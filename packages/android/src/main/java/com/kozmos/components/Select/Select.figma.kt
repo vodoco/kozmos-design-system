@@ -36,11 +36,41 @@ class KozmosSelectConnect {
         "Error" to true
     )
 
+    // GAP-164: the open list, each option with its count.
+    @FigmaProperty(FigmaType.Enum, "Content")
+    val expanded: Boolean = Figma.mapping(
+        "Closed" to false,
+        "Open" to true
+    )
+
+    @FigmaProperty(FigmaType.Text, "Option 1 Text")
+    val option1Text: String = "Cafés"
+
+    @FigmaProperty(FigmaType.Text, "Option 2 Text")
+    val option2Text: String = "Restrooms"
+
+    @FigmaProperty(FigmaType.Text, "Option 3 Text")
+    val option3Text: String = "Shops"
+
+    // Figma's `Option N Count` texts are not carried to this snippet: a
+    // text property reaches Kotlin as a String, and the item's count is an
+    // Int. So the snippet writes the set's own sample counts, 128, 96 and
+    // 32, as Ints, shown or not with Show Counts; an instance whose counts
+    // were edited still shows these.
+    @FigmaProperty(FigmaType.Boolean, "Show Counts")
+    val option1Count: Int? = Figma.mapping(true to 128, false to null)
+
+    @FigmaProperty(FigmaType.Boolean, "Show Counts")
+    val option2Count: Int? = Figma.mapping(true to 96, false to null)
+
+    @FigmaProperty(FigmaType.Boolean, "Show Counts")
+    val option3Count: Int? = Figma.mapping(true to 32, false to null)
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun ComponentExample() {
         KozmosSelect(
-            expanded = false,
+            expanded = expanded,
             onExpandedChange = {},
             trigger = {
                 KozmosSelectTrigger(
@@ -56,10 +86,25 @@ class KozmosSelectConnect {
             }
         ) {
             KozmosSelectItem(
-                value = "option",
-                label = "Option",
+                value = "option1",
+                label = option1Text,
                 onValueChange = {},
-                onDismissRequest = {}
+                onDismissRequest = {},
+                count = option1Count
+            )
+            KozmosSelectItem(
+                value = "option2",
+                label = option2Text,
+                onValueChange = {},
+                onDismissRequest = {},
+                count = option2Count
+            )
+            KozmosSelectItem(
+                value = "option3",
+                label = option3Text,
+                onValueChange = {},
+                onDismissRequest = {},
+                count = option3Count
             )
         }
     }

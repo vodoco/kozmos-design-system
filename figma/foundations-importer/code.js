@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "493e2e6a7314";
+const PLUGIN_BUILD = "d6faf1e9bc64";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -414,6 +414,14 @@ const SEARCH_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const SEARCH_STATUSES = ["Default", "Error"];
 const SELECT_STATES = ["Default", "Focus", "Disabled", "Mixed"];
 const SELECT_STATUSES = ["Default", "Error"];
+// GAP-164 (decision 132): Open draws the trigger with its list under it, so a
+// row's count is visible in Figma. A variant drawn before the axis is Closed.
+const SELECT_CONTENT = ["Closed", "Open"];
+// An open list is neither disabled nor the trigger's focus-ring state, so
+// Open is drawn at State=Default only (#525 review): 6 Closed + 2 Open.
+function selectVariantIsGenerated(state, _status, content) {
+  return content !== "Open" || state === "Default";
+}
 const SLIDER_STATES = ["Default", "Focus", "Disabled"];
 const SLIDER_STATUSES = ["Default", "Error"];
 const SLIDER_TYPES = ["Single", "Range"];
@@ -969,6 +977,9 @@ const TOAST_TONES = ["Neutral", "Success", "Info", "Warning", "Critical"];
 const TABS_COUNTS = ["Two", "Three", "Four"];
 const TABS_ACTIVE = ["One", "Two", "Three", "Four"];
 const TABS_STATES = ["Default", "Focus", "Disabled"];
+// GAP-152 (decision 132): a trigger's words alone, or a 20 icon 4 above them.
+// A variant drawn before the axis is Label.
+const TABS_CONTENT = ["Label", "Icon Over Label"];
 const TOOLTIP_SIDES = ["Top", "Right", "Bottom", "Left"];
 const BACKDROP_VISIBILITY = ["Visible", "Hidden"];
 // Whether the scrim lights a target (GAP-189): Cut-out leaves an example
@@ -1699,7 +1710,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Select",
-          variantName: "State=Default, Status=Default",
+          variantName: "State=Default, Status=Default, Content=Closed",
           text: { "Placeholder Text": "Destination" },
         },
         {
@@ -3557,13 +3568,17 @@ const COMPONENT_DOCS = [
       "Count maps to the number of TabsTrigger examples.",
       "Active maps to Tabs.defaultValue in Code Connect.",
       "State maps to disabled and focus examples for the generated triggers.",
+      "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them, a 56 trigger in a 64 list (GAP-152).",
       "Tab 1 Text through Tab 4 Text map to TabsTrigger children.",
+      "Tab 1 Icon through Tab 4 Icon map to each TabsTrigger.icon in Icon Over Label.",
     ],
     properties: [
       "Count: Two, Three, Four",
       "Active: One, Two, Three, Four",
       "State: Default, Focus, Disabled",
+      "Content: Label, Icon Over Label",
       "Tab 1 Text, Tab 2 Text, Tab 3 Text, Tab 4 Text, Focus Visible",
+      "Tab 1 Icon, Tab 2 Icon, Tab 3 Icon, Tab 4 Icon",
     ],
     accessibility: [
       "The tab list keeps a 44px outer interaction frame.",
@@ -4464,14 +4479,20 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option 1 Text through Option 3 Text map to SelectItem children.",
+      "Option 1 Count through Option 3 Count map to SelectItem.count, drawn as the neutral Counter; Show Counts shows them. Every row keeps the check's 16 at its end, so the counts form one column.",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Mixed",
       "Status: Default, Error",
+      "Content: Closed, Open",
       "Placeholder Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
+      "Option 1 Text, Option 2 Text, Option 3 Text",
+      "Option 1 Count, Option 2 Count, Option 3 Count, Show Counts",
     ],
     accessibility: [
       "Trigger height meets the 44px minimum target.",
@@ -6863,6 +6884,32 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // Icon Over Label (GAP-152): a 20 icon 4 above the words, 6 above and
+  // below, so a trigger is 56 and the list, inside 4 all round, 64. Their own
+  // heights, so the Label variants keep 32 and 40.
+  {
+    name: "Tabs/list/height/stacked",
+    value: 64,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  { name: "Tabs/trigger/height/stacked", value: 56, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Tabs/trigger/padding/y",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Tabs/trigger/icon/size",
+    value: 20,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Tabs/trigger/icon/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   { name: "Checkbox/width/default", value: 176, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Checkbox/height/default",
@@ -8081,6 +8128,62 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 20,
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
+  },
+  // Content=Open (GAP-164): the list SelectContent draws 4 under the trigger
+  // (translate-y-1), its rows Combobox's (owned-selection.css), so each
+  // carries Combobox's value and alias.
+  {
+    name: "Select/listbox/offset",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/padding",
+    value: POPOVER_ROW_INSET,
+    alias: spacingAliasFor(POPOVER_ROW_INSET),
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/gap",
+    value: 2,
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Select/listbox/stroke/width",
+    value: 1,
+    alias: "Border Width/sm",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "Select/option/height",
+    value: 44,
+    alias: "Button/height/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Select/option/padding/x",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/option/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/option/radius",
+    value: 4,
+    alias: "Radius/sm",
+    scopes: ["CORNER_RADIUS"],
   },
   {
     name: "Combobox/width/default",
@@ -12554,10 +12657,11 @@ async function buildSettingsExampleTemplate({
   panel.appendChild(
     await createExampleInstance({
       componentSetName: "Select",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      // The closed trigger; a file whose Select predates Content has only it.
+      variantProperties: [
+        { State: "Default", Status: "Default", Content: "Closed" },
+        { State: "Default", Status: "Default" },
+      ],
       name: "Default Building Select",
       textProperties: {
         "Placeholder Text": "Default building",
@@ -18749,6 +18853,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Count: TABS_COUNTS,
       Active: TABS_ACTIVE,
       State: TABS_STATES,
+      Content: TABS_CONTENT,
     };
   }
 
@@ -19002,6 +19107,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       State: SELECT_STATES,
       Status: SELECT_STATUSES,
+      Content: SELECT_CONTENT,
     };
   }
 
@@ -28059,12 +28165,13 @@ function bindTabsGeometryVariables(
   triggers,
   variableByName,
   stats,
+  stacked,
 ) {
   const widthToken = `Tabs/width/${String(count).toLowerCase()}`;
   bindSizeVariables(
     component,
     widthToken,
-    "Tabs/list/height",
+    stacked ? "Tabs/list/height/stacked" : "Tabs/list/height",
     variableByName,
     stats,
   );
@@ -28115,10 +28222,33 @@ function bindTabsGeometryVariables(
     bindFloatVariable(
       trigger,
       "height",
-      "Tabs/trigger/height",
+      stacked ? "Tabs/trigger/height/stacked" : "Tabs/trigger/height",
       variableByName,
       stats,
     );
+    if (stacked) {
+      bindFloatVariable(
+        trigger,
+        "paddingTop",
+        "Tabs/trigger/padding/y",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        trigger,
+        "paddingBottom",
+        "Tabs/trigger/padding/y",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        trigger,
+        "itemSpacing",
+        "Tabs/trigger/icon/gap",
+        variableByName,
+        stats,
+      );
+    }
     bindFloatVariable(
       trigger,
       "paddingLeft",
@@ -29579,7 +29709,90 @@ function bindSelectGeometryVariables(
   icon,
   variableByName,
   stats,
+  listbox,
 ) {
+  if (listbox) {
+    bindFloatVariable(
+      component,
+      "itemSpacing",
+      "Select/listbox/offset",
+      variableByName,
+      stats,
+    );
+    for (const field of [
+      "paddingLeft",
+      "paddingRight",
+      "paddingTop",
+      "paddingBottom",
+    ]) {
+      bindFloatVariable(
+        listbox,
+        field,
+        "Select/listbox/padding",
+        variableByName,
+        stats,
+      );
+    }
+    bindFloatVariable(
+      listbox,
+      "itemSpacing",
+      "Select/listbox/gap",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      listbox,
+      "cornerRadius",
+      "Select/listbox/radius",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      listbox,
+      "strokeWeight",
+      "Select/listbox/stroke/width",
+      variableByName,
+      stats,
+    );
+    for (const option of listbox.children) {
+      bindFloatVariable(
+        option,
+        "height",
+        "Select/option/height",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "paddingLeft",
+        "Select/option/padding/x",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "paddingRight",
+        "Select/option/padding/x",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "itemSpacing",
+        "Select/option/gap",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "cornerRadius",
+        "Select/option/radius",
+        variableByName,
+        stats,
+      );
+    }
+  }
+
   bindFloatVariable(
     component,
     "width",
@@ -34472,6 +34685,7 @@ async function buildTabsComponent() {
       count: combination.count,
       active: combination.active,
       state: combination.state,
+      content: combination.content,
       variableByName,
       fonts,
       stats,
@@ -34492,7 +34706,9 @@ async function buildTabsComponent() {
     "Count maps to the number of TabsTrigger examples.",
     "Active maps to Tabs.defaultValue.",
     "State maps to disabled and focus examples.",
+    "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them (GAP-152).",
     "Tab text properties map to TabsTrigger children.",
+    "Tab 1 Icon through Tab 4 Icon swap each trigger's icon in Icon Over Label.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutTabsVariants(componentSet);
@@ -34506,7 +34722,7 @@ async function buildTabsComponent() {
     expectedVariantAxesForComponentSetName(componentSet.name),
     stats,
   );
-  configureTabsProperties(componentSet, stats);
+  await configureTabsProperties(componentSet, stats, variableByName);
   return stats;
 }
 
@@ -34516,7 +34732,7 @@ async function updateTabsComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
-    variantsMissing: 0,
+    variantsCreated: 0,
     warnings: [],
   };
 
@@ -34545,7 +34761,9 @@ async function updateTabsComponent() {
     "Count maps to the number of TabsTrigger examples.",
     "Active maps to Tabs.defaultValue.",
     "State maps to disabled and focus examples.",
+    "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them (GAP-152).",
     "Tab text properties map to TabsTrigger children.",
+    "Tab 1 Icon through Tab 4 Icon swap each trigger's icon in Icon Over Label.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -34559,11 +34777,14 @@ async function updateTabsComponent() {
       continue;
     }
 
-    seenKeys[`${props.count}/${props.active}/${props.state}`] = true;
+    // A variant drawn before the Content axis parses as Label and is renamed
+    // in place, so the node ids Code Connect and instances pin survive.
+    seenKeys[tabsVariantKey(props)] = true;
     await updateTabsVariant(child, {
       count: props.count,
       active: props.active,
       state: props.state,
+      content: props.content,
       variableByName,
       fonts,
       stats,
@@ -34572,11 +34793,21 @@ async function updateTabsComponent() {
   }
 
   for (const combination of tabsVariantCombinations()) {
-    const key = `${combination.count}/${combination.active}/${combination.state}`;
-    if (!seenKeys[key]) {
-      stats.variantsMissing += 1;
-      stats.warnings.push(`Missing Tabs variant ${key}.`);
-    }
+    const key = tabsVariantKey(combination);
+    if (seenKeys[key]) continue;
+
+    const component = await createTabsVariant({
+      count: combination.count,
+      active: combination.active,
+      state: combination.state,
+      content: combination.content,
+      variableByName,
+      fonts,
+      stats,
+    });
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
 
   layoutTabsVariants(existing);
@@ -34588,7 +34819,7 @@ async function updateTabsComponent() {
     expectedVariantAxesForComponentSetName(existing.name),
     stats,
   );
-  configureTabsProperties(existing, stats);
+  await configureTabsProperties(existing, stats, variableByName);
   return stats;
 }
 
@@ -38388,18 +38619,23 @@ async function buildSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
+    types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     x: 80,
     y: 3280,
     xStep: 360,
     yStep: 96,
+    layoutVariants: layoutSelectVariants,
     createVariant: createSelectVariant,
     configureProperties: configureSelectProperties,
     description: [
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
   });
@@ -38411,8 +38647,11 @@ async function updateSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
+    types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     xStep: 360,
     yStep: 96,
+    layoutVariants: layoutSelectVariants,
     createVariant: createSelectVariant,
     updateVariant: updateSelectVariant,
     parseVariantName: parseSelectVariantName,
@@ -38422,8 +38661,10 @@ async function updateSelectComponent() {
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -38530,6 +38771,11 @@ async function buildStateStatusComponent(config) {
       const status = config.statuses[statusIndex];
       for (let typeIndex = 0; typeIndex < types.length; typeIndex += 1) {
         const type = types[typeIndex];
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
         const component = await config.createVariant({
           state,
           status,
@@ -38564,6 +38810,7 @@ async function buildStateStatusComponent(config) {
     config.description,
   );
   clearComponentSetContainerFill(componentSet);
+  if (config.layoutVariants) config.layoutVariants(componentSet);
 
   stats.created = true;
   stats.componentSetId = componentSet.id;
@@ -38643,6 +38890,18 @@ async function updateStateStatusComponent(config) {
 
     const type = props.type || null;
     seenKeys[stateStatusComponentKey(props.state, props.status, type)] = true;
+    if (
+      config.includeVariant &&
+      !config.includeVariant(props.state, props.status, type)
+    ) {
+      // A combination the set no longer generates, drawn by an earlier run.
+      // Kept and redrawn, never removed: instances and Code Connect may pin
+      // it. Delete it by hand once nothing uses it.
+      stats.variantsNotGenerated = (stats.variantsNotGenerated || 0) + 1;
+      stats.warnings.push(
+        `${config.componentName} variant "${child.name}" is no longer generated; kept and updated. Delete it by hand once no instance uses it.`,
+      );
+    }
     await config.updateVariant(child, {
       state: props.state,
       status: props.status,
@@ -38659,6 +38918,11 @@ async function updateStateStatusComponent(config) {
       for (const type of types) {
         const key = stateStatusComponentKey(state, status, type);
         if (seenKeys[key]) continue;
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
 
         const component = await config.createVariant({
           state,
@@ -38675,7 +38939,11 @@ async function updateStateStatusComponent(config) {
     }
   }
 
-  layoutStateStatusVariants(existing, config);
+  if (config.layoutVariants) {
+    config.layoutVariants(existing);
+  } else {
+    layoutStateStatusVariants(existing, config);
+  }
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -45557,6 +45825,46 @@ function configureSelectProperties(componentSet, stats) {
   configurePlaceholderTextProperty(componentSet, "Select an option", stats);
   configureResetMixedProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  // Content=Open's rows (GAP-164).
+  for (let index = 0; index < SELECT_OPTION_DEFAULTS.length; index += 1) {
+    const text = `Option ${index + 1} Text`;
+    const count = `Option ${index + 1} Count`;
+    configureNamedTextProperty(
+      componentSet,
+      text,
+      text,
+      SELECT_OPTION_DEFAULTS[index].text,
+      stats,
+    );
+    configureNamedTextProperty(
+      componentSet,
+      count,
+      count,
+      SELECT_OPTION_DEFAULTS[index].count,
+      stats,
+    );
+  }
+  const showCounts = ensureBooleanProperty(
+    componentSet,
+    "Show Counts",
+    true,
+    stats,
+  );
+  if (!showCounts) return;
+  let boundCount = 0;
+  (function walk(node) {
+    if (
+      node.type === "FRAME" &&
+      sharedPluginDataValue(node, RUN_NAMESPACE, "kind") === "option-count"
+    ) {
+      bindVisibilityProperty(node, showCounts, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+  stats.selectCountVisibilityBindings = boundCount;
 }
 
 function configureFormFieldProperties(componentSet, stats) {
@@ -55503,9 +55811,17 @@ function layoutTabsVariants(componentSet) {
     const countIndex = TABS_COUNTS.indexOf(props.count);
     const activeIndex = TABS_ACTIVE_TO_INDEX[props.active];
     const stateIndex = TABS_STATES.indexOf(props.state);
+    const row = countIndex * TABS_STATES.length + stateIndex;
     child.x = activeIndex * 700;
-    child.y = (countIndex * TABS_STATES.length + stateIndex) * 76;
+    // Label where it always stood, 76 a row; Icon Over Label's 64-tall lists
+    // under them, 100 a row.
+    child.y =
+      props.content === "Icon Over Label"
+        ? TABS_COUNTS.length * TABS_STATES.length * 76 + 40 + row * 100
+        : row * 76;
   }
+
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 function layoutToggleButtonVariants(componentSet) {
@@ -56075,7 +56391,7 @@ function configureTableProperties(componentSet, stats) {
   }
 }
 
-function configureTabsProperties(componentSet, stats) {
+async function configureTabsProperties(componentSet, stats, variableByName) {
   const defaults = ["Overview", "Details", "Usage", "History"];
   for (let index = 0; index < defaults.length; index += 1) {
     const label = `Tab ${index + 1} Text`;
@@ -56089,6 +56405,38 @@ function configureTabsProperties(componentSet, stats) {
   }
 
   configureFocusVisibleProperty(componentSet, stats);
+  await configureTabsIconSlots(componentSet, stats, variableByName);
+}
+
+// Icon Over Label's icons (GAP-152): Tab N Icon swaps the Tab N Icon layer
+// of every stacked variant, offering the curated icons, as Tree's slots do.
+async function configureTabsIconSlots(componentSet, stats, variableByName) {
+  if (!componentSet || !componentSet.children) return;
+
+  const iconSourceComponents = await findKozmosIconSourceComponents();
+  const preferredValues = iconPreferredValues(iconSourceComponents);
+  const fallback = await resolveDefaultIconSourceComponent(
+    variableByName,
+    stats,
+  );
+  for (let index = 0; index < TABS_DEFAULT_ICONS.length; index += 1) {
+    const name = `Tab ${index + 1} Icon`;
+    const defaultComponent =
+      (await findKozmosIconSourceComponent(TABS_DEFAULT_ICONS[index])) ||
+      fallback;
+    if (!defaultComponent) continue;
+
+    const propertyName = ensureInstanceSwapProperty(
+      componentSet,
+      name,
+      defaultComponent.id,
+      stats,
+      preferredValues,
+    );
+    if (!propertyName) continue;
+
+    bindTreeItemIconSlotInstances(componentSet, name, propertyName, stats);
+  }
 }
 
 function configureTooltipProperties(componentSet, stats) {
@@ -61137,6 +61485,7 @@ async function createTabsVariant({
   count,
   active,
   state,
+  content,
   variableByName,
   fonts,
   stats,
@@ -61146,6 +61495,7 @@ async function createTabsVariant({
     count,
     active,
     state,
+    content,
     variableByName,
     fonts,
     stats,
@@ -61165,10 +61515,14 @@ function parseTabsVariantName(name) {
     values[key] = value;
   }
 
+  // A variant drawn before the Content axis is Label, so Update renames it in
+  // place and its node id survives.
+  const content = values.Content || "Label";
   if (
     TABS_COUNTS.indexOf(values.Count) === -1 ||
     TABS_ACTIVE.indexOf(values.Active) === -1 ||
     TABS_STATES.indexOf(values.State) === -1 ||
+    TABS_CONTENT.indexOf(content) === -1 ||
     !tabsActiveIsValidForCount(values.Active, values.Count)
   ) {
     return null;
@@ -61178,17 +61532,20 @@ function parseTabsVariantName(name) {
     count: values.Count,
     active: values.Active,
     state: values.State,
+    content,
   };
 }
 
 async function updateTabsVariant(
   component,
-  { count, active, state, variableByName, fonts, stats },
+  { count, active, state, content, variableByName, fonts, stats },
 ) {
   const tabCount = TABS_COUNT_TO_NUMBER[count];
   const width = tabsWidthForCount(count);
+  const tabsContent = content || "Label";
+  const stacked = tabsContent === "Icon Over Label";
 
-  component.name = `Count=${count}, Active=${active}, State=${state}`;
+  component.name = `Count=${count}, Active=${active}, State=${state}, Content=${tabsContent}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -61199,8 +61556,9 @@ async function updateTabsVariant(
   component.paddingRight = 4;
   component.paddingTop = 4;
   component.paddingBottom = 4;
-  // React's h-10: a 32 trigger inside 4 all round.
-  component.resizeWithoutConstraints(width, 40);
+  // React's h-10: a 32 trigger inside 4 all round; stacked, a 56 trigger
+  // (6, the 20 icon, 4, the 20 line, 6) inside the same 4 is 64.
+  component.resizeWithoutConstraints(width, stacked ? 64 : 40);
   component.cornerRadius = KOZMOS_RADIUS.container;
   component.clipsContent = false;
   component.fills = [
@@ -61220,6 +61578,7 @@ async function updateTabsVariant(
     count,
     active,
     state,
+    content: tabsContent,
     tabCount,
     width,
     variableByName,
@@ -64662,6 +65021,7 @@ async function updateSearchVariant(
 async function createSelectVariant({
   state,
   status,
+  type,
   variableByName,
   fonts,
   stats,
@@ -64670,6 +65030,7 @@ async function createSelectVariant({
   await updateSelectVariant(component, {
     state,
     status,
+    type,
     variableByName,
     fonts,
     stats,
@@ -64677,25 +65038,40 @@ async function createSelectVariant({
   return component;
 }
 
+// The state-status builders carry a third axis as `type`; Select's is
+// Content. A variant drawn before the axis is Closed, so Update renames it in
+// place and its node id survives.
 function parseSelectVariantName(name) {
-  return parseStateStatusVariantName(name, SELECT_STATES, SELECT_STATUSES);
+  const props = parseStateStatusVariantName(
+    name,
+    SELECT_STATES,
+    SELECT_STATUSES,
+  );
+  if (!props) return null;
+  const match = /(?:^|,)\s*Content=([^,]+)/.exec(name);
+  const content = match ? match[1].trim() : "Closed";
+  if (SELECT_CONTENT.indexOf(content) === -1) return null;
+  return { state: props.state, status: props.status, type: content };
 }
 
 async function updateSelectVariant(
   component,
-  { state, status, variableByName, fonts, stats },
+  { state, status, type, variableByName, fonts, stats },
 ) {
   const config = inputConfig(state, status);
+  const content = type || "Closed";
+  const isOpen = content === "Open";
 
-  component.name = `State=${state}, Status=${status}`;
+  component.name = `State=${state}, Status=${status}, Content=${content}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "MIN";
   // React's FieldWrapper gap, between the trigger and Reset Mixed when it
-  // shows (GAP-153); nothing else shares the column.
-  component.itemSpacing = 6;
+  // shows (GAP-153); Open: SelectContent's translate-y-1, 4 under the
+  // trigger (GAP-164), with Reset Mixed (hidden by default) between them.
+  component.itemSpacing = isOpen ? 4 : 6;
   component.paddingLeft = 0;
   component.paddingRight = 0;
   component.paddingTop = 0;
@@ -64712,11 +65088,37 @@ async function updateSelectVariant(
     component,
     state,
     status,
+    content,
     config,
     variableByName,
     fonts,
     stats,
   });
+}
+
+// Closed where the set always drew them, 360 by 96; Open, each a trigger and
+// its list, to their right, 240 a row.
+function layoutSelectVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+
+    const props = parseSelectVariantName(child.name);
+    if (!props) continue;
+
+    const stateIndex = SELECT_STATES.indexOf(props.state);
+    const statusIndex = SELECT_STATUSES.indexOf(props.status);
+    if (props.type === "Open") {
+      child.x = (SELECT_STATUSES.length + statusIndex) * 360;
+      child.y = stateIndex * 240;
+    } else {
+      child.x = statusIndex * 360;
+      child.y = stateIndex * 96;
+    }
+  }
+
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createSliderVariant({
@@ -68033,6 +68435,7 @@ async function syncTabsVariantChildren({
   count,
   active,
   state,
+  content,
   tabCount,
   width,
   variableByName,
@@ -68041,6 +68444,11 @@ async function syncTabsVariantChildren({
 }) {
   const triggerWidth = (width - 8) / tabCount;
   const triggers = [];
+  const icons = [];
+  // Icon Over Label (GAP-152): the icon 4 above the words, both centred, 6
+  // above and below, so the trigger is 56. Label draws as it always has.
+  const stacked = content === "Icon Over Label";
+  const triggerHeight = stacked ? 56 : 32;
 
   const existingChildren = [];
   for (const child of component.children) existingChildren.push(child);
@@ -68068,17 +68476,17 @@ async function syncTabsVariantChildren({
       trigger.name = triggerName;
     }
 
-    trigger.layoutMode = "HORIZONTAL";
+    trigger.layoutMode = stacked ? "VERTICAL" : "HORIZONTAL";
     trigger.primaryAxisSizingMode = "FIXED";
     trigger.counterAxisSizingMode = "FIXED";
     trigger.primaryAxisAlignItems = "CENTER";
     trigger.counterAxisAlignItems = "CENTER";
-    trigger.itemSpacing = 0;
+    trigger.itemSpacing = stacked ? 4 : 0;
     trigger.paddingLeft = 12;
     trigger.paddingRight = 12;
-    trigger.paddingTop = 0;
-    trigger.paddingBottom = 0;
-    trigger.resizeWithoutConstraints(triggerWidth, 32);
+    trigger.paddingTop = stacked ? 6 : 0;
+    trigger.paddingBottom = stacked ? 6 : 0;
+    trigger.resizeWithoutConstraints(triggerWidth, triggerHeight);
     trigger.cornerRadius = 12;
     trigger.clipsContent = false;
     trigger.fills = config.background
@@ -68103,6 +68511,56 @@ async function syncTabsVariantChildren({
       trigger.layoutGrow = 1;
     } catch (_error) {
       // layoutGrow is unavailable on older plugin runtimes.
+    }
+
+    const iconName = `Tab ${index + 1} Icon`;
+    let icon = directChildNamed(trigger, iconName);
+    if (icon && (!stacked || icon.type !== "INSTANCE")) {
+      icon.remove();
+      icon = null;
+    }
+    if (stacked) {
+      if (icon) {
+        // Kept, so a swap made on the main component survives an Update;
+        // only its paint and size are the painter's.
+        icon.resize(20, 20);
+        bindSizeVariables(
+          icon,
+          "Tabs/trigger/icon/size",
+          "Tabs/trigger/icon/size",
+          variableByName,
+          stats,
+        );
+        storeIconSlotAuditMetadata(
+          icon,
+          config.foreground,
+          config.foregroundFallback,
+          stats,
+        );
+        applyIconColorOverrides(
+          icon,
+          config.foreground,
+          config.foregroundFallback,
+          variableByName,
+          stats,
+        );
+      } else {
+        icon = await createFixedIconInstance(
+          TABS_DEFAULT_ICONS[index],
+          config.foreground,
+          config.foregroundFallback,
+          variableByName,
+          stats,
+          20,
+          "Tabs/trigger/icon/size",
+        );
+        icon.name = iconName;
+      }
+      icon.setSharedPluginData(RUN_NAMESPACE, "kind", "tabs-trigger-icon");
+      // First in the trigger, above the words.
+      trigger.insertChild(0, icon);
+      setFixedChildSizing(icon);
+      icons.push(icon);
     }
 
     let text = directChildNamed(trigger, textName);
@@ -68132,7 +68590,7 @@ async function syncTabsVariantChildren({
     syncFocusRing(trigger, {
       enabled: state === "Focus" && isActive,
       width: triggerWidth,
-      height: 32,
+      height: triggerHeight,
       radius: 12,
       variableName: "Colors/theme/600",
       fallback: "#1051E8",
@@ -68145,7 +68603,14 @@ async function syncTabsVariantChildren({
     triggers.push(trigger);
   }
 
-  bindTabsGeometryVariables(component, count, triggers, variableByName, stats);
+  bindTabsGeometryVariables(
+    component,
+    count,
+    triggers,
+    variableByName,
+    stats,
+    stacked,
+  );
 }
 
 async function syncTooltipVariantChildren({
@@ -73902,9 +74367,13 @@ async function createOptionGroupLabel({
   return row;
 }
 
+// Select's rows pass their own tokenPrefix and a count (GAP-164); without
+// them the row is Combobox's, as MultiSelect and Listbox have always drawn it.
 async function createComboboxOption({
   index,
   text,
+  count,
+  tokenPrefix,
   selected,
   active,
   focused,
@@ -73913,8 +74382,9 @@ async function createComboboxOption({
   fonts,
   stats,
 }) {
+  const prefix = tokenPrefix || "Combobox";
   const option = figma.createFrame();
-  option.name = `Combobox Option ${index + 1}`;
+  option.name = `${prefix} Option ${index + 1}`;
   option.layoutMode = "HORIZONTAL";
   option.primaryAxisSizingMode = "FIXED";
   option.counterAxisSizingMode = "FIXED";
@@ -73960,13 +74430,7 @@ async function createComboboxOption({
 
   const label = figma.createText();
   label.name = `Option ${index + 1} Text`;
-  await applyFieldTextTypography(
-    label,
-    fonts,
-    "Combobox",
-    variableByName,
-    stats,
-  );
+  await applyFieldTextTypography(label, fonts, prefix, variableByName, stats);
   label.characters = text;
   setHorizontalFillTextSizing(label);
   setTextAutoResize(label, "TRUNCATE");
@@ -73981,6 +74445,27 @@ async function createComboboxOption({
   label.textAlignVertical = "CENTER";
   option.appendChild(label);
 
+  // SelectItem's count, between the words and the check.
+  if (typeof count === "string") {
+    // The words take the row's slack, so the count sits against the check's
+    // 16 rather than floating between SPACE_BETWEEN's ends. FILL set before
+    // the append has no auto-layout parent and may not hold; set it again.
+    // SPACE_BETWEEN with a filling child lays no gap, so the row packs from
+    // the start and its 8 (Select/option/gap) parts words, count and check.
+    setLayoutSizingHorizontal(label, "FILL");
+    option.primaryAxisAlignItems = "MIN";
+    option.appendChild(
+      await createOptionCount({
+        index,
+        text: count,
+        disabled,
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+  }
+
   if (selected) {
     const icon = await createFixedIconInstance(
       "check",
@@ -73989,9 +74474,29 @@ async function createComboboxOption({
       variableByName,
       stats,
       16,
-      "Combobox/icon/size",
+      `${prefix}/icon/size`,
     );
     option.appendChild(icon);
+  } else if (typeof count === "string") {
+    // Decision 1 (#525 review): with counts, every row keeps the check's 16 at
+    // its end, so the counts form one column whichever row is chosen. Rows
+    // with no count (Combobox, MultiSelect, Listbox) draw as they always have.
+    const slot = figma.createFrame();
+    slot.name = "Check Slot";
+    slot.fills = [];
+    slot.strokes = [];
+    slot.clipsContent = false;
+    slot.resizeWithoutConstraints(16, 16);
+    slot.setSharedPluginData(RUN_NAMESPACE, "kind", "option-check-slot");
+    bindSizeVariables(
+      slot,
+      `${prefix}/icon/size`,
+      `${prefix}/icon/size`,
+      variableByName,
+      stats,
+    );
+    option.appendChild(slot);
+    setFixedChildSizing(slot);
   }
 
   return option;
@@ -77465,10 +77970,15 @@ async function createColorPickerPaletteSelect({
 }) {
   const created = await createNestedComponentInstance({
     componentSetName: "Select",
-    variantProperties: {
-      State: disabled ? "Disabled" : "Default",
-      Status: "Default",
-    },
+    // The closed trigger; a file whose Select predates Content has only it.
+    variantProperties: [
+      {
+        State: disabled ? "Disabled" : "Default",
+        Status: "Default",
+        Content: "Closed",
+      },
+      { State: disabled ? "Disabled" : "Default", Status: "Default" },
+    ],
     name: "ColorPicker Palette Select",
     role: "palette-select",
     stats,
@@ -78293,11 +78803,23 @@ async function syncSelectVariantChildren({
   component,
   state,
   status,
+  content,
   config,
   variableByName,
   fonts,
   stats,
 }) {
+  const preservedText = collectDescendantTextCharactersByName(component, [
+    "Option 1 Text",
+    "Option 2 Text",
+    "Option 3 Text",
+    "Option 1 Count",
+    "Option 2 Count",
+    "Option 3 Count",
+  ]);
+  const staleListbox = directChildNamed(component, "Select Listbox");
+  if (staleListbox) staleListbox.remove();
+
   let trigger = directChildNamed(component, "Select Trigger");
   if (trigger && trigger.type !== "FRAME") {
     trigger.remove();
@@ -78406,7 +78928,25 @@ async function syncSelectVariantChildren({
     stats,
   });
 
-  bindSelectGeometryVariables(component, trigger, icon, variableByName, stats);
+  const listbox =
+    content === "Open"
+      ? await createSelectListbox({
+          state,
+          preservedText,
+          variableByName,
+          fonts,
+          stats,
+        })
+      : null;
+
+  bindSelectGeometryVariables(
+    component,
+    trigger,
+    icon,
+    variableByName,
+    stats,
+    listbox,
+  );
 
   component.appendChild(trigger);
   setLayoutSizingHorizontal(trigger, "FILL");
@@ -78416,7 +78956,139 @@ async function syncSelectVariantChildren({
     variableByName,
     stats,
   });
+  if (listbox) {
+    component.appendChild(listbox);
+    setLayoutSizingHorizontal(listbox, "FILL");
+  }
   normalizeInputFamilyChildSizing(component);
+}
+
+// GAP-164: Select's open list, so a row's count is visible in Figma. It is
+// SelectContent as React draws it: Combobox's list (Surface/0, Border/Subtle,
+// the control radius, the overlay elevation, the row inset all round, 2
+// between rows) and its rows, the first chosen with its check, the second
+// under the pointer, each SelectItem's `[words] [count] [check]` with the
+// count the neutral Counter. Show Counts hides the counts.
+const SELECT_OPTION_DEFAULTS = [
+  { text: "Everything", count: "128" },
+  { text: "POI", count: "96" },
+  { text: "Interior asset", count: "32" },
+];
+
+async function createSelectListbox({
+  state,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const listbox = figma.createFrame();
+  listbox.name = "Select Listbox";
+  listbox.layoutMode = "VERTICAL";
+  listbox.primaryAxisSizingMode = "AUTO";
+  listbox.counterAxisSizingMode = "FIXED";
+  listbox.primaryAxisAlignItems = "MIN";
+  listbox.counterAxisAlignItems = "MIN";
+  listbox.itemSpacing = 2;
+  listbox.paddingLeft = POPOVER_ROW_INSET;
+  listbox.paddingRight = POPOVER_ROW_INSET;
+  listbox.paddingTop = POPOVER_ROW_INSET;
+  listbox.paddingBottom = POPOVER_ROW_INSET;
+  listbox.resizeWithoutConstraints(320, 160);
+  listbox.cornerRadius = KOZMOS_RADIUS.control;
+  listbox.clipsContent = false;
+  listbox.setSharedPluginData(RUN_NAMESPACE, "kind", "select-listbox");
+  listbox.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  listbox.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  listbox.strokeWeight = 1;
+  listbox.effects = [elevationEffect("overlay")];
+
+  for (let index = 0; index < SELECT_OPTION_DEFAULTS.length; index += 1) {
+    const fallback = SELECT_OPTION_DEFAULTS[index];
+    const option = await createComboboxOption({
+      index,
+      text: preservedText[`Option ${index + 1} Text`] || fallback.text,
+      count: preservedText[`Option ${index + 1} Count`] || fallback.count,
+      tokenPrefix: "Select",
+      selected: index === 0,
+      active: index === 1,
+      focused: state === "Focus",
+      disabled,
+      variableByName,
+      fonts,
+      stats,
+    });
+    listbox.appendChild(option);
+  }
+
+  return listbox;
+}
+
+// React's Counter at its default size in the neutral tone, as the Counter set
+// paints it (counterConfig, counterMetrics): a 20 pill at least 20 wide, 6 at
+// the sides, 12/16 digits. A drawn pill rather than a Counter instance, since
+// a set's TEXT property cannot drive a text inside a nested instance, and
+// Option N Count must.
+async function createOptionCount({
+  index,
+  text,
+  disabled,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const config = counterConfig("Neutral");
+  const metrics = counterMetrics("Default");
+  const pill = figma.createFrame();
+  pill.name = `Option ${index + 1} Counter`;
+  pill.layoutMode = "HORIZONTAL";
+  pill.primaryAxisSizingMode = "AUTO";
+  pill.counterAxisSizingMode = "FIXED";
+  pill.primaryAxisAlignItems = "CENTER";
+  pill.counterAxisAlignItems = "CENTER";
+  pill.itemSpacing = 0;
+  pill.paddingLeft = metrics.paddingX;
+  pill.paddingRight = metrics.paddingX;
+  pill.paddingTop = 0;
+  pill.paddingBottom = 0;
+  pill.resizeWithoutConstraints(metrics.minWidth, metrics.height);
+  setNodePropertyIfSupported(pill, "minWidth", metrics.minWidth);
+  pill.cornerRadius = KOZMOS_RADIUS.pill;
+  pill.clipsContent = false;
+  pill.fills = [
+    paintFromVariable(
+      config.background,
+      config.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  pill.strokes = [];
+  pill.setSharedPluginData(RUN_NAMESPACE, "kind", "option-count");
+  bindCounterGeometryVariables(pill, metrics, variableByName, stats);
+
+  const digits = figma.createText();
+  digits.name = `Option ${index + 1} Count`;
+  await applyCounterTypography(digits, "Default", fonts, variableByName, stats);
+  digits.characters = text;
+  digits.fills = [
+    paintFromVariable(
+      disabled ? "Colors/foreground/500" : config.foreground,
+      disabled ? "#747B8B" : config.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  digits.textAlignHorizontal = "CENTER";
+  digits.textAlignVertical = "CENTER";
+  pill.appendChild(digits);
+  setHugChildSizing(digits);
+  return pill;
 }
 
 async function syncSliderVariantChildren({
@@ -80058,6 +80730,7 @@ const INPUT_FAMILY_VERTICAL_FIXED_FILL_NODE_NAMES = new Set([
 
 const INPUT_FAMILY_VERTICAL_HUG_FILL_NODE_NAMES = new Set([
   "Combobox Listbox",
+  "Select Listbox",
   "MultiSelect Listbox",
   "TimePicker Listbox",
   "DatePicker Calendar",
@@ -83077,17 +83750,28 @@ function tabsActiveIsValidForCount(active, count) {
 function tabsVariantCombinations() {
   const combinations = [];
 
-  for (const count of TABS_COUNTS) {
-    for (const active of TABS_ACTIVE) {
-      if (!tabsActiveIsValidForCount(active, count)) continue;
-      for (const state of TABS_STATES) {
-        combinations.push({ count, active, state });
+  // Label first, so a Build lays down today's 27 before the stacked ones.
+  for (const content of TABS_CONTENT) {
+    for (const count of TABS_COUNTS) {
+      for (const active of TABS_ACTIVE) {
+        if (!tabsActiveIsValidForCount(active, count)) continue;
+        for (const state of TABS_STATES) {
+          combinations.push({ count, active, state, content });
+        }
       }
     }
   }
 
   return combinations;
 }
+
+function tabsVariantKey(props) {
+  return `${props.content || "Label"}/${props.count}/${props.active}/${props.state}`;
+}
+
+// A trigger's icon in Icon Over Label, one per tab, as configureTabsProperties
+// offers it through Tab N Icon.
+const TABS_DEFAULT_ICONS = ["home-line", "info-circle", "activity", "clock"];
 
 /**
  * A tab's paint. The active tab is React's raised segment (decision 65,

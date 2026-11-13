@@ -139,7 +139,13 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## TabsTrigger
 
-It forwards its ref to `HTMLButtonElement`. Its props are `Omit<TabsPrimitive.TabsTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref">`.
+It forwards its ref to `HTMLButtonElement`. Its props are `TabsTriggerProps`, which extends `React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>`.
+
+- `icon`: `React.ReactNode`, optional.
+
+  An icon over the tab's words (GAP-152): 20px, 4px above them, in their
+  colour. It is drawn only; the tab is named by its words. The active tab
+  stays decision 65's raised segment, and the list grows to hold it.
 
 - `asChild`: `boolean`, optional.
 - `value`: `string`, **required**.

@@ -19756,6 +19756,7 @@
             "error",
             "mixed",
             "mixedLabel",
+            "open",
             "resetMixedLabel"
           ],
           "unmappedProps": []

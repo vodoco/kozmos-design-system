@@ -1106,6 +1106,8 @@
         "WithScroll",
         "Disabled",
         "WithError",
+        "OptionCounts",
+        "OptionCountsOpen",
         "MixedValue"
       ]
     },
@@ -1191,7 +1193,7 @@
       "id": "components-tabs",
       "title": "Core/Layout/Tabs",
       "component": "Tabs",
-      "exports": ["Default"]
+      "exports": ["Default", "IconOverLabel", "IconOverLabelRightToLeft"]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",
