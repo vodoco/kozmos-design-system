@@ -52,10 +52,26 @@ describe("RatingEditor", () => {
     ).previousElementSibling!;
     expect(stars).toHaveAttribute("aria-hidden", "true");
     expect(stars.querySelectorAll("svg")).toHaveLength(5);
+    // How many are filled: Core's Rating draws whole stars, so 4.5 fills
+    // four (it draws no half yet).
+    const filled = () =>
+      document.querySelectorAll(
+        ".kozmos-rating-editor-preview svg.fill-data-yellow",
+      ).length;
+    expect(filled()).toBe(4);
     rerender(<RatingEditor value={value(86, 100, 1)} />);
     expect(screen.getByText("86 of 100 · 1 rating")).toBeVisible();
+    expect(filled()).toBe(4);
     rerender(<RatingEditor value={value(3, 5, null)} />);
     expect(screen.getByText("3 of 5")).toBeVisible();
+    expect(filled()).toBe(3);
+    // 3.3 of 6 is 2.75 stars, a half: 3, not 2.5's two.
+    rerender(<RatingEditor value={value(3.3, 6, null)} />);
+    expect(filled()).toBe(3);
+    rerender(<RatingEditor value={value(5, 5, null)} />);
+    expect(filled()).toBe(5);
+    rerender(<RatingEditor value={value(0, 5, null)} />);
+    expect(filled()).toBe(0);
   });
 
   it("rounds the preview's share to the nearest half star (decision 181)", () => {
@@ -64,6 +80,10 @@ describe("RatingEditor", () => {
     expect(ratingStars(3.2, 5)).toBe(3);
     expect(ratingStars(4.76, 5)).toBe(5);
     expect(ratingStars(7, 10)).toBe(3.5);
+    // A half that floating point put just under: 2.75 stars is 3.
+    expect(ratingStars(3.3, 6)).toBe(3);
+    expect(ratingStars(0.3, 6)).toBe(0.5);
+    expect(ratingStars(6.6, 12)).toBe(3);
   });
 
   it("marks a rating above its max on both fields, each described by its message", () => {

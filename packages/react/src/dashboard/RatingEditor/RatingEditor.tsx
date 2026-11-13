@@ -76,11 +76,16 @@ export function validateRating(
 
 /**
  * The preview's stars: always five, filled to the rating's share of its
- * max, to the nearest half (decision 181): 4.3 of 5 is 4.5, 86 of 100 is
- * 4.5, 3.2 of 5 is 3.
+ * max, to the nearest half (decision 181), a half rounding up: 4.3 of 5 is
+ * 4.5, 86 of 100 is 4.5, 3.2 of 5 is 3, 3.3 of 6 is 3.
+ *
+ * The rating has one decimal at most, so its tenths are a whole number, and
+ * a whole number over the max is a half exactly when it should be: rating
+ * / max * 10 rounded 3.3 of 6 (2.75 stars, 5.4999… halves) down to 2.5.
+ * Checked over every one-decimal rating for every max from 1 to 100.
  */
 export function ratingStars(rating: number, max: number) {
-  return Math.round((rating / max) * 10) / 2;
+  return Math.round(Math.round(rating * 10) / max) / 2;
 }
 
 export interface RatingEditorProps extends Omit<
