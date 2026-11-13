@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d6faf1e9bc64";
+const PLUGIN_BUILD = "8f0d2e23b5bb";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -435,8 +435,26 @@ const RATING_STATES = ["Default", "Readonly"];
 // a Current past its Count.
 const RATING_SCALES = ["Stars", "Thumbs"];
 const RATING_THUMB_VALUES = ["0", "1", "2"];
-function ratingValuesForScale(scale) {
-  return scale === "Thumbs" ? RATING_THUMB_VALUES : RATING_VALUES;
+// A read-only star rating shows a score to the nearest half (decision 181),
+// so Scale=Stars, State=Readonly also takes the halves; editing stays whole
+// stars and thumbs are a choice, so no other row draws one.
+const RATING_HALF_VALUES = ["0.5", "1.5", "2.5", "3.5", "4.5"];
+const RATING_READONLY_STAR_VALUES = [
+  "0",
+  "0.5",
+  "1",
+  "1.5",
+  "2",
+  "2.5",
+  "3",
+  "3.5",
+  "4",
+  "4.5",
+  "5",
+];
+function ratingValuesForScale(scale, state) {
+  if (scale === "Thumbs") return RATING_THUMB_VALUES;
+  return state === "Readonly" ? RATING_READONLY_STAR_VALUES : RATING_VALUES;
 }
 // How the steps are drawn (GAP-191): Numbered, a numbered circle over each
 // label, or Dots, a tour's progress, one dot per step with no label shown.
@@ -19122,7 +19140,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Rating") {
     return {
       Scale: RATING_SCALES,
-      Value: RATING_VALUES,
+      Value: RATING_READONLY_STAR_VALUES,
       State: RATING_STATES,
     };
   }
@@ -46456,7 +46474,7 @@ async function buildRatingComponent() {
       // Thumbs has no third, fourth or fifth value: the set skips them rather
       // than drawing variants that mean nothing, as Stepper skips a Current
       // past its Count.
-      for (const value of ratingValuesForScale(scale)) {
+      for (const value of ratingValuesForScale(scale, state)) {
         const component = await createRatingVariant({
           scale,
           value,
@@ -46482,7 +46500,7 @@ async function buildRatingComponent() {
     "Kozmos Rating component set generated from React Rating API.",
     "Scale maps to Rating.variant: Stars is the ordinal scale, Thumbs is a choice of two.",
     "Value maps to Rating.value in Code Connect. 0 is unanswered; on Thumbs 1 is down and 2 is up.",
-    "State maps to Rating.readOnly.",
+    "State maps to Rating.readOnly. A read-only star rating also takes the halves, 0.5 to 4.5: a score to the nearest half.",
     "Max is fixed to five on the Stars scale.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -46534,7 +46552,7 @@ async function updateRatingComponent() {
   applyComponentSetDescription(existing, "Rating", true, [
     "Kozmos Rating component set generated from React Rating API.",
     "Value maps to Rating.value in Code Connect.",
-    "State maps to Rating.readOnly.",
+    "State maps to Rating.readOnly. A read-only star rating also takes the halves, 0.5 to 4.5: a score to the nearest half.",
     "Max is fixed to five for the Core component.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -46570,7 +46588,7 @@ async function updateRatingComponent() {
 
   for (const scale of RATING_SCALES) {
     for (const state of RATING_STATES) {
-      for (const value of ratingValuesForScale(scale)) {
+      for (const value of ratingValuesForScale(scale, state)) {
         const key = `${scale}/${value}/${state}`;
         if (seenKeys[key]) continue;
 
@@ -65247,7 +65265,7 @@ function parseRatingVariantName(name) {
 
   if (
     RATING_SCALES.indexOf(scale) === -1 ||
-    ratingValuesForScale(scale).indexOf(value) === -1 ||
+    ratingValuesForScale(scale, state).indexOf(value) === -1 ||
     RATING_STATES.indexOf(state) === -1
   ) {
     return null;
@@ -65303,7 +65321,7 @@ function layoutRatingVariants(componentSet) {
     const props = parseRatingVariantName(child.name);
     if (!props) continue;
 
-    const valueIndex = RATING_VALUES.indexOf(props.value);
+    const valueIndex = RATING_READONLY_STAR_VALUES.indexOf(props.value);
     const stateIndex = RATING_STATES.indexOf(props.state);
     const scaleIndex = RATING_SCALES.indexOf(props.scale);
     child.x = valueIndex * 260;
@@ -65560,6 +65578,8 @@ async function syncRatingVariantChildren({
     const star = await createRatingStar({
       index,
       filled: index <= valueNumber,
+      // Only a read-only score's halves reach here (decision 181).
+      half: index - 0.5 === valueNumber,
       readonly,
       variableByName,
       fonts,
@@ -65640,9 +65660,36 @@ async function createRatingThumb({
   return cell;
 }
 
+/**
+ * One five-point star glyph: filled in Data/Yellow and outlined in it, or
+ * empty and outlined in foreground/500.
+ */
+function createRatingStarGlyph(filled, variableByName, stats) {
+  const glyph = figma.createStar();
+  glyph.name = filled ? "Star / filled" : "Star / empty";
+  glyph.pointCount = 5;
+  glyph.innerRadius = 0.45;
+  glyph.resizeWithoutConstraints(22, 22);
+  glyph.fills = filled
+    ? [paintFromVariable("Data/Yellow", "#A66A00", variableByName, stats)]
+    : [];
+  glyph.strokes = [
+    paintFromVariable(
+      filled ? "Data/Yellow" : "Colors/foreground/500",
+      filled ? "#A66A00" : "#747B8B",
+      variableByName,
+      stats,
+    ),
+  ];
+  glyph.strokeWeight = 1.5;
+  glyph.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-glyph");
+  return glyph;
+}
+
 async function createRatingStar({
   index,
   filled,
+  half = false,
   readonly,
   variableByName,
   fonts,
@@ -65664,26 +65711,41 @@ async function createRatingStar({
   cell.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-hit-area");
   setFixedChildSizing(cell);
 
+  if (typeof figma.createStar === "function" && half) {
+    // A score's half (decision 181): the empty star, and the filled one over
+    // it clipped to its start half, the left — Figma draws left to right.
+    // Same glyphs, size and colours as a full and an empty star.
+    const star = figma.createFrame();
+    star.name = "Star / half";
+    star.resizeWithoutConstraints(22, 22);
+    star.clipsContent = false;
+    star.fills = [];
+    star.strokes = [];
+    star.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-half");
+    const empty = createRatingStarGlyph(false, variableByName, stats);
+    star.appendChild(empty);
+    empty.x = 0;
+    empty.y = 0;
+    const clip = figma.createFrame();
+    clip.name = "Half Clip";
+    clip.resizeWithoutConstraints(11, 22);
+    clip.clipsContent = true;
+    clip.fills = [];
+    clip.strokes = [];
+    star.appendChild(clip);
+    clip.x = 0;
+    clip.y = 0;
+    const full = createRatingStarGlyph(true, variableByName, stats);
+    clip.appendChild(full);
+    full.x = 0;
+    full.y = 0;
+    cell.appendChild(star);
+    setFixedChildSizing(star);
+    return cell;
+  }
+
   if (typeof figma.createStar === "function") {
-    const glyph = figma.createStar();
-    glyph.name = filled ? "Star / filled" : "Star / empty";
-    glyph.pointCount = 5;
-    glyph.innerRadius = 0.45;
-    glyph.resizeWithoutConstraints(22, 22);
-    glyph.fills = filled
-      ? [paintFromVariable("Data/Yellow", "#A66A00", variableByName, stats)]
-      : [];
-    glyph.strokes = [
-      paintFromVariable(
-        filled ? "Data/Yellow" : "Colors/foreground/500",
-        filled ? "#A66A00" : "#747B8B",
-        variableByName,
-        stats,
-      ),
-    ];
-    glyph.strokeWeight = 1.5;
-    glyph.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-glyph");
-    cell.appendChild(glyph);
+    cell.appendChild(createRatingStarGlyph(filled, variableByName, stats));
     return cell;
   }
 

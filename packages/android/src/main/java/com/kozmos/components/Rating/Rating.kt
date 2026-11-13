@@ -19,11 +19,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -129,27 +132,111 @@ fun KozmosRating(
                         )
                     }
                 } else {
-                    Icon(
-                        imageVector = if (filled(item)) Icons.Filled.Star else Icons.Outlined.Star,
-                        contentDescription = null,
-                        // semanticsDataYellow, as React and SwiftUI draw it.
-                        // This was primitivesColorsEmotionalAlert600 - #f9a707
-                        // against the other two platforms' #d97706, so the same
-                        // star was a different colour on Android, in both themes.
-                        tint = if (filled(item)) KozmosThemeTokens.semanticsDataYellow
-                        else KozmosThemeTokens.primitivesColorsForeground400,
-                        // 32 box, 2 of padding: a 28 glyph, exactly the size
-                        // it was. Only the colour and the semantics change
-                        // here — dropping the padding would have grown every
-                        // star by four and called it an accessibility fix.
-                        modifier = Modifier
-                            .size(KozmosDimensions.primitivesLayoutSizing400)
-                            .padding(KozmosDimensions.primitivesLayoutSpacing25)
-                    )
+                    RatingStar(if (filled(item)) RatingStarFill.Full else RatingStarFill.Empty)
                 }
             }
         }
     }
+}
+
+/**
+ * A read-only star rating of a score that need not be whole, an average of
+ * reviews: it is drawn to the nearest half (decision 181), 4.3 as 4.5, 4.2 as
+ * 4 and 4.25 as 4.5, and TalkBack hears the rounded value, "Rated 4.5 out of 5
+ * stars". Editing stays whole stars: the `value` overload is the control.
+ */
+@Composable
+fun KozmosRating(
+    rating: Float,
+    modifier: Modifier = Modifier,
+    max: Int = 5,
+    valueLabel: (Float, Int) -> String = ::kozmosRatingScoreLabel
+) {
+    val shown = kozmosRatingRoundedToHalf(rating)
+    Row(
+        // Not a control: one thing whose description is the score, as the
+        // read-only `value` overload is.
+        modifier = modifier.clearAndSetSemantics { contentDescription = valueLabel(shown, max) },
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(max) { index ->
+            val item = index + 1
+            RatingStar(
+                when {
+                    item <= shown -> RatingStarFill.Full
+                    item - 0.5f == shown -> RatingStarFill.Half
+                    else -> RatingStarFill.Empty
+                }
+            )
+        }
+    }
+}
+
+private enum class RatingStarFill { Full, Half, Empty }
+
+@Composable
+private fun RatingStar(fill: RatingStarFill) {
+    // 32 box, 2 of padding: a 28 glyph, exactly the size it was. Dropping the
+    // padding would have grown every star by four and called it an
+    // accessibility fix.
+    val glyph = Modifier
+        .size(KozmosDimensions.primitivesLayoutSizing400)
+        .padding(KozmosDimensions.primitivesLayoutSpacing25)
+    if (fill != RatingStarFill.Half) {
+        Icon(
+            imageVector = if (fill == RatingStarFill.Full) Icons.Filled.Star else Icons.Outlined.Star,
+            contentDescription = null,
+            // semanticsDataYellow, as React and SwiftUI draw it. This was
+            // primitivesColorsEmotionalAlert600 - #f9a707 against the other two
+            // platforms' #d97706, so the same star was a different colour on
+            // Android, in both themes.
+            tint = if (fill == RatingStarFill.Full) KozmosThemeTokens.semanticsDataYellow
+            else KozmosThemeTokens.primitivesColorsForeground400,
+            modifier = glyph
+        )
+        return
+    }
+    // The empty star, and the filled one over it clipped to its start half:
+    // the left half left to right, the right half right to left. Same glyphs,
+    // size and colours as a full and an empty star.
+    Box {
+        Icon(
+            imageVector = Icons.Outlined.Star,
+            contentDescription = null,
+            tint = KozmosThemeTokens.primitivesColorsForeground400,
+            modifier = glyph
+        )
+        Icon(
+            imageVector = Icons.Filled.Star,
+            contentDescription = null,
+            tint = KozmosThemeTokens.semanticsDataYellow,
+            modifier = Modifier
+                .matchParentSize()
+                .drawWithContent {
+                    val half = size.width / 2
+                    if (layoutDirection == LayoutDirection.Ltr) {
+                        clipRect(right = half) { this@drawWithContent.drawContent() }
+                    } else {
+                        clipRect(left = half) { this@drawWithContent.drawContent() }
+                    }
+                }
+                .padding(KozmosDimensions.primitivesLayoutSpacing25)
+        )
+    }
+}
+
+/**
+ * A score to the nearest half: the doubled value rounded half up, as React's
+ * `Math.round(value * 2) / 2` and SwiftUI's are.
+ */
+fun kozmosRatingRoundedToHalf(rating: Float): Float = kotlin.math.floor(rating * 2 + 0.5f) / 2
+
+/** How the `rating` overload reads, given the rounded value: "Rated 4.5 out of 5 stars". */
+fun kozmosRatingScoreLabel(value: Float, max: Int): String {
+    if (value == 0f) return "Not rated"
+    val spoken = if (value % 1f == 0f) value.toInt().toString() else value.toString()
+    return "Rated $spoken out of $max stars"
 }
 
 fun kozmosRatingItemLabel(item: Int, max: Int, variant: KozmosRatingVariant): String =
