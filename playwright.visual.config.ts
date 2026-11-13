@@ -66,7 +66,11 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testMatch: ["stories.visual.ts", "stillness.visual.ts"],
+      testMatch: [
+        "stories.visual.ts",
+        "stillness.visual.ts",
+        "environment.visual.ts",
+      ],
     },
     {
       name: "vue",
