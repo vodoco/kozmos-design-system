@@ -1091,6 +1091,8 @@
               </optgroup>
               <optgroup label="Data display">
                 <option value="list">List</option>
+                <option value="listItem">ListItem</option>
+                <option value="settingsRow">SettingsRow</option>
                 <option value="metaStrip">MetaStrip</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
@@ -1920,6 +1922,20 @@
           update: "update-list",
           rebuild: "rebuild-list",
           hint: "Build creates List with Default and Compact density variants plus editable item text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        listItem: {
+          label: "ListItem",
+          build: "build-list-item",
+          update: "update-list-item",
+          rebuild: "rebuild-list-item",
+          hint: "Build creates ListItem (GAP-195), React ListItem's slots: a status mark, a title with a tag, a description, a meta line and one action, with Selected False and True (the tint). Each slot has a Show boolean; the texts are editable. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        settingsRow: {
+          label: "SettingsRow",
+          build: "build-settings-row",
+          update: "update-settings-row",
+          rebuild: "rebuild-settings-row",
+          hint: "Build creates SettingsRow (GAP-040): a label, its state tag, a description and a switch, with State None, Inherited and Overridden (which offers Reset to default) by Disabled False and True (which says why). Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         table: {
           label: "Table",

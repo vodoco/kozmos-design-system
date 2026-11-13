@@ -13656,6 +13656,375 @@ section("GAP-156: Kbd draws a key cap, one key or a combination");
   );
 }
 
+section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
+{
+  // React's ListItem filled in: a row 360 wide, padded 16 across and 12
+  // down (List's own variables), its mark, body and control 12 apart
+  // (gap-3); the mark 20 (h-5 w-5) in the theme fill with a check; the
+  // body's lines 2 apart, the title 14/20 medium in the foreground with its
+  // tag 8 after it, the description 14/20 and the meta 12/16 in the muted
+  // foreground; Selected tints the row theme 0. SettingsRow is that row with
+  // a setting in it: its state's tag, Reset to default while overridden, the
+  // reason while disabled, and Switch's 44 by 24 track at the end.
+  const painted =
+    typeof plugin.updateListItemVariant === "function" &&
+    typeof plugin.configureListItemProperties === "function" &&
+    typeof plugin.updateSettingsRowVariant === "function" &&
+    typeof plugin.configureSettingsRowProperties === "function";
+  ok(painted, "ListItem's and SettingsRow's painters and properties are reachable");
+  ok(
+    painted &&
+      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("ListItem")) ===
+        JSON.stringify({ Selected: ["False", "True"] }) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("SettingsRow"),
+      ) ===
+        JSON.stringify({
+          State: ["None", "Inherited", "Overridden"],
+          Disabled: ["False", "True"],
+        }),
+    "ListItem's axis is Selected; SettingsRow's are State (None, Inherited, Overridden) and Disabled",
+  );
+  const drawItem = async (value, component = figma.createComponent()) => {
+    await withAutoLayout(() =>
+      plugin.updateListItemVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const drawRow = async (value, second, component = figma.createComponent()) => {
+    await withAutoLayout(() =>
+      plugin.updateSettingsRowVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const childNames = (node) => (node ? node.children.map((c) => c.name) : []);
+  const rowBound = (component, at) => {
+    ok(
+      component.paddingLeft === 16 &&
+        component.paddingRight === 16 &&
+        component.paddingTop === 12 &&
+        component.paddingBottom === 12 &&
+        menusBound(component, "paddingLeft") === "List/item/padding/x" &&
+        menusBound(component, "paddingRight") === "List/item/padding/x" &&
+        menusBound(component, "paddingTop") === "List/item/padding/y/default" &&
+        menusBound(component, "paddingBottom") === "List/item/padding/y/default",
+      `${at}: padded 16 across and 12 down, List's own variables`,
+    );
+    ok(
+      component.itemSpacing === 12 &&
+        menusBound(component, "itemSpacing") === "ListItem/gap" &&
+        menusValueOf("ListItem/gap") === 12,
+      `${at}: its columns 12 apart, ListItem/gap (${component.itemSpacing}, ${menusBound(component, "itemSpacing")})`,
+    );
+    const body = named(component, "Body");
+    ok(
+      body &&
+        body.itemSpacing === 2 &&
+        menusBound(body, "itemSpacing") === "ListItem/body/gap" &&
+        menusValueOf("ListItem/body/gap") === 2 &&
+        body.layoutSizingHorizontal === "FILL",
+      `${at}: the body takes the rest, its lines 2 apart, ListItem/body/gap`,
+    );
+    const heading = named(component, "Heading");
+    ok(
+      heading &&
+        heading.itemSpacing === 8 &&
+        menusBound(heading, "itemSpacing") === "ListItem/heading/gap" &&
+        menusValueOf("ListItem/heading/gap") === 8,
+      `${at}: the title's addon 8 after it, ListItem/heading/gap`,
+    );
+  };
+  const textLooks = (text, at, size, line, style, colour) =>
+    ok(
+      text &&
+        text.fontSize === size &&
+        text.lineHeight.value === line &&
+        text.fontName.style === style &&
+        boundVariableName(text.fills[0]) === colour,
+      `${at}: ${size}/${line} ${style} in ${colour} (${text && text.fontSize}/${text && text.lineHeight.value} ${text && text.fontName.style}, ${text && boundVariableName(text.fills[0])})`,
+    );
+
+  for (const value of painted ? plugin.LIST_ITEM_SELECTED : []) {
+    const at = `ListItem ${value}`;
+    const component = await drawItem(value);
+    ok(
+      component.name === `Selected=${value}` &&
+        plugin.parseListItemVariantName(component.name).value === value,
+      `${at}: named Selected=${value}, and reads back as itself`,
+    );
+    ok(
+      JSON.stringify(childNames(component)) ===
+        JSON.stringify(["Leading", "Body", "Trailing"]) &&
+        JSON.stringify(childNames(named(component, "Body"))) ===
+          JSON.stringify(["Heading", "Description Text", "Meta Text"]) &&
+        JSON.stringify(childNames(named(component, "Heading"))) ===
+          JSON.stringify(["Title Text", "Title Addon"]),
+      `${at}: Leading, Body (Heading: Title Text, Title Addon; Description Text; Meta Text), Trailing (${childNames(component)})`,
+    );
+    ok(
+      value === "True"
+        ? component.fills.length === 1 &&
+            boundVariableName(component.fills[0]) === "Colors/theme/0"
+        : component.fills.length === 0,
+      `${at}: ${value === "True" ? "tinted theme 0" : "unpainted"} (${component.fills.map(boundVariableName)})`,
+    );
+    ok(
+      component.width === 360 &&
+        menusBound(component, "width") === "List/width/default",
+      `${at}: 360 wide, List/width/default (${component.width})`,
+    );
+    rowBound(component, at);
+    const mark = named(component, "Leading");
+    ok(
+      mark &&
+        mark.width === 20 &&
+        mark.height === 20 &&
+        menusBound(mark, "width") === "ListItem/status/size" &&
+        menusBound(mark, "height") === "ListItem/status/size" &&
+        menusValueOf("ListItem/status/size") === 20 &&
+        boundVariableName(mark.fills[0]) ===
+          "Primary Buttons/themed/button/background/idle" &&
+        Boolean(named(mark, "Status Icon")),
+      `${at}: the status mark 20 across in the theme fill with its check, ListItem/status/size`,
+    );
+    textLooks(
+      named(component, "Title Text"),
+      `${at} / Title Text`,
+      14,
+      20,
+      "Medium",
+      "Colors/foreground/0",
+    );
+    textLooks(
+      named(component, "Description Text"),
+      `${at} / Description Text`,
+      14,
+      20,
+      "Regular",
+      "Colors/foreground/400",
+    );
+    textLooks(
+      named(component, "Meta Text"),
+      `${at} / Meta Text`,
+      12,
+      16,
+      "Regular",
+      "Colors/foreground/400",
+    );
+    ok(
+      Boolean(named(component, "Action Text")) &&
+        named(component, "Trailing").height === 32,
+      `${at}: one action at the end, 32 tall, its words Action Text`,
+    );
+    await drawItem(value, component);
+    ok(
+      JSON.stringify(childNames(component)) ===
+        JSON.stringify(["Leading", "Body", "Trailing"]),
+      `${at}: an Update keeps Leading, Body, Trailing once`,
+    );
+  }
+
+  const expectedRows = {
+    None: { tag: null },
+    Inherited: { tag: "outline" },
+    Overridden: { tag: "secondary" },
+  };
+  for (const state of painted ? plugin.SETTINGS_ROW_STATES : []) {
+    for (const disabled of plugin.SETTINGS_ROW_DISABLED) {
+      const at = `SettingsRow ${state}/${disabled}`;
+      const component = await drawRow(state, disabled);
+      const parsed = plugin.parseSettingsRowVariantName(component.name);
+      ok(
+        component.name === `State=${state}, Disabled=${disabled}` &&
+          parsed.value === state &&
+          parsed.second === disabled,
+        `${at}: named State=${state}, Disabled=${disabled}, and reads back as itself (${component.name})`,
+      );
+      ok(
+        component.width === 560 &&
+          menusBound(component, "width") === "SettingsRow/width/default" &&
+          menusValueOf("SettingsRow/width/default") === 560,
+        `${at}: 560 wide, SettingsRow/width/default (${component.width})`,
+      );
+      rowBound(component, at);
+      ok(
+        JSON.stringify(childNames(component)) ===
+          JSON.stringify(["Body", "Control"]),
+        `${at}: Body, Control (${childNames(component)})`,
+      );
+      const heading = named(component, "Heading");
+      const tag = named(component, "State");
+      const want = expectedRows[state].tag;
+      ok(
+        want === null
+          ? JSON.stringify(childNames(heading)) ===
+              JSON.stringify(["Label Text"])
+          : JSON.stringify(childNames(heading)) ===
+              JSON.stringify(["Label Text", "State"]) &&
+              named(tag, "State Text").characters === state &&
+              (want === "outline"
+                ? tag.fills.length === 0 &&
+                  boundVariableName(tag.strokes[0]) === "Border/Subtle"
+                : boundVariableName(tag.fills[0]) ===
+                    "Colors/background/100" && tag.strokes.length === 0),
+        `${at}: ${want ? `the ${want} tag "${state}" beside the label` : "the label alone"} (${childNames(heading)})`,
+      );
+      textLooks(
+        named(component, "Label Text"),
+        `${at} / Label Text`,
+        14,
+        20,
+        "Medium",
+        disabled === "True" ? "Colors/foreground/400" : "Colors/foreground/0",
+      );
+      const reset = named(component, "Reset Text");
+      const reason = named(component, "Reason Text");
+      ok(
+        disabled === "True"
+          ? Boolean(reason) && !reset
+          : !reason && Boolean(reset) === (state === "Overridden"),
+        `${at}: ${disabled === "True" ? "the reason, no reset" : state === "Overridden" ? "Reset to default, no reason" : "neither reset nor reason"}`,
+      );
+      if (reset)
+        ok(
+          reset.characters === "Reset to default" &&
+            boundVariableName(reset.fills[0]) === "Colors/theme/600",
+          `${at}: Reset to default in the theme's 600`,
+        );
+      const control = named(component, "Control");
+      ok(
+        control &&
+          control.width === 44 &&
+          control.height === 24 &&
+          menusBound(control, "width") === "Switch/track/width" &&
+          menusBound(control, "height") === "Switch/track/height" &&
+          control.opacity === (disabled === "True" ? 0.5 : 1),
+        `${at}: Switch's 44 by 24 track at the end${disabled === "True" ? ", at half" : ""} (${control && control.width}x${control && control.height}, ${control && control.opacity})`,
+      );
+    }
+  }
+
+  // The sets' properties: each text a TEXT property bound to its layers;
+  // each ListItem slot a boolean on its layer.
+  const keyOf = (definitions, name, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === name && definitions[key].type === type,
+    );
+  const items = [];
+  for (const value of painted ? plugin.LIST_ITEM_SELECTED : [])
+    items.push(await drawItem(value));
+  const itemSet = painted
+    ? figma.combineAsVariants(items, figma.currentPage)
+    : figma.createComponent();
+  itemSet.name = "ListItem";
+  if (painted) plugin.configureListItemProperties(itemSet, freshStats());
+  const itemDefinitions = itemSet.componentPropertyDefinitions || {};
+  const itemTexts = [
+    "Title Text",
+    "Addon Text",
+    "Description Text",
+    "Meta Text",
+    "Action Text",
+  ];
+  ok(
+    itemTexts.every((name) => keyOf(itemDefinitions, name, "TEXT")) &&
+      items.every((variant) =>
+        itemTexts.every(
+          (name) =>
+            named(variant, name).componentPropertyReferences.characters ===
+            keyOf(itemDefinitions, name, "TEXT"),
+        ),
+      ),
+    `ListItem: ${itemTexts.join(", ")} drive each variant's texts (${Object.keys(itemDefinitions).join(", ")})`,
+  );
+  const booleans = [
+    ["Leading", "Show Leading"],
+    ["Title Addon", "Show Title Addon"],
+    ["Description Text", "Show Description"],
+    ["Meta Text", "Show Meta"],
+    ["Trailing", "Show Trailing"],
+  ];
+  ok(
+    booleans.every(
+      ([layer, name]) =>
+        keyOf(itemDefinitions, name, "BOOLEAN") &&
+        items.every(
+          (variant) =>
+            named(variant, layer).componentPropertyReferences.visible ===
+            keyOf(itemDefinitions, name, "BOOLEAN"),
+        ),
+    ),
+    "ListItem: Show Leading, Show Title Addon, Show Description, Show Meta and Show Trailing show each slot",
+  );
+  const titleInSet = items[0] && named(items[0], "Title Text");
+  ok(
+    titleInSet &&
+      plugin.inferTextStyleKeyForComponentText(titleInSet, itemSet) ===
+        plugin.textStyleKeyForText("Small", "Medium") &&
+      plugin.inferTextStyleKeyForComponentText(
+        named(items[0], "Meta Text"),
+        itemSet,
+      ) === plugin.textStyleKeyForText("XS", "Normal"),
+    "ListItem: the audit expects Text / Small / Medium on the title, Text / XS / Normal on the meta",
+  );
+  itemSet.remove();
+
+  const rows = [];
+  for (const state of painted ? plugin.SETTINGS_ROW_STATES : [])
+    for (const disabled of plugin.SETTINGS_ROW_DISABLED)
+      rows.push(await drawRow(state, disabled));
+  const rowSet = painted
+    ? figma.combineAsVariants(rows, figma.currentPage)
+    : figma.createComponent();
+  rowSet.name = "SettingsRow";
+  if (painted) plugin.configureSettingsRowProperties(rowSet, freshStats());
+  const rowDefinitions = rowSet.componentPropertyDefinitions || {};
+  ok(
+    ["Label Text", "Description Text", "Reason Text"].every((name) =>
+      keyOf(rowDefinitions, name, "TEXT"),
+    ) &&
+      keyOf(rowDefinitions, "Show Description", "BOOLEAN") &&
+      rows.every(
+        (variant) =>
+          named(variant, "Label Text").componentPropertyReferences
+            .characters === keyOf(rowDefinitions, "Label Text", "TEXT") &&
+          named(variant, "Description Text").componentPropertyReferences
+            .visible === keyOf(rowDefinitions, "Show Description", "BOOLEAN"),
+      ),
+    `SettingsRow: Label Text, Description Text, Reason Text and Show Description (${Object.keys(rowDefinitions).join(", ")})`,
+  );
+  rowSet.remove();
+
+  const core = plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name);
+  const handlers = plugin.additionalComponentActionHandlers();
+  const { names, axes } = expectations();
+  for (const [name, slug] of [
+    ["ListItem", "list-item"],
+    ["SettingsRow", "settings-row"],
+  ]) {
+    ok(
+      core.includes(name) &&
+        ["build", "update", "rebuild"].every(
+          (verb) => typeof handlers[`${verb}-${slug}`] === "function",
+        ) &&
+        names.includes(name) &&
+        axes[name],
+      `${name} is in the Core sequence, the UI's actions, the page's layout and the audit's axes`,
+    );
+  }
+}
+
 section("Decision 152: Menu's and ContextMenu's items take External");
 {
   // A plain item that opens a page draws Link's new-tab icon at its end, as

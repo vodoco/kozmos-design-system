@@ -796,6 +796,9 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosAvatar: { props: { fallback: "AL" } },
   KozmosTag: { slot: true },
   KozmosList: { slot: true },
+  KozmosListItem: { slot: true },
+  KozmosListItemStatus: { props: { status: "done" } },
+  KozmosSettingsRow: { props: { label: "Analytics" } },
   // A table cannot hold the slot's box.
   KozmosTable: { click: first("table") },
   KozmosTree: { props: { data: [{ id: "1", name: "a.ts" }] } },

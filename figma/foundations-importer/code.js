@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3a2555238f0a";
+const PLUGIN_BUILD = "39a1c70912fe";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -880,6 +880,13 @@ const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 // `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
 // first, so the set's default is the plain cap.
 const KBD_KEYS = ["Single", "Combination"];
+// GAP-195, decision 135: ListItem's slots, the checklist row. Selected is
+// the row's tint, React's `selected`; the plain row comes first.
+const LIST_ITEM_SELECTED = ["False", "True"];
+// GAP-040, decision 135: SettingsRow. State is where the value comes from,
+// None (no system value), Inherited or Overridden; Disabled is the row's.
+const SETTINGS_ROW_STATES = ["None", "Inherited", "Overridden"];
+const SETTINGS_ROW_DISABLED = ["False", "True"];
 const TOAST_CONTENT = ["Basic", "Action"];
 // toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
 // in the tone's text colour, on the same surface. A variant drawn before the
@@ -1256,6 +1263,8 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Link: 260,
   Separator: 260,
   Kbd: 260,
+  ListItem: 260,
+  SettingsRow: 520,
   Button: 900,
   IconButton: 820,
   ToggleButton: 620,
@@ -1378,6 +1387,8 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     title: "Data display",
     components: [
       "List",
+      "ListItem",
+      "SettingsRow",
       "MetaStrip",
       "Table",
       "TreeParentItem",
@@ -3235,6 +3246,60 @@ const COMPONENT_DOCS = [
       "List is non-interactive unless composed with interactive children.",
       "Rows preserve readable text contrast in Light and Dark modes.",
       "Product code should use native list semantics when rows are navigable.",
+    ],
+  },
+  {
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    category: "Data Display",
+    summary:
+      "ListItem's slots draw a row with a mark at the start, a title with an addon, a description, a meta line and one control at the end (GAP-195, decision 135): the Get started checklist row and the persona visibility row.",
+    usage: [
+      "Use inside a List for a checklist of tours, a list of personas to show, or any row with one control.",
+      "Leading holds a status mark, an icon or a persona's mark; Trailing holds one action, a Checkbox or a Switch.",
+      "Use Selected for a ticked row: it tints the row; the control still says it is checked.",
+    ],
+    api: [
+      "Title Text maps to title, Addon Text to titleAddon, Description Text to description, Meta Text to meta, Action Text to trailing's Button.",
+      "Leading maps to leading, a ListItemStatus; Show Leading, Show Title Addon, Show Description, Show Meta and Show Trailing show each slot.",
+      "Selected maps to selected.",
+    ],
+    properties: [
+      "Selected: False, True",
+      "Title Text, Addon Text, Description Text, Meta Text, Action Text",
+      "Show Leading, Show Title Addon, Show Description, Show Meta, Show Trailing",
+    ],
+    accessibility: [
+      "The status mark is read before the title, in words: Done, In progress, Not started.",
+      "The row is not pressable; its one control is.",
+      "The tint is drawn only: a ticked row's checkbox says it is checked.",
+    ],
+  },
+  {
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    category: "Data Display",
+    summary:
+      "SettingsRow is one setting in a List: a label, a description, its control at the end, where its value comes from (inherited or overridden, with Reset to default), and why it is disabled (GAP-040, decision 135).",
+    usage: [
+      "Use one row per setting on a settings page, in a List, which draws the dividers.",
+      "Use Inherited for a system value the site has not changed and Overridden for the site's own; Overridden offers Reset to default.",
+      "Use Disabled with Reason Text to say why a setting cannot change.",
+    ],
+    api: [
+      "Label Text maps to label, Description Text to description, Reason Text to disabledReason.",
+      "State maps to state (None is unset); Disabled maps to disabled.",
+      "The switch stands for the control prop: any Kozmos control goes there.",
+    ],
+    properties: [
+      "State: None, Inherited, Overridden",
+      "Disabled: False, True",
+      "Label Text, Description Text, Reason Text, Show Description",
+    ],
+    accessibility: [
+      "The label names the control; the description, the state and the reason are read with it.",
+      "Reset to default is a button; pressed, focus goes to the control.",
+      "A disabled row disables its control and offers no reset.",
     ],
   },
   {
@@ -7704,6 +7769,30 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Kbd/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "Kbd/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
+  // GAP-195: ListItem's slots, 12 between the mark, the body and the
+  // control (gap-3), the body's lines 2 apart, the title's addon 8 after it
+  // (gap-2), the status mark 20 (h-5 w-5).
+  {
+    name: "ListItem/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ListItem/body/gap",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ListItem/heading/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  { name: "ListItem/status/size", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  // GAP-040: a settings row is drawn 560 wide, a settings page's column.
+  { name: "SettingsRow/width/default", value: 560, scopes: ["WIDTH_HEIGHT"] },
   { name: "Toast/width/default", value: 420, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Toast/padding",
@@ -11199,6 +11288,8 @@ const CORE_UPDATE_SEQUENCE = [
   ["SegmentedControl", updateSegmentedControlComponent],
   ["Card", updateCardComponent],
   ["List", updateListComponent],
+  ["ListItem", updateListItemComponent],
+  ["SettingsRow", updateSettingsRowComponent],
   ["Table", updateTableComponent],
   ["Tabs", updateTabsComponent],
   ["Tooltip", updateTooltipComponent],
@@ -11470,6 +11561,12 @@ function additionalComponentActionHandlers() {
     "build-kbd": buildKbdComponent,
     "update-kbd": updateKbdComponent,
     "rebuild-kbd": rebuildKbdComponent,
+    "build-list-item": buildListItemComponent,
+    "update-list-item": updateListItemComponent,
+    "rebuild-list-item": rebuildListItemComponent,
+    "build-settings-row": buildSettingsRowComponent,
+    "update-settings-row": updateSettingsRowComponent,
+    "rebuild-settings-row": rebuildSettingsRowComponent,
     "build-context-menu": buildContextMenuComponent,
     "update-context-menu": updateContextMenuComponent,
     "rebuild-context-menu": rebuildContextMenuComponent,
@@ -17998,6 +18095,8 @@ function shouldAuditLayoutBindings(name) {
       "SegmentedControl",
       "Card",
       "List",
+      "ListItem",
+      "SettingsRow",
       "TreeParentItem",
       "TreeChildItem",
       "TreeItem",
@@ -18682,6 +18781,19 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Kbd") {
     return {
       Keys: KBD_KEYS,
+    };
+  }
+
+  if (canonicalName === "ListItem") {
+    return {
+      Selected: LIST_ITEM_SELECTED,
+    };
+  }
+
+  if (canonicalName === "SettingsRow") {
+    return {
+      State: SETTINGS_ROW_STATES,
+      Disabled: SETTINGS_ROW_DISABLED,
     };
   }
 
@@ -25449,6 +25561,8 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return "popoverDescription";
   }
   if (setName === "Kbd") return textStyleKeyForText("XS", "Medium");
+  if (setName === "ListItem" || setName === "SettingsRow")
+    return listItemTextStyleKey(textName);
   if (setName === "Menu" || setName === "ContextMenu") {
     if (textName === "Shortcut Text") return "menuShortcut";
     if (textName === "Label Text") return "menuItemStrong";
@@ -62732,6 +62846,841 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// --- ListItem and SettingsRow -------------------------------------------------
+
+// GAP-195, decision 135: React's ListItem filled in, the Get started
+// checklist row. A row 360 wide (List/width/default) padded 16 across
+// (List/item/padding/x) and 12 down (List/item/padding/y/default), its three
+// columns 12 apart (ListItem/gap): a status mark at the start, 20 across
+// (ListItem/status/size), on the title's 20 line; the body, which takes the
+// rest, its lines 2 apart (ListItem/body/gap): the title 14/20 medium in the
+// foreground with a role tag 8 after it (ListItem/heading/gap), the
+// description 14/20 in the muted foreground and the meta 12/16 in it too;
+// one action at the end, centred on the row. Selected tints the row theme 0,
+// as React's `selected` does. Each slot is shown by its boolean; the texts
+// are properties.
+const LIST_ITEM_BODY_NAME = "Body";
+const LIST_ITEM_HEADING_NAME = "Heading";
+
+async function createListItemVariant({ value, variableByName, fonts, stats }) {
+  const component = figma.createComponent();
+  await updateListItemVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseListItemVariantName(name) {
+  const values = parseVariantNameParts(name);
+  if (LIST_ITEM_SELECTED.indexOf(values.Selected) === -1) return null;
+  return { value: values.Selected };
+}
+
+function parseVariantNameParts(name) {
+  const values = {};
+  for (const part of String(name).split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  return values;
+}
+
+/** The row's own frame: React's padded ListItem, one per variant. */
+function applyListItemRowFrame(component, selected, variableByName, stats) {
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "FIXED";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.paddingLeft = 16;
+  component.paddingRight = 16;
+  component.paddingTop = 12;
+  component.paddingBottom = 12;
+  component.itemSpacing = 12;
+  component.resizeWithoutConstraints(360, 48);
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = selected
+    ? [paintFromVariable("Colors/theme/0", "#EDF2FE", variableByName, stats)]
+    : [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "width",
+    "List/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingLeft",
+    "List/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingRight",
+    "List/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingTop",
+    "List/item/padding/y/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingBottom",
+    "List/item/padding/y/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ListItem/gap",
+    variableByName,
+    stats,
+  );
+}
+
+async function createListItemText({
+  name,
+  characters,
+  role,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const text = figma.createText();
+  text.name = name;
+  const meta = role === "meta";
+  text.fontName = role === "title" ? fonts.medium : fonts.regular;
+  text.fontSize = meta ? 12 : 14;
+  text.lineHeight = { unit: "PIXELS", value: meta ? 16 : 20 };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, listItemTextStyleKey(name), stats);
+  text.fills = [
+    role === "title"
+      ? paintFromVariable(
+          "Colors/foreground/0",
+          "#0B0D12",
+          variableByName,
+          stats,
+        )
+      : paintFromVariable(
+          "Colors/foreground/400",
+          "#5D626F",
+          variableByName,
+          stats,
+        ),
+  ];
+  if (!meta) {
+    bindFloatVariable(
+      text,
+      "fontSize",
+      "List/item/font-size",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      text,
+      "lineHeight",
+      "List/item/line-height",
+      variableByName,
+      stats,
+    );
+  }
+  return text;
+}
+
+/** The text style the audit expects on a ListItem's or SettingsRow's text. */
+function listItemTextStyleKey(textName) {
+  if (textName === "Title Text" || textName === "Label Text")
+    return textStyleKeyForText("Small", "Medium");
+  if (textName === "Addon Text" || textName === "State Text")
+    return textStyleKeyForText("XS", "Semibold");
+  if (textName === "Meta Text" || textName === "Reason Text")
+    return textStyleKeyForText("XS", "Normal");
+  if (textName === "Action Text" || textName === "Reset Text")
+    return textStyleKeyForText("Small", "Medium");
+  return textStyleKeyForText("Small", "Normal");
+}
+
+/** A vertical column that takes the rest of the row: the row's body. */
+function createListItemBody(variableByName, stats) {
+  const body = figma.createFrame();
+  body.name = LIST_ITEM_BODY_NAME;
+  body.layoutMode = "VERTICAL";
+  body.primaryAxisSizingMode = "AUTO";
+  body.counterAxisSizingMode = "FIXED";
+  body.primaryAxisAlignItems = "MIN";
+  body.counterAxisAlignItems = "MIN";
+  body.itemSpacing = 2;
+  body.paddingLeft = 0;
+  body.paddingRight = 0;
+  body.paddingTop = 0;
+  body.paddingBottom = 0;
+  body.fills = [];
+  body.strokes = [];
+  body.clipsContent = false;
+  bindFloatVariable(
+    body,
+    "itemSpacing",
+    "ListItem/body/gap",
+    variableByName,
+    stats,
+  );
+  return body;
+}
+
+/** The title's line: the title, and what sits beside it. */
+function createListItemHeading(variableByName, stats) {
+  const heading = figma.createFrame();
+  heading.name = LIST_ITEM_HEADING_NAME;
+  heading.layoutMode = "HORIZONTAL";
+  heading.primaryAxisSizingMode = "AUTO";
+  heading.counterAxisSizingMode = "AUTO";
+  heading.primaryAxisAlignItems = "MIN";
+  heading.counterAxisAlignItems = "CENTER";
+  heading.itemSpacing = 8;
+  heading.paddingLeft = 0;
+  heading.paddingRight = 0;
+  heading.paddingTop = 0;
+  heading.paddingBottom = 0;
+  heading.fills = [];
+  heading.strokes = [];
+  heading.clipsContent = false;
+  bindFloatVariable(
+    heading,
+    "itemSpacing",
+    "ListItem/heading/gap",
+    variableByName,
+    stats,
+  );
+  return heading;
+}
+
+/**
+ * A tag beside the title: Tag's pill, 12 semibold on the muted fill
+ * (secondary) or on nothing with an edge (outline), 10 across and 2 down.
+ */
+async function createListItemTag({
+  name,
+  textName,
+  characters,
+  outline,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const tag = figma.createFrame();
+  tag.name = name;
+  tag.layoutMode = "HORIZONTAL";
+  tag.primaryAxisSizingMode = "AUTO";
+  tag.counterAxisSizingMode = "AUTO";
+  tag.primaryAxisAlignItems = "CENTER";
+  tag.counterAxisAlignItems = "CENTER";
+  tag.paddingLeft = 10;
+  tag.paddingRight = 10;
+  tag.paddingTop = 2;
+  tag.paddingBottom = 2;
+  tag.cornerRadius = KOZMOS_RADIUS.pill;
+  tag.clipsContent = false;
+  tag.fills = outline
+    ? []
+    : [
+        paintFromVariable(
+          "Colors/background/100",
+          "#E3E4E8",
+          variableByName,
+          stats,
+        ),
+      ];
+  setNodePropertyIfSupported(tag, "strokesIncludedInLayout", true);
+  tag.strokeWeight = 1;
+  tag.strokeAlign = "INSIDE";
+  tag.strokes = outline
+    ? [paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats)]
+    : [];
+  const text = figma.createText();
+  text.name = textName;
+  text.fontName = textFontForWeight("Semibold", fonts);
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, listItemTextStyleKey(textName), stats);
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
+  ];
+  tag.appendChild(text);
+  setHugChildSizing(text);
+  return tag;
+}
+
+/** The checklist's status mark, Done: the theme fill with a 12 check. */
+async function createListItemStatusMark(variableByName, stats) {
+  const mark = figma.createFrame();
+  mark.name = "Leading";
+  mark.layoutMode = "HORIZONTAL";
+  mark.primaryAxisSizingMode = "FIXED";
+  mark.counterAxisSizingMode = "FIXED";
+  mark.primaryAxisAlignItems = "CENTER";
+  mark.counterAxisAlignItems = "CENTER";
+  mark.resizeWithoutConstraints(20, 20);
+  mark.cornerRadius = KOZMOS_RADIUS.pill;
+  mark.clipsContent = false;
+  mark.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  mark.strokes = [];
+  bindFloatVariable(
+    mark,
+    "width",
+    "ListItem/status/size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    mark,
+    "height",
+    "ListItem/status/size",
+    variableByName,
+    stats,
+  );
+  mark.setSharedPluginData(RUN_NAMESPACE, "kind", "list-item-status");
+  const check = await createFixedIconInstance(
+    "check",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    12,
+    null,
+  );
+  check.name = "Status Icon";
+  mark.appendChild(check);
+  return mark;
+}
+
+/** One small outline button: the row's action, Button's sm outline. */
+async function createListItemAction(fonts, variableByName, stats) {
+  const action = figma.createFrame();
+  action.name = "Trailing";
+  action.layoutMode = "HORIZONTAL";
+  action.primaryAxisSizingMode = "AUTO";
+  action.counterAxisSizingMode = "FIXED";
+  action.primaryAxisAlignItems = "CENTER";
+  action.counterAxisAlignItems = "CENTER";
+  action.paddingLeft = 12;
+  action.paddingRight = 12;
+  action.paddingTop = 0;
+  action.paddingBottom = 0;
+  action.resizeWithoutConstraints(72, 32);
+  action.cornerRadius = KOZMOS_RADIUS.control;
+  action.clipsContent = false;
+  action.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  setNodePropertyIfSupported(action, "strokesIncludedInLayout", true);
+  action.strokeWeight = 1;
+  action.strokeAlign = "INSIDE";
+  action.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  const text = figma.createText();
+  text.name = "Action Text";
+  text.fontName = fonts.medium;
+  text.fontSize = 14;
+  text.lineHeight = { unit: "PIXELS", value: 20 };
+  text.characters = "Replay";
+  await applyTextStyleToNodeAsync(
+    text,
+    listItemTextStyleKey("Action Text"),
+    stats,
+  );
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
+  ];
+  action.appendChild(text);
+  setHugChildSizing(text);
+  return action;
+}
+
+async function updateListItemVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  component.name = `Selected=${value}`;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "ListItem");
+  applyListItemRowFrame(component, value === "True", variableByName, stats);
+
+  // Redrawn whole on every Update: the row holds no designer's override but
+  // its texts and its booleans, which the properties carry.
+  removeDirectChildren(component);
+  const leading = await createListItemStatusMark(variableByName, stats);
+  component.appendChild(leading);
+  setFixedChildSizing(leading);
+  setNodePropertyIfSupported(leading, "layoutAlign", "INHERIT");
+
+  const body = createListItemBody(variableByName, stats);
+  component.appendChild(body);
+  const heading = createListItemHeading(variableByName, stats);
+  body.appendChild(heading);
+  const title = await createListItemText({
+    name: "Title Text",
+    characters: "Explore the map",
+    role: "title",
+    fonts,
+    variableByName,
+    stats,
+  });
+  heading.appendChild(title);
+  setHugChildSizing(title);
+  const addon = await createListItemTag({
+    name: "Title Addon",
+    textName: "Addon Text",
+    characters: "Viewer",
+    outline: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  heading.appendChild(addon);
+  setHugChildSizing(addon);
+  setHugChildSizing(heading);
+  setNodePropertyIfSupported(heading, "layoutAlign", "INHERIT");
+  const description = await createListItemText({
+    name: "Description Text",
+    characters: "Pan, zoom and change levels.",
+    role: "description",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+  const meta = await createListItemText({
+    name: "Meta Text",
+    characters: "2 min",
+    role: "meta",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(meta);
+  setLayoutSizingHorizontal(meta, "FILL");
+  setTextAutoResize(meta, "HEIGHT");
+  setLayoutSizingHorizontal(body, "FILL");
+  setLayoutSizingVertical(body, "HUG");
+
+  const trailing = await createListItemAction(fonts, variableByName, stats);
+  component.appendChild(trailing);
+  // Button's sm: 32 tall, as wide as its words and 12 either side.
+  setLayoutSizingHorizontal(trailing, "HUG");
+  setLayoutSizingVertical(trailing, "FIXED");
+  setNodePropertyIfSupported(trailing, "layoutAlign", "CENTER");
+}
+
+const LIST_ITEM_BOOLEANS = [
+  ["Leading", "Show Leading"],
+  ["Title Addon", "Show Title Addon"],
+  ["Description Text", "Show Description"],
+  ["Meta Text", "Show Meta"],
+  ["Trailing", "Show Trailing"],
+];
+
+function configureListItemProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    "Explore the map",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Addon Text",
+    "Addon Text",
+    "Viewer",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Pan, zoom and change levels.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Meta Text",
+    "Meta Text",
+    "2 min",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Action Text",
+    "Action Text",
+    "Replay",
+    stats,
+  );
+  for (const pair of LIST_ITEM_BOOLEANS) {
+    configureNamedBooleanProperty(componentSet, pair[0], pair[1], true, stats);
+  }
+}
+
+// GAP-195: ListItem. Selected is the row's tint.
+async function buildListItemComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    axisName: "Selected",
+    values: LIST_ITEM_SELECTED,
+    x: 80,
+    y: 7400,
+    xStep: 420,
+    createVariant: createListItemVariant,
+    configureProperties: configureListItemProperties,
+    description: listItemSetDescription(false),
+  });
+}
+
+async function updateListItemComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    axisName: "Selected",
+    values: LIST_ITEM_SELECTED,
+    xStep: 420,
+    createVariant: createListItemVariant,
+    updateVariant: updateListItemVariant,
+    parseVariantName: parseListItemVariantName,
+    configureProperties: configureListItemProperties,
+    description: listItemSetDescription(true),
+  });
+}
+
+function listItemSetDescription(updated) {
+  const lines = [
+    "Kozmos ListItem component set generated from React ListItem's slots (GAP-195, decision 135).",
+    "Leading maps to leading (a ListItemStatus), Title Text to title, Addon Text to titleAddon (a Tag), Description Text to description, Meta Text to meta and Action Text to trailing (one Button).",
+    "Selected maps to selected: the row tinted theme 0.",
+  ];
+  if (updated)
+    lines.push("Updated in place to preserve the Code Connect node ID.");
+  return lines;
+}
+
+async function rebuildListItemComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    build: buildListItemComponent,
+  });
+}
+
+// GAP-040, decision 135: SettingsRow, ListItem's row with a setting in it.
+// The label 14/20 medium and the state's tag beside it (Inherited, an
+// outline tag; Overridden, the secondary fill), the description under it,
+// and the control at the end: Switch's track 44 by 24, on in the theme fill.
+// Overridden draws Reset to default under the description, in the theme's
+// 600 at 14 medium; Disabled draws the reason there instead, the label in the
+// muted foreground and the switch at half, as React draws a disabled row.
+const SETTINGS_ROW_CONTROL_NAME = "Control";
+
+async function createSettingsRowVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateSettingsRowVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseSettingsRowVariantName(name) {
+  const values = parseVariantNameParts(name);
+  if (SETTINGS_ROW_STATES.indexOf(values.State) === -1) return null;
+  const disabled = values.Disabled === undefined ? "False" : values.Disabled;
+  if (SETTINGS_ROW_DISABLED.indexOf(disabled) === -1) return null;
+  return { value: values.State, second: disabled };
+}
+
+/** Switch's track and thumb, on: React's h-6 w-11, the thumb 20. */
+function createSettingsRowSwitch(disabled, variableByName, stats) {
+  const track = figma.createFrame();
+  track.name = SETTINGS_ROW_CONTROL_NAME;
+  track.layoutMode = "HORIZONTAL";
+  track.primaryAxisSizingMode = "FIXED";
+  track.counterAxisSizingMode = "FIXED";
+  track.primaryAxisAlignItems = "MAX";
+  track.counterAxisAlignItems = "CENTER";
+  track.paddingLeft = 2;
+  track.paddingRight = 2;
+  track.paddingTop = 2;
+  track.paddingBottom = 2;
+  track.resizeWithoutConstraints(44, 24);
+  track.cornerRadius = KOZMOS_RADIUS.pill;
+  track.clipsContent = false;
+  track.opacity = disabled ? 0.5 : 1;
+  track.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  track.strokes = [];
+  bindFloatVariable(
+    track,
+    "width",
+    "Switch/track/width",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    track,
+    "height",
+    "Switch/track/height",
+    variableByName,
+    stats,
+  );
+  const thumb = figma.createEllipse();
+  thumb.name = "Thumb";
+  thumb.resize(20, 20);
+  thumb.fills = [
+    paintFromVariable(
+      THEME_FILL_FOREGROUND.name,
+      THEME_FILL_FOREGROUND.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  track.appendChild(thumb);
+  return track;
+}
+
+async function updateSettingsRowVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const disabled = second === "True";
+  component.name = `State=${state}, Disabled=${disabled ? "True" : "False"}`;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "SettingsRow");
+  applyListItemRowFrame(component, false, variableByName, stats);
+  component.resizeWithoutConstraints(560, 48);
+  bindFloatVariable(
+    component,
+    "width",
+    "SettingsRow/width/default",
+    variableByName,
+    stats,
+  );
+
+  removeDirectChildren(component);
+  const body = createListItemBody(variableByName, stats);
+  component.appendChild(body);
+  const heading = createListItemHeading(variableByName, stats);
+  body.appendChild(heading);
+  const label = await createListItemText({
+    name: "Label Text",
+    characters: "Show the banner",
+    role: "title",
+    fonts,
+    variableByName,
+    stats,
+  });
+  if (disabled) {
+    label.fills = [
+      paintFromVariable(
+        "Colors/foreground/400",
+        "#5D626F",
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+  heading.appendChild(label);
+  setHugChildSizing(label);
+  if (state !== "None") {
+    const tag = await createListItemTag({
+      name: "State",
+      textName: "State Text",
+      characters: state,
+      outline: state === "Inherited",
+      fonts,
+      variableByName,
+      stats,
+    });
+    heading.appendChild(tag);
+    setHugChildSizing(tag);
+  }
+  setHugChildSizing(heading);
+  setNodePropertyIfSupported(heading, "layoutAlign", "INHERIT");
+  const description = await createListItemText({
+    name: "Description Text",
+    characters: "A message above the map.",
+    role: "description",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+  if (disabled) {
+    const reason = await createListItemText({
+      name: "Reason Text",
+      characters: "Turn on Positioning first.",
+      role: "meta",
+      fonts,
+      variableByName,
+      stats,
+    });
+    body.appendChild(reason);
+    setLayoutSizingHorizontal(reason, "FILL");
+    setTextAutoResize(reason, "HEIGHT");
+  } else if (state === "Overridden") {
+    const reset = figma.createText();
+    reset.name = "Reset Text";
+    reset.fontName = fonts.medium;
+    reset.fontSize = 14;
+    reset.lineHeight = { unit: "PIXELS", value: 20 };
+    reset.characters = "Reset to default";
+    await applyTextStyleToNodeAsync(
+      reset,
+      listItemTextStyleKey("Reset Text"),
+      stats,
+    );
+    reset.fills = [
+      paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+    ];
+    body.appendChild(reset);
+    setHugChildSizing(reset);
+    setNodePropertyIfSupported(reset, "layoutAlign", "INHERIT");
+  }
+  setLayoutSizingHorizontal(body, "FILL");
+  setLayoutSizingVertical(body, "HUG");
+
+  const control = createSettingsRowSwitch(disabled, variableByName, stats);
+  component.appendChild(control);
+  setFixedChildSizing(control);
+}
+
+function configureSettingsRowProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label Text",
+    "Show the banner",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "A message above the map.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Reason Text",
+    "Reason Text",
+    "Turn on Positioning first.",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Show Description",
+    true,
+    stats,
+  );
+}
+
+// GAP-040: SettingsRow. State is the value's source; Disabled the row's.
+async function buildSettingsRowComponent() {
+  return buildSingleAxisComponent({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    axisName: "State",
+    values: SETTINGS_ROW_STATES,
+    axis2Values: SETTINGS_ROW_DISABLED,
+    x: 80,
+    y: 7640,
+    xStep: 620,
+    yStep: 140,
+    createVariant: createSettingsRowVariant,
+    configureProperties: configureSettingsRowProperties,
+    description: settingsRowSetDescription(false),
+  });
+}
+
+async function updateSettingsRowComponent() {
+  return updateSingleAxisComponent({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    axisName: "State",
+    values: SETTINGS_ROW_STATES,
+    axis2Values: SETTINGS_ROW_DISABLED,
+    xStep: 620,
+    yStep: 140,
+    createVariant: createSettingsRowVariant,
+    updateVariant: updateSettingsRowVariant,
+    parseVariantName: parseSettingsRowVariantName,
+    configureProperties: configureSettingsRowProperties,
+    description: settingsRowSetDescription(true),
+  });
+}
+
+function settingsRowSetDescription(updated) {
+  const lines = [
+    "Kozmos SettingsRow component set generated from React SettingsRow (GAP-040, decision 135), a ListItem with a setting in it.",
+    "State maps to state: None is unset, Inherited and Overridden draw their tag; Overridden offers Reset to default (onReset).",
+    "Disabled maps to disabled; Reason Text to disabledReason. Label Text maps to label, Description Text to description.",
+    "The switch stands for the control slot: any Kozmos control goes there.",
+  ];
+  if (updated)
+    lines.push("Updated in place to preserve the Code Connect node ID.");
+  return lines;
+}
+
+async function rebuildSettingsRowComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    build: buildSettingsRowComponent,
+  });
 }
 
 async function createCheckboxVariant({

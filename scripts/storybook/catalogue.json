@@ -564,7 +564,14 @@
       "id": "data-display-list",
       "title": "Core/Data display/List",
       "component": "List",
-      "exports": ["Default", "Compact"]
+      "exports": ["Default", "Compact", "Checklist", "PersonaVisibility"]
+    },
+    {
+      "file": "packages/react/src/components/SettingsRow/SettingsRow.stories.tsx",
+      "id": "data-display-settingsrow",
+      "title": "Core/Data display/SettingsRow",
+      "component": "SettingsRow",
+      "exports": ["Default", "SdkConfiguration", "Compact"]
     },
     {
       "file": "packages/react/src/components/Listbox/Listbox.stories.tsx",

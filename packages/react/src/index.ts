@@ -59,6 +59,7 @@ export * from "./components/Backdrop/Backdrop";
 export * from "./components/Avatar/Avatar";
 export * from "./components/Tag/Tag";
 export * from "./components/List/List";
+export * from "./components/SettingsRow/SettingsRow";
 export * from "./components/Table/Table";
 export * from "./components/Tree/Tree";
 export * from "./components/Timeline/Timeline";

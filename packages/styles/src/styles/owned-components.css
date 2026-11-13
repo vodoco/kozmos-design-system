@@ -472,6 +472,113 @@
   .kozmos-field-message {
     @apply text-sm leading-5;
   }
+  /* ListItem's slots (GAP-195, decision 135): a mark at the start, centred
+     on the title's 20 line; the title, its addon beside it, the description
+     and the meta under it, taking the rest of the row; one control at the
+     end, centred on the row. 12 between the three. The list's density
+     still pads the row. */
+  .kozmos-list-item-slotted {
+    align-items: flex-start;
+    column-gap: 0.75rem;
+  }
+  /* A ticked row: theme 0, CardHeader's subtle strip. */
+  .kozmos-list-item-selected {
+    background-color: var(--primitives-colors-theme-0);
+  }
+  .kozmos-list-item-leading {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 1.25rem;
+  }
+  .kozmos-list-item-body {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    row-gap: 0.125rem;
+    min-inline-size: 0;
+  }
+  .kozmos-list-item-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.5rem;
+    row-gap: 0.25rem;
+    min-inline-size: 0;
+  }
+  .kozmos-list-item-title {
+    @apply text-sm font-medium leading-5 text-foreground;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-list-item-title-addon {
+    display: inline-flex;
+    align-items: center;
+    column-gap: 0.25rem;
+  }
+  .kozmos-list-item-description {
+    @apply text-sm leading-5 text-muted-foreground;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-list-item-meta {
+    @apply text-xs leading-4 text-muted-foreground;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+    padding-block-start: 0.125rem;
+  }
+  .kozmos-list-item-trailing {
+    display: flex;
+    flex-shrink: 0;
+    align-self: center;
+    align-items: center;
+    column-gap: 0.5rem;
+  }
+  /* A checklist row's status: Stepper's step marks at 20. Done, the theme
+     fill with a 12 check; in progress, a 2 theme ring round an 8 dot; not
+     started, a 1 ring in foreground 500, as a pending step's. */
+  .kozmos-list-item-status {
+    @apply rounded-pill;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border: 1px solid var(--primitives-colors-foreground-500);
+  }
+  .kozmos-list-item-status[data-status="done"] {
+    @apply border-theme-fill bg-theme-fill text-theme-fill-foreground;
+  }
+  .kozmos-list-item-status[data-status="inProgress"] {
+    @apply border-primary;
+    border-width: 2px;
+  }
+  .kozmos-list-item-status-check {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+  }
+  .kozmos-list-item-status-dot {
+    @apply rounded-pill bg-primary;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+  }
+  /* SettingsRow (GAP-040): the reason a setting is disabled reads as the
+     description does; the control column holds a field up to 240 wide. */
+  .kozmos-settings-row-reason {
+    @apply text-xs leading-4 text-muted-foreground;
+  }
+  .kozmos-settings-row-control {
+    display: flex;
+    align-items: center;
+    max-inline-size: 15rem;
+  }
+  .kozmos-settings-row[data-disabled] .kozmos-list-item-title {
+    @apply text-muted-foreground;
+  }
   .kozmos-field-default {
     @apply text-muted-foreground;
   }

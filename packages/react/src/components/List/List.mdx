@@ -16,6 +16,125 @@ Compose ListItem children for content rows; use POIResultList for SDK search res
 
 <Controls />
 
+## Rows with slots
+
+A ListItem takes slots (GAP-195, decision 135): `leading` at the start, centred on the title's line; `title`, with
+`titleAddon` beside it; `description` and `meta` under it; and `trailing`, the row's one control, at the end. Give
+any of them and the row draws them; give none and the row is its children, as before. `selected` tints the row,
+theme 0, for a row whose box is ticked: it is drawn only, and the row's control still says it is checked.
+
+The Get started checklist is a List of these rows. `ListItemStatus` is its status mark: done, in progress or not
+started, drawn as Stepper's step marks at 20 and read in words ("Done", or the product's own `label`). It is first in
+the row, so a screen reader hears each tour's status with its name.
+
+<Canvas>
+  <Story of={ListStories.Checklist} />
+</Canvas>
+
+Pointr Cloud's Map Persona Visibility list is the same row: a persona's mark, its name, an info button beside it and
+a checkbox at the end, tinted while it is ticked. The mark here is a stand-in for the persona's own (GAP-106).
+
+<Canvas>
+  <Story of={ListStories.PersonaVisibility} />
+</Canvas>
+
+A setting is SettingsRow, which is this row with a setting in it.
+
+<PlatformSnippets
+    react={`
+import { Button, List, ListItem, ListItemStatus, Tag } from "@kozmos-ds/react";
+export function TourChecklist() {
+  return (
+    <List>
+      <ListItem
+        leading={<ListItemStatus status="done" />}
+        title="Explore the map"
+        titleAddon={<Tag variant="secondary">Viewer</Tag>}
+        description="Pan, zoom and change levels."
+        meta="2 min"
+        trailing={<Button size="sm" variant="outline">Replay</Button>}
+      />
+    </List>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosButton } from "@kozmos-ds/vue"
+import {
+  KozmosList,
+  KozmosListItem,
+  KozmosListItemStatus,
+  KozmosTag,
+} from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosList>
+    <KozmosListItem title="Explore the map" description="Pan, zoom and change levels." meta="2 min">
+      <template #leading><KozmosListItemStatus status="done" /></template>
+      <template #titleAddon><KozmosTag variant="secondary">Viewer</KozmosTag></template>
+      <template #trailing><KozmosButton size="sm" variant="outline">Replay</KozmosButton></template>
+    </KozmosListItem>
+  </KozmosList>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A checklist row: its status mark, read before the title; a role tag; a
+// description and a meta line; one action at the end. selected: true tints
+// a ticked row.
+struct TourChecklist: View {
+    var body: some View {
+        KozmosList {
+            KozmosListItem("Explore the map", description: "Pan, zoom and change levels.", meta: "2 min")
+                .leading { KozmosListItemStatus(.done) }
+                .titleAddon { KozmosTag("Viewer", variant: .secondary) }
+                .trailing { KozmosButton("Replay", variant: .outline, size: .sm) {} }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonSize
+import com.kozmos.components.button.KozmosButtonVariant
+import com.kozmos.components.list.KozmosList
+import com.kozmos.components.list.KozmosListItem
+import com.kozmos.components.list.KozmosListItemStatus
+import com.kozmos.components.list.KozmosListItemStatusValue
+import com.kozmos.components.tag.KozmosTag
+import com.kozmos.components.tag.KozmosTagVariant
+
+// A checklist row: its status mark, read before the title; a role tag; a
+// description and a meta line; one action at the end. selected = true tints
+// a ticked row.
+@Composable
+fun TourChecklist() {
+    KozmosList {
+        KozmosListItem(
+            text = "Explore the map",
+            description = "Pan, zoom and change levels.",
+            meta = "2 min",
+            showDivider = false,
+            leading = { KozmosListItemStatus(status = KozmosListItemStatusValue.Done) },
+            titleAddon = { KozmosTag(text = "Viewer", variant = KozmosTagVariant.Secondary) },
+            trailing = {
+                KozmosButton(onClick = {}, variant = KozmosButtonVariant.Outline, size = KozmosButtonSize.Sm) {
+                    Text("Replay")
+                }
+            }
+        )
+    }
+}
+`}
+
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>
