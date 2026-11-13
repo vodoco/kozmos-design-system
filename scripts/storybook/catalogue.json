@@ -1180,7 +1180,7 @@
       "id": "data-display-table",
       "title": "Core/Data display/Table",
       "component": "Table",
-      "exports": ["Default"]
+      "exports": ["Default", "Framed"]
     },
     {
       "file": "packages/react/src/components/Tabs/Tabs.stories.tsx",
