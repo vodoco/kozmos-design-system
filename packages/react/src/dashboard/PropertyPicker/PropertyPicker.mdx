@@ -1,0 +1,70 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../../components/DocumentationControls";
+import * as PropertyPickerStories from "./PropertyPicker.stories";
+import { PlatformSnippets } from "../../components/PlatformSnippets";
+
+<Meta of={PropertyPickerStories} />
+
+# PropertyPicker
+
+Pointr Cloud's "+ Add additional field" (CLOUD-UI-003): a subtle Button the width of its form that opens a search over the properties a product can add, each with its type, under Suggested and Others tabs while anything is suggested, and a Custom field action after the list. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
+
+It is built of Core parts: Button (`variant="subtle"`, GAP-200), Popover, Search, Tabs, Listbox, EmptyState. A property is data, already in the page's language: `{ id, name, type, description?, suggested? }`. Pass the properties that can still be added; leave out those already on the form.
+
+<Canvas>
+  <Story of={PropertyPickerStories.Default} />
+</Canvas>
+
+<Controls />
+
+## Suggested and Others
+
+While any property is `suggested` (a Booth's five), the popup has two tabs: Suggested, and Others, which never repeats a suggested property. Once nothing is suggested, the tabs go and one list holds every property. Typing searches both at once, case-insensitive, on the name only: the results are one list, under Suggested and Others groups. When nothing matches, the popup says so, and a screen reader hears it.
+
+<Canvas>
+  <Story of={PropertyPickerStories.Suggested} />
+</Canvas>
+
+## Each property
+
+A row is the property's name, with its type, then its description, under it: Listbox's option description, part of the option, so a screen reader reads all three as the option and nothing needs a pointer to reveal it. Cloud showed the description in a tooltip on an unnamed info button, a tab stop of its own on every row.
+
+## Keyboard
+
+The search has the focus when the popup opens. ArrowDown moves into the list, at its first property; the arrows, Home and End move through it, and Enter or Space adds the property. ArrowUp from the first property, or typing a letter, goes back to the search. Tab moves from the search to the tabs, the list and Custom field. Escape empties the search while it holds text, then closes the popup, one layer at a time, and the focus goes back to the button.
+
+## Adding a property
+
+Choosing a property calls `onSelect` with it and closes the popup, and the focus goes back to the button, ready for the next. Closing, rather than staying open, means the popup never covers the field the product has just added above it, as Cloud's menu does.
+
+<Canvas>
+  <Story of={PropertyPickerStories.InAForm} />
+</Canvas>
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { PropertyPicker, type PropertyPickerProperty } from "@kozmos-ds/react/dashboard";
+
+export function AddField({
+  available,
+  onAdd,
+  onCustomField,
+}: {
+  available: PropertyPickerProperty[];
+  onAdd: (property: PropertyPickerProperty) => void;
+  onCustomField: () => void;
+}) {
+  return (
+    <PropertyPicker
+      properties={available}
+      onSelect={onAdd}
+      onCustomField={onCustomField}
+    />
+  );
+}
+    `}
+/>

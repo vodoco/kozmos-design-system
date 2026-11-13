@@ -19,7 +19,7 @@ These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose
 being built on Reka UI (Vue 3 Phase 0), and not yet something to install.
 There is no React Native package.
 
-## Components (129)
+## Components (130)
 
 A row is a directory of `packages/react/src/components`, or of `packages/react/src/dashboard`
 for a Dashboard module (imported from `@kozmos-ds/react/dashboard`), linked to its API card,
@@ -118,7 +118,7 @@ component has no such prop; **unknown** means the checker could not resolve it.
 | [**Tree**](../docs/claude-design/components/Tree.md)                                 | ✅  |   ✅    | `density`: compact \| default<br>`activationMode`: select \| select-toggle \| toggle<br>`selectionMode`: multiple \| single<br>`metaPlacement`: below \| inline<br>`TreeChildItemRow.actionsVisibility`: always \| auto<br>`TreeChildItemRow.density`: compact \| default<br>`TreeChildItemRow.metaPlacement`: below \| inline<br>`TreeItemRow.actionsVisibility`: always \| auto<br>`TreeItemRow.density`: compact \| default<br>`TreeItemRow.metaPlacement`: below \| inline<br>`TreeParentItemRow.actionsVisibility`: always \| auto<br>`TreeParentItemRow.density`: compact \| default<br>`TreeParentItemRow.metaPlacement`: below \| inline<br>`TreeSectionRow.density`: compact \| default |
 | [**UserMessage**](../docs/claude-design/components/UserMessage.md)                   |  —  |    —    | none                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
-### Dashboard (5)
+### Dashboard (6)
 
 | Component                                                                        | iOS | Android | Variants                                                                                |
 | -------------------------------------------------------------------------------- | :-: | :-----: | --------------------------------------------------------------------------------------- |
@@ -126,6 +126,7 @@ component has no such prop; **unknown** means the checker could not resolve it.
 | [**KeyValueList**](../docs/claude-design/components/KeyValueList.md)             |  —  |    —    | none                                                                                    |
 | [**OpeningHoursEditor**](../docs/claude-design/components/OpeningHoursEditor.md) |  —  |    —    | `weekStart`: friday \| monday \| saturday \| sunday \| thursday \| tuesday \| wednesday |
 | [**PropertyField**](../docs/claude-design/components/PropertyField.md)           |  —  |    —    | none                                                                                    |
+| [**PropertyPicker**](../docs/claude-design/components/PropertyPicker.md)         |  —  |    —    | none                                                                                    |
 | [**RatingEditor**](../docs/claude-design/components/RatingEditor.md)             |  —  |    —    | none                                                                                    |
 
 ### Foundations (4)

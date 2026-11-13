@@ -1203,6 +1203,7 @@
                 <option value="openingHoursEditor">OpeningHoursEditor</option>
                 <option value="ratingEditor">RatingEditor</option>
                 <option value="keyValueList">KeyValueList</option>
+                <option value="propertyPicker">PropertyPicker</option>
               </optgroup>
               <optgroup label="Utilities">
                 <option value="icons">Curated Icons</option>
@@ -1690,6 +1691,12 @@
           update: "update-key-value-list",
           rebuild: "rebuild-key-value-list",
           hint: "Build creates KeyValueList (CLOUD-UI-004), a Dashboard module: State Default (two rows), Empty and Mixed, each row a name, a type, a value and a red trash, with Add field. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        propertyPicker: {
+          label: "PropertyPicker",
+          build: "build-property-picker",
+          update: "update-property-picker",
+          rebuild: "rebuild-property-picker",
+          hint: "Build creates PropertyPicker (CLOUD-UI-003), Pointr Cloud's \"+ Add additional field\", a Dashboard module: the subtle Button and its popup (search, tabs, property rows, Custom field), with State Closed, Open, Suggested and Empty variants and a Label text property. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         aiSearchButton: {
           label: "AISearchButton",

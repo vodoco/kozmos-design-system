@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "39f8c4e7642b";
+const PLUGIN_BUILD = "630c09c629c8";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -969,6 +969,37 @@ const BRAND_LOADER_GEOMETRY = {
   secondRingStroke: 4,
   pin: 32,
 };
+// PropertyPicker (CLOUD-UI-003, decisions 133 and 183): Pointr Cloud's
+// "+ Add additional field". State is what the popup shows: Closed, the
+// subtle Button alone, first, so it is the set's default; Open, every
+// property; Suggested, the Suggested and Others tabs over Booth's five;
+// Empty, a search that finds nothing.
+const PROPERTY_PICKER_STATES = ["Closed", "Open", "Suggested", "Empty"];
+// Cloud's 368 form column; the density's control and field height, 44;
+// PopoverContent's sideOffset, 4; the popup 12 in, 8 between its parts.
+const PROPERTY_PICKER_GEOMETRY = {
+  width: 368,
+  control: 44,
+  offset: 4,
+  padding: 12,
+  gap: 8,
+};
+// Example rows: a property's name, type and description, as React draws
+// them (Cloud's types; the names Cloud showed).
+const PROPERTY_PICKER_ROWS = [
+  ["Access Programs", "Array", "Named access program accepted"],
+  ["Booking Url", "Hyperlink"],
+  ["Capacity", "Integer"],
+  ["Images", "Image"],
+  ["Opening Hours", "Object"],
+];
+const PROPERTY_PICKER_SUGGESTED_ROWS = [
+  ["Access Restrictions", "Enum"],
+  ["Description", "Text"],
+  ["Has Assistance", "Boolean"],
+  ["Has Wifi", "Boolean"],
+  ["Occupancy Status", "Enum"],
+];
 const MAP_VIEW_CONTENT = ["Empty", "Overlay"];
 const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
@@ -1393,6 +1424,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DynamicIsland: 320,
   FeedbackCard: 360,
   BrandLoader: 260,
+  PropertyPicker: 520,
   PropertyField: 220,
   OpeningHoursEditor: 760,
   RatingEditor: 420,
@@ -1569,6 +1601,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "OpeningHoursEditor",
       "RatingEditor",
       "KeyValueList",
+      "PropertyPicker",
     ],
   },
   {
@@ -2336,6 +2369,31 @@ const COMPONENT_DOCS = [
       "Under reduced motion, the system's or DesignConfigProvider's, the rings and the pin stand still: the drawing in Figma.",
       "Overlay makes the rest of the page inert and busy until the loader goes, takes every pointer event on the scrim and shows the wait cursor; focus is not moved to it, and goes back where it was.",
       "The rings and the pin are decoration, hidden from assistive technology.",
+    ],
+  },
+  {
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    category: "Dashboard",
+    summary:
+      'PropertyPicker is Pointr Cloud\'s "+ Add additional field" (CLOUD-UI-003): a subtle Button the width of its form that opens a search over the properties a product can add, each with its type, under Suggested and Others tabs while anything is suggested, and a Custom field action. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).',
+    usage: [
+      "Use under a form's fields to add one more property; pass only the properties not on the form yet.",
+      "Mark a property suggested for what is being edited (a Booth's five): the Suggested tab lists them, and Others never repeats them.",
+      "Use Combobox to choose a value for a field; this picker adds a field.",
+    ],
+    api: [
+      "State is what the popup shows: Closed, Open (every property), Suggested (with the tabs) and Empty (a search that finds nothing). In code it is open or not (open, defaultOpen); the rest follows from the data.",
+      "Label maps to PropertyPicker.label (default \"Add additional field\"), the button's words and the popup's name.",
+      "properties is { id, name, type, description?, suggested? }[], in the page's language; onSelect gets the property chosen, and onCustomField draws the Custom field action.",
+      "A row is the name over its type and description: Listbox's option description.",
+    ],
+    properties: ["State: Closed, Open, Suggested, Empty", "Label: text"],
+    accessibility: [
+      "The popup is a dialog named by the button's words; its search is labelled and has the focus as it opens.",
+      "ArrowDown moves from the search into the list, ArrowUp from its first row back; Enter or Space adds; typing in the list types in the search.",
+      "Escape empties the search, then closes the popup, one layer at a time, and the focus goes back to the button; so does a choice.",
+      "A search that finds nothing is said, from a status region; each row's type and description are part of the option, never behind a pointer.",
     ],
   },
   {
@@ -11715,6 +11773,7 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   // Dashboard modules (decision 183) ride this run: they share no painter
   // with Core, and a lane of one needs no button of its own.
   ["BrandLoader", updateBrandLoaderComponent],
+  ["PropertyPicker", updatePropertyPickerComponent],
   // The property editors (CLOUD-UI-004). RatingEditor holds Rating's own
   // read-only instance, which Core's run draws first.
   ["PropertyField", updatePropertyFieldComponent],
@@ -12008,6 +12067,9 @@ function additionalComponentActionHandlers() {
     "build-brand-loader": buildBrandLoaderComponent,
     "update-brand-loader": updateBrandLoaderComponent,
     "rebuild-brand-loader": rebuildBrandLoaderComponent,
+    "build-property-picker": buildPropertyPickerComponent,
+    "update-property-picker": updatePropertyPickerComponent,
+    "rebuild-property-picker": rebuildPropertyPickerComponent,
     "build-property-field": buildPropertyFieldComponent,
     "update-property-field": updatePropertyFieldComponent,
     "rebuild-property-field": rebuildPropertyFieldComponent,
@@ -18761,6 +18823,12 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "BrandLoader") {
     return {
       Overlay: BRAND_LOADER_OVERLAY,
+    };
+  }
+
+  if (canonicalName === "PropertyPicker") {
+    return {
+      State: PROPERTY_PICKER_STATES,
     };
   }
 
@@ -55826,6 +55894,461 @@ async function rebuildBrandLoaderComponent() {
     componentName: "BrandLoader",
     componentSetName: "BrandLoader",
     build: buildBrandLoaderComponent,
+  });
+}
+
+// --- PropertyPicker (Dashboard) --------------------------------------------
+
+// Pointr Cloud's "+ Add additional field" (CLOUD-UI-003, decisions 133 and
+// 183), as React's PropertyPicker and
+// packages/styles/src/dashboard/property-picker.css draw it: a subtle Button
+// the width of the form, Cloud's 368 column (GAP-200, decision 135), and
+// under it, 4 below as PopoverContent's sideOffset puts it, the popup, as
+// wide as the button: Popover's surface, 12 in, 8 between its parts. In it
+// the labelled search, the Suggested and Others tabs while anything is
+// suggested, the list (a Listbox's rows: the name, 14/20, over its type and
+// description, 12/16, in the muted foreground), and the Custom field action
+// after it, a ghost Button. Empty draws the search finding nothing: the
+// empty state's title where the list was. React's words are props; Label,
+// the button's, is the one text property, as Code Connect maps it.
+
+async function createPropertyPickerVariant(args) {
+  const component = figma.createComponent();
+  await updatePropertyPickerVariant(component, args);
+  return component;
+}
+
+function parsePropertyPickerVariantName(name) {
+  return productSdkVariantValues(name, "State", PROPERTY_PICKER_STATES);
+}
+
+async function propertyPickerText(
+  name,
+  characters,
+  styleKey,
+  colorToken,
+  colorFallback,
+  width,
+  { fonts, variableByName, stats },
+) {
+  return productSdkText({
+    name,
+    characters,
+    styleKey,
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken,
+    colorFallback,
+    variableByName,
+    stats,
+    width,
+  });
+}
+
+async function propertyPickerButton({
+  name,
+  label,
+  subtle,
+  width,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const geometry = PROPERTY_PICKER_GEOMETRY;
+  const button = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: subtle ? "CENTER" : "MIN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width,
+    height: geometry.control,
+  });
+  markControlSurface(button);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  const foreground = subtle
+    ? {
+        name: "Subtle Buttons/themed/button/foreground/content/idle",
+        fallback: "#1051E8",
+      }
+    : { name: "Colors/foreground/0", fallback: "#000000" };
+  button.fills = subtle
+    ? [
+        paintFromVariable(
+          "Subtle Buttons/themed/button/background/idle",
+          "#F1F5FE",
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  const icon = await productSdkIconInstance({
+    iconName: "plus",
+    token: foreground,
+    size: 16,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: name,
+  });
+  if (icon) {
+    icon.name = name + " Icon";
+    button.appendChild(icon);
+  }
+  const text = await productSdkText({
+    name: subtle ? "Label" : name + " Label",
+    characters: label,
+    styleKey: "buttonLabel",
+    fonts,
+    bold: true,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: foreground.name,
+    colorFallback: foreground.fallback,
+    variableByName,
+    stats,
+    width: 200,
+  });
+  text.textAutoResize = "WIDTH_AND_HEIGHT";
+  button.appendChild(text);
+  return button;
+}
+
+async function propertyPickerSearch(inner, context) {
+  const { variableByName, stats } = context;
+  const group = productSdkFrame("Search", { spacing: 8 });
+  const label = await propertyPickerText(
+    "Search Label",
+    "Search properties",
+    "fieldLabel",
+    "Colors/foreground/0",
+    "#000000",
+    inner,
+    context,
+  );
+  appendWithSizing(group, label, "FILL", null);
+  const field = productSdkFrame("Search Field", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: inner,
+    height: PROPERTY_PICKER_GEOMETRY.control,
+  });
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  field.strokes = [
+    paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
+  ];
+  field.strokeWeight = 1;
+  field.strokeAlign = "INSIDE";
+  const icon = await productSdkIconInstance({
+    iconName: "search-md",
+    token: { name: "Colors/foreground/400", fallback: "#5D626F" },
+    size: 16,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: "PropertyPicker",
+  });
+  if (icon) {
+    icon.name = "Search Icon";
+    field.appendChild(icon);
+  }
+  const placeholder = await propertyPickerText(
+    "Search Placeholder",
+    context.state === "Empty" ? "zzzz" : "Search",
+    "fieldText",
+    context.state === "Empty" ? "Colors/foreground/0" : "Colors/foreground/400",
+    context.state === "Empty" ? "#000000" : "#5D626F",
+    inner - 52,
+    context,
+  );
+  appendWithSizing(field, placeholder, "FILL", null);
+  appendWithSizing(group, field, "FILL", "FIXED");
+  return group;
+}
+
+async function propertyPickerTabs(inner, context) {
+  const { variableByName, stats } = context;
+  // Tabs' track: the muted fill, 4 in, the active tab raised on the surface.
+  const list = productSdkFrame("Tabs", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 0,
+    padding: 4,
+    width: inner,
+    height: 40,
+  });
+  list.cornerRadius = KOZMOS_RADIUS.control;
+  list.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E4E6EA",
+      variableByName,
+      stats,
+    ),
+  ];
+  for (const [name, active] of [
+    ["Suggested", true],
+    ["Others", false],
+  ]) {
+    const tab = productSdkFrame(name + " Tab", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      width: (inner - 8) / 2,
+      height: 32,
+    });
+    tab.cornerRadius = KOZMOS_RADIUS.control - 4;
+    tab.fills = active
+      ? [paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats)]
+      : [];
+    if (active) tab.effects = [elevationEffect("raised")];
+    const text = await propertyPickerText(
+      name + " Tab Label",
+      name,
+      "tabsTrigger",
+      active ? "Colors/foreground/0" : "Colors/foreground/400",
+      active ? "#000000" : "#5D626F",
+      120,
+      context,
+    );
+    text.textAutoResize = "WIDTH_AND_HEIGHT";
+    tab.appendChild(text);
+    appendWithSizing(list, tab, "FILL", "FIXED");
+  }
+  return list;
+}
+
+async function propertyPickerRow([name, type, description], inner, context) {
+  const row = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 0,
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingTop: 4,
+    paddingBottom: 4,
+    width: inner,
+  });
+  row.cornerRadius = KOZMOS_RADIUS.marker;
+  // Two lines, 20 and 16, and 4 above and below: Listbox's 44.
+  const label = await propertyPickerText(
+    name + " Name",
+    name,
+    "listItem",
+    "Colors/foreground/0",
+    "#000000",
+    inner - 24,
+    context,
+  );
+  appendWithSizing(row, label, "FILL", null);
+  const meta = await propertyPickerText(
+    name + " Type",
+    description ? `${type} · ${description}` : type,
+    "fieldMeta",
+    "Colors/foreground/400",
+    "#5D626F",
+    inner - 24,
+    context,
+  );
+  appendWithSizing(row, meta, "FILL", null);
+  return row;
+}
+
+async function updatePropertyPickerVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = PROPERTY_PICKER_GEOMETRY;
+  const open = value !== "Closed";
+  const context = { fonts, variableByName, stats, state: value };
+  productSdkVariantRoot(component, "PropertyPicker", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.offset,
+    width: geometry.width,
+    height: geometry.control,
+  });
+  component.fills = [];
+  component.strokes = [];
+  component.effects = [];
+
+  const trigger = await propertyPickerButton({
+    name: "Trigger",
+    label: "Add additional field",
+    subtle: true,
+    width: geometry.width,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(component, trigger, "FILL", "FIXED");
+  if (!open) return;
+
+  const inner = geometry.width - geometry.padding * 2;
+  const popup = productSdkFrame("Popup", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.gap,
+    padding: geometry.padding,
+    width: geometry.width,
+    height: 200,
+  });
+  // Popover's surface: Surface/0, the subtle edge, the control corner and
+  // the overlay elevation (updatePopoverVariant's).
+  popup.cornerRadius = KOZMOS_RADIUS.control;
+  popup.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  popup.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  popup.strokeWeight = 1;
+  popup.effects = [elevationEffect("overlay")];
+  appendWithSizing(component, popup, "FILL", "HUG");
+
+  appendWithSizing(
+    popup,
+    await propertyPickerSearch(inner, context),
+    "FILL",
+    "HUG",
+  );
+  if (value === "Suggested") {
+    appendWithSizing(
+      popup,
+      await propertyPickerTabs(inner, context),
+      "FILL",
+      "FIXED",
+    );
+  }
+
+  if (value === "Empty") {
+    const empty = productSdkFrame("Empty State", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      paddingTop: 16,
+      paddingBottom: 16,
+      width: inner,
+    });
+    const title = await propertyPickerText(
+      "Empty Title",
+      "No properties match",
+      "emptyStateTitle",
+      "Colors/foreground/0",
+      "#000000",
+      inner,
+      context,
+    );
+    title.textAlignHorizontal = "CENTER";
+    appendWithSizing(empty, title, "FILL", null);
+    appendWithSizing(popup, empty, "FILL", "HUG");
+  } else {
+    const list = productSdkFrame("List", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      width: inner,
+    });
+    const rows =
+      value === "Suggested"
+        ? PROPERTY_PICKER_SUGGESTED_ROWS
+        : PROPERTY_PICKER_ROWS;
+    for (const entry of rows) {
+      appendWithSizing(
+        list,
+        await propertyPickerRow(entry, inner, context),
+        "FILL",
+        "HUG",
+      );
+    }
+    appendWithSizing(popup, list, "FILL", "HUG");
+  }
+
+  const custom = await propertyPickerButton({
+    name: "Custom Field",
+    label: "Custom field",
+    subtle: false,
+    width: inner,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(popup, custom, "FILL", "FIXED");
+}
+
+function configurePropertyPickerProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label",
+    "Label",
+    "Add additional field",
+    stats,
+  );
+}
+
+const PROPERTY_PICKER_DESCRIPTION = [
+  'Kozmos PropertyPicker generated from the React PropertyPicker API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), Pointr Cloud\'s "+ Add additional field" (CLOUD-UI-003).',
+  "State: Closed is the subtle Button alone; Open the popup with every property; Suggested with the Suggested and Others tabs; Empty a search that finds nothing.",
+  "Label maps to PropertyPicker.label. The properties are data (properties, onSelect, onCustomField), so the rows are an example.",
+  "Built of Core parts: Button subtle (GAP-200), Popover, Search, Tabs, Listbox, EmptyState, and a ghost Button for Custom field.",
+];
+
+async function buildPropertyPickerComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    axisName: "State",
+    values: PROPERTY_PICKER_STATES,
+    x: 80,
+    y: 19700,
+    xStep: 440,
+    createVariant: createPropertyPickerVariant,
+    configureProperties: configurePropertyPickerProperties,
+    autoReorganize: true,
+    description: PROPERTY_PICKER_DESCRIPTION,
+  });
+}
+
+async function updatePropertyPickerComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    axisName: "State",
+    values: PROPERTY_PICKER_STATES,
+    xStep: 440,
+    createVariant: createPropertyPickerVariant,
+    updateVariant: updatePropertyPickerVariant,
+    parseVariantName: parsePropertyPickerVariantName,
+    configureProperties: configurePropertyPickerProperties,
+    autoReorganize: true,
+    description: PROPERTY_PICKER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildPropertyPickerComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    build: buildPropertyPickerComponent,
   });
 }
 

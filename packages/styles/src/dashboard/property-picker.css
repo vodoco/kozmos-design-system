@@ -1,0 +1,80 @@
+/* PropertyPicker (CLOUD-UI-003): Pointr Cloud's "+ Add additional field".
+   The button is a subtle Button the width of its form (GAP-200, decision
+   135). Its popup is a Popover as wide as the button, at most Cloud's 360
+   tall (22.5rem; no size token is 360) and never taller than the room below
+   or above it, holding the search, the tabs while anything is suggested, the
+   list, which scrolls alone, and the custom field action, fixed after it.
+   The list is a Listbox drawn flat in the popup: the popup is its box, so
+   the list's own border, fill, shadow and padding give way (as TimePicker's
+   panel flattens its Listbox). Every side is logical. */
+@kozmos-owned {
+  .kozmos-property-picker {
+    display: block;
+    min-inline-size: 0;
+  }
+  .kozmos-property-picker .kozmos-property-picker-trigger {
+    inline-size: 100%;
+  }
+  /* The class twice: Popover's own rule (w-72, p-4) weighs one, and a
+     sheet names no Core part's class (bundle-analyzer). */
+  .kozmos-property-picker-popup.kozmos-property-picker-popup {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    box-sizing: border-box;
+    inline-size: var(--radix-popover-trigger-width, 22.5rem);
+    max-block-size: min(
+      22.5rem,
+      var(--radix-popover-content-available-height, 22.5rem)
+    );
+    padding: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+  .kozmos-property-picker-tabs {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+  .kozmos-property-picker-tabs > .kozmos-property-picker-tab-list {
+    display: flex;
+  }
+  .kozmos-property-picker-tab-list > [role="tab"] {
+    flex: 1 1 0;
+  }
+  .kozmos-property-picker-tabs > .kozmos-property-picker-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+  .kozmos-property-picker-tabs > .kozmos-property-picker-panel[hidden] {
+    display: none;
+  }
+  /* Three classes: the Listbox's own rule weighs one, its focus ring two,
+     and the scoped preflight's border reset one, with proximity (GAP-52). */
+  .kozmos-property-picker-popup
+    .kozmos-property-picker-list.kozmos-property-picker-list {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    max-block-size: none;
+    overflow-y: auto;
+    padding: 0;
+    border-width: 0;
+    background-color: transparent;
+  }
+  /* Its drop shadow goes; its focus ring, a shadow too, stays. */
+  .kozmos-property-picker-popup
+    .kozmos-property-picker-list.kozmos-property-picker-list:not(
+      :focus-visible
+    ) {
+    box-shadow: none;
+  }
+  .kozmos-property-picker-status:empty {
+    display: none;
+  }
+  .kozmos-property-picker-popup .kozmos-property-picker-custom {
+    flex: none;
+    justify-content: flex-start;
+    inline-size: 100%;
+  }
+}

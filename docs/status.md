@@ -28,7 +28,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
-| Dashboard              | 5          | 5/5   | 5/5       | 0/5     | 0/5   | 0/5     | 0/5     | 0/5         |
+| Dashboard              | 6          | 6/6   | 6/6       | 0/6     | 0/6   | 0/6     | 0/6     | 0/6         |
 
 ## Core
 
@@ -192,6 +192,7 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 | KeyValueList       | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 | OpeningHoursEditor | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 | PropertyField      | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| PropertyPicker     | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 | RatingEditor       | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 
 ## Code Connect Not Applicable
@@ -204,18 +205,18 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 ## Summary
 
-- Web components: 129/129
-- Web stories: 129/129
-- Web tests: 129/129
-- Web Code Connect files: 106/124
-- Web Code Connect scaffolds: 5/124
-- Web Code Connect linked: 101/124
-- iOS components: 114/129
-- iOS Code Connect files: 101/124
-- iOS Code Connect scaffolds: 0/124
-- iOS Code Connect linked: 101/124
-- Android components: 115/129
-- Android Code Connect files: 101/124
-- Android Code Connect scaffolds: 0/124
-- Android Code Connect linked: 101/124
-- Code Connect not applicable: 5/129
+- Web components: 130/130
+- Web stories: 130/130
+- Web tests: 130/130
+- Web Code Connect files: 107/125
+- Web Code Connect scaffolds: 6/125
+- Web Code Connect linked: 101/125
+- iOS components: 114/130
+- iOS Code Connect files: 101/125
+- iOS Code Connect scaffolds: 0/125
+- iOS Code Connect linked: 101/125
+- Android components: 115/130
+- Android Code Connect files: 101/125
+- Android Code Connect scaffolds: 0/125
+- Android Code Connect linked: 101/125
+- Code Connect not applicable: 5/130

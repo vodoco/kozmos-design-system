@@ -15899,6 +15899,115 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// --- PropertyPicker (CLOUD-UI-003), a Dashboard module ---------------------------
+
+// React's PropertyPicker: the subtle Button in Cloud's 368 column, and under
+// it, 4 below, the popup as wide: the labelled search, the tabs only while
+// something is suggested, the property rows (name over type and
+// description), the empty state when the search finds nothing, and the
+// Custom field action. Every paint is a variable's.
+section("PropertyPicker: the subtle Button and its popup");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const painted = {};
+  for (const value of ["Closed", "Open", "Suggested", "Empty"]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    let error = null;
+    try {
+      await plugin.updatePropertyPickerVariant(component, {
+        value,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    painted[value] = component;
+    ok(
+      !error && stats.warnings.length === 0,
+      `${value}: painted, no warnings (${error ? error.message : stats.warnings.join(" | ")})`,
+    );
+    const unbound = component
+      .findAll(() => true)
+      .flatMap((node) =>
+        [...(node.fills || []), ...(node.strokes || [])]
+          .filter((paint) => paint.type === "SOLID" && !boundVariableName(paint))
+          .map(() => node.name),
+      );
+    ok(
+      unbound.length === 0,
+      `${value}: every paint is a variable's (${unbound.join(", ")})`,
+    );
+  }
+  const closed = painted.Closed;
+  const trigger = closed && named(closed, "Trigger");
+  ok(
+    Boolean(
+      closed &&
+      closed.name === "State=Closed" &&
+      closed.width === 368 &&
+      closed.children.length === 1 &&
+      trigger &&
+      trigger.width === 368 &&
+      trigger.height === 44 &&
+      boundVariableName(trigger.fills[0]) ===
+        "Subtle Buttons/themed/button/background/idle" &&
+      named(trigger, "Label") &&
+      named(trigger, "Label").characters === "Add additional field",
+    ),
+    `Closed: the subtle Button alone, 368 by 44, its words the Label text (${trigger && [trigger.width, trigger.height, boundVariableName(trigger.fills[0])].join(" ")})`,
+  );
+  const open = painted.Open;
+  const popup = open && named(open, "Popup");
+  ok(
+    Boolean(
+      popup &&
+      open.itemSpacing === 4 &&
+      popup.width === 368 &&
+      popup.paddingLeft === 12 &&
+      popup.itemSpacing === 8 &&
+      boundVariableName(popup.fills[0]) === "Surface/0" &&
+      named(popup, "Search Label").characters === "Search properties" &&
+      !named(popup, "Tabs") &&
+      named(popup, "List").children.length === 5 &&
+      named(popup, "Access Programs Type").characters ===
+        "Array · Named access program accepted" &&
+      named(popup, "Custom Field"),
+    ),
+    "Open: 4 below the button, as wide; a labelled search, no tabs, five rows of name over type and description, then Custom field",
+  );
+  const suggested = painted.Suggested && named(painted.Suggested, "Popup");
+  ok(
+    Boolean(
+      suggested &&
+      named(suggested, "Tabs") &&
+      named(suggested, "Suggested Tab Label").characters === "Suggested" &&
+      named(suggested, "Others Tab Label").characters === "Others" &&
+      named(suggested, "List").children.map((row) => row.name).join() ===
+        "Access Restrictions,Description,Has Assistance,Has Wifi,Occupancy Status",
+    ),
+    "Suggested: the Suggested and Others tabs over Booth's five",
+  );
+  const empty = painted.Empty && named(painted.Empty, "Popup");
+  ok(
+    Boolean(
+      empty &&
+      !named(empty, "List") &&
+      named(empty, "Empty Title").characters === "No properties match" &&
+      named(empty, "Custom Field"),
+    ),
+    "Empty: the empty state where the list was, and Custom field still after it",
+  );
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("PropertyPicker"),
+    ) === JSON.stringify({ State: ["Closed", "Open", "Suggested", "Empty"] }),
+    "the set's one axis is State: Closed (its default), Open, Suggested, Empty",
+  );
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(
