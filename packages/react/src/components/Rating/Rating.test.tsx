@@ -71,6 +71,71 @@ describe("Rating", () => {
     expect(screen.queryByRole("radiogroup")).toBeNull();
   });
 
+  describe("read-only halves (decision 181)", () => {
+    // What each star draws: full, half or empty, start to end.
+    const drawn = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll('[role="img"] > *')).map((star) =>
+        star.querySelector("[data-rating-half]")
+          ? "half"
+          : star.matches(".fill-data-yellow")
+            ? "full"
+            : "empty",
+      );
+
+    it.each([
+      [4.3, 4.5, ["full", "full", "full", "full", "half"]],
+      [4.2, 4, ["full", "full", "full", "full", "empty"]],
+      [4.25, 4.5, ["full", "full", "full", "full", "half"]],
+      [0.4, 0.5, ["half", "empty", "empty", "empty", "empty"]],
+      [2.75, 3, ["full", "full", "full", "empty", "empty"]],
+    ])(
+      "rounds %s to the nearest half, %s, and says so",
+      (value, rounded, stars) => {
+        const { container } = render(<Rating readOnly value={value} />);
+        expect(
+          screen.getByRole("img", {
+            name: `Rated ${rounded} out of 5 stars`,
+          }),
+        ).toBeVisible();
+        expect(drawn(container)).toEqual(stars);
+      },
+    );
+
+    it("gives a caller's label the rounded value it draws", () => {
+      const valueLabel = vi.fn(() => "4,5 sur 5");
+      render(<Rating readOnly value={4.3} valueLabel={valueLabel} />);
+      expect(valueLabel).toHaveBeenCalledWith(4.5, 5, "stars");
+      expect(screen.getByRole("img", { name: "4,5 sur 5" })).toBeVisible();
+    });
+
+    it("draws the half as the filled star clipped to its inline start", () => {
+      // start-0, a logical side: the left half in a left-to-right page and
+      // the right half in a right-to-left one, over the same empty star.
+      const { container } = render(<Rating readOnly value={1.5} />);
+      const half = container.querySelector("[data-rating-half]");
+      expect(half).toHaveClass("start-0", "w-1/2", "overflow-hidden");
+      expect(half?.querySelector("svg")).toHaveClass(
+        "h-6",
+        "w-6",
+        "fill-data-yellow",
+        "text-data-yellow",
+      );
+      expect(half?.parentElement?.querySelector(":scope > svg")).toHaveClass(
+        "h-6",
+        "w-6",
+        "text-muted-foreground",
+      );
+    });
+
+    it("leaves editing whole: a half is only ever read", () => {
+      const { container } = render(<Rating onChange={vi.fn()} value={4.5} />);
+      expect(container.querySelector("[data-rating-half]")).toBeNull();
+      expect(
+        screen.getAllByRole("radio").map((r) => r.getAttribute("aria-checked")),
+      ).toEqual(["false", "false", "false", "false", "false"]);
+    });
+  });
+
   it("takes its words from the caller", () => {
     // "Rating" and "Rate 3 out of 5 stars" were fixed English, and the second
     // says "stars" whatever the scale is.

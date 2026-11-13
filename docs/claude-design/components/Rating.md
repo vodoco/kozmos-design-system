@@ -36,7 +36,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `RatingProps`, which exte
 
 - `value`: `number`, optional, default `0`.
 
-  `0` is unanswered. Choosing what is already chosen returns to it.
+  `0` is unanswered. Choosing what is already chosen returns to it. A
+  read-only star rating draws a score that is not whole to the nearest
+  half: `Math.round(value * 2) / 2`, so 4.3 is 4.5 and 4.2 is 4.
 
 - `onChange`: `(value: number) => void`, optional.
 - `readOnly`: `boolean`, optional, default `false`.
@@ -52,7 +54,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `RatingProps`, which exte
 
 - `valueLabel`: `(value: number, max: number, variant: RatingVariant) => string`, optional, default `defaultValueLabel`.
 
-  How a chosen rating reads when `readOnly`.
+  How a chosen rating reads when `readOnly`. On the stars it is given the
+  value rounded to the nearest half, as it is drawn: 4.3 reads as 4.5.
 
 - `children`: `ReactNode`, optional.
 

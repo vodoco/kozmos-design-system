@@ -9088,6 +9088,84 @@ section("Rating");
     ) === JSON.stringify({ scale: "Thumbs", value: "2", state: "Readonly" }),
     "and accepts the three values it does have",
   );
+
+  // Decision 181: a read-only star rating shows a score to the nearest half.
+  // The halves are a read-only star's only: editing stays whole stars, and
+  // thumbs are a choice.
+  ok(
+    Array.isArray(ratingAxes && ratingAxes.Value) &&
+      ["0.5", "1.5", "2.5", "3.5", "4.5"].every(
+        (half) => ratingAxes.Value.indexOf(half) !== -1,
+      ),
+    `the Value axis takes the halves, 0.5 to 4.5 (got ${JSON.stringify(ratingAxes && ratingAxes.Value)})`,
+  );
+  ok(
+    JSON.stringify(
+      plugin.parseRatingVariantName("Scale=Stars, Value=4.5, State=Readonly"),
+    ) === JSON.stringify({ scale: "Stars", value: "4.5", state: "Readonly" }),
+    "a read-only star rating draws a half",
+  );
+  ok(
+    plugin.parseRatingVariantName("Scale=Stars, Value=4.5, State=Default") ===
+      null &&
+      plugin.parseRatingVariantName(
+        "Scale=Thumbs, Value=1.5, State=Readonly",
+      ) === null,
+    "and nothing else does: editing is whole stars, and thumbs are a choice",
+  );
+  if (typeof plugin.updateRatingVariant === "function") {
+    const halves = (await paint("Stars", "4.5", "Readonly")).component;
+    ok(
+      halves.name === "Scale=Stars, Value=4.5, State=Readonly",
+      `a half variant is named for its value (got "${halves.name}")`,
+    );
+    const glyphOf = (cell) => cell.children[0];
+    ok(
+      halves.children
+        .slice(0, 4)
+        .every((cell) => glyphOf(cell).name === "Star / filled"),
+      "4.5 fills four stars",
+    );
+    const half = glyphOf(halves.children[4]);
+    ok(
+      half && half.name === "Star / half" && half.children.length === 2,
+      `and draws the fifth as a half (got "${half && half.name}")`,
+    );
+    const [under, clip] = half ? half.children : [];
+    const over = clip && clip.children[0];
+    ok(
+      under &&
+        under.name === "Star / empty" &&
+        under.width === 22 &&
+        under.fills.length === 0 &&
+        boundVariableName(under.strokes[0]) === "Colors/foreground/500",
+      "the empty star underneath, as an empty star is drawn",
+    );
+    ok(
+      clip &&
+        clip.name === "Half Clip" &&
+        clip.clipsContent === true &&
+        clip.x === 0 &&
+        clip.width === 11 &&
+        clip.height === 22,
+      "a clip of its start half, the left",
+    );
+    ok(
+      over &&
+        over.name === "Star / filled" &&
+        over.width === 22 &&
+        over.x === 0 &&
+        boundVariableName(over.fills[0]) === "Data/Yellow",
+      "holding the filled star, the same size and the same yellow",
+    );
+    const whole = (await paint("Stars", "4", "Readonly")).component;
+    ok(
+      whole.children.every(
+        (cell) => glyphOf(cell).name !== "Star / half",
+      ),
+      "a whole score draws no half",
+    );
+  }
 }
 
 // --- Card's padding, and the second axis the helper now takes ------------------------
