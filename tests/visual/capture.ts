@@ -63,9 +63,9 @@ export async function drawStory(
   }
   // Nothing from outside this Storybook. A remote photo becomes one grey
   // pixel, a taxonomy symbol a circle, and anything else is refused —
-  // Google Fonts included, so text is drawn in the image's own fonts,
-  // which never update underneath a baseline. A run then depends on no
-  // CDN and no map server.
+  // Google Fonts included, so text is drawn in the review's own committed
+  // font (tests/visual/fonts), which never updates underneath a baseline.
+  // A run then depends on no CDN and no map server.
   await page.route("**/*", (route) => {
     const request = route.request();
     if (baseURL && request.url().startsWith(baseURL)) {

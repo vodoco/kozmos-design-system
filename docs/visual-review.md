@@ -22,21 +22,23 @@ gives a `DesignConfigProvider`.
   and 1 KB. What a visually hidden box holds (`sr-only`, Radix's `VisuallyHidden`: a box clipped to
   nothing) is left out: it is never drawn, though its text keeps a layout box.
 - **Nothing from outside.** The suite refuses every request that is not to its own Storybook: remote
-  photos become one grey pixel, and Pointr's taxonomy symbols a filled circle, and Google Fonts are refused, so text is drawn in the image's own
-  fonts, which never update underneath a baseline. Map canvases (WebGL, from tiles) and the slots of
-  outside symbols are **masked** (drawn as solid magenta): their size and place are compared, their
-  pixels are not. A symbol scaled into its slot rasterised a pixel or two differently from run to run.
-- **Blind to Medium against Semibold.** The image's sans draws weights 500 and 600 alike (measured on
-  16 Oct: LocationPin's label read the same pixels at both), so a change between them shows no
-  difference here. Read a weight with `getComputedStyle`, as `check-location-pin` does, and check
-  the layout in a wide sans: CI's other browser jobs, in the same image with the runner's DejaVu
-  Sans, draw 600 wider.
+  photos become one grey pixel, and Pointr's taxonomy symbols a filled circle, and Google Fonts are
+  refused. Map canvases (WebGL, from tiles) and the slots of outside symbols are **masked** (drawn as
+  solid magenta): their size and place are compared, their pixels are not. A symbol scaled into its
+  slot rasterised a pixel or two differently from run to run.
+- **Its own font.** Text is drawn in Roboto, a variable font committed in `tests/visual/fonts`, which
+  `fonts.conf` makes the image's `system-ui` and `sans-serif`; the image's own fonts follow it for
+  scripts Roboto lacks. Until 13 Nov the image resolved Kozmos's stack to WenQuanYi Zen Hei, which
+  drew 700 like 400 and 600 like 500, so a lost weight passed. `tests/visual/environment.visual.ts`
+  fails if the stack resolves to anything but Roboto, or if 400, 500, 600 and 700 do not each draw
+  differently. Changing the font changes every baseline.
 - **Sensitive to token changes.** Colours are compared at `threshold: 0.02`: this permits tiny
   anti-aliasing rounding differences. Playwright's default tolerance passed a whole token step
   (the Skeleton's move from background/100 to /200) as unchanged. See the configuration's
   measured comparison; this is not a claim of byte-identical screenshots.
 - **Still.** The clock is fixed (2026-01-15 10:30 UTC), `Math.random` is seeded, animations and
-  transitions are prevented before the first render, the caret is hidden, and the page asks for reduced motion.
+  transitions are prevented before the first render, the caret is hidden, and the page prefers
+  reduced motion (a context option; `environment.visual.ts` checks the page sees it).
 - **Opting out.** Give a story the tag `no-visual`, with a comment saying why.
 
 The suite is `tests/visual/stories.visual.ts` for React's stories and
