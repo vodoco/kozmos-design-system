@@ -100,6 +100,81 @@ final class KozmosPageHeaderTests: XCTestCase {
         }
     }
 
+    private static func isRed(_ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) -> Bool {
+        a > 200 && r > 200 && g < 60 && b < 60
+    }
+
+    private static func redAction(width: CGFloat) -> some View {
+        Color(red: 1, green: 0, blue: 0).frame(width: width, height: 44)
+    }
+
+    /// An actions slot that draws nothing (an `if` that leaves its button
+    /// out) reserves nothing: no 16 at the row's end. A title as wide as the
+    /// text column less 8 fits on one line with no actions slot; with 16
+    /// reserved, it would wrap and the header would grow.
+    @MainActor func testAnActionsSlotThatDrawsNothingReservesNothing() throws {
+        let titleText = "Map content and levels"
+        let title = try DrawnPixels.draw(
+            Text(titleText).font(.system(size: 24, weight: .bold)).fixedSize(), scale: 1).size
+        let side = KozmosContainerInset.padding(.panel, width: 0)
+        let width = (title.width + 8 + 2 * side).rounded(.up)
+        let bare = try draw(KozmosPageHeader(titleText, tone: .default, inset: .panel), width: width).size.height
+        let shown = false
+        let emptied = try draw(KozmosPageHeader(titleText, tone: .default, inset: .panel, actions: {
+            if shown { KozmosButton("Save changes") {} }
+        }), width: width).size.height
+        XCTAssertEqual(emptied, bare, accuracy: 0.5,
+                       "an empty actions slot narrowed the text and the title wrapped (\(emptied) against \(bare))")
+    }
+
+    /// React's row wraps (`flex-wrap`, the text's basis 256): where the text's
+    /// 256, the 16 and the actions don't fit, the actions go under the text,
+    /// 16 below it, at its start, and the header grows by them. In a 320
+    /// window (288 inside) two buttons wrap; right to left they start at the
+    /// right.
+    @MainActor func testActionsThatDoNotFitWrapUnderTheText() throws {
+        let width: CGFloat = 320
+        let side = KozmosContainerInset.padding(.window, width: width)
+        let titleText = "Map content for Terminal A"
+        let bare = try draw(KozmosPageHeader(titleText, tone: .default), width: width).size.height
+        // The text column's height: the header less its 32 above and 24 below.
+        let textHeight = bare - 32 - 24
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let header = KozmosPageHeader(titleText, tone: .default, actions: {
+                Self.redAction(width: 100)
+                Self.redAction(width: 100)
+            }).environment(\.layoutDirection, direction)
+            let drawn = try draw(header, width: width)
+            let box = try XCTUnwrap(drawn.boundingBox(where: Self.isRed), "\(direction): no actions drawn")
+            XCTAssertEqual(box.minY, 32 + textHeight + 16, accuracy: 0.5,
+                           "\(direction): the actions are not 16 under the text (\(box.minY))")
+            XCTAssertEqual(drawn.size.height, bare + 16 + 44, accuracy: 0.5,
+                           "\(direction): the header did not grow by the 16 and the actions")
+            if direction == .leftToRight {
+                XCTAssertEqual(box.minX, side, accuracy: 0.5, "the wrapped actions are not at the text's start")
+            } else {
+                XCTAssertEqual(width - box.maxX, side, accuracy: 0.5, "the wrapped actions are not at the right")
+            }
+        }
+    }
+
+    /// Where the text's 256, the 16 and the action fit, the action stays on
+    /// the title's line, at the end, centred on it, and the header is no
+    /// taller than with no action.
+    @MainActor func testActionsThatFitStayOnTheTitlesLine() throws {
+        let width: CGFloat = 600
+        let side = KozmosContainerInset.padding(.window, width: width)
+        let bare = try draw(KozmosPageHeader("Settings", tone: .default), width: width).size.height
+        let drawn = try draw(KozmosPageHeader("Settings", tone: .default, actions: {
+            Self.redAction(width: 100)
+        }), width: width)
+        let box = try XCTUnwrap(drawn.boundingBox(where: Self.isRed), "no action drawn")
+        XCTAssertEqual(drawn.size.height, bare, accuracy: 0.5, "the action grew the header")
+        XCTAssertEqual(width - box.maxX, side, accuracy: 0.5, "the action is not at the end")
+        XCTAssertGreaterThan(box.minY, 16)
+        XCTAssertLessThan(box.minY, 32)
+    }
+
     /// The info button is 8 after the title, on its line.
     @MainActor func testTheInfoButtonIsAfterTheTitle() throws {
         let drawn = try draw(KozmosPageHeader("Settings", tone: .default, info: {

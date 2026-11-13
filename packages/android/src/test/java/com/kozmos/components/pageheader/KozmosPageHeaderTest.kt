@@ -7,20 +7,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.ReadSemantics
+import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.readSemantics
@@ -115,7 +119,8 @@ class KozmosPageHeaderTest {
 
     @Test
     fun theSlotsAreReadInOrderAndTheActionsSitAtTheEnd() {
-        val tree = read {
+        // 600 wide: 568 inside holds a 256 text, the 16 gap and an 80 action.
+        val tree = read(width = 600) {
             KozmosPageHeader(
                 title = "Settings",
                 modifier = Modifier.testTag("header"),
@@ -141,6 +146,90 @@ class KozmosPageHeaderTest {
         assertEquals("the actions at the end, 16 in", 16f, header.right - save.right, 0.5f)
         assertEquals("the actions centred on the title's line", title.center.y, save.center.y, 0.5f)
         assertEquals("24 under the description: a 44 action makes it no taller", 24f, header.bottom - description.bottom, 0.5f)
+    }
+
+    // React's row wraps (flex-wrap, gap 16, the text's basis 256): the
+    // actions stay on the title's line where 256 + 16 + their width fits,
+    // and go under the text, at its start, where it does not.
+    private fun ReadSemantics.text(words: String): Rect =
+        unmerged.first { it.texts.contains(words) }.frame.let {
+            Rect(it.left / density, it.top / density, it.right / density, it.bottom / density)
+        }
+
+    private val longTitle = "Map content and every feature on every level of the site"
+
+    // Each button in a tagged box: the box is the button's layout box, its
+    // 48 touch target, which the row places; the 44 surface is 2 inside it.
+    @Composable
+    private fun twoActions() {
+        Box(Modifier.testTag("import")) { KozmosButton(onClick = {}) { Text("Import") } }
+        Box(Modifier.testTag("publish")) { KozmosButton(onClick = {}) { Text("Publish") } }
+    }
+
+    @Test
+    fun aLongTitleAndTwoActionsWrapUnderTheTextAtPhoneWidth() {
+        val tree = read(width = 320) {
+            KozmosPageHeader(
+                title = longTitle,
+                modifier = Modifier.testTag("header"),
+                description = "Manage the site's map.",
+                actions = { twoActions() }
+            )
+        }
+        val title = tree.text(longTitle)
+        val description = tree.frame("Manage the site's map.")
+        val import = tree.tagged("import")
+        val publish = tree.tagged("publish")
+        assertEquals("the text takes the 288 inside", 288f, description.right.coerceAtLeast(title.right) - title.left, 24f)
+        assertEquals("the actions 16 under the text", 16f, import.top - description.bottom, 0.5f)
+        assertEquals("at the text's start", title.left, import.left, 0.5f)
+        assertEquals("8 apart on their own line", 8f, publish.left - import.right, 0.5f)
+        assertEquals("on one line", import.top, publish.top, 0.5f)
+        assertEquals("the header grows by them, 24 below", 24f, tree.tagged("header").bottom - import.bottom, 0.5f)
+        assertEquals("their own height, the 48 touch target", 48f, import.height, 0.5f)
+    }
+
+    @Test
+    fun wrappedActionsSitAtTheTextsStartRightToLeft() {
+        val tree = read(width = 320) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                KozmosPageHeader(title = longTitle, modifier = Modifier.testTag("header"), actions = { twoActions() })
+            }
+        }
+        val header = tree.tagged("header")
+        val import = tree.tagged("import")
+        assertEquals("the first action at the right, the text's start, 16 in", 16f, header.right - import.right, 0.5f)
+        assertEquals("under the title", 16f, import.top - tree.text(longTitle).bottom, 0.5f)
+    }
+
+    @Test
+    fun aShortTitleAndOneActionStayOnTheTitlesLineWhereTheyFit() {
+        val bare = read(width = 600) { KozmosPageHeader(title = "Settings", modifier = Modifier.testTag("header")) }
+        val tree = read(width = 600) {
+            KozmosPageHeader(
+                title = "Settings",
+                modifier = Modifier.testTag("header"),
+                actions = { Box(Modifier.testTag("save")) { KozmosButton(onClick = {}) { Text("Save changes") } } }
+            )
+        }
+        val header = tree.tagged("header")
+        val title = tree.frame("Settings")
+        val save = tree.tagged("save")
+        assertEquals("at the end, the window's 16 in", 16f, header.right - save.right, 0.5f)
+        assertEquals("centred on the title's line", title.center.y, save.center.y, 0.5f)
+        assertEquals("the header no taller than with no actions", bare.tagged("header").height, header.height, 0.5f)
+    }
+
+    @Test
+    fun anActionsSlotThatDrawsNothingReservesNoGap() {
+        // A word with no break, broken by character: it fills what it is given.
+        val word = "i".repeat(160)
+        val without = read(width = 600) { KozmosPageHeader(title = word) }.text(word)
+        val nothing = read(width = 600) {
+            KozmosPageHeader(title = word, actions = { if (word.isEmpty()) Text("Save") })
+        }.text(word)
+        assertEquals("the title is as wide as with no actions", without.right, nothing.right, 0.5f)
+        assertEquals("and as tall", without.height, nothing.height, 0.5f)
     }
 }
 

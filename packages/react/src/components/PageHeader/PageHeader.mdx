@@ -41,7 +41,13 @@ within a section; `size="lg"` at Heading 2's 30/36, for a landing page such as H
 
 `info` sits on the title's first line, after it: an `IconButton` with its own label, opening a Popover or a Tooltip.
 It is not part of the heading, so a screen reader reads the title alone. `actions` sit at the end of the title's line,
-centred on it, and wrap under the text where the page is too narrow for both. In right to left they are at the left.
+centred on it, and wrap under the text where the page is too narrow for both: the text keeps at least 256 (16rem), so
+they stay on the title's line only where 256, the 16 gap and the actions fit, and otherwise sit 16 under the text, at
+its start. In right to left they are at the left. On a phone (320 wide, 288 inside) any button wraps.
+
+SwiftUI's and Compose's `KozmosPageHeader` follow the same rule: the actions on the title's line where 256, 16 and the
+actions fit, and otherwise 16 under the text at its start (at the right in right to left). An actions slot that draws
+nothing, such as an `if` that leaves its button out, takes no room and no gap.
 
 <Canvas>
   <Story of={PageHeaderStories.WithInfo} />
