@@ -2,12 +2,12 @@ import figma from "@figma/code-connect";
 import { RatingEditor } from "./RatingEditor";
 
 const ratingEditorUrl =
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD";
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2480-12045";
 
 /**
  * Figma Code Connect: RatingEditor, a Dashboard module (decision 183).
  * The set is not in the live file yet: its node id is a placeholder.
- * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD
+ * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2480-12045
  */
 figma.connect(RatingEditor, ratingEditorUrl, {
   variant: { State: "Default" },

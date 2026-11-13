@@ -4,11 +4,11 @@ import { PropertyPicker } from "./PropertyPicker";
 /**
  * Figma Code Connect: PropertyPicker, a Dashboard module (decision 183).
  * The set is not in the live file yet: its node id is a placeholder.
- * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD
+ * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2480-12212
  */
 figma.connect(
   PropertyPicker,
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2480-12212",
   {
     props: {
       label: figma.string("Label"),

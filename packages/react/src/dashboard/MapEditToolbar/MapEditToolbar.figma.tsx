@@ -23,9 +23,10 @@ import { MapEditToolbar } from "./MapEditToolbar";
  * (CLOUD-UI-005). Overflow has no prop: in code the toolbar overflows into
  * its More menu when the map is narrower than its items.
  * The set is not in the live file yet: its node id is a placeholder.
- * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD
+ * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2480-12604
  */
-const URL = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD";
+const URL =
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2480-12604";
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "Create" },
