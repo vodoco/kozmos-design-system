@@ -5,6 +5,8 @@ import { Check, ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 
 import { cn, mergeAriaIds } from "../../utils";
 
+import { resolveLocale } from "../Calendar/calendar-dates";
+import { Counter } from "../Counter";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { inertOutside } from "../../utils/modal-inert";
@@ -286,28 +288,126 @@ const SelectLabel = React.forwardRef<
 ));
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
+export interface SelectItemProps extends React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Item
+> {
+  /**
+   * A count beside the option's words (GAP-164), as a neutral Counter at the
+   * row's end, before the check's place. It sits outside the item text, so
+   * the closed select shows the words alone. A number is written in the
+   * app's grouping (the document's `lang`, as Calendar reads it: "1,234",
+   * "1.234" in German), and the option is named by its words, then its
+   * count: "POI, 96". A caller's own `aria-label` wins.
+   */
+  count?: React.ReactNode;
+}
+
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+const subscribeToNothing = () => () => {};
+const serverLocale = () => "en-US";
+
+/**
+ * The app's language, as Calendar reads it (resolveLocale): the document's
+ * `lang`, then the browser's. A server, and hydration, write en-US; the
+ * client's first render after that writes the app's own.
+ */
+function useAppLocale() {
+  return React.useSyncExternalStore(
+    subscribeToNothing,
+    () => resolveLocale(),
+    serverLocale,
+  );
+}
+
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  // Combobox's row (owned-selection.css): the words, then the check at the
-  // end, a light row under the pointer or the keyboard.
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "kozmos-reset kozmos-option select-none data-[disabled]:pointer-events-none",
-      className,
-    )}
-    {...props}
-  >
-    <span className="kozmos-reset kozmos-option-content">
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-    </span>
-    <SelectPrimitive.ItemIndicator asChild>
-      <Check aria-hidden="true" className="kozmos-reset kozmos-option-check" />
-    </SelectPrimitive.ItemIndicator>
-  </SelectPrimitive.Item>
-));
+  SelectItemProps
+>(({ className, children, count, ...props }, ref) => {
+  const textId = React.useId();
+  const countId = React.useId();
+  const locale = useAppLocale();
+  const hasCount = count !== undefined && count !== null && count !== false;
+  // A number in the app's grouping, as SwiftUI and Compose write it.
+  const countText = !hasCount
+    ? null
+    : typeof count === "number"
+      ? new Intl.NumberFormat(locale).format(count)
+      : count;
+  const callerLabel = props["aria-label"];
+  const callerLabelledBy = props["aria-labelledby"];
+  const plain = (node: React.ReactNode) =>
+    typeof node === "string" || typeof node === "number";
+  const plainName =
+    hasCount && plain(children) && plain(countText)
+      ? `${children}, ${countText}`
+      : null;
+  // Words or a count that are not plain text: the name is read from what
+  // they draw once they are drawn, in the same "words, count" form.
+  const textRef = React.useRef<HTMLSpanElement>(null);
+  const countRef = React.useRef<HTMLSpanElement>(null);
+  const [drawnName, setDrawnName] = React.useState<string | null>(null);
+  useIsomorphicLayoutEffect(() => {
+    const words = textRef.current?.textContent?.trim();
+    const number = countRef.current?.textContent?.trim();
+    const next =
+      hasCount && !plainName && words && number ? `${words}, ${number}` : null;
+    setDrawnName((current) => (current === next ? current : next));
+  });
+  // Radix names the option by its item text alone, through
+  // aria-labelledby, which would beat a caller's aria-label: that label
+  // wins. With a count, the name is the words, then the count: "POI, 96".
+  let naming: Record<string, string | undefined> | null = null;
+  if (callerLabel !== undefined && callerLabelledBy === undefined) {
+    naming = { "aria-labelledby": undefined };
+  } else if (hasCount && callerLabelledBy === undefined) {
+    const name = plainName ?? drawnName;
+    naming = name
+      ? { "aria-label": name, "aria-labelledby": undefined }
+      : { "aria-labelledby": `${textId} ${countId}` };
+  }
+  return (
+    // Combobox's row (owned-selection.css): the words, then the check at the
+    // end, a light row under the pointer or the keyboard. The check's place
+    // is kept on every row, so counts form one column that a new choice
+    // never moves (decision 1).
+    <SelectPrimitive.Item
+      ref={ref}
+      className={cn(
+        "kozmos-reset kozmos-option select-none data-[disabled]:pointer-events-none",
+        className,
+      )}
+      {...props}
+      {...naming}
+    >
+      <span className="kozmos-reset kozmos-option-content">
+        <SelectPrimitive.ItemText
+          ref={textRef}
+          {...(hasCount ? { id: textId } : null)}
+        >
+          {children}
+        </SelectPrimitive.ItemText>
+      </span>
+      {hasCount ? (
+        <Counter ref={countRef} id={countId} className="shrink-0">
+          {countText}
+        </Counter>
+      ) : null}
+      <span
+        data-slot="select-item-check"
+        className="flex h-4 w-4 shrink-0 items-center justify-center"
+      >
+        <SelectPrimitive.ItemIndicator asChild>
+          <Check
+            aria-hidden="true"
+            className="kozmos-reset kozmos-option-check"
+          />
+        </SelectPrimitive.ItemIndicator>
+      </span>
+    </SelectPrimitive.Item>
+  );
+});
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 const SelectSeparator = React.forwardRef<

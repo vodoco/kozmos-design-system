@@ -64,7 +64,7 @@ class KozmosMaterialSchemeTest {
     // Kozmos's colours, light then dark.
     private fun theme600(dark: Boolean) = if (dark) 0xFF5887F3.toInt() else 0xFF1051E8.toInt()
     private fun page(dark: Boolean) = if (dark) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
-    private fun foreground100(dark: Boolean) = if (dark) 0xFFE8E6E3.toInt() else 0xFF17191C.toInt()
+    private fun foreground0(dark: Boolean) = if (dark) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
     private fun foreground400(dark: Boolean) = if (dark) 0xFFA29D90.toInt() else 0xFF5D626F.toInt()
     private fun borderInput(dark: Boolean) = if (dark) 0xFF8B8474.toInt() else 0xFF747B8B.toInt()
 
@@ -293,23 +293,25 @@ class KozmosMaterialSchemeTest {
         )
     }
 
-    // A checkbox's label is Material's onSurface.
+    // A checkbox's label is full ink, foreground/0, as React's text-foreground
+    // label is (the owner's decision, 11 Nov): it was foreground/100, Kozmos's
+    // onSurface, and never Material's.
 
     @Test
-    fun aCheckboxLabelIsForeground100InLight() = checkboxLabelIn(dark = false)
+    fun aCheckboxLabelIsForeground0InLight() = checkboxLabelIn(dark = false)
 
     @Test
-    fun aCheckboxLabelIsForeground100InDark() = checkboxLabelIn(dark = true)
+    fun aCheckboxLabelIsForeground0InDark() = checkboxLabelIn(dark = true)
 
     private fun checkboxLabelIn(dark: Boolean) {
         val drawn = paparazzi.drawn(frames) {
             OnThePage(dark) { KozmosCheckbox(checked = false, onCheckedChange = {}, label = "Keep me posted") }
         }
         val material = drawn.count(materialOnSurface(dark), tolerance = 1)
-        val ink = drawn.count(foreground100(dark), tolerance = 1)
+        val ink = drawn.count(foreground0(dark), tolerance = 1)
         // Material's ink may be up to 1% of Kozmos's: edge anti-aliasing.
         assertTrue(
-            "a checkbox label in ${mode(dark)}: $ink pixels of foreground/100 ${DrawnPixels.hex(foreground100(dark))}, " +
+            "a checkbox label in ${mode(dark)}: $ink pixels of foreground/0 ${DrawnPixels.hex(foreground0(dark))}, " +
                 "$material of Material's onSurface ${DrawnPixels.hex(materialOnSurface(dark))}",
             ink > 20 && material * 100 <= ink
         )

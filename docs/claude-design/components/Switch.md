@@ -30,6 +30,25 @@ export function SwitchExample() {
 It forwards its ref to `HTMLButtonElement`. Its props are `SwitchProps`, which extends `React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>`.
 
 - `label`: `string`, optional.
+- `description`: `string`, optional.
+
+  A line under the label, read as the switch's description
+  (`aria-describedby`), never as part of its name (GAP-162).
+
+- `showStateLabel`: `boolean`, optional, default `false`.
+
+  Draws the state in words beside the track: `onLabel` or `offLabel`
+  (GAP-162). The words are not read: the switch's own role says on or off
+  in the reader's language.
+
+- `onLabel`: `string`, optional, default `"On"`.
+
+  The word for on, "On" unless given.
+
+- `offLabel`: `string`, optional, default `"Off"`.
+
+  The word for off, "Off" unless given.
+
 - `error`: `boolean | string`, optional.
 - `wrapperClassName`: `string`, optional.
 - `defaultChecked`: `boolean`, optional.

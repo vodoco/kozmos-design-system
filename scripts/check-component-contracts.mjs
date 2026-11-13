@@ -1584,8 +1584,20 @@ assertContains(
 assertContains(
   files.reactCardFigma,
   source.reactCardFigma,
-  "<CardHeader actions={headerActions}>",
-  "Card Code Connect header composition, with its actions (GAP-169)",
+  "<CardHeader actions={headerActions} tone={tone}>",
+  "Card Code Connect header composition, with its actions (GAP-169) and its tone (CLOUD-UI-001)",
+);
+assertContains(
+  files.reactCardFigma,
+  source.reactCardFigma,
+  'tone: figma.enum("HeaderTone", { Default: undefined, Subtle: "subtle" })',
+  "Card Code Connect header tone mapping (CLOUD-UI-001)",
+);
+assertContains(
+  files.reactCardFigma,
+  source.reactCardFigma,
+  "<CardTitle size={titleSize}>{title}</CardTitle>",
+  "Card Code Connect title size (GAP-035)",
 );
 assertContains(
   files.reactCardFigma,
@@ -4725,7 +4737,7 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const PROGRESS_VALUES = ["0", "25", "50", "75", "100"]',
+  'const PROGRESS_VALUES = ["0", "25", "50", "75", "100", "Indeterminate"]',
   "Progress value axis",
 );
 assertContains(
@@ -5025,7 +5037,7 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  "configureTabsProperties(componentSet, stats)",
+  "await configureTabsProperties(componentSet, stats, variableByName)",
   "Tabs text and focus component property binding",
 );
 assertContains(

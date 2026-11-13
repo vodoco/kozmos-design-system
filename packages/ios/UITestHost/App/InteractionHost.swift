@@ -51,6 +51,8 @@ private struct InteractionFixture: View {
         ProcessInfo.processInfo.arguments.dropFirst().first ?? ""] ?? ""
     @State private var otpLength = ProcessInfo.processInfo.arguments.dropFirst().first == "otp-length" ? 7 : 6
     @State private var otpSubmitted: [String] = []
+    /// The Select scenario's chosen option.
+    @State private var selectCategory = "gates"
     // Decision 132's field ends: Search's clear, NumberInput's unit, Slider's readout.
     @State private var searchQuery = "Gate 12"
     @State private var widthMetres: Double? = 15
@@ -144,6 +146,48 @@ private struct InteractionFixture: View {
                 controlAccessibilityReport = report
             }
             if found.count == names.count { return }
+        }
+    }
+
+    /// Where the open system menu draws the Select scenario's words (GAP-164,
+    /// decision 1): each option's label and count as
+    /// `<words> <minX>-<maxX> text <width> <alignment>`, its label's box in
+    /// window points, the width its words take and where in the box they
+    /// sit, after `open <n>`, the menu's opening, and the chosen option.
+    /// The menu is UIKit's, so this reads its labels, not Kozmos's rows.
+    /// Reported once a menu's words have held still for 300ms, each
+    /// once, so neither an opening animation nor UIKit's passing second copy
+    /// of a row is read; polled every 100ms while the fixture is up.
+    @MainActor private func reportMenuWords() async {
+        // Each count as KozmosSelectItem writes it, in this locale's format.
+        let words = ["Gates", 12.formatted(), "Cafes", 1234.formatted(), "Toilets"]
+        var opening = 0, open = false, last = "", still = 0
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            let labels = Self.labels(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+                .flatMap(\.windows)).filter { words.contains($0.text ?? "") }
+            guard !labels.isEmpty else { open = false; still = 0; continue }
+            if !open { open = true; opening += 1 }
+            guard labels.count == words.count, Set(labels.compactMap(\.text)).count == words.count else { still = 0; continue }
+            let frames = words.map { word -> String in
+                let label = labels.first { $0.text == word }!
+                let frame = label.convert(label.bounds, to: nil)
+                let text = label.textRect(forBounds: label.bounds, limitedToNumberOfLines: label.numberOfLines)
+                let alignment = [.natural: "natural", .left: "left", .right: "right", .center: "centre"][label.textAlignment] ?? "justified"
+                return String(format: "%@ %.1f-%.1f text %.1f %@", word, frame.minX, frame.maxX, text.width, alignment)
+            }.joined(separator: "|")
+            let report = "open \(opening); chosen \(selectCategory); \(frames)"
+            still = report == last ? still + 1 : 0
+            last = report
+            if still == 3 { controlAccessibilityReport = report }
+        }
+    }
+
+    /// Every label drawn in `views`, at any depth.
+    private static func labels(_ views: [UIView]) -> [UILabel] {
+        views.flatMap { view -> [UILabel] in
+            guard !view.isHidden, view.alpha > 0 else { return [] }
+            return (view as? UILabel).map { [$0] } ?? labels(view.subviews)
         }
     }
 
@@ -770,6 +814,20 @@ private struct InteractionFixture: View {
             KozmosColorPicker(value: $colour, format: .hex, defaultOpen: true,
                 disabled: scenario == "color-format-disabled", readOnly: scenario == "color-format-readonly")
                 .frame(width: 320)
+        case "select-counts":
+            // Options with a count, one with a count past a thousand, and
+            // one without, in the system's own menu (GAP-164).
+            let choice = Binding(get: { selectCategory }, set: { selectCategory = $0; events.append($0) })
+            KozmosSelect {
+                Text("Category")
+            } content: {
+                KozmosSelectItem(value: "gates", label: "Gates", count: 12, selection: choice)
+                KozmosSelectItem(value: "cafes", label: "Cafes", count: 1234, selection: choice)
+                KozmosSelectItem(value: "toilets", label: "Toilets", selection: choice)
+            }
+            Text(controlAccessibilityReport).accessibilityIdentifier("control-accessibility-report")
+                // One poll per appearance, cancelled when the fixture goes.
+                .task { await reportMenuWords() }
         case "menu-external", "context-menu-external":
             // An item that leaves the app beside one that stays, in the
             // system's menu: SwiftUI's Menu, or a long press's context menu.
