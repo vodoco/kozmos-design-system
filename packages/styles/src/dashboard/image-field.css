@@ -15,7 +15,7 @@
     padding: calc(var(--primitives-layout-spacing-200) * 1px);
     border: var(--primitives-border-width-sm) solid
       var(--semantics-border-subtle);
-    border-radius: var(--semantics-radius-container);
+    border-radius: calc(var(--semantics-radius-container) * 1px);
     color: var(--primitives-colors-foreground-0);
   }
   .kozmos-image-field-header {
@@ -44,9 +44,11 @@
   }
   .kozmos-image-field-item {
     display: grid;
-    grid-template-columns:
-      calc(var(--primitives-layout-sizing-1000) * 1.5px)
-      minmax(0, 1fr);
+    /* A 120 thumbnail: Layout/sizing/1000, 80, and half again. */
+    --kozmos-image-field-thumb: calc(
+      var(--primitives-layout-sizing-1000) * 1.5px
+    );
+    grid-template-columns: var(--kozmos-image-field-thumb) minmax(0, 1fr);
     align-items: start;
     gap: calc(var(--primitives-layout-spacing-100) * 1px)
       calc(var(--primitives-layout-spacing-150) * 1px);
@@ -57,7 +59,7 @@
     grid-row: span 2;
     overflow: hidden;
     aspect-ratio: 1;
-    border-radius: var(--semantics-radius-control);
+    border-radius: calc(var(--semantics-radius-control) * 1px);
     background-color: var(--primitives-colors-background-100);
   }
   .kozmos-image-field .kozmos-image-field-thumb-image {
@@ -126,7 +128,7 @@
     position: relative;
     overflow: hidden;
     inline-size: 100%;
-    border-radius: var(--semantics-radius-control);
+    border-radius: calc(var(--semantics-radius-control) * 1px);
     background-color: var(--primitives-colors-background-100);
     cursor: grab;
     touch-action: none;
