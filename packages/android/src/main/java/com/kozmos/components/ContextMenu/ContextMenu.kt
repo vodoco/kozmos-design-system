@@ -28,6 +28,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -47,7 +49,8 @@ import com.kozmos.components.menu.KozmosMenuItems
  * A context menu on [content] (GAP-155): the same items `KozmosMenu` draws,
  * from the same [KozmosMenuContent], opened where it is asked for.
  *
- * - A long press (touch) or a secondary (right) click opens it at the press.
+ * - A long press (touch) or a secondary (right) click opens it at the press,
+ *   over a button or a row inside too, whose own tap still clicks it.
  * - From a keyboard, the Menu key or Shift+F10, while focus is inside, opens
  *   it at the focused [kozmosContextMenuTarget], or else at the area's start.
  * - TalkBack: the content keeps its own focus stops; nothing is merged, so
@@ -117,17 +120,20 @@ internal fun KozmosContextMenuArea(
                     } else {
                         // Held still past the long-press timeout, as a touch's
                         // long press is. Lifted, moved past the touch slop (a
-                        // scroll or a drag), or taken by another handler, it is
-                        // not one: the block ends before the timeout.
+                        // scroll or a drag), or its movement taken by another
+                        // handler, it is not one: the block ends before the
+                        // timeout. The down itself may be taken: every press
+                        // detector inside (a row's or a button's click) takes
+                        // it, and a long press over one still opens the menu.
                         withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
                             while (true) {
                                 val event = awaitPointerEvent(PointerEventPass.Main)
                                 val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                                if (!change.pressed || change.isConsumed) break
+                                if (!change.pressed || change.takenAfterDown()) break
                                 if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) break
                                 // What a handler after this one did with it.
                                 val after = awaitPointerEvent(PointerEventPass.Final)
-                                if (after.changes.any { it.id == down.id && it.isConsumed }) break
+                                if (after.changes.any { it.id == down.id && it.takenAfterDown() }) break
                             }
                         } == null
                     }
@@ -181,6 +187,14 @@ internal fun KozmosContextMenuArea(
         }
     }
 }
+
+/**
+ * Taken by another handler after it went down: the press's movement, which a
+ * scroller or a drag takes. A down taken as it lands is a press detector's (a
+ * click's), which still lets a long press be the menu's: until 13 Nov a long
+ * press over a pressable row or button never opened it (#517).
+ */
+private fun PointerInputChange.takenAfterDown(): Boolean = isConsumed && !changedToDownIgnoreConsumed()
 
 /** What an area tells the targets inside it. */
 internal class KozmosContextMenuTargets {
