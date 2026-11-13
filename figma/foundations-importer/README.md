@@ -207,6 +207,16 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   label (MapEditToolbar / Label); a chosen tool is the theme fill, a disabled
   item at half strength; dividers `Border/Subtle`, 32 tall. Its icons are UI
   icons the Pointr library holds (decision 121); run Curated Icons first.
+- **ImageField** — Pointr Cloud's image field (CLOUD-UI-004's image part,
+  decisions 133 and 183): a bordered group 368 wide, the `Label` text property
+  in Field / Label and the count in Field / Meta; one image, a 120 × 68 (16:9)
+  thumbnail beside its alt-text Input slot and its Preview (`eye`), Frame
+  (`crop-01`) and Remove (`trash-01`) ghost icon buttons; the FileUpload slot,
+  112 tall; and the URL row, an Input slot and an outline Add. `State` is
+  Default, Full (the count at max, the drop zone and URL row at 50%) and
+  Disabled (the whole field at 50%). The cropper and the full-screen preview
+  are dialogs React opens, not drawn. `crop-01` is not a curated icon yet, so
+  the Frame button draws a typed glyph and the run warns until it is added.
 
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 

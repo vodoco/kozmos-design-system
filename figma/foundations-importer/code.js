@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "a548cfc15f08";
+const PLUGIN_BUILD = "bf743850de17";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1528,6 +1528,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DynamicIsland: 320,
   FeedbackCard: 360,
   BrandLoader: 260,
+  ImageField: 420,
   MapEditToolbar: 320,
   PropertyPicker: 520,
   PropertyField: 220,
@@ -1708,6 +1709,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "KeyValueList",
       "PropertyPicker",
       "MapEditToolbar",
+      "ImageField",
     ],
   },
   {
@@ -2475,6 +2477,33 @@ const COMPONENT_DOCS = [
       "Under reduced motion, the system's or DesignConfigProvider's, the rings and the pin stand still: the drawing in Figma.",
       "Overlay makes the rest of the page inert and busy until the loader goes, takes every pointer event on the scrim and shows the wait cursor; focus is not moved to it, and goes back where it was.",
       "The rings and the pin are decoration, hidden from assistive technology.",
+    ],
+  },
+  {
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    category: "Dashboard",
+    summary:
+      "ImageField is Pointr Cloud's image field (CLOUD-UI-004): up to max images, added by upload or by URL, each a thumbnail with its alt text, a full-screen preview, a cropper to the field's aspect ratio, and Remove. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for a property whose value is images: a place's Images (max 7) or its Logo (max 1).",
+      "Use State Full when the field holds max images, and Disabled when the form is read-only.",
+      "Use FileUpload alone for a file that is not an image, or that needs no preview or frame.",
+    ],
+    api: [
+      "Label maps to ImageField.label; State Disabled to disabled. Full is images.length === max.",
+      "max, accept (JPG and PNG by default), maxSize (bytes) and aspectRatio (16 / 9) are set in code; the hint under the drop zone is written from them.",
+      "onChange hands the product every change: a picked File, a URL, an alt text, a frame. Kozmos uploads nothing; the product uploads and crops.",
+      "A frame (crop) is a rectangle of the image in fractions of its width and height, never pixels.",
+    ],
+    properties: ["State: Default, Full, Disabled", "Label: text"],
+    accessibility: [
+      "The field is a group named by its label; its count is a polite live region.",
+      "The picker offers only the allowed types, and every pick or drop is checked again, with an error naming the file.",
+      "Remove, Preview and Frame are named for their image; focus moves to the next Remove when one goes.",
+      "Preview and the cropper are dialogs: Escape closes them and focus returns to the button that opened them.",
+      "The cropper is one tab stop: the arrow keys move the frame, plus and minus zoom, a pointer drags, and each change is said.",
+      "Every image has an editable alt text.",
     ],
   },
   {
@@ -12032,6 +12061,7 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   // Dashboard modules (decision 183) ride this run: they share no painter
   // with Core, and a lane of one needs no button of its own.
   ["BrandLoader", updateBrandLoaderComponent],
+  ["ImageField", updateImageFieldComponent],
   ["MapEditToolbar", updateMapEditToolbarComponent],
   ["PropertyPicker", updatePropertyPickerComponent],
   // The property editors (CLOUD-UI-004). RatingEditor holds Rating's own
@@ -12327,6 +12357,9 @@ function additionalComponentActionHandlers() {
     "build-brand-loader": buildBrandLoaderComponent,
     "update-brand-loader": updateBrandLoaderComponent,
     "rebuild-brand-loader": rebuildBrandLoaderComponent,
+    "build-image-field": buildImageFieldComponent,
+    "update-image-field": updateImageFieldComponent,
+    "rebuild-image-field": rebuildImageFieldComponent,
     "build-map-edit-toolbar": buildMapEditToolbarComponent,
     "update-map-edit-toolbar": updateMapEditToolbarComponent,
     "rebuild-map-edit-toolbar": rebuildMapEditToolbarComponent,
@@ -19086,6 +19119,12 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "BrandLoader") {
     return {
       Overlay: BRAND_LOADER_OVERLAY,
+    };
+  }
+
+  if (canonicalName === "ImageField") {
+    return {
+      State: IMAGE_FIELD_STATES,
     };
   }
 
@@ -56176,6 +56215,278 @@ async function rebuildBrandLoaderComponent() {
     componentName: "BrandLoader",
     componentSetName: "BrandLoader",
     build: buildBrandLoaderComponent,
+  });
+}
+
+// --- ImageField (Dashboard) ------------------------------------------------
+
+// Pointr Cloud's image field (CLOUD-UI-004's image part, decisions 133 and
+// 183), as React's ImageField and packages/styles/src/dashboard/image-field.css
+// draw it: a bordered group (Border/Subtle, the container radius, 16 in), the
+// label in Field / Label and the "n of max" count in Field / Meta on one line;
+// one image, a 120 thumbnail at 16:9 (68) beside its alt-text field and its
+// Preview (eye), Frame (crop-01) and Remove (trash-01) icon buttons; the drop
+// zone (FileUpload, 112 as Cloud's) with its hint line; and the URL row, an
+// Input and an outline Add. The Core parts are slots, as FeedbackCard draws
+// its Rating and Textarea: they are Core's sets, not this one's. State is
+// what changes the drawing: Default; Full, the count at max and the drop zone
+// and the URL row off; Disabled, the whole field at 50%. The cropper and the
+// preview are dialogs React opens; the set does not draw them.
+const IMAGE_FIELD_STATES = ["Default", "Full", "Disabled"];
+const IMAGE_FIELD_GEOMETRY = {
+  width: 368,
+  padding: 16,
+  spacing: 12,
+  thumbnail: 120,
+  // 120 at 16:9, rounded to the pixel.
+  thumbnailHeight: 68,
+  dropZone: 112,
+  field: 44,
+};
+
+async function createImageFieldVariant(args) {
+  const component = figma.createComponent();
+  await updateImageFieldVariant(component, args);
+  return component;
+}
+
+function parseImageFieldVariantName(name) {
+  return productSdkVariantValues(name, "State", IMAGE_FIELD_STATES);
+}
+
+async function updateImageFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const full = value === "Full";
+  const disabled = value === "Disabled";
+  const geometry = IMAGE_FIELD_GEOMETRY;
+  const inner = geometry.width - 2 * geometry.padding;
+  productSdkVariantRoot(component, "ImageField", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.spacing,
+    padding: geometry.padding,
+    width: geometry.width,
+    height: 320,
+  });
+  productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
+  // A disabled field is drawn at a plain 50%, as a disabled Button is.
+  component.opacity = disabled ? 0.5 : 1;
+
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "SPACE_BETWEEN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: inner,
+    height: 20,
+  });
+  appendWithSizing(component, header, "FILL", "HUG");
+  const label = await productSdkText({
+    name: "Label Text",
+    characters: "Images",
+    styleKey: "fieldLabel",
+    fonts,
+    bold: true,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/0",
+    colorFallback: "#000000",
+    variableByName,
+    stats,
+    width: 200,
+  });
+  appendWithSizing(header, label, "FILL", null);
+  const count = await productSdkText({
+    name: "Count Text",
+    characters: full ? "7 of 7 images" : "1 of 7 images",
+    styleKey: "fieldMeta",
+    fonts,
+    bold: false,
+    fontSize: 12,
+    lineHeight: 16,
+    colorToken: "Colors/foreground/400",
+    colorFallback: "#5D626F",
+    variableByName,
+    stats,
+    width: 120,
+  });
+  count.textAutoResize = "WIDTH_AND_HEIGHT";
+  header.appendChild(count);
+
+  const item = productSdkFrame("Image", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 12,
+    width: inner,
+    height: geometry.thumbnailHeight,
+  });
+  appendWithSizing(component, item, "FILL", "HUG");
+  const thumbnail = await productSdkSlot({
+    name: "Thumbnail Slot",
+    label: "Image",
+    width: geometry.thumbnail,
+    height: geometry.thumbnailHeight,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control + 4,
+    inset: 4,
+  });
+  item.appendChild(thumbnail);
+  const details = productSdkFrame("Details", {
+    spacing: 8,
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    width: inner - geometry.thumbnail - 12,
+    height: geometry.field,
+  });
+  appendWithSizing(item, details, "FILL", "HUG");
+  const alt = await productSdkSlot({
+    name: "Alt Text Slot",
+    label: "Input slot",
+    width: inner - geometry.thumbnail - 12,
+    height: geometry.field,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(details, alt, "FILL", "FIXED");
+  const actions = productSdkFrame("Actions", {
+    direction: "horizontal",
+    spacing: 4,
+  });
+  details.appendChild(actions);
+  for (const [name, iconName, glyph] of [
+    ["Preview Button", "eye", "◉"],
+    ["Frame Button", "crop-01", "⌗"],
+    ["Remove Button", "trash-01", "×"],
+  ]) {
+    const button = await productSdkControlButton({
+      name,
+      glyph,
+      iconName,
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    });
+    // React's ghost IconButton: no fill and no edge until hovered.
+    button.fills = [];
+    button.strokes = [];
+    button.strokeWeight = 0;
+    actions.appendChild(button);
+  }
+
+  const upload = await productSdkSlot({
+    name: "Upload Slot",
+    label: "FileUpload slot · JPG, PNG · Max 2 MB · 16:9",
+    width: inner,
+    height: geometry.dropZone,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  upload.opacity = full ? 0.5 : 1;
+  appendWithSizing(component, upload, "FILL", "FIXED");
+
+  const url = productSdkFrame("URL Row", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "MAX",
+    spacing: 8,
+    width: inner,
+    height: geometry.field,
+  });
+  url.opacity = full ? 0.5 : 1;
+  appendWithSizing(component, url, "FILL", "HUG");
+  const urlField = await productSdkSlot({
+    name: "URL Slot",
+    label: "Input slot · Image URL",
+    width: inner - 80,
+    height: geometry.field,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(url, urlField, "FILL", "FIXED");
+  const add = await productSdkControlButton({
+    name: "Add Button",
+    glyph: "+",
+    label: "Add",
+    filled: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  url.appendChild(add);
+}
+
+function configureImageFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label",
+    "Images",
+    stats,
+  );
+}
+
+const IMAGE_FIELD_DESCRIPTION = [
+  "Kozmos ImageField generated from the React ImageField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), CLOUD-UI-004's image part.",
+  "Label maps to label. State: Default; Full, the count at max with the drop zone and URL row off; Disabled maps to disabled, drawn at 50%.",
+  "Each image: a thumbnail at aspectRatio, its alt text (an Input), Preview, Frame (the cropper) and Remove. The slots are Core's FileUpload, Input and Button.",
+  "The cropper and the full-screen preview are Dialogs React opens; max, accept, maxSize and aspectRatio are set in code.",
+];
+
+async function buildImageFieldComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    axisName: "State",
+    values: IMAGE_FIELD_STATES,
+    x: 80,
+    y: 19700,
+    xStep: 420,
+    createVariant: createImageFieldVariant,
+    configureProperties: configureImageFieldProperties,
+    autoReorganize: true,
+    description: IMAGE_FIELD_DESCRIPTION,
+  });
+}
+
+async function updateImageFieldComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    axisName: "State",
+    values: IMAGE_FIELD_STATES,
+    xStep: 420,
+    createVariant: createImageFieldVariant,
+    updateVariant: updateImageFieldVariant,
+    parseVariantName: parseImageFieldVariantName,
+    configureProperties: configureImageFieldProperties,
+    autoReorganize: true,
+    description: IMAGE_FIELD_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildImageFieldComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    build: buildImageFieldComponent,
   });
 }
 

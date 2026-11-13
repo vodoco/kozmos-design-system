@@ -10,3 +10,4 @@ export * from "./RatingEditor";
 export * from "./KeyValueList";
 export * from "./PropertyPicker";
 export * from "./MapEditToolbar";
+export * from "./ImageField";

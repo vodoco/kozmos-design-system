@@ -15915,6 +15915,112 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// --- ImageField (Dashboard, CLOUD-UI-004) ---------------------------------------
+
+// Pointr Cloud's image field, as React's ImageField draws it: a bordered group
+// on the container radius with its Label property and count; one image with
+// its alt-text slot and three ghost icon buttons; the FileUpload slot and the
+// URL row. Full turns the drop zone and the URL row off (50 %), Disabled the
+// whole field, as a disabled Button is drawn. It rides Update All Product /
+// SDK, in the Dashboard section, on one State axis.
+section("ImageField (Dashboard)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateImageFieldVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    return { component, stats };
+  };
+  const { component: field, stats } = await paint("Default");
+  const label = named(field, "Label Text");
+  const count = named(field, "Count Text");
+  ok(
+    field.name === "State=Default" &&
+      field.cornerRadius === plugin.KOZMOS_RADIUS.container &&
+      boundVariableName(field.strokes[0]) === "Border/Subtle" &&
+      field.width === 368 &&
+      field.opacity === 1,
+    `Default: a 368 group on the container radius with the subtle edge (${field.name}, ${field.width}, r${field.cornerRadius}, ${field.strokes[0] && boundVariableName(field.strokes[0])})`,
+  );
+  ok(
+    label &&
+      label.characters === "Images" &&
+      count &&
+      count.characters === "1 of 7 images" &&
+      boundVariableName(count.fills[0]) === "Colors/foreground/400",
+    `Default: "Images" and its count in the muted foreground (${label && label.characters}; ${count && count.characters})`,
+  );
+  const thumbnail = named(field, "Thumbnail Slot");
+  ok(
+    thumbnail && thumbnail.width === 120 && thumbnail.height === 68,
+    `Default: the thumbnail is 120 × 68, 16:9 (${thumbnail && `${thumbnail.width} × ${thumbnail.height}`})`,
+  );
+  const buttons = ["Preview Button", "Frame Button", "Remove Button"].map(
+    (name) => named(field, name),
+  );
+  ok(
+    buttons.every(
+      (button) =>
+        button && button.fills.length === 0 && button.strokes.length === 0,
+    ),
+    `Default: Preview, Frame and Remove are ghost icon buttons (${buttons.map((button) => (button ? button.name : "missing")).join(", ")})`,
+  );
+  ok(
+    named(field, "Upload Slot") &&
+      named(field, "Upload Slot").height === 112 &&
+      named(field, "URL Slot") &&
+      named(field, "Add Button"),
+    "Default: the 112 drop zone and the URL row with Add",
+  );
+  ok(
+    framesLargerThanAsked(field).length === 0,
+    `Default: no frame larger than it was drawn (${framesLargerThanAsked(field)
+      .map((node) => node.name)
+      .join(", ")})`,
+  );
+  ok(
+    // The stand-in file has no Icons page, so every icon warns; nothing else may.
+    stats.warnings.every((warning) => /is not on the Icons page/.test(warning)),
+    `Default: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+  );
+
+  const { component: full } = await paint("Full");
+  ok(
+    full.opacity === 1 &&
+      named(full, "Upload Slot").opacity === 0.5 &&
+      named(full, "URL Row").opacity === 0.5 &&
+      named(full, "Count Text").characters === "7 of 7 images",
+    `Full: the count at max, the drop zone and URL row at 50 % (${named(full, "Upload Slot").opacity}, ${named(full, "URL Row").opacity})`,
+  );
+  const { component: disabled } = await paint("Disabled");
+  ok(
+    disabled.opacity === 0.5 && named(disabled, "Upload Slot").opacity === 1,
+    `Disabled: the whole field at a plain 50 % (${disabled.opacity})`,
+  );
+
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("ImageField"),
+    ) === JSON.stringify({ State: ["Default", "Full", "Disabled"] }) &&
+      plugin.PRODUCT_SDK_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ImageField" && update === plugin.updateImageFieldComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Dashboard" &&
+          entry.components.includes("ImageField"),
+      ),
+    "ImageField: one State axis, in Update All Product / SDK and the Dashboard section",
+  );
+}
+
 section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
 {
   ok(
