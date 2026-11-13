@@ -105,6 +105,86 @@ final class KozmosThemeFillTests: XCTestCase {
         }
     }
 
+    /// A control's label is full ink, foreground/0, as React's
+    /// text-foreground label is (the owner's decision, 11 Nov): white in the
+    /// dark. Checkbox's, Switch's and the radios' were foreground/100
+    /// (#E8E6E3), which draws no pure white.
+    @MainActor func testAControlsLabelIsFullInkInTheDark() throws {
+        let off = Binding.constant(false)
+        let none = Binding.constant("")
+        let parts: [(String, AnyView)] = [
+            ("Checkbox", AnyView(KozmosCheckbox(checked: off, label: "MMMM WWWW"))),
+            ("Switch", AnyView(KozmosSwitch(checked: off, label: "MMMM WWWW"))),
+            ("Radio", AnyView(KozmosRadioGroupItem(value: "a", label: "MMMM WWWW", selection: none))),
+            ("Radio card", AnyView(KozmosRadioGroupItem(value: "a", label: "MMMM WWWW", variant: .card, selection: none).frame(width: 240))),
+        ]
+        for (name, part) in parts {
+            let drawn = try draw(part, in: .dark)
+            var white = 0
+            for y in 0..<drawn.height {
+                for x in 0..<drawn.width {
+                    let p = drawn.pixel(at: CGPoint(x: CGFloat(x) / drawn.scale, y: CGFloat(y) / drawn.scale))
+                    if p.r == 255, p.g == 255, p.b == 255, p.a > 240 { white += 1 }
+                }
+            }
+            XCTAssertGreaterThan(white, 50, "\(name)'s label draws only \(white) pixels of foreground/0 (#FFFFFF) in the dark")
+        }
+    }
+
+    /// A card's and a tile's icon is drawn in the theme's ink, white in the
+    /// dark, not a fixed dark colour that vanishes on the dark surface.
+    @MainActor func testACardsAndATilesIconIsFullInkInTheDark() throws {
+        let none = Binding.constant("")
+        for variant in [KozmosRadioGroupItemVariant.card, .tile] {
+            let part = KozmosRadioGroupItem(value: "a", variant: variant, selection: none) {
+                Image(systemName: "map.fill").font(.system(size: 40))
+            }
+            .frame(width: 160)
+            let drawn = try draw(part, in: .dark)
+            var white = 0
+            for y in 0..<drawn.height {
+                for x in 0..<drawn.width {
+                    let p = drawn.pixel(at: CGPoint(x: CGFloat(x) / drawn.scale, y: CGFloat(y) / drawn.scale))
+                    if p.r == 255, p.g == 255, p.b == 255, p.a > 240 { white += 1 }
+                }
+            }
+            XCTAssertGreaterThan(white, 50, "the \(variant) icon draws only \(white) pixels of foreground/0 (#FFFFFF) in the dark")
+        }
+    }
+
+    /// Right to left, a Switch's description lines up with its label at the
+    /// right, the layout's start, as a Checkbox's does.
+    @MainActor func testASwitchsDescriptionStartsWithItsLabelRightToLeft() throws {
+        let on = Binding.constant(true)
+        for (name, part) in [
+            ("Switch", AnyView(KozmosSwitch(checked: on, label: "Gate alerts", description: "Sends a push when your gate changes, and again when boarding starts", showStateLabel: true))),
+            ("Checkbox", AnyView(KozmosCheckbox(checked: on, label: "Route updates", description: "Tell me when a faster route opens, and when it closes again later"))),
+        ] {
+            let drawn = try draw(part.frame(width: 300).environment(\.layoutDirection, .rightToLeft), in: .light)
+            // Neutral, dark pixels: the words' ink, not the track or the box.
+            func isInk(_ p: Pixel) -> Bool {
+                let sum = Int(p.r) + Int(p.g) + Int(p.b)
+                return p.a > 240 && sum < 420 && abs(Int(p.r) - Int(p.g)) < 24 && abs(Int(p.g) - Int(p.b)) < 24
+            }
+            var labelRows: [Int] = []
+            var inkRight: [Int: Int] = [:]
+            for y in 0..<drawn.height {
+                for x in 0..<drawn.width {
+                    let p = drawn.pixel(at: CGPoint(x: CGFloat(x) / drawn.scale, y: CGFloat(y) / drawn.scale))
+                    guard isInk(p) else { continue }
+                    inkRight[y] = max(inkRight[y] ?? 0, x)
+                    if p.r < 40, p.g < 40, p.b < 40 { labelRows.append(y) }
+                }
+            }
+            let lastLabelRow = try XCTUnwrap(labelRows.max(), "\(name): no label ink")
+            let labelRight = labelRows.compactMap { inkRight[$0] }.max() ?? 0
+            let descriptionRight = inkRight.filter { $0.key > lastLabelRow + 2 }.map(\.value).max() ?? 0
+            XCTAssertGreaterThan(descriptionRight, 0, "\(name): no description ink")
+            XCTAssertLessThanOrEqual(abs(descriptionRight - labelRight), Int(3 * drawn.scale),
+                "\(name): right to left, the description ends at x \(descriptionRight) and the label at \(labelRight)")
+        }
+    }
+
     @MainActor func testACheckedCheckboxIsTheThemeFillWithAWhiteCheckInLightAndDark() throws {
         try assertThemeFillWithWhiteMark("checked checkbox", KozmosCheckbox(checked: .constant(true)))
     }

@@ -24,6 +24,12 @@ class KozmosCheckboxConnect {
         "Error" to "error"
     )
 
+    @FigmaProperty(FigmaType.Boolean, "Show Description")
+    val showDescription: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Description Text")
+    val description: String = "Required to book a desk"
+
     @Composable
     fun ComponentExample() {
         KozmosCheckbox(
@@ -31,7 +37,8 @@ class KozmosCheckboxConnect {
             onCheckedChange = {},
             label = label,
             enabled = state != "disabled",
-            error = state == "error"
+            error = state == "error",
+            description = if (showDescription) description else null
         )
     }
 }

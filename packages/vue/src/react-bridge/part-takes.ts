@@ -615,7 +615,14 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [
     Switch,
     html(
-      ["asChild", "checked", "disabled", "formNoValidate", "required"],
+      [
+        "asChild",
+        "checked",
+        "disabled",
+        "formNoValidate",
+        "required",
+        "showStateLabel",
+      ],
       [],
       ["error"],
     ),

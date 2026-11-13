@@ -1,4 +1,4 @@
-// Switch.mdx's Compose snippet, word for word below the package line:
+// Switch.mdx's Compose snippet ("Implementation"), word for word below the package line:
 // compiled here, so a renamed or removed parameter fails in this target
 // rather than in a reader's project. Change the two together.
 package com.kozmos.docsnippets

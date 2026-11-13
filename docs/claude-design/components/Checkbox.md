@@ -30,6 +30,11 @@ export function CheckboxExample() {
 It forwards its ref to `HTMLButtonElement`. Its props are `CheckboxProps`, which extends `React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>`.
 
 - `label`: `string`, optional.
+- `description`: `string`, optional.
+
+  A line under the label, read as the checkbox's description
+  (`aria-describedby`), never as part of its name (GAP-162).
+
 - `error`: `boolean | string`, optional.
 - `wrapperClassName`: `string`, optional.
 - `defaultChecked`: `CheckedState`, optional.
