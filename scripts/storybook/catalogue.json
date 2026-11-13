@@ -1303,6 +1303,20 @@
       "exports": ["Default", "Still", "Overlay"]
     },
     {
+      "file": "packages/react/src/dashboard/ImageField/ImageField.stories.tsx",
+      "id": "dashboard-imagefield",
+      "title": "Dashboard/ImageField",
+      "component": "ImageField",
+      "exports": [
+        "Default",
+        "Logo",
+        "Full",
+        "NoRatio",
+        "Disabled",
+        "RightToLeft"
+      ]
+    },
+    {
       "file": "apps/docs/src/stories/Tokens.stories.tsx",
       "id": "design-system-tokens-map",
       "title": "Foundations/Tokens/Map",

@@ -4,3 +4,4 @@
 // after style.css. One line per module, in the order they were added: see
 // ./README.md for what a module brings with it.
 export * from "./BrandLoader";
+export * from "./ImageField";
