@@ -38,7 +38,8 @@ export interface ImageFieldImage {
   /**
    * Where it is drawn from: the URL a person pasted, the product's URL once
    * it has uploaded a file, or, for a file just picked, an object URL the
-   * field made (and revokes when that image is removed).
+   * field made (and revokes once the image leaves the field, removed or
+   * given the product's own URL, or the field unmounts).
    */
   src: string;
   /** Its text alternative, which the field edits. */
@@ -436,13 +437,17 @@ function Cropper({
       <span role="status" aria-live="polite" className="kozmos-image-field-sr">
         {said}
       </span>
+      {/* At a limit a zoom button is unavailable, not disabled: a disabled
+          button that has focus drops it to the page, out of the dialog. */}
       <div className="kozmos-image-field-zoom">
         <IconButton
           type="button"
           variant="outline"
           aria-label={labels.zoomOut}
-          disabled={!frame || frame.zoom <= 1}
-          onClick={() => zoomBy(1 / ZOOM_STEP)}
+          aria-disabled={!frame || frame.zoom <= 1 || undefined}
+          onClick={() => {
+            if (frame && frame.zoom > 1) zoomBy(1 / ZOOM_STEP);
+          }}
         >
           <ZoomOut aria-hidden="true" />
         </IconButton>
@@ -450,8 +455,10 @@ function Cropper({
           type="button"
           variant="outline"
           aria-label={labels.zoomIn}
-          disabled={!frame || frame.zoom >= MAX_ZOOM}
-          onClick={() => zoomBy(ZOOM_STEP)}
+          aria-disabled={!frame || frame.zoom >= MAX_ZOOM || undefined}
+          onClick={() => {
+            if (frame && frame.zoom < MAX_ZOOM) zoomBy(ZOOM_STEP);
+          }}
         >
           <ZoomIn aria-hidden="true" />
         </IconButton>
@@ -519,6 +526,31 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
       defaultValue ?? [],
     );
     const images = value ?? inner;
+    const upload = React.useRef<HTMLDivElement>(null);
+
+    // An object URL the field made is revoked once it has been drawn and
+    // left the images (removed, or the product swapped in its uploaded URL),
+    // and every one when the field goes. Not before it is drawn: a product
+    // may commit the new image a render later.
+    const drawn = React.useRef(new Set<string>());
+    React.useEffect(() => {
+      const now = new Set(images.map((image) => image.src));
+      for (const src of objectUrls.current) {
+        if (now.has(src)) drawn.current.add(src);
+        else if (drawn.current.has(src)) {
+          URL.revokeObjectURL(src);
+          objectUrls.current.delete(src);
+          drawn.current.delete(src);
+        }
+      }
+    }, [images]);
+    React.useEffect(() => {
+      const made = objectUrls.current;
+      return () => {
+        for (const src of made) URL.revokeObjectURL(src);
+        made.clear();
+      };
+    }, []);
     const left = Math.max(max - images.length, 0);
     const full = left === 0;
     const [uploadError, setUploadError] = React.useState<string | null>(null);
@@ -546,6 +578,12 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
     };
 
     const onFiles = (files: File[]) => {
+      // The same file picked again is a change: FileUpload keeps the last
+      // pick in its input, so the field empties it after each one. FileUpload
+      // forwards its box, not its input (a Core gap), so the field finds it.
+      const input =
+        upload.current?.querySelector<HTMLInputElement>('input[type="file"]');
+      if (input) input.value = "";
       if (files.length === 0) return;
       const wrong = files.find((file) => !accepts(accept, file));
       const large = maxSize
@@ -588,6 +626,7 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
       if (objectUrls.current.has(image.src)) {
         URL.revokeObjectURL(image.src);
         objectUrls.current.delete(image.src);
+        drawn.current.delete(image.src);
       }
       setUploadError(null);
       commit(images.filter((_, i) => i !== index));
@@ -753,9 +792,13 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
         ) : null}
 
         <FileUpload
+          ref={upload}
           aria-label={labels.upload}
           accept={accept}
-          multiple={left > 1}
+          // Always multiple, so FileUpload sets no count of its own: with
+          // one slot left it said "Select up to 1 file." in English, before
+          // the field's own tooMany in the product's words.
+          multiple
           disabled={disabled || full}
           browseLabel={labels.browse}
           dropLabel={labels.drop}

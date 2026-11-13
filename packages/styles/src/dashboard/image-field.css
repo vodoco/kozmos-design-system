@@ -154,4 +154,10 @@
     justify-content: center;
     gap: calc(var(--primitives-layout-spacing-100) * 1px);
   }
+  /* A zoom at its limit is unavailable, not disabled, so it keeps focus:
+     drawn as a disabled button is, at half opacity. */
+  .kozmos-image-field-zoom > [aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: default;
+  }
 }

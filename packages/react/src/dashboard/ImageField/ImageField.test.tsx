@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import React from "react";
 import { ImageField, type ImageFieldImage } from "./ImageField";
 
 const jpeg = (name = "lobby.jpg", size = 10) =>
@@ -153,16 +154,28 @@ describe("ImageField", () => {
     });
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByText("Add 2 more images at most.")).toBeVisible();
-    // One left: the picker takes one file at a time.
+    // One left: the field's own check still runs, in the product's words,
+    // not FileUpload's English "Select up to 1 file.".
     rerender(
       <ImageField
         label="Images"
         max={3}
         defaultValue={stored}
         onChange={onChange}
+        labels={{ tooMany: (left) => `Room for ${left}` }}
       />,
     );
-    expect(fileInput(container)).not.toHaveAttribute("multiple");
+    fireEvent.drop(screen.getByRole("button", { name: "Upload an image" }), {
+      dataTransfer: { files: [jpeg("1.jpg"), jpeg("2.jpg")] },
+    });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText("Room for 1")).toBeVisible();
+    expect(screen.queryByText(/Select up to/)).toBeNull();
+    // And one file in the one slot is taken.
+    fireEvent.drop(screen.getByRole("button", { name: "Upload an image" }), {
+      dataTransfer: { files: [jpeg("1.jpg")] },
+    });
+    expect(onChange).toHaveBeenCalledTimes(1);
   });
 
   it("says the types, the size limit and the ratio under the drop zone", () => {
@@ -245,6 +258,82 @@ describe("ImageField", () => {
     expect(revoked).toEqual([]);
     await user.click(screen.getByRole("button", { name: "Remove image 1" }));
     expect(revoked).toEqual(["blob:image-1"]);
+  });
+
+  it("revokes the object URLs it made when it unmounts", async () => {
+    const user = userEvent.setup();
+    const { container, unmount } = render(
+      <ImageField label="Images" max={7} />,
+    );
+    await user.upload(fileInput(container), [jpeg("1.jpg"), jpeg("2.jpg")]);
+    expect(created).toEqual(["blob:image-1", "blob:image-2"]);
+    expect(revoked).toEqual([]);
+    unmount();
+    expect(revoked.sort()).toEqual(["blob:image-1", "blob:image-2"]);
+  });
+
+  it("revokes an object URL once the product swaps in its uploaded URL, not before it draws the image", async () => {
+    const user = userEvent.setup();
+    let upload: () => void = () => {};
+    function Host() {
+      const [images, setImages] = React.useState<ImageFieldImage[]>([]);
+      return (
+        <ImageField
+          label="Images"
+          max={3}
+          value={images}
+          onChange={(next) => {
+            // The product commits the picked image a tick later, and
+            // uploads it when told to.
+            setTimeout(() => setImages(next), 0);
+            upload = () =>
+              setImages(
+                next.map((image) =>
+                  image.file
+                    ? {
+                        id: image.id,
+                        src: "https://cdn.example/up.jpg",
+                        alt: "",
+                      }
+                    : image,
+                ),
+              );
+          }}
+        />
+      );
+    }
+    const { container } = render(<Host />);
+    await user.upload(fileInput(container), jpeg());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    expect(
+      container.querySelector(".kozmos-image-field-thumb-image"),
+    ).toHaveAttribute("src", "blob:image-1");
+    expect(revoked).toEqual([]);
+    act(() => upload());
+    expect(
+      container.querySelector(".kozmos-image-field-thumb-image"),
+    ).toHaveAttribute("src", "https://cdn.example/up.jpg");
+    expect(revoked).toEqual(["blob:image-1"]);
+  });
+
+  it("takes the same file again after it was removed", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const { container } = render(
+      <ImageField label="Images" max={3} onChange={onChange} />,
+    );
+    const lobby = jpeg();
+    await user.upload(fileInput(container), lobby);
+    // The input keeps no pick, so the same file again is a change.
+    expect(fileInput(container).value).toBe("");
+    await user.click(screen.getByRole("button", { name: "Remove image 1" }));
+    await user.upload(fileInput(container), lobby);
+    expect(onChange).toHaveBeenCalledTimes(3);
+    expect(onChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ file: lobby }),
+    ]);
   });
 
   it("edits each image's alt text", async () => {
@@ -366,10 +455,23 @@ describe("ImageField", () => {
     const { dialog } = loadedCropper();
     const zoomOut = within(dialog).getByRole("button", { name: "Zoom out" });
     const zoomIn = within(dialog).getByRole("button", { name: "Zoom in" });
-    expect(zoomOut).toBeDisabled();
+    expect(zoomOut).toHaveAttribute("aria-disabled", "true");
     for (let i = 0; i < 7; i += 1) await user.click(zoomIn);
-    expect(zoomIn).toBeDisabled();
+    // At the limit it is unavailable, not disabled: focus stays on it, in
+    // the dialog, and a further press does nothing.
+    expect(zoomIn).toHaveAttribute("aria-disabled", "true");
+    expect(zoomIn).toBeEnabled();
+    expect(zoomIn).toHaveFocus();
     expect(within(dialog).getByRole("status")).toHaveTextContent("zoom 400%");
+    await user.keyboard("{Enter}");
+    expect(within(dialog).getByRole("status")).toHaveTextContent("zoom 400%");
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    // Back to 1 by keyboard: Zoom out keeps the focus at its limit too.
+    await user.click(zoomOut);
+    for (let i = 0; i < 7; i += 1) await user.keyboard("{Enter}");
+    expect(zoomOut).toHaveAttribute("aria-disabled", "true");
+    expect(zoomOut).toHaveFocus();
+    expect(zoomIn).not.toHaveAttribute("aria-disabled");
   });
 
   it("moves the frame when the image is dragged", async () => {
