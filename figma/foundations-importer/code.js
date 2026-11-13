@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "3a2555238f0a";
+const PLUGIN_BUILD = "493e2e6a7314";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -449,7 +449,9 @@ const STEPPER_LABELS = [
   "Notify",
   "Done",
 ];
-const PROGRESS_VALUES = ["0", "25", "50", "75", "100"];
+// GAP-159: a bar with no value, Indeterminate, is the bar's own value; only
+// the bar takes it (a turning ring is Spinner).
+const PROGRESS_VALUES = ["0", "25", "50", "75", "100", "Indeterminate"];
 // Decision 131 (GAP-038): Progress's Shape, the bar or a ring, a ring's
 // Size, and its Tone (owner, 28 Oct: a status ring), as React's `shape`,
 // `size` and `tone`. The tones are Tag's and Button's emotions. A bar has one
@@ -466,16 +468,95 @@ const PROGRESS_TONES = [
   "Informative",
   "Alert",
 ];
-// No spread: the plugin sandbox's parser refuses it.
-const PROGRESS_FORMS = ["Linear/Medium/Themed"];
+// GAP-159: where a bar sits, React's `placement`. Inline is the 8 tall bar in
+// the flow; Top is the page's loading bar, 4 tall (spacing 50) and square,
+// fixed to the top of the window in code. A ring is Inline. A variant drawn
+// before the axis is Inline, and Update renames it in place.
+const PROGRESS_PLACEMENTS = ["Inline", "Top"];
+const PROGRESS_TOP_HEIGHT = 4;
+// The indeterminate segment's share of the track, as React's
+// kozmos-progress-sweep draws it.
+const PROGRESS_SWEEP_FRACTION = 0.25;
+// A form is Shape/Size/Tone/Placement. No spread: the plugin sandbox's parser
+// refuses it.
+const PROGRESS_FORMS = [
+  "Linear/Medium/Themed/Inline",
+  "Linear/Medium/Themed/Top",
+];
 for (const size of PROGRESS_SIZES) {
   for (const tone of PROGRESS_TONES) {
-    PROGRESS_FORMS.push(`Circular/${size}/${tone}`);
+    PROGRESS_FORMS.push(`Circular/${size}/${tone}/Inline`);
   }
+}
+/** The set is sparse: Indeterminate is a bar's value alone. */
+function progressHasCombination(value, second) {
+  return value !== "Indeterminate" || String(second).indexOf("Linear/") === 0;
 }
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
 const ALERT_VARIANTS = ["Default", "Destructive", "Success", "Warning", "Info"];
+// GAP-160 (decision 132): React's Notice. Tone is NoticeTone, Status its
+// `status`, None when it reports no work.
+const NOTICE_TONES = ["Warning", "Info", "Critical", "Success"];
+const NOTICE_STATUSES = ["None", "Progress", "Done"];
+const NOTICE_WIDTH = 344;
+const NOTICE_INSET = { x: 12, y: 8 };
+const NOTICE_GAP = 8;
+const NOTICE_ICON = 16;
+// React's mt-0.5: the mark sits 2 down, on the summary's first line.
+const NOTICE_ICON_DROP = 2;
+const NOTICE_DETAIL_GAP = 6;
+const NOTICE_ACTION_GAP = 12;
+const NOTICE_ACTION_VARIANT = {
+  Variant: "Outline",
+  Size: "Small",
+  State: "Default",
+};
+const NOTICE_SAMPLE = {
+  summary: "Check allergens with the venue.",
+  detail: "These results are AI-assisted and may be incomplete or out of date.",
+};
+// Each tone's fill and edge, its ramp's step as React's bg-<tone>/5 and
+// border-<tone>/50 draw them (critical's edge 60 %), and its words' and
+// marks' text role, React's text-<tone>-text.
+const NOTICE_TONE_SPECS = {
+  Warning: {
+    fill: { name: "Colors/emotional/alert/800", fallback: "#A06B04" },
+    edge: 0.5,
+    ink: { name: "Emotion/alert/text", fallback: "#744D03" },
+    icon: "alert-triangle",
+  },
+  Info: {
+    fill: { name: "Colors/emotional/info/700", fallback: "#2379A4" },
+    edge: 0.5,
+    ink: { name: "Emotion/informative/text", fallback: "#1C6082" },
+    icon: "info-circle",
+  },
+  Critical: {
+    fill: { name: "Colors/emotional/danger/600", fallback: "#D41C42" },
+    edge: 0.6,
+    ink: { name: "Emotion/danger/text", fallback: "#B01736" },
+    icon: "alert-circle",
+  },
+  // Success's edge is a step darker, 900: success 800's scopes are fills
+  // only, and 900 is the step Alert's success edge binds.
+  Success: {
+    fill: { name: "Colors/emotional/success/800", fallback: "#197F4C" },
+    stroke: { name: "Colors/emotional/success/900", fallback: "#14653D" },
+    edge: 0.5,
+    ink: { name: "Emotion/success/text", fallback: "#14653D" },
+    icon: "check",
+  },
+};
+const NOTICE_DESCRIPTION = [
+  "Kozmos Notice component set generated from React Notice API (GAP-160).",
+  "Tone maps to Notice.tone: Warning, Info, Critical or Success.",
+  "Status maps to Notice.status: None (no status), Progress or Done.",
+  "Progress turns the loading arc where the mark is (still here; code turns it, and stills it under reduced motion), and code sets aria-busy.",
+  "Done ends the summary in a check at its inline end and draws no mark at its start.",
+  "Summary maps to Notice.summary; Detail, shown by Show Detail, to its children.",
+  "Show Icon off is icon={null}; Show Action shows Notice.action, a Button under the text.",
+];
 // How much room an empty state takes. Default pads 32 and fills its region,
 // which is right when the empty state IS the screen; Compact is for a slot
 // that already draws a box round it. Measured on the web, the same content
@@ -1348,6 +1429,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Rating: 360,
   Textarea: 760,
   Alert: 260,
+  Notice: 700,
   Stepper: 420,
   Progress: 260,
   Skeleton: 260,
@@ -1485,6 +1567,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     title: "Feedback",
     components: [
       "Alert",
+      "Notice",
       "EmptyState",
       "Progress",
       "Skeleton",
@@ -1660,7 +1743,8 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Progress",
-          variantName: "Shape=Linear, Size=Medium, Tone=Themed, Value=50",
+          variantName:
+            "Shape=Linear, Size=Medium, Tone=Themed, Value=50, Placement=Inline",
         },
         {
           componentSetName: "Spinner",
@@ -4460,12 +4544,13 @@ const COMPONENT_DOCS = [
     usage: [
       "Use when a task has measurable completion.",
       "Use the Circular shape for a count out of a total, with its count in the centre label.",
-      "Use Spinner instead when progress cannot be estimated.",
+      "Use Value Indeterminate for a bar whose wait cannot be estimated, and Placement Top for the page's loading bar (GAP-159); use Spinner for a wait in a small place.",
       "Avoid using Progress as an interactive input.",
     ],
     api: [
       "Value maps to Progress.value in Code Connect.",
-      "Value variants cover 0, 25, 50, 75, and 100 percent examples.",
+      "Value variants cover 0, 25, 50, 75, and 100 percent examples; Indeterminate is a bar with no value, its quarter-wide segment drawn at the inline start (code sweeps it every 2 s and stills it centred under reduced motion).",
+      "Placement maps to Progress.placement: Inline, or Top, the page's loading bar, 4 tall and square, fixed to the top of the window in code. A ring is Inline.",
       "Shape maps to Progress.shape; Size, Tone and Label to a ring's size, tone and label; Label Beside to labelPlacement end.",
       "At Small and 100 the hole draws a check in the ring's tone, as code does with no label: \"100%\" does not fit. A product's own label wins in code; Show Label has nothing to draw on those variants.",
       "Progress is non-interactive and does not expose focus or disabled states.",
@@ -4474,7 +4559,8 @@ const COMPONENT_DOCS = [
       "Shape: Linear, Circular",
       "Size: Small, Medium, Large (a ring's; a bar is Medium)",
       "Tone: Themed, Neutral, Success, Danger, Informative, Alert (a ring's; a bar is Themed)",
-      "Value: 0, 25, 50, 75, 100",
+      "Value: 0, 25, 50, 75, 100, Indeterminate (a bar's)",
+      "Placement: Inline, Top (a bar's; a ring is Inline)",
       "Label, Show Label, Label Beside",
     ],
     accessibility: [
@@ -4483,6 +4569,7 @@ const COMPONENT_DOCS = [
       "A ring fills from 12 o'clock clockwise and does not mirror right to left.",
       "The visual bar is non-interactive, so it does not need a 44px target.",
       "Code should provide an accessible progress value; a ring's centre label names it.",
+      "An indeterminate bar is named Loading, or its label, and says it once as the wait starts; the sweep says nothing more.",
       "A small ring's check is decoration: the ring still says 100%, in name and value.",
     ],
   },
@@ -4558,6 +4645,33 @@ const COMPONENT_DOCS = [
       "Text, icon, and border contrast pass in Light and Dark modes.",
       "Alert is non-interactive, so focus states are not exposed.",
       "Use semantic live-region behavior in product code only when the message is dynamic.",
+    ],
+  },
+  {
+    componentName: "Notice",
+    componentSetName: "Notice",
+    category: "Feedback",
+    summary:
+      "Notice is a short notice that opens for the long version, in a tone, with what the work it reports on has got to (GAP-160).",
+    usage: [
+      "Keep the summary informative on its own: it is the one line always shown.",
+      'Use Success with Status Done for finished work ("Geometry is set"), Progress while it runs.',
+      "Use Critical with Show Action and the detail shown for an emergency: nothing to discover.",
+    ],
+    api: [
+      "Tone maps to Notice.tone; Status to Notice.status (None is no status).",
+      "Summary maps to Notice.summary; Detail to its children, revealed by its More disclosure in code.",
+      "Show Icon off maps to icon={null}; Show Action to Notice.action, a Button under the text.",
+    ],
+    properties: [
+      "Tone: Warning, Info, Critical, Success",
+      "Status: None, Progress, Done",
+      "Summary, Detail, Show Icon, Show Detail, Show Action",
+    ],
+    accessibility: [
+      "In code the notice is a polite status by default; live sets off or assertive.",
+      "Progress marks the notice busy; the marks are decoration, and the summary says what happened.",
+      "Text and marks take the tone's text role, 4.5:1 on the tinted fill in Light and Dark.",
     ],
   },
   {
@@ -9069,6 +9183,13 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   { name: "Progress/height/default", value: 8, scopes: ["WIDTH_HEIGHT"] },
+  // GAP-159: the page's top loading bar, React's kozmos-progress-top.
+  {
+    name: "Progress/height/top",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["WIDTH_HEIGHT"],
+  },
   {
     name: "Progress/radius",
     value: 9999,
@@ -9134,6 +9255,39 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 20,
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
+  },
+  // GAP-160: React's Notice, w-[22rem] in its stories, px-3 py-2 gap-2,
+  // rounded-container, its marks h-4 w-4.
+  { name: "Notice/width/default", value: 344, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Notice/padding/x",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Notice/padding/y",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Notice/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Notice/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Notice/icon/size",
+    value: 16,
+    alias: "Button/icon/size",
+    scopes: ["WIDTH_HEIGHT"],
   },
   { name: "Alert/width/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
   {
@@ -11233,6 +11387,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Spinner", updateSpinnerComponent],
   ["Avatar", updateAvatarComponent],
   ["Alert", updateAlertComponent],
+  ["Notice", updateNoticeComponent],
   ["EmptyState", updateEmptyStateComponent],
   ["Toast", updateToastComponent],
   ["Tag", updateTagComponent],
@@ -11467,6 +11622,9 @@ async function updateAllCoreComponents() {
 
 function additionalComponentActionHandlers() {
   return {
+    "build-notice": buildNoticeComponent,
+    "update-notice": updateNoticeComponent,
+    "rebuild-notice": rebuildNoticeComponent,
     "build-kbd": buildKbdComponent,
     "update-kbd": updateKbdComponent,
     "rebuild-kbd": rebuildKbdComponent,
@@ -13111,6 +13269,7 @@ async function buildSdkRouteFlowExampleTemplate({
         Size: "Medium",
         Tone: "Themed",
         Value: "50",
+        Placement: "Inline",
       },
       name: "Route Progress",
       width: contentWidth - 40,
@@ -18030,6 +18189,7 @@ function shouldAuditLayoutBindings(name) {
       "Spinner",
       "Avatar",
       "Alert",
+      "Notice",
     ].indexOf(name) !== -1
   );
 }
@@ -18875,6 +19035,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Size: PROGRESS_SIZES,
       Tone: PROGRESS_TONES,
       Value: PROGRESS_VALUES,
+      Placement: PROGRESS_PLACEMENTS,
     };
   }
 
@@ -18893,6 +19054,13 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Alert") {
     return {
       Variant: ALERT_VARIANTS,
+    };
+  }
+
+  if (canonicalName === "Notice") {
+    return {
+      Tone: NOTICE_TONES,
+      Status: NOTICE_STATUSES,
     };
   }
 
@@ -25396,6 +25564,9 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   if (setName === "Alert") {
     return textName === "Title" ? "alertTitle" : "alertDescription";
   }
+  if (setName === "Notice") {
+    return textName === "Summary" ? "alertTitle" : "alertDescription";
+  }
   if (setName === "EmptyState") {
     return textName === "Title Text"
       ? "emptyStateTitle"
@@ -31013,11 +31184,16 @@ function bindProgressGeometryVariables(
   range,
   variableByName,
   stats,
+  top,
 ) {
+  // GAP-159: the page's top bar is Progress/height/top, 4 (spacing 50), and
+  // square: its corners and its edge are unbound, or the bound pill radius
+  // would beat the painter's 0.
+  const heightToken = top ? "Progress/height/top" : "Progress/height/default";
   bindSizeVariables(
     component,
     "Progress/width/default",
-    "Progress/height/default",
+    heightToken,
     variableByName,
     stats,
   );
@@ -31026,41 +31202,54 @@ function bindProgressGeometryVariables(
     bindSizeVariables(
       track,
       "Progress/width/default",
-      "Progress/height/default",
+      heightToken,
       variableByName,
       stats,
     );
-    bindFloatVariable(
-      track,
-      "cornerRadius",
-      "Progress/radius",
-      variableByName,
-      stats,
-    );
-    bindFloatVariable(
-      track,
-      "strokeWeight",
-      "Progress/stroke/width",
-      variableByName,
-      stats,
-    );
+    if (top) {
+      clearBoundVariable(track, "topLeftRadius", stats);
+      clearBoundVariable(track, "topRightRadius", stats);
+      clearBoundVariable(track, "bottomLeftRadius", stats);
+      clearBoundVariable(track, "bottomRightRadius", stats);
+      clearBoundVariable(track, "cornerRadius", stats);
+      clearBoundVariable(track, "strokeWeight", stats);
+      track.cornerRadius = KOZMOS_RADIUS.none;
+    } else {
+      bindFloatVariable(
+        track,
+        "cornerRadius",
+        "Progress/radius",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        track,
+        "strokeWeight",
+        "Progress/stroke/width",
+        variableByName,
+        stats,
+      );
+    }
   }
 
   if (range) {
-    bindFloatVariable(
-      range,
-      "height",
-      "Progress/height/default",
-      variableByName,
-      stats,
-    );
-    bindFloatVariable(
-      range,
-      "cornerRadius",
-      "Progress/radius",
-      variableByName,
-      stats,
-    );
+    bindFloatVariable(range, "height", heightToken, variableByName, stats);
+    if (top) {
+      clearBoundVariable(range, "topLeftRadius", stats);
+      clearBoundVariable(range, "topRightRadius", stats);
+      clearBoundVariable(range, "bottomLeftRadius", stats);
+      clearBoundVariable(range, "bottomRightRadius", stats);
+      clearBoundVariable(range, "cornerRadius", stats);
+      range.cornerRadius = KOZMOS_RADIUS.none;
+    } else {
+      bindFloatVariable(
+        range,
+        "cornerRadius",
+        "Progress/radius",
+        variableByName,
+        stats,
+      );
+    }
   }
 }
 
@@ -46301,6 +46490,7 @@ async function buildProgressComponent() {
     values: PROGRESS_VALUES,
     axis2Name: "Shape",
     axis2Values: PROGRESS_FORMS,
+    hasCombination: progressHasCombination,
     yStep: 152,
     x: 80,
     y: 3700,
@@ -46315,6 +46505,8 @@ async function buildProgressComponent() {
       "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
       "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
       "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
+      "Value Indeterminate is a bar with no value (GAP-159): a segment a quarter of the track wide, drawn here at the inline start; code sweeps it to the inline end every 2 s, linear, and stills it in the middle of the track under reduced motion.",
+      "Placement maps to Progress.placement: Inline, the 8 tall bar, or Top, the page's loading bar, 4 tall and square, fixed to the top of the window in code. A ring is Inline.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
   });
@@ -46328,6 +46520,7 @@ async function updateProgressComponent() {
     values: PROGRESS_VALUES,
     axis2Name: "Shape",
     axis2Values: PROGRESS_FORMS,
+    hasCombination: progressHasCombination,
     yStep: 152,
     xStep: 360,
     createVariant: createProgressVariant,
@@ -46342,6 +46535,8 @@ async function updateProgressComponent() {
       "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
       "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
       "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
+      "Value Indeterminate is a bar with no value (GAP-159): a segment a quarter of the track wide, drawn here at the inline start; code sweeps it to the inline end every 2 s, linear, and stills it in the middle of the track under reduced motion.",
+      "Placement maps to Progress.placement: Inline, the 8 tall bar, or Top, the page's loading bar, 4 tall and square, fixed to the top of the window in code. A ring is Inline.",
       "Progress is non-interactive and does not expose focus or disabled states.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -65347,17 +65542,27 @@ function parseProgressVariantName(name) {
   const shape = variantAxisValue(name, "Shape") || "Linear";
   const size = variantAxisValue(name, "Size") || "Medium";
   const tone = variantAxisValue(name, "Tone") || "Themed";
-  const second = `${shape}/${size}/${tone}`;
+  // GAP-159: a variant drawn before Placement is Inline.
+  const placement = variantAxisValue(name, "Placement") || "Inline";
+  const second = `${shape}/${size}/${tone}/${placement}`;
   if (PROGRESS_FORMS.indexOf(second) === -1) return null;
+  if (!progressHasCombination(base.value, second)) return null;
   return { value: base.value, second };
 }
 
-/** A Progress form's Shape, Size and Tone, from the row it is drawn in. */
+/**
+ * A Progress form's Shape, Size, Tone and Placement, from the row it is
+ * drawn in.
+ */
 function progressForm(second) {
-  const form =
-    PROGRESS_FORMS.indexOf(second) === -1 ? PROGRESS_FORMS[0] : second;
-  const [shape, size, tone] = form.split("/");
-  return { shape, size, tone };
+  // A form named before Placement (Shape/Size/Tone) is Inline.
+  const named =
+    typeof second === "string" && second.split("/").length === 3
+      ? `${second}/Inline`
+      : second;
+  const form = PROGRESS_FORMS.indexOf(named) === -1 ? PROGRESS_FORMS[0] : named;
+  const [shape, size, tone, placement] = form.split("/");
+  return { shape, size, tone, placement };
 }
 
 async function updateProgressVariant(
@@ -65377,10 +65582,11 @@ async function updateProgressVariant(
     return;
   }
   const config = progressConfig(value);
+  const top = form.placement === "Top";
 
-  component.name = `Shape=Linear, Size=Medium, Tone=Themed, Value=${value}`;
+  component.name = `Shape=Linear, Size=Medium, Tone=Themed, Value=${value}, Placement=${top ? "Top" : "Inline"}`;
   component.layoutMode = "NONE";
-  component.resizeWithoutConstraints(320, 8);
+  component.resizeWithoutConstraints(320, top ? PROGRESS_TOP_HEIGHT : 8);
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -65392,6 +65598,7 @@ async function updateProgressVariant(
     component,
     value,
     config,
+    top,
     variableByName,
     stats,
   });
@@ -65460,7 +65667,7 @@ async function updateProgressRingVariant(
   const fill = progressRingToneFill(tone);
   const toneName = PROGRESS_TONES.indexOf(tone) === -1 ? "Themed" : tone;
 
-  component.name = `Shape=Circular, Size=${size}, Tone=${toneName}, Value=${value}`;
+  component.name = `Shape=Circular, Size=${size}, Tone=${toneName}, Value=${value}, Placement=Inline`;
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -65648,6 +65855,460 @@ async function syncProgressRingCheck(
     fill.name,
     fill.fallback,
     variableByName,
+    stats,
+  );
+}
+
+// --- Notice -------------------------------------------------------------------
+
+// GAP-160, decision 132: React's Notice, a short notice that opens for the
+// long version, in its look (decision 151): 344 wide (the stories' 22rem),
+// 12 across and 8 down inside a container corner, its tone's fill at 5 % and
+// its edge at 50 % (critical 60 %), each a layer of its own at that strength,
+// as TourStep's instruction draws it. A row of the tone's 16 mark 2 down
+// beside the 14 summary, 8 apart; the detail 6 under it, indented past the
+// mark, and the action, a live Button, 12 under the text. Status is
+// React's `status`: Progress turns the loading arc where the mark is, Done
+// ends the summary in a 16 check and draws no mark at its start.
+async function createNoticeVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateNoticeVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseNoticeVariantName(name) {
+  const base = parseSingleAxisVariantName(name, "Tone", NOTICE_TONES);
+  if (!base) return null;
+  const second = variantAxisValue(name, "Status") || "None";
+  if (NOTICE_STATUSES.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+/** A tone's colours: the fill and edge's ramp step, and its text role. */
+function noticeToneSpec(tone) {
+  return NOTICE_TONE_SPECS[tone] || NOTICE_TONE_SPECS.Warning;
+}
+
+/** A line of the notice: 14 on 20, in its tone's text role, with its style. */
+async function noticeText({
+  name,
+  characters,
+  styleKey,
+  font,
+  ink,
+  variableByName,
+  stats,
+}) {
+  const text = figma.createText();
+  text.name = name;
+  text.fontName = font;
+  text.fontSize = 14;
+  text.lineHeight = { unit: "PIXELS", value: 20 };
+  text.characters = characters;
+  text.textAlignHorizontal = "LEFT";
+  await applyTextStyleToNodeAsync(text, styleKey, stats);
+  text.fills = [
+    paintFromVariable(ink.name, ink.fallback, variableByName, stats),
+  ];
+  return text;
+}
+
+function noticeFrame(name, direction) {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = direction;
+  frame.primaryAxisSizingMode = direction === "HORIZONTAL" ? "FIXED" : "AUTO";
+  frame.counterAxisSizingMode = direction === "HORIZONTAL" ? "AUTO" : "FIXED";
+  frame.primaryAxisAlignItems = "MIN";
+  frame.counterAxisAlignItems = "MIN";
+  frame.itemSpacing = 0;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  return frame;
+}
+
+async function updateNoticeVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const tone = NOTICE_TONES.indexOf(value) === -1 ? "Warning" : value;
+  const status = NOTICE_STATUSES.indexOf(second) === -1 ? "None" : second;
+  const spec = noticeToneSpec(tone);
+  const inner = NOTICE_WIDTH - 2 * NOTICE_INSET.x;
+  // Done moves the mark to the summary's end; the start then has none, and
+  // the detail and the action start where the summary does.
+  const leading = status !== "Done";
+  const indent = leading ? NOTICE_ICON + NOTICE_GAP : 0;
+
+  component.name = `Tone=${tone}, Status=${status}`;
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 0;
+  component.paddingLeft = NOTICE_INSET.x;
+  component.paddingRight = NOTICE_INSET.x;
+  component.paddingTop = NOTICE_INSET.y;
+  component.paddingBottom = NOTICE_INSET.y;
+  component.resizeWithoutConstraints(NOTICE_WIDTH, 40);
+  component.cornerRadius = KOZMOS_RADIUS.container;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Notice");
+  component.setSharedPluginData(RUN_NAMESPACE, "tone", tone);
+  component.setSharedPluginData(RUN_NAMESPACE, "status", status);
+  removeDirectChildren(component);
+
+  // The summary's row: the mark, the words, and Done's check.
+  const row = noticeFrame("Summary Row", "HORIZONTAL");
+  row.itemSpacing = NOTICE_GAP;
+  row.resizeWithoutConstraints(inner, 20);
+  if (status === "Progress") {
+    row.appendChild(noticeProgressMark(spec, variableByName, stats));
+  } else if (leading) {
+    const slot = noticeFrame("Icon", "VERTICAL");
+    slot.paddingTop = NOTICE_ICON_DROP;
+    slot.primaryAxisSizingMode = "AUTO";
+    slot.counterAxisSizingMode = "AUTO";
+    const icon = await createFixedIconInstance(
+      spec.icon,
+      spec.ink.name,
+      spec.ink.fallback,
+      variableByName,
+      stats,
+      NOTICE_ICON,
+      "Notice/icon/size",
+    );
+    icon.name = "Mark";
+    scaleIconStrokes(icon, NOTICE_ICON);
+    icon.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-mark");
+    slot.appendChild(icon);
+    row.appendChild(slot);
+  }
+  const summary = await noticeText({
+    name: "Summary",
+    characters: NOTICE_SAMPLE.summary,
+    styleKey: "alertTitle",
+    font: fonts.medium,
+    ink: spec.ink,
+    variableByName,
+    stats,
+  });
+  summary.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-summary");
+  row.appendChild(summary);
+  setTextAutoResize(summary, "HEIGHT");
+  setLayoutSizingHorizontal(summary, "FILL");
+  if (status === "Done") {
+    const slot = noticeFrame("Done", "VERTICAL");
+    slot.paddingTop = NOTICE_ICON_DROP;
+    slot.primaryAxisSizingMode = "AUTO";
+    slot.counterAxisSizingMode = "AUTO";
+    const check = await createFixedIconInstance(
+      "check",
+      spec.ink.name,
+      spec.ink.fallback,
+      variableByName,
+      stats,
+      NOTICE_ICON,
+      "Notice/icon/size",
+    );
+    check.name = "Done Check";
+    scaleIconStrokes(check, NOTICE_ICON);
+    check.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-done");
+    slot.appendChild(check);
+    row.appendChild(slot);
+  }
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
+
+  // The detail, hidden until Show Detail: 6 under the summary, past the mark.
+  const detailRow = noticeFrame("Detail Row", "VERTICAL");
+  detailRow.paddingTop = NOTICE_DETAIL_GAP;
+  detailRow.paddingLeft = indent;
+  detailRow.resizeWithoutConstraints(inner, 26);
+  const detail = await noticeText({
+    name: "Detail",
+    characters: NOTICE_SAMPLE.detail,
+    styleKey: "alertDescription",
+    font: fonts.regular,
+    ink: spec.ink,
+    variableByName,
+    stats,
+  });
+  detail.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-detail");
+  detailRow.appendChild(detail);
+  setTextAutoResize(detail, "HEIGHT");
+  setLayoutSizingHorizontal(detail, "FILL");
+  component.appendChild(detailRow);
+  setLayoutSizingHorizontal(detailRow, "FILL");
+
+  // The action, hidden until Show Action: a live Button, 12 under the text.
+  const actionRow = noticeFrame("Action Row", "VERTICAL");
+  actionRow.paddingTop = NOTICE_ACTION_GAP;
+  actionRow.paddingLeft = indent;
+  actionRow.resizeWithoutConstraints(inner, 44);
+  actionRow.appendChild(await createNoticeActionButton(stats));
+  component.appendChild(actionRow);
+  setLayoutSizingHorizontal(actionRow, "FILL");
+  // Off by default, as React's detail is collapsed and it draws no action
+  // until one is given; Show Detail and Show Action turn them on.
+  detailRow.visible = false;
+  actionRow.visible = false;
+
+  // The tone's fill at 5 % and its edge at 50 % (critical 60 %), each a
+  // layer of its own, out of the flow, stretched to the notice: a strength on
+  // a bound paint does not hold.
+  insertTranslucentTokenLayer(component, {
+    name: "Notice Fill",
+    token: spec.fill,
+    opacity: 0.05,
+    cornerRadius: KOZMOS_RADIUS.container,
+    variableByName,
+    stats,
+  });
+  const edge = figma.createRectangle();
+  edge.name = "Notice Edge";
+  edge.resize(component.width, component.height);
+  edge.cornerRadius = KOZMOS_RADIUS.container;
+  edge.fills = [];
+  setTranslucentTokenPaint(
+    edge,
+    "strokes",
+    spec.stroke || spec.fill,
+    spec.edge,
+    variableByName,
+    stats,
+  );
+  edge.strokeWeight = 1;
+  edge.strokeAlign = "INSIDE";
+  edge.setSharedPluginData(RUN_NAMESPACE, "role", "translucent-token-layer");
+  component.insertChild(1, edge);
+  edge.layoutPositioning = "ABSOLUTE";
+  edge.x = 0;
+  edge.y = 0;
+  edge.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+  holdNoticeLayers(component, stats);
+  bindNoticeGeometryVariables(component, row, variableByName, stats);
+}
+
+/**
+ * Progress's mark: the system's loading arc, Spinner's three quarters of a
+ * circle from 12 o'clock, radius 9 and 2 thick on the icons' 24 grid, drawn
+ * at 16 in the tone's ink. A frame cannot turn; code turns it, and stills it
+ * under reduced motion.
+ */
+function noticeProgressMark(spec, variableByName, stats) {
+  const slot = noticeFrame("Progress Mark", "NONE");
+  slot.layoutMode = "NONE";
+  slot.resizeWithoutConstraints(NOTICE_ICON, NOTICE_ICON + NOTICE_ICON_DROP);
+  const outer = (NOTICE_ICON * 10) / 24;
+  const arc = figma.createEllipse();
+  arc.name = "Progress Arc";
+  arc.resize(2 * outer, 2 * outer);
+  arc.x = NOTICE_ICON / 2 - outer;
+  arc.y = NOTICE_ICON_DROP + NOTICE_ICON / 2 - outer;
+  arc.arcData = {
+    startingAngle: -Math.PI / 2,
+    endingAngle: Math.PI,
+    innerRadius: 0.8,
+  };
+  arc.strokes = [];
+  arc.fills = [
+    paintFromVariable(spec.ink.name, spec.ink.fallback, variableByName, stats),
+  ];
+  arc.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-progress-arc");
+  slot.appendChild(arc);
+  slot.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-progress");
+  return slot;
+}
+
+/** The fill and edge are the notice's size once it hugs its content. */
+function holdNoticeLayers(component, stats) {
+  for (const name of ["Notice Fill", "Notice Edge"]) {
+    const layer = directChildNamed(component, name);
+    if (!layer) continue;
+    layer.x = 0;
+    layer.y = 0;
+    layer.resizeWithoutConstraints(component.width, component.height);
+    if (
+      Math.abs(layer.width - component.width) > 0.5 ||
+      Math.abs(layer.height - component.height) > 0.5
+    ) {
+      stats.warnings.push(
+        `Notice: ${name} is ${layer.width} by ${layer.height} in a ${component.width} by ${component.height} notice.`,
+      );
+    }
+  }
+}
+
+async function createNoticeActionButton(stats) {
+  let action = null;
+  let buttonSet = null;
+  const created = await createNestedComponentInstance({
+    componentSetName: "Button",
+    variantProperties: NOTICE_ACTION_VARIANT,
+    name: "Action",
+    stats,
+  });
+  if (!created) {
+    action = createMissingNestedComponentNode(
+      "Action",
+      "Build Button before updating Notice.",
+      stats,
+    );
+  } else {
+    action = created.instance;
+    buttonSet = created.componentSet;
+  }
+  if (action.type === "INSTANCE" && buttonSet) {
+    try {
+      action.setProperties(NOTICE_ACTION_VARIANT);
+    } catch (error) {
+      stats.warnings.push(
+        `Notice Action: could not set Button variant properties (${messageFor(error)}).`,
+      );
+    }
+    setInstanceTextProperty(action, buttonSet, "Label Text", "Action", stats);
+    markNestedComponentInstance(action, "Button", "notice-action");
+  }
+  if (action.setSharedPluginData) {
+    action.setSharedPluginData(RUN_NAMESPACE, "role", "notice-action");
+  }
+  return action;
+}
+
+function bindNoticeGeometryVariables(component, row, variableByName, stats) {
+  bindFloatVariable(
+    component,
+    "width",
+    "Notice/width/default",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"]) {
+    bindFloatVariable(
+      component,
+      side,
+      "Notice/padding/x",
+      variableByName,
+      stats,
+    );
+  }
+  for (const side of ["paddingTop", "paddingBottom"]) {
+    bindFloatVariable(
+      component,
+      side,
+      "Notice/padding/y",
+      variableByName,
+      stats,
+    );
+  }
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "Notice/radius",
+    variableByName,
+    stats,
+  );
+  if (row) {
+    bindFloatVariable(row, "itemSpacing", "Notice/gap", variableByName, stats);
+  }
+}
+
+async function buildNoticeComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Notice",
+    componentSetName: "Notice",
+    axisName: "Tone",
+    values: NOTICE_TONES,
+    axis2Name: "Status",
+    axis2Values: NOTICE_STATUSES,
+    yStep: 200,
+    x: 80,
+    y: 4200,
+    xStep: 400,
+    createVariant: createNoticeVariant,
+    configureProperties: configureNoticeProperties,
+    description: NOTICE_DESCRIPTION,
+  });
+}
+
+async function updateNoticeComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Notice",
+    componentSetName: "Notice",
+    axisName: "Tone",
+    values: NOTICE_TONES,
+    axis2Name: "Status",
+    axis2Values: NOTICE_STATUSES,
+    yStep: 200,
+    xStep: 400,
+    createVariant: createNoticeVariant,
+    updateVariant: updateNoticeVariant,
+    parseVariantName: parseNoticeVariantName,
+    configureProperties: configureNoticeProperties,
+    description: NOTICE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildNoticeComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "Notice",
+    componentSetName: "Notice",
+    build: buildNoticeComponent,
+  });
+}
+
+function configureNoticeProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Summary",
+    "Summary",
+    NOTICE_SAMPLE.summary,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Detail",
+    "Detail",
+    NOTICE_SAMPLE.detail,
+    stats,
+  );
+  configureNamedBooleanProperty(componentSet, "Icon", "Show Icon", true, stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Detail Row",
+    "Show Detail",
+    false,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Action Row",
+    "Show Action",
+    false,
     stats,
   );
 }
@@ -78123,9 +78784,12 @@ async function syncProgressVariantChildren({
   component,
   value,
   config,
+  top,
   variableByName,
   stats,
 }) {
+  const height = top ? PROGRESS_TOP_HEIGHT : 8;
+  const indeterminate = value === "Indeterminate";
   let track = directChildNamed(component, "Progress Track");
   if (track && track.type !== "FRAME") {
     track.remove();
@@ -78138,10 +78802,12 @@ async function syncProgressVariantChildren({
   }
 
   track.layoutMode = "NONE";
-  track.resizeWithoutConstraints(320, 8);
+  track.resizeWithoutConstraints(320, height);
   track.x = 0;
   track.y = 0;
-  track.cornerRadius = KOZMOS_RADIUS.pill;
+  // The page's top bar is square and has no edge: it runs off both sides of
+  // the window, as React's kozmos-progress-top draws it.
+  track.cornerRadius = top ? KOZMOS_RADIUS.none : KOZMOS_RADIUS.pill;
   track.fills = [
     paintFromVariable(
       config.trackFill,
@@ -78159,6 +78825,7 @@ async function syncProgressVariantChildren({
     ),
   ];
   track.strokeWeight = 1;
+  if (top) track.strokes = [];
   track.clipsContent = true;
   track.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-track");
 
@@ -78173,11 +78840,16 @@ async function syncProgressVariantChildren({
     range.name = "Progress Range";
   }
 
-  const rangeWidth = Math.max(1, Math.round((Number(value) / 100) * 320));
-  range.resizeWithoutConstraints(rangeWidth, 8);
+  // Indeterminate (GAP-159): the sweeping segment, a quarter of the track,
+  // drawn where it enters at the inline start. A frame cannot move; code
+  // sweeps it every 2 s and stills it centred under reduced motion.
+  const rangeWidth = indeterminate
+    ? Math.round(320 * PROGRESS_SWEEP_FRACTION)
+    : Math.max(1, Math.round((Number(value) / 100) * 320));
+  range.resizeWithoutConstraints(rangeWidth, height);
   range.x = 0;
   range.y = 0;
-  range.cornerRadius = KOZMOS_RADIUS.pill;
+  range.cornerRadius = top ? KOZMOS_RADIUS.none : KOZMOS_RADIUS.pill;
   range.visible = value !== "0";
   range.fills = [
     paintFromVariable(
@@ -78189,10 +78861,22 @@ async function syncProgressVariantChildren({
   ];
   range.strokes = [];
   range.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-range");
+  range.setSharedPluginData(
+    RUN_NAMESPACE,
+    "progress-indeterminate",
+    indeterminate ? "true" : "",
+  );
 
   track.appendChild(range);
   component.appendChild(track);
-  bindProgressGeometryVariables(component, track, range, variableByName, stats);
+  bindProgressGeometryVariables(
+    component,
+    track,
+    range,
+    variableByName,
+    stats,
+    top,
+  );
 }
 
 async function syncSpinnerVariantChildren({
