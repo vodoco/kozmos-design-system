@@ -48,8 +48,9 @@ figma.connect(Table, tableUrl, {
     const denseClassName =
       density === "compact" ? "[&_td]:py-2 [&_th]:h-10" : undefined;
 
+    // Figma draws the table framed (decision 159), as React's `framed` does.
     return (
-      <Table className={denseClassName}>
+      <Table framed className={denseClassName}>
         <TableHeader>
           <TableRow>
             <TableHead>{header1}</TableHead>

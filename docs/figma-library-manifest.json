@@ -20190,7 +20190,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Table"],
-          "mappedProps": [],
+          "mappedProps": ["framed"],
           "unmappedProps": []
         },
         "props": [
@@ -20198,6 +20198,7 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "framed",
           "id",
           "role",
           "tabIndex",

@@ -47,3 +47,41 @@ export const Default: Story = {
     </Table>
   ),
 };
+
+/**
+ * Decision 159: a 1px border and the control radius, 16, round the table, as
+ * Figma, SwiftUI and Compose draw it. The header and rows are clipped inside
+ * the frame, and the caption sits inside it, at its foot. Off by default.
+ */
+export const Framed: Story = {
+  args: { framed: true },
+  render: (args) => (
+    <Table {...args}>
+      <TableCaption>Places in this venue</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Floor</TableHead>
+          <TableHead className="text-right">Visitors</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow>
+          <TableCell className="font-medium">Reception</TableCell>
+          <TableCell>Ground</TableCell>
+          <TableCell className="text-right">412</TableCell>
+        </TableRow>
+        <TableRow data-state="selected">
+          <TableCell className="font-medium">Library</TableCell>
+          <TableCell>First</TableCell>
+          <TableCell className="text-right">87</TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell className="font-medium">Roof garden</TableCell>
+          <TableCell>Fifth</TableCell>
+          <TableCell className="text-right">35</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  ),
+};
