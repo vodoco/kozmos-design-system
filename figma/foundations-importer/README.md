@@ -161,6 +161,26 @@ convention that avoids variant explosion:
 Use **Update** rather than **Build** after the first pass so the Code Connect node
 IDs stay stable, exactly as with Core sets.
 
+## Dashboard Lane
+
+The **Dashboard** group builds Pointr Cloud's web modules, which ship from
+`@kozmos-ds/react/dashboard` and exist in React only (decision 183). They live
+in their own `Dashboard` section on the `Components` page, after Platform /
+Form-Factor, and **Update All Product / SDK** updates them with the rest.
+
+- **BrandLoader** — Pointr Cloud's brand loader (CLOUD-UI-008, decisions 133
+  and 176): `Overlay` of False, the loader alone in its 120 box
+  (`BrandLoader/size`), and True, the loader centred on Backdrop's example
+  scrim, 320×180 in `Overlay/Scrim`. A frame cannot ripple, so the set draws
+  the still state, as reduced motion draws it: the first ring at rest round
+  the pin, 108 (`BrandLoader/ring/size`) and 6 thick
+  (`BrandLoader/ring/stroke/width`, border-width lg + md), and the pin,
+  `marker-pin-01` at 32 (`BrandLoader/pin/size`), both in the theme fill, theme
+  500 (decisions 176 and 59). The second ring is a hidden `Second Ring` layer
+  at its ripple's start, 40 and 4 thick (`Border Width/lg`). React's `label` is
+  screen-reader text, never drawn, so the set has no text property. Run
+  Curated Icons first.
+
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 
 Click **Build Surface QA** after the component audit is green and before closing Core v1. It creates or refreshes the generated `QA / Transparent Surfaces` page with Light/Dark `Surface/0` panels and representative product-map panels labeled `fill-extrusion` and `symbol_label`. The page uses live instances from the canonical component sets so Button, IconButton, Badge, fields, selection controls, Progress, and Spinner can be reviewed on the surfaces that produced the audit advisories without changing component node IDs. `Audit Library` also checks those live QA instances against their host surface fills, so dark-on-dark transparent or glass regressions are reported as `surface-contrast` issues.

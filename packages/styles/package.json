@@ -23,6 +23,7 @@
   "exports": {
     "./style.css": "./dist/style.css",
     "./reset.css": "./dist/reset.css",
+    "./dashboard.css": "./dist/dashboard.css",
     "./package.json": "./package.json"
   },
   "files": [
@@ -43,7 +44,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "rm -rf dist && vite build",
+    "build": "rm -rf dist && vite build && vite build --config vite.dashboard.config.mts",
     "test": "node --test postcss/*.test.cjs"
   },
   "devDependencies": {

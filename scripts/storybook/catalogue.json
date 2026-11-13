@@ -1296,6 +1296,13 @@
       "exports": ["Default", "InsideMapOverlay"]
     },
     {
+      "file": "packages/react/src/dashboard/BrandLoader/BrandLoader.stories.tsx",
+      "id": "dashboard-brandloader",
+      "title": "Dashboard/BrandLoader",
+      "component": "BrandLoader",
+      "exports": ["Default", "Still", "Overlay"]
+    },
+    {
       "file": "apps/docs/src/stories/Tokens.stories.tsx",
       "id": "design-system-tokens-map",
       "title": "Foundations/Tokens/Map",

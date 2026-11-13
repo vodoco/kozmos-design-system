@@ -1197,6 +1197,9 @@
                 <option value="dynamicIsland">DynamicIsland</option>
                 <option value="feedbackCard">FeedbackCard</option>
               </optgroup>
+              <optgroup label="Dashboard">
+                <option value="brandLoader">BrandLoader</option>
+              </optgroup>
               <optgroup label="Utilities">
                 <option value="icons">Curated Icons</option>
               </optgroup>
@@ -1648,6 +1651,13 @@
           update: "update-feedback-card",
           rebuild: "rebuild-feedback-card",
           hint: "Build creates FeedbackCard with Default, Submitting, and Success states; Success replaces the form rather than disabling it. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        brandLoader: {
+          label: "BrandLoader",
+          build: "build-brand-loader",
+          update: "update-brand-loader",
+          rebuild: "rebuild-brand-loader",
+          hint: "Build creates BrandLoader (CLOUD-UI-008), Pointr Cloud's brand loader, a Dashboard module: the pin in a ring in the theme fill, drawn still as reduced motion draws it, with Overlay False (the loader alone) and True (on Backdrop's scrim) variants. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         aiSearchButton: {
           label: "AISearchButton",

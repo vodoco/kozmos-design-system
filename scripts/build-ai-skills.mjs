@@ -49,6 +49,7 @@ import {
   buildClaudeDesignDocs,
 } from "./skills/claude-design-docs.mjs";
 import { readStories, storyProgram } from "./skills/claude-design-examples.mjs";
+import { componentDirectory } from "./skills/claude-design-source.mjs";
 
 /**
  * Written the way the repository writes markdown.
@@ -65,7 +66,6 @@ async function formatted(markdown, filepath) {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const REACT = path.join(root, "packages/react/src/components");
 const IOS = path.join(root, "packages/ios/Sources/Components");
 const ANDROID = path.join(
   root,
@@ -81,12 +81,14 @@ const facts = readKozmosFacts(root);
 const directories = componentDirectories(root, facts);
 
 /** The category each directory is filed under in Storybook, from meta.title. */
+const storyOf = (name) =>
+  path.join(componentDirectory(root, name), `${name}.stories.tsx`);
 const storyFiles = directories
-  .map((d) => path.join(REACT, d.name, `${d.name}.stories.tsx`))
+  .map((d) => storyOf(d.name))
   .filter((file) => fs.existsSync(file));
 const stories = storyProgram(storyFiles);
 function categoryOf(name) {
-  const file = path.join(REACT, name, `${name}.stories.tsx`);
+  const file = storyOf(name);
   if (!storyFiles.includes(file)) return "Uncategorised";
   const title = readStories(stories.program, file).meta.title;
   return title ? title.split("/")[0].trim() : "Uncategorised";
@@ -195,7 +197,10 @@ lines.push("");
 lines.push(`## Components (${directories.length})`);
 lines.push("");
 lines.push(
-  "A row is a directory of `packages/react/src/components`, linked to its API card,",
+  "A row is a directory of `packages/react/src/components`, or of `packages/react/src/dashboard`",
+);
+lines.push(
+  "for a Dashboard module (imported from `@kozmos-ds/react/dashboard`), linked to its API card,",
 );
 lines.push(
   "which lists every part to import and every prop. **iOS** and **Android** say",

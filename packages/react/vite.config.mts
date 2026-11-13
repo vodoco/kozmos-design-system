@@ -39,9 +39,12 @@ function toGlobalName(packageName: string) {
  * and reset.css once for every Kozmos web package, from the sources and the
  * PostCSS passes this build ran until 5 Nov 2026. This package still ships
  * both, unchanged, as ./style.css, ./reset.css and ./dist/style.css, so no
- * product's import moves. Read as bytes, so the copy is exact.
+ * product's import moves. Read as bytes, so the copy is exact. dashboard.css,
+ * the Dashboard modules' sheet (decision 183), is @kozmos-ds/styles's too,
+ * and ships as ./dashboard.css beside @kozmos-ds/react/dashboard
+ * (vite.dashboard.config.mts).
  */
-const STYLESHEETS = ["style.css", "reset.css"];
+const STYLESHEETS = ["style.css", "reset.css", "dashboard.css"];
 
 /**
  * The JavaScript is built for the browsers package.json declares, not for
@@ -52,7 +55,7 @@ const STYLESHEETS = ["style.css", "reset.css"];
  * has. Android's WebView is Chrome's engine at the same version. An entry this
  * does not understand stops the build rather than leaving a browser out.
  */
-function targetFrom(browserslist: string[]) {
+export function targetFrom(browserslist: string[]) {
   const engines: Record<string, string> = {
     chrome: "chrome",
     edge: "edge",

@@ -1,0 +1,141 @@
+/* BrandLoader (CLOUD-UI-008): Pointr Cloud's loader, the pin with two rings
+   rippling out from it. Cloud's geometry: a 120 box; rings growing from 40
+   to 108 and fading, the first 6 thick and the second 4, the second half a
+   second ahead; the pin wobbling ±15° in the first third of each 3 s cycle.
+   The rings are the theme's prominent colour, theme 500 (decision 176, with
+   decision 59), not Cloud's info teal, in both themes. The loop scales with
+   the motion tokens' duration scale; no motion token is a 3 s loop (the
+   longest, deliberate, is 460 ms), so the cycle is Cloud's, named once here.
+   Its easing is the standard motion token. Under reduced motion, the
+   system's or DesignConfigProvider's (the component marks itself from the
+   media query too), the rings and the pin stand still: the first ring at
+   rest round the pin, the second gone. Every side is logical and the box is
+   centred with auto margins, so right to left draws the same. */
+@kozmos-owned {
+  .kozmos-brand-loader {
+    --kozmos-brand-loader-cycle: calc(
+      3s * var(--semantics-motion-duration-scale, 1)
+    );
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: 7.5rem;
+    block-size: 7.5rem;
+    color: var(--primitives-colors-theme-500);
+  }
+  /* Two classes: the scoped preflight's border reset weighs one and wins a
+     tie on proximity (GAP-52). */
+  .kozmos-brand-loader .kozmos-brand-loader-ring {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    box-sizing: border-box;
+    inline-size: 6.75rem;
+    block-size: 6.75rem;
+    border-style: solid;
+    border-color: currentColor;
+    border-width: calc(
+      var(--primitives-border-width-lg) + var(--primitives-border-width-md)
+    );
+    border-radius: 50%;
+    opacity: 0;
+    animation: brand-loader-ripple var(--kozmos-brand-loader-cycle)
+      var(--semantics-motion-easing-standard) infinite;
+  }
+  .kozmos-brand-loader .kozmos-brand-loader-ring[data-ring="second"] {
+    border-width: var(--primitives-border-width-lg);
+    animation-delay: calc(-0.5s * var(--semantics-motion-duration-scale, 1));
+  }
+  @keyframes brand-loader-ripple {
+    from {
+      inline-size: calc(var(--primitives-layout-spacing-500) * 1px);
+      block-size: calc(var(--primitives-layout-spacing-500) * 1px);
+      opacity: 1;
+    }
+    to {
+      inline-size: 6.75rem;
+      block-size: 6.75rem;
+      opacity: 0;
+    }
+  }
+  .kozmos-brand-loader-pin {
+    position: relative;
+    inline-size: 2rem;
+    block-size: 2rem;
+    animation: brand-loader-wobble var(--kozmos-brand-loader-cycle)
+      var(--semantics-motion-easing-standard)
+      calc(-0.75s * var(--semantics-motion-duration-scale, 1)) infinite;
+  }
+  @keyframes brand-loader-wobble {
+    0%,
+    9%,
+    18%,
+    27%,
+    36%,
+    100% {
+      rotate: 0deg;
+    }
+    4.5%,
+    31.5% {
+      rotate: 15deg;
+    }
+    13.5%,
+    22.5% {
+      rotate: -15deg;
+    }
+  }
+  .kozmos-brand-loader-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  /* Still: one ring at rest round the pin, the pin upright. */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-brand-loader .kozmos-brand-loader-ring,
+    .kozmos-brand-loader .kozmos-brand-loader-pin {
+      animation: none;
+    }
+    .kozmos-brand-loader .kozmos-brand-loader-ring {
+      opacity: 1;
+    }
+    .kozmos-brand-loader .kozmos-brand-loader-ring[data-ring="second"] {
+      display: none;
+    }
+  }
+  :is([data-kozmos-motion="reduced"], [data-motion="reduced"])
+    .kozmos-brand-loader-ring,
+  :is([data-kozmos-motion="reduced"], [data-motion="reduced"])
+    .kozmos-brand-loader-pin {
+    animation: none;
+  }
+  :is([data-kozmos-motion="reduced"], [data-motion="reduced"])
+    .kozmos-brand-loader-ring {
+    opacity: 1;
+  }
+  :is([data-kozmos-motion="reduced"], [data-motion="reduced"])
+    .kozmos-brand-loader-ring[data-ring="second"] {
+    display: none;
+  }
+  /* The overlay: Backdrop's scrim over the window, the loader in its middle,
+     and a pointer that says the page is not ready. Backdrop draws its scrim
+     with utilities, which a host without @scope drops; covering the window
+     is this module's promise, so it is owned here too, with Backdrop's own
+     values. */
+  .kozmos-brand-loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--primitives-layer-50);
+    background-color: var(--semantics-overlay-scrim);
+    display: grid;
+    place-items: center;
+    cursor: wait;
+  }
+}

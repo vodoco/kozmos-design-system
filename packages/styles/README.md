@@ -29,6 +29,19 @@ Tailwind's preflight, with nothing scoped:
 @import "@kozmos-ds/styles/reset.css";
 ```
 
+## Dashboard modules
+
+`dashboard.css` is the sheet of Pointr Cloud's Dashboard modules (`@kozmos-ds/react/dashboard`, which ships it as
+`@kozmos-ds/react/dashboard.css`). It holds their own rules and nothing else, and reads the tokens `style.css`
+declares, so it is imported after it:
+
+```css
+@import "@kozmos-ds/styles/style.css";
+@import "@kozmos-ds/styles/dashboard.css";
+```
+
+`style.css` holds none of the modules' rules: a product that draws none of them does not load this file.
+
 ## Themes and density
 
 The light theme is on `:root`; the dark theme is under `[data-theme="dark"]`. Touch density is the default;

@@ -8,6 +8,19 @@ import path from "node:path";
 import { ts } from "./claude-design-typescript.mjs";
 
 export const COMPONENTS = "packages/react/src/components";
+/**
+ * Pointr Cloud's Dashboard modules (decision 183): one directory each, as a
+ * component's, published from @kozmos-ds/react/dashboard.
+ */
+export const DASHBOARD = "packages/react/src/dashboard";
+
+/** A component's directory: a Dashboard module's, or Core's. */
+export function componentDirectory(root, name) {
+  const dashboard = path.join(root, DASHBOARD, name);
+  return fs.existsSync(path.join(dashboard, `${name}.tsx`))
+    ? dashboard
+    : path.join(root, COMPONENTS, name);
+}
 
 /** The modules outside components/ that export something, by card name. */
 const OTHER_MODULES = [
@@ -161,7 +174,7 @@ function filesIn(target) {
 export function readModules(root, componentNames) {
   const modules = [];
   for (const name of componentNames) {
-    const dir = path.join(root, COMPONENTS, name);
+    const dir = componentDirectory(root, name);
     const main = path.join(dir, `${name}.tsx`);
     const files = filesIn(dir).sort((a, b) =>
       a === main ? -1 : b === main ? 1 : a.localeCompare(b),

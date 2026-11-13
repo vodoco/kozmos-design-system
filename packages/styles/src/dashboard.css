@@ -1,0 +1,8 @@
+/* dashboard.css: the Dashboard modules' sheet (decision 183, owner, 13 Nov
+   2026), shipped as @kozmos-ds/react/dashboard.css and loaded after
+   style.css, whose tokens it reads. Owned rules only, in @kozmos-owned
+   blocks (postcss/dashboard-sheet.cjs): no Tailwind runs here, and the
+   package's own sources under react/src/dashboard are not scanned for
+   style.css's utilities. One file per module under ./dashboard, imported
+   here in the order the modules were added. */
+@import "./dashboard/brand-loader.css";

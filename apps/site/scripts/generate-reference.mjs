@@ -34,6 +34,16 @@ const SITE_ROOT = path.resolve(
 );
 const REPO_ROOT = path.resolve(SITE_ROOT, "..", "..");
 const COMPONENTS_DIR = path.join(REPO_ROOT, "packages/react/src/components");
+// Pointr Cloud's Dashboard modules (decision 183), one folder each.
+const DASHBOARD_DIR = path.join(REPO_ROOT, "packages/react/src/dashboard");
+
+/** A web component's folder: a Dashboard module's, or Core's. */
+function componentDirectory(name) {
+  const dashboard = path.join(DASHBOARD_DIR, name);
+  return fs.existsSync(path.join(dashboard, `${name}.tsx`))
+    ? dashboard
+    : path.join(COMPONENTS_DIR, name);
+}
 const STATUS_SCRIPT = path.join(
   REPO_ROOT,
   "scripts/skills/check-completion.ts",
@@ -50,6 +60,7 @@ export const LANES = {
   "code-only": "Code-only / utility",
   "product-sdk": "Product / SDK",
   "platform-form-factor": "Platform / form factor",
+  dashboard: "Dashboard",
 };
 
 /** PascalCase to kebab-case, keeping acronyms whole: POIDetailPanel → poi-detail-panel. */
@@ -92,11 +103,19 @@ export function readStatusReport() {
  * never `not-expected`: the status script would have to say so first.
  */
 export function platformsOf(status) {
+  // A Dashboard module is a web part (decisions 88, 183): no SwiftUI or
+  // Compose counterpart is coming.
+  const native = (built) =>
+    built
+      ? "implemented"
+      : status.lane === "dashboard"
+        ? "not-expected"
+        : "not-yet";
   return {
     react:
       status.web.component && status.web.exported ? "implemented" : "not-yet",
-    swiftui: status.ios.component ? "implemented" : "not-yet",
-    compose: status.android.component ? "implemented" : "not-yet",
+    swiftui: native(status.ios.component),
+    compose: native(status.android.component),
     figma: !status.codeConnectApplicable
       ? "not-expected"
       : status.web.codeConnect ||
@@ -277,7 +296,7 @@ export function readStories(source, file) {
  * which only a component that is not on the web yet can lack.
  */
 export function storybookPathOf(name) {
-  const directory = path.join(COMPONENTS_DIR, name);
+  const directory = componentDirectory(name);
   const mdxPath = path.join(directory, `${name}.mdx`);
   const mdx = fs.existsSync(mdxPath) ? fs.readFileSync(mdxPath, "utf8") : "";
   const attached = attachedStories(mdx);
@@ -321,7 +340,7 @@ export function generate(report = readStatusReport()) {
     .map((status) => {
       // A component found only on a native platform has no React folder,
       // so no docs and no stories: its page says where it is, and no more.
-      const directory = path.join(COMPONENTS_DIR, status.name);
+      const directory = componentDirectory(status.name);
       const onTheWeb = fs.existsSync(directory);
       const read = (file) =>
         fs.existsSync(path.join(directory, file))

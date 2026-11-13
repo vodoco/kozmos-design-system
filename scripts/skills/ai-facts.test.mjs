@@ -334,6 +334,8 @@ test("the compiler agrees with every fact: each closed prop is an axis with exac
   const preamble = [
     `import type { ComponentProps, JSXElementConstructor } from "react";`,
     `import * as K from "@kozmos-ds/react";`,
+    // The Dashboard modules' entry (decision 183).
+    `import * as D from "@kozmos-ds/react/dashboard";`,
     `type Props<C> = C extends JSXElementConstructor<any> ? ComponentProps<C> : never;`,
     `type PropOf<C, P extends PropertyKey> = Props<C> extends infer T ? T extends unknown ? P extends keyof T ? T[P] : never : never : never;`,
     `type IsAny<T> = 0 extends 1 & T ? true : false;`,
@@ -374,7 +376,9 @@ test("the compiler agrees with every fact: each closed prop is an axis with exac
     );
     for (const prop of props) {
       const key = JSON.stringify(prop.name);
-      const type = `PropOf<typeof K.${entry.name}, ${key}>`;
+      const namespace =
+        entry.module === "@kozmos-ds/react/dashboard" ? "D" : "K";
+      const type = `PropOf<typeof ${namespace}.${entry.name}, ${key}>`;
       const values = axes[prop.name];
       const id = count++;
       if (values) {

@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d6faf1e9bc64";
+const PLUGIN_BUILD = "49eaf1fd3617";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -951,6 +951,24 @@ const DYNAMIC_ISLAND_GEOMETRY = {
   Minimal: { width: 56, height: 56, radius: 28 },
 };
 const FEEDBACK_CARD_STATES = ["Default", "Submitting", "Success"];
+// Dashboard lane (decision 183): Pointr Cloud's web modules, shipped from
+// @kozmos-ds/react/dashboard, React only. BrandLoader (CLOUD-UI-008,
+// decisions 133 and 176) is the first. Its Overlay axis is React's `overlay`
+// prop, the one prop that changes the drawing; False, the loader alone, is
+// first, so it is the set's default.
+const BRAND_LOADER_OVERLAY = ["False", "True"];
+// React's .kozmos-brand-loader: a 120 box (7.5rem); the first ring at rest is
+// 108 (6.75rem) and 6 thick (border-width lg + md), the second 4 (lg) and
+// starts its ripple at 40 (Layout/spacing/500); the pin is 32 (2rem). The
+// overlay is drawn on Backdrop's example scrim (BACKDROP_CUTOUT's 320×180).
+const BRAND_LOADER_GEOMETRY = {
+  size: 120,
+  ring: 108,
+  ringStroke: 6,
+  secondRingStart: 40,
+  secondRingStroke: 4,
+  pin: 32,
+};
 const MAP_VIEW_CONTENT = ["Empty", "Overlay"];
 const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
@@ -1374,6 +1392,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DirectionStep: 260,
   DynamicIsland: 320,
   FeedbackCard: 360,
+  BrandLoader: 260,
   FloorSelector: 420,
   MapControlButton: 260,
   MapControlsGroup: 320,
@@ -1534,6 +1553,13 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     // form-factor validation of their own before any promotion.
     title: "Platform / Form-Factor",
     components: ["DynamicIsland", "FeedbackCard"],
+  },
+  {
+    // Dashboard modules (decision 183): Pointr Cloud's web modules, shipped
+    // from @kozmos-ds/react/dashboard, React only. Kept out of Core, which
+    // stays domain-neutral, and out of Product / SDK, which is the map's.
+    title: "Dashboard",
+    components: ["BrandLoader"],
   },
   {
     title: "Overlay",
@@ -2275,6 +2301,31 @@ const COMPONENT_DOCS = [
       "Success replaces the form, so nothing reads as still editable after submitting.",
       "Submitting must be announced; the dimmed button alone is not sufficient.",
       "The rating control owns its own accessible value.",
+    ],
+  },
+  {
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    category: "Dashboard",
+    summary:
+      "BrandLoader is Pointr Cloud's brand loader (CLOUD-UI-008): the pin, with two rings rippling out from it in the theme's prominent colour, while the product loads. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use while Pointr Cloud, or a module of it, loads: once, for the whole wait.",
+      "Use Overlay True to cover the page while it loads; Overlay False draws the loader in place, in a box of its own.",
+      "Use Spinner for a wait in a small place, and Progress when the wait can be measured.",
+    ],
+    api: [
+      "Overlay maps to BrandLoader.overlay: True centres the loader on Backdrop's scrim, Overlay/Scrim, over the window.",
+      'label is what a screen reader hears (default "Loading"); it is never drawn, so it has no Figma property: write it in code, in the product\'s words ("Loading Pointr Cloud").',
+      "The rings and the pin are the theme fill, theme 500 (decisions 176 and 59), in both themes.",
+      "Figma draws the still state, as reduced motion draws it: the first ring at rest round the pin, 108 and 6 thick. The second ring, 4 thick, is a hidden layer at its ripple's start, 40; in code the two ripple from 40 to 108 and fade, every 3 s.",
+    ],
+    properties: ["Overlay: False, True"],
+    accessibility: [
+      'In code the loader is a status region (role="status", aria-live polite): its label arrives after it mounts, so a screen reader announces it once, and nothing that moves is in it.',
+      "Under reduced motion, the system's or DesignConfigProvider's, the rings and the pin stand still: the drawing in Figma.",
+      "Overlay makes the rest of the page inert and busy until the loader goes, takes every pointer event on the scrim and shows the wait cursor; focus is not moved to it, and goes back where it was.",
+      "The rings and the pin are decoration, hidden from assistive technology.",
     ],
   },
   {
@@ -9340,6 +9391,23 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Switch/track/stroke/width",
     scopes: ["STROKE_FLOAT"],
   },
+  // BrandLoader (CLOUD-UI-008): React's 120 box, the first ring at rest, 108,
+  // 6 thick (border-width lg + md, a sum no one variable holds), the second 4
+  // (border-width lg), and the 32 pin.
+  { name: "BrandLoader/size", value: 120, scopes: ["WIDTH_HEIGHT"] },
+  { name: "BrandLoader/ring/size", value: 108, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "BrandLoader/ring/stroke/width",
+    value: 6,
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "BrandLoader/ring/second/stroke/width",
+    value: 4,
+    alias: "Border Width/lg",
+    scopes: ["STROKE_FLOAT"],
+  },
+  { name: "BrandLoader/pin/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
   { name: "Avatar/size/default", value: 40, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Avatar/radius",
@@ -11511,7 +11579,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Timeline", updateTimelineComponent],
 ];
 
-// Every Product / SDK and platform set, in picker order, except that a set
+// Every Product / SDK, platform and Dashboard set, in picker order, except that a set
 // runs after any set it sets overrides inside (SETS_THAT_OVERRIDE_INSIDE):
 // CategoryTile before BrowseCategoriesPanel. These share the productSdkSlot /
 // productSdkControlButton / productSdkText helpers, so a change to any of them
@@ -11547,6 +11615,9 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["RouteProgressRail", updateRouteProgressRailComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
+  // Dashboard modules (decision 183) ride this run: they share no painter
+  // with Core, and a lane of one needs no button of its own.
+  ["BrandLoader", updateBrandLoaderComponent],
 ];
 
 /**
@@ -11831,6 +11902,9 @@ function additionalComponentActionHandlers() {
     "build-feedback-card": buildFeedbackCardComponent,
     "update-feedback-card": updateFeedbackCardComponent,
     "rebuild-feedback-card": rebuildFeedbackCardComponent,
+    "build-brand-loader": buildBrandLoaderComponent,
+    "update-brand-loader": updateBrandLoaderComponent,
+    "rebuild-brand-loader": rebuildBrandLoaderComponent,
     "update-all-product-sdk": updateAllProductSdkComponents,
     "update-all-core": updateAllCoreComponents,
     "build-adaptive-map-shell": buildAdaptiveMapShellComponent,
@@ -18566,6 +18640,12 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "FeedbackCard") {
     return {
       State: FEEDBACK_CARD_STATES,
+    };
+  }
+
+  if (canonicalName === "BrandLoader") {
+    return {
+      Overlay: BRAND_LOADER_OVERLAY,
     };
   }
 
@@ -55403,6 +55483,218 @@ async function rebuildFeedbackCardComponent() {
     componentName: "FeedbackCard",
     componentSetName: "FeedbackCard",
     build: buildFeedbackCardComponent,
+  });
+}
+
+// --- BrandLoader (Dashboard) -----------------------------------------------
+
+// Pointr Cloud's brand loader (CLOUD-UI-008, decisions 133, 176 and 183), as
+// React's BrandLoader and packages/styles/src/dashboard/brand-loader.css draw
+// it. A Figma frame cannot ripple, so the set draws the still state, the one
+// reduced motion draws: the first ring at rest round the pin, 108 and 6 thick,
+// and no second ring. A mid-ripple frame would be a moment the code never
+// holds, and a designer would read its size and fade as the design. The
+// second ring is kept as a hidden layer at its ripple's start, 40 and 4
+// thick, so the set carries both rings' strokes and a designer who shows it
+// sees where the ripple begins. The rings and the pin are the theme fill,
+// theme 500 (decision 176, with decision 59): React's
+// --primitives-colors-theme-500, here through THEME_FILL, the component
+// variable that aliases it and is scoped to strokes as the primitive is not.
+// The label is never drawn (it is screen-reader text), so the set has no
+// text property; its notes say so.
+
+async function createBrandLoaderVariant(args) {
+  const component = figma.createComponent();
+  await updateBrandLoaderVariant(component, args);
+  return component;
+}
+
+function parseBrandLoaderVariantName(name) {
+  return parseSingleAxisVariantName(name, "Overlay", BRAND_LOADER_OVERLAY);
+}
+
+async function updateBrandLoaderVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  const overlay = value === "True";
+  const geometry = BRAND_LOADER_GEOMETRY;
+  component.name = `Overlay=${value}`;
+  component.layoutMode = "NONE";
+  component.clipsContent = overlay;
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.effects = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "BrandLoader");
+  // Redrawn whole on every Update: nothing in it holds an override a designer
+  // keeps, and it has no component property.
+  removeDirectChildren(component);
+
+  let loader = component;
+  if (overlay) {
+    // Backdrop's scrim, the example Backdrop's set draws (320×180, 12), with
+    // the loader in its middle, as React's grid centres it in the window.
+    component.resizeWithoutConstraints(
+      BACKDROP_CUTOUT.width,
+      BACKDROP_CUTOUT.height,
+    );
+    component.cornerRadius = 12;
+    component.fills = [
+      paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats),
+    ];
+    loader = figma.createFrame();
+    loader.name = "Loader";
+    loader.layoutMode = "NONE";
+    loader.clipsContent = false;
+    loader.strokes = [];
+    loader.setSharedPluginData(RUN_NAMESPACE, "kind", "brand-loader");
+    component.appendChild(loader);
+  } else {
+    component.cornerRadius = KOZMOS_RADIUS.none;
+  }
+  loader.resizeWithoutConstraints(geometry.size, geometry.size);
+  loader.fills = [];
+  bindSizeVariables(
+    loader,
+    "BrandLoader/size",
+    "BrandLoader/size",
+    variableByName,
+    stats,
+  );
+  if (overlay) {
+    loader.x = Math.round((BACKDROP_CUTOUT.width - geometry.size) / 2);
+    loader.y = Math.round((BACKDROP_CUTOUT.height - geometry.size) / 2);
+  }
+
+  const ring = createBrandLoaderRing({
+    name: "Ring",
+    diameter: geometry.ring,
+    stroke: geometry.ringStroke,
+    strokeToken: "BrandLoader/ring/stroke/width",
+    sizeToken: "BrandLoader/ring/size",
+    box: geometry.size,
+    variableByName,
+    stats,
+  });
+  loader.appendChild(ring);
+
+  const second = createBrandLoaderRing({
+    name: "Second Ring",
+    diameter: geometry.secondRingStart,
+    stroke: geometry.secondRingStroke,
+    strokeToken: "BrandLoader/ring/second/stroke/width",
+    sizeToken: null,
+    box: geometry.size,
+    variableByName,
+    stats,
+  });
+  loader.appendChild(second);
+  second.visible = false;
+
+  const pin = await createFixedIconInstance(
+    "marker-pin-01",
+    THEME_FILL.name,
+    THEME_FILL.fallback,
+    variableByName,
+    stats,
+    geometry.pin,
+    "BrandLoader/pin/size",
+  );
+  pin.name = "Pin";
+  scaleIconStrokes(pin, geometry.pin);
+  loader.appendChild(pin);
+  pin.x = (geometry.size - geometry.pin) / 2;
+  pin.y = (geometry.size - geometry.pin) / 2;
+}
+
+/**
+ * A ring, centred in the loader's box: a border drawn inside its box, as
+ * CSS's border-box does, in the theme fill.
+ */
+function createBrandLoaderRing({
+  name,
+  diameter,
+  stroke,
+  strokeToken,
+  sizeToken,
+  box,
+  variableByName,
+  stats,
+}) {
+  const ring = figma.createEllipse();
+  ring.name = name;
+  ring.resizeWithoutConstraints(diameter, diameter);
+  ring.fills = [];
+  ring.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  ring.strokeWeight = stroke;
+  ring.strokeAlign = "INSIDE";
+  ring.setSharedPluginData(RUN_NAMESPACE, "kind", "brand-loader-ring");
+  if (sizeToken) {
+    bindSizeVariables(ring, sizeToken, sizeToken, variableByName, stats);
+  }
+  bindFloatVariable(ring, "strokeWeight", strokeToken, variableByName, stats);
+  ring.x = (box - diameter) / 2;
+  ring.y = (box - diameter) / 2;
+  return ring;
+}
+
+function configureBrandLoaderProperties(_componentSet, _stats) {}
+
+const BRAND_LOADER_DESCRIPTION = [
+  "Kozmos BrandLoader generated from the React BrandLoader API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Overlay maps to BrandLoader.overlay: True centres the loader on Backdrop's scrim.",
+  "Drawn still, as reduced motion draws it: the first ring at rest, 108 and 6 thick; the second ring, 4 thick, is hidden at its ripple's start.",
+  "Rings and pin are the theme fill, theme 500 (decisions 176 and 59).",
+  "label is screen-reader text, never drawn, so it has no property: role=status, announced once.",
+];
+
+async function buildBrandLoaderComponent() {
+  return buildSingleAxisComponent({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    axisName: "Overlay",
+    values: BRAND_LOADER_OVERLAY,
+    x: 80,
+    y: 19240,
+    xStep: 400,
+    createVariant: createBrandLoaderVariant,
+    configureProperties: configureBrandLoaderProperties,
+    autoReorganize: true,
+    description: BRAND_LOADER_DESCRIPTION,
+  });
+}
+
+async function updateBrandLoaderComponent() {
+  return updateSingleAxisComponent({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    axisName: "Overlay",
+    values: BRAND_LOADER_OVERLAY,
+    xStep: 400,
+    createVariant: createBrandLoaderVariant,
+    updateVariant: updateBrandLoaderVariant,
+    parseVariantName: parseBrandLoaderVariantName,
+    configureProperties: configureBrandLoaderProperties,
+    autoReorganize: true,
+    description: BRAND_LOADER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildBrandLoaderComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    build: buildBrandLoaderComponent,
   });
 }
 
