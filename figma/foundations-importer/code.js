@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "97246f120e52";
+const PLUGIN_BUILD = "7103069d9876";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -56886,6 +56886,9 @@ async function createMapEditToolbarField({ fonts, variableByName, stats }) {
   field.strokeWeight = 1;
   field.clipsContent = true;
   field.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-field");
+  // An Input placed in the card: it keeps its control radius, as a button in
+  // a card does (docs/nested-radius.md), and the nesting check reads it so.
+  markControlSurface(field);
   bindFloatVariable(
     field,
     "height",

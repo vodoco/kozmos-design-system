@@ -16608,6 +16608,15 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
           : !json,
         `${at}: ${mode === "JSON" ? "the GeoJSON field before the items" : "no field"}`,
       );
+      if (json)
+        // An Input placed in the card keeps its control radius, as a button
+        // in a card does (docs/nested-radius.md): stamped a control, so the
+        // nesting check reads it as one.
+        ok(
+          json.getSharedPluginData("kozmos_ds_importer", "surface") ===
+            "control",
+          `${at}: the GeoJSON field is stamped a control (${json.getSharedPluginData("kozmos_ds_importer", "surface") || "none"})`,
+        );
       for (const item of row ? row.children : []) {
         if (item.name === "Divider") {
           const rule = item.children[0];
