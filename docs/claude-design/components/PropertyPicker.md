@@ -7,7 +7,7 @@ Pointr Cloud's "+ Add additional field" (CLOUD-UI-003): a subtle Button the widt
 - **Import:** `import { PropertyPicker } from "@kozmos-ds/react/dashboard";`
 - **Stylesheet:** `import "@kozmos-ds/react/dashboard.css";`, after the package's `style.css`: a Dashboard module's rules are in this sheet alone.
 - **Group:** Dashboard
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/dashboard-propertypicker--docs>
 
 ## Example

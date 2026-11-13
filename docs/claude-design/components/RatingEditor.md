@@ -7,7 +7,7 @@ Pointr Cloud's Rating property editor (CLOUD-UI-004, decision 180): the rating, 
 - **Import:** `import { RatingEditor } from "@kozmos-ds/react/dashboard";`
 - **Stylesheet:** `import "@kozmos-ds/react/dashboard.css";`, after the package's `style.css`: a Dashboard module's rules are in this sheet alone.
 - **Group:** Dashboard
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/dashboard-ratingeditor--docs>
 
 ## Example

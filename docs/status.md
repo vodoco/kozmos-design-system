@@ -28,7 +28,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
-| Dashboard              | 8          | 8/8   | 8/8       | 0/8     | 0/8   | 0/8     | 0/8     | 0/8         |
+| Dashboard              | 8          | 8/8   | 8/8       | 8/8     | 0/8   | 0/8     | 0/8     | 0/8         |
 
 ## Core
 
@@ -188,14 +188,14 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 | Component          | Web (Comp) | Web (Story) | Web (Test) | Web (Code Connect File) | Web (Code Connect Linked) | Web (Barrel) | Web (Export) | iOS (Comp) | iOS (Code Connect File) | iOS (Code Connect Linked) | Android (Comp) | Android (Code Connect File) | Android (Code Connect Linked) |
 | ------------------ | ---------- | ----------- | ---------- | ----------------------- | ------------------------- | ------------ | ------------ | ---------- | ----------------------- | ------------------------- | -------------- | --------------------------- | ----------------------------- |
-| BrandLoader        | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
-| ImageField         | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
-| KeyValueList       | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
-| MapEditToolbar     | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
-| OpeningHoursEditor | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
-| PropertyField      | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
-| PropertyPicker     | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
-| RatingEditor       | ✅         | ✅          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| BrandLoader        | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| ImageField         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| KeyValueList       | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| MapEditToolbar     | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| OpeningHoursEditor | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| PropertyField      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| PropertyPicker     | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| RatingEditor       | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 
 ## Code Connect Not Applicable
 
@@ -211,8 +211,8 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 - Web stories: 132/132
 - Web tests: 132/132
 - Web Code Connect files: 109/127
-- Web Code Connect scaffolds: 8/127
-- Web Code Connect linked: 101/127
+- Web Code Connect scaffolds: 0/127
+- Web Code Connect linked: 109/127
 - iOS components: 114/132
 - iOS Code Connect files: 101/127
 - iOS Code Connect scaffolds: 0/127
