@@ -45,6 +45,7 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  Notice,
   Drawer,
   Toast,
   Breadcrumb,
@@ -348,6 +349,11 @@ export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
 export const KozmosKbd = createVueWrapper(Kbd);
+// Its disclosure is a model: v-model:expanded, as React's expanded and
+// onExpandedChange are.
+export const KozmosNotice = createVueWrapper(Notice, {
+  expanded: { prop: "expanded", callback: "onExpandedChange", empty: false },
+});
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);
@@ -371,7 +377,8 @@ export const KozmosAvatar = createVueWrapper(AvatarAdapter);
 export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
 export const KozmosTable = createVueWrapper(Table);
-// Its selection is reported as the item; the model is the item's id.
+// Its selection is reported as the item; the model is the item's id. A
+// multiple tree's model is its selected ids (GAP-151).
 export const KozmosTree = createVueWrapper(Tree, {
   expandedIds: { prop: "expandedIds", callback: "onExpandedChange", empty: [] },
   selectedId: {
@@ -379,6 +386,11 @@ export const KozmosTree = createVueWrapper(Tree, {
     callback: "onSelectionChange",
     read: (item) => item.id,
     empty: "",
+  },
+  selectedIds: {
+    prop: "selectedIds",
+    callback: "onSelectedIdsChange",
+    empty: [],
   },
 });
 export const KozmosTimeline = createVueWrapper(Timeline);

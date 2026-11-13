@@ -768,7 +768,9 @@
         "Expanded",
         "Emergency",
         "SingleLine",
-        "SearchWithAi"
+        "SearchWithAi",
+        "SuccessProgressAndDone",
+        "Success"
       ]
     },
     {
@@ -948,7 +950,9 @@
         "Tones",
         "SelectedSection",
         "LivePosition",
-        "AnimatedUpdate"
+        "AnimatedUpdate",
+        "Indeterminate",
+        "TopOfPage"
       ]
     },
     {
@@ -1260,11 +1264,14 @@
       "title": "Core/Data display/Tree",
       "component": "Tree",
       "exports": [
-        "Default",
-        "WithRowActions",
         "Composed",
+        "Default",
+        "Divided",
         "RowPrimitive",
-        "Divided"
+        "SectionsAndRanges",
+        "Virtualized",
+        "VirtualizedInPanel",
+        "WithRowActions"
       ]
     },
     {

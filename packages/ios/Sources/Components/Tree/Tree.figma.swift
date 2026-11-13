@@ -58,8 +58,21 @@ struct KozmosTreeParentItemConnect: FigmaConnect {
     @FigmaBoolean("Divided")
     var divided: Bool = false
 
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name, children: [])], density: self.density, divided: self.divided)
+        KozmosTree(
+            nodes: [Node(value: self.name, children: [], meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }
 
@@ -82,8 +95,21 @@ struct KozmosTreeChildItemConnect: FigmaConnect {
     @FigmaBoolean("Divided")
     var divided: Bool = false
 
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density, divided: self.divided)
+        KozmosTree(
+            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }
 
@@ -106,7 +132,20 @@ struct KozmosTreeItemConnect: FigmaConnect {
     @FigmaBoolean("Divided")
     var divided: Bool = false
 
+    // GAP-107: Meta Below draws the Meta Text on a second line under the
+    // label; off, the row has no meta.
+    @FigmaBoolean("Meta Below")
+    var metaBelow: Bool = false
+
+    @FigmaString("Meta Text")
+    var metaText: String = "Changes awaiting publish"
+
     var body: some View {
-        KozmosTree(nodes: [Node(value: self.name)], density: self.density, divided: self.divided)
+        KozmosTree(
+            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            density: self.density,
+            divided: self.divided,
+            metaPlacement: self.metaBelow ? .below : .inline
+        )
     }
 }

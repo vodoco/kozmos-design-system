@@ -3,6 +3,7 @@ import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { EMOTIONS, type Emotion } from "../../utils/emotion";
+import { ProgressBar } from "./ProgressBar";
 
 export interface ProgressProps extends React.ComponentPropsWithoutRef<
   typeof ProgressPrimitive.Root
@@ -22,8 +23,15 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
    * What a ring shows: "11 Levels Added in total", or a percentage. It
    * names the progress bar, or describes it when `aria-label` or
    * `aria-labelledby` already names it, and the drawn copy is hidden from
-   * assistive technology, so it is heard once. A bar draws none. An `sm`
-   * ring that is complete and has no label draws a check in its hole.
+   * assistive technology, so it is heard once. An `sm` ring that is
+   * complete and has no label draws a check in its hole.
+   *
+   * A bar draws none. While a bar has no value (`undefined` or `null`) it
+   * waits (GAP-159): its label, else its `aria-label` or the text its
+   * `aria-labelledby` names, else "Loading", is said once as the wait
+   * starts, by the first bar waiting on the page only. A string label also
+   * names an unnamed waiting bar; a bar with a value takes its name from
+   * `aria-label`.
    */
   label?: React.ReactNode;
   /**
@@ -38,6 +46,13 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
    * `"themed"`, the default, is the bar's own fill, theme 600.
    */
   tone?: Emotion;
+  /**
+   * Where a bar sits (GAP-159). `"inline"`, the default, is the 8 tall
+   * rounded bar in the flow. `"top"` is the page's loading bar: fixed to the
+   * top of the window, edge to edge, 4 tall and square, over the page's
+   * content. A ring has one placement.
+   */
+  placement?: "inline" | "top";
 }
 
 /**
@@ -61,6 +76,7 @@ const Progress = React.forwardRef<
       label,
       labelPlacement = "center",
       tone = "themed",
+      placement = "inline",
       style,
       "aria-labelledby": labelledBy,
       "aria-describedby": describedBy,
@@ -141,7 +157,7 @@ const Progress = React.forwardRef<
               starts at 12 o'clock and runs clockwise, and a progress ring
               does not mirror right to left: SVG is drawn in the page's own
               coordinates whatever the direction. With no value the track is
-              drawn alone (the indeterminate ring is GAP-159's). */}
+              drawn alone: a turning ring is Spinner. */}
           <div className="kozmos-progress-ring-dial">
             <svg
               aria-hidden="true"
@@ -183,27 +199,22 @@ const Progress = React.forwardRef<
         </ProgressPrimitive.Root>
       );
     }
+    // The bar, in a module of its own so a part that draws only a bar
+    // (TourStep) does not carry the ring.
     return (
-      <ProgressPrimitive.Root
+      <ProgressBar
         ref={ref}
         value={drawnValue}
         max={max}
-        className={cn(
-          "relative h-2 w-full overflow-hidden rounded-pill bg-secondary",
-          className,
-        )}
+        percentage={percentage}
+        placement={placement}
+        label={label}
+        className={className}
+        style={style}
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
-        style={style}
         {...props}
-      >
-        {/* As wide as the value, from the inline start: right to left it fills
-          from the right, as SwiftUI's and Compose's bars do. */}
-        <ProgressPrimitive.Indicator
-          className="h-full bg-primary transition-all"
-          style={{ width: `${percentage}%` }}
-        />
-      </ProgressPrimitive.Root>
+      />
     );
   },
 );

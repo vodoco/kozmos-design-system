@@ -1098,6 +1098,7 @@
                 <option value="treeParentItem">TreeParentItem</option>
                 <option value="treeChildItem">TreeChildItem</option>
                 <option value="treeItem">TreeItem</option>
+                <option value="treeSection">TreeSection</option>
               </optgroup>
               <optgroup label="Navigation">
                 <option value="bottomNavigation">BottomNavigation</option>
@@ -1151,6 +1152,7 @@
               </optgroup>
               <optgroup label="Feedback">
                 <option value="alert">Alert</option>
+                <option value="notice">Notice</option>
                 <option value="emptyState">EmptyState</option>
                 <option value="progress">Progress</option>
                 <option value="skeleton">Skeleton</option>
@@ -1962,6 +1964,13 @@
           rebuild: "rebuild-tree-item",
           hint: "Build creates the compatibility TreeItem row with Type, Content, Expanded, Depth, Density, and State axes. Prefer TreeParentItem and TreeChildItem for new hand-composed trees.",
         },
+        treeSection: {
+          label: "TreeSection",
+          build: "build-tree-section",
+          update: "update-tree-section",
+          rebuild: "rebuild-tree-section",
+          hint: "Build creates TreeSection (GAP-151), a section's heading in a tree: its name in 11px medium theme-coloured words and the rows' count pill, with Density and Depth axes, Label Text, Count Text and a Show Count boolean. Update builds it when the file has none, and otherwise preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
         bottomNavigation: {
           label: "BottomNavigation",
           build: "build-bottom-navigation",
@@ -2248,6 +2257,13 @@
           update: "update-alert",
           rebuild: "rebuild-alert",
           hint: "Build creates Alert with Variant axis plus editable Title and Description text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        notice: {
+          label: "Notice",
+          build: "build-notice",
+          update: "update-notice",
+          rebuild: "rebuild-notice",
+          hint: "Build creates Notice (GAP-160) with Tone (Warning, Info, Critical, Success) and Status (None, Progress, Done) axes, editable Summary and Detail, and Show Icon, Show Detail and Show Action. Build Button first: the action is a live Button. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         emptyState: {
           label: "EmptyState",

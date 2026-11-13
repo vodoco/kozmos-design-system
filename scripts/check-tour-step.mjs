@@ -380,7 +380,16 @@ const measure = (page) =>
     const notice = q(".kozmos-tour-step-instruction");
     const noticeStyle = notice ? getComputedStyle(notice) : null;
     const noticeIcon = notice?.querySelector("svg");
-    const noticeText = notice?.querySelector("p");
+    // The box that holds the instruction's words, whatever its tag: Notice
+    // drew its summary in a <p> until #522 made it a <div>, which a control
+    // or a framework's wrapper may sit in.
+    const noticeText = (() => {
+      if (!notice) return null;
+      const walker = document.createTreeWalker(notice, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode())
+        if (node.textContent.trim()) return node.parentElement;
+      return null;
+    })();
     const bar = q(".kozmos-tour-step-progress-bar");
     const fill = bar?.firstElementChild;
     const text = q(".kozmos-tour-step-progress-text");
