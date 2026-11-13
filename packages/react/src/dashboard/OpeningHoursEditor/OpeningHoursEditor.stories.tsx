@@ -42,7 +42,13 @@ export const Overnight: Story = {
 
 /** In the locale's words, from the week start asked for. */
 export const Localised: Story = {
-  args: { locale: "de", weekStart: "sunday" },
+  args: {
+    locale: "de",
+    weekStart: "sunday",
+    hoursLabel: "Öffnungszeiten",
+    closedLabel: "Geschlossen",
+    alwaysOpenLabel: "Immer geöffnet",
+  },
 };
 
 /**

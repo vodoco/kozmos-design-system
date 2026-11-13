@@ -388,6 +388,28 @@ try {
         `${mode} list row ${index + 1}: delete at the end of the first line`,
       );
     }
+    // A mixed Boolean says so beside its switch, on the track's line, not
+    // pushed to the row's far side (the switch's own box is full width).
+    const mixed = await page.getByTestId("list-mixed").evaluate((root) => {
+      const track = root
+        .querySelector('[role="switch"]')
+        .getBoundingClientRect();
+      const words = [...root.querySelectorAll("*")].find(
+        (node) =>
+          node.childElementCount === 0 &&
+          node.textContent.trim() === "Multiple values",
+      );
+      const box = words.getBoundingClientRect();
+      return {
+        gap: Math.round(box.left - track.right),
+        sameLine:
+          box.top < track.bottom && box.bottom > track.top && box.height <= 24,
+      };
+    });
+    assert.ok(
+      mixed.gap >= 0 && mixed.gap <= 16 && mixed.sameLine,
+      `${mode} list: a mixed Boolean's words beside its switch (gap ${mixed.gap}, same line ${mixed.sameLine})`,
+    );
     // The hours: a time field's own Down Arrow steps the editor's 5
     // minutes, carrying into the hour, whichever part of the time has focus
     // (the browser's would make 07:00 or 08:59).

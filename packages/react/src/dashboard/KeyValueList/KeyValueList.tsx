@@ -137,7 +137,6 @@ const KeyValueList = React.forwardRef<HTMLDivElement, KeyValueListProps>(
       target.focus();
       setFocus(undefined);
     }, [focus, rows]);
-    const mixedId = React.useId();
 
     const change = (next: KeyValueRow[]) => {
       if (valueProp === undefined) setHeld(next);
@@ -211,24 +210,15 @@ const KeyValueList = React.forwardRef<HTMLDivElement, KeyValueListProps>(
                   <>
                     <Switch
                       aria-label={`${label} value`}
-                      aria-describedby={
-                        mixed ? `${mixedId}-${row.id}` : undefined
-                      }
+                      // A switch has no third state: a mixed one says so,
+                      // beside the track, as the switch's description.
+                      description={mixed ? mixedLabel : undefined}
                       checked={row.value === true}
                       disabled={disabled}
                       onCheckedChange={(checked) =>
                         edit(row.id, { value: checked, mixed: false })
                       }
                     />
-                    {/* A switch has no third state: a mixed one says so. */}
-                    {mixed ? (
-                      <span
-                        id={`${mixedId}-${row.id}`}
-                        className="kozmos-key-value-mixed"
-                      >
-                        {mixedLabel}
-                      </span>
-                    ) : null}
                   </>
                 ) : row.type === "number" ? (
                   <NumberInput

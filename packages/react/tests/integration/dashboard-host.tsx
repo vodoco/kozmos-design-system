@@ -97,6 +97,20 @@ function Modules() {
       <form data-testid="list-inside" style={{ width: 480 }}>
         <KeyValueList defaultValue={ROWS} />
       </form>
+      <div data-testid="list-mixed" style={{ width: 480 }}>
+        <KeyValueList
+          defaultValue={[
+            {
+              id: "m",
+              name: "public",
+              type: "boolean",
+              value: false,
+              mixed: true,
+            },
+          ]}
+          mixedLabel="Multiple values"
+        />
+      </div>
       <div data-testid="hours" style={{ width: 640 }}>
         <OpeningHoursEditor locale="en-GB" />
       </div>
