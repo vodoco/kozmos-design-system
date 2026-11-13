@@ -62,13 +62,21 @@ class KozmosTreeParentItemConnect {
     @FigmaProperty(FigmaType.Boolean, "Divided")
     val divided: Boolean = false
 
+    // GAP-107: Meta Below draws Meta Text on a line under the label.
+    @FigmaProperty(FigmaType.Boolean, "Meta Below")
+    val metaBelow: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Meta Text")
+    val metaText: String = "Changes awaiting publish"
+
     @Composable
     fun ComponentExample() {
         TreeItem(
-            item = TreeNode(id = "row", name = name),
+            item = TreeNode(id = "row", name = name, meta = if (metaBelow) metaText else null),
             depth = depth,
             density = density,
-            divided = divided
+            divided = divided,
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
         )
     }
 }
@@ -94,13 +102,21 @@ class KozmosTreeChildItemConnect {
     @FigmaProperty(FigmaType.Boolean, "Divided")
     val divided: Boolean = false
 
+    // GAP-107: Meta Below draws Meta Text on a line under the label.
+    @FigmaProperty(FigmaType.Boolean, "Meta Below")
+    val metaBelow: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Meta Text")
+    val metaText: String = "Changes awaiting publish"
+
     @Composable
     fun ComponentExample() {
         TreeItem(
-            item = TreeNode(id = "row", name = name),
+            item = TreeNode(id = "row", name = name, meta = if (metaBelow) metaText else null),
             depth = depth,
             density = density,
-            divided = divided
+            divided = divided,
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
         )
     }
 }
@@ -126,13 +142,21 @@ class KozmosTreeItemConnect {
     @FigmaProperty(FigmaType.Boolean, "Divided")
     val divided: Boolean = false
 
+    // GAP-107: Meta Below draws Meta Text on a line under the label.
+    @FigmaProperty(FigmaType.Boolean, "Meta Below")
+    val metaBelow: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Meta Text")
+    val metaText: String = "Changes awaiting publish"
+
     @Composable
     fun ComponentExample() {
         TreeItem(
-            item = TreeNode(id = "row", name = name),
+            item = TreeNode(id = "row", name = name, meta = if (metaBelow) metaText else null),
             depth = depth,
             density = density,
-            divided = divided
+            divided = divided,
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
         )
     }
 }

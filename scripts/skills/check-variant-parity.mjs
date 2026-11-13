@@ -100,6 +100,14 @@ const INTENTIONAL = {
     figma:
       "What a click does — select the row, toggle it open, or both. Every value renders the same tree; the difference is in what happens next, which a static component set cannot hold.",
   },
+  "Tree.selectionMode": {
+    figma:
+      "Whether a click picks one row or adds to a set (GAP-151). A selected row draws the same either way, as State=Selected on each row set; a set of them is several rows in Selected, which a designer composes in the Content Slot.",
+  },
+  "Tree.metaPlacement": {
+    figma:
+      "Modelled as the row sets' Meta Below boolean with its Meta Text (GAP-107): the meta's second line under the label, hidden while off. A variant axis would double TreeItem's 216 variants for a layer's visibility; the inline meta is not drawn in the sets.",
+  },
   "ThemeProvider.theme": {
     figma:
       "A React context provider, not a drawn component. Figma expresses the theme as a variable mode on the whole file, which is why the set is absent rather than missing an axis.",

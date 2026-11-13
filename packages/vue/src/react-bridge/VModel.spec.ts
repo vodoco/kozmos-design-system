@@ -267,6 +267,22 @@ const PARTS: Part[] = [
     alone: "true",
   },
   {
+    // GAP-160: the "More" disclosure over the detail.
+    name: "KozmosNotice",
+    model: "expanded",
+    props: { summary: "Check allergens.", children: "The full wording." },
+    start: false,
+    before: "false",
+    field: () => $("button[aria-expanded]"),
+    change: (toggle) => toggle.click(),
+    next: true,
+    shown: () => $("button[aria-expanded]")?.getAttribute("aria-expanded"),
+    shows: "true",
+    nothing: "false",
+    listener: "onExpandedChange",
+    alone: "true",
+  },
+  {
     name: "KozmosSlider",
     props: { "aria-label": "Volume", max: 10 },
     start: [3],
@@ -766,6 +782,27 @@ const PARTS: Part[] = [
     shows: ["b.ts"],
     nothing: [],
     listener: "onSelectionChange",
+    alone: ["b.ts"],
+  },
+  {
+    // A multiple tree's model is its selected ids (GAP-151): Cmd with a
+    // click adds a row to them.
+    name: "KozmosTree",
+    model: "selectedIds",
+    props: { data: tree, selectionMode: "multiple" },
+    start: ["1"],
+    before: ["src"],
+    field: () => byText("[role=treeitem]", "b.ts"),
+    change: (item) =>
+      item.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, metaKey: true }),
+      ),
+    next: ["1", "3"],
+    shown: () => texts("[role=treeitem][aria-selected=true]"),
+    shows: ["src", "b.ts"],
+    nothing: [],
+    fromNothing: { next: ["3"], shows: ["b.ts"] },
+    listener: "onSelectedIdsChange",
     alone: ["b.ts"],
   },
   {

@@ -83,6 +83,58 @@
       forced-color-adjust: none;
     }
   }
+  /* Progress's indeterminate bar (GAP-159): a segment a quarter of the track
+     wide, theme 600 as the bar's fill is, sweeping from the inline start to
+     the inline end every 2 s, linear, for as long as the wait lasts (Pointr
+     Cloud's loading bar). It enters wholly before the start and leaves wholly
+     past the end; right to left it runs from the right. Under reduced
+     motion, the system's or DesignConfigProvider's, it stands still in the
+     middle of the track, where it reads as a wait and not as a value. */
+  .kozmos-progress-sweep {
+    --kozmos-progress-sweep-sign: calc(1 - 2 * var(--kozmos-rtl, 0));
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 25%;
+    border-radius: inherit;
+    background: var(--primitives-colors-theme-600);
+    animation: progress-sweep 2s linear infinite;
+  }
+  @keyframes progress-sweep {
+    from {
+      transform: translateX(calc(-100% * var(--kozmos-progress-sweep-sign)));
+    }
+    to {
+      transform: translateX(calc(400% * var(--kozmos-progress-sweep-sign)));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-progress-sweep {
+      animation: none;
+      transform: translateX(calc(150% * var(--kozmos-progress-sweep-sign)));
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-progress-sweep {
+    animation: none;
+    transform: translateX(calc(150% * var(--kozmos-progress-sweep-sign)));
+  }
+  /* The page's loading bar (GAP-159): fixed to the top of the window, under
+     the notch or status bar's safe area, edge to edge, 4 tall (spacing 50)
+     and square, over the page's content. */
+  .kozmos-progress-top {
+    position: fixed;
+    inset-block-start: env(safe-area-inset-top, 0px);
+    inset-inline: 0;
+    z-index: var(--primitives-layer-50);
+    height: calc(var(--primitives-layout-spacing-50) * 1px);
+    border-radius: 0;
+  }
+  @media (forced-colors: active) {
+    .kozmos-progress-sweep {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
+  }
   /* Progress's ring (decision 131): a dial 48, 96 or 128 across (spacing
      600, 900 and 1000), its label centred in the hole and kept inside the
      square the hole holds, or beside the dial at the inline end. The arc is
