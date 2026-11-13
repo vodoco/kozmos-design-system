@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "49eaf1fd3617";
+const PLUGIN_BUILD = "39f8c4e7642b";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1393,6 +1393,10 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DynamicIsland: 320,
   FeedbackCard: 360,
   BrandLoader: 260,
+  PropertyField: 220,
+  OpeningHoursEditor: 760,
+  RatingEditor: 420,
+  KeyValueList: 360,
   FloorSelector: 420,
   MapControlButton: 260,
   MapControlsGroup: 320,
@@ -1559,7 +1563,13 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     // from @kozmos-ds/react/dashboard, React only. Kept out of Core, which
     // stays domain-neutral, and out of Product / SDK, which is the map's.
     title: "Dashboard",
-    components: ["BrandLoader"],
+    components: [
+      "BrandLoader",
+      "PropertyField",
+      "OpeningHoursEditor",
+      "RatingEditor",
+      "KeyValueList",
+    ],
   },
   {
     title: "Overlay",
@@ -2326,6 +2336,93 @@ const COMPONENT_DOCS = [
       "Under reduced motion, the system's or DesignConfigProvider's, the rings and the pin stand still: the drawing in Figma.",
       "Overlay makes the rest of the page inert and busy until the loader goes, takes every pointer event on the scrim and shows the wait cursor; focus is not moved to it, and goes back where it was.",
       "The rings and the pin are decoration, hidden from assistive technology.",
+    ],
+  },
+  {
+    componentName: "PropertyField",
+    componentSetName: "PropertyField",
+    category: "Dashboard",
+    summary:
+      "PropertyField is the frame every property of a Pointr Cloud item sits in (CLOUD-UI-004): a bordered group captioned with the property's name, an info button and a red trash that removes it. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use round each property an item carries in Pointr Cloud's add and edit panel, its editor in Content Slot.",
+      "Use Removable True when the property can be taken off the item; False for one it always has.",
+    ],
+    api: [
+      "Name maps to PropertyField.name, the caption and the group's accessible name.",
+      "Removable maps to PropertyField.onRemove: True draws the red trash, named Remove <name> (removeLabel).",
+      "The info button opens PropertyField.info, named About <name> (infoLabel); in code it is drawn only when info is given.",
+    ],
+    properties: ["Removable: True, False", "Name: text"],
+    accessibility: [
+      "In code the frame is a group named by its caption.",
+      "The info button is a toggletip: a click, Enter or Space opens it, so touch reaches it too.",
+      "Both buttons are named; Cloud's had no name.",
+    ],
+  },
+  {
+    componentName: "OpeningHoursEditor",
+    componentSetName: "OpeningHoursEditor",
+    category: "Dashboard",
+    summary:
+      "OpeningHoursEditor is Pointr Cloud's Opening Hours property editor (CLOUD-UI-004): the seven days, each Hours, Closed or Always open, with opening and closing times. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for an Opening Hours property, inside a PropertyField.",
+      "Use State Overnight to show a close before the open: the next day's, marked +1 day (decision 179).",
+      "Use State Mixed for a multi-selection whose days differ (GAP-153).",
+    ],
+    api: [
+      "Default is DEFAULT_OPENING_HOURS: Monday to Friday 08:00 to 22:00, the weekend closed.",
+      "Each day is a SegmentedControl (Hours, Closed, Always open) and, for Hours, two TimePickers stepping five minutes and carrying into the hour.",
+      "Mixed maps to mixedDays: those days choose nothing and say Multiple values.",
+    ],
+    properties: ["State: Default, Overnight, Mixed"],
+    accessibility: [
+      "Every control is a tab stop (Cloud's editor had none).",
+      "A day's choice is named by the day; its times are named <day> opening time and <day> closing time; +1 day describes the closing time.",
+    ],
+  },
+  {
+    componentName: "RatingEditor",
+    componentSetName: "RatingEditor",
+    category: "Dashboard",
+    summary:
+      "RatingEditor is Pointr Cloud's Rating property editor (CLOUD-UI-004, decision 180): the rating, its max and the number of ratings, checked against each other, and a preview of five stars with the exact numbers in words. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for a Rating property, inside a PropertyField.",
+      "Use State Error for a rating above its max (an error on both fields) and a count below 0.",
+      "Use State Mixed for a multi-selection whose ratings differ (GAP-153).",
+    ],
+    api: [
+      "Three NumberInputs: rating (one decimal, 0 or more), max (1 or more) and count (a whole number, 0 or more).",
+      "The preview is always five stars, the rating's share of its max rounded to the nearest half (decision 181), and its words carry the exact value: 4.3 of 5 · 120 ratings.",
+      "Stars is Rating's own Readonly instance; Figma's Rating has whole values, so 4½ is drawn as 4.",
+    ],
+    properties: ["State: Default, Error, Mixed"],
+    accessibility: [
+      "In code each error is the field's own: aria-invalid, and described by its message.",
+      "The stars are hidden from assistive technology; the words are read.",
+    ],
+  },
+  {
+    componentName: "KeyValueList",
+    componentSetName: "KeyValueList",
+    category: "Dashboard",
+    summary:
+      "KeyValueList is Pointr Cloud's key–value list (CLOUD-UI-004, decision 178): repeatable rows of a name, a type (Text, JSON, Number, Boolean) and a value drawn for its type, with delete and Add field. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for custom fields and Extra Data, inside a PropertyField.",
+      "Use State Empty for a list with no rows yet, the add button alone.",
+      "Use State Mixed for a row whose value differs across a multi-selection (GAP-153).",
+    ],
+    api: [
+      "A row is a name (Input), a type (Select), a value (Input for Text and JSON, NumberInput for Number, Switch for Boolean) and a red trash.",
+      "Add field ends the list; changing a type carries the value over as far as it can.",
+    ],
+    properties: ["State: Default, Empty, Mixed"],
+    accessibility: [
+      "Every control is named for its row: Field 2 name, Field 2 type, Field 2 value, Remove Field 2.",
+      "Adding puts focus in the new row's name; deleting puts it in the next row's name, or on Add field.",
     ],
   },
   {
@@ -11618,6 +11715,12 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   // Dashboard modules (decision 183) ride this run: they share no painter
   // with Core, and a lane of one needs no button of its own.
   ["BrandLoader", updateBrandLoaderComponent],
+  // The property editors (CLOUD-UI-004). RatingEditor holds Rating's own
+  // read-only instance, which Core's run draws first.
+  ["PropertyField", updatePropertyFieldComponent],
+  ["OpeningHoursEditor", updateOpeningHoursEditorComponent],
+  ["RatingEditor", updateRatingEditorComponent],
+  ["KeyValueList", updateKeyValueListComponent],
 ];
 
 /**
@@ -11905,6 +12008,18 @@ function additionalComponentActionHandlers() {
     "build-brand-loader": buildBrandLoaderComponent,
     "update-brand-loader": updateBrandLoaderComponent,
     "rebuild-brand-loader": rebuildBrandLoaderComponent,
+    "build-property-field": buildPropertyFieldComponent,
+    "update-property-field": updatePropertyFieldComponent,
+    "rebuild-property-field": rebuildPropertyFieldComponent,
+    "build-opening-hours-editor": buildOpeningHoursEditorComponent,
+    "update-opening-hours-editor": updateOpeningHoursEditorComponent,
+    "rebuild-opening-hours-editor": rebuildOpeningHoursEditorComponent,
+    "build-rating-editor": buildRatingEditorComponent,
+    "update-rating-editor": updateRatingEditorComponent,
+    "rebuild-rating-editor": rebuildRatingEditorComponent,
+    "build-key-value-list": buildKeyValueListComponent,
+    "update-key-value-list": updateKeyValueListComponent,
+    "rebuild-key-value-list": rebuildKeyValueListComponent,
     "update-all-product-sdk": updateAllProductSdkComponents,
     "update-all-core": updateAllCoreComponents,
     "build-adaptive-map-shell": buildAdaptiveMapShellComponent,
@@ -18647,6 +18762,22 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Overlay: BRAND_LOADER_OVERLAY,
     };
+  }
+
+  if (canonicalName === "PropertyField") {
+    return { Removable: PROPERTY_FIELD_REMOVABLE };
+  }
+
+  if (canonicalName === "OpeningHoursEditor") {
+    return { State: OPENING_HOURS_EDITOR_STATES };
+  }
+
+  if (canonicalName === "RatingEditor") {
+    return { State: RATING_EDITOR_STATES };
+  }
+
+  if (canonicalName === "KeyValueList") {
+    return { State: KEY_VALUE_LIST_STATES };
   }
 
   if (canonicalName === "DirectionStep") {
@@ -55696,6 +55827,932 @@ async function rebuildBrandLoaderComponent() {
     componentSetName: "BrandLoader",
     build: buildBrandLoaderComponent,
   });
+}
+
+// --- Property editors (Dashboard) ------------------------------------------
+
+// Pointr Cloud's property editors (CLOUD-UI-004, decisions 177–181 and 183),
+// as React's PropertyField, OpeningHoursEditor, RatingEditor and KeyValueList
+// draw them with packages/styles/src/dashboard/*.css. They are compositions
+// of Core fields, so a set draws each field as Core's field looks (44 tall,
+// the control radius, the input edge, its words in Field / Text) rather than
+// nesting the Core sets, whose texts an Update would reset (their layer ids
+// change on every Update); the stars of RatingEditor's preview are Rating's
+// own Readonly instance, which carries no override. Every word is a field's
+// example, not a property, except PropertyField's caption, its Name.
+
+const DASHBOARD_EDITOR_WIDTH = 340;
+const DASHBOARD_FIELD_HEIGHT = 44;
+const DASHBOARD_DANGER = {
+  name: "Colors/emotional/danger/600",
+  fallback: "#D41C42",
+};
+const DASHBOARD_MUTED = { name: "Colors/foreground/400", fallback: "#5D626F" };
+
+async function dashboardText(
+  name,
+  characters,
+  styleKey,
+  tone,
+  width,
+  { fonts, variableByName, stats },
+) {
+  const colour = tone || { name: "Colors/foreground/0", fallback: "#000000" };
+  return productSdkText({
+    name,
+    characters,
+    styleKey,
+    fonts,
+    bold: styleKey === "fieldLabel" || styleKey === "controlLabel",
+    fontSize: styleKey === "fieldMeta" ? 12 : 14,
+    lineHeight: styleKey === "fieldMeta" ? 16 : 20,
+    colorToken: colour.name,
+    colorFallback: colour.fallback,
+    variableByName,
+    stats,
+    width,
+  });
+}
+
+async function dashboardIcon(iconName, tone, size, context) {
+  const icon = await createFixedIconInstance(
+    iconName,
+    tone.name,
+    tone.fallback,
+    context.variableByName,
+    context.stats,
+    size,
+  );
+  scaleIconStrokes(icon, size);
+  return icon;
+}
+
+/**
+ * A Core field as it draws: 44 tall, the control radius, the input edge (the
+ * danger edge in error), its value in Field / Text, or its placeholder muted,
+ * and a trailing icon when the field has one (a time's clock).
+ */
+async function dashboardFieldBox(
+  { name, value, placeholder, error, icon, width },
+  context,
+) {
+  const box = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width,
+    height: DASHBOARD_FIELD_HEIGHT,
+  });
+  box.cornerRadius = KOZMOS_RADIUS.control;
+  box.fills = [
+    paintFromVariable(
+      "Surface/0",
+      "#FFFFFF",
+      context.variableByName,
+      context.stats,
+    ),
+  ];
+  box.strokes = [
+    error
+      ? paintFromVariable(
+          DASHBOARD_DANGER.name,
+          DASHBOARD_DANGER.fallback,
+          context.variableByName,
+          context.stats,
+        )
+      : paintFromVariable(
+          "Border/Input",
+          "#747B8B",
+          context.variableByName,
+          context.stats,
+        ),
+  ];
+  box.strokeWeight = 1;
+  box.strokeAlign = "INSIDE";
+  const text = await dashboardText(
+    "Value Text",
+    placeholder || value,
+    "fieldText",
+    placeholder ? DASHBOARD_MUTED : null,
+    width - 24 - (icon ? 24 : 0),
+    context,
+  );
+  appendWithSizing(box, text, "FILL", null);
+  if (icon) {
+    const glyph = await dashboardIcon(icon, DASHBOARD_MUTED, 16, context);
+    appendWithSizing(box, glyph, "FIXED", "FIXED");
+  }
+  return box;
+}
+
+/** A labelled field: its label, the field, and its error under it. */
+async function dashboardLabelledField(
+  { name, label, value, placeholder, error, width },
+  context,
+) {
+  const field = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 6,
+    width,
+    height: 70,
+  });
+  appendWithSizing(
+    field,
+    await dashboardText(
+      "Label Text",
+      label,
+      "fieldLabel",
+      null,
+      width,
+      context,
+    ),
+    "FILL",
+    null,
+  );
+  appendWithSizing(
+    field,
+    await dashboardFieldBox(
+      { name: "Field", value, placeholder, error: !!error, width },
+      context,
+    ),
+    "FILL",
+    "FIXED",
+  );
+  if (error) {
+    appendWithSizing(
+      field,
+      await dashboardText(
+        "Error Text",
+        error,
+        "fieldMeta",
+        DASHBOARD_DANGER,
+        width,
+        context,
+      ),
+      "FILL",
+      null,
+    );
+  }
+  return field;
+}
+
+/** A 44 icon button: the info button, or the red trash (`danger`). */
+async function dashboardIconButton(name, iconName, tone, size, context) {
+  const button = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: size,
+    height: size,
+  });
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  markControlSurface(button);
+  appendWithSizing(
+    button,
+    await dashboardIcon(iconName, tone, size >= 44 ? 20 : 16, context),
+    "FIXED",
+    "FIXED",
+  );
+  return button;
+}
+
+/** Sets a variant root's name and kind, as every generated set's are. */
+function dashboardVariantRoot(component, componentName, axis, value, options) {
+  productSdkVariantRoot(
+    component,
+    componentName,
+    `${axis}=${value}`,
+    Object.assign(
+      {
+        primarySizing: "AUTO",
+        counterSizing: "FIXED",
+        width: DASHBOARD_EDITOR_WIDTH,
+        height: 200,
+      },
+      options,
+    ),
+  );
+  component.fills = [];
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+}
+
+// PropertyField: the frame. Removable is React's onRemove, given or not.
+const PROPERTY_FIELD_REMOVABLE = ["True", "False"];
+
+async function createPropertyFieldVariant(args) {
+  const component = figma.createComponent();
+  await updatePropertyFieldVariant(component, args);
+  return component;
+}
+
+function parsePropertyFieldVariantName(name) {
+  return parseSingleAxisVariantName(
+    name,
+    "Removable",
+    PROPERTY_FIELD_REMOVABLE,
+  );
+}
+
+async function updatePropertyFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  const removable = value === "True";
+  dashboardVariantRoot(component, "PropertyField", "Removable", value, {
+    direction: "horizontal",
+    counterAlign: "CENTER",
+    spacing: 4,
+    width: 368,
+  });
+  const boxWidth = removable ? 368 - 4 - 44 : 368;
+  const box = productSdkFrame("Box", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 8,
+    padding: 12,
+    width: boxWidth,
+    height: 100,
+  });
+  box.cornerRadius = KOZMOS_RADIUS.control;
+  box.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  box.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  box.strokeWeight = 1;
+  box.strokeAlign = "INSIDE";
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: boxWidth - 24,
+    height: 24,
+  });
+  appendWithSizing(
+    header,
+    await dashboardText(
+      "Name Text",
+      "Capacity",
+      "fieldMeta",
+      DASHBOARD_MUTED,
+      boxWidth - 24 - 32,
+      context,
+    ),
+    "FILL",
+    null,
+  );
+  appendWithSizing(
+    header,
+    await dashboardIconButton(
+      "Info Button",
+      "info-circle",
+      DASHBOARD_MUTED,
+      24,
+      context,
+    ),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(box, header, "FILL", "FIXED");
+  const content = await productSdkSlot({
+    name: "Content Slot",
+    label: "Editor",
+    width: boxWidth - 24,
+    height: DASHBOARD_FIELD_HEIGHT,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+  });
+  appendWithSizing(box, content, "FILL", "FIXED");
+  appendWithSizing(component, box, "FILL", "HUG");
+  if (removable) {
+    appendWithSizing(
+      component,
+      await dashboardIconButton(
+        "Remove Button",
+        "trash-01",
+        DASHBOARD_DANGER,
+        44,
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+  }
+}
+
+function configurePropertyFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Name Text",
+    "Name",
+    "Capacity",
+    stats,
+  );
+}
+
+const PROPERTY_FIELD_DESCRIPTION = [
+  "Kozmos PropertyField generated from the React PropertyField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Name maps to PropertyField.name, the group's caption and accessible name. Removable maps to onRemove, the red trash named Remove <name>.",
+  "The info button, About <name>, opens PropertyField.info. Content Slot holds the property's editor.",
+];
+
+// OpeningHoursEditor: the week, as a new field has it, with overnight hours
+// (decision 179), and with a multi-selection's mixed weekend (GAP-153).
+const OPENING_HOURS_EDITOR_STATES = ["Default", "Overnight", "Mixed"];
+const OPENING_HOURS_EDITOR_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+async function createOpeningHoursEditorVariant(args) {
+  const component = figma.createComponent();
+  await updateOpeningHoursEditorVariant(component, args);
+  return component;
+}
+
+function parseOpeningHoursEditorVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", OPENING_HOURS_EDITOR_STATES);
+}
+
+/** A SegmentedControl, small: Hours, Closed, Always open, one chosen or none. */
+async function dashboardChoice(chosen, context) {
+  const choice = productSdkFrame("Choice", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 2,
+    padding: 4,
+    width: 220,
+    height: 36,
+  });
+  choice.cornerRadius = KOZMOS_RADIUS.control;
+  choice.fills = [
+    paintFromVariable(
+      "Surface/200",
+      "#ECEEF2",
+      context.variableByName,
+      context.stats,
+    ),
+  ];
+  for (const label of ["Hours", "Closed", "Always open"]) {
+    const segment = productSdkFrame(`${label} Segment`, {
+      direction: "horizontal",
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      paddingLeft: 8,
+      paddingRight: 8,
+      width: 60,
+      height: 28,
+    });
+    segment.cornerRadius = KOZMOS_RADIUS.control - 4;
+    if (label === chosen)
+      segment.fills = [
+        paintFromVariable(
+          "Surface/0",
+          "#FFFFFF",
+          context.variableByName,
+          context.stats,
+        ),
+      ];
+    const text = await dashboardText(
+      "Label Text",
+      label,
+      "fieldMeta",
+      label === chosen ? null : DASHBOARD_MUTED,
+      label === "Always open" ? 72 : 44,
+      context,
+    );
+    text.textAutoResize = "WIDTH_AND_HEIGHT";
+    appendWithSizing(segment, text, null, null);
+    appendWithSizing(choice, segment, null, "FIXED");
+  }
+  return choice;
+}
+
+async function updateOpeningHoursEditorVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "OpeningHoursEditor", "State", value, {
+    spacing: 12,
+    height: 600,
+  });
+  for (const [index, name] of OPENING_HOURS_EDITOR_DAYS.entries()) {
+    const weekend = index >= 5;
+    const overnight = value === "Overnight" && name === "Friday";
+    const mixed = value === "Mixed" && weekend;
+    const day = productSdkFrame(`${name} Row`, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 36,
+    });
+    const line = productSdkFrame("Day", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 36,
+    });
+    appendWithSizing(
+      line,
+      await dashboardText("Day Text", name, "fieldLabel", null, 96, context),
+      "FILL",
+      null,
+    );
+    appendWithSizing(
+      line,
+      await dashboardChoice(
+        mixed ? null : weekend ? "Closed" : "Hours",
+        context,
+      ),
+      null,
+      "FIXED",
+    );
+    appendWithSizing(day, line, "FILL", "HUG");
+    if (mixed) {
+      appendWithSizing(
+        day,
+        await dashboardText(
+          "Mixed Text",
+          "Multiple values",
+          "fieldText",
+          DASHBOARD_MUTED,
+          DASHBOARD_EDITOR_WIDTH,
+          context,
+        ),
+        "FILL",
+        null,
+      );
+    } else if (!weekend) {
+      const times = productSdkFrame("Times", {
+        direction: "horizontal",
+        primarySizing: "FIXED",
+        counterSizing: "AUTO",
+        counterAlign: "CENTER",
+        spacing: 8,
+        width: DASHBOARD_EDITOR_WIDTH,
+        height: DASHBOARD_FIELD_HEIGHT,
+      });
+      const fieldWidth = overnight ? 128 : 166;
+      appendWithSizing(
+        times,
+        await dashboardFieldBox(
+          {
+            name: "Opening Time",
+            value: overnight ? "18:00" : "08:00",
+            icon: "clock",
+            width: fieldWidth,
+          },
+          context,
+        ),
+        "FILL",
+        "FIXED",
+      );
+      appendWithSizing(
+        times,
+        await dashboardFieldBox(
+          {
+            name: "Closing Time",
+            value: overnight ? "02:00" : "22:00",
+            icon: "clock",
+            width: fieldWidth,
+          },
+          context,
+        ),
+        "FILL",
+        "FIXED",
+      );
+      if (overnight) {
+        const next = await dashboardText(
+          "Next Day Text",
+          "+1 day",
+          "fieldMeta",
+          DASHBOARD_MUTED,
+          48,
+          context,
+        );
+        next.textAutoResize = "WIDTH_AND_HEIGHT";
+        appendWithSizing(times, next, null, null);
+      }
+      appendWithSizing(day, times, "FILL", "HUG");
+    }
+    appendWithSizing(component, day, "FILL", "HUG");
+  }
+}
+
+function configureOpeningHoursEditorProperties(_componentSet, _stats) {}
+
+const OPENING_HOURS_EDITOR_DESCRIPTION = [
+  "Kozmos OpeningHoursEditor generated from the React OpeningHoursEditor API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Each day is a SegmentedControl (Hours, Closed, Always open) and, for Hours, two TimePickers. Default is DEFAULT_OPENING_HOURS: Monday to Friday 08:00–22:00, the weekend closed.",
+  "Overnight: a close before the open shows +1 day (decision 179). Mixed: mixedDays choose nothing and say Multiple values (GAP-153).",
+];
+
+// RatingEditor: three NumberInputs and the preview (decisions 180, 181).
+const RATING_EDITOR_STATES = ["Default", "Error", "Mixed"];
+
+async function createRatingEditorVariant(args) {
+  const component = figma.createComponent();
+  await updateRatingEditorVariant(component, args);
+  return component;
+}
+
+function parseRatingEditorVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", RATING_EDITOR_STATES);
+}
+
+async function updateRatingEditorVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "RatingEditor", "State", value, {
+    spacing: 12,
+    height: 300,
+  });
+  const error = value === "Error";
+  const mixed = value === "Mixed";
+  const fields = [
+    {
+      name: "Rating Field",
+      label: "Rating",
+      value: error ? "7" : "4.3",
+      placeholder: mixed ? "Multiple values" : null,
+      error: error ? "Rating can't be more than the max rating, 5." : null,
+    },
+    {
+      name: "Max Field",
+      label: "Max rating",
+      value: "5",
+      error: error ? "Max rating can't be less than the rating, 7." : null,
+    },
+    {
+      name: "Count Field",
+      label: "Number of ratings",
+      value: error ? "-3" : "120",
+      placeholder: mixed ? "Multiple values" : null,
+      error: error
+        ? "Number of ratings must be a whole number, 0 or more."
+        : null,
+    },
+  ];
+  for (const field of fields) {
+    appendWithSizing(
+      component,
+      await dashboardLabelledField(
+        Object.assign({ width: DASHBOARD_EDITOR_WIDTH }, field),
+        context,
+      ),
+      "FILL",
+      "HUG",
+    );
+  }
+  if (value !== "Default") return;
+  const preview = productSdkFrame("Preview", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: DASHBOARD_EDITOR_WIDTH,
+    height: 24,
+  });
+  // Rating's own read-only stars: React draws 4.3 of 5 as 4½ (decision 181);
+  // Rating's set has whole values, so the nearest below it.
+  const nested = await createNestedComponentInstance({
+    componentSetName: "Rating",
+    name: "Stars",
+    role: "rating-editor-preview",
+    variantProperties: [{ Value: "4", State: "Readonly" }, { Value: "4" }],
+    stats,
+  });
+  appendWithSizing(
+    preview,
+    nested
+      ? nested.instance
+      : createMissingNestedComponentNode(
+          "Stars",
+          "Rating is missing: run Core first.",
+          stats,
+        ),
+    null,
+    null,
+  );
+  const words = await dashboardText(
+    "Summary Text",
+    "4.3 of 5 · 120 ratings",
+    "fieldText",
+    DASHBOARD_MUTED,
+    160,
+    context,
+  );
+  appendWithSizing(preview, words, "FILL", null);
+  appendWithSizing(component, preview, "FILL", "HUG");
+}
+
+function configureRatingEditorProperties(_componentSet, _stats) {}
+
+const RATING_EDITOR_DESCRIPTION = [
+  "Kozmos RatingEditor generated from the React RatingEditor API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Three NumberInputs: rating (one decimal), max (1 or more), number of ratings (a whole number, 0 or more). A rating above its max is an error on both (decision 180).",
+  "The preview is always five stars, the rating's share of its max to the nearest half (decision 181), with the exact numbers in words. Mixed: Multiple values (GAP-153).",
+];
+
+// KeyValueList: rows of name, type, value and delete, and Add field
+// (decision 178).
+const KEY_VALUE_LIST_STATES = ["Default", "Empty", "Mixed"];
+
+async function createKeyValueListVariant(args) {
+  const component = figma.createComponent();
+  await updateKeyValueListVariant(component, args);
+  return component;
+}
+
+function parseKeyValueListVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", KEY_VALUE_LIST_STATES);
+}
+
+async function updateKeyValueListVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "KeyValueList", "State", value, {
+    spacing: 8,
+    height: 200,
+  });
+  const rows =
+    value === "Empty"
+      ? []
+      : value === "Mixed"
+        ? [["vendor", "Text", null]]
+        : [
+            ["vendor", "Text", "Acme"],
+            ["floors", "Number", "3"],
+          ];
+  const half = (DASHBOARD_EDITOR_WIDTH - 44 - 16) / 2;
+  for (const [index, [name, type, entry]] of rows.entries()) {
+    const row = productSdkFrame(`Row ${index + 1}`, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 96,
+    });
+    const line = productSdkFrame("Name and Type", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: DASHBOARD_FIELD_HEIGHT,
+    });
+    appendWithSizing(
+      line,
+      await dashboardFieldBox(
+        { name: "Name Field", value: name, width: half },
+        context,
+      ),
+      "FILL",
+      "FIXED",
+    );
+    appendWithSizing(
+      line,
+      await dashboardFieldBox(
+        { name: "Type Field", value: type, icon: "chevron-down", width: half },
+        context,
+      ),
+      "FILL",
+      "FIXED",
+    );
+    appendWithSizing(
+      line,
+      await dashboardIconButton(
+        "Remove Button",
+        "trash-01",
+        DASHBOARD_DANGER,
+        44,
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+    appendWithSizing(row, line, "FILL", "HUG");
+    appendWithSizing(
+      row,
+      await dashboardFieldBox(
+        {
+          name: "Value Field",
+          value: entry || "",
+          placeholder: entry ? null : "Multiple values",
+          width: half * 2 + 8,
+        },
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+    appendWithSizing(component, row, "FILL", "HUG");
+  }
+  const add = productSdkFrame("Add Button", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: 120,
+    height: 36,
+  });
+  add.cornerRadius = KOZMOS_RADIUS.control;
+  markControlSurface(add);
+  // The ghost Button's words and mark: the theme's text colour.
+  const theme = { name: "Colors/theme/600", fallback: "#1051E8" };
+  appendWithSizing(
+    add,
+    await dashboardIcon("plus", theme, 16, context),
+    "FIXED",
+    "FIXED",
+  );
+  const label = await dashboardText(
+    "Label Text",
+    "Add field",
+    "controlLabel",
+    theme,
+    72,
+    context,
+  );
+  label.textAutoResize = "WIDTH_AND_HEIGHT";
+  appendWithSizing(add, label, null, null);
+  appendWithSizing(component, add, null, "FIXED");
+}
+
+function configureKeyValueListProperties(_componentSet, _stats) {}
+
+const KEY_VALUE_LIST_DESCRIPTION = [
+  "Kozmos KeyValueList generated from the React KeyValueList API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "A row is a name (Input), a type (Select: Text, JSON, Number, Boolean), a value drawn for its type (Input, NumberInput, Switch) and a red trash; Add field ends the list (decision 178).",
+  "Every control is named for its row (Field 2 name). Mixed: a row's value says Multiple values (GAP-153).",
+];
+
+/** Build, Update and Rebuild for each editor set: one axis each. */
+const DASHBOARD_EDITOR_SETS = {
+  PropertyField: {
+    axisName: "Removable",
+    values: PROPERTY_FIELD_REMOVABLE,
+    y: 19640,
+    xStep: 420,
+    create: createPropertyFieldVariant,
+    update: updatePropertyFieldVariant,
+    parse: parsePropertyFieldVariantName,
+    configure: configurePropertyFieldProperties,
+    description: PROPERTY_FIELD_DESCRIPTION,
+  },
+  OpeningHoursEditor: {
+    axisName: "State",
+    values: OPENING_HOURS_EDITOR_STATES,
+    y: 20000,
+    xStep: 400,
+    create: createOpeningHoursEditorVariant,
+    update: updateOpeningHoursEditorVariant,
+    parse: parseOpeningHoursEditorVariantName,
+    configure: configureOpeningHoursEditorProperties,
+    description: OPENING_HOURS_EDITOR_DESCRIPTION,
+  },
+  RatingEditor: {
+    axisName: "State",
+    values: RATING_EDITOR_STATES,
+    y: 20800,
+    xStep: 400,
+    create: createRatingEditorVariant,
+    update: updateRatingEditorVariant,
+    parse: parseRatingEditorVariantName,
+    configure: configureRatingEditorProperties,
+    description: RATING_EDITOR_DESCRIPTION,
+  },
+  KeyValueList: {
+    axisName: "State",
+    values: KEY_VALUE_LIST_STATES,
+    y: 21300,
+    xStep: 400,
+    create: createKeyValueListVariant,
+    update: updateKeyValueListVariant,
+    parse: parseKeyValueListVariantName,
+    configure: configureKeyValueListProperties,
+    description: KEY_VALUE_LIST_DESCRIPTION,
+  },
+};
+
+async function buildDashboardEditorComponent(componentName) {
+  const set = DASHBOARD_EDITOR_SETS[componentName];
+  return buildSingleAxisComponent({
+    componentName,
+    componentSetName: componentName,
+    axisName: set.axisName,
+    values: set.values,
+    x: 80,
+    y: set.y,
+    xStep: set.xStep,
+    createVariant: set.create,
+    configureProperties: set.configure,
+    autoReorganize: true,
+    description: set.description,
+  });
+}
+
+async function updateDashboardEditorComponent(componentName) {
+  const set = DASHBOARD_EDITOR_SETS[componentName];
+  return updateSingleAxisComponent({
+    componentName,
+    componentSetName: componentName,
+    axisName: set.axisName,
+    values: set.values,
+    xStep: set.xStep,
+    createVariant: set.create,
+    updateVariant: set.update,
+    parseVariantName: set.parse,
+    configureProperties: set.configure,
+    autoReorganize: true,
+    description: set.description.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildDashboardEditorComponent(componentName) {
+  return rebuildGeneratedComponentSet({
+    componentName,
+    componentSetName: componentName,
+    build: () => buildDashboardEditorComponent(componentName),
+  });
+}
+
+async function buildPropertyFieldComponent() {
+  return buildDashboardEditorComponent("PropertyField");
+}
+async function updatePropertyFieldComponent() {
+  return updateDashboardEditorComponent("PropertyField");
+}
+async function rebuildPropertyFieldComponent() {
+  return rebuildDashboardEditorComponent("PropertyField");
+}
+async function buildOpeningHoursEditorComponent() {
+  return buildDashboardEditorComponent("OpeningHoursEditor");
+}
+async function updateOpeningHoursEditorComponent() {
+  return updateDashboardEditorComponent("OpeningHoursEditor");
+}
+async function rebuildOpeningHoursEditorComponent() {
+  return rebuildDashboardEditorComponent("OpeningHoursEditor");
+}
+async function buildRatingEditorComponent() {
+  return buildDashboardEditorComponent("RatingEditor");
+}
+async function updateRatingEditorComponent() {
+  return updateDashboardEditorComponent("RatingEditor");
+}
+async function rebuildRatingEditorComponent() {
+  return rebuildDashboardEditorComponent("RatingEditor");
+}
+async function buildKeyValueListComponent() {
+  return buildDashboardEditorComponent("KeyValueList");
+}
+async function updateKeyValueListComponent() {
+  return updateDashboardEditorComponent("KeyValueList");
+}
+async function rebuildKeyValueListComponent() {
+  return rebuildDashboardEditorComponent("KeyValueList");
 }
 
 /**

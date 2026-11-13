@@ -1303,6 +1303,34 @@
       "exports": ["Default", "Still", "Overlay"]
     },
     {
+      "file": "packages/react/src/dashboard/PropertyField/PropertyField.stories.tsx",
+      "id": "dashboard-propertyfield",
+      "title": "Dashboard/PropertyField",
+      "component": "PropertyField",
+      "exports": ["Default", "MultiSelection"]
+    },
+    {
+      "file": "packages/react/src/dashboard/OpeningHoursEditor/OpeningHoursEditor.stories.tsx",
+      "id": "dashboard-openinghourseditor",
+      "title": "Dashboard/OpeningHoursEditor",
+      "component": "OpeningHoursEditor",
+      "exports": ["Default", "Overnight", "Localised", "Mixed"]
+    },
+    {
+      "file": "packages/react/src/dashboard/RatingEditor/RatingEditor.stories.tsx",
+      "id": "dashboard-ratingeditor",
+      "title": "Dashboard/RatingEditor",
+      "component": "RatingEditor",
+      "exports": ["Default", "OutOf100", "Errors", "Mixed"]
+    },
+    {
+      "file": "packages/react/src/dashboard/KeyValueList/KeyValueList.stories.tsx",
+      "id": "dashboard-keyvaluelist",
+      "title": "Dashboard/KeyValueList",
+      "component": "KeyValueList",
+      "exports": ["Default", "Empty", "Mixed"]
+    },
+    {
       "file": "apps/docs/src/stories/Tokens.stories.tsx",
       "id": "design-system-tokens-map",
       "title": "Foundations/Tokens/Map",

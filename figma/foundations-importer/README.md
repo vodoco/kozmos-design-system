@@ -180,6 +180,15 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   at its ripple's start, 40 and 4 thick (`Border Width/lg`). React's `label` is
   screen-reader text, never drawn, so the set has no text property. Run
   Curated Icons first.
+- **PropertyField**, **OpeningHoursEditor**, **RatingEditor** and
+  **KeyValueList** — Pointr Cloud's property editors (CLOUD-UI-004, decisions
+  177–181). PropertyField is the frame (`Removable` True or False, a `Name`
+  text property, a `Content Slot` for the editor); OpeningHoursEditor's
+  `State` is Default, Overnight (+1 day) or Mixed; RatingEditor's is Default
+  (with its preview, Rating's own Readonly instance), Error or Mixed;
+  KeyValueList's is Default, Empty or Mixed. Their fields are drawn as Core's
+  fields look, not nested, so an Update keeps their words. Run Core and
+  Curated Icons first.
 
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 

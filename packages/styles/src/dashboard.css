@@ -6,3 +6,7 @@
    style.css's utilities. One file per module under ./dashboard, imported
    here in the order the modules were added. */
 @import "./dashboard/brand-loader.css";
+@import "./dashboard/property-field.css";
+@import "./dashboard/opening-hours-editor.css";
+@import "./dashboard/rating-editor.css";
+@import "./dashboard/key-value-list.css";

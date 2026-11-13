@@ -4,3 +4,7 @@
 // after style.css. One line per module, in the order they were added: see
 // ./README.md for what a module brings with it.
 export * from "./BrandLoader";
+export * from "./PropertyField";
+export * from "./OpeningHoursEditor";
+export * from "./RatingEditor";
+export * from "./KeyValueList";

@@ -1,0 +1,60 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../../components/DocumentationControls";
+import * as KeyValueListStories from "./KeyValueList.stories";
+import { PlatformSnippets } from "../../components/PlatformSnippets";
+
+<Meta of={KeyValueListStories} />
+
+# KeyValueList
+
+Pointr Cloud's key–value list (CLOUD-UI-004, decision 178): one list of repeatable rows, each a name, a type (Text, JSON, Number or Boolean) and a value drawn for its type, with a delete button per row and "Add field" at the end. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
+
+<Canvas>
+  <Story of={KeyValueListStories.Default} />
+</Canvas>
+
+<Controls />
+
+## By keyboard
+
+Every control is named for its row: "Field 2 name", "Field 2 type", "Field 2 value", "Remove Field 2". Adding a row puts focus in its name; deleting one puts it in the next row's name, or on "Add field" after the last, so focus is never lost to the page.
+
+A Number value is a number field (Cloud's was text) and a Boolean a switch; changing the type carries the value over as far as it can ("12" becomes 12). A JSON value that does not parse is an error on its field.
+
+<Canvas>
+  <Story of={KeyValueListStories.Empty} />
+</Canvas>
+
+## A multi-selection
+
+A row's `mixed` value differs across the selection (GAP-153): a text, JSON or number value shows "Multiple values" and none, until it is edited.
+
+<Canvas>
+  <Story of={KeyValueListStories.Mixed} />
+</Canvas>
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import {
+  KeyValueList,
+  PropertyField,
+  type KeyValueRow,
+} from "@kozmos-ds/react/dashboard";
+
+export function Example() {
+  const [rows, setRows] = useState<KeyValueRow[]>([
+    { id: "vendor", name: "vendor", type: "text", value: "Acme" },
+  ]);
+  return (
+    <PropertyField name="Extra Data">
+      <KeyValueList value={rows} onValueChange={setRows} />
+    </PropertyField>
+  );
+}
+    `}
+/>

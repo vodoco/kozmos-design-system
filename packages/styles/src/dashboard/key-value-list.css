@@ -1,0 +1,27 @@
+/* KeyValueList (CLOUD-UI-004, decision 178): a row a field, its name, type
+   and value sharing the line and the delete button at its end; in a narrow
+   column the value wraps under the name. "Add field" closes the list, at
+   its start. Logical sides throughout. */
+@kozmos-owned {
+  .kozmos-key-value-list {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-key-value-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: start;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-key-value-row > :nth-child(3) {
+    grid-column: 1 / 3;
+  }
+  .kozmos-key-value-row > :nth-child(4) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .kozmos-key-value-add {
+    align-self: start;
+  }
+}

@@ -1199,6 +1199,10 @@
               </optgroup>
               <optgroup label="Dashboard">
                 <option value="brandLoader">BrandLoader</option>
+                <option value="propertyField">PropertyField</option>
+                <option value="openingHoursEditor">OpeningHoursEditor</option>
+                <option value="ratingEditor">RatingEditor</option>
+                <option value="keyValueList">KeyValueList</option>
               </optgroup>
               <optgroup label="Utilities">
                 <option value="icons">Curated Icons</option>
@@ -1658,6 +1662,34 @@
           update: "update-brand-loader",
           rebuild: "rebuild-brand-loader",
           hint: "Build creates BrandLoader (CLOUD-UI-008), Pointr Cloud's brand loader, a Dashboard module: the pin in a ring in the theme fill, drawn still as reduced motion draws it, with Overlay False (the loader alone) and True (on Backdrop's scrim) variants. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        propertyField: {
+          label: "PropertyField",
+          build: "build-property-field",
+          update: "update-property-field",
+          rebuild: "rebuild-property-field",
+          hint: "Build creates PropertyField (CLOUD-UI-004), the frame every property of a Pointr Cloud item sits in, a Dashboard module: Removable True (the red trash) and False, with a Name text property and a Content Slot. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        openingHoursEditor: {
+          label: "OpeningHoursEditor",
+          build: "build-opening-hours-editor",
+          update: "update-opening-hours-editor",
+          rebuild: "rebuild-opening-hours-editor",
+          hint: "Build creates OpeningHoursEditor (CLOUD-UI-004), a Dashboard module: State Default (Monday to Friday 08:00–22:00, the weekend closed), Overnight (+1 day) and Mixed. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        ratingEditor: {
+          label: "RatingEditor",
+          build: "build-rating-editor",
+          update: "update-rating-editor",
+          rebuild: "rebuild-rating-editor",
+          hint: "Build creates RatingEditor (CLOUD-UI-004), a Dashboard module: State Default (with the five-star preview, Rating's own Readonly instance), Error and Mixed. Run Core's Rating first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        keyValueList: {
+          label: "KeyValueList",
+          build: "build-key-value-list",
+          update: "update-key-value-list",
+          rebuild: "rebuild-key-value-list",
+          hint: "Build creates KeyValueList (CLOUD-UI-004), a Dashboard module: State Default (two rows), Empty and Mixed, each row a name, a type, a value and a red trash, with Add field. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         aiSearchButton: {
           label: "AISearchButton",
