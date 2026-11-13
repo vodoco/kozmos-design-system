@@ -937,6 +937,39 @@
       var(--primitives-colors-background-0)
     );
   }
+  /* A radio card or tile (GAP-158): chosen, its 1px edge turns theme 600 and
+     a second pixel inside it draws it heavier, so the choice is told by
+     weight and by the ring's dot or the tile's check, never by colour alone.
+     The second pixel is an inset shadow held in --tw-shadow, the slot the
+     ring utilities compose their box-shadow with: focused, the ring is drawn
+     around it and the heavier edge stays. An outline did not survive focus,
+     as the scoped focus-visible:outline-none outweighs this rule. */
+  .kozmos-radio-card[data-state="checked"] {
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-theme-600);
+    box-shadow:
+      var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--tw-shadow);
+  }
+  .kozmos-radio-card[data-state="checked"][data-error] {
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-emotional-danger-600);
+  }
+  /* A card's image sits 12 in from its edge, so its corners are the card's
+     less those 12, concentric with it (docs/nested-radius.md): 20 - 12 = 8. */
+  .kozmos-radio-card-media {
+    border-radius: calc(
+      var(--semantics-radius-container) * 1px -
+        var(--primitives-layout-spacing-150) * 1px
+    );
+  }
+  /* Forced colours draw no box-shadow, so there the chosen box's heavier
+     edge is a 2px outline inside it in Highlight: the choice still shows
+     by weight, as well as by the dot or the check. */
+  @media (forced-colors: active) {
+    .kozmos-radio-card[data-state="checked"] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map
      leaves room for, so it is a scroll box, and a scroll box clips at its
      padding edge. With no padding, that edge sat on the map chrome itself and

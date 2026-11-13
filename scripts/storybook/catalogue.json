@@ -291,7 +291,7 @@
       "id": "components-checkbox",
       "title": "Core/Inputs/Checkbox",
       "component": "Checkbox",
-      "exports": ["Default", "Checked", "Disabled", "Error"]
+      "exports": ["Default", "Checked", "Disabled", "Error", "WithDescription"]
     },
     {
       "file": "packages/react/src/components/Chip/Chip.stories.tsx",
@@ -960,7 +960,14 @@
       "id": "components-radiogroup",
       "title": "Core/Inputs/RadioGroup",
       "component": "Radio",
-      "exports": ["Default", "Disabled", "Error"]
+      "exports": [
+        "Default",
+        "Disabled",
+        "Error",
+        "WithDescription",
+        "Cards",
+        "Tiles"
+      ]
     },
     {
       "file": "packages/react/src/components/Rating/Rating.stories.tsx",
@@ -1179,7 +1186,14 @@
       "id": "components-switch",
       "title": "Core/Inputs/Switch",
       "component": "Switch",
-      "exports": ["Default", "Checked", "Disabled", "Error"]
+      "exports": [
+        "Default",
+        "Checked",
+        "Disabled",
+        "Error",
+        "WithDescription",
+        "StateLabel"
+      ]
     },
     {
       "file": "packages/react/src/components/Table/Table.stories.tsx",

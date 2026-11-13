@@ -29,16 +29,23 @@ figma.connect(Card, cardUrl, {
     title: figma.string("Title Text"),
     description: figma.string("Description Text"),
     body: figma.string("Body Text"),
+    // CLOUD-UI-001 / GAP-169: the header's tone; GAP-035: the title's size.
+    tone: figma.enum("HeaderTone", { Default: undefined, Subtle: "subtle" }),
+    titleSize: figma.enum("TitleSize", {
+      Large: "lg",
+      Medium: "md",
+      Small: "sm",
+    }),
     // GAP-169: what acts on the card, at the header's end.
     headerActions: figma.boolean("Header Actions", {
       true: figma.slot("Header Actions Slot"),
       false: undefined,
     }),
   },
-  example: ({ body, description, headerActions, title }) => (
+  example: ({ body, description, headerActions, title, titleSize, tone }) => (
     <Card>
-      <CardHeader actions={headerActions}>
-        <CardTitle>{title}</CardTitle>
+      <CardHeader actions={headerActions} tone={tone}>
+        <CardTitle size={titleSize}>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>{body}</CardContent>
@@ -52,6 +59,13 @@ figma.connect(Card, cardUrl, {
     title: figma.string("Title Text"),
     description: figma.string("Description Text"),
     body: figma.string("Body Text"),
+    // CLOUD-UI-001 / GAP-169: the header's tone; GAP-035: the title's size.
+    tone: figma.enum("HeaderTone", { Default: undefined, Subtle: "subtle" }),
+    titleSize: figma.enum("TitleSize", {
+      Large: "lg",
+      Medium: "md",
+      Small: "sm",
+    }),
     actions: figma.children(["Secondary Action", "Primary Action"]),
     // GAP-169: what acts on the card, at the header's end.
     headerActions: figma.boolean("Header Actions", {
@@ -59,10 +73,18 @@ figma.connect(Card, cardUrl, {
       false: undefined,
     }),
   },
-  example: ({ actions, body, description, headerActions, title }) => (
+  example: ({
+    actions,
+    body,
+    description,
+    headerActions,
+    title,
+    titleSize,
+    tone,
+  }) => (
     <Card>
-      <CardHeader actions={headerActions}>
-        <CardTitle>{title}</CardTitle>
+      <CardHeader actions={headerActions} tone={tone}>
+        <CardTitle size={titleSize}>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>{body}</CardContent>

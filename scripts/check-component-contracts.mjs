@@ -1584,8 +1584,20 @@ assertContains(
 assertContains(
   files.reactCardFigma,
   source.reactCardFigma,
-  "<CardHeader actions={headerActions}>",
-  "Card Code Connect header composition, with its actions (GAP-169)",
+  "<CardHeader actions={headerActions} tone={tone}>",
+  "Card Code Connect header composition, with its actions (GAP-169) and its tone (CLOUD-UI-001)",
+);
+assertContains(
+  files.reactCardFigma,
+  source.reactCardFigma,
+  'tone: figma.enum("HeaderTone", { Default: undefined, Subtle: "subtle" })',
+  "Card Code Connect header tone mapping (CLOUD-UI-001)",
+);
+assertContains(
+  files.reactCardFigma,
+  source.reactCardFigma,
+  "<CardTitle size={titleSize}>{title}</CardTitle>",
+  "Card Code Connect title size (GAP-035)",
 );
 assertContains(
   files.reactCardFigma,
