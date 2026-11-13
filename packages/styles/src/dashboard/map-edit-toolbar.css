@@ -29,7 +29,8 @@
     min-inline-size: 0;
     pointer-events: none;
   }
-  .kozmos-map-edit-toolbar.kozmos-surface-solid {
+  /* Two classes: Surface's own rule, the solid fill and its edge, weighs one. */
+  .kozmos-map-edit-toolbar-frame .kozmos-map-edit-toolbar {
     pointer-events: auto;
     display: flex;
     flex: none;
