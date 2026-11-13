@@ -1338,6 +1338,23 @@
       "exports": ["Default", "Suggested", "Open", "InAForm"]
     },
     {
+      "file": "packages/react/src/dashboard/MapEditToolbar/MapEditToolbar.stories.tsx",
+      "id": "dashboard-mapedittoolbar",
+      "title": "Dashboard/MapEditToolbar",
+      "component": "MapEditToolbar",
+      "exports": [
+        "Create",
+        "DrawPolygon",
+        "DrawCircle",
+        "DrawPoint",
+        "GeometrySet",
+        "Json",
+        "EditExisting",
+        "NarrowMap",
+        "RightToLeft"
+      ]
+    },
+    {
       "file": "apps/docs/src/stories/Tokens.stories.tsx",
       "id": "design-system-tokens-map",
       "title": "Foundations/Tokens/Map",

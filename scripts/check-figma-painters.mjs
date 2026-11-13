@@ -12289,9 +12289,25 @@ section(
     ]),
   );
 
-  // A file of its own: Counter, the curated icons and the three UI icons on
+  // A file of its own: Counter, the curated icons and the UI icons on
   // their pages, and an IconButton set for the card's action to nest.
-  const uiIcons = ["copy-01", "pencil-01", "star-01"];
+  const uiIcons = [
+    "copy-01",
+    "pencil-01",
+    "star-01",
+    // MapEditToolbar's items (CLOUD-UI-005).
+    "pentagon",
+    "circle",
+    "code-02",
+    "flip-forward",
+    "x-square",
+    "refresh-ccw-01",
+    "transform",
+    "scissors-cut-01",
+    "divider",
+    "ruler",
+    "dots-horizontal",
+  ];
   const controlsPages = () => {
     const [components, icons] = pages();
     for (const name of uiIcons) icons.appendChild(mockIconComponent(name));
@@ -12318,7 +12334,7 @@ section(
             (registry) => registry.name === definition.name,
           ),
       ),
-    `the importer's UI icons are copy-01, pencil-01 and star-01, each with the catalog's key and none a registry icon (${uiList.map((d) => `${d.name} ${d.componentKey}`).join(", ")})`,
+    `the importer's UI icons are ${uiIcons.join(", ")}, each with the catalog's key and none a registry icon (${uiList.map((d) => `${d.name} ${d.componentKey}`).join(", ")})`,
   );
   {
     const library = new Map();
@@ -12361,7 +12377,7 @@ section(
               JSON.stringify(slotOf(registryCount + wayfindingCount + offset))
           );
         }),
-      `Curated Icons imports the three by their catalog keys, after the wayfinding glyphs (${uiIcons.map((name) => `${name} ${JSON.stringify(at(placed(name)))}`).join(", ")})`,
+      `Curated Icons imports the UI icons by their catalog keys, after the wayfinding glyphs (${uiIcons.map((name) => `${name} ${JSON.stringify(at(placed(name)))}`).join(", ")})`,
     );
     const lastRegistry = run.KOSMOS_ICON_DEFINITIONS[registryCount - 1];
     const lastGlyph = (run.KOZMOS_WAYFINDING_ICONS || [])[wayfindingCount - 1];
@@ -15896,6 +15912,243 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         built.children.map((child) => child.id).join() === ids.join(),
       `a second Update keeps the set and its six variants' ids (${error ? error.message : second && `${second.variantsUpdated} updated, ${second.variantsCreated} created, ${second.variantsRemoved} removed`})`,
     );
+  }
+}
+
+section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
+{
+  ok(
+    typeof plugin.updateMapEditToolbarVariant === "function" &&
+      typeof plugin.buildMapEditToolbarComponent === "function" &&
+      typeof plugin.updateMapEditToolbarComponent === "function" &&
+      typeof plugin.rebuildMapEditToolbarComponent === "function",
+    "MapEditToolbar's painter, Build, Update and Rebuild are reachable",
+  );
+  const modes = [
+    "Create",
+    "Draw Polygon",
+    "Draw Circle",
+    "Draw Point",
+    "Geometry Set",
+    "JSON",
+    "Edit Existing",
+  ];
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("MapEditToolbar"),
+    ) === JSON.stringify({ Mode: modes, Overflow: ["False", "True"] }),
+    `MapEditToolbar's axes are Mode (Cloud's seven toolbars) and Overflow (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("MapEditToolbar"))})`,
+  );
+  const dashboard = (plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || []).find(
+    (s) => s.title === "Dashboard",
+  );
+  const sequence = (plugin.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(
+    ([name]) => name,
+  );
+  const ui = fs.readFileSync(
+    path.join(path.dirname(PLUGIN), "ui.html"),
+    "utf8",
+  );
+  ok(
+    dashboard &&
+      dashboard.components.includes("MapEditToolbar") &&
+      sequence.includes("MapEditToolbar") &&
+      (plugin.COMPONENT_DOCS || []).some(
+        (doc) => doc.componentSetName === "MapEditToolbar",
+      ) &&
+      /<option value="mapEditToolbar">MapEditToolbar<\/option>/.test(ui) &&
+      /update: "update-map-edit-toolbar"/.test(ui),
+    `MapEditToolbar is in the Dashboard section, Update All Product / SDK, the docs and the panel (${dashboard && dashboard.components.join(", ")})`,
+  );
+
+  // Its items' icons on the Icons page, as Curated Icons puts them there.
+  const iconsPage = figma.root.children.find((page) => page.name === "Icons");
+  for (const name of [
+    "pentagon",
+    "circle",
+    "code-02",
+    "flip-forward",
+    "x-square",
+    "refresh-ccw-01",
+    "transform",
+    "scissors-cut-01",
+    "divider",
+    "ruler",
+    "dots-horizontal",
+    "pencil-01",
+  ])
+    if (!iconsPage.findOne((node) => node.name === `Icon / ${name}`))
+      iconsPage.appendChild(mockIconComponent(name));
+
+  const draw = async (value, second) => {
+    const component = figma.createComponent();
+    if (typeof plugin.updateMapEditToolbarVariant !== "function")
+      return component;
+    await withAutoLayout(() =>
+      plugin.updateMapEditToolbarVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  // React's stories: the items each of Cloud's toolbars shows, the chosen
+  // tool, and the disabled ones.
+  const expected = {
+    Create: "Polygon Point Circle | JSON | Undo- Redo- Clear",
+    "Draw Polygon": "Draw* Split- Straighten- | Undo- Redo- Clear",
+    "Draw Circle": "Draw* Split- Straighten- | Undo- Redo- Clear",
+    "Draw Point": "Draw* | Undo- Redo- Clear",
+    "Geometry Set": "Adjust* | Cut-out Split Straighten | Undo Redo- Clear",
+    JSON: "Undo Redo- Clear Reset",
+    "Edit Existing":
+      "Adjust* | Cut-out Split Straighten | Undo Redo Clear Reset",
+  };
+  const read = (row) =>
+    row.children
+      .map((item) => {
+        if (item.name === "Divider") return "|";
+        const state = item.getSharedPluginData(
+          "kozmos_ds_importer",
+          "itemState",
+        );
+        return (
+          item.name + (state === "On" ? "*" : state === "Disabled" ? "-" : "")
+        );
+      })
+      .join(" ");
+  for (const mode of modes) {
+    for (const overflow of ["False", "True"]) {
+      const at = `Mode=${mode}, Overflow=${overflow}`;
+      const card = await draw(mode, overflow);
+      const parsed =
+        typeof plugin.parseMapEditToolbarVariantName === "function"
+          ? plugin.parseMapEditToolbarVariantName(card.name)
+          : null;
+      ok(
+        card.name === at &&
+          parsed &&
+          parsed.value === mode &&
+          parsed.second === overflow,
+        `${at}: named so, and reads back as itself (${card.name})`,
+      );
+      ok(
+        card.layoutMode === "HORIZONTAL" &&
+          card.height === 60 &&
+          menusBound(card, "height") === "MapEditToolbar/height" &&
+          card.paddingTop === 6 &&
+          card.paddingBottom === 6 &&
+          card.paddingLeft === 8 &&
+          card.paddingRight === 8 &&
+          menusBound(card, "paddingTop") === "MapEditToolbar/padding/y" &&
+          menusValueOf("MapEditToolbar/padding/y") === 6 &&
+          card.cornerRadius === 16 &&
+          menusBound(card, "cornerRadius") === "MapEditToolbar/radius" &&
+          boundVariableName(card.fills[0]) === "Surface/0" &&
+          card.strokes.length === 0 &&
+          card.effects.length === 1 &&
+          card.effects[0].offset.y === 4 &&
+          card.effects[0].radius === 8,
+        `${at}: a 60 card, padding 6 and 8, corner 16, Surface/0 with no edge, the floating elevation (${card.height}, ${card.paddingTop}/${card.paddingLeft}, ${card.cornerRadius}, ${card.strokes.length})`,
+      );
+      const row = named(card, "Items");
+      const drawn = row ? read(row) : "";
+      if (overflow === "False") {
+        ok(
+          drawn === expected[mode],
+          `${at}: Cloud's items, as React's stories show them (${drawn})`,
+        );
+      } else {
+        const full = expected[mode].split(" ");
+        const shown = drawn.split(" ");
+        // A toolbar that fits a 320 map is drawn whole, with no More.
+        ok(
+          card.width <= 320 &&
+            (drawn === expected[mode] || shown[shown.length - 1] === "More") &&
+            shown[shown.length - 2] !== "|" &&
+            shown.slice(0, -1).every((item, index) => item === full[index]),
+          `${at}: on a 320 map, the items that fit, from the start, then More when any did not (${card.width}: ${drawn})`,
+        );
+      }
+      const json = named(card, "GeoJSON Field");
+      ok(
+        mode === "JSON"
+          ? json &&
+              card.children[0] === json &&
+              json.width === 200 &&
+              boundVariableName(json.strokes[0]) === "Border/Input"
+          : !json,
+        `${at}: ${mode === "JSON" ? "the GeoJSON field before the items" : "no field"}`,
+      );
+      for (const item of row ? row.children : []) {
+        if (item.name === "Divider") {
+          const rule = item.children[0];
+          ok(
+            item.paddingLeft === 4 &&
+              item.paddingRight === 4 &&
+              rule &&
+              rule.width === 1 &&
+              rule.height === 32 &&
+              boundVariableName(rule.fills[0]) === "Border/Subtle",
+            `${at}: a divider is a 1 × 32 Border/Subtle rule, 4 of margin each side`,
+          );
+          continue;
+        }
+        const state = item.getSharedPluginData(
+          "kozmos_ds_importer",
+          "itemState",
+        );
+        const label = named(item, "Label Text");
+        const icon = named(item, "Icon");
+        const ink =
+          state === "On"
+            ? "Primary Buttons/themed/button/foreground/content/idle"
+            : "Colors/foreground/400";
+        ok(
+          item.layoutMode === "VERTICAL" &&
+            item.width === 56 &&
+            item.height === 48 &&
+            menusBound(item, "width") === "MapEditToolbar/item/width" &&
+            item.cornerRadius === 8 &&
+            icon &&
+            icon.width === 24 &&
+            label &&
+            label.characters === item.name &&
+            label.fontSize === 11 &&
+            label.lineHeight.value === 14 &&
+            boundVariableName(label.fills[0]) === ink &&
+            (state === "On"
+              ? boundVariableName(item.fills[0]) ===
+                "Primary Buttons/themed/button/background/idle"
+              : item.fills.length === 0) &&
+            item.opacity === (state === "Disabled" ? 0.5 : 1),
+          `${at}: ${item.name} is 56 × 48, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : "no fill"}${state === "Disabled" ? ", at half strength" : ""} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+        );
+      }
+      card.remove();
+    }
+  }
+  {
+    const set = figma.combineAsVariants(
+      [await draw("JSON", "False")],
+      figma.currentPage,
+    );
+    set.name = "MapEditToolbar";
+    const item = named(set, "Undo");
+    const label = item && named(item, "Label Text");
+    const field = named(set, "Field Text");
+    ok(
+      label &&
+        field &&
+        plugin.inferTextStyleKeyForComponentText(label, set) ===
+          "mapEditToolbarLabel" &&
+        plugin.inferTextStyleKeyForComponentText(field, set) === "fieldText",
+      "the audit expects MapEditToolbar / Label on an item and Field / Text in the field",
+    );
+    set.remove();
   }
 }
 

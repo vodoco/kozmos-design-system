@@ -9,3 +9,4 @@ export * from "./OpeningHoursEditor";
 export * from "./RatingEditor";
 export * from "./KeyValueList";
 export * from "./PropertyPicker";
+export * from "./MapEditToolbar";

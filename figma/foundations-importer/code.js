@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "630c09c629c8";
+const PLUGIN_BUILD = "a548cfc15f08";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -969,6 +969,110 @@ const BRAND_LOADER_GEOMETRY = {
   secondRingStroke: 4,
   pin: 32,
 };
+// MapEditToolbar (CLOUD-UI-005, decisions 139 and 151): Pointr Cloud's map
+// edit toolbar. Mode is one of Cloud's seven toolbars (Cloud 10.16, read on 11
+// Nov), drawn with Cloud's items; Overflow True draws it on a 320 map, the
+// items that do not fit behind More, as React's overflow does. Create, the
+// first, with Overflow False, is the set's default.
+const MAP_EDIT_TOOLBAR_MODES = [
+  "Create",
+  "Draw Polygon",
+  "Draw Circle",
+  "Draw Point",
+  "Geometry Set",
+  "JSON",
+  "Edit Existing",
+];
+const MAP_EDIT_TOOLBAR_OVERFLOW = ["False", "True"];
+// React's .kozmos-map-edit-toolbar: the card 60 tall (6 + 48 + 6), padding 8
+// at the sides, corner 16, 8 between the field and the items; items 56 × 48,
+// 4 apart, padded 4, corner 8 (16 less the card's padding), a 24 icon over an
+// 11/14 label 2 below it; dividers 1 × 32 with 4 of margin; the JSON field an
+// Input, 200 wide.
+const MAP_EDIT_TOOLBAR_GEOMETRY = {
+  height: 60,
+  paddingX: 8,
+  paddingY: 6,
+  cardGap: 8,
+  itemGap: 4,
+  itemWidth: 56,
+  itemHeight: 48,
+  itemPaddingX: 4,
+  itemRadius: 8,
+  icon: 24,
+  labelGap: 2,
+  labelSize: 11,
+  labelLineHeight: 14,
+  dividerHeight: 32,
+  dividerMargin: 4,
+  fieldWidth: 200,
+  fieldHeight: 44,
+  narrowMap: 320,
+};
+const MAP_EDIT_TOOLBAR_ICON = {
+  polygon: "pentagon",
+  point: "marker-pin-01",
+  circle: "circle",
+  json: "code-02",
+  undo: "flip-backward",
+  redo: "flip-forward",
+  clear: "x-square",
+  reset: "refresh-ccw-01",
+  draw: "pencil-01",
+  adjust: "transform",
+  cutOut: "scissors-cut-01",
+  split: "divider",
+  straighten: "ruler",
+};
+function mapEditToolbarItem(kind, label, icon, state) {
+  return { kind, label, icon: MAP_EDIT_TOOLBAR_ICON[icon], state };
+}
+const MAP_EDIT_TOOLBAR_DIVIDER = { kind: "divider" };
+const MAP_EDIT_TOOLBAR_ITEMS = (() => {
+  const t = (label, icon, state) =>
+    mapEditToolbarItem("tool", label, icon, state || "Off");
+  const a = (label, icon, state) =>
+    mapEditToolbarItem("action", label, icon, state || "Off");
+  const d = MAP_EDIT_TOOLBAR_DIVIDER;
+  const history = (undo, redo) => [
+    a("Undo", "undo", undo),
+    a("Redo", "redo", redo),
+    a("Clear", "clear"),
+  ];
+  const drawing = [
+    t("Draw", "draw", "On"),
+    t("Split", "split", "Disabled"),
+    a("Straighten", "straighten", "Disabled"),
+    d,
+  ].concat(history("Disabled", "Disabled"));
+  const geometry = (redo) =>
+    [
+      t("Adjust", "adjust", "On"),
+      d,
+      t("Cut-out", "cutOut"),
+      t("Split", "split"),
+      a("Straighten", "straighten"),
+      d,
+    ].concat(history("Off", redo));
+  return {
+    Create: [
+      t("Polygon", "polygon"),
+      t("Point", "point"),
+      t("Circle", "circle"),
+      d,
+      t("JSON", "json"),
+      d,
+    ].concat(history("Disabled", "Disabled")),
+    "Draw Polygon": drawing,
+    "Draw Circle": drawing,
+    "Draw Point": [t("Draw", "draw", "On"), d].concat(
+      history("Disabled", "Disabled"),
+    ),
+    "Geometry Set": geometry("Disabled"),
+    JSON: history("Off", "Disabled").concat([a("Reset", "reset")]),
+    "Edit Existing": geometry("Off").concat([a("Reset", "reset")]),
+  };
+})();
 // PropertyPicker (CLOUD-UI-003, decisions 133 and 183): Pointr Cloud's
 // "+ Add additional field". State is what the popup shows: Closed, the
 // subtle Button alone, first, so it is the set's default; Open, every
@@ -1424,6 +1528,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DynamicIsland: 320,
   FeedbackCard: 360,
   BrandLoader: 260,
+  MapEditToolbar: 320,
   PropertyPicker: 520,
   PropertyField: 220,
   OpeningHoursEditor: 760,
@@ -1602,6 +1707,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "RatingEditor",
       "KeyValueList",
       "PropertyPicker",
+      "MapEditToolbar",
     ],
   },
   {
@@ -2369,6 +2475,34 @@ const COMPONENT_DOCS = [
       "Under reduced motion, the system's or DesignConfigProvider's, the rings and the pin stand still: the drawing in Figma.",
       "Overlay makes the rest of the page inert and busy until the loader goes, takes every pointer event on the scrim and shows the wait cursor; focus is not moved to it, and goes back where it was.",
       "The rings and the pin are decoration, hidden from assistive technology.",
+    ],
+  },
+  {
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    category: "Dashboard",
+    summary:
+      "MapEditToolbar is Pointr Cloud's map edit toolbar (CLOUD-UI-005): one part for its seven geometry toolbars, a card on the map of tools, actions and dividers, with one tool chosen at a time. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use it on the map while a geometry is drawn or edited, with the items the mode needs: the product decides which show.",
+      "Use a tool for a mode the map stays in (Draw, Adjust, Split) and an action for a step done once (Undo, Straighten, Clear).",
+      "Leave room above the card for the guidance strip (CLOUD-UI-006), which it does not draw.",
+    ],
+    api: [
+      "Mode is one of Cloud's seven toolbars, drawn with Cloud's items; in code the items are MapEditToolbar.items, the product's: tools, actions and dividers.",
+      "A chosen tool (the theme fill) is MapEditToolbar.value; a disabled item, at half strength, is an item's disabled.",
+      "Overflow True draws a 320 map, the items that do not fit behind More, from the end; in code the toolbar follows its width, and it is no prop.",
+      "JSON's GeoJSON field is MapEditToolbar.field, a labelled Input.",
+    ],
+    properties: [
+      "Mode: Create, Draw Polygon, Draw Circle, Draw Point, Geometry Set, JSON, Edit Existing",
+      "Overflow: False, True",
+    ],
+    accessibility: [
+      'In code it is one tab stop, role="toolbar", named by label: the arrow keys move between the items in the writing direction, and Home and End go to the ends.',
+      "Every item is named by its label; a tool says whether it is pressed (aria-pressed), and a disabled item is skipped.",
+      "A tooltip describes an item where it adds to the label, on hover and keyboard focus.",
+      "Nothing runs off a narrow map: what does not fit is in the More menu, a tool there a checkbox item.",
     ],
   },
   {
@@ -5477,6 +5611,84 @@ const IMPORTER_UI_ICON_DEFINITIONS = [
     category: "Shapes",
     componentKey: "ff0eb2f124d6feedc853de839891884656c55adc",
     description: "Featured: Input's toggle action (GAP-154).",
+  },
+  {
+    name: "pentagon",
+    figmaName: "pentagon",
+    category: "Shapes",
+    componentKey: "8d9d6b316f3319c48c1c4823d225774e5fa6ad5b",
+    description: "Polygon: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "circle",
+    figmaName: "circle",
+    category: "Shapes",
+    componentKey: "ee738140892ec31187911104b2d52a84141e246d",
+    description: "Circle: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "code-02",
+    figmaName: "code-02",
+    category: "Development",
+    componentKey: "925bb167a3dade2a9c79fad8d3d30b0d964af92b",
+    description: "JSON: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "flip-forward",
+    figmaName: "flip-forward",
+    category: "Arrows",
+    componentKey: "a0368b09e64c0bd7aeeb628f6451193a1bc367bf",
+    description: "Redo: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "x-square",
+    figmaName: "x-square",
+    category: "General",
+    componentKey: "d0ab609a2235194914372fe989cd85c16d4a945f",
+    description: "Clear: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "refresh-ccw-01",
+    figmaName: "refresh-ccw-01",
+    category: "Arrows",
+    componentKey: "5bdbdf443e193e64782588e5f526bc2f15e6c074",
+    description: "Reset: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "transform",
+    figmaName: "transform",
+    category: "Editor",
+    componentKey: "112f170a30bfc3d5345b22f13697e27463ba3f60",
+    description: "Adjust: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "scissors-cut-01",
+    figmaName: "scissors-cut-01",
+    category: "Editor",
+    componentKey: "d5a4ac7378b48f55b57ae97615c356b7b6bc15b6",
+    description: "Cut-out: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "divider",
+    figmaName: "divider",
+    category: "Layout",
+    componentKey: "0c1791163fa3ae7c628b6f520a6eac68d6a2fe8c",
+    description: "Split: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "ruler",
+    figmaName: "ruler",
+    category: "Education",
+    componentKey: "42be600b2ea2060be05f8e10d7ec29b472f9ca3a",
+    description: "Straighten: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "dots-horizontal",
+    figmaName: "dots-horizontal",
+    category: "General",
+    componentKey: "4c3adc5d6e726fe219837c9bee42d022433d8074",
+    description:
+      "More, the overflow menu: MapEditToolbar's item (CLOUD-UI-005).",
   },
 ];
 /** Every Pointr icon the importer imports: the registry's, then the UI's. */
@@ -9563,6 +9775,53 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["STROKE_FLOAT"],
   },
   { name: "BrandLoader/pin/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
+  // MapEditToolbar (CLOUD-UI-005, decisions 139 and 151): React's card, 60
+  // tall, padded 6 and 8, the Control corner; items 56 × 48, 4 apart, corner
+  // 8; a 24 icon; dividers 32 tall with 4 of margin.
+  { name: "MapEditToolbar/height", value: 60, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "MapEditToolbar/padding/y",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "MapEditToolbar/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "MapEditToolbar/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  { name: "MapEditToolbar/item/width", value: 56, scopes: ["WIDTH_HEIGHT"] },
+  { name: "MapEditToolbar/item/height", value: 48, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/item/radius",
+    value: 8,
+    scopes: ["CORNER_RADIUS"],
+  },
+  { name: "MapEditToolbar/icon/size", value: 24, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/divider/height",
+    value: 32,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "MapEditToolbar/divider/margin",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   { name: "Avatar/size/default", value: 40, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Avatar/radius",
@@ -11773,6 +12032,7 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   // Dashboard modules (decision 183) ride this run: they share no painter
   // with Core, and a lane of one needs no button of its own.
   ["BrandLoader", updateBrandLoaderComponent],
+  ["MapEditToolbar", updateMapEditToolbarComponent],
   ["PropertyPicker", updatePropertyPickerComponent],
   // The property editors (CLOUD-UI-004). RatingEditor holds Rating's own
   // read-only instance, which Core's run draws first.
@@ -12067,6 +12327,9 @@ function additionalComponentActionHandlers() {
     "build-brand-loader": buildBrandLoaderComponent,
     "update-brand-loader": updateBrandLoaderComponent,
     "rebuild-brand-loader": rebuildBrandLoaderComponent,
+    "build-map-edit-toolbar": buildMapEditToolbarComponent,
+    "update-map-edit-toolbar": updateMapEditToolbarComponent,
+    "rebuild-map-edit-toolbar": rebuildMapEditToolbarComponent,
     "build-property-picker": buildPropertyPickerComponent,
     "update-property-picker": updatePropertyPickerComponent,
     "rebuild-property-picker": rebuildPropertyPickerComponent,
@@ -18848,6 +19111,13 @@ function expectedVariantAxesForComponentSetName(name) {
     return { State: KEY_VALUE_LIST_STATES };
   }
 
+  if (canonicalName === "MapEditToolbar") {
+    return {
+      Mode: MAP_EDIT_TOOLBAR_MODES,
+      Overflow: MAP_EDIT_TOOLBAR_OVERFLOW,
+    };
+  }
+
   if (canonicalName === "DirectionStep") {
     return {
       Type: DIRECTION_STEP_TYPES,
@@ -25284,6 +25554,15 @@ function addComponentTextStyleSpecs(specs, fonts) {
   );
   addTextStyleSpec(
     specs,
+    "mapEditToolbarLabel",
+    "MapEditToolbar / Label",
+    fonts.medium,
+    11,
+    14,
+    "Typography contract for a map edit toolbar item's label: 11/14 medium, under its 24 icon (CLOUD-UI-005, decision 151).",
+  );
+  addTextStyleSpec(
+    specs,
     "navigationItem",
     "NavigationItem / Label",
     fonts.medium,
@@ -25986,6 +26265,9 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   if (setName === "TreeSection") {
     if (/Count Text$/.test(textName)) return "counterSmall";
     return "treeSection";
+  }
+  if (setName === "MapEditToolbar") {
+    return textName === "Field Text" ? "fieldText" : "mapEditToolbarLabel";
   }
   if (setName === "Table") {
     if (/^Header \d+ Text$/.test(textName)) return "tableHeader";
@@ -55894,6 +56176,430 @@ async function rebuildBrandLoaderComponent() {
     componentName: "BrandLoader",
     componentSetName: "BrandLoader",
     build: buildBrandLoaderComponent,
+  });
+}
+
+// --- MapEditToolbar (Dashboard) --------------------------------------------
+
+// Pointr Cloud's map edit toolbar (CLOUD-UI-005, decisions 133, 139, 151 and
+// 183), as React's MapEditToolbar and
+// packages/styles/src/dashboard/map-edit-toolbar.css draw it: a card of
+// Surface/0 with no edge (a map control's, decision 40), 60 tall, padding 6
+// and 8, the Control corner (16) and map chrome's floating elevation; items
+// 56 × 48, a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
+// 4 between items; a chosen tool is a pressed ToggleButton, the theme fill
+// under its ink; every other item is Cloud's grey ink (foreground 400), and a
+// disabled one is drawn at half strength, as every Kozmos button is. Dividers
+// are Border/Subtle, 1 × 32, 8 from the items each side (4 of margin and the
+// gap). Mode is one of Cloud's seven toolbars, with Cloud's items; Overflow
+// True draws it on a 320 map, the items that do not fit gone into More, as
+// React's overflow does. Each variant is redrawn whole on Update: the items
+// are data, not overrides a designer keeps.
+
+async function createMapEditToolbarVariant(args) {
+  const component = figma.createComponent();
+  await updateMapEditToolbarVariant(component, args);
+  return component;
+}
+
+function parseMapEditToolbarVariantName(name) {
+  const values = parseVariantValueMap(name);
+  if (MAP_EDIT_TOOLBAR_MODES.indexOf(values.Mode) === -1) return null;
+  const overflow = values.Overflow === undefined ? "False" : values.Overflow;
+  if (MAP_EDIT_TOOLBAR_OVERFLOW.indexOf(overflow) === -1) return null;
+  return { value: values.Mode, second: overflow };
+}
+
+/**
+ * How many of a mode's items a card `width` wide shows: React's
+ * fitMapEditToolbarItems, with a divider left at the end dropped.
+ */
+function mapEditToolbarVisibleCount(items, width, withField) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const widthOf = (item) =>
+    item.kind === "divider" ? 1 + 2 * g.dividerMargin : g.itemWidth;
+  let available = width - 2 * g.paddingX;
+  if (withField) available -= g.fieldWidth + g.cardGap;
+  const total = (count) =>
+    items.slice(0, count).reduce((sum, item) => sum + widthOf(item), 0) +
+    Math.max(0, count - 1) * g.itemGap;
+  let count = items.length;
+  if (total(count) > available) {
+    count -= 1;
+    while (count > 0 && total(count) + g.itemGap + g.itemWidth > available)
+      count -= 1;
+  }
+  while (count > 0 && items[count - 1].kind === "divider") count -= 1;
+  return count;
+}
+
+async function updateMapEditToolbarVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const overflow = second === "True";
+  const json = value === "JSON";
+  const all = MAP_EDIT_TOOLBAR_ITEMS[value];
+  const shown = overflow
+    ? mapEditToolbarVisibleCount(all, g.narrowMap, json)
+    : all.length;
+  const items = all.slice(0, shown);
+  const more = shown < all.length;
+
+  productSdkVariantRoot(
+    component,
+    "MapEditToolbar",
+    `Mode=${value}, Overflow=${overflow ? "True" : "False"}`,
+    {
+      direction: "horizontal",
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "MIN",
+      counterAlign: "CENTER",
+      spacing: g.cardGap,
+      paddingLeft: g.paddingX,
+      paddingRight: g.paddingX,
+      paddingTop: g.paddingY,
+      paddingBottom: g.paddingY,
+      width: g.paddingX * 2 + g.itemWidth,
+      height: g.height,
+    },
+  );
+  component.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.effects = [elevationEffect("floating")];
+  bindFloatVariable(
+    component,
+    "height",
+    "MapEditToolbar/height",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      component,
+      side,
+      "MapEditToolbar/padding/x",
+      variableByName,
+      stats,
+    );
+  for (const side of ["paddingTop", "paddingBottom"])
+    bindFloatVariable(
+      component,
+      side,
+      "MapEditToolbar/padding/y",
+      variableByName,
+      stats,
+    );
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "MapEditToolbar/radius",
+    variableByName,
+    stats,
+  );
+
+  if (json) {
+    component.appendChild(
+      await createMapEditToolbarField({ fonts, variableByName, stats }),
+    );
+  }
+
+  const row = figma.createFrame();
+  row.name = "Items";
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "AUTO";
+  row.counterAxisSizingMode = "AUTO";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = g.itemGap;
+  row.fills = [];
+  row.strokes = [];
+  row.clipsContent = false;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-items");
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "MapEditToolbar/gap",
+    variableByName,
+    stats,
+  );
+  component.appendChild(row);
+
+  for (const item of items) {
+    if (item.kind === "divider") {
+      row.appendChild(createMapEditToolbarDivider(variableByName, stats));
+      continue;
+    }
+    row.appendChild(
+      await createMapEditToolbarItem(item, { fonts, variableByName, stats }),
+    );
+  }
+  if (more) {
+    row.appendChild(
+      await createMapEditToolbarItem(
+        { kind: "action", label: "More", icon: "dots-horizontal" },
+        { fonts, variableByName, stats },
+      ),
+    );
+  }
+}
+
+/** One item: the icon over its label, in the item's state. */
+async function createMapEditToolbarItem(
+  item,
+  { fonts, variableByName, stats },
+) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const on = item.state === "On";
+  const ink = on
+    ? THEME_FILL_FOREGROUND
+    : { name: "Colors/foreground/400", fallback: "#5D626F" };
+  const frame = figma.createFrame();
+  frame.name = item.label;
+  frame.layoutMode = "VERTICAL";
+  frame.primaryAxisSizingMode = "FIXED";
+  frame.counterAxisSizingMode = "FIXED";
+  frame.primaryAxisAlignItems = "CENTER";
+  frame.counterAxisAlignItems = "CENTER";
+  frame.itemSpacing = g.labelGap;
+  frame.paddingLeft = g.itemPaddingX;
+  frame.paddingRight = g.itemPaddingX;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.resizeWithoutConstraints(g.itemWidth, g.itemHeight);
+  frame.cornerRadius = g.itemRadius;
+  frame.clipsContent = false;
+  frame.strokes = [];
+  frame.fills = on
+    ? [
+        paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  frame.opacity = item.state === "Disabled" ? 0.5 : 1;
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
+  frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
+  frame.setSharedPluginData(RUN_NAMESPACE, "itemState", item.state || "Off");
+  bindSizeVariables(
+    frame,
+    "MapEditToolbar/item/width",
+    "MapEditToolbar/item/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    frame,
+    "cornerRadius",
+    "MapEditToolbar/item/radius",
+    variableByName,
+    stats,
+  );
+
+  const source = await findImporterIconSource(
+    item.icon,
+    "MapEditToolbar",
+    stats,
+  );
+  if (source) {
+    const icon = createIconSlotInstance(
+      source,
+      ink.name,
+      ink.fallback,
+      variableByName,
+      stats,
+      g.icon,
+      "MapEditToolbar/icon/size",
+    );
+    frame.appendChild(icon);
+  }
+
+  const label = await productSdkText({
+    name: "Label Text",
+    characters: item.label,
+    styleKey: "mapEditToolbarLabel",
+    fonts,
+    bold: true,
+    fontSize: g.labelSize,
+    lineHeight: g.labelLineHeight,
+    colorToken: ink.name,
+    colorFallback: ink.fallback,
+    variableByName,
+    stats,
+    width: g.itemWidth - 2 * g.itemPaddingX,
+  });
+  label.textAutoResize = "WIDTH_AND_HEIGHT";
+  label.textAlignHorizontal = "CENTER";
+  frame.appendChild(label);
+  return frame;
+}
+
+function createMapEditToolbarDivider(variableByName, stats) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  // The 4 of margin each side of React's divider, as a frame round the
+  // rule, so the gap and the margin make the 8 the code draws.
+  const box = figma.createFrame();
+  box.name = "Divider";
+  box.layoutMode = "HORIZONTAL";
+  box.primaryAxisSizingMode = "AUTO";
+  box.counterAxisSizingMode = "AUTO";
+  box.paddingLeft = g.dividerMargin;
+  box.paddingRight = g.dividerMargin;
+  box.paddingTop = 0;
+  box.paddingBottom = 0;
+  box.fills = [];
+  box.strokes = [];
+  box.clipsContent = false;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-divider");
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      box,
+      side,
+      "MapEditToolbar/divider/margin",
+      variableByName,
+      stats,
+    );
+  const rule = figma.createRectangle();
+  rule.name = "Rule";
+  rule.resizeWithoutConstraints(1, g.dividerHeight);
+  rule.fills = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  bindSizeVariables(
+    rule,
+    "Separator/thickness",
+    "MapEditToolbar/divider/height",
+    variableByName,
+    stats,
+  );
+  box.appendChild(rule);
+  return box;
+}
+
+/** JSON mode's GeoJSON field: an outlined Input, its placeholder. */
+async function createMapEditToolbarField({ fonts, variableByName, stats }) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const field = figma.createFrame();
+  field.name = "GeoJSON Field";
+  field.layoutMode = "HORIZONTAL";
+  field.primaryAxisSizingMode = "FIXED";
+  field.counterAxisSizingMode = "FIXED";
+  field.counterAxisAlignItems = "CENTER";
+  field.paddingLeft = 12;
+  field.paddingRight = 12;
+  field.resizeWithoutConstraints(g.fieldWidth, g.fieldHeight);
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  field.strokes = [
+    paintFromVariable("Border/Input", "#C7CAD1", variableByName, stats),
+  ];
+  field.strokeWeight = 1;
+  field.clipsContent = true;
+  field.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-field");
+  bindFloatVariable(
+    field,
+    "height",
+    "Input/field/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    field,
+    "cornerRadius",
+    "Input/field/radius",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      field,
+      side,
+      "Input/field/padding/x",
+      variableByName,
+      stats,
+    );
+  const placeholder = await productSdkText({
+    name: "Field Text",
+    characters: "Paste GeoJSON",
+    styleKey: "fieldText",
+    fonts,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/400",
+    colorFallback: "#5D626F",
+    variableByName,
+    stats,
+    width: g.fieldWidth - 24,
+  });
+  field.appendChild(placeholder);
+  return field;
+}
+
+function configureMapEditToolbarProperties(_componentSet, _stats) {}
+
+const MAP_EDIT_TOOLBAR_DESCRIPTION = [
+  "Kozmos MapEditToolbar generated from the React MapEditToolbar API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Mode is one of Pointr Cloud's seven toolbars (CLOUD-UI-005), with Cloud's items; in code the items are MapEditToolbar.items, the product's.",
+  "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is at half strength. In code the chosen tool is MapEditToolbar.value.",
+  "Overflow True draws a 320 map: what does not fit goes into More, from the end. In code it follows the width; it is no prop.",
+  "The card is 60 tall, padding 6 and 8, corner 16; items 56 × 48, a 24 icon over an 11/14 label (decisions 139 and 151).",
+];
+
+async function buildMapEditToolbarComponent() {
+  return buildSingleAxisComponent({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    axisName: "Mode",
+    values: MAP_EDIT_TOOLBAR_MODES,
+    axis2Name: "Overflow",
+    axis2Values: MAP_EDIT_TOOLBAR_OVERFLOW,
+    x: 80,
+    y: 19640,
+    xStep: 760,
+    yStep: 120,
+    createVariant: createMapEditToolbarVariant,
+    configureProperties: configureMapEditToolbarProperties,
+    autoReorganize: true,
+    description: MAP_EDIT_TOOLBAR_DESCRIPTION,
+  });
+}
+
+async function updateMapEditToolbarComponent() {
+  return updateSingleAxisComponent({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    axisName: "Mode",
+    values: MAP_EDIT_TOOLBAR_MODES,
+    axis2Name: "Overflow",
+    axis2Values: MAP_EDIT_TOOLBAR_OVERFLOW,
+    xStep: 760,
+    yStep: 120,
+    createVariant: createMapEditToolbarVariant,
+    updateVariant: updateMapEditToolbarVariant,
+    parseVariantName: parseMapEditToolbarVariantName,
+    configureProperties: configureMapEditToolbarProperties,
+    autoReorganize: true,
+    description: MAP_EDIT_TOOLBAR_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildMapEditToolbarComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    build: buildMapEditToolbarComponent,
   });
 }
 
