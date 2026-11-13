@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "2c3aa417c5f1";
+const PLUGIN_BUILD = "7103069d9876";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -961,6 +961,159 @@ const DYNAMIC_ISLAND_GEOMETRY = {
   Minimal: { width: 56, height: 56, radius: 28 },
 };
 const FEEDBACK_CARD_STATES = ["Default", "Submitting", "Success"];
+// Dashboard lane (decision 183): Pointr Cloud's web modules, shipped from
+// @kozmos-ds/react/dashboard, React only. BrandLoader (CLOUD-UI-008,
+// decisions 133 and 176) is the first. Its Overlay axis is React's `overlay`
+// prop, the one prop that changes the drawing; False, the loader alone, is
+// first, so it is the set's default.
+const BRAND_LOADER_OVERLAY = ["False", "True"];
+// React's .kozmos-brand-loader: a 120 box (7.5rem); the first ring at rest is
+// 108 (6.75rem) and 6 thick (border-width lg + md), the second 4 (lg) and
+// starts its ripple at 40 (Layout/spacing/500); the pin is 32 (2rem). The
+// overlay is drawn on Backdrop's example scrim (BACKDROP_CUTOUT's 320×180).
+const BRAND_LOADER_GEOMETRY = {
+  size: 120,
+  ring: 108,
+  ringStroke: 6,
+  secondRingStart: 40,
+  secondRingStroke: 4,
+  pin: 32,
+};
+// MapEditToolbar (CLOUD-UI-005, decisions 139 and 151): Pointr Cloud's map
+// edit toolbar. Mode is one of Cloud's seven toolbars (Cloud 10.16, read on 11
+// Nov), drawn with Cloud's items; Overflow True draws it on a 320 map, the
+// items that do not fit behind More, as React's overflow does. Create, the
+// first, with Overflow False, is the set's default.
+const MAP_EDIT_TOOLBAR_MODES = [
+  "Create",
+  "Draw Polygon",
+  "Draw Circle",
+  "Draw Point",
+  "Geometry Set",
+  "JSON",
+  "Edit Existing",
+];
+const MAP_EDIT_TOOLBAR_OVERFLOW = ["False", "True"];
+// React's .kozmos-map-edit-toolbar: the card 60 tall (6 + 48 + 6), padding 8
+// at the sides, corner 16, 8 between the field and the items; items 56 × 48,
+// 4 apart, padded 4, corner 8 (16 less the card's padding), a 24 icon over an
+// 11/14 label 2 below it; dividers 1 × 32 with 4 of margin; the JSON field an
+// Input, 200 wide.
+const MAP_EDIT_TOOLBAR_GEOMETRY = {
+  height: 60,
+  paddingX: 8,
+  paddingY: 6,
+  cardGap: 8,
+  itemGap: 4,
+  itemWidth: 56,
+  itemHeight: 48,
+  itemPaddingX: 4,
+  itemRadius: 8,
+  icon: 24,
+  labelGap: 2,
+  labelSize: 11,
+  labelLineHeight: 14,
+  dividerHeight: 32,
+  dividerMargin: 4,
+  fieldWidth: 200,
+  fieldHeight: 44,
+  narrowMap: 320,
+};
+const MAP_EDIT_TOOLBAR_ICON = {
+  polygon: "pentagon",
+  point: "marker-pin-01",
+  circle: "circle",
+  json: "code-02",
+  undo: "flip-backward",
+  redo: "flip-forward",
+  clear: "x-square",
+  reset: "refresh-ccw-01",
+  draw: "pencil-01",
+  adjust: "transform",
+  cutOut: "scissors-cut-01",
+  split: "divider",
+  straighten: "ruler",
+};
+function mapEditToolbarItem(kind, label, icon, state) {
+  return { kind, label, icon: MAP_EDIT_TOOLBAR_ICON[icon], state };
+}
+const MAP_EDIT_TOOLBAR_DIVIDER = { kind: "divider" };
+const MAP_EDIT_TOOLBAR_ITEMS = (() => {
+  const t = (label, icon, state) =>
+    mapEditToolbarItem("tool", label, icon, state || "Off");
+  const a = (label, icon, state) =>
+    mapEditToolbarItem("action", label, icon, state || "Off");
+  const d = MAP_EDIT_TOOLBAR_DIVIDER;
+  const history = (undo, redo) => [
+    a("Undo", "undo", undo),
+    a("Redo", "redo", redo),
+    a("Clear", "clear"),
+  ];
+  const drawing = [
+    t("Draw", "draw", "On"),
+    t("Split", "split", "Disabled"),
+    a("Straighten", "straighten", "Disabled"),
+    d,
+  ].concat(history("Disabled", "Disabled"));
+  const geometry = (redo) =>
+    [
+      t("Adjust", "adjust", "On"),
+      d,
+      t("Cut-out", "cutOut"),
+      t("Split", "split"),
+      a("Straighten", "straighten"),
+      d,
+    ].concat(history("Off", redo));
+  return {
+    Create: [
+      t("Polygon", "polygon"),
+      t("Point", "point"),
+      t("Circle", "circle"),
+      d,
+      t("JSON", "json"),
+      d,
+    ].concat(history("Disabled", "Disabled")),
+    "Draw Polygon": drawing,
+    "Draw Circle": drawing,
+    "Draw Point": [t("Draw", "draw", "On"), d].concat(
+      history("Disabled", "Disabled"),
+    ),
+    "Geometry Set": geometry("Disabled"),
+    JSON: history("Off", "Disabled").concat([a("Reset", "reset")]),
+    "Edit Existing": geometry("Off").concat([a("Reset", "reset")]),
+  };
+})();
+// PropertyPicker (CLOUD-UI-003, decisions 133 and 183): Pointr Cloud's
+// "+ Add additional field". State is what the popup shows: Closed, the
+// subtle Button alone, first, so it is the set's default; Open, every
+// property; Suggested, the Suggested and Others tabs over Booth's five;
+// Empty, a search that finds nothing.
+const PROPERTY_PICKER_STATES = ["Closed", "Open", "Suggested", "Empty"];
+// Cloud's 368 form column; the density's control and field height, 44;
+// PopoverContent's sideOffset, 4; the popup 12 in, 8 between its parts.
+const PROPERTY_PICKER_GEOMETRY = {
+  width: 368,
+  control: 44,
+  offset: 4,
+  padding: 12,
+  gap: 8,
+};
+// Example rows: a property's name, type and description, as React draws
+// them (Cloud's types; the names Cloud showed).
+const PROPERTY_PICKER_ROWS = [
+  ["Access Programs", "Array", "Named access program accepted"],
+  ["Booking Url", "Hyperlink"],
+  ["Capacity", "Integer"],
+  ["Images", "Image"],
+  ["Opening Hours", "Object"],
+];
+const PROPERTY_PICKER_SUGGESTED_ROWS = [
+  ["Access Restrictions", "Enum"],
+  ["Description", "Text"],
+  ["Has Assistance", "Boolean"],
+  ["Has Wifi", "Boolean"],
+  ["Occupancy Status", "Enum"],
+];
 const MAP_VIEW_CONTENT = ["Empty", "Overlay"];
 const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
@@ -1384,6 +1537,14 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DirectionStep: 260,
   DynamicIsland: 320,
   FeedbackCard: 360,
+  BrandLoader: 260,
+  ImageField: 420,
+  MapEditToolbar: 320,
+  PropertyPicker: 520,
+  PropertyField: 220,
+  OpeningHoursEditor: 760,
+  RatingEditor: 420,
+  KeyValueList: 360,
   FloorSelector: 420,
   MapControlButton: 260,
   MapControlsGroup: 320,
@@ -1544,6 +1705,22 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     // form-factor validation of their own before any promotion.
     title: "Platform / Form-Factor",
     components: ["DynamicIsland", "FeedbackCard"],
+  },
+  {
+    // Dashboard modules (decision 183): Pointr Cloud's web modules, shipped
+    // from @kozmos-ds/react/dashboard, React only. Kept out of Core, which
+    // stays domain-neutral, and out of Product / SDK, which is the map's.
+    title: "Dashboard",
+    components: [
+      "BrandLoader",
+      "PropertyField",
+      "OpeningHoursEditor",
+      "RatingEditor",
+      "KeyValueList",
+      "PropertyPicker",
+      "MapEditToolbar",
+      "ImageField",
+    ],
   },
   {
     title: "Overlay",
@@ -2285,6 +2462,198 @@ const COMPONENT_DOCS = [
       "Success replaces the form, so nothing reads as still editable after submitting.",
       "Submitting must be announced; the dimmed button alone is not sufficient.",
       "The rating control owns its own accessible value.",
+    ],
+  },
+  {
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    category: "Dashboard",
+    summary:
+      "BrandLoader is Pointr Cloud's brand loader (CLOUD-UI-008): the pin, with two rings rippling out from it in the theme's prominent colour, while the product loads. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use while Pointr Cloud, or a module of it, loads: once, for the whole wait.",
+      "Use Overlay True to cover the page while it loads; Overlay False draws the loader in place, in a box of its own.",
+      "Use Spinner for a wait in a small place, and Progress when the wait can be measured.",
+    ],
+    api: [
+      "Overlay maps to BrandLoader.overlay: True centres the loader on Backdrop's scrim, Overlay/Scrim, over the window.",
+      'label is what a screen reader hears (default "Loading"); it is never drawn, so it has no Figma property: write it in code, in the product\'s words ("Loading Pointr Cloud").',
+      "The rings and the pin are the theme fill, theme 500 (decisions 176 and 59), in both themes.",
+      "Figma draws the still state, as reduced motion draws it: the first ring at rest round the pin, 108 and 6 thick. The second ring, 4 thick, is a hidden layer at its ripple's start, 40; in code the two ripple from 40 to 108 and fade, every 3 s.",
+    ],
+    properties: ["Overlay: False, True"],
+    accessibility: [
+      'In code the loader is a status region (role="status", aria-live polite): its label arrives after it mounts, so a screen reader announces it once, and nothing that moves is in it.',
+      "Under reduced motion, the system's or DesignConfigProvider's, the rings and the pin stand still: the drawing in Figma.",
+      "Overlay makes the rest of the page inert and busy until the loader goes, takes every pointer event on the scrim and shows the wait cursor; focus is not moved to it, and goes back where it was.",
+      "The rings and the pin are decoration, hidden from assistive technology.",
+    ],
+  },
+  {
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    category: "Dashboard",
+    summary:
+      "ImageField is Pointr Cloud's image field (CLOUD-UI-004): up to max images, added by upload or by URL, each a thumbnail with its alt text, a full-screen preview, a cropper to the field's aspect ratio, and Remove. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for a property whose value is images: a place's Images (max 7) or its Logo (max 1).",
+      "Use State Full when the field holds max images, and Disabled when the form is read-only.",
+      "Use FileUpload alone for a file that is not an image, or that needs no preview or frame.",
+    ],
+    api: [
+      "Label maps to ImageField.label; State Disabled to disabled. Full is images.length === max.",
+      "max, accept (JPG and PNG by default), maxSize (bytes) and aspectRatio (16 / 9) are set in code; the hint under the drop zone is written from them.",
+      "onChange hands the product every change: a picked File, a URL, an alt text, a frame. Kozmos uploads nothing; the product uploads and crops.",
+      "A frame (crop) is a rectangle of the image in fractions of its width and height, never pixels.",
+    ],
+    properties: ["State: Default, Full, Disabled", "Label: text"],
+    accessibility: [
+      "The field is a group named by its label; its count is a polite live region.",
+      "The picker offers only the allowed types, and every pick or drop is checked again, with an error naming the file.",
+      "Remove, Preview and Frame are named for their image; focus moves to the next Remove when one goes.",
+      "Preview and the cropper are dialogs: Escape closes them and focus returns to the button that opened them.",
+      "The cropper is one tab stop: the arrow keys move the frame, plus and minus zoom, a pointer drags, and each change is said.",
+      "Every image has an editable alt text.",
+    ],
+  },
+  {
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    category: "Dashboard",
+    summary:
+      "MapEditToolbar is Pointr Cloud's map edit toolbar (CLOUD-UI-005): one part for its seven geometry toolbars, a card on the map of tools, actions and dividers, with one tool chosen at a time. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use it on the map while a geometry is drawn or edited, with the items the mode needs: the product decides which show.",
+      "Use a tool for a mode the map stays in (Draw, Adjust, Split) and an action for a step done once (Undo, Straighten, Clear).",
+      "Leave room above the card for the guidance strip (CLOUD-UI-006), which it does not draw.",
+    ],
+    api: [
+      "Mode is one of Cloud's seven toolbars, drawn with Cloud's items; in code the items are MapEditToolbar.items, the product's: tools, actions and dividers.",
+      "A chosen tool (the theme fill) is MapEditToolbar.value; a disabled item, at half strength, is an item's disabled.",
+      "Overflow True draws a 320 map, the items that do not fit behind More, from the end; in code the toolbar follows its width, and it is no prop.",
+      "JSON's GeoJSON field is MapEditToolbar.field, a labelled Input.",
+    ],
+    properties: [
+      "Mode: Create, Draw Polygon, Draw Circle, Draw Point, Geometry Set, JSON, Edit Existing",
+      "Overflow: False, True",
+    ],
+    accessibility: [
+      'In code it is one tab stop, role="toolbar", named by label: the arrow keys move between the items in the writing direction, and Home and End go to the ends.',
+      "Every item is named by its label; a tool says whether it is pressed (aria-pressed), and a disabled item is skipped.",
+      "A tooltip describes an item where it adds to the label, on hover and keyboard focus.",
+      "Nothing runs off a narrow map: what does not fit is in the More menu, a tool there a checkbox item.",
+    ],
+  },
+  {
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    category: "Dashboard",
+    summary:
+      'PropertyPicker is Pointr Cloud\'s "+ Add additional field" (CLOUD-UI-003): a subtle Button the width of its form that opens a search over the properties a product can add, each with its type, under Suggested and Others tabs while anything is suggested, and a Custom field action. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).',
+    usage: [
+      "Use under a form's fields to add one more property; pass only the properties not on the form yet.",
+      "Mark a property suggested for what is being edited (a Booth's five): the Suggested tab lists them, and Others never repeats them.",
+      "Use Combobox to choose a value for a field; this picker adds a field.",
+    ],
+    api: [
+      "State is what the popup shows: Closed, Open (every property), Suggested (with the tabs) and Empty (a search that finds nothing). In code it is open or not (open, defaultOpen); the rest follows from the data.",
+      "Label maps to PropertyPicker.label (default \"Add additional field\"), the button's words and the popup's name.",
+      "properties is { id, name, type, description?, suggested? }[], in the page's language; onSelect gets the property chosen, and onCustomField draws the Custom field action.",
+      "A row is the name over its type and description: Listbox's option description.",
+    ],
+    properties: ["State: Closed, Open, Suggested, Empty", "Label: text"],
+    accessibility: [
+      "The popup is a dialog named by the button's words; its search is labelled and has the focus as it opens.",
+      "ArrowDown moves from the search into the list, ArrowUp from its first row back; Enter or Space adds; typing in the list types in the search.",
+      "Escape empties the search, then closes the popup, one layer at a time, and the focus goes back to the button; so does a choice.",
+      "A search that finds nothing is said, from a status region; each row's type and description are part of the option, never behind a pointer.",
+    ],
+  },
+  {
+    componentName: "PropertyField",
+    componentSetName: "PropertyField",
+    category: "Dashboard",
+    summary:
+      "PropertyField is the frame every property of a Pointr Cloud item sits in (CLOUD-UI-004): a bordered group captioned with the property's name, an info button and a red trash that removes it. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use round each property an item carries in Pointr Cloud's add and edit panel, its editor in Content Slot.",
+      "Use Removable True when the property can be taken off the item; False for one it always has.",
+    ],
+    api: [
+      "Name maps to PropertyField.name, the caption and the group's accessible name.",
+      "Removable maps to PropertyField.onRemove: True draws the red trash, named Remove <name> (removeLabel).",
+      "The info button opens PropertyField.info, named About <name> (infoLabel); in code it is drawn only when info is given.",
+    ],
+    properties: ["Removable: True, False", "Name: text"],
+    accessibility: [
+      "In code the frame is a group named by its caption.",
+      "The info button is a toggletip: a click, Enter or Space opens it, so touch reaches it too.",
+      "Both buttons are named; Cloud's had no name.",
+    ],
+  },
+  {
+    componentName: "OpeningHoursEditor",
+    componentSetName: "OpeningHoursEditor",
+    category: "Dashboard",
+    summary:
+      "OpeningHoursEditor is Pointr Cloud's Opening Hours property editor (CLOUD-UI-004): the seven days, each Hours, Closed or Always open, with opening and closing times. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for an Opening Hours property, inside a PropertyField.",
+      "Use State Overnight to show a close before the open: the next day's, marked +1 day (decision 179).",
+      "Use State Mixed for a multi-selection whose days differ (GAP-153).",
+    ],
+    api: [
+      "Default is DEFAULT_OPENING_HOURS: Monday to Friday 08:00 to 22:00, the weekend closed.",
+      "Each day is a SegmentedControl (Hours, Closed, Always open) and, for Hours, two TimePickers stepping five minutes and carrying into the hour.",
+      "Mixed maps to mixedDays: those days choose nothing and say Multiple values.",
+    ],
+    properties: ["State: Default, Overnight, Mixed"],
+    accessibility: [
+      "Every control is a tab stop (Cloud's editor had none).",
+      "A day's choice is named by the day; its times are named <day> opening time and <day> closing time; +1 day describes the closing time.",
+    ],
+  },
+  {
+    componentName: "RatingEditor",
+    componentSetName: "RatingEditor",
+    category: "Dashboard",
+    summary:
+      "RatingEditor is Pointr Cloud's Rating property editor (CLOUD-UI-004, decision 180): the rating, its max and the number of ratings, checked against each other, and a preview of five stars with the exact numbers in words. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for a Rating property, inside a PropertyField.",
+      "Use State Error for a rating above its max (an error on both fields) and a count below 0.",
+      "Use State Mixed for a multi-selection whose ratings differ (GAP-153).",
+    ],
+    api: [
+      "Three NumberInputs: rating (one decimal, 0 or more), max (1 or more) and count (a whole number, 0 or more).",
+      "The preview is always five stars, the rating's share of its max rounded to the nearest half (decision 181), and its words carry the exact value: 4.3 of 5 · 120 ratings.",
+      "Stars is Rating's own Readonly instance; Figma's Rating has whole values, so 4½ is drawn as 4.",
+    ],
+    properties: ["State: Default, Error, Mixed"],
+    accessibility: [
+      "In code each error is the field's own: aria-invalid, and described by its message.",
+      "The stars are hidden from assistive technology; the words are read.",
+    ],
+  },
+  {
+    componentName: "KeyValueList",
+    componentSetName: "KeyValueList",
+    category: "Dashboard",
+    summary:
+      "KeyValueList is Pointr Cloud's key–value list (CLOUD-UI-004, decision 178): repeatable rows of a name, a type (Text, JSON, Number, Boolean) and a value drawn for its type, with delete and Add field. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for custom fields and Extra Data, inside a PropertyField.",
+      "Use State Empty for a list with no rows yet, the add button alone.",
+      "Use State Mixed for a row whose value differs across a multi-selection (GAP-153).",
+    ],
+    api: [
+      "A row is a name (Input), a type (Select), a value (Input for Text and JSON, NumberInput for Number, Switch for Boolean) and a red trash.",
+      "Add field ends the list; changing a type carries the value over as far as it can.",
+    ],
+    properties: ["State: Default, Empty, Mixed"],
+    accessibility: [
+      "Every control is named for its row: Field 2 name, Field 2 type, Field 2 value, Remove Field 2.",
+      "Adding puts focus in the new row's name; deleting puts it in the next row's name, or on Add field.",
     ],
   },
   {
@@ -5288,6 +5657,84 @@ const IMPORTER_UI_ICON_DEFINITIONS = [
     category: "Shapes",
     componentKey: "ff0eb2f124d6feedc853de839891884656c55adc",
     description: "Featured: Input's toggle action (GAP-154).",
+  },
+  {
+    name: "pentagon",
+    figmaName: "pentagon",
+    category: "Shapes",
+    componentKey: "8d9d6b316f3319c48c1c4823d225774e5fa6ad5b",
+    description: "Polygon: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "circle",
+    figmaName: "circle",
+    category: "Shapes",
+    componentKey: "ee738140892ec31187911104b2d52a84141e246d",
+    description: "Circle: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "code-02",
+    figmaName: "code-02",
+    category: "Development",
+    componentKey: "925bb167a3dade2a9c79fad8d3d30b0d964af92b",
+    description: "JSON: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "flip-forward",
+    figmaName: "flip-forward",
+    category: "Arrows",
+    componentKey: "a0368b09e64c0bd7aeeb628f6451193a1bc367bf",
+    description: "Redo: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "x-square",
+    figmaName: "x-square",
+    category: "General",
+    componentKey: "d0ab609a2235194914372fe989cd85c16d4a945f",
+    description: "Clear: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "refresh-ccw-01",
+    figmaName: "refresh-ccw-01",
+    category: "Arrows",
+    componentKey: "5bdbdf443e193e64782588e5f526bc2f15e6c074",
+    description: "Reset: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "transform",
+    figmaName: "transform",
+    category: "Editor",
+    componentKey: "112f170a30bfc3d5345b22f13697e27463ba3f60",
+    description: "Adjust: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "scissors-cut-01",
+    figmaName: "scissors-cut-01",
+    category: "Editor",
+    componentKey: "d5a4ac7378b48f55b57ae97615c356b7b6bc15b6",
+    description: "Cut-out: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "divider",
+    figmaName: "divider",
+    category: "Layout",
+    componentKey: "0c1791163fa3ae7c628b6f520a6eac68d6a2fe8c",
+    description: "Split: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "ruler",
+    figmaName: "ruler",
+    category: "Education",
+    componentKey: "42be600b2ea2060be05f8e10d7ec29b472f9ca3a",
+    description: "Straighten: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "dots-horizontal",
+    figmaName: "dots-horizontal",
+    category: "General",
+    componentKey: "4c3adc5d6e726fe219837c9bee42d022433d8074",
+    description:
+      "More, the overflow menu: MapEditToolbar's item (CLOUD-UI-005).",
   },
 ];
 /** Every Pointr icon the importer imports: the registry's, then the UI's. */
@@ -9357,6 +9804,70 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Switch/track/stroke/width",
     scopes: ["STROKE_FLOAT"],
   },
+  // BrandLoader (CLOUD-UI-008): React's 120 box, the first ring at rest, 108,
+  // 6 thick (border-width lg + md, a sum no one variable holds), the second 4
+  // (border-width lg), and the 32 pin.
+  { name: "BrandLoader/size", value: 120, scopes: ["WIDTH_HEIGHT"] },
+  { name: "BrandLoader/ring/size", value: 108, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "BrandLoader/ring/stroke/width",
+    value: 6,
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "BrandLoader/ring/second/stroke/width",
+    value: 4,
+    alias: "Border Width/lg",
+    scopes: ["STROKE_FLOAT"],
+  },
+  { name: "BrandLoader/pin/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
+  // MapEditToolbar (CLOUD-UI-005, decisions 139 and 151): React's card, 60
+  // tall, padded 6 and 8, the Control corner; items 56 × 48, 4 apart, corner
+  // 8; a 24 icon; dividers 32 tall with 4 of margin.
+  { name: "MapEditToolbar/height", value: 60, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "MapEditToolbar/padding/y",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "MapEditToolbar/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "MapEditToolbar/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  { name: "MapEditToolbar/item/width", value: 56, scopes: ["WIDTH_HEIGHT"] },
+  { name: "MapEditToolbar/item/height", value: 48, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/item/radius",
+    value: 8,
+    scopes: ["CORNER_RADIUS"],
+  },
+  { name: "MapEditToolbar/icon/size", value: 24, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/divider/height",
+    value: 32,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "MapEditToolbar/divider/margin",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   { name: "Avatar/size/default", value: 40, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Avatar/radius",
@@ -11528,7 +12039,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Timeline", updateTimelineComponent],
 ];
 
-// Every Product / SDK and platform set, in picker order, except that a set
+// Every Product / SDK, platform and Dashboard set, in picker order, except that a set
 // runs after any set it sets overrides inside (SETS_THAT_OVERRIDE_INSIDE):
 // CategoryTile before BrowseCategoriesPanel. These share the productSdkSlot /
 // productSdkControlButton / productSdkText helpers, so a change to any of them
@@ -11564,6 +12075,18 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["RouteProgressRail", updateRouteProgressRailComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
+  // Dashboard modules (decision 183) ride this run: they share no painter
+  // with Core, and a lane of one needs no button of its own.
+  ["BrandLoader", updateBrandLoaderComponent],
+  ["ImageField", updateImageFieldComponent],
+  ["MapEditToolbar", updateMapEditToolbarComponent],
+  ["PropertyPicker", updatePropertyPickerComponent],
+  // The property editors (CLOUD-UI-004). RatingEditor holds Rating's own
+  // read-only instance, which Core's run draws first.
+  ["PropertyField", updatePropertyFieldComponent],
+  ["OpeningHoursEditor", updateOpeningHoursEditorComponent],
+  ["RatingEditor", updateRatingEditorComponent],
+  ["KeyValueList", updateKeyValueListComponent],
 ];
 
 /**
@@ -11848,6 +12371,30 @@ function additionalComponentActionHandlers() {
     "build-feedback-card": buildFeedbackCardComponent,
     "update-feedback-card": updateFeedbackCardComponent,
     "rebuild-feedback-card": rebuildFeedbackCardComponent,
+    "build-brand-loader": buildBrandLoaderComponent,
+    "update-brand-loader": updateBrandLoaderComponent,
+    "rebuild-brand-loader": rebuildBrandLoaderComponent,
+    "build-image-field": buildImageFieldComponent,
+    "update-image-field": updateImageFieldComponent,
+    "rebuild-image-field": rebuildImageFieldComponent,
+    "build-map-edit-toolbar": buildMapEditToolbarComponent,
+    "update-map-edit-toolbar": updateMapEditToolbarComponent,
+    "rebuild-map-edit-toolbar": rebuildMapEditToolbarComponent,
+    "build-property-picker": buildPropertyPickerComponent,
+    "update-property-picker": updatePropertyPickerComponent,
+    "rebuild-property-picker": rebuildPropertyPickerComponent,
+    "build-property-field": buildPropertyFieldComponent,
+    "update-property-field": updatePropertyFieldComponent,
+    "rebuild-property-field": rebuildPropertyFieldComponent,
+    "build-opening-hours-editor": buildOpeningHoursEditorComponent,
+    "update-opening-hours-editor": updateOpeningHoursEditorComponent,
+    "rebuild-opening-hours-editor": rebuildOpeningHoursEditorComponent,
+    "build-rating-editor": buildRatingEditorComponent,
+    "update-rating-editor": updateRatingEditorComponent,
+    "rebuild-rating-editor": rebuildRatingEditorComponent,
+    "build-key-value-list": buildKeyValueListComponent,
+    "update-key-value-list": updateKeyValueListComponent,
+    "rebuild-key-value-list": rebuildKeyValueListComponent,
     "update-all-product-sdk": updateAllProductSdkComponents,
     "update-all-core": updateAllCoreComponents,
     "build-adaptive-map-shell": buildAdaptiveMapShellComponent,
@@ -18615,6 +19162,47 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "BrandLoader") {
+    return {
+      Overlay: BRAND_LOADER_OVERLAY,
+    };
+  }
+
+  if (canonicalName === "ImageField") {
+    return {
+      State: IMAGE_FIELD_STATES,
+    };
+  }
+
+  if (canonicalName === "PropertyPicker") {
+    return {
+      State: PROPERTY_PICKER_STATES,
+    };
+  }
+
+  if (canonicalName === "PropertyField") {
+    return { Removable: PROPERTY_FIELD_REMOVABLE };
+  }
+
+  if (canonicalName === "OpeningHoursEditor") {
+    return { State: OPENING_HOURS_EDITOR_STATES };
+  }
+
+  if (canonicalName === "RatingEditor") {
+    return { State: RATING_EDITOR_STATES };
+  }
+
+  if (canonicalName === "KeyValueList") {
+    return { State: KEY_VALUE_LIST_STATES };
+  }
+
+  if (canonicalName === "MapEditToolbar") {
+    return {
+      Mode: MAP_EDIT_TOOLBAR_MODES,
+      Overflow: MAP_EDIT_TOOLBAR_OVERFLOW,
+    };
+  }
+
   if (canonicalName === "DirectionStep") {
     return {
       Type: DIRECTION_STEP_TYPES,
@@ -25052,6 +25640,15 @@ function addComponentTextStyleSpecs(specs, fonts) {
   );
   addTextStyleSpec(
     specs,
+    "mapEditToolbarLabel",
+    "MapEditToolbar / Label",
+    fonts.medium,
+    11,
+    14,
+    "Typography contract for a map edit toolbar item's label: 11/14 medium, under its 24 icon (CLOUD-UI-005, decision 151).",
+  );
+  addTextStyleSpec(
+    specs,
     "navigationItem",
     "NavigationItem / Label",
     fonts.medium,
@@ -25754,6 +26351,9 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   if (setName === "TreeSection") {
     if (/Count Text$/.test(textName)) return "counterSmall";
     return "treeSection";
+  }
+  if (setName === "MapEditToolbar") {
+    return textName === "Field Text" ? "fieldText" : "mapEditToolbarLabel";
   }
   if (setName === "Table") {
     if (/^Header \d+ Text$/.test(textName)) return "tableHeader";
@@ -55473,6 +56073,2298 @@ async function rebuildFeedbackCardComponent() {
     componentSetName: "FeedbackCard",
     build: buildFeedbackCardComponent,
   });
+}
+
+// --- BrandLoader (Dashboard) -----------------------------------------------
+
+// Pointr Cloud's brand loader (CLOUD-UI-008, decisions 133, 176 and 183), as
+// React's BrandLoader and packages/styles/src/dashboard/brand-loader.css draw
+// it. A Figma frame cannot ripple, so the set draws the still state, the one
+// reduced motion draws: the first ring at rest round the pin, 108 and 6 thick,
+// and no second ring. A mid-ripple frame would be a moment the code never
+// holds, and a designer would read its size and fade as the design. The
+// second ring is kept as a hidden layer at its ripple's start, 40 and 4
+// thick, so the set carries both rings' strokes and a designer who shows it
+// sees where the ripple begins. The rings and the pin are the theme fill,
+// theme 500 (decision 176, with decision 59): React's
+// --primitives-colors-theme-500, here through THEME_FILL, the component
+// variable that aliases it and is scoped to strokes as the primitive is not.
+// The label is never drawn (it is screen-reader text), so the set has no
+// text property; its notes say so.
+
+async function createBrandLoaderVariant(args) {
+  const component = figma.createComponent();
+  await updateBrandLoaderVariant(component, args);
+  return component;
+}
+
+function parseBrandLoaderVariantName(name) {
+  return parseSingleAxisVariantName(name, "Overlay", BRAND_LOADER_OVERLAY);
+}
+
+async function updateBrandLoaderVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  const overlay = value === "True";
+  const geometry = BRAND_LOADER_GEOMETRY;
+  component.name = `Overlay=${value}`;
+  component.layoutMode = "NONE";
+  component.clipsContent = overlay;
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.effects = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "BrandLoader");
+  // Redrawn whole on every Update: nothing in it holds an override a designer
+  // keeps, and it has no component property.
+  removeDirectChildren(component);
+
+  let loader = component;
+  if (overlay) {
+    // Backdrop's scrim, the example Backdrop's set draws (320×180, 12), with
+    // the loader in its middle, as React's grid centres it in the window.
+    component.resizeWithoutConstraints(
+      BACKDROP_CUTOUT.width,
+      BACKDROP_CUTOUT.height,
+    );
+    component.cornerRadius = 12;
+    component.fills = [
+      paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats),
+    ];
+    loader = figma.createFrame();
+    loader.name = "Loader";
+    loader.layoutMode = "NONE";
+    loader.clipsContent = false;
+    loader.strokes = [];
+    loader.setSharedPluginData(RUN_NAMESPACE, "kind", "brand-loader");
+    component.appendChild(loader);
+  } else {
+    component.cornerRadius = KOZMOS_RADIUS.none;
+  }
+  loader.resizeWithoutConstraints(geometry.size, geometry.size);
+  loader.fills = [];
+  bindSizeVariables(
+    loader,
+    "BrandLoader/size",
+    "BrandLoader/size",
+    variableByName,
+    stats,
+  );
+  if (overlay) {
+    loader.x = Math.round((BACKDROP_CUTOUT.width - geometry.size) / 2);
+    loader.y = Math.round((BACKDROP_CUTOUT.height - geometry.size) / 2);
+  }
+
+  const ring = createBrandLoaderRing({
+    name: "Ring",
+    diameter: geometry.ring,
+    stroke: geometry.ringStroke,
+    strokeToken: "BrandLoader/ring/stroke/width",
+    sizeToken: "BrandLoader/ring/size",
+    box: geometry.size,
+    variableByName,
+    stats,
+  });
+  loader.appendChild(ring);
+
+  const second = createBrandLoaderRing({
+    name: "Second Ring",
+    diameter: geometry.secondRingStart,
+    stroke: geometry.secondRingStroke,
+    strokeToken: "BrandLoader/ring/second/stroke/width",
+    sizeToken: null,
+    box: geometry.size,
+    variableByName,
+    stats,
+  });
+  loader.appendChild(second);
+  second.visible = false;
+
+  const pin = await createFixedIconInstance(
+    "marker-pin-01",
+    THEME_FILL.name,
+    THEME_FILL.fallback,
+    variableByName,
+    stats,
+    geometry.pin,
+    "BrandLoader/pin/size",
+  );
+  pin.name = "Pin";
+  scaleIconStrokes(pin, geometry.pin);
+  loader.appendChild(pin);
+  pin.x = (geometry.size - geometry.pin) / 2;
+  pin.y = (geometry.size - geometry.pin) / 2;
+}
+
+/**
+ * A ring, centred in the loader's box: a border drawn inside its box, as
+ * CSS's border-box does, in the theme fill.
+ */
+function createBrandLoaderRing({
+  name,
+  diameter,
+  stroke,
+  strokeToken,
+  sizeToken,
+  box,
+  variableByName,
+  stats,
+}) {
+  const ring = figma.createEllipse();
+  ring.name = name;
+  ring.resizeWithoutConstraints(diameter, diameter);
+  ring.fills = [];
+  ring.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  ring.strokeWeight = stroke;
+  ring.strokeAlign = "INSIDE";
+  ring.setSharedPluginData(RUN_NAMESPACE, "kind", "brand-loader-ring");
+  if (sizeToken) {
+    bindSizeVariables(ring, sizeToken, sizeToken, variableByName, stats);
+  }
+  bindFloatVariable(ring, "strokeWeight", strokeToken, variableByName, stats);
+  ring.x = (box - diameter) / 2;
+  ring.y = (box - diameter) / 2;
+  return ring;
+}
+
+function configureBrandLoaderProperties(_componentSet, _stats) {}
+
+const BRAND_LOADER_DESCRIPTION = [
+  "Kozmos BrandLoader generated from the React BrandLoader API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Overlay maps to BrandLoader.overlay: True centres the loader on Backdrop's scrim.",
+  "Drawn still, as reduced motion draws it: the first ring at rest, 108 and 6 thick; the second ring, 4 thick, is hidden at its ripple's start.",
+  "Rings and pin are the theme fill, theme 500 (decisions 176 and 59).",
+  "label is screen-reader text, never drawn, so it has no property: role=status, announced once.",
+];
+
+async function buildBrandLoaderComponent() {
+  return buildSingleAxisComponent({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    axisName: "Overlay",
+    values: BRAND_LOADER_OVERLAY,
+    x: 80,
+    y: 19240,
+    xStep: 400,
+    createVariant: createBrandLoaderVariant,
+    configureProperties: configureBrandLoaderProperties,
+    autoReorganize: true,
+    description: BRAND_LOADER_DESCRIPTION,
+  });
+}
+
+async function updateBrandLoaderComponent() {
+  return updateSingleAxisComponent({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    axisName: "Overlay",
+    values: BRAND_LOADER_OVERLAY,
+    xStep: 400,
+    createVariant: createBrandLoaderVariant,
+    updateVariant: updateBrandLoaderVariant,
+    parseVariantName: parseBrandLoaderVariantName,
+    configureProperties: configureBrandLoaderProperties,
+    autoReorganize: true,
+    description: BRAND_LOADER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildBrandLoaderComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    build: buildBrandLoaderComponent,
+  });
+}
+
+// --- ImageField (Dashboard) ------------------------------------------------
+
+// Pointr Cloud's image field (CLOUD-UI-004's image part, decisions 133 and
+// 183), as React's ImageField and packages/styles/src/dashboard/image-field.css
+// draw it: a bordered group (Border/Subtle, the container radius, 16 in), the
+// label in Field / Label and the "n of max" count in Field / Meta on one line;
+// one image, a 120 thumbnail at 16:9 (68) beside its alt-text field and its
+// Preview (eye), Frame (crop-01) and Remove (trash-01) icon buttons; the drop
+// zone (FileUpload, 112 as Cloud's) with its hint line; and the URL row, an
+// Input and an outline Add. The Core parts are slots, as FeedbackCard draws
+// its Rating and Textarea: they are Core's sets, not this one's. State is
+// what changes the drawing: Default; Full, the count at max and the drop zone
+// and the URL row off; Disabled, the whole field at 50%. The cropper and the
+// preview are dialogs React opens; the set does not draw them.
+const IMAGE_FIELD_STATES = ["Default", "Full", "Disabled"];
+const IMAGE_FIELD_GEOMETRY = {
+  width: 368,
+  padding: 16,
+  spacing: 12,
+  thumbnail: 120,
+  // 120 at 16:9, rounded to the pixel.
+  thumbnailHeight: 68,
+  dropZone: 112,
+  field: 44,
+};
+
+async function createImageFieldVariant(args) {
+  const component = figma.createComponent();
+  await updateImageFieldVariant(component, args);
+  return component;
+}
+
+function parseImageFieldVariantName(name) {
+  return productSdkVariantValues(name, "State", IMAGE_FIELD_STATES);
+}
+
+async function updateImageFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const full = value === "Full";
+  const disabled = value === "Disabled";
+  const geometry = IMAGE_FIELD_GEOMETRY;
+  const inner = geometry.width - 2 * geometry.padding;
+  productSdkVariantRoot(component, "ImageField", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.spacing,
+    padding: geometry.padding,
+    width: geometry.width,
+    height: 320,
+  });
+  productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
+  // A disabled field is drawn at a plain 50%, as a disabled Button is.
+  component.opacity = disabled ? 0.5 : 1;
+
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "SPACE_BETWEEN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: inner,
+    height: 20,
+  });
+  appendWithSizing(component, header, "FILL", "HUG");
+  const label = await productSdkText({
+    name: "Label Text",
+    characters: "Images",
+    styleKey: "fieldLabel",
+    fonts,
+    bold: true,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/0",
+    colorFallback: "#000000",
+    variableByName,
+    stats,
+    width: 200,
+  });
+  appendWithSizing(header, label, "FILL", null);
+  const count = await productSdkText({
+    name: "Count Text",
+    characters: full ? "7 of 7 images" : "1 of 7 images",
+    styleKey: "fieldMeta",
+    fonts,
+    bold: false,
+    fontSize: 12,
+    lineHeight: 16,
+    colorToken: "Colors/foreground/400",
+    colorFallback: "#5D626F",
+    variableByName,
+    stats,
+    width: 120,
+  });
+  count.textAutoResize = "WIDTH_AND_HEIGHT";
+  header.appendChild(count);
+
+  const item = productSdkFrame("Image", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 12,
+    width: inner,
+    height: geometry.thumbnailHeight,
+  });
+  appendWithSizing(component, item, "FILL", "HUG");
+  const thumbnail = await productSdkSlot({
+    name: "Thumbnail Slot",
+    label: "Image",
+    width: geometry.thumbnail,
+    height: geometry.thumbnailHeight,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control + 4,
+    inset: 4,
+  });
+  item.appendChild(thumbnail);
+  const details = productSdkFrame("Details", {
+    spacing: 8,
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    width: inner - geometry.thumbnail - 12,
+    height: geometry.field,
+  });
+  appendWithSizing(item, details, "FILL", "HUG");
+  const alt = await productSdkSlot({
+    name: "Alt Text Slot",
+    label: "Input slot",
+    width: inner - geometry.thumbnail - 12,
+    height: geometry.field,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(details, alt, "FILL", "FIXED");
+  const actions = productSdkFrame("Actions", {
+    direction: "horizontal",
+    spacing: 4,
+  });
+  details.appendChild(actions);
+  for (const [name, iconName, glyph] of [
+    ["Preview Button", "eye", "◉"],
+    ["Frame Button", "crop-01", "⌗"],
+    ["Remove Button", "trash-01", "×"],
+  ]) {
+    const button = await productSdkControlButton({
+      name,
+      glyph,
+      iconName,
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    });
+    // React's ghost IconButton: no fill and no edge until hovered.
+    button.fills = [];
+    button.strokes = [];
+    button.strokeWeight = 0;
+    actions.appendChild(button);
+  }
+
+  const upload = await productSdkSlot({
+    name: "Upload Slot",
+    label: "FileUpload slot · JPG, PNG · Max 2 MB · 16:9",
+    width: inner,
+    height: geometry.dropZone,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  upload.opacity = full ? 0.5 : 1;
+  appendWithSizing(component, upload, "FILL", "FIXED");
+
+  const url = productSdkFrame("URL Row", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "MAX",
+    spacing: 8,
+    width: inner,
+    height: geometry.field,
+  });
+  url.opacity = full ? 0.5 : 1;
+  appendWithSizing(component, url, "FILL", "HUG");
+  const urlField = await productSdkSlot({
+    name: "URL Slot",
+    label: "Input slot · Image URL",
+    width: inner - 80,
+    height: geometry.field,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(url, urlField, "FILL", "FIXED");
+  const add = await productSdkControlButton({
+    name: "Add Button",
+    glyph: "+",
+    label: "Add",
+    filled: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  url.appendChild(add);
+}
+
+function configureImageFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label",
+    "Images",
+    stats,
+  );
+}
+
+const IMAGE_FIELD_DESCRIPTION = [
+  "Kozmos ImageField generated from the React ImageField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), CLOUD-UI-004's image part.",
+  "Label maps to label. State: Default; Full, the count at max with the drop zone and URL row off; Disabled maps to disabled, drawn at 50%.",
+  "Each image: a thumbnail at aspectRatio, its alt text (an Input), Preview, Frame (the cropper) and Remove. The slots are Core's FileUpload, Input and Button.",
+  "The cropper and the full-screen preview are Dialogs React opens; max, accept, maxSize and aspectRatio are set in code.",
+];
+
+async function buildImageFieldComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    axisName: "State",
+    values: IMAGE_FIELD_STATES,
+    x: 80,
+    y: 19700,
+    xStep: 420,
+    createVariant: createImageFieldVariant,
+    configureProperties: configureImageFieldProperties,
+    autoReorganize: true,
+    description: IMAGE_FIELD_DESCRIPTION,
+  });
+}
+
+async function updateImageFieldComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    axisName: "State",
+    values: IMAGE_FIELD_STATES,
+    xStep: 420,
+    createVariant: createImageFieldVariant,
+    updateVariant: updateImageFieldVariant,
+    parseVariantName: parseImageFieldVariantName,
+    configureProperties: configureImageFieldProperties,
+    autoReorganize: true,
+    description: IMAGE_FIELD_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildImageFieldComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    build: buildImageFieldComponent,
+  });
+}
+
+// --- MapEditToolbar (Dashboard) --------------------------------------------
+
+// Pointr Cloud's map edit toolbar (CLOUD-UI-005, decisions 133, 139, 151 and
+// 183), as React's MapEditToolbar and
+// packages/styles/src/dashboard/map-edit-toolbar.css draw it: a card of
+// Surface/0 with no edge (a map control's, decision 40), 60 tall, padding 6
+// and 8, the Control corner (16) and map chrome's floating elevation; items
+// 56 × 48, a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
+// 4 between items; a chosen tool is a pressed ToggleButton, the theme fill
+// under its ink; every other item is Cloud's grey ink (foreground 400), and a
+// disabled one is drawn at half strength, as every Kozmos button is. Dividers
+// are Border/Subtle, 1 × 32, 8 from the items each side (4 of margin and the
+// gap). Mode is one of Cloud's seven toolbars, with Cloud's items; Overflow
+// True draws it on a 320 map, the items that do not fit gone into More, as
+// React's overflow does. Each variant is redrawn whole on Update: the items
+// are data, not overrides a designer keeps.
+
+async function createMapEditToolbarVariant(args) {
+  const component = figma.createComponent();
+  await updateMapEditToolbarVariant(component, args);
+  return component;
+}
+
+function parseMapEditToolbarVariantName(name) {
+  const values = parseVariantValueMap(name);
+  if (MAP_EDIT_TOOLBAR_MODES.indexOf(values.Mode) === -1) return null;
+  const overflow = values.Overflow === undefined ? "False" : values.Overflow;
+  if (MAP_EDIT_TOOLBAR_OVERFLOW.indexOf(overflow) === -1) return null;
+  return { value: values.Mode, second: overflow };
+}
+
+/**
+ * How many of a mode's items a card `width` wide shows: React's
+ * fitMapEditToolbarItems, with a divider left at the end dropped.
+ */
+function mapEditToolbarVisibleCount(items, width, withField) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const widthOf = (item) =>
+    item.kind === "divider" ? 1 + 2 * g.dividerMargin : g.itemWidth;
+  let available = width - 2 * g.paddingX;
+  if (withField) available -= g.fieldWidth + g.cardGap;
+  const total = (count) =>
+    items.slice(0, count).reduce((sum, item) => sum + widthOf(item), 0) +
+    Math.max(0, count - 1) * g.itemGap;
+  let count = items.length;
+  if (total(count) > available) {
+    count -= 1;
+    while (count > 0 && total(count) + g.itemGap + g.itemWidth > available)
+      count -= 1;
+  }
+  while (count > 0 && items[count - 1].kind === "divider") count -= 1;
+  return count;
+}
+
+async function updateMapEditToolbarVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const overflow = second === "True";
+  const json = value === "JSON";
+  const all = MAP_EDIT_TOOLBAR_ITEMS[value];
+  const shown = overflow
+    ? mapEditToolbarVisibleCount(all, g.narrowMap, json)
+    : all.length;
+  const items = all.slice(0, shown);
+  const more = shown < all.length;
+
+  productSdkVariantRoot(
+    component,
+    "MapEditToolbar",
+    `Mode=${value}, Overflow=${overflow ? "True" : "False"}`,
+    {
+      direction: "horizontal",
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "MIN",
+      counterAlign: "CENTER",
+      spacing: g.cardGap,
+      paddingLeft: g.paddingX,
+      paddingRight: g.paddingX,
+      paddingTop: g.paddingY,
+      paddingBottom: g.paddingY,
+      width: g.paddingX * 2 + g.itemWidth,
+      height: g.height,
+    },
+  );
+  component.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.effects = [elevationEffect("floating")];
+  bindFloatVariable(
+    component,
+    "height",
+    "MapEditToolbar/height",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      component,
+      side,
+      "MapEditToolbar/padding/x",
+      variableByName,
+      stats,
+    );
+  for (const side of ["paddingTop", "paddingBottom"])
+    bindFloatVariable(
+      component,
+      side,
+      "MapEditToolbar/padding/y",
+      variableByName,
+      stats,
+    );
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "MapEditToolbar/radius",
+    variableByName,
+    stats,
+  );
+
+  if (json) {
+    component.appendChild(
+      await createMapEditToolbarField({ fonts, variableByName, stats }),
+    );
+  }
+
+  const row = figma.createFrame();
+  row.name = "Items";
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "AUTO";
+  row.counterAxisSizingMode = "AUTO";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = g.itemGap;
+  row.fills = [];
+  row.strokes = [];
+  row.clipsContent = false;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-items");
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "MapEditToolbar/gap",
+    variableByName,
+    stats,
+  );
+  component.appendChild(row);
+
+  for (const item of items) {
+    if (item.kind === "divider") {
+      row.appendChild(createMapEditToolbarDivider(variableByName, stats));
+      continue;
+    }
+    row.appendChild(
+      await createMapEditToolbarItem(item, { fonts, variableByName, stats }),
+    );
+  }
+  if (more) {
+    row.appendChild(
+      await createMapEditToolbarItem(
+        { kind: "action", label: "More", icon: "dots-horizontal" },
+        { fonts, variableByName, stats },
+      ),
+    );
+  }
+}
+
+/** One item: the icon over its label, in the item's state. */
+async function createMapEditToolbarItem(
+  item,
+  { fonts, variableByName, stats },
+) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const on = item.state === "On";
+  const ink = on
+    ? THEME_FILL_FOREGROUND
+    : { name: "Colors/foreground/400", fallback: "#5D626F" };
+  const frame = figma.createFrame();
+  frame.name = item.label;
+  frame.layoutMode = "VERTICAL";
+  frame.primaryAxisSizingMode = "FIXED";
+  frame.counterAxisSizingMode = "FIXED";
+  frame.primaryAxisAlignItems = "CENTER";
+  frame.counterAxisAlignItems = "CENTER";
+  frame.itemSpacing = g.labelGap;
+  frame.paddingLeft = g.itemPaddingX;
+  frame.paddingRight = g.itemPaddingX;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.resizeWithoutConstraints(g.itemWidth, g.itemHeight);
+  frame.cornerRadius = g.itemRadius;
+  frame.clipsContent = false;
+  frame.strokes = [];
+  frame.fills = on
+    ? [
+        paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  frame.opacity = item.state === "Disabled" ? 0.5 : 1;
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
+  frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
+  frame.setSharedPluginData(RUN_NAMESPACE, "itemState", item.state || "Off");
+  bindSizeVariables(
+    frame,
+    "MapEditToolbar/item/width",
+    "MapEditToolbar/item/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    frame,
+    "cornerRadius",
+    "MapEditToolbar/item/radius",
+    variableByName,
+    stats,
+  );
+
+  const source = await findImporterIconSource(
+    item.icon,
+    "MapEditToolbar",
+    stats,
+  );
+  if (source) {
+    const icon = createIconSlotInstance(
+      source,
+      ink.name,
+      ink.fallback,
+      variableByName,
+      stats,
+      g.icon,
+      "MapEditToolbar/icon/size",
+    );
+    frame.appendChild(icon);
+  }
+
+  const label = await productSdkText({
+    name: "Label Text",
+    characters: item.label,
+    styleKey: "mapEditToolbarLabel",
+    fonts,
+    bold: true,
+    fontSize: g.labelSize,
+    lineHeight: g.labelLineHeight,
+    colorToken: ink.name,
+    colorFallback: ink.fallback,
+    variableByName,
+    stats,
+    width: g.itemWidth - 2 * g.itemPaddingX,
+  });
+  label.textAutoResize = "WIDTH_AND_HEIGHT";
+  label.textAlignHorizontal = "CENTER";
+  frame.appendChild(label);
+  return frame;
+}
+
+function createMapEditToolbarDivider(variableByName, stats) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  // The 4 of margin each side of React's divider, as a frame round the
+  // rule, so the gap and the margin make the 8 the code draws.
+  const box = figma.createFrame();
+  box.name = "Divider";
+  box.layoutMode = "HORIZONTAL";
+  box.primaryAxisSizingMode = "AUTO";
+  box.counterAxisSizingMode = "AUTO";
+  box.paddingLeft = g.dividerMargin;
+  box.paddingRight = g.dividerMargin;
+  box.paddingTop = 0;
+  box.paddingBottom = 0;
+  box.fills = [];
+  box.strokes = [];
+  box.clipsContent = false;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-divider");
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      box,
+      side,
+      "MapEditToolbar/divider/margin",
+      variableByName,
+      stats,
+    );
+  const rule = figma.createRectangle();
+  rule.name = "Rule";
+  rule.resizeWithoutConstraints(1, g.dividerHeight);
+  rule.fills = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  bindSizeVariables(
+    rule,
+    "Separator/thickness",
+    "MapEditToolbar/divider/height",
+    variableByName,
+    stats,
+  );
+  box.appendChild(rule);
+  return box;
+}
+
+/** JSON mode's GeoJSON field: an outlined Input, its placeholder. */
+async function createMapEditToolbarField({ fonts, variableByName, stats }) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const field = figma.createFrame();
+  field.name = "GeoJSON Field";
+  field.layoutMode = "HORIZONTAL";
+  field.primaryAxisSizingMode = "FIXED";
+  field.counterAxisSizingMode = "FIXED";
+  field.counterAxisAlignItems = "CENTER";
+  field.paddingLeft = 12;
+  field.paddingRight = 12;
+  field.resizeWithoutConstraints(g.fieldWidth, g.fieldHeight);
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  field.strokes = [
+    paintFromVariable("Border/Input", "#C7CAD1", variableByName, stats),
+  ];
+  field.strokeWeight = 1;
+  field.clipsContent = true;
+  field.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-field");
+  // An Input placed in the card: it keeps its control radius, as a button in
+  // a card does (docs/nested-radius.md), and the nesting check reads it so.
+  markControlSurface(field);
+  bindFloatVariable(
+    field,
+    "height",
+    "Input/field/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    field,
+    "cornerRadius",
+    "Input/field/radius",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      field,
+      side,
+      "Input/field/padding/x",
+      variableByName,
+      stats,
+    );
+  const placeholder = await productSdkText({
+    name: "Field Text",
+    characters: "Paste GeoJSON",
+    styleKey: "fieldText",
+    fonts,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/400",
+    colorFallback: "#5D626F",
+    variableByName,
+    stats,
+    width: g.fieldWidth - 24,
+  });
+  field.appendChild(placeholder);
+  return field;
+}
+
+function configureMapEditToolbarProperties(_componentSet, _stats) {}
+
+const MAP_EDIT_TOOLBAR_DESCRIPTION = [
+  "Kozmos MapEditToolbar generated from the React MapEditToolbar API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Mode is one of Pointr Cloud's seven toolbars (CLOUD-UI-005), with Cloud's items; in code the items are MapEditToolbar.items, the product's.",
+  "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is at half strength. In code the chosen tool is MapEditToolbar.value.",
+  "Overflow True draws a 320 map: what does not fit goes into More, from the end. In code it follows the width; it is no prop.",
+  "The card is 60 tall, padding 6 and 8, corner 16; items 56 × 48, a 24 icon over an 11/14 label (decisions 139 and 151).",
+];
+
+async function buildMapEditToolbarComponent() {
+  return buildSingleAxisComponent({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    axisName: "Mode",
+    values: MAP_EDIT_TOOLBAR_MODES,
+    axis2Name: "Overflow",
+    axis2Values: MAP_EDIT_TOOLBAR_OVERFLOW,
+    x: 80,
+    y: 19640,
+    xStep: 760,
+    yStep: 120,
+    createVariant: createMapEditToolbarVariant,
+    configureProperties: configureMapEditToolbarProperties,
+    autoReorganize: true,
+    description: MAP_EDIT_TOOLBAR_DESCRIPTION,
+  });
+}
+
+async function updateMapEditToolbarComponent() {
+  return updateSingleAxisComponent({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    axisName: "Mode",
+    values: MAP_EDIT_TOOLBAR_MODES,
+    axis2Name: "Overflow",
+    axis2Values: MAP_EDIT_TOOLBAR_OVERFLOW,
+    xStep: 760,
+    yStep: 120,
+    createVariant: createMapEditToolbarVariant,
+    updateVariant: updateMapEditToolbarVariant,
+    parseVariantName: parseMapEditToolbarVariantName,
+    configureProperties: configureMapEditToolbarProperties,
+    autoReorganize: true,
+    description: MAP_EDIT_TOOLBAR_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildMapEditToolbarComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    build: buildMapEditToolbarComponent,
+  });
+}
+
+// --- PropertyPicker (Dashboard) --------------------------------------------
+
+// Pointr Cloud's "+ Add additional field" (CLOUD-UI-003, decisions 133 and
+// 183), as React's PropertyPicker and
+// packages/styles/src/dashboard/property-picker.css draw it: a subtle Button
+// the width of the form, Cloud's 368 column (GAP-200, decision 135), and
+// under it, 4 below as PopoverContent's sideOffset puts it, the popup, as
+// wide as the button: Popover's surface, 12 in, 8 between its parts. In it
+// the labelled search, the Suggested and Others tabs while anything is
+// suggested, the list (a Listbox's rows: the name, 14/20, over its type and
+// description, 12/16, in the muted foreground), and the Custom field action
+// after it, a ghost Button. Empty draws the search finding nothing: the
+// empty state's title where the list was. React's words are props; Label,
+// the button's, is the one text property, as Code Connect maps it.
+
+async function createPropertyPickerVariant(args) {
+  const component = figma.createComponent();
+  await updatePropertyPickerVariant(component, args);
+  return component;
+}
+
+function parsePropertyPickerVariantName(name) {
+  return productSdkVariantValues(name, "State", PROPERTY_PICKER_STATES);
+}
+
+async function propertyPickerText(
+  name,
+  characters,
+  styleKey,
+  colorToken,
+  colorFallback,
+  width,
+  { fonts, variableByName, stats },
+) {
+  return productSdkText({
+    name,
+    characters,
+    styleKey,
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken,
+    colorFallback,
+    variableByName,
+    stats,
+    width,
+  });
+}
+
+async function propertyPickerButton({
+  name,
+  label,
+  subtle,
+  width,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const geometry = PROPERTY_PICKER_GEOMETRY;
+  const button = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: subtle ? "CENTER" : "MIN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width,
+    height: geometry.control,
+  });
+  markControlSurface(button);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  const foreground = subtle
+    ? {
+        name: "Subtle Buttons/themed/button/foreground/content/idle",
+        fallback: "#1051E8",
+      }
+    : { name: "Colors/foreground/0", fallback: "#000000" };
+  button.fills = subtle
+    ? [
+        paintFromVariable(
+          "Subtle Buttons/themed/button/background/idle",
+          "#F1F5FE",
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  const icon = await productSdkIconInstance({
+    iconName: "plus",
+    token: foreground,
+    size: 16,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: name,
+  });
+  if (icon) {
+    icon.name = name + " Icon";
+    button.appendChild(icon);
+  }
+  const text = await productSdkText({
+    name: subtle ? "Label" : name + " Label",
+    characters: label,
+    styleKey: "buttonLabel",
+    fonts,
+    bold: true,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: foreground.name,
+    colorFallback: foreground.fallback,
+    variableByName,
+    stats,
+    width: 200,
+  });
+  text.textAutoResize = "WIDTH_AND_HEIGHT";
+  button.appendChild(text);
+  return button;
+}
+
+async function propertyPickerSearch(inner, context) {
+  const { variableByName, stats } = context;
+  const group = productSdkFrame("Search", { spacing: 8 });
+  const label = await propertyPickerText(
+    "Search Label",
+    "Search properties",
+    "fieldLabel",
+    "Colors/foreground/0",
+    "#000000",
+    inner,
+    context,
+  );
+  appendWithSizing(group, label, "FILL", null);
+  const field = productSdkFrame("Search Field", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: inner,
+    height: PROPERTY_PICKER_GEOMETRY.control,
+  });
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  field.strokes = [
+    paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
+  ];
+  field.strokeWeight = 1;
+  field.strokeAlign = "INSIDE";
+  const icon = await productSdkIconInstance({
+    iconName: "search-md",
+    token: { name: "Colors/foreground/400", fallback: "#5D626F" },
+    size: 16,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: "PropertyPicker",
+  });
+  if (icon) {
+    icon.name = "Search Icon";
+    field.appendChild(icon);
+  }
+  const placeholder = await propertyPickerText(
+    "Search Placeholder",
+    context.state === "Empty" ? "zzzz" : "Search",
+    "fieldText",
+    context.state === "Empty" ? "Colors/foreground/0" : "Colors/foreground/400",
+    context.state === "Empty" ? "#000000" : "#5D626F",
+    inner - 52,
+    context,
+  );
+  appendWithSizing(field, placeholder, "FILL", null);
+  appendWithSizing(group, field, "FILL", "FIXED");
+  return group;
+}
+
+async function propertyPickerTabs(inner, context) {
+  const { variableByName, stats } = context;
+  // Tabs' track: the muted fill, 4 in, the active tab raised on the surface.
+  const list = productSdkFrame("Tabs", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 0,
+    padding: 4,
+    width: inner,
+    height: 40,
+  });
+  list.cornerRadius = KOZMOS_RADIUS.control;
+  list.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E4E6EA",
+      variableByName,
+      stats,
+    ),
+  ];
+  for (const [name, active] of [
+    ["Suggested", true],
+    ["Others", false],
+  ]) {
+    const tab = productSdkFrame(name + " Tab", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      width: (inner - 8) / 2,
+      height: 32,
+    });
+    tab.cornerRadius = KOZMOS_RADIUS.control - 4;
+    tab.fills = active
+      ? [paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats)]
+      : [];
+    if (active) tab.effects = [elevationEffect("raised")];
+    const text = await propertyPickerText(
+      name + " Tab Label",
+      name,
+      "tabsTrigger",
+      active ? "Colors/foreground/0" : "Colors/foreground/400",
+      active ? "#000000" : "#5D626F",
+      120,
+      context,
+    );
+    text.textAutoResize = "WIDTH_AND_HEIGHT";
+    tab.appendChild(text);
+    appendWithSizing(list, tab, "FILL", "FIXED");
+  }
+  return list;
+}
+
+async function propertyPickerRow([name, type, description], inner, context) {
+  const row = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 0,
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingTop: 4,
+    paddingBottom: 4,
+    width: inner,
+  });
+  row.cornerRadius = KOZMOS_RADIUS.marker;
+  // Two lines, 20 and 16, and 4 above and below: Listbox's 44.
+  const label = await propertyPickerText(
+    name + " Name",
+    name,
+    "listItem",
+    "Colors/foreground/0",
+    "#000000",
+    inner - 24,
+    context,
+  );
+  appendWithSizing(row, label, "FILL", null);
+  const meta = await propertyPickerText(
+    name + " Type",
+    description ? `${type} · ${description}` : type,
+    "fieldMeta",
+    "Colors/foreground/400",
+    "#5D626F",
+    inner - 24,
+    context,
+  );
+  appendWithSizing(row, meta, "FILL", null);
+  return row;
+}
+
+async function updatePropertyPickerVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = PROPERTY_PICKER_GEOMETRY;
+  const open = value !== "Closed";
+  const context = { fonts, variableByName, stats, state: value };
+  productSdkVariantRoot(component, "PropertyPicker", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.offset,
+    width: geometry.width,
+    height: geometry.control,
+  });
+  component.fills = [];
+  component.strokes = [];
+  component.effects = [];
+
+  const trigger = await propertyPickerButton({
+    name: "Trigger",
+    label: "Add additional field",
+    subtle: true,
+    width: geometry.width,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(component, trigger, "FILL", "FIXED");
+  if (!open) return;
+
+  const inner = geometry.width - geometry.padding * 2;
+  const popup = productSdkFrame("Popup", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.gap,
+    padding: geometry.padding,
+    width: geometry.width,
+    height: 200,
+  });
+  // Popover's surface: Surface/0, the subtle edge, the control corner and
+  // the overlay elevation (updatePopoverVariant's).
+  popup.cornerRadius = KOZMOS_RADIUS.control;
+  popup.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  popup.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  popup.strokeWeight = 1;
+  popup.effects = [elevationEffect("overlay")];
+  appendWithSizing(component, popup, "FILL", "HUG");
+
+  appendWithSizing(
+    popup,
+    await propertyPickerSearch(inner, context),
+    "FILL",
+    "HUG",
+  );
+  if (value === "Suggested") {
+    appendWithSizing(
+      popup,
+      await propertyPickerTabs(inner, context),
+      "FILL",
+      "FIXED",
+    );
+  }
+
+  if (value === "Empty") {
+    const empty = productSdkFrame("Empty State", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      paddingTop: 16,
+      paddingBottom: 16,
+      width: inner,
+    });
+    const title = await propertyPickerText(
+      "Empty Title",
+      "No properties match",
+      "emptyStateTitle",
+      "Colors/foreground/0",
+      "#000000",
+      inner,
+      context,
+    );
+    title.textAlignHorizontal = "CENTER";
+    appendWithSizing(empty, title, "FILL", null);
+    appendWithSizing(popup, empty, "FILL", "HUG");
+  } else {
+    const list = productSdkFrame("List", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      width: inner,
+    });
+    const rows =
+      value === "Suggested"
+        ? PROPERTY_PICKER_SUGGESTED_ROWS
+        : PROPERTY_PICKER_ROWS;
+    for (const entry of rows) {
+      appendWithSizing(
+        list,
+        await propertyPickerRow(entry, inner, context),
+        "FILL",
+        "HUG",
+      );
+    }
+    appendWithSizing(popup, list, "FILL", "HUG");
+  }
+
+  const custom = await propertyPickerButton({
+    name: "Custom Field",
+    label: "Custom field",
+    subtle: false,
+    width: inner,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(popup, custom, "FILL", "FIXED");
+}
+
+function configurePropertyPickerProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label",
+    "Label",
+    "Add additional field",
+    stats,
+  );
+}
+
+const PROPERTY_PICKER_DESCRIPTION = [
+  'Kozmos PropertyPicker generated from the React PropertyPicker API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), Pointr Cloud\'s "+ Add additional field" (CLOUD-UI-003).',
+  "State: Closed is the subtle Button alone; Open the popup with every property; Suggested with the Suggested and Others tabs; Empty a search that finds nothing.",
+  "Label maps to PropertyPicker.label. The properties are data (properties, onSelect, onCustomField), so the rows are an example.",
+  "Built of Core parts: Button subtle (GAP-200), Popover, Search, Tabs, Listbox, EmptyState, and a ghost Button for Custom field.",
+];
+
+async function buildPropertyPickerComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    axisName: "State",
+    values: PROPERTY_PICKER_STATES,
+    x: 80,
+    y: 19700,
+    xStep: 440,
+    createVariant: createPropertyPickerVariant,
+    configureProperties: configurePropertyPickerProperties,
+    autoReorganize: true,
+    description: PROPERTY_PICKER_DESCRIPTION,
+  });
+}
+
+async function updatePropertyPickerComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    axisName: "State",
+    values: PROPERTY_PICKER_STATES,
+    xStep: 440,
+    createVariant: createPropertyPickerVariant,
+    updateVariant: updatePropertyPickerVariant,
+    parseVariantName: parsePropertyPickerVariantName,
+    configureProperties: configurePropertyPickerProperties,
+    autoReorganize: true,
+    description: PROPERTY_PICKER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildPropertyPickerComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    build: buildPropertyPickerComponent,
+  });
+}
+
+// --- Property editors (Dashboard) ------------------------------------------
+
+// Pointr Cloud's property editors (CLOUD-UI-004, decisions 177–181 and 183),
+// as React's PropertyField, OpeningHoursEditor, RatingEditor and KeyValueList
+// draw them with packages/styles/src/dashboard/*.css. They are compositions
+// of Core fields, so a set draws each field as Core's field looks (44 tall,
+// the control radius, the input edge, its words in Field / Text) rather than
+// nesting the Core sets, whose texts an Update would reset (their layer ids
+// change on every Update); the stars of RatingEditor's preview are Rating's
+// own Readonly instance, which carries no override. Every word is a field's
+// example, not a property, except PropertyField's caption, its Name.
+
+const DASHBOARD_EDITOR_WIDTH = 340;
+const DASHBOARD_FIELD_HEIGHT = 44;
+const DASHBOARD_DANGER = {
+  name: "Colors/emotional/danger/600",
+  fallback: "#D41C42",
+};
+const DASHBOARD_MUTED = { name: "Colors/foreground/400", fallback: "#5D626F" };
+
+async function dashboardText(
+  name,
+  characters,
+  styleKey,
+  tone,
+  width,
+  { fonts, variableByName, stats },
+) {
+  const colour = tone || { name: "Colors/foreground/0", fallback: "#000000" };
+  return productSdkText({
+    name,
+    characters,
+    styleKey,
+    fonts,
+    bold: styleKey === "fieldLabel" || styleKey === "controlLabel",
+    fontSize: styleKey === "fieldMeta" ? 12 : 14,
+    lineHeight: styleKey === "fieldMeta" ? 16 : 20,
+    colorToken: colour.name,
+    colorFallback: colour.fallback,
+    variableByName,
+    stats,
+    width,
+  });
+}
+
+async function dashboardIcon(iconName, tone, size, context) {
+  const icon = await createFixedIconInstance(
+    iconName,
+    tone.name,
+    tone.fallback,
+    context.variableByName,
+    context.stats,
+    size,
+  );
+  scaleIconStrokes(icon, size);
+  return icon;
+}
+
+/**
+ * A Core field as it draws: 44 tall, the control radius, the input edge (the
+ * danger edge in error), its value in Field / Text, or its placeholder muted,
+ * and a trailing icon when the field has one (a time's clock).
+ */
+async function dashboardFieldBox(
+  { name, value, placeholder, error, icon, width },
+  context,
+) {
+  const box = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width,
+    height: DASHBOARD_FIELD_HEIGHT,
+  });
+  box.cornerRadius = KOZMOS_RADIUS.control;
+  box.fills = [
+    paintFromVariable(
+      "Surface/0",
+      "#FFFFFF",
+      context.variableByName,
+      context.stats,
+    ),
+  ];
+  box.strokes = [
+    error
+      ? paintFromVariable(
+          DASHBOARD_DANGER.name,
+          DASHBOARD_DANGER.fallback,
+          context.variableByName,
+          context.stats,
+        )
+      : paintFromVariable(
+          "Border/Input",
+          "#747B8B",
+          context.variableByName,
+          context.stats,
+        ),
+  ];
+  box.strokeWeight = 1;
+  box.strokeAlign = "INSIDE";
+  const text = await dashboardText(
+    "Value Text",
+    placeholder || value,
+    "fieldText",
+    placeholder ? DASHBOARD_MUTED : null,
+    width - 24 - (icon ? 24 : 0),
+    context,
+  );
+  appendWithSizing(box, text, "FILL", null);
+  if (icon) {
+    const glyph = await dashboardIcon(icon, DASHBOARD_MUTED, 16, context);
+    appendWithSizing(box, glyph, "FIXED", "FIXED");
+  }
+  return box;
+}
+
+/** A labelled field: its label, the field, and its error under it. */
+async function dashboardLabelledField(
+  { name, label, value, placeholder, error, width },
+  context,
+) {
+  const field = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 6,
+    width,
+    height: 70,
+  });
+  appendWithSizing(
+    field,
+    await dashboardText(
+      "Label Text",
+      label,
+      "fieldLabel",
+      null,
+      width,
+      context,
+    ),
+    "FILL",
+    null,
+  );
+  appendWithSizing(
+    field,
+    await dashboardFieldBox(
+      { name: "Field", value, placeholder, error: !!error, width },
+      context,
+    ),
+    "FILL",
+    "FIXED",
+  );
+  if (error) {
+    appendWithSizing(
+      field,
+      await dashboardText(
+        "Error Text",
+        error,
+        "fieldMeta",
+        DASHBOARD_DANGER,
+        width,
+        context,
+      ),
+      "FILL",
+      null,
+    );
+  }
+  return field;
+}
+
+/** A 44 icon button: the info button, or the red trash (`danger`). */
+async function dashboardIconButton(name, iconName, tone, size, context) {
+  const button = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: size,
+    height: size,
+  });
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  markControlSurface(button);
+  appendWithSizing(
+    button,
+    await dashboardIcon(iconName, tone, size >= 44 ? 20 : 16, context),
+    "FIXED",
+    "FIXED",
+  );
+  return button;
+}
+
+/** Sets a variant root's name and kind, as every generated set's are. */
+function dashboardVariantRoot(component, componentName, axis, value, options) {
+  productSdkVariantRoot(
+    component,
+    componentName,
+    `${axis}=${value}`,
+    Object.assign(
+      {
+        primarySizing: "AUTO",
+        counterSizing: "FIXED",
+        width: DASHBOARD_EDITOR_WIDTH,
+        height: 200,
+      },
+      options,
+    ),
+  );
+  component.fills = [];
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+}
+
+// PropertyField: the frame. Removable is React's onRemove, given or not.
+const PROPERTY_FIELD_REMOVABLE = ["True", "False"];
+
+async function createPropertyFieldVariant(args) {
+  const component = figma.createComponent();
+  await updatePropertyFieldVariant(component, args);
+  return component;
+}
+
+function parsePropertyFieldVariantName(name) {
+  return parseSingleAxisVariantName(
+    name,
+    "Removable",
+    PROPERTY_FIELD_REMOVABLE,
+  );
+}
+
+async function updatePropertyFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  const removable = value === "True";
+  dashboardVariantRoot(component, "PropertyField", "Removable", value, {
+    direction: "horizontal",
+    counterAlign: "CENTER",
+    spacing: 4,
+    width: 368,
+  });
+  const boxWidth = removable ? 368 - 4 - 44 : 368;
+  const box = productSdkFrame("Box", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 8,
+    padding: 12,
+    width: boxWidth,
+    height: 100,
+  });
+  box.cornerRadius = KOZMOS_RADIUS.control;
+  box.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  box.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  box.strokeWeight = 1;
+  box.strokeAlign = "INSIDE";
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: boxWidth - 24,
+    height: 24,
+  });
+  appendWithSizing(
+    header,
+    await dashboardText(
+      "Name Text",
+      "Capacity",
+      "fieldMeta",
+      DASHBOARD_MUTED,
+      boxWidth - 24 - 32,
+      context,
+    ),
+    "FILL",
+    null,
+  );
+  appendWithSizing(
+    header,
+    await dashboardIconButton(
+      "Info Button",
+      "info-circle",
+      DASHBOARD_MUTED,
+      24,
+      context,
+    ),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(box, header, "FILL", "FIXED");
+  const content = await productSdkSlot({
+    name: "Content Slot",
+    label: "Editor",
+    width: boxWidth - 24,
+    height: DASHBOARD_FIELD_HEIGHT,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+  });
+  appendWithSizing(box, content, "FILL", "FIXED");
+  appendWithSizing(component, box, "FILL", "HUG");
+  if (removable) {
+    appendWithSizing(
+      component,
+      await dashboardIconButton(
+        "Remove Button",
+        "trash-01",
+        DASHBOARD_DANGER,
+        44,
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+  }
+}
+
+function configurePropertyFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Name Text",
+    "Name",
+    "Capacity",
+    stats,
+  );
+}
+
+const PROPERTY_FIELD_DESCRIPTION = [
+  "Kozmos PropertyField generated from the React PropertyField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Name maps to PropertyField.name, the group's caption and accessible name. Removable maps to onRemove, the red trash named Remove <name>.",
+  "The info button, About <name>, opens PropertyField.info. Content Slot holds the property's editor.",
+];
+
+// OpeningHoursEditor: the week, as a new field has it, with overnight hours
+// (decision 179), and with a multi-selection's mixed weekend (GAP-153).
+const OPENING_HOURS_EDITOR_STATES = ["Default", "Overnight", "Mixed"];
+const OPENING_HOURS_EDITOR_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+async function createOpeningHoursEditorVariant(args) {
+  const component = figma.createComponent();
+  await updateOpeningHoursEditorVariant(component, args);
+  return component;
+}
+
+function parseOpeningHoursEditorVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", OPENING_HOURS_EDITOR_STATES);
+}
+
+/** A SegmentedControl, small: Hours, Closed, Always open, one chosen or none. */
+async function dashboardChoice(chosen, context) {
+  const choice = productSdkFrame("Choice", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 2,
+    padding: 4,
+    width: 220,
+    height: 36,
+  });
+  choice.cornerRadius = KOZMOS_RADIUS.control;
+  choice.fills = [
+    paintFromVariable(
+      "Surface/200",
+      "#ECEEF2",
+      context.variableByName,
+      context.stats,
+    ),
+  ];
+  for (const label of ["Hours", "Closed", "Always open"]) {
+    const segment = productSdkFrame(`${label} Segment`, {
+      direction: "horizontal",
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      paddingLeft: 8,
+      paddingRight: 8,
+      width: 60,
+      height: 28,
+    });
+    segment.cornerRadius = KOZMOS_RADIUS.control - 4;
+    if (label === chosen)
+      segment.fills = [
+        paintFromVariable(
+          "Surface/0",
+          "#FFFFFF",
+          context.variableByName,
+          context.stats,
+        ),
+      ];
+    const text = await dashboardText(
+      "Label Text",
+      label,
+      "fieldMeta",
+      label === chosen ? null : DASHBOARD_MUTED,
+      label === "Always open" ? 72 : 44,
+      context,
+    );
+    text.textAutoResize = "WIDTH_AND_HEIGHT";
+    appendWithSizing(segment, text, null, null);
+    appendWithSizing(choice, segment, null, "FIXED");
+  }
+  return choice;
+}
+
+async function updateOpeningHoursEditorVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "OpeningHoursEditor", "State", value, {
+    spacing: 12,
+    height: 600,
+  });
+  for (const [index, name] of OPENING_HOURS_EDITOR_DAYS.entries()) {
+    const weekend = index >= 5;
+    const overnight = value === "Overnight" && name === "Friday";
+    const mixed = value === "Mixed" && weekend;
+    const day = productSdkFrame(`${name} Row`, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 36,
+    });
+    const line = productSdkFrame("Day", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 36,
+    });
+    appendWithSizing(
+      line,
+      await dashboardText("Day Text", name, "fieldLabel", null, 96, context),
+      "FILL",
+      null,
+    );
+    appendWithSizing(
+      line,
+      await dashboardChoice(
+        mixed ? null : weekend ? "Closed" : "Hours",
+        context,
+      ),
+      null,
+      "FIXED",
+    );
+    appendWithSizing(day, line, "FILL", "HUG");
+    if (mixed) {
+      appendWithSizing(
+        day,
+        await dashboardText(
+          "Mixed Text",
+          "Multiple values",
+          "fieldText",
+          DASHBOARD_MUTED,
+          DASHBOARD_EDITOR_WIDTH,
+          context,
+        ),
+        "FILL",
+        null,
+      );
+    } else if (!weekend) {
+      const times = productSdkFrame("Times", {
+        direction: "horizontal",
+        primarySizing: "FIXED",
+        counterSizing: "AUTO",
+        counterAlign: "CENTER",
+        spacing: 8,
+        width: DASHBOARD_EDITOR_WIDTH,
+        height: DASHBOARD_FIELD_HEIGHT,
+      });
+      const fieldWidth = overnight ? 128 : 166;
+      appendWithSizing(
+        times,
+        await dashboardFieldBox(
+          {
+            name: "Opening Time",
+            value: overnight ? "18:00" : "08:00",
+            icon: "clock",
+            width: fieldWidth,
+          },
+          context,
+        ),
+        "FILL",
+        "FIXED",
+      );
+      appendWithSizing(
+        times,
+        await dashboardFieldBox(
+          {
+            name: "Closing Time",
+            value: overnight ? "02:00" : "22:00",
+            icon: "clock",
+            width: fieldWidth,
+          },
+          context,
+        ),
+        "FILL",
+        "FIXED",
+      );
+      if (overnight) {
+        const next = await dashboardText(
+          "Next Day Text",
+          "+1 day",
+          "fieldMeta",
+          DASHBOARD_MUTED,
+          48,
+          context,
+        );
+        next.textAutoResize = "WIDTH_AND_HEIGHT";
+        appendWithSizing(times, next, null, null);
+      }
+      appendWithSizing(day, times, "FILL", "HUG");
+    }
+    appendWithSizing(component, day, "FILL", "HUG");
+  }
+}
+
+function configureOpeningHoursEditorProperties(_componentSet, _stats) {}
+
+const OPENING_HOURS_EDITOR_DESCRIPTION = [
+  "Kozmos OpeningHoursEditor generated from the React OpeningHoursEditor API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Each day is a SegmentedControl (Hours, Closed, Always open) and, for Hours, two TimePickers. Default is DEFAULT_OPENING_HOURS: Monday to Friday 08:00–22:00, the weekend closed.",
+  "Overnight: a close before the open shows +1 day (decision 179). Mixed: mixedDays choose nothing and say Multiple values (GAP-153).",
+];
+
+// RatingEditor: three NumberInputs and the preview (decisions 180, 181).
+const RATING_EDITOR_STATES = ["Default", "Error", "Mixed"];
+
+async function createRatingEditorVariant(args) {
+  const component = figma.createComponent();
+  await updateRatingEditorVariant(component, args);
+  return component;
+}
+
+function parseRatingEditorVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", RATING_EDITOR_STATES);
+}
+
+async function updateRatingEditorVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "RatingEditor", "State", value, {
+    spacing: 12,
+    height: 300,
+  });
+  const error = value === "Error";
+  const mixed = value === "Mixed";
+  const fields = [
+    {
+      name: "Rating Field",
+      label: "Rating",
+      value: error ? "7" : "4.3",
+      placeholder: mixed ? "Multiple values" : null,
+      error: error ? "Rating can't be more than the max rating, 5." : null,
+    },
+    {
+      name: "Max Field",
+      label: "Max rating",
+      value: "5",
+      error: error ? "Max rating can't be less than the rating, 7." : null,
+    },
+    {
+      name: "Count Field",
+      label: "Number of ratings",
+      value: error ? "-3" : "120",
+      placeholder: mixed ? "Multiple values" : null,
+      error: error
+        ? "Number of ratings must be a whole number, 0 or more."
+        : null,
+    },
+  ];
+  for (const field of fields) {
+    appendWithSizing(
+      component,
+      await dashboardLabelledField(
+        Object.assign({ width: DASHBOARD_EDITOR_WIDTH }, field),
+        context,
+      ),
+      "FILL",
+      "HUG",
+    );
+  }
+  if (value !== "Default") return;
+  const preview = productSdkFrame("Preview", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: DASHBOARD_EDITOR_WIDTH,
+    height: 24,
+  });
+  // Rating's own read-only stars: React draws 4.3 of 5 as 4½ (decision 181);
+  // Rating's set has whole values, so the nearest below it.
+  const nested = await createNestedComponentInstance({
+    componentSetName: "Rating",
+    name: "Stars",
+    role: "rating-editor-preview",
+    variantProperties: [{ Value: "4", State: "Readonly" }, { Value: "4" }],
+    stats,
+  });
+  appendWithSizing(
+    preview,
+    nested
+      ? nested.instance
+      : createMissingNestedComponentNode(
+          "Stars",
+          "Rating is missing: run Core first.",
+          stats,
+        ),
+    null,
+    null,
+  );
+  const words = await dashboardText(
+    "Summary Text",
+    "4.3 of 5 · 120 ratings",
+    "fieldText",
+    DASHBOARD_MUTED,
+    160,
+    context,
+  );
+  appendWithSizing(preview, words, "FILL", null);
+  appendWithSizing(component, preview, "FILL", "HUG");
+}
+
+function configureRatingEditorProperties(_componentSet, _stats) {}
+
+const RATING_EDITOR_DESCRIPTION = [
+  "Kozmos RatingEditor generated from the React RatingEditor API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Three NumberInputs: rating (one decimal), max (1 or more), number of ratings (a whole number, 0 or more). A rating above its max is an error on both (decision 180).",
+  "The preview is always five stars, the rating's share of its max to the nearest half (decision 181), with the exact numbers in words. Mixed: Multiple values (GAP-153).",
+];
+
+// KeyValueList: rows of name, type, value and delete, and Add field
+// (decision 178).
+const KEY_VALUE_LIST_STATES = ["Default", "Empty", "Mixed"];
+
+async function createKeyValueListVariant(args) {
+  const component = figma.createComponent();
+  await updateKeyValueListVariant(component, args);
+  return component;
+}
+
+function parseKeyValueListVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", KEY_VALUE_LIST_STATES);
+}
+
+async function updateKeyValueListVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "KeyValueList", "State", value, {
+    spacing: 8,
+    height: 200,
+  });
+  const rows =
+    value === "Empty"
+      ? []
+      : value === "Mixed"
+        ? [["vendor", "Text", null]]
+        : [
+            ["vendor", "Text", "Acme"],
+            ["floors", "Number", "3"],
+          ];
+  const half = (DASHBOARD_EDITOR_WIDTH - 44 - 16) / 2;
+  for (const [index, [name, type, entry]] of rows.entries()) {
+    const row = productSdkFrame(`Row ${index + 1}`, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 96,
+    });
+    const line = productSdkFrame("Name and Type", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: DASHBOARD_FIELD_HEIGHT,
+    });
+    appendWithSizing(
+      line,
+      await dashboardFieldBox(
+        { name: "Name Field", value: name, width: half },
+        context,
+      ),
+      "FILL",
+      "FIXED",
+    );
+    appendWithSizing(
+      line,
+      await dashboardFieldBox(
+        { name: "Type Field", value: type, icon: "chevron-down", width: half },
+        context,
+      ),
+      "FILL",
+      "FIXED",
+    );
+    appendWithSizing(
+      line,
+      await dashboardIconButton(
+        "Remove Button",
+        "trash-01",
+        DASHBOARD_DANGER,
+        44,
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+    appendWithSizing(row, line, "FILL", "HUG");
+    appendWithSizing(
+      row,
+      await dashboardFieldBox(
+        {
+          name: "Value Field",
+          value: entry || "",
+          placeholder: entry ? null : "Multiple values",
+          width: half * 2 + 8,
+        },
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+    appendWithSizing(component, row, "FILL", "HUG");
+  }
+  const add = productSdkFrame("Add Button", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: 120,
+    height: 36,
+  });
+  add.cornerRadius = KOZMOS_RADIUS.control;
+  markControlSurface(add);
+  // The ghost Button's words and mark: the theme's text colour.
+  const theme = { name: "Colors/theme/600", fallback: "#1051E8" };
+  appendWithSizing(
+    add,
+    await dashboardIcon("plus", theme, 16, context),
+    "FIXED",
+    "FIXED",
+  );
+  const label = await dashboardText(
+    "Label Text",
+    "Add field",
+    "controlLabel",
+    theme,
+    72,
+    context,
+  );
+  label.textAutoResize = "WIDTH_AND_HEIGHT";
+  appendWithSizing(add, label, null, null);
+  appendWithSizing(component, add, null, "FIXED");
+}
+
+function configureKeyValueListProperties(_componentSet, _stats) {}
+
+const KEY_VALUE_LIST_DESCRIPTION = [
+  "Kozmos KeyValueList generated from the React KeyValueList API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "A row is a name (Input), a type (Select: Text, JSON, Number, Boolean), a value drawn for its type (Input, NumberInput, Switch) and a red trash; Add field ends the list (decision 178).",
+  "Every control is named for its row (Field 2 name). Mixed: a row's value says Multiple values (GAP-153).",
+];
+
+/** Build, Update and Rebuild for each editor set: one axis each. */
+const DASHBOARD_EDITOR_SETS = {
+  PropertyField: {
+    axisName: "Removable",
+    values: PROPERTY_FIELD_REMOVABLE,
+    y: 19640,
+    xStep: 420,
+    create: createPropertyFieldVariant,
+    update: updatePropertyFieldVariant,
+    parse: parsePropertyFieldVariantName,
+    configure: configurePropertyFieldProperties,
+    description: PROPERTY_FIELD_DESCRIPTION,
+  },
+  OpeningHoursEditor: {
+    axisName: "State",
+    values: OPENING_HOURS_EDITOR_STATES,
+    y: 20000,
+    xStep: 400,
+    create: createOpeningHoursEditorVariant,
+    update: updateOpeningHoursEditorVariant,
+    parse: parseOpeningHoursEditorVariantName,
+    configure: configureOpeningHoursEditorProperties,
+    description: OPENING_HOURS_EDITOR_DESCRIPTION,
+  },
+  RatingEditor: {
+    axisName: "State",
+    values: RATING_EDITOR_STATES,
+    y: 20800,
+    xStep: 400,
+    create: createRatingEditorVariant,
+    update: updateRatingEditorVariant,
+    parse: parseRatingEditorVariantName,
+    configure: configureRatingEditorProperties,
+    description: RATING_EDITOR_DESCRIPTION,
+  },
+  KeyValueList: {
+    axisName: "State",
+    values: KEY_VALUE_LIST_STATES,
+    y: 21300,
+    xStep: 400,
+    create: createKeyValueListVariant,
+    update: updateKeyValueListVariant,
+    parse: parseKeyValueListVariantName,
+    configure: configureKeyValueListProperties,
+    description: KEY_VALUE_LIST_DESCRIPTION,
+  },
+};
+
+async function buildDashboardEditorComponent(componentName) {
+  const set = DASHBOARD_EDITOR_SETS[componentName];
+  return buildSingleAxisComponent({
+    componentName,
+    componentSetName: componentName,
+    axisName: set.axisName,
+    values: set.values,
+    x: 80,
+    y: set.y,
+    xStep: set.xStep,
+    createVariant: set.create,
+    configureProperties: set.configure,
+    autoReorganize: true,
+    description: set.description,
+  });
+}
+
+async function updateDashboardEditorComponent(componentName) {
+  const set = DASHBOARD_EDITOR_SETS[componentName];
+  return updateSingleAxisComponent({
+    componentName,
+    componentSetName: componentName,
+    axisName: set.axisName,
+    values: set.values,
+    xStep: set.xStep,
+    createVariant: set.create,
+    updateVariant: set.update,
+    parseVariantName: set.parse,
+    configureProperties: set.configure,
+    autoReorganize: true,
+    description: set.description.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildDashboardEditorComponent(componentName) {
+  return rebuildGeneratedComponentSet({
+    componentName,
+    componentSetName: componentName,
+    build: () => buildDashboardEditorComponent(componentName),
+  });
+}
+
+async function buildPropertyFieldComponent() {
+  return buildDashboardEditorComponent("PropertyField");
+}
+async function updatePropertyFieldComponent() {
+  return updateDashboardEditorComponent("PropertyField");
+}
+async function rebuildPropertyFieldComponent() {
+  return rebuildDashboardEditorComponent("PropertyField");
+}
+async function buildOpeningHoursEditorComponent() {
+  return buildDashboardEditorComponent("OpeningHoursEditor");
+}
+async function updateOpeningHoursEditorComponent() {
+  return updateDashboardEditorComponent("OpeningHoursEditor");
+}
+async function rebuildOpeningHoursEditorComponent() {
+  return rebuildDashboardEditorComponent("OpeningHoursEditor");
+}
+async function buildRatingEditorComponent() {
+  return buildDashboardEditorComponent("RatingEditor");
+}
+async function updateRatingEditorComponent() {
+  return updateDashboardEditorComponent("RatingEditor");
+}
+async function rebuildRatingEditorComponent() {
+  return rebuildDashboardEditorComponent("RatingEditor");
+}
+async function buildKeyValueListComponent() {
+  return buildDashboardEditorComponent("KeyValueList");
+}
+async function updateKeyValueListComponent() {
+  return updateDashboardEditorComponent("KeyValueList");
+}
+async function rebuildKeyValueListComponent() {
+  return rebuildDashboardEditorComponent("KeyValueList");
 }
 
 /**

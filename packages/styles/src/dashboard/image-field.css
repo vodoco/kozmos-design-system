@@ -1,0 +1,163 @@
+/* ImageField (CLOUD-UI-004): Pointr Cloud's image field. A bordered group, as
+   Cloud draws it: the label and the "n of max" count on one line, the
+   images, each a thumbnail with its alt text and its buttons, then the drop
+   zone (FileUpload's) and the URL row (Input and Button). Every side is
+   logical, so right to left draws the mirror; only an image's own geometry
+   (the frame inside a thumbnail or the cropper) is physical, because an
+   image's pixels do not mirror. Spacing, sizes, colours, radii and strokes
+   are tokens; the Core parts inside draw themselves, density included. */
+@kozmos-owned {
+  .kozmos-image-field {
+    display: grid;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    min-inline-size: 0;
+    box-sizing: border-box;
+    padding: calc(var(--primitives-layout-spacing-200) * 1px);
+    border: var(--primitives-border-width-sm) solid
+      var(--semantics-border-subtle);
+    border-radius: calc(var(--semantics-radius-container) * 1px);
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-image-field-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  /* The label is Core's field label (.kozmos-field-label, style.css), as
+     every field's above it in the form; the count is Field / Meta, 12/16,
+     the muted foreground, as a field's helper line. */
+  .kozmos-image-field-count {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--primitives-colors-foreground-400);
+  }
+  /* Two classes: the scoped preflight's list reset weighs one and wins a tie
+     on proximity (GAP-52). */
+  .kozmos-image-field .kozmos-image-field-list {
+    display: grid;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .kozmos-image-field-item {
+    display: grid;
+    /* A 120 thumbnail: Layout/sizing/1000, 80, and half again. */
+    --kozmos-image-field-thumb: calc(
+      var(--primitives-layout-sizing-1000) * 1.5px
+    );
+    grid-template-columns: var(--kozmos-image-field-thumb) minmax(0, 1fr);
+    align-items: start;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px)
+      calc(var(--primitives-layout-spacing-150) * 1px);
+    min-inline-size: 0;
+  }
+  .kozmos-image-field-thumb {
+    position: relative;
+    grid-row: span 2;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background-color: var(--primitives-colors-background-100);
+  }
+  .kozmos-image-field .kozmos-image-field-thumb-image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+    object-fit: cover;
+  }
+  .kozmos-image-field .kozmos-image-field-thumb-image[data-framed] {
+    position: absolute;
+    object-fit: fill;
+  }
+  .kozmos-image-field-alt {
+    min-inline-size: 0;
+  }
+  .kozmos-image-field-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+  }
+  .kozmos-image-field-url {
+    display: flex;
+    align-items: end;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-image-field-url-input {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+  .kozmos-image-field-sr {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* The preview: Dialog over the whole window, less its usual 16 margin
+     each side, the image as large as it fits inside. Dialog sizes itself
+     with utilities, which weigh two classes inside style.css's @scope
+     (":scope .max-w-lg") and win a tie on proximity, so this weighs three. */
+  .kozmos-image-field-preview[role="dialog"][data-state] {
+    inline-size: calc(100vw - var(--primitives-layout-spacing-400) * 1px);
+    max-inline-size: none;
+    block-size: calc(100dvh - var(--primitives-layout-spacing-400) * 1px);
+    max-block-size: none;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .kozmos-image-field-preview .kozmos-image-field-preview-image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+    min-block-size: 0;
+    object-fit: contain;
+  }
+
+  /* The cropper: the frame is the box, in the field's ratio; the image moves
+     and scales under it. */
+  .kozmos-image-field-cropper {
+    position: relative;
+    overflow: hidden;
+    inline-size: 100%;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background-color: var(--primitives-colors-background-100);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .kozmos-image-field-cropper:active {
+    cursor: grabbing;
+  }
+  .kozmos-image-field-cropper:focus-visible {
+    outline: var(--primitives-border-width-md) solid
+      var(--primitives-colors-theme-600);
+    outline-offset: var(--primitives-border-width-md);
+  }
+  .kozmos-image-field-cropper .kozmos-image-field-cropper-image {
+    position: absolute;
+    display: block;
+    max-inline-size: none;
+    max-block-size: none;
+    pointer-events: none;
+  }
+  .kozmos-image-field-zoom {
+    display: flex;
+    justify-content: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  /* A zoom at its limit is unavailable, not disabled, so it keeps focus:
+     drawn as a disabled button is, at half opacity. */
+  .kozmos-image-field-zoom > [aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: default;
+  }
+}

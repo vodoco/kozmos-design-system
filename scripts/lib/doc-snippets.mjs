@@ -105,6 +105,9 @@ export function collectSnippets(root) {
     }
   }
   walk(path.join(root, "packages/react/src/components"));
+  // The Dashboard modules' pages (decision 183), whose recipes import
+  // @kozmos-ds/react/dashboard.
+  walk(path.join(root, "packages/react/src/dashboard"));
   if (!snippets.length) throw new Error("No documentation snippets found");
   return snippets;
 }

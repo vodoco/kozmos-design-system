@@ -1,0 +1,63 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../../components/DocumentationControls";
+import * as OpeningHoursEditorStories from "./OpeningHoursEditor.stories";
+import { PlatformSnippets } from "../../components/PlatformSnippets";
+
+<Meta of={OpeningHoursEditorStories} />
+
+# OpeningHoursEditor
+
+Pointr Cloud's Opening Hours property editor (CLOUD-UI-004): the seven days, each Hours, Closed or Always open, and for Hours its opening and closing time, typed or chosen. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
+
+<Canvas>
+  <Story of={OpeningHoursEditorStories.Default} />
+</Canvas>
+
+<Controls />
+
+## A day at a time
+
+Each day is a SegmentedControl named by the day, Hours, Closed or Always open: one of three, where Cloud's two switches could both be on. Its times are TimePickers, named "Monday opening time" and "Monday closing time", typed, or chosen from a list five minutes apart whose arrow keys carry into the hour: back from 08:00 is 07:55 (decision 179). Closing a day and opening it again gives it back its own hours. Every control is a tab stop; Cloud's editor had none.
+
+The value is the week, each day `{ closed: true }`, `{ alwaysOpen: true }` or `{ open: "08:00", close: "22:00" }`, Monday first; a new field starts as Cloud's does, `DEFAULT_OPENING_HOURS`: Monday to Friday 08:00 to 22:00, the weekend closed. The days are named in `locale`'s words, from `weekStart`.
+
+## Overnight
+
+A closing time before the opening time is the next day's (decision 179). "+1 day" says so beside it, and describes the closing field to a screen reader.
+
+<Canvas>
+  <Story of={OpeningHoursEditorStories.Overnight} />
+</Canvas>
+
+## A multi-selection
+
+The days in `mixedDays` differ across the selection (GAP-153): they choose nothing and say "Multiple values" until one is chosen. `onResetMixed` offers, per day, to go back to the several hours.
+
+<Canvas>
+  <Story of={OpeningHoursEditorStories.Mixed} />
+</Canvas>
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import {
+  DEFAULT_OPENING_HOURS,
+  OpeningHoursEditor,
+  PropertyField,
+  type OpeningHours,
+} from "@kozmos-ds/react/dashboard";
+
+export function Example() {
+  const [hours, setHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
+  return (
+    <PropertyField name="Opening Hours">
+      <OpeningHoursEditor value={hours} onValueChange={setHours} />
+    </PropertyField>
+  );
+}
+    `}
+/>

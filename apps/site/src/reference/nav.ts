@@ -14,6 +14,7 @@ export const componentIndex = index as ComponentIndex;
 export const laneOrder: readonly Lane[] = [
   "core",
   "product-sdk",
+  "dashboard",
   "platform-form-factor",
   "code-only",
 ];

@@ -2,7 +2,8 @@
   "codeConnect": {
     "parser": "react",
     "importPaths": {
-      "src/components/*": "@kozmos-ds/react"
+      "src/components/*": "@kozmos-ds/react",
+      "src/dashboard/*": "@kozmos-ds/react/dashboard"
     },
     "include": [
       "src/components/Button/Button.figma.tsx",
@@ -208,7 +209,23 @@
       "src/components/DynamicIsland/DynamicIsland.figma.tsx",
       "src/components/DynamicIsland/DynamicIsland.tsx",
       "src/components/FeedbackCard/FeedbackCard.figma.tsx",
-      "src/components/FeedbackCard/FeedbackCard.tsx"
+      "src/components/FeedbackCard/FeedbackCard.tsx",
+      "src/dashboard/BrandLoader/BrandLoader.figma.tsx",
+      "src/dashboard/BrandLoader/BrandLoader.tsx",
+      "src/dashboard/PropertyField/PropertyField.figma.tsx",
+      "src/dashboard/PropertyField/PropertyField.tsx",
+      "src/dashboard/OpeningHoursEditor/OpeningHoursEditor.figma.tsx",
+      "src/dashboard/OpeningHoursEditor/OpeningHoursEditor.tsx",
+      "src/dashboard/RatingEditor/RatingEditor.figma.tsx",
+      "src/dashboard/RatingEditor/RatingEditor.tsx",
+      "src/dashboard/KeyValueList/KeyValueList.figma.tsx",
+      "src/dashboard/KeyValueList/KeyValueList.tsx",
+      "src/dashboard/PropertyPicker/PropertyPicker.figma.tsx",
+      "src/dashboard/PropertyPicker/PropertyPicker.tsx",
+      "src/dashboard/MapEditToolbar/MapEditToolbar.figma.tsx",
+      "src/dashboard/MapEditToolbar/MapEditToolbar.tsx",
+      "src/dashboard/ImageField/ImageField.figma.tsx",
+      "src/dashboard/ImageField/ImageField.tsx"
     ]
   }
 }

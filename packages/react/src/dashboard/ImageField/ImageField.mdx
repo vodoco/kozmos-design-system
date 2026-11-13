@@ -1,0 +1,79 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../../components/DocumentationControls";
+import * as ImageFieldStories from "./ImageField.stories";
+import { PlatformSnippets } from "../../components/PlatformSnippets";
+
+<Meta of={ImageFieldStories} />
+
+# ImageField
+
+Pointr Cloud's image field (CLOUD-UI-004): up to `max` images, added by upload or by URL, each a thumbnail with its alt text, a full-screen preview, a cropper to the field's aspect ratio, and Remove. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
+
+It is built from FileUpload, Input, Button, IconButton and Dialog. It never uploads: `onChange` hands the product each picked `File`, each URL and each frame, and the product uploads and crops.
+
+<Canvas>
+  <Story of={ImageFieldStories.Default} />
+</Canvas>
+
+<Controls />
+
+## Adding images
+
+The count beside the label, "2 of 7 images", is a polite live region, so adding or removing an image is said. The drop zone's picker offers only `accept`'s types (JPG and PNG by default), and every file picked or dropped is checked again, with an error naming the file, as is `maxSize`. A URL is added with Add or Enter, and must be a web address (`https://` or `http://`). At `max`, the drop zone and the URL row are off.
+
+<Canvas>
+  <Story of={ImageFieldStories.Logo} />
+</Canvas>
+
+<Canvas>
+  <Story of={ImageFieldStories.Full} />
+</Canvas>
+
+## Alt text, preview and remove
+
+Each image's alt text is a field of its own: Pointr Cloud has none. Preview opens the image in a dialog over the window with its alt text, and Escape or Close gives focus back to the Preview button. Remove is named for its image ("Remove image 2"), and focus moves to the next image's Remove, or the URL field when none is left. An object URL the field made for a picked file is revoked once its image leaves the field, removed or given the product's own URL, and when the field unmounts. The same file can be picked again after it was removed.
+
+## Framing
+
+With `aspectRatio`, every thumbnail is drawn in that frame, and Frame opens a cropper, which also opens on its own when one image is added. The frame is the box; the image moves and scales under it. Drag the image, or focus the box and use the arrow keys to move the frame by a tenth of itself, and plus and minus (or the zoom buttons) to zoom, from 1 to 4 times; a zoom button at its limit is unavailable but keeps focus, so focus never falls out of the dialog. Each change is said in a polite live region ("Frame 10% from the left, 28% from the top, zoom 125%."). Apply gives the image its `crop`: a rectangle of the image, each side a fraction of its width or height from its top-left corner, never pixels. The image does not mirror right to left, so neither do the arrows.
+
+<Canvas>
+  <Story of={ImageFieldStories.NoRatio} />
+</Canvas>
+
+## Right to left, and the product's words
+
+Every word the field draws or says is in `labels`, with an English default.
+
+<Canvas>
+  <Story of={ImageFieldStories.RightToLeft} />
+</Canvas>
+
+<Canvas>
+  <Story of={ImageFieldStories.Disabled} />
+</Canvas>
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { ImageField, type ImageFieldImage } from "@kozmos-ds/react/dashboard";
+
+export function Example() {
+  const [images, setImages] = useState<ImageFieldImage[]>([]);
+  return (
+    <ImageField
+      label="Images"
+      max={7}
+      maxSize={2 * 1024 * 1024}
+      aspectRatio={16 / 9}
+      value={images}
+      onChange={setImages}
+    />
+  );
+}
+    `}
+/>

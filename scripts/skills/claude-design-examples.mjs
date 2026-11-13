@@ -193,6 +193,9 @@ export function convertStory({
   exportNames,
   exampleName,
   packageRoot,
+  // The entry a name is imported from: @kozmos-ds/react, or
+  // @kozmos-ds/react/dashboard for a Dashboard module (decision 183).
+  moduleOf = () => "@kozmos-ds/react",
 }) {
   // ---- the args: the meta's, then the story's --------------------------------
   const args = new Map();
@@ -547,7 +550,7 @@ export function convertStory({
       if (!target.startsWith(packageRoot))
         refuse(`it imports from ${module}, outside the package`);
       if (exportNames.has(name))
-        return addImport("@kozmos-ds/react", name, localName, typeOnly);
+        return addImport(moduleOf(name), name, localName, typeOnly);
       const fixture =
         fixtures.get(`${target}.ts`) ?? fixtures.get(`${target}.tsx`);
       const carried = fixture?.statements.find(
@@ -851,9 +854,21 @@ export function synthesizeExample({ api, description, exampleName }) {
     ? `<${tag} ${attributes.join(" ")}>${text ?? `{${children}}`}</${tag}>`
     : `<${tag} ${attributes.join(" ")} />`;
   const wrap = !PROVIDERS.has(tag);
-  const names = [...new Set([tag, ...(wrap ? ["ThemeProvider"] : [])])].sort();
+  // A Dashboard module is imported from its own entry (decision 183).
+  const module = description.entry.module ?? "@kozmos-ds/react";
+  const names = [
+    ...new Set([
+      ...(module === "@kozmos-ds/react" ? [tag] : []),
+      ...(wrap ? ["ThemeProvider"] : []),
+    ]),
+  ].sort();
   return [
-    `import { ${names.join(", ")} } from "@kozmos-ds/react";`,
+    ...(names.length
+      ? [`import { ${names.join(", ")} } from "@kozmos-ds/react";`]
+      : []),
+    ...(module === "@kozmos-ds/react"
+      ? []
+      : [`import { ${tag} } from "${module}";`]),
     `export function ${exampleName}() {\nreturn (\n${wrap ? `<ThemeProvider defaultTheme="light">\n${element}\n</ThemeProvider>` : element}\n);\n}`,
   ]
     .join("\n\n")

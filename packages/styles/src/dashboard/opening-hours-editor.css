@@ -1,0 +1,36 @@
+/* OpeningHoursEditor (CLOUD-UI-004, decision 179): a day a row, its name
+   and its Hours / Closed / Always open choice on one line, its two times
+   under them, "+1 day" after an overnight close. The times share the line
+   and wrap under each other in a narrow column. Logical sides throughout. */
+@kozmos-owned {
+  .kozmos-opening-hours {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+  .kozmos-opening-hours-day {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-opening-hours-day > :nth-child(n + 3) {
+    grid-column: 1 / -1;
+  }
+  .kozmos-opening-hours-times {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-opening-hours-times > * {
+    flex: 1 1 calc(var(--primitives-layout-spacing-1000) * 1px);
+    min-inline-size: 0;
+  }
+  .kozmos-opening-hours-times > span {
+    flex: none;
+  }
+  .kozmos-opening-hours-reset {
+    justify-self: start;
+  }
+}

@@ -161,6 +161,63 @@ convention that avoids variant explosion:
 Use **Update** rather than **Build** after the first pass so the Code Connect node
 IDs stay stable, exactly as with Core sets.
 
+## Dashboard Lane
+
+The **Dashboard** group builds Pointr Cloud's web modules, which ship from
+`@kozmos-ds/react/dashboard` and exist in React only (decision 183). They live
+in their own `Dashboard` section on the `Components` page, after Platform /
+Form-Factor, and **Update All Product / SDK** updates them with the rest.
+
+- **BrandLoader** — Pointr Cloud's brand loader (CLOUD-UI-008, decisions 133
+  and 176): `Overlay` of False, the loader alone in its 120 box
+  (`BrandLoader/size`), and True, the loader centred on Backdrop's example
+  scrim, 320×180 in `Overlay/Scrim`. A frame cannot ripple, so the set draws
+  the still state, as reduced motion draws it: the first ring at rest round
+  the pin, 108 (`BrandLoader/ring/size`) and 6 thick
+  (`BrandLoader/ring/stroke/width`, border-width lg + md), and the pin,
+  `marker-pin-01` at 32 (`BrandLoader/pin/size`), both in the theme fill, theme
+  500 (decisions 176 and 59). The second ring is a hidden `Second Ring` layer
+  at its ripple's start, 40 and 4 thick (`Border Width/lg`). React's `label` is
+  screen-reader text, never drawn, so the set has no text property. Run
+  Curated Icons first.
+- **PropertyField**, **OpeningHoursEditor**, **RatingEditor** and
+  **KeyValueList** — Pointr Cloud's property editors (CLOUD-UI-004, decisions
+  177–181). PropertyField is the frame (`Removable` True or False, a `Name`
+  text property, a `Content Slot` for the editor); OpeningHoursEditor's
+  `State` is Default, Overnight (+1 day) or Mixed; RatingEditor's is Default
+  (with its preview, Rating's own Readonly instance), Error or Mixed;
+  KeyValueList's is Default, Empty or Mixed. Their fields are drawn as Core's
+  fields look, not nested, so an Update keeps their words. Run Core and
+  Curated Icons first.
+- **PropertyPicker** — Pointr Cloud's "+ Add additional field" (CLOUD-UI-003,
+  decision 133): the subtle Button (GAP-200) in Cloud's 368 column and, 4
+  below, the popup on Popover's surface, 12 in: the labelled search, the
+  Suggested and Others tabs, the property rows (name over type and
+  description, as Listbox draws an option's description) and the Custom field
+  ghost Button. `State` is Closed, Open, Suggested and Empty (a search that
+  finds nothing); `Label` is the button's words, React's `label`. The rows are
+  examples: in code they are data. Run Curated Icons first.
+- **MapEditToolbar** — Pointr Cloud's map edit toolbar (CLOUD-UI-005,
+  decisions 139 and 151): `Mode` is each of Cloud's seven toolbars (Create,
+  Draw Polygon, Draw Circle, Draw Point, Geometry Set, JSON, Edit Existing),
+  drawn with Cloud's items, and `Overflow` True draws it on a 320 map, the
+  items that do not fit behind More. A card of `Surface/0` with no edge, 60
+  tall (`MapEditToolbar/height`), padding 6 and 8, corner 16, the floating
+  elevation; items 56 × 48 (`MapEditToolbar/item/*`), a 24 icon over an 11/14
+  label (MapEditToolbar / Label); a chosen tool is the theme fill, a disabled
+  item at half strength; dividers `Border/Subtle`, 32 tall. Its icons are UI
+  icons the Pointr library holds (decision 121); run Curated Icons first.
+- **ImageField** — Pointr Cloud's image field (CLOUD-UI-004's image part,
+  decisions 133 and 183): a bordered group 368 wide, the `Label` text property
+  in Field / Label and the count in Field / Meta; one image, a 120 × 68 (16:9)
+  thumbnail beside its alt-text Input slot and its Preview (`eye`), Frame
+  (`crop-01`) and Remove (`trash-01`) ghost icon buttons; the FileUpload slot,
+  112 tall; and the URL row, an Input slot and an outline Add. `State` is
+  Default, Full (the count at max, the drop zone and URL row at 50%) and
+  Disabled (the whole field at 50%). The cropper and the full-screen preview
+  are dialogs React opens, not drawn. `crop-01` is not a curated icon yet, so
+  the Frame button draws a typed glyph and the run warns until it is added.
+
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 
 Click **Build Surface QA** after the component audit is green and before closing Core v1. It creates or refreshes the generated `QA / Transparent Surfaces` page with Light/Dark `Surface/0` panels and representative product-map panels labeled `fill-extrusion` and `symbol_label`. The page uses live instances from the canonical component sets so Button, IconButton, Badge, fields, selection controls, Progress, and Spinner can be reviewed on the surfaces that produced the audit advisories without changing component node IDs. `Audit Library` also checks those live QA instances against their host surface fills, so dark-on-dark transparent or glass regressions are reported as `surface-contrast` issues.

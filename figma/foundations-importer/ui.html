@@ -1197,6 +1197,16 @@
                 <option value="dynamicIsland">DynamicIsland</option>
                 <option value="feedbackCard">FeedbackCard</option>
               </optgroup>
+              <optgroup label="Dashboard">
+                <option value="brandLoader">BrandLoader</option>
+                <option value="propertyField">PropertyField</option>
+                <option value="openingHoursEditor">OpeningHoursEditor</option>
+                <option value="ratingEditor">RatingEditor</option>
+                <option value="keyValueList">KeyValueList</option>
+                <option value="propertyPicker">PropertyPicker</option>
+                <option value="mapEditToolbar">MapEditToolbar</option>
+                <option value="imageField">ImageField</option>
+              </optgroup>
               <optgroup label="Utilities">
                 <option value="icons">Curated Icons</option>
               </optgroup>
@@ -1648,6 +1658,62 @@
           update: "update-feedback-card",
           rebuild: "rebuild-feedback-card",
           hint: "Build creates FeedbackCard with Default, Submitting, and Success states; Success replaces the form rather than disabling it. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        brandLoader: {
+          label: "BrandLoader",
+          build: "build-brand-loader",
+          update: "update-brand-loader",
+          rebuild: "rebuild-brand-loader",
+          hint: "Build creates BrandLoader (CLOUD-UI-008), Pointr Cloud's brand loader, a Dashboard module: the pin in a ring in the theme fill, drawn still as reduced motion draws it, with Overlay False (the loader alone) and True (on Backdrop's scrim) variants. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        propertyField: {
+          label: "PropertyField",
+          build: "build-property-field",
+          update: "update-property-field",
+          rebuild: "rebuild-property-field",
+          hint: "Build creates PropertyField (CLOUD-UI-004), the frame every property of a Pointr Cloud item sits in, a Dashboard module: Removable True (the red trash) and False, with a Name text property and a Content Slot. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        openingHoursEditor: {
+          label: "OpeningHoursEditor",
+          build: "build-opening-hours-editor",
+          update: "update-opening-hours-editor",
+          rebuild: "rebuild-opening-hours-editor",
+          hint: "Build creates OpeningHoursEditor (CLOUD-UI-004), a Dashboard module: State Default (Monday to Friday 08:00–22:00, the weekend closed), Overnight (+1 day) and Mixed. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        ratingEditor: {
+          label: "RatingEditor",
+          build: "build-rating-editor",
+          update: "update-rating-editor",
+          rebuild: "rebuild-rating-editor",
+          hint: "Build creates RatingEditor (CLOUD-UI-004), a Dashboard module: State Default (with the five-star preview, Rating's own Readonly instance), Error and Mixed. Run Core's Rating first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        keyValueList: {
+          label: "KeyValueList",
+          build: "build-key-value-list",
+          update: "update-key-value-list",
+          rebuild: "rebuild-key-value-list",
+          hint: "Build creates KeyValueList (CLOUD-UI-004), a Dashboard module: State Default (two rows), Empty and Mixed, each row a name, a type, a value and a red trash, with Add field. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        propertyPicker: {
+          label: "PropertyPicker",
+          build: "build-property-picker",
+          update: "update-property-picker",
+          rebuild: "rebuild-property-picker",
+          hint: "Build creates PropertyPicker (CLOUD-UI-003), Pointr Cloud's \"+ Add additional field\", a Dashboard module: the subtle Button and its popup (search, tabs, property rows, Custom field), with State Closed, Open, Suggested and Empty variants and a Label text property. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        mapEditToolbar: {
+          label: "MapEditToolbar",
+          build: "build-map-edit-toolbar",
+          update: "update-map-edit-toolbar",
+          rebuild: "rebuild-map-edit-toolbar",
+          hint: "Build creates MapEditToolbar (CLOUD-UI-005), Pointr Cloud's map edit toolbar, a Dashboard module: Mode is each of Cloud's seven toolbars with its items, and Overflow True draws it on a 320 map with More. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        imageField: {
+          label: "ImageField",
+          build: "build-image-field",
+          update: "update-image-field",
+          rebuild: "rebuild-image-field",
+          hint: "Build creates ImageField (CLOUD-UI-004), Pointr Cloud's image field, a Dashboard module: the label and count, one image with its alt text and Preview, Frame and Remove, the drop zone and the URL row, with Default, Full and Disabled states and a Label text property. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         aiSearchButton: {
           label: "AISearchButton",

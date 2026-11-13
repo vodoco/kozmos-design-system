@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
 
 const ROOT = process.cwd();
 const PLUGIN_MAIN = path.join(ROOT, "figma/foundations-importer/code.js");
@@ -131,6 +132,33 @@ if (failures.length > 0) {
  * the half that was right.
  */
 const ui = fs.readFileSync(PLUGIN_UI, "utf8");
+
+/**
+ * The panel's own code lives in `ui.html`'s inline <script>, and nothing else
+ * parses it: a registry entry that lost its closing `},` left the whole panel
+ * dead (no menu, no buttons) while every other check stayed green. Parse each
+ * inline script as the panel's browser would, and name the line that fails.
+ */
+const inlineScripts = [
+  ...ui.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/g),
+].filter((match) => !/\ssrc\s*=/.test(match[1] || ""));
+if (inlineScripts.length === 0) {
+  console.error("Figma plugin UI check failed: ui.html has no inline <script> to parse.");
+  process.exit(1);
+}
+for (const match of inlineScripts) {
+  const startLine = ui.slice(0, match.index + match[0].indexOf(">") + 1).split("\n").length;
+  try {
+    // Parse only: a vm.Script compiles the source and runs nothing.
+    new vm.Script(match[2], { filename: "ui.html", lineOffset: startLine - 1 });
+  } catch (error) {
+    const where = String(error.stack || "").split("\n")[0];
+    console.error(`Figma plugin UI check failed: the inline <script> at ui.html:${startLine} does not parse.`);
+    console.error(`- ${where}: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 const optionKeys = new Set(
   [...ui.matchAll(/<option value="([A-Za-z0-9]+)"/g)].map((match) => match[1]),
 );

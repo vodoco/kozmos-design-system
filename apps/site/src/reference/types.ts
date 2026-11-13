@@ -4,7 +4,8 @@ export type Lane =
   | "core"
   | "code-only"
   | "product-sdk"
-  | "platform-form-factor";
+  | "platform-form-factor"
+  | "dashboard";
 
 /** The four places a component can exist, in the order the site shows them. */
 export type Platform = "react" | "swiftui" | "compose" | "figma";

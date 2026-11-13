@@ -1310,6 +1310,79 @@
       "exports": ["Default", "InsideMapOverlay"]
     },
     {
+      "file": "packages/react/src/dashboard/BrandLoader/BrandLoader.stories.tsx",
+      "id": "dashboard-brandloader",
+      "title": "Dashboard/BrandLoader",
+      "component": "BrandLoader",
+      "exports": ["Default", "Still", "Overlay"]
+    },
+    {
+      "file": "packages/react/src/dashboard/PropertyField/PropertyField.stories.tsx",
+      "id": "dashboard-propertyfield",
+      "title": "Dashboard/PropertyField",
+      "component": "PropertyField",
+      "exports": ["Default", "MultiSelection"]
+    },
+    {
+      "file": "packages/react/src/dashboard/OpeningHoursEditor/OpeningHoursEditor.stories.tsx",
+      "id": "dashboard-openinghourseditor",
+      "title": "Dashboard/OpeningHoursEditor",
+      "component": "OpeningHoursEditor",
+      "exports": ["Default", "Overnight", "Localised", "Mixed"]
+    },
+    {
+      "file": "packages/react/src/dashboard/RatingEditor/RatingEditor.stories.tsx",
+      "id": "dashboard-ratingeditor",
+      "title": "Dashboard/RatingEditor",
+      "component": "RatingEditor",
+      "exports": ["Default", "OutOf100", "Errors", "Mixed"]
+    },
+    {
+      "file": "packages/react/src/dashboard/KeyValueList/KeyValueList.stories.tsx",
+      "id": "dashboard-keyvaluelist",
+      "title": "Dashboard/KeyValueList",
+      "component": "KeyValueList",
+      "exports": ["Default", "Empty", "Mixed"]
+    },
+    {
+      "file": "packages/react/src/dashboard/PropertyPicker/PropertyPicker.stories.tsx",
+      "id": "dashboard-propertypicker",
+      "title": "Dashboard/PropertyPicker",
+      "component": "PropertyPicker",
+      "exports": ["Default", "Suggested", "Open", "InAForm"]
+    },
+    {
+      "file": "packages/react/src/dashboard/MapEditToolbar/MapEditToolbar.stories.tsx",
+      "id": "dashboard-mapedittoolbar",
+      "title": "Dashboard/MapEditToolbar",
+      "component": "MapEditToolbar",
+      "exports": [
+        "Create",
+        "DrawPolygon",
+        "DrawCircle",
+        "DrawPoint",
+        "GeometrySet",
+        "Json",
+        "EditExisting",
+        "NarrowMap",
+        "RightToLeft"
+      ]
+    },
+    {
+      "file": "packages/react/src/dashboard/ImageField/ImageField.stories.tsx",
+      "id": "dashboard-imagefield",
+      "title": "Dashboard/ImageField",
+      "component": "ImageField",
+      "exports": [
+        "Default",
+        "Logo",
+        "Full",
+        "NoRatio",
+        "Disabled",
+        "RightToLeft"
+      ]
+    },
+    {
       "file": "apps/docs/src/stories/Tokens.stories.tsx",
       "id": "design-system-tokens-map",
       "title": "Foundations/Tokens/Map",

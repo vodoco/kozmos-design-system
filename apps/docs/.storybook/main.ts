@@ -54,6 +54,15 @@ const config: StorybookConfig & PinsReact = {
         find: /^@kozmos-ds\/react$/,
         replacement: resolve(__dirname, "../../../packages/react/src/index.ts"),
       },
+      // The Dashboard modules' entry (decision 183), from source as the main
+      // entry is, so its parts share the stories' React contexts too.
+      {
+        find: /^@kozmos-ds\/react\/dashboard$/,
+        replacement: resolve(
+          __dirname,
+          "../../../packages/react/src/dashboard/index.ts",
+        ),
+      },
       ...(Array.isArray(aliases)
         ? aliases
         : Object.entries(aliases).map(([find, replacement]) => ({

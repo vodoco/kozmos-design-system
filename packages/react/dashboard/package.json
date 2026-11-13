@@ -1,0 +1,6 @@
+{
+  "main": "../dist/kozmos-react-dashboard.cjs",
+  "module": "../dist/kozmos-react-dashboard.mjs",
+  "types": "../dist/dashboard/index.d.ts",
+  "sideEffects": false
+}
