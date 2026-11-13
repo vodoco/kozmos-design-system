@@ -10,6 +10,12 @@
  * 176), 6 and 4 thick, rippling; a 32 pin; the label heard, never seen. Under
  * reduced motion, still: one ring at rest, 108 round, the pin upright. As an
  * overlay, the window covered and the page under it inert.
+ *
+ * MapEditToolbar (CLOUD-UI-005): on maps 640, 700 and 760 wide its items,
+ * the dividers' inline margins counted, stay inside the card. PropertyPicker
+ * (CLOUD-UI-003): its status region is in the page before it has words.
+ * KeyValueList (CLOUD-UI-004): a row lays out the same inside a <form>,
+ * where a Select adds a hidden native select to it, as outside one.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -225,9 +231,168 @@ try {
       passed.push(where);
       await page.close();
     }
+
+  for (const [mode, stylesheet] of [
+    ["full", css],
+    ["without-scope", unscoped.toString()],
+  ]) {
+    const page = await browser.newPage({
+      viewport: { width: 1000, height: 900 },
+    });
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.setContent(
+      '<!doctype html><html><head></head><body><div id="fixture"></div></body></html>',
+    );
+    await page.addStyleTag({ content: stylesheet });
+    await page.addStyleTag({ content: dashboardCss });
+    await page.evaluate(() => {
+      window.__dashboardModules = true;
+    });
+    await page.addScriptTag({ content: code });
+    await page.getByTestId("list-inside").waitFor();
+    await settleLayout(page);
+
+    // The toolbar: nothing runs past the card, at any of the three widths.
+    for (const width of [640, 700, 760]) {
+      const drawn = await page
+        .getByTestId(`toolbar-${width}`)
+        .evaluate((box) => {
+          const card = box.querySelector(".kozmos-map-edit-toolbar");
+          const row = card.querySelector(".kozmos-map-edit-toolbar-items");
+          const last = row.lastElementChild.getBoundingClientRect();
+          const inner = card.getBoundingClientRect();
+          const style = getComputedStyle(card);
+          return {
+            scrollWidth: card.scrollWidth,
+            clientWidth: card.clientWidth,
+            past:
+              Math.round(
+                (last.right -
+                  (inner.right -
+                    parseFloat(style.paddingRight) -
+                    parseFloat(style.borderRightWidth))) *
+                  100,
+              ) / 100,
+            more: card.querySelector('[aria-haspopup="menu"]') !== null,
+          };
+        });
+      assert.ok(
+        drawn.scrollWidth <= drawn.clientWidth,
+        `${mode} toolbar ${width}: scrollWidth ${drawn.scrollWidth} <= clientWidth ${drawn.clientWidth}`,
+      );
+      assert.ok(
+        drawn.past <= 0,
+        `${mode} toolbar ${width}: the last item ends ${drawn.past}px past the card's content box`,
+      );
+      assert.ok(
+        drawn.more,
+        `${mode} toolbar ${width}: the rest is behind More`,
+      );
+    }
+
+    // The picker: its status region is rendered (not display: none) before
+    // anything is typed, and draws the empty state once nothing matches.
+    await page.locator(".kozmos-property-picker-trigger").click();
+    await page.locator(".kozmos-property-picker-status").waitFor({
+      state: "attached",
+    });
+    const status = () =>
+      page.locator(".kozmos-property-picker-status").evaluate((region) => {
+        const r = region.getBoundingClientRect();
+        return {
+          display: getComputedStyle(region).display,
+          box: { width: r.width, height: r.height },
+          text: region.textContent,
+        };
+      });
+    const before = await status();
+    assert.notEqual(
+      before.display,
+      "none",
+      `${mode} picker: the status region is rendered before it has words`,
+    );
+    assert.ok(
+      before.box.width <= 1 && before.box.height <= 1,
+      `${mode} picker: the empty status region takes no room`,
+    );
+    await page.keyboard.type("zzz");
+    await settleLayout(page);
+    const after = await status();
+    assert.match(
+      after.text,
+      /No properties match/,
+      `${mode} picker: the words`,
+    );
+    assert.ok(
+      after.box.width > 100 && after.box.height > 20,
+      `${mode} picker: the empty state is seen`,
+    );
+    await page.keyboard.press("Escape");
+    await settleLayout(page);
+
+    // The list: a row's value under its name and type, the delete button at
+    // the end of the first line, inside a <form> as outside it.
+    const rows = (id) =>
+      page.getByTestId(id).evaluate((root) =>
+        [...root.querySelectorAll(".kozmos-key-value-row")].map((row) => {
+          const at = (node) => {
+            const r = node.getBoundingClientRect();
+            const origin = row.getBoundingClientRect();
+            return [
+              Math.round(r.left - origin.left),
+              Math.round(r.top - origin.top),
+              Math.round(r.width),
+              Math.round(r.height),
+            ];
+          };
+          return {
+            hiddenSelect: row.querySelector("select") !== null,
+            name: at(row.querySelector("input")),
+            // Found by name, not by class, so the check reads any markup.
+            value: at(
+              [...row.children].find((child) =>
+                child.matches(
+                  '[aria-label$=" value"], :has([aria-label$=" value"])',
+                ),
+              ),
+            ),
+            remove: at(row.querySelector('button[aria-label^="Remove"]')),
+            row: at(row),
+          };
+        }),
+      );
+    const outside = await rows("list-outside");
+    const inside = await rows("list-inside");
+    assert.ok(
+      inside.every((row) => row.hiddenSelect),
+      `${mode} list: a Select inside the form adds its native select`,
+    );
+    for (const [index, row] of inside.entries()) {
+      const { hiddenSelect: _, ...boxes } = row;
+      const { hiddenSelect: __, ...expected } = outside[index];
+      assert.deepEqual(
+        boxes,
+        expected,
+        `${mode} list row ${index + 1}: inside a form as outside one`,
+      );
+      assert.ok(
+        row.value[1] >= row.name[1] + row.name[3],
+        `${mode} list row ${index + 1}: the value under the name`,
+      );
+      assert.ok(
+        row.remove[1] < row.name[1] + row.name[3] &&
+          row.remove[0] + row.remove[2] === row.row[2],
+        `${mode} list row ${index + 1}: delete at the end of the first line`,
+      );
+    }
+    assert.deepEqual(errors, [], `${mode} modules: page errors`);
+    passed.push(`${mode} modules`);
+    await page.close();
+  }
 } finally {
   await browser.close();
 }
 console.log(
-  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay (${passed.join("; ")})`,
+  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay; MapEditToolbar inside its card at 640, 700 and 760; PropertyPicker's status region rendered before its words; KeyValueList's rows inside a form as outside (${passed.join("; ")})`,
 );
