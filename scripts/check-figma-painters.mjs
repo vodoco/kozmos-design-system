@@ -1401,6 +1401,8 @@ section("A set runs after the sets it reaches into");
     retintTourStepCloseIcon: ["IconButton", "TourStep"],
     // GAP-169: the header action's pencil, tinted again after the swap.
     retintCardHeaderActionIcon: ["IconButton", "Card"],
+    // GAP-036: PageHeader's info-circle, tinted again after the swap.
+    retintPageHeaderInfoIcon: ["IconButton", "PageHeader"],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1454,8 +1456,8 @@ section("A set runs after the sets it reaches into");
     // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
       [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
-        "Card,TourStep",
-      `after IconButton: TourStep and Card (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+        "Card,PageHeader,TourStep",
+      `after IconButton: TourStep, Card and PageHeader (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -8822,8 +8824,8 @@ section("The rest of the batch");
   const ctWindow = await paint("updateContainerVariant", "True", "Window");
   const ctPanel = await paint("updateContainerVariant", "True", "Panel");
   ok(
-    ctWindow.name === "Centered=True, Inset=Window",
-    `Container carries both axes (got "${ctWindow.name}")`,
+    ctWindow.name === "Centered=True, Inset=Window, Block=None",
+    `Container carries its axes (got "${ctWindow.name}")`,
   );
   ok(
     ctWindow.paddingLeft === 24 && ctPanel.paddingLeft === 16,
@@ -8831,8 +8833,123 @@ section("The rest of the batch");
   );
   ok(
     JSON.stringify(plugin.parseContainerVariantName("Centered=True")) ===
-      JSON.stringify({ value: "True", second: "Window", centered: "True" }),
-    "Container: no Inset reads as Window",
+      JSON.stringify({
+        value: "True",
+        second: "Window/None",
+        centered: "True",
+      }),
+    "Container: no Inset reads as Window, and no Block as None",
+  );
+
+  // GAP-116: Container's Block, React's `block`: none, 16, 24 or 32 above
+  // and below, bound to Container/padding/y/*, which alias the layout
+  // spacing steps 200, 300 and 400.
+  ok(
+    JSON.stringify(axis("Container", "Block")) ===
+      JSON.stringify(["None", "Small", "Medium", "Large"]),
+    `Container expects a Block (got ${JSON.stringify(axis("Container", "Block"))})`,
+  );
+  ok(
+    JSON.stringify(
+      plugin.parseContainerVariantName("Centered=True, Inset=Window"),
+    ) ===
+      JSON.stringify({
+        value: "True",
+        second: "Window/None",
+        centered: "True",
+      }) &&
+      JSON.stringify(
+        plugin.parseContainerVariantName(
+          "Centered=False, Inset=Panel, Block=Large",
+        ),
+      ) ===
+        JSON.stringify({
+          value: "False",
+          second: "Panel/Large",
+          centered: "False",
+        }) &&
+      plugin.parseContainerVariantName("Centered=True, Block=Huge") === null,
+    "Container: a variant drawn before Block reads as None, so Update renames it; an unknown Block is not the set's",
+  );
+  ok(
+    JSON.stringify(plugin.CONTAINER_INSET_BLOCKS) ===
+      JSON.stringify([
+        "Window/None",
+        "Window/Small",
+        "Window/Medium",
+        "Window/Large",
+        "Panel/None",
+        "Panel/Small",
+        "Panel/Medium",
+        "Panel/Large",
+      ]),
+    `Container draws every Inset with every Block, one row each (${JSON.stringify(plugin.CONTAINER_INSET_BLOCKS)})`,
+  );
+  const ctBound = (node, field) => {
+    const alias = node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const ctFloat = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  // The component tokens too, which the payload alone does not carry.
+  const ctTokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const paintContainer = async (
+    second,
+    component = figma.createComponent(),
+  ) => {
+    await plugin.updateContainerVariant(component, {
+      value: "True",
+      second,
+      variableByName: ctTokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  for (const [block, padding, token, step] of [
+    ["Small", 16, "Container/padding/y/small", "Layout/spacing/200"],
+    ["Medium", 24, "Container/padding/y/medium", "Layout/spacing/300"],
+    ["Large", 32, "Container/padding/y/large", "Layout/spacing/400"],
+  ]) {
+    const ct = await paintContainer(`Panel/${block}`);
+    ok(
+      ct.name === `Centered=True, Inset=Panel, Block=${block}` &&
+        ct.paddingTop === padding &&
+        ct.paddingBottom === padding &&
+        ctBound(ct, "paddingTop") === token &&
+        ctBound(ct, "paddingBottom") === token &&
+        ctFloat.get(token)?.value === padding &&
+        ctFloat.get(token)?.alias === step &&
+        ct.paddingLeft === 16,
+      `Block=${block}: ${padding} above and below, ${token} (${step}), the panel's 16 a side (got ${ct.paddingTop}/${ct.paddingBottom}, ${ctBound(ct, "paddingTop")})`,
+    );
+    ok(
+      ct.height === 64 + 2 * padding && ctBound(ct, "height") === null,
+      `Block=${block}: the example is its content and the space above and below it, ${64 + 2 * padding}, not the fixed 120 (got ${ct.height}, ${ctBound(ct, "height")})`,
+    );
+  }
+  ok(
+    ctWindow.paddingTop === 0 &&
+      ctWindow.paddingBottom === 0 &&
+      ctBound(ctWindow, "paddingTop") === null &&
+      ctWindow.height === 120,
+    `Block=None: no top or bottom, 120 tall, as before (got ${ctWindow.paddingTop}, ${ctWindow.height})`,
+  );
+  // An Update from a block back to none drops the block's binding.
+  const ctBack = await paintContainer("Window/Large");
+  const ctBackBound = ctBound(ctBack, "paddingTop");
+  await paintContainer("Window/None", ctBack);
+  ok(
+    ctBackBound === "Container/padding/y/large" &&
+      ctBack.paddingTop === 0 &&
+      ctBound(ctBack, "paddingTop") === null &&
+      ctBound(ctBack, "paddingBottom") === null,
+    `Container: redrawn with no Block, a variant keeps no block binding (got ${ctBack.paddingTop}, ${ctBound(ctBack, "paddingTop")})`,
   );
 
   // POIResultCard
@@ -13442,6 +13559,368 @@ const menusBound = (node, field) => {
   const alias = node && node.boundVariables && node.boundVariables[field];
   return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
 };
+
+section(
+  "GAP-036: PageHeader draws a band, a breadcrumb, the title's line and the actions",
+);
+{
+  // React's PageHeader: a band in theme 0 (Subtle) or none (Default), its
+  // content in a Container, 24 a side, 32 above and 24 below (GAP-116); a
+  // breadcrumb 8 above the title; the title (Heading 3, 24/32, at Medium;
+  // Heading 2, 30/36, at Large) with the info button 8 after it; the
+  // description 4 under it, 14/20 in foreground/400; the actions 16 after
+  // the text, centred on the title's line.
+  const ready =
+    Array.isArray(plugin.PAGE_HEADER_TONES) &&
+    typeof plugin.updatePageHeaderVariant === "function" &&
+    typeof plugin.configurePageHeaderProperties === "function";
+  ok(ready, "PageHeader's axes, painter and properties are reachable");
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("PageHeader"),
+      ) ===
+        JSON.stringify({
+          Tone: ["Subtle", "Default"],
+          Size: ["Medium", "Large"],
+        }),
+    `PageHeader's axes are Tone (Subtle, Default) and Size (Medium, Large) (${ready && JSON.stringify(plugin.expectedVariantAxesForComponentSetName("PageHeader"))})`,
+  );
+  const core = plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name);
+  ok(
+    core.includes("PageHeader") &&
+      ["Breadcrumb", "Button", "IconButton", "Container"].every(
+        (name) => core.indexOf(name) < core.indexOf("PageHeader"),
+      ),
+    "Update All runs PageHeader after the sets it nests and the Container it pads as",
+  );
+  const handlers = plugin.additionalComponentActionHandlers();
+  ok(
+    ["build", "update", "rebuild"].every(
+      (verb) => typeof handlers[`${verb}-page-header`] === "function",
+    ),
+    "the plugin UI's build, update and rebuild of PageHeader reach a handler",
+  );
+  const uiHtml = fs.readFileSync(
+    path.join(ROOT, "figma/foundations-importer/ui.html"),
+    "utf8",
+  );
+  ok(
+    /<option value="pageHeader">PageHeader<\/option>/.test(uiHtml) &&
+      /build: "build-page-header"/.test(uiHtml),
+    "the plugin UI offers PageHeader",
+  );
+  ok(
+    plugin.shouldAuditLayoutBindings("PageHeader") === true,
+    "the audit checks PageHeader's layout bindings",
+  );
+
+  // The file: Breadcrumb's Basic, Button's Default with its Label Text,
+  // IconButton's Ghost at Small with its Icon swap, and info-circle.
+  const breadcrumbSet = mockComponentSet("Breadcrumb", [
+    {
+      properties: { Content: "Basic" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "AUTO";
+        node.counterAxisSizingMode = "AUTO";
+        node.resize(240, 20);
+      },
+    },
+  ]);
+  const buttonSet = mockComponentSet("Button", [
+    {
+      properties: { Variant: "Default", Size: "Default", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(120, 44);
+        const label = new MockNode("TEXT", "Label Text");
+        label.characters = "Button";
+        label.componentPropertyReferences = { characters: "Label Text#1:0" };
+        node.appendChild(label);
+      },
+    },
+  ]);
+  buttonSet.componentPropertyDefinitions = {
+    "Label Text#1:0": { type: "TEXT", defaultValue: "Button" },
+  };
+  const plusGlyph = mockIconComponent("plus");
+  const infoGlyph = mockIconComponent("info-circle");
+  const ghostInk = "Secondary Buttons/themed/button/foreground/content/idle";
+  const iconButtonSet = mockComponentSet("IconButton", [
+    {
+      properties: { Variant: "Ghost", Size: "Small", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(32, 32);
+        const icon = plusGlyph.createInstance();
+        icon.name = "Icon";
+        icon.resize(16, 16);
+        icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+        node.appendChild(icon);
+      },
+    },
+  ]);
+  iconButtonSet.componentPropertyDefinitions = {
+    "Icon#2:0": { type: "INSTANCE_SWAP", defaultValue: plusGlyph.id },
+  };
+  const components = new MockNode("PAGE", "Components");
+  for (const set of [breadcrumbSet, buttonSet, iconButtonSet])
+    components.appendChild(set);
+  const icons = new MockNode("PAGE", "Icons");
+  for (const icon of [plusGlyph, infoGlyph]) icons.appendChild(icon);
+  const fileFigma = createFigmaMock({ pages: [components, icons] });
+  const file = loadPlugin({ pluginPath: PLUGIN, figma: fileFigma });
+  await file.ensureKozmosTextStyles(FONTS, freshStats());
+  const phTokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+      ghostInk,
+    ]),
+  );
+  const phFloats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const phBound = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const draw = async (tone, size, component = fileFigma.createComponent()) => {
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      file.updatePageHeaderVariant(component, {
+        value: tone,
+        second: size,
+        variableByName: phTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    component.stats = stats;
+    return component;
+  };
+
+  const variants = [];
+  for (const tone of ready ? plugin.PAGE_HEADER_TONES : [])
+    for (const size of plugin.PAGE_HEADER_SIZES) {
+      const at = `${tone}/${size}`;
+      const component = await draw(tone, size);
+      variants.push(component);
+      const line = size === "Large" ? 36 : 32;
+      ok(
+        component.name === `Tone=${tone}, Size=${size}` &&
+          JSON.stringify(file.parsePageHeaderVariantName(component.name)) ===
+            JSON.stringify({ value: tone, second: size }),
+        `${at}: named Tone=${tone}, Size=${size}, and reads back as itself (${component.name})`,
+      );
+      ok(
+        component.layoutMode === "VERTICAL" &&
+          component.width === 960 &&
+          phBound(component, "width") === "PageHeader/width/default" &&
+          component.paddingLeft === 24 &&
+          component.paddingRight === 24 &&
+          phBound(component, "paddingLeft") === "Container/padding/x/window" &&
+          component.paddingTop === 32 &&
+          phBound(component, "paddingTop") === "Container/padding/y/large" &&
+          component.paddingBottom === 24 &&
+          phBound(component, "paddingBottom") === "Container/padding/y/medium",
+        `${at}: 960 wide, Container's 24 a side, 32 above and 24 below, bound to Container's tokens (${component.width}, ${component.paddingLeft}, ${component.paddingTop}/${component.paddingBottom}, ${phBound(component, "paddingTop")})`,
+      );
+      ok(
+        tone === "Subtle"
+          ? component.fills.length === 1 &&
+              boundVariableName(component.fills[0]) === "Colors/theme/0"
+          : component.fills.length === 0,
+        `${at}: ${tone === "Subtle" ? "the band in theme 0" : "no band"} (${component.fills.map(boundVariableName)})`,
+      );
+      ok(
+        JSON.stringify(component.children.map((child) => child.name)) ===
+          JSON.stringify(["Breadcrumb", "Header Row"]) &&
+          component.itemSpacing === 8 &&
+          phBound(component, "itemSpacing") === "PageHeader/breadcrumb/gap" &&
+          phFloats.get("PageHeader/breadcrumb/gap").alias ===
+            "Layout/spacing/100",
+        `${at}: the Breadcrumb 8 above the header row (${component.children.map((child) => child.name)}, ${component.itemSpacing})`,
+      );
+      const breadcrumb = named(component, "Breadcrumb");
+      ok(
+        breadcrumb &&
+          breadcrumb.type === "INSTANCE" &&
+          breadcrumb.mainComponent &&
+          breadcrumb.mainComponent.parent === breadcrumbSet,
+        `${at}: the Breadcrumb is a live Breadcrumb instance`,
+      );
+      const row = named(component, "Header Row");
+      const text = named(component, "Header Text");
+      const actions = named(component, "Actions");
+      ok(
+        row &&
+          JSON.stringify(row.children.map((child) => child.name)) ===
+            JSON.stringify(["Header Text", "Actions"]) &&
+          row.itemSpacing === 16 &&
+          phBound(row, "itemSpacing") === "PageHeader/gap" &&
+          row.layoutSizingHorizontal === "FILL" &&
+          text.layoutSizingHorizontal === "FILL",
+        `${at}: the text fills the row and the Actions sit 16 after it (${row && row.children.map((child) => child.name)}, ${row && row.itemSpacing})`,
+      );
+      ok(
+        JSON.stringify(text.children.map((child) => child.name)) ===
+          JSON.stringify(["Title Row", "Description Text"]) &&
+          text.itemSpacing === 4 &&
+          phBound(text, "itemSpacing") === "PageHeader/text/gap",
+        `${at}: the description 4 under the title's line (${text.children.map((child) => child.name)}, ${text.itemSpacing})`,
+      );
+      const titleRow = named(component, "Title Row");
+      const title = named(component, "Title Text");
+      ok(
+        JSON.stringify(titleRow.children.map((child) => child.name)) ===
+          JSON.stringify(["Title Text", "Info"]) &&
+          titleRow.itemSpacing === 8 &&
+          phBound(titleRow, "itemSpacing") === "PageHeader/title/gap",
+        `${at}: the Info 8 after the title (${titleRow.children.map((child) => child.name)}, ${titleRow.itemSpacing})`,
+      );
+      const token = size === "Large" ? "3xl" : "2xl";
+      ok(
+        title.fontSize === (size === "Large" ? 30 : 24) &&
+          title.lineHeight.value === line &&
+          title.fontName.style === "Bold" &&
+          phBound(title, "fontSize") === `Text/font-size/${token}` &&
+          phBound(title, "lineHeight") === `Text/line-height/${token}` &&
+          boundVariableName(title.fills[0]) === "Colors/foreground/0",
+        `${at}: the title is ${size === "Large" ? "Heading 2, 30/36" : "Heading 3, 24/32"}, bold, in the foreground (${title.fontSize}/${title.lineHeight.value}, ${title.fontName.style})`,
+      );
+      const description = named(component, "Description Text");
+      ok(
+        description.fontSize === 14 &&
+          description.lineHeight.value === 20 &&
+          phBound(description, "fontSize") === "Text/font-size/sm" &&
+          boundVariableName(description.fills[0]) === "Colors/foreground/400",
+        `${at}: the description is 14/20 in foreground/400 (${description.fontSize}/${description.lineHeight.value}, ${boundVariableName(description.fills[0])})`,
+      );
+      const info = named(component, "Info");
+      for (const [frame, name] of [
+        [info, "Info"],
+        [actions, "Actions"],
+      ])
+        ok(
+          frame.height === line &&
+            frame.counterAxisAlignItems === "CENTER" &&
+            frame.clipsContent === false,
+          `${at}: ${name} is as tall as the title's line, ${line}, and centres what it holds, which spills past it (${frame.height}, ${frame.counterAxisAlignItems})`,
+        );
+      ok(
+        info.visible === false && actions.visible !== false,
+        `${at}: Info is hidden by default, the Actions shown (${info.visible}, ${actions.visible})`,
+      );
+      const infoButton = named(info, "Info Button");
+      const infoIcon =
+        infoButton &&
+        infoButton.findOne(
+          (node) => node.type === "INSTANCE" && node.name === "Icon",
+        );
+      ok(
+        infoButton &&
+          infoButton.type === "INSTANCE" &&
+          infoButton.mainComponent.parent === iconButtonSet &&
+          infoIcon &&
+          infoIcon.mainComponent === infoGlyph,
+        `${at}: the Info is IconButton's Ghost at Small with info-circle (${infoIcon && infoIcon.mainComponent && infoIcon.mainComponent.name})`,
+      );
+      const action = named(actions, "Primary Action");
+      ok(
+        action &&
+          action.type === "INSTANCE" &&
+          action.mainComponent.parent === buttonSet,
+        `${at}: the action is a live Button`,
+      );
+      // An Update redraws the same layers, once.
+      await draw(tone, size, component);
+      ok(
+        JSON.stringify(component.children.map((child) => child.name)) ===
+          JSON.stringify(["Breadcrumb", "Header Row"]) &&
+          component.findAll((node) => node.name === "Title Text").length === 1,
+        `${at}: an Update keeps the Breadcrumb and the header row once`,
+      );
+    }
+  ok(
+    JSON.stringify(file.parsePageHeaderVariantName("Tone=Subtle")) ===
+      JSON.stringify({ value: "Subtle", second: "Medium" }) &&
+      file.parsePageHeaderVariantName("Tone=Loud, Size=Medium") === null &&
+      file.parsePageHeaderVariantName("Tone=Subtle, Size=Huge") === null,
+    "PageHeader: no Size reads as Medium; an unknown Tone or Size is not the set's",
+  );
+
+  // The set's properties, on the layers they drive.
+  const set = ready
+    ? fileFigma.combineAsVariants(variants, fileFigma.currentPage)
+    : fileFigma.createComponent();
+  set.name = "PageHeader";
+  if (ready) file.configurePageHeaderProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions || {};
+  const keyOf = (name, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === name && definitions[key].type === type,
+    );
+  const expected = [
+    ["Title Text", "TEXT", "Settings"],
+    [
+      "Description Text",
+      "TEXT",
+      "Manage the site's map, its levels and who can edit them.",
+    ],
+    ["Breadcrumb", "BOOLEAN", true],
+    ["Info", "BOOLEAN", false],
+    ["Description", "BOOLEAN", true],
+    ["Actions", "BOOLEAN", true],
+  ];
+  for (const [name, type, value] of expected) {
+    const key = keyOf(name, type);
+    ok(
+      key && definitions[key].defaultValue === value,
+      `PageHeader: ${name} is a ${type} property, ${JSON.stringify(value)} by default (${key && JSON.stringify(definitions[key].defaultValue)})`,
+    );
+  }
+  const drives = (layer, field, property) =>
+    variants.length === 4 &&
+    variants.every((variant) => {
+      const node = named(variant, layer);
+      return (
+        node &&
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences[field] ===
+          keyOf(property[0], property[1])
+      );
+    });
+  ok(
+    drives("Title Text", "characters", ["Title Text", "TEXT"]) &&
+      drives("Description Text", "characters", ["Description Text", "TEXT"]) &&
+      drives("Breadcrumb", "visible", ["Breadcrumb", "BOOLEAN"]) &&
+      drives("Info", "visible", ["Info", "BOOLEAN"]) &&
+      drives("Description Text", "visible", ["Description", "BOOLEAN"]) &&
+      drives("Actions", "visible", ["Actions", "BOOLEAN"]),
+    "PageHeader: each property drives its layer in every variant",
+  );
+  const titleInSet = variants[1] && named(variants[1], "Title Text");
+  const descriptionInSet =
+    variants[0] && named(variants[0], "Description Text");
+  ok(
+    titleInSet &&
+      file.inferTextStyleKeyForComponentText(titleInSet, set) ===
+        file.textStyleKeyForHeading("H2") &&
+      file.inferTextStyleKeyForComponentText(
+        named(variants[0], "Title Text"),
+        set,
+      ) === file.textStyleKeyForHeading("H3") &&
+      file.inferTextStyleKeyForComponentText(descriptionInSet, set) ===
+        file.textStyleKeyForText("Small", "Normal"),
+    `PageHeader: the audit expects Heading / H3 at Medium, H2 at Large, Text / Small / Normal on the description (${titleInSet && file.inferTextStyleKeyForComponentText(titleInSet, set)})`,
+  );
+  set.remove();
+}
 
 section("GAP-156: Kbd draws a key cap, one key or a combination");
 {

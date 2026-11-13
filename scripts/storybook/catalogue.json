@@ -326,7 +326,7 @@
       "id": "foundations-container",
       "title": "Core/Layout/Container",
       "component": "Container",
-      "exports": ["Default", "Fluid", "InAPanel"]
+      "exports": ["Default", "Fluid", "InAPanel", "BlockInset"]
     },
     {
       "file": "packages/react/src/components/ContextMenu/ContextMenu.stories.tsx",
@@ -893,6 +893,13 @@
         "QuickAccessNumberedRightToLeft",
         "SelectionComesIntoView"
       ]
+    },
+    {
+      "file": "packages/react/src/components/PageHeader/PageHeader.stories.tsx",
+      "id": "navigation-pageheader",
+      "title": "Core/Layout/PageHeader",
+      "component": "PageHeader",
+      "exports": ["Default", "Landing", "WithInfo", "Plain"]
     },
     {
       "file": "packages/react/src/components/Pagination/Pagination.stories.tsx",

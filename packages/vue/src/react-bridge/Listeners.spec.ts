@@ -787,6 +787,7 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosKbd: { props: { keys: ["Esc"] } },
   KozmosDrawer: { slot: true },
   KozmosBreadcrumb: { slot: true },
+  KozmosPageHeader: { props: { title: "Settings" } },
   KozmosPagination: { slot: true },
   KozmosStepper: { props: { steps: ["Pick", "Pay"], currentStep: 0 } },
   KozmosAlert: { props: { title: "Saved" } },

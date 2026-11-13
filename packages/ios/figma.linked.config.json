@@ -26,6 +26,8 @@
       "Sources/Components/ScrollArea/ScrollArea.swift",
       "Sources/Components/Container/Container.figma.swift",
       "Sources/Components/Container/Container.swift",
+      "Sources/Components/PageHeader/PageHeader.figma.swift",
+      "Sources/Components/PageHeader/PageHeader.swift",
       "Sources/Components/BottomNavigation/BottomNavigation.figma.swift",
       "Sources/Components/BottomNavigation/BottomNavigation.swift",
       "Sources/Components/NavigationItem/NavigationItem.figma.swift",

@@ -1086,6 +1086,7 @@
                 <option value="card">Card</option>
                 <option value="container">Container</option>
                 <option value="grid">Grid</option>
+                <option value="pageHeader">PageHeader</option>
                 <option value="scrollArea">ScrollArea</option>
                 <option value="stack">Stack</option>
               </optgroup>
@@ -1807,7 +1808,14 @@
           build: "build-container",
           update: "update-container",
           rebuild: "rebuild-container",
-          hint: "Build creates Container with centered and fluid examples plus an editable Content Slot. Update preserves its future Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+          hint: "Build creates Container with centered and fluid examples, Window and Panel insets, the None, Small, Medium and Large block insets (GAP-116), plus an editable Content Slot. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        pageHeader: {
+          label: "PageHeader",
+          build: "build-page-header",
+          update: "update-page-header",
+          rebuild: "rebuild-page-header",
+          hint: "Build creates PageHeader (GAP-036) after Breadcrumb, Button, IconButton and Curated Icons: a band with Subtle and Default Tone and Medium and Large Size variants, a live Breadcrumb, an Info IconButton, a Description and a live Button action, each shown by its boolean, and editable Title Text and Description Text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         breadcrumb: {
           label: "Breadcrumb",

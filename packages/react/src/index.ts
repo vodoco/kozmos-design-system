@@ -42,6 +42,7 @@ export * from "./components/Drawer/Drawer";
 export * from "./components/Toast/Toast";
 export * from "./components/Toast/Toaster";
 export * from "./components/Breadcrumb/Breadcrumb";
+export * from "./components/PageHeader/PageHeader";
 export * from "./components/Pagination/Pagination";
 export * from "./components/Stepper/Stepper";
 export * from "./components/ActionCard";

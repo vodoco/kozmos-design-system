@@ -35,28 +35,79 @@ public enum KozmosContainerInset: Sendable, Hashable, CaseIterable {
     }
 }
 
+/// A step of a container's block (top and bottom) inset, as React's
+/// `block` (GAP-116): `none` 0, `sm` 16, `md` 24, `lg` 32, the layout
+/// spacing steps 200, 300 and 400.
+public enum KozmosContainerBlockInset: Sendable, Hashable, CaseIterable {
+    case none
+    case sm
+    case md
+    case lg
+
+    /// The step's length.
+    var length: CGFloat {
+        switch self {
+        case .none: return 0
+        case .sm: return KozmosDimensions.primitivesLayoutSpacing200
+        case .md: return KozmosDimensions.primitivesLayoutSpacing300
+        case .lg: return KozmosDimensions.primitivesLayoutSpacing400
+        }
+    }
+}
+
+/// The clear space above (`start`) and below (`end`) a container's content,
+/// as React's `block`: `.sm` is 16 on both, `.init(start: .lg, end: .md)`
+/// PageHeader's 32 above and 24 below. It holds whatever the width: a
+/// region's top and bottom space does not step as its sides do.
+public struct KozmosContainerBlock: Sendable, Hashable {
+    public var start: KozmosContainerBlockInset
+    public var end: KozmosContainerBlockInset
+
+    public init(start: KozmosContainerBlockInset = .none, end: KozmosContainerBlockInset = .none) {
+        self.start = start
+        self.end = end
+    }
+
+    /// No space above or below: a container as it always was.
+    public static let none = KozmosContainerBlock()
+    /// 16 above and below.
+    public static let sm = KozmosContainerBlock(start: .sm, end: .sm)
+    /// 24 above and below.
+    public static let md = KozmosContainerBlock(start: .md, end: .md)
+    /// 32 above and below.
+    public static let lg = KozmosContainerBlock(start: .lg, end: .lg)
+}
+
 public struct KozmosContainer<Content: View>: View {
     let content: Content
     let inset: KozmosContainerInset?
+    let block: KozmosContainerBlock
 
     /// Pads all four sides by the platform's default, as before `inset`.
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()
         self.inset = nil
+        self.block = .none
     }
 
     /// Pads the sides only, as React's Container does: `.panel` keeps 16,
     /// `.window` steps with the width the container is given. Content of
     /// several views stacks top to bottom with no space between, as a React
-    /// Container's children do.
-    public init(inset: KozmosContainerInset, @ViewBuilder content: () -> Content) {
+    /// Container's children do. `block` gives the content clear space above
+    /// and below (GAP-116), none unless given.
+    public init(
+        inset: KozmosContainerInset,
+        block: KozmosContainerBlock = .none,
+        @ViewBuilder content: () -> Content
+    ) {
         self.content = content()
         self.inset = inset
+        self.block = block
     }
 
     public var body: some View {
         if let inset {
-            KozmosContainerInsetLayout(inset: inset) {
+            KozmosContainerInsetLayout(inset: inset, block: block) {
                 VStack(alignment: .leading, spacing: 0) { content }
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }
@@ -78,28 +129,43 @@ public struct KozmosContainer<Content: View>: View {
 /// laid out.
 private struct KozmosContainerInsetLayout: Layout {
     let inset: KozmosContainerInset
+    var block: KozmosContainerBlock = .none
+
+    /// The block inset above and below, together.
+    private var blockLength: CGFloat { block.start.length + block.end.length }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let height = proposal.height.map { max(0, $0 - blockLength) }
         if let width = proposal.width {
             let inner = ProposedViewSize(
                 width: max(0, width - 2 * KozmosContainerInset.padding(inset, width: width)),
-                height: proposal.height
+                height: height
             )
-            return CGSize(width: width, height: subviews.map { $0.sizeThatFits(inner).height }.max() ?? 0)
+            return CGSize(
+                width: width,
+                height: (subviews.map { $0.sizeThatFits(inner).height }.max() ?? 0) + blockLength
+            )
         }
-        let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: nil, height: proposal.height)) }
+        let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: nil, height: height)) }
         let content = sizes.map(\.width).max() ?? 0
         return CGSize(
             width: content + 2 * KozmosContainerInset.padding(inset, around: content),
-            height: sizes.map(\.height).max() ?? 0
+            height: (sizes.map(\.height).max() ?? 0) + blockLength
         )
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let side = KozmosContainerInset.padding(inset, width: bounds.width)
-        let inner = ProposedViewSize(width: max(0, bounds.width - 2 * side), height: bounds.height)
+        let inner = ProposedViewSize(
+            width: max(0, bounds.width - 2 * side),
+            height: max(0, bounds.height - blockLength)
+        )
         for subview in subviews {
-            subview.place(at: CGPoint(x: bounds.minX + side, y: bounds.minY), anchor: .topLeading, proposal: inner)
+            subview.place(
+                at: CGPoint(x: bounds.minX + side, y: bounds.minY + block.start.length),
+                anchor: .topLeading,
+                proposal: inner
+            )
         }
     }
 }

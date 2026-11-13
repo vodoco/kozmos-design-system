@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 102 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 103 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 102 Core SwiftUI and 102 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 103 Core SwiftUI and 103 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15714,13 +15714,13 @@
   },
   "components": {
     "summary": {
-      "total": 124,
-      "stories": 124,
-      "tests": 124,
-      "exported": 124,
-      "codeConnectFiles": 100,
+      "total": 125,
+      "stories": 125,
+      "tests": 125,
+      "exported": 125,
+      "codeConnectFiles": 101,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 100
+      "codeConnectLinked": 101
     },
     "firstBatch": [
       "Accordion",
@@ -15780,6 +15780,7 @@
       "NavigationItem",
       "NumberInput",
       "OTPInput",
+      "PageHeader",
       "Pagination",
       "PasswordInput",
       "POICard",
@@ -16927,10 +16928,10 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Container"],
-          "mappedProps": ["centered"],
+          "mappedProps": ["block", "centered", "inset"],
           "unmappedProps": []
         },
-        "props": ["asChild", "centered", "children", "id", "inset"],
+        "props": ["asChild", "block", "centered", "children", "id", "inset"],
         "variants": {}
       },
       {
@@ -18719,6 +18720,51 @@
           "title",
           "value",
           "wrapperClassName"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "PageHeader",
+        "source": "packages/react/src/components/PageHeader/PageHeader.tsx",
+        "story": "packages/react/src/components/PageHeader/PageHeader.stories.tsx",
+        "test": "packages/react/src/components/PageHeader/PageHeader.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/PageHeader/PageHeader.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23074",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
+          "connectedComponents": ["PageHeader"],
+          "mappedProps": [
+            "actions",
+            "breadcrumb",
+            "description",
+            "info",
+            "size",
+            "title",
+            "tone"
+          ],
+          "unmappedProps": []
+        },
+        "props": [
+          "actions",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "breadcrumb",
+          "centered",
+          "children",
+          "description",
+          "id",
+          "info",
+          "inset",
+          "role",
+          "size",
+          "tabIndex",
+          "title",
+          "tone"
         ],
         "variants": {}
       },
