@@ -1,0 +1,148 @@
+/* MapEditToolbar (CLOUD-UI-005): Pointr Cloud's map edit toolbar, one part
+   for its seven geometry toolbars. The register's numbers, with decisions
+   139 and 151: a card 60 tall (6 + 48 + 6), padding 6 and 8, corner 16
+   (the Control radius), lifted by map chrome's floating elevation (as the
+   client app banner on the map, and the Figma map controls); items 56 wide
+   and 48 tall, a 24 icon over an 11/14 label; dividers 32 tall with 8 each
+   side. The card is Surface's solid fill without its edge, as every map
+   control is drawn on the map (decision 40), so it is 60 tall, not 62.
+   Items keep their parts' own looks: a chosen tool is a pressed
+   ToggleButton (the theme fill), an action a ghost Button, both with their
+   focus ring and their half-strength disabled state; here they take the
+   toolbar's shape and the muted ink of Cloud's labels. An item's corner is
+   8, the card's 16 less its padding (docs/nested-radius.md). Three classes
+   on every item rule: the parts draw with utilities, scoped, which weigh two
+   (`:scope .h-9`) and win a tie on proximity. The parts' looks the toolbar
+   promises, the pressed tool's theme fill, the hover fill, the focus ring
+   and half strength when disabled, are owned here too, with the parts' own
+   values, as BrandLoader owns Backdrop's scrim: a host without @scope drops
+   the utilities a ToggleButton and a Separator draw with.
+   The frame spans the space the product gives it and centres the card; it
+   takes no pointer, so the map under it still does. Logical sides
+   throughout, so right to left mirrors. */
+@kozmos-owned {
+  .kozmos-map-edit-toolbar-frame {
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    pointer-events: none;
+  }
+  .kozmos-map-edit-toolbar.kozmos-surface-solid {
+    pointer-events: auto;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    box-sizing: border-box;
+    max-inline-size: 100%;
+    padding-block: calc(var(--primitives-layout-spacing-75) * 1px);
+    padding-inline: calc(var(--primitives-layout-spacing-100) * 1px);
+    border-width: 0;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    box-shadow: var(--semantics-elevation-floating);
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-map-edit-toolbar-field {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+  .kozmos-map-edit-toolbar-items {
+    display: flex;
+    flex: none;
+    align-items: center;
+    column-gap: calc(var(--primitives-layout-spacing-50) * 1px);
+  }
+  .kozmos-map-edit-toolbar-tip {
+    display: flex;
+    flex: none;
+  }
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item {
+    display: inline-flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--primitives-layout-spacing-25) * 1px);
+    box-sizing: border-box;
+    min-inline-size: calc(var(--primitives-layout-sizing-700) * 1px);
+    inline-size: auto;
+    block-size: calc(var(--primitives-layout-sizing-600) * 1px);
+    min-block-size: 0;
+    padding-block: 0;
+    padding-inline: calc(var(--primitives-layout-spacing-50) * 1px);
+    border-width: 0;
+    border-radius: calc(var(--primitives-layout-radius-100) * 1px);
+    font-size: calc(var(--primitives-typography-font-size-100) * 1px);
+    line-height: calc(var(--primitives-typography-line-height-50) * 1px);
+    white-space: nowrap;
+  }
+  /* Off, and every action: no fill and Cloud's grey ink (foreground 400).
+     Hovered, the hover fill, the ink kept. */
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item:where(:not([aria-pressed="true"])) {
+    background-color: transparent;
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item:where(
+      :not([aria-pressed="true"]):not(:disabled)
+    ):hover {
+    background-color: var(--semantics-hover-fill);
+    color: var(--primitives-colors-foreground-400);
+  }
+  /* On: the pressed ToggleButton's theme fill and its ink (decision 59). */
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item[aria-pressed="true"] {
+    background-color: var(
+      --components-primary-buttons-themed-button-background-idle
+    );
+    color: var(
+      --components-primary-buttons-themed-button-foreground-content-idle
+    );
+  }
+  /* The parts' focus ring, the theme's 600, 2 wide and 2 out. */
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item:focus-visible {
+    outline: 2px solid var(--primitives-colors-theme-600);
+    outline-offset: 2px;
+  }
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item:disabled {
+    opacity: 0.5;
+  }
+  .kozmos-map-edit-toolbar-icon {
+    flex: none;
+    inline-size: calc(var(--primitives-layout-sizing-300) * 1px);
+    block-size: calc(var(--primitives-layout-sizing-300) * 1px);
+  }
+  .kozmos-map-edit-toolbar-label {
+    display: block;
+  }
+  /* Separator's rule, the subtle border, 32 tall. */
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-divider {
+    flex: none;
+    inline-size: 1px;
+    block-size: calc(var(--primitives-layout-sizing-400) * 1px);
+    margin-inline: calc(var(--primitives-layout-spacing-50) * 1px);
+    background-color: var(--semantics-border-subtle);
+  }
+  /* The More menu's icons: 16, before the words, 8 from them. */
+  .kozmos-map-edit-toolbar-menu-icon {
+    flex: none;
+    inline-size: calc(var(--primitives-layout-sizing-200) * 1px);
+    block-size: calc(var(--primitives-layout-sizing-200) * 1px);
+    margin-inline-end: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+}

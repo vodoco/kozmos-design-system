@@ -180,6 +180,16 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   at its ripple's start, 40 and 4 thick (`Border Width/lg`). React's `label` is
   screen-reader text, never drawn, so the set has no text property. Run
   Curated Icons first.
+- **MapEditToolbar** — Pointr Cloud's map edit toolbar (CLOUD-UI-005,
+  decisions 139 and 151): `Mode` is each of Cloud's seven toolbars (Create,
+  Draw Polygon, Draw Circle, Draw Point, Geometry Set, JSON, Edit Existing),
+  drawn with Cloud's items, and `Overflow` True draws it on a 320 map, the
+  items that do not fit behind More. A card of `Surface/0` with no edge, 60
+  tall (`MapEditToolbar/height`), padding 6 and 8, corner 16, the floating
+  elevation; items 56 × 48 (`MapEditToolbar/item/*`), a 24 icon over an 11/14
+  label (MapEditToolbar / Label); a chosen tool is the theme fill, a disabled
+  item at half strength; dividers `Border/Subtle`, 32 tall. Its icons are UI
+  icons the Pointr library holds (decision 121); run Curated Icons first.
 
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 
