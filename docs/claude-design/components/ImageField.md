@@ -128,7 +128,8 @@ interface ImageFieldImage {
   /**
    * Where it is drawn from: the URL a person pasted, the product's URL once
    * it has uploaded a file, or, for a file just picked, an object URL the
-   * field made (and revokes when that image is removed).
+   * field made (and revokes once the image leaves the field, removed or
+   * given the product's own URL, or the field unmounts).
    */
   src: string;
   /** Its text alternative, which the field edits. */

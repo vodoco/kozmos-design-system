@@ -101,22 +101,6 @@ const SWALLOWED = {
 };
 
 /**
- * Pointr Cloud's brand loader (CLOUD-UI-008): the pin, with two rings
- * rippling out from it in the theme's prominent colour (decision 176, theme
- * 500, as every prominent fill is: decision 59), while the product loads.
- *
- * It is said once: a status region, mounted empty, whose words arrive after
- * it, so a screen reader announces the change, and nothing that moves is in
- * it, so the loop says nothing more. Under reduced motion, the system's or
- * DesignConfigProvider's, the rings and the pin stand still: one ring, at
- * rest round the pin. The loop is Cloud's: 3 s, the second ring half a
- * second ahead, the pin wobbling for the first third of each.
- *
- * A Dashboard module (decision 183): import it from
- * `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` after
- * the package's style.css.
- */
-/**
  * The loader itself, its status region. The words are its own state, set
  * after it mounts: an overlay's Backdrop draws into the theme's portal a
  * render later than the BrandLoader, so words held by the BrandLoader were
@@ -161,6 +145,22 @@ const Loader = React.forwardRef<
 });
 Loader.displayName = "BrandLoaderStatus";
 
+/**
+ * Pointr Cloud's brand loader (CLOUD-UI-008): the pin, with two rings
+ * rippling out from it in the theme's prominent colour (decision 176, theme
+ * 500, as every prominent fill is: decision 59), while the product loads.
+ *
+ * It is said once: a status region, mounted empty, whose words arrive after
+ * it, so a screen reader announces the change, and nothing that moves is in
+ * it, so the loop says nothing more. Under reduced motion, the system's or
+ * DesignConfigProvider's, the rings and the pin stand still: one ring, at
+ * rest round the pin. The loop is Cloud's: 3 s, the second ring half a
+ * second ahead, the pin wobbling for the first third of each.
+ *
+ * A Dashboard module (decision 183): import it from
+ * `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` after
+ * the package's style.css.
+ */
 const BrandLoader = React.forwardRef<HTMLDivElement, BrandLoaderProps>(
   ({ label = "Loading", overlay = false, ...props }, ref) => {
     const [scrim, setScrim] = React.useState<HTMLDivElement | null>(null);

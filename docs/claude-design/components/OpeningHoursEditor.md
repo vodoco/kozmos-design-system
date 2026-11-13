@@ -66,8 +66,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `OpeningHoursEditorProps`
 
 - `stepMinutes`: `number`, optional, default `5`.
 
-  The minutes between the times the list of times offers, and the step
-  its arrow keys take, carrying into the hour: 5 from 08:00 back is 07:55.
+  The minutes between the times the list of times offers, and the step a
+  time field's Up and Down Arrow keys take, whichever part of the time is
+  focused, on that grid, carrying into the hour and round midnight: 5 from
+  08:00 back is 07:55, from 23:55 on is 00:00. The browser's own arrows
+  step one part by one and never carry, so the editor takes them over.
   Default 5, Cloud's.
 
 - `mixedDays`: `readonly Weekday[]`, optional, default `[]`.

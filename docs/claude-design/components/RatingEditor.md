@@ -144,4 +144,4 @@ interface RatingEditorMessages {
   ```
 
 - `validateRating`: `({ rating, max, count }: RatingEditorValue, messages?: Partial<RatingEditorMessages>, format?: (value: number) => string) => RatingEditorErrors`. Checks a rating (decision 180): the rating 0 or more, one decimal at most, and no more than the max; the max 1 or more; the count a whole number of 0 or more.
-- `ratingStars`: `(rating: number, max: number) => number`. The preview's stars: always five, filled to the rating's share of its max, to the nearest half (decision 181): 4.3 of 5 is 4.5, 86 of 100 is 4.5, 3.2 of 5 is 3.
+- `ratingStars`: `(rating: number, max: number) => number`. The preview's stars: always five, filled to the rating's share of its max, to the nearest half (decision 181), a half rounding up: 4.3 of 5 is 4.5, 86 of 100 is 4.5, 3.2 of 5 is 3, 3.3 of 6 is 3.
