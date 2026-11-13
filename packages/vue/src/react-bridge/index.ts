@@ -62,6 +62,9 @@ import {
   AvatarFallback,
   Tag as ReactTag,
   List,
+  ListItem,
+  ListItemStatus,
+  SettingsRow,
   Table,
   Tree,
   Timeline,
@@ -370,6 +373,13 @@ Object.assign(KozmosBackdrop, { props: { target: null } });
 export const KozmosAvatar = createVueWrapper(AvatarAdapter);
 export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
+// ListItem's slots (GAP-195): #leading, #title, #titleAddon, #description,
+// #meta and #trailing, or its props for words. A row mounts a React root of
+// its own, so it is a row of a KozmosList's default slot.
+export const KozmosListItem = createVueWrapper(ListItem);
+export const KozmosListItemStatus = createVueWrapper(ListItemStatus);
+// GAP-040: #control is the setting's control, @reset its Reset to default.
+export const KozmosSettingsRow = createVueWrapper(SettingsRow);
 export const KozmosTable = createVueWrapper(Table);
 // Its selection is reported as the item; the model is the item's id. A
 // multiple tree's model is its selected ids (GAP-151).

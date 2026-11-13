@@ -1,0 +1,177 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as SettingsRowStories from "./SettingsRow.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
+
+<Meta of={SettingsRowStories} />
+
+# SettingsRow
+
+One setting on a settings page (GAP-040, decision 135): its name and what it does, its control at the end, where its
+value comes from, and why it cannot change when it cannot. It is a ListItem with a setting in it, so it goes in a
+List, which draws the divider between rows.
+
+<Canvas>
+  <Story of={SettingsRowStories.Default} />
+</Canvas>
+
+<Controls />
+
+## Inherited, overridden and reset
+
+A setting with a system value says where its value comes from, as a tag beside its name: `state="inherited"` while
+the site keeps the system's value, `state="overridden"` once the site has its own. An overridden row offers Reset to
+default (`onReset`). Pressed, focus goes to the control, then `onReset` is called: the product sets the system's value
+and `state="inherited"`, and the reset goes. Leave `state` unset for a setting that has no system value.
+
+`disabled` disables the control, and `disabledReason` says why, under the description. A disabled row offers no reset.
+
+<Canvas>
+  <Story of={SettingsRowStories.SdkConfiguration} />
+</Canvas>
+
+<Canvas>
+  <Story of={SettingsRowStories.Compact} />
+</Canvas>
+
+## Accessibility
+
+The control is named by the row's label, and its description, its state and the disabled reason are read with it:
+"Show the banner, switch, on. A message above the map. Overridden." Give the control no label of its own; one with its
+own `aria-label` or `aria-labelledby` keeps it. On SwiftUI the label is the control's accessibility label and the rest
+its hint; on Compose they are its content description.
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { List, SettingsRow, Switch } from "@kozmos-ds/react";
+import { useState } from "react";
+export function BannerSetting() {
+  const [on, setOn] = useState(false);
+  const [state, setState] = useState<"inherited" | "overridden">("inherited");
+  return (
+    <List>
+      <SettingsRow
+        label="Show the banner"
+        description="A message above the map."
+        state={state}
+        onReset={() => {
+          setOn(false);
+          setState("inherited");
+        }}
+        control={
+          <Switch
+            checked={on}
+            onCheckedChange={(next) => {
+              setOn(next);
+              setState("overridden");
+            }}
+          />
+        }
+      />
+    </List>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosList, KozmosSettingsRow, KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
+
+const on = ref(false)
+const state = ref("inherited")
+function change(next) {
+  on.value = next
+  state.value = "overridden"
+}
+function reset() {
+  on.value = false
+  state.value = "inherited"
+}
+</script>
+
+<template>
+  <KozmosList>
+    <KozmosSettingsRow label="Show the banner" description="A message above the map." :state="state" @reset="reset">
+      <template #control>
+        <KozmosSwitch :checked="on" @update:checked="change" />
+      </template>
+    </KozmosSettingsRow>
+  </KozmosList>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The switch is read by the row's name, with the description and the state
+// as its hint. Changed, the setting is overridden; Reset to default gives it
+// back to the system's value.
+struct BannerSetting: View {
+    @State private var on = false
+    @State private var state: KozmosSettingsRowState = .inherited
+
+    var body: some View {
+        KozmosList {
+            KozmosSettingsRow(
+                "Show the banner",
+                description: "A message above the map.",
+                state: state,
+                onReset: {
+                    on = false
+                    state = .inherited
+                }
+            ) {
+                KozmosSwitch(checked: Binding(get: { on }, set: { on = $0; state = .overridden }))
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.list.KozmosList
+import com.kozmos.components.settingsrow.KozmosSettingsRow
+import com.kozmos.components.settingsrow.KozmosSettingsRowState
+import com.kozmos.components.switch.KozmosSwitch
+
+// The switch takes the modifier the row hands it, which names it by the
+// row's label and reads the description and the state with it. Changed, the
+// setting is overridden; Reset to default gives it back to the system's.
+@Composable
+fun BannerSetting() {
+    var on by remember { mutableStateOf(false) }
+    var state by remember { mutableStateOf(KozmosSettingsRowState.Inherited) }
+    KozmosList {
+        KozmosSettingsRow(
+            label = "Show the banner",
+            description = "A message above the map.",
+            state = state,
+            onReset = {
+                on = false
+                state = KozmosSettingsRowState.Inherited
+            },
+            showDivider = false
+        ) { modifier, enabled ->
+            KozmosSwitch(
+                checked = on,
+                onCheckedChange = {
+                    on = it
+                    state = KozmosSettingsRowState.Overridden
+                },
+                modifier = modifier,
+                enabled = enabled
+            )
+        }
+    }
+}
+`}
+
+/>
