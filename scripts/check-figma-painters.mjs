@@ -2066,9 +2066,10 @@ section("Progress's ring (decision 131, GAP-038)");
           Shape: ["Linear", "Circular"],
           Size: ["Small", "Medium", "Large"],
           Tone: TONES,
-          Value: ["0", "25", "50", "75", "100"],
-        }) && plugin.PROGRESS_FORMS.length === 19,
-      `the set's axes are Shape, Size, Tone and Value, a bar and 18 rings a value (${JSON.stringify(axes)}, ${plugin.PROGRESS_FORMS.length} forms)`,
+          Value: ["0", "25", "50", "75", "100", "Indeterminate"],
+          Placement: ["Inline", "Top"],
+        }) && plugin.PROGRESS_FORMS.length === 20,
+      `the set's axes are Shape, Size, Tone, Value and Placement (GAP-159): two bars, Inline and Top, and 18 rings (${JSON.stringify(axes)}, ${plugin.PROGRESS_FORMS.length} forms)`,
     );
     const parsed = [
       "Value=50",
@@ -2083,9 +2084,9 @@ section("Progress's ring (decision 131, GAP-038)");
     ok(
       JSON.stringify(parsed) ===
         JSON.stringify([
-          { value: "50", second: "Linear/Medium/Themed" },
-          { value: "25", second: "Circular/Large/Themed" },
-          { value: "25", second: "Circular/Large/Success" },
+          { value: "50", second: "Linear/Medium/Themed/Inline" },
+          { value: "25", second: "Circular/Large/Themed/Inline" },
+          { value: "25", second: "Circular/Large/Success/Inline" },
           null,
           null,
           null,
@@ -2120,7 +2121,7 @@ section("Progress's ring (decision 131, GAP-038)");
       const inner = 1 - (2 * stroke) / diameter;
       ok(
         variant.name ===
-          `Shape=Circular, Size=${size}, Tone=Themed, Value=25` &&
+          `Shape=Circular, Size=${size}, Tone=Themed, Value=25, Placement=Inline` &&
           variant.layoutMode === "HORIZONTAL" &&
           variant.itemSpacing === 12 &&
           variant.counterAxisAlignItems === "CENTER" &&
@@ -2189,7 +2190,7 @@ section("Progress's ring (decision 131, GAP-038)");
       const arc = named(named(variant, "Dial"), "Ring Arc");
       ok(
         variant.name ===
-          `Shape=Circular, Size=Medium, Tone=${tone}, Value=75` &&
+          `Shape=Circular, Size=Medium, Tone=${tone}, Value=75, Placement=Inline` &&
           arc &&
           boundVariableName(arc.fills[0]) ===
             `Emotion/${tone.toLowerCase()}/text`,
@@ -2301,23 +2302,25 @@ section("Progress's ring (decision 131, GAP-038)");
     }
     const bar = await plugin.createProgressVariant({
       value: "50",
-      second: "Linear/Medium/Themed",
+      second: "Linear/Medium/Themed/Inline",
       variableByName: tokens.variableByName,
       fonts: FONTS,
       stats: freshStats(),
     });
     ok(
-      bar.name === "Shape=Linear, Size=Medium, Tone=Themed, Value=50" &&
+      bar.name ===
+        "Shape=Linear, Size=Medium, Tone=Themed, Value=50, Placement=Inline" &&
         named(bar, "Progress Track") &&
         !named(bar, "Dial") &&
         !named(bar, "Label"),
       `the bar is drawn as before, named with its Shape, Size and Tone (${bar.name})`,
     );
 
-    // Update over the set as it is in the file today: five bars, named
+    // Update over the set as it was before decision 131: five bars, named
     // before the axes. Each keeps its node id and is renamed the Linear,
-    // Medium, Themed bar; the 90 rings are created beside them, and the
-    // label's properties bind every ring's two labels and nothing else.
+    // Medium, Themed, Inline bar; the 90 rings, the Indeterminate bar and the
+    // six Top bars (GAP-159) are created beside them, and the label's
+    // properties bind every ring's two labels and nothing else.
     const livePage = new MockNode("PAGE", "Components");
     const liveSet = new MockNode("COMPONENT_SET", "Progress");
     const oldNames = ["0", "25", "50", "75", "100"].map((v) => `Value=${v}`);
@@ -2348,21 +2351,22 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       updated.updated === true &&
         updated.componentSetId === setId &&
         updated.variantsUpdated === 5 &&
-        updated.variantsCreated === 90 &&
-        liveSet.children.length === 95 &&
-        new Set(names).size === 95,
-      `Update keeps the set and its 5 bars, and adds 90 rings: 95 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+        updated.variantsCreated === 97 &&
+        liveSet.children.length === 102 &&
+        new Set(names).size === 102,
+      `Update keeps the set and its 5 bars, and adds 90 rings, the Indeterminate bar and 6 Top bars: 102 in all, each named once (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
     );
     ok(
       oldNames.every((name) => {
         const variant = byId.get(oldIds[name]);
         return (
           variant &&
-          variant.name === `Shape=Linear, Size=Medium, Tone=Themed, ${name}` &&
+          variant.name ===
+            `Shape=Linear, Size=Medium, Tone=Themed, ${name}, Placement=Inline` &&
           named(variant, "Progress Track")
         );
       }),
-      `each bar keeps its node id, is renamed Shape=Linear, Size=Medium, Tone=Themed and repainted in place (${oldNames.map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
+      `each bar keeps its node id, is renamed Shape=Linear, Size=Medium, Tone=Themed, Placement=Inline and repainted in place (${oldNames.map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
     );
     const texts = (name) =>
       liveSet.findAll((node) => node.type === "TEXT" && node.name === name);
@@ -2422,6 +2426,552 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     ok(
       overlaps.length === 0,
       `the laid-out set has no two variants overlapping (${overlaps.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
+// --- Progress's indeterminate bar and top placement (GAP-159) ---------------------
+
+// React's Progress with no value sweeps a segment a quarter of the track wide,
+// and `placement="top"` is the page's loading bar, 4 tall and square. The set
+// is sparse: Indeterminate and Top are a bar's alone, so it holds 12 bars
+// (Inline and Top, six values each) and 90 rings, 102 variants. A variant
+// from before Placement reads as Inline and is renamed in place.
+section("Progress's indeterminate bar and top placement (GAP-159)");
+{
+  const ready =
+    Array.isArray(plugin.PROGRESS_PLACEMENTS) &&
+    typeof plugin.progressHasCombination === "function";
+  ok(ready, "Progress has a Placement axis and a sparse matrix");
+  if (ready) {
+    const tokens = payloadVariables(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+        ...variableByName.keys(),
+      ]),
+    );
+    const floats = new Map(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+    );
+    const bound = (node, field) => {
+      const alias = node && node.boundVariables && node.boundVariables[field];
+      return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+    };
+    const combos = plugin.generatedVariantCombinations({
+      values: plugin.PROGRESS_VALUES,
+      axis2Values: plugin.PROGRESS_FORMS,
+      hasCombination: plugin.progressHasCombination,
+    });
+    const keys = combos.map((c) => `${c.second}/${c.value}`);
+    ok(
+      combos.length === 102 &&
+        keys.filter((k) => k.indexOf("Linear/Medium/Themed/Top/") === 0)
+          .length === 6 &&
+        keys.indexOf("Linear/Medium/Themed/Inline/Indeterminate") !== -1 &&
+        keys.indexOf("Linear/Medium/Themed/Top/Indeterminate") !== -1 &&
+        !keys.some(
+          (k) =>
+            k.indexOf("Circular/") === 0 && /\/(Top|Indeterminate)/.test(k),
+        ),
+      `the set draws 102: 6 Inline and 6 Top bars, Indeterminate among them, and 90 rings, none Top or Indeterminate (${combos.length})`,
+    );
+    const top = floats.get("Progress/height/top");
+    ok(
+      top &&
+        top.value === 4 &&
+        top.alias === "Layout/spacing/50" &&
+        JSON.stringify(top.scopes) === JSON.stringify(["WIDTH_HEIGHT"]),
+      `Progress/height/top is 4, spacing 50 (${JSON.stringify(top)})`,
+    );
+    const parsed = [
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=Indeterminate, Placement=Top",
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=25, Placement=Top",
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=Indeterminate",
+      "Shape=Circular, Size=Small, Tone=Themed, Value=Indeterminate, Placement=Inline",
+      "Shape=Circular, Size=Small, Tone=Themed, Value=25, Placement=Top",
+      "Shape=Linear, Size=Medium, Tone=Themed, Value=25, Placement=Middle",
+    ].map((name) => plugin.parseProgressVariantName(name));
+    ok(
+      JSON.stringify(parsed) ===
+        JSON.stringify([
+          { value: "Indeterminate", second: "Linear/Medium/Themed/Top" },
+          { value: "25", second: "Linear/Medium/Themed/Top" },
+          { value: "Indeterminate", second: "Linear/Medium/Themed/Inline" },
+          null,
+          null,
+          null,
+        ]),
+      `a Top or Indeterminate bar parses, one from before Placement as Inline; an indeterminate or Top ring and an unknown Placement do not (${JSON.stringify(parsed)})`,
+    );
+    const bar = async (value, placement) =>
+      withAutoLayout(() =>
+        plugin.createProgressVariant({
+          value,
+          second: `Linear/Medium/Themed/${placement}`,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+    for (const placement of ["Inline", "Top"]) {
+      const height = placement === "Top" ? 4 : 8;
+      const variant = await bar("Indeterminate", placement);
+      const track = named(variant, "Progress Track");
+      const range = track && named(track, "Progress Range");
+      ok(
+        variant.name ===
+          `Shape=Linear, Size=Medium, Tone=Themed, Value=Indeterminate, Placement=${placement}` &&
+          range &&
+          range.visible !== false &&
+          range.width === 80 &&
+          range.x === 0 &&
+          range.height === height &&
+          boundVariableName(range.fills[0]) === "Colors/theme/600" &&
+          boundVariableName(track.fills[0]) === "Colors/background/200",
+        `${placement} Indeterminate: a theme 600 segment a quarter of the 320 track, 80 wide, at the inline start, on background 200 (${variant.name}; ${range && [range.width, range.x, range.height, boundVariableName(range.fills[0])].join(", ")})`,
+      );
+    }
+    for (const value of ["0", "50", "Indeterminate"]) {
+      const variant = await bar(value, "Top");
+      const track = named(variant, "Progress Track");
+      const range = track && named(track, "Progress Range");
+      ok(
+        variant.height === 4 &&
+          track.height === 4 &&
+          range.height === 4 &&
+          track.cornerRadius === 0 &&
+          range.cornerRadius === 0 &&
+          track.strokes.length === 0 &&
+          bound(variant, "height") === "Progress/height/top" &&
+          bound(track, "height") === "Progress/height/top" &&
+          bound(range, "height") === "Progress/height/top" &&
+          !bound(track, "cornerRadius") &&
+          !bound(range, "cornerRadius") &&
+          bound(track, "width") === "Progress/width/default",
+        `Top at ${value}: 4 tall on Progress/height/top, square and edgeless, its corners unbound (${[variant.height, track.height, range.height, track.cornerRadius, range.cornerRadius, track.strokes.length, bound(track, "height"), bound(track, "cornerRadius")].join(", ")})`,
+      );
+    }
+    {
+      const variant = await bar("50", "Inline");
+      const track = named(variant, "Progress Track");
+      const range = named(track, "Progress Range");
+      ok(
+        variant.height === 8 &&
+          range.width === 160 &&
+          bound(track, "height") === "Progress/height/default" &&
+          bound(track, "cornerRadius") === "Progress/radius" &&
+          track.strokes.length === 1,
+        `Inline at 50 is the bar as before: 8 tall, the pill, its edge, half filled (${variant.height}, ${range.width}, ${bound(track, "cornerRadius")})`,
+      );
+      // An Update over a Top bar from an Inline one rebinds its height.
+      await withAutoLayout(() =>
+        plugin.updateProgressVariant(variant, {
+          value: "50",
+          second: "Linear/Medium/Themed/Top",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      ok(
+        variant.height === 4 &&
+          bound(track, "height") === "Progress/height/top" &&
+          !bound(track, "cornerRadius") &&
+          track.cornerRadius === 0,
+        `an Update from Inline to Top unbinds the pill radius and binds the top height (${variant.height}, ${bound(track, "cornerRadius")}, ${track.cornerRadius})`,
+      );
+    }
+
+    // Update over the set as it is after decision 131: the 95 variants named
+    // with Shape, Size, Tone and Value. Each keeps its node id and gains
+    // Placement=Inline; the Indeterminate bar and the six Top bars are added.
+    const livePage = new MockNode("PAGE", "Components");
+    const liveSet = new MockNode("COMPONENT_SET", "Progress");
+    const ids = {};
+    for (const form of ["Linear/Medium/Themed"].concat(
+      plugin.PROGRESS_FORMS.filter((f) => f.indexOf("Circular/") === 0).map(
+        (f) => f.split("/").slice(0, 3).join("/"),
+      ),
+    )) {
+      const [shape, size, tone] = form.split("/");
+      for (const value of ["0", "25", "50", "75", "100"]) {
+        const name = `Shape=${shape}, Size=${size}, Tone=${tone}, Value=${value}`;
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        ids[name] = variant.id;
+      }
+    }
+    livePage.appendChild(liveSet);
+    const liveIcons = new MockNode("PAGE", "Icons");
+    liveIcons.appendChild(mockIconComponent("check"));
+    const livePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: createFigmaMock({ pages: [livePage, liveIcons] }),
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const updated = await livePlugin.updateProgressComponent();
+    const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+    const names = liveSet.children.map((child) => child.name);
+    ok(
+      updated.updated === true &&
+        updated.variantsUpdated === 95 &&
+        updated.variantsCreated === 7 &&
+        liveSet.children.length === 102 &&
+        new Set(names).size === 102 &&
+        names.every((name) => /, Placement=(Inline|Top)$/.test(name)),
+      `Update over the 95 of decision 131 keeps them and adds the Indeterminate bar and 6 Top bars: 102, each named with its Placement (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length})`,
+    );
+    ok(
+      Object.keys(ids).every((name) => {
+        const variant = byId.get(ids[name]);
+        return variant && variant.name === `${name}, Placement=Inline`;
+      }),
+      "each of the 95 keeps its node id and is renamed with Placement=Inline",
+    );
+    ok(
+      Object.keys(ids).length === 95 &&
+        JSON.stringify(
+          livePlugin.expectedVariantAxesForComponentSetName("Progress")
+            .Placement,
+        ) === JSON.stringify(["Inline", "Top"]),
+      "Progress's expected axes name Placement: Inline, Top",
+    );
+  }
+}
+
+// --- Notice (GAP-160, decision 132) ------------------------------------------------
+
+// React's Notice, which had no set: Tone (Warning, Info, Critical, Success)
+// by Status (None, Progress, Done), 12 variants. 344 wide, 12 by 8 inside
+// the container corner, its tone's fill at 5 % and edge at 50 % (critical
+// 60 %) as layers of their own; a 16 mark in the tone's text role 2 down
+// beside the 14 summary, 8 apart; the detail 6 under it and the action, a
+// live outline Small Button, 12 under the text, both past the mark. Progress
+// turns the loading arc where the mark is; Done ends the summary in a check
+// and draws no mark at its start. Summary and Detail are text properties;
+// Show Icon (on), Show Detail and Show Action (off) booleans.
+section("Notice (GAP-160, decision 132)");
+{
+  const ready =
+    Array.isArray(plugin.NOTICE_TONES) &&
+    typeof plugin.updateNoticeVariant === "function" &&
+    typeof plugin.buildNoticeComponent === "function";
+  ok(ready, "Notice's painter, its axes and its Build are reachable");
+  if (ready) {
+    const tokens = payloadVariables(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+        ...variableByName.keys(),
+      ]),
+    );
+    const bound = (node, field) => {
+      const alias = node && node.boundVariables && node.boundVariables[field];
+      return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+    };
+    ok(
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("Notice"),
+      ) ===
+        JSON.stringify({
+          Tone: ["Warning", "Info", "Critical", "Success"],
+          Status: ["None", "Progress", "Done"],
+        }),
+      `Notice's axes are Tone and Status (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("Notice"))})`,
+    );
+    const page = new MockNode("PAGE", "Components");
+    page.appendChild(
+      mockComponentSet("Button", [
+        {
+          properties: { Variant: "Outline", Size: "Small", State: "Default" },
+          build: (variant) => variant.resize(80, 32),
+        },
+      ]),
+    );
+    const icons = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "alert-triangle",
+      "info-circle",
+      "alert-circle",
+      "check",
+    ])
+      icons.appendChild(mockIconComponent(name));
+    const noticeFigma = createFigmaMock({ pages: [page, icons] });
+    const noticePlugin = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: noticeFigma,
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    const draw = async (tone, status) => {
+      const component = noticeFigma.createComponent();
+      await withAutoLayout(() =>
+        noticePlugin.updateNoticeVariant(component, {
+          value: tone,
+          second: status,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      return component;
+    };
+    const SPEC = {
+      Warning: [
+        "Colors/emotional/alert/800",
+        0.5,
+        "Emotion/alert/text",
+        "alert-triangle",
+      ],
+      Info: [
+        "Colors/emotional/info/700",
+        0.5,
+        "Emotion/informative/text",
+        "info-circle",
+      ],
+      Critical: [
+        "Colors/emotional/danger/600",
+        0.6,
+        "Emotion/danger/text",
+        "alert-circle",
+      ],
+      Success: [
+        "Colors/emotional/success/800",
+        0.5,
+        "Emotion/success/text",
+        "check",
+      ],
+    };
+    const EDGE = { Success: "Colors/emotional/success/900" };
+    for (const tone of plugin.NOTICE_TONES) {
+      const [fill, edge, ink, icon] = SPEC[tone];
+      for (const status of ["None", "Progress", "Done"]) {
+        const at = `${tone}/${status}`;
+        const c = await draw(tone, status);
+        const row = named(c, "Summary Row");
+        const order = row ? row.children.map((n) => n.name) : [];
+        ok(
+          c.name === `Tone=${tone}, Status=${status}` &&
+            JSON.stringify(noticePlugin.parseNoticeVariantName(c.name)) ===
+              JSON.stringify({ value: tone, second: status }),
+          `${at}: named Tone=${tone}, Status=${status}, and reads back as itself (${c.name})`,
+        );
+        ok(
+          c.width === 344 &&
+            c.layoutMode === "VERTICAL" &&
+            c.paddingLeft === 12 &&
+            c.paddingRight === 12 &&
+            c.paddingTop === 8 &&
+            c.paddingBottom === 8 &&
+            c.cornerRadius === plugin.KOZMOS_RADIUS.container &&
+            bound(c, "width") === "Notice/width/default" &&
+            bound(c, "paddingLeft") === "Notice/padding/x" &&
+            bound(c, "paddingTop") === "Notice/padding/y" &&
+            bound(c, "cornerRadius") === "Notice/radius" &&
+            c.fills.length === 0 &&
+            c.strokes.length === 0,
+          `${at}: 344 wide, 12 by 8 inside the container corner, each bound, unpainted itself (${[c.width, c.paddingLeft, c.paddingTop, c.cornerRadius, bound(c, "paddingLeft")].join(", ")})`,
+        );
+        ok(
+          isWash(c, "Notice Fill", fill, 0.05, c.width, c.height),
+          `${at}: its fill is ${fill} at 5 %, a layer of its own the notice's size`,
+        );
+        const edgeLayer = named(c, "Notice Edge");
+        ok(
+          edgeLayer &&
+            edgeLayer.fills.length === 0 &&
+            edgeLayer.strokes.length === 1 &&
+            boundVariableName(edgeLayer.strokes[0]) === (EDGE[tone] || fill) &&
+            Math.abs(edgeLayer.opacity - edge) < 1e-9 &&
+            edgeLayer.strokeWeight === 1 &&
+            edgeLayer.strokeAlign === "INSIDE" &&
+            edgeLayer.layoutPositioning === "ABSOLUTE" &&
+            edgeLayer.width === c.width &&
+            edgeLayer.height === c.height,
+          `${at}: its edge is ${EDGE[tone] || fill} at ${edge * 100} %, 1 inside (${edgeLayer && [boundVariableName(edgeLayer.strokes[0]), edgeLayer.opacity, edgeLayer.width, edgeLayer.height].join(", ")})`,
+        );
+        const expected =
+          status === "Progress"
+            ? ["Progress Mark", "Summary"]
+            : status === "Done"
+              ? ["Summary", "Done"]
+              : ["Icon", "Summary"];
+        ok(
+          row &&
+            JSON.stringify(order) === JSON.stringify(expected) &&
+            row.itemSpacing === 8 &&
+            bound(row, "itemSpacing") === "Notice/gap",
+          `${at}: the summary's row is ${expected.join(", ")}, 8 apart (${order.join(", ")})`,
+        );
+        const summary = row && named(row, "Summary");
+        ok(
+          summary &&
+            summary.type === "TEXT" &&
+            summary.fontSize === 14 &&
+            summary.fontName.style === "Medium" &&
+            boundVariableName(summary.fills[0]) === ink,
+          `${at}: the summary is 14 medium in ${ink} (${summary && [summary.fontSize, summary.fontName.style, boundVariableName(summary.fills[0])].join(", ")})`,
+        );
+        if (status === "None") {
+          const mark = named(row, "Mark");
+          const vector = mark && mark.findOne((n) => n.type === "VECTOR");
+          ok(
+            mark &&
+              mark.type === "INSTANCE" &&
+              mark.mainComponent.name === `Icon / ${icon}` &&
+              mark.width === 16 &&
+              named(row, "Icon").paddingTop === 2 &&
+              vector &&
+              boundVariableName(vector.strokes[0]) === ink,
+            `${at}: the mark is ${icon} at 16, 2 down, in ${ink} (${mark && mark.mainComponent.name}, ${vector && boundVariableName(vector.strokes[0])})`,
+          );
+        }
+        if (status === "Progress") {
+          const arc = named(row, "Progress Arc");
+          ok(
+            arc &&
+              arc.type === "ELLIPSE" &&
+              Math.abs(arc.arcData.startingAngle + Math.PI / 2) < 1e-9 &&
+              Math.abs(arc.arcData.endingAngle - Math.PI) < 1e-9 &&
+              Math.abs(arc.arcData.innerRadius - 0.8) < 1e-9 &&
+              boundVariableName(arc.fills[0]) === ink &&
+              !named(row, "Icon") &&
+              !named(c, "Done Check"),
+            `${at}: the loading arc, three quarters from 12 o'clock, in ${ink}, where the mark was; no mark, no check (${arc && JSON.stringify(arc.arcData)})`,
+          );
+        }
+        if (status === "Done") {
+          const check = named(row, "Done Check");
+          const vector = check && check.findOne((n) => n.type === "VECTOR");
+          ok(
+            check &&
+              check.mainComponent.name === "Icon / check" &&
+              check.width === 16 &&
+              vector &&
+              boundVariableName(vector.strokes[0]) === ink &&
+              order[order.length - 1] === "Done" &&
+              !named(row, "Icon") &&
+              !named(row, "Progress Mark"),
+            `${at}: a 16 check in ${ink} ends the summary's row, and no mark starts it (${order.join(", ")})`,
+          );
+        }
+        const detailRow = named(c, "Detail Row");
+        const detail = detailRow && named(detailRow, "Detail");
+        const actionRow = named(c, "Action Row");
+        const action = actionRow && named(actionRow, "Action");
+        const indent = status === "Done" ? 0 : 24;
+        ok(
+          detailRow &&
+            detailRow.paddingTop === 6 &&
+            detailRow.paddingLeft === indent &&
+            detail &&
+            detail.fontSize === 14 &&
+            detail.fontName.style === "Regular" &&
+            boundVariableName(detail.fills[0]) === ink &&
+            actionRow &&
+            actionRow.paddingTop === 12 &&
+            actionRow.paddingLeft === indent &&
+            action &&
+            action.type === "INSTANCE" &&
+            action.mainComponent.name ===
+              "Variant=Outline, Size=Small, State=Default" &&
+            detailRow.visible === false &&
+            actionRow.visible === false &&
+            c.height === 8 + 20 + 8,
+          `${at}: the detail 6 under, the action an outline Small Button 12 under, both ${indent} in, both hidden until shown, so the notice is its 20 summary and 8 above and below, 36 (${c.height}; ${detailRow && [detailRow.paddingTop, detailRow.paddingLeft, detailRow.visible, actionRow.visible].join(", ")}; ${action && action.type}, ${action && action.mainComponent && action.mainComponent.name})`,
+        );
+      }
+    }
+    // An Update redraws the same layers, once.
+    {
+      const c = await draw("Info", "Done");
+      await withAutoLayout(() =>
+        noticePlugin.updateNoticeVariant(c, {
+          value: "Info",
+          second: "Done",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      ok(
+        JSON.stringify(c.children.map((n) => n.name)) ===
+          JSON.stringify([
+            "Notice Fill",
+            "Notice Edge",
+            "Summary Row",
+            "Detail Row",
+            "Action Row",
+          ]),
+        `an Update keeps one fill, edge and row of each (${c.children.map((n) => n.name).join(", ")})`,
+      );
+    }
+    // Build: the set of 12 and its properties.
+    const built = await noticePlugin.buildNoticeComponent();
+    const set = page.children.find(
+      (n) => n.type === "COMPONENT_SET" && n.name === "Notice",
+    );
+    const variantNames = set ? set.children.map((n) => n.name).sort() : [];
+    const expectedNames = [];
+    for (const tone of ["Warning", "Info", "Critical", "Success"])
+      for (const status of ["None", "Progress", "Done"])
+        expectedNames.push(`Tone=${tone}, Status=${status}`);
+    ok(
+      built.created === true &&
+        set &&
+        JSON.stringify(variantNames) === JSON.stringify(expectedNames.sort()),
+      `Build makes Notice of 12 variants, Tone by Status (${variantNames.length}: ${variantNames.slice(0, 3).join("; ")}…)`,
+    );
+    const definitions = (set && set.componentPropertyDefinitions) || {};
+    const prop = (base, type) => {
+      const key = Object.keys(definitions).find(
+        (k) => k.split("#")[0] === base && definitions[k].type === type,
+      );
+      return key ? Object.assign({ key }, definitions[key]) : null;
+    };
+    const summaryProp = prop("Summary", "TEXT");
+    const detailProp = prop("Detail", "TEXT");
+    const showIcon = prop("Show Icon", "BOOLEAN");
+    const showDetail = prop("Show Detail", "BOOLEAN");
+    const showAction = prop("Show Action", "BOOLEAN");
+    ok(
+      summaryProp &&
+        summaryProp.defaultValue === "Check allergens with the venue." &&
+        detailProp &&
+        showIcon &&
+        showIcon.defaultValue === true &&
+        showDetail &&
+        showDetail.defaultValue === false &&
+        showAction &&
+        showAction.defaultValue === false,
+      `the properties are Summary, Detail, Show Icon (on), Show Detail and Show Action (off) (${Object.keys(definitions).join(", ")})`,
+    );
+    const refs = (name, field) =>
+      set
+        ? set
+            .findAll((n) => n.name === name)
+            .map((n) => (n.componentPropertyReferences || {})[field] || null)
+        : [];
+    const all = (list, key) =>
+      list.length > 0 && list.every((value) => value === key);
+    ok(
+      set &&
+        refs("Summary", "characters").length === 12 &&
+        all(refs("Summary", "characters"), summaryProp && summaryProp.key) &&
+        all(refs("Detail", "characters"), detailProp && detailProp.key) &&
+        refs("Icon", "visible").length === 4 &&
+        all(refs("Icon", "visible"), showIcon && showIcon.key) &&
+        refs("Detail Row", "visible").length === 12 &&
+        all(refs("Detail Row", "visible"), showDetail && showDetail.key) &&
+        refs("Action Row", "visible").length === 12 &&
+        all(refs("Action Row", "visible"), showAction && showAction.key) &&
+        all(
+          refs("Progress Mark", "visible").map((v) => v || "none"),
+          "none",
+        ),
+      `each property binds its layers: Summary and Detail 12 each, Show Icon the 4 marks, Show Detail and Show Action 12 rows; the loading arc is bound to none (${refs("Icon", "visible").length} marks)`,
     );
   }
 }
@@ -4271,7 +4821,15 @@ section("Every frame keeps the size it was drawn at");
   }
   const tokens = payloadVariables([...variableByName.keys()]);
   const jobsFor = async (name, update) => {
-    const captured = await update();
+    // An Update that builds a set the file lacks (TreeSection, GAP-151) needs
+    // the file's variables, which this scan has none of; its config is read
+    // below all the same.
+    let captured = null;
+    try {
+      captured = await update();
+    } catch {
+      captured = null;
+    }
     if (captured && captured.__singleAxis) {
       const config = captured.__singleAxis;
       return config.values.map((value) => [config.updateVariant, { value }]);
@@ -9004,6 +9562,625 @@ section("Decision 65: Tabs draw React's raised segment");
   );
 }
 
+// --- Tabs' icons and Select's counts (GAP-152, GAP-164, decision 132) -------
+
+// Tabs gains a Content axis: Label, today's triggers, and Icon Over Label, a
+// 20 icon 4 above the words, so a trigger is 6 + 20 + 4 + 20 + 6 = 56 and the
+// list, inside 4 all round, 64; each icon is Tab N Icon, an instance swap, in
+// its words' colour. Select gains Content: Closed, today's trigger, and Open,
+// the trigger with SelectContent under it, three rows of Combobox's, each
+// `[words] [count] [check]` with the count the neutral Counter, the counts
+// and words editable (Option N Text, Option N Count) and shown by Show
+// Counts. Every row keeps the check's 16 at its end, so the counts form one
+// column, and Open is drawn at State=Default only (#525 review): an open list
+// is neither disabled nor the trigger's focus ring. Both reach the file
+// through Update: today's variants are renamed in place, their node ids
+// kept, and the new ones created beside them.
+section("Tabs' icons and Select's counts (GAP-152, GAP-164, decision 132)");
+{
+  const ready =
+    Array.isArray(plugin.TABS_CONTENT) &&
+    Array.isArray(plugin.SELECT_CONTENT) &&
+    typeof plugin.createOptionCount === "function";
+  ok(
+    ready,
+    "Tabs has a Content axis, Select a Content axis, and a row count painter",
+  );
+  // Not gated on `ready`: run over a plugin without the axes, every
+  // assertion below fails on what it paints, rather than being skipped.
+  {
+    ok(
+      ready &&
+        plugin.TABS_CONTENT.join(",") === "Label,Icon Over Label" &&
+        plugin.SELECT_CONTENT.join(",") === "Closed,Open",
+      `the axes' values, Label first and Closed first (${ready ? `${plugin.TABS_CONTENT.join(", ")}; ${plugin.SELECT_CONTENT.join(", ")}` : "none"})`,
+    );
+    const floats = new Map(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+    );
+    const tokens = payloadVariables(
+      [...floats.keys()].concat([...variableByName.keys()]),
+    );
+    const iconsPage = () => {
+      const page = new MockNode("PAGE", "Icons");
+      for (const name of [
+        "home-line",
+        "info-circle",
+        "activity",
+        "clock",
+        "check",
+        "chevron-down",
+        "search-md",
+      ])
+        page.appendChild(mockIconComponent(name));
+      return page;
+    };
+    const own = (pages) => {
+      const mock = createFigmaMock({ pages });
+      mock.__kozmosVariables = tokens.variableByName;
+      return {
+        mock,
+        plugin: loadPlugin({
+          pluginPath: PLUGIN,
+          figma: mock,
+          append: `
+ensureComponentRuntimeVariables = async () => figma.__kozmosVariables;
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+        }),
+      };
+    };
+    const boundTo = (node, field) => {
+      const alias = node && node.boundVariables && node.boundVariables[field];
+      return alias && alias.id
+        ? String(alias.id).replace(/^VariableID:/, "")
+        : null;
+    };
+    const value = (name) => {
+      let token = floats.get(name);
+      let depth = 0;
+      while (token && token.alias && floats.get(token.alias) && depth < 8) {
+        token = floats.get(token.alias);
+        depth += 1;
+      }
+      return token && token.value;
+    };
+    const painter = own([new MockNode("PAGE", "Components"), iconsPage()]);
+    const paintTabs = async (props) => {
+      const component = painter.mock.createComponent();
+      await painter.plugin.updateTabsVariant(
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    };
+
+    // Label is today's: 40, 32 triggers, no icon.
+    const label = await paintTabs({
+      count: "Three",
+      active: "Two",
+      state: "Default",
+      content: "Label",
+    });
+    const labelTrigger = named(label, "Tab 1 Trigger");
+    ok(
+      label.name === "Count=Three, Active=Two, State=Default, Content=Label" &&
+        label.height === 40 &&
+        boundTo(label, "height") === "Tabs/list/height" &&
+        labelTrigger.height === 32 &&
+        boundTo(labelTrigger, "height") === "Tabs/trigger/height" &&
+        labelTrigger.layoutMode === "HORIZONTAL" &&
+        !label.findOne((node) => /^Tab \d+ Icon$/.test(node.name)),
+      `Content=Label draws as before: a 40 list of 32 triggers with no icon (${label.name}; ${label.height}, ${labelTrigger.height}, ${labelTrigger.layoutMode})`,
+    );
+
+    // Icon Over Label: 64, 56, the icon 20 and 4 above the words.
+    const stacked = await paintTabs({
+      count: "Three",
+      active: "Two",
+      state: "Default",
+      content: "Icon Over Label",
+    });
+    ok(
+      stacked.name ===
+        "Count=Three, Active=Two, State=Default, Content=Icon Over Label" &&
+        stacked.height === 64 &&
+        boundTo(stacked, "height") === "Tabs/list/height/stacked" &&
+        value("Tabs/list/height/stacked") === 64,
+      `Icon Over Label's list is 64, bound to Tabs/list/height/stacked (${stacked.name}; ${stacked.height} through ${boundTo(stacked, "height")})`,
+    );
+    for (let n = 1; n <= 3; n += 1) {
+      const trigger = named(stacked, `Tab ${n} Trigger`);
+      const icon = named(trigger, `Tab ${n} Icon`);
+      const words = named(trigger, `Tab ${n} Text`);
+      const kids = trigger.children.filter((c) => c.name !== "Focus Ring");
+      const wordsPaint = boundVariableName(words.fills[0]);
+      ok(
+        trigger.height === 56 &&
+          boundTo(trigger, "height") === "Tabs/trigger/height/stacked" &&
+          value("Tabs/trigger/height/stacked") === 56 &&
+          trigger.layoutMode === "VERTICAL" &&
+          trigger.primaryAxisAlignItems === "CENTER" &&
+          trigger.counterAxisAlignItems === "CENTER" &&
+          trigger.paddingTop === 6 &&
+          trigger.paddingBottom === 6 &&
+          boundTo(trigger, "paddingTop") === "Tabs/trigger/padding/y" &&
+          trigger.itemSpacing === 4 &&
+          boundTo(trigger, "itemSpacing") === "Tabs/trigger/icon/gap" &&
+          kids[0] === icon &&
+          kids[1] === words,
+        `tab ${n} is 56, VERTICAL and centred, 6 above and below, its icon 4 above its words (${trigger.height}, ${trigger.layoutMode}, ${trigger.paddingTop}/${trigger.itemSpacing}, ${kids.map((c) => c.name).join(" > ")})`,
+      );
+      ok(
+        icon &&
+          icon.type === "INSTANCE" &&
+          icon.width === 20 &&
+          icon.height === 20 &&
+          boundTo(icon, "width") === "Tabs/trigger/icon/size" &&
+          value("Tabs/trigger/icon/size") === 20 &&
+          icon.mainComponent &&
+          icon.mainComponent.name ===
+            `Icon / ${["home-line", "info-circle", "activity"][n - 1]}` &&
+          icon.getSharedPluginData("kozmos_ds_importer", "foreground-token") ===
+            wordsPaint,
+        `tab ${n}'s icon is a 20 instance of ${icon && icon.mainComponent && icon.mainComponent.name}, in its words' ${wordsPaint} (${icon && icon.getSharedPluginData("kozmos_ds_importer", "foreground-token")})`,
+      );
+    }
+    const activeTrigger = named(stacked, "Tab 2 Trigger");
+    ok(
+      boundVariableName(activeTrigger.fills[0]) === "Colors/background/0" &&
+        JSON.stringify(activeTrigger.effects) ===
+          JSON.stringify([painter.plugin.elevationEffect("raised")]) &&
+        boundVariableName(named(stacked, "Tab 2 Text").fills[0]) ===
+          "Colors/foreground/0" &&
+        boundVariableName(named(stacked, "Tab 1 Text").fills[0]) ===
+          "Colors/foreground/400",
+      "stacked, the active tab keeps decision 65's raised segment, the others' words foreground/400",
+    );
+    const focus = await paintTabs({
+      count: "Two",
+      active: "One",
+      state: "Focus",
+      content: "Icon Over Label",
+    });
+    const focusRing = named(named(focus, "Tab 1 Trigger"), "Focus Ring");
+    ok(
+      focusRing && focusRing.height === 56 + 4 * 2,
+      `a stacked tab's ring is 4 outside its 56 (${focusRing && focusRing.height})`,
+    );
+
+    // Select: Closed is today's trigger; Open adds the list with counts.
+    const paintSelect = async (props) => {
+      const component = painter.mock.createComponent();
+      await painter.plugin.updateSelectVariant(
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    };
+    const closed = await paintSelect({
+      state: "Default",
+      status: "Default",
+      type: "Closed",
+    });
+    ok(
+      closed.name === "State=Default, Status=Default, Content=Closed" &&
+        // #521's Reset Mixed, hidden until Reset Mixed is on, stays under it.
+        closed.children.map((c) => c.name).join(",") ===
+          "Select Trigger,Reset Mixed" &&
+        closed.height === 44 &&
+        closed.itemSpacing === 6,
+      `Content=Closed is the trigger alone, 44 (${closed.name}; ${closed.children.map((c) => c.name).join(", ")}; ${closed.height})`,
+    );
+    const open = await paintSelect({
+      state: "Default",
+      status: "Default",
+      type: "Open",
+    });
+    const listbox = named(open, "Select Listbox");
+    ok(
+      open.name === "State=Default, Status=Default, Content=Open" &&
+        open.children.map((c) => c.name).join(",") ===
+          "Select Trigger,Reset Mixed,Select Listbox" &&
+        open.itemSpacing === 4 &&
+        boundTo(open, "itemSpacing") === "Select/listbox/offset" &&
+        listbox.paddingTop === 12 &&
+        boundTo(listbox, "paddingTop") === "Select/listbox/padding" &&
+        listbox.itemSpacing === 2 &&
+        boundVariableName(listbox.fills[0]) === "Surface/0" &&
+        boundVariableName(listbox.strokes[0]) === "Border/Subtle" &&
+        listbox.cornerRadius === 16 &&
+        listbox.children.length === 3,
+      `Content=Open is the trigger and, 4 under it, SelectContent: Surface/0, Border/Subtle, 12 inside, 2 between 3 rows (${open.children.map((c) => c.name).join(", ")}; ${open.itemSpacing}, ${listbox && listbox.paddingTop}, ${listbox && listbox.children.length})`,
+    );
+    const counts = ["128", "96", "32"];
+    for (let n = 1; n <= 3; n += 1) {
+      const row = listbox && listbox.children[n - 1];
+      const pill = row && named(row, `Option ${n} Counter`);
+      const digits = pill && named(pill, `Option ${n} Count`);
+      const order = row ? row.children.map((c) => c.name).join(" > ") : "";
+      ok(
+        row &&
+          row.name === `Select Option ${n}` &&
+          order ===
+            (n === 1
+              ? `Option ${n} Text > Option ${n} Counter > Icon`
+              : `Option ${n} Text > Option ${n} Counter > Check Slot`) &&
+          row.itemSpacing === 8 &&
+          row.height === 44,
+        `row ${n} is [words] [count] ${n === 1 ? "[check]" : "[the check's empty slot]"}, 8 apart, 44 tall (${order}; ${row && row.itemSpacing}, ${row && row.height})`,
+      );
+      ok(
+        pill &&
+          digits &&
+          digits.characters === counts[n - 1] &&
+          pill.height === 20 &&
+          boundTo(pill, "height") === "Counter/height/default" &&
+          pill.paddingLeft === 6 &&
+          boundTo(pill, "minWidth") === "Counter/min-width/default" &&
+          pill.cornerRadius === 9999 &&
+          boundVariableName(pill.fills[0]) === "Colors/background/200" &&
+          boundVariableName(digits.fills[0]) === "Colors/foreground/0" &&
+          digits.fontSize === 12,
+        `row ${n}'s count reads ${digits && digits.characters} in the neutral Counter's 20 pill, 6 at the sides, background/200 under foreground/0 12px (${pill && pill.height}, ${pill && pill.paddingLeft}, ${pill && boundVariableName(pill.fills[0])}, ${digits && boundVariableName(digits.fills[0])}, ${digits && digits.fontSize})`,
+      );
+    }
+
+    // Decision 1 (#525 review): the counts form one column. Every row keeps
+    // the check's 16 at its end, the chosen row's check, the others an empty
+    // Check Slot bound to the same size, so each count ends where the others
+    // do, laid out as Figma would.
+    await withAutoLayout(async () => {
+      for (const status of ["Default", "Error"]) {
+        const laid = await paintSelect({
+          state: "Default",
+          status,
+          type: "Open",
+        });
+        const rows = named(laid, "Select Listbox").children;
+        const ends = rows.map((row, i) => {
+          const pill = named(row, `Option ${i + 1} Counter`);
+          return pill ? pill.x + pill.width : null;
+        });
+        const slots = rows.map((row) => row.children[row.children.length - 1]);
+        ok(
+          ends.length === 3 &&
+            ends.every((end) => end !== null && end === ends[0]) &&
+            ends[0] === rows[0].width - 12 - 16 - 8 &&
+            slots.every(
+              (slot, i) =>
+                slot.width === 16 &&
+                slot.height === 16 &&
+                (i === 0
+                  ? slot.type === "INSTANCE"
+                  : slot.name === "Check Slot" &&
+                    slot.type === "FRAME" &&
+                    slot.fills.length === 0 &&
+                    boundTo(slot, "width") === "Select/icon/size"),
+            ),
+          `Status=${status}, Open: the three counts end at one x, 16 + 8 inside the row's 12, each row closed by the check or its empty 16 slot (ends ${ends.join(", ")}; ${slots.map((slot) => `${slot.name} ${slot.width}`).join(", ")})`,
+        );
+      }
+    });
+
+    // Combobox's row is unchanged with no count.
+    const comboRow = await painter.plugin.createComboboxOption({
+      index: 0,
+      text: "Metro Station",
+      selected: true,
+      active: false,
+      focused: false,
+      disabled: false,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      comboRow.name === "Combobox Option 1" &&
+        comboRow.children.map((c) => c.name).join(",") ===
+          "Option 1 Text,Icon" &&
+        boundVariableName(named(comboRow, "Option 1 Text").fills[0]) ===
+          "Colors/foreground/0",
+      `with no count, Combobox's row is as it was (${comboRow.name}: ${comboRow.children.map((c) => c.name).join(", ")})`,
+    );
+    const comboPlain = await painter.plugin.createComboboxOption({
+      index: 1,
+      text: "Gate A12",
+      selected: false,
+      active: true,
+      focused: false,
+      disabled: false,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      comboPlain.name === "Combobox Option 2" &&
+        comboPlain.children.map((c) => c.name).join(",") === "Option 2 Text",
+      `with no count, an unchosen Combobox row keeps no check slot (${comboPlain.children.map((c) => c.name).join(", ")})`,
+    );
+
+    // Update over the sets as the file has them today.
+    const overlapsIn = (set) => {
+      const boxes = set.children.map((c) => [
+        c.x,
+        c.y,
+        c.x + c.width,
+        c.y + c.height,
+        c.name,
+      ]);
+      const found = [];
+      for (let i = 0; i < boxes.length; i += 1)
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          const [a, b] = [boxes[i], boxes[j]];
+          if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+            found.push(`${a[4]} / ${b[4]}`);
+        }
+      return found;
+    };
+    const definitionsOf = (set) =>
+      Object.entries(set.componentPropertyDefinitions || {}).map(
+        ([key, definition]) => [key.split("#")[0], definition],
+      );
+
+    {
+      const oldNames = [];
+      for (const count of ["Two", "Three", "Four"]) {
+        const tabsN = { Two: 2, Three: 3, Four: 4 }[count];
+        for (const active of ["One", "Two", "Three", "Four"].slice(0, tabsN))
+          for (const state of ["Default", "Focus", "Disabled"])
+            oldNames.push(`Count=${count}, Active=${active}, State=${state}`);
+      }
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Tabs");
+      const oldIds = {};
+      for (const name of oldNames) {
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        oldIds[name] = variant.id;
+      }
+      livePage.appendChild(liveSet);
+      const setId = liveSet.id;
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateTabsComponent();
+      const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+      const names = liveSet.children.map((child) => child.name);
+      ok(
+        updated.updated === true &&
+          updated.componentSetId === setId &&
+          updated.variantsUpdated === 27 &&
+          updated.variantsCreated === 27 &&
+          liveSet.children.length === 54 &&
+          new Set(names).size === 54 &&
+          !(updated.warnings || []).some((w) => /Missing Tabs/.test(w)),
+        `Tabs Update keeps the set and its 27 variants and creates the 27 Icon Over Label ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+      );
+      ok(
+        oldNames.every(
+          (name) =>
+            byId.get(oldIds[name]) &&
+            byId.get(oldIds[name]).name === `${name}, Content=Label`,
+        ),
+        "each of the 27 keeps its node id and gains Content=Label",
+      );
+      const tabsDefs = definitionsOf(liveSet);
+      const swaps = tabsDefs
+        .filter(([, d]) => d.type === "INSTANCE_SWAP")
+        .map(([name]) => name)
+        .sort();
+      ok(
+        swaps.join(",") === "Tab 1 Icon,Tab 2 Icon,Tab 3 Icon,Tab 4 Icon" &&
+          ["Tab 1 Text", "Tab 2 Text", "Tab 3 Text", "Tab 4 Text"].every(
+            (name) =>
+              tabsDefs.some(([n, d]) => n === name && d.type === "TEXT"),
+          ),
+        `Tab 1 Icon to Tab 4 Icon are instance swaps beside the Tab N Text properties (${swaps.join(", ")})`,
+      );
+      const stackedIcons = liveSet.findAll(
+        (node) => node.type === "INSTANCE" && /^Tab \d Icon$/.test(node.name),
+      );
+      const unboundIcons = stackedIcons.filter(
+        (icon) =>
+          !icon.componentPropertyReferences ||
+          !String(icon.componentPropertyReferences.mainComponent || "")
+            .split("#")[0]
+            .startsWith(icon.name),
+      );
+      ok(
+        // Two tabs in 6 variants, three in 9, four in 12.
+        stackedIcons.length === 6 * 2 + 9 * 3 + 12 * 4 &&
+          unboundIcons.length === 0,
+        `every stacked trigger's icon is bound to its Tab N Icon (${stackedIcons.length} icons, ${unboundIcons.length} unbound)`,
+      );
+      const tabsOverlaps = overlapsIn(liveSet);
+      ok(
+        tabsOverlaps.length === 0,
+        `the updated Tabs set has no two variants overlapping (${tabsOverlaps.slice(0, 3).join("; ")})`,
+      );
+    }
+
+    {
+      const oldNames = [];
+      for (const state of ["Default", "Focus", "Disabled"])
+        for (const status of ["Default", "Error"])
+          oldNames.push(`State=${state}, Status=${status}`);
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Select");
+      const oldIds = {};
+      for (const name of oldNames) {
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        oldIds[name] = variant.id;
+      }
+      livePage.appendChild(liveSet);
+      const setId = liveSet.id;
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateSelectComponent();
+      const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+      ok(
+        updated.updated === true &&
+          updated.componentSetId === setId &&
+          updated.variantsUpdated === 6 &&
+          // #521's two Mixed variants and the two Open ones.
+          updated.variantsCreated === 4 &&
+          liveSet.children.length === 10,
+        `Select Update keeps the set and its 6 variants and creates the 2 Mixed and 2 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+      );
+      // #525 review: an open list is neither disabled nor the trigger's focus
+      // ring, so Open is drawn at State=Default only.
+      const openNames = liveSet.children
+        .map((child) => child.name)
+        .filter((name) => /Content=Open/.test(name))
+        .sort();
+      ok(
+        openNames.join(" | ") ===
+          "State=Default, Status=Default, Content=Open | State=Default, Status=Error, Content=Open",
+        `the Open variants are State=Default's two Statuses alone (${openNames.join(" | ")})`,
+      );
+      ok(
+        oldNames.every(
+          (name) =>
+            byId.get(oldIds[name]) &&
+            byId.get(oldIds[name]).name === `${name}, Content=Closed`,
+        ),
+        "each of the 6 keeps its node id and gains Content=Closed",
+      );
+      const selectDefs = definitionsOf(liveSet);
+      const typeOf = (name) => {
+        const hit = selectDefs.find(([n]) => n === name);
+        return hit ? `${hit[1].type}:${hit[1].defaultValue}` : "missing";
+      };
+      const expected = {
+        "Option 1 Text": "TEXT:Everything",
+        "Option 2 Text": "TEXT:POI",
+        "Option 3 Text": "TEXT:Interior asset",
+        "Option 1 Count": "TEXT:128",
+        "Option 2 Count": "TEXT:96",
+        "Option 3 Count": "TEXT:32",
+        "Show Counts": "BOOLEAN:true",
+        "Placeholder Text": "TEXT:Select an option",
+      };
+      const drift = Object.entries(expected).filter(
+        ([name, want]) => typeOf(name) !== want,
+      );
+      ok(
+        drift.length === 0,
+        `Select's properties: Option N Text, Option N Count, Show Counts on, Placeholder Text kept (${drift.map(([n]) => `${n} ${typeOf(n)}`).join("; ")})`,
+      );
+      const pills = liveSet.findAll(
+        (node) =>
+          node.type === "FRAME" && /^Option \d Counter$/.test(node.name),
+      );
+      const showKey = Object.keys(liveSet.componentPropertyDefinitions).find(
+        (key) => key.split("#")[0] === "Show Counts",
+      );
+      ok(
+        pills.length === 2 * 3 &&
+          pills.every(
+            (pill) =>
+              pill.componentPropertyReferences &&
+              pill.componentPropertyReferences.visible === showKey,
+          ),
+        `Show Counts shows each of the 6 counts (${pills.length} counts)`,
+      );
+      const countTexts = liveSet.findAll(
+        (node) => node.type === "TEXT" && /^Option \d Count$/.test(node.name),
+      );
+      ok(
+        countTexts.length === 6 &&
+          countTexts.every(
+            (text) =>
+              text.componentPropertyReferences &&
+              String(text.componentPropertyReferences.characters || "").split(
+                "#",
+              )[0] === text.name,
+          ),
+        `each count's digits are bound to their Option N Count (${countTexts.length})`,
+      );
+      const selectOverlaps = overlapsIn(liveSet);
+      ok(
+        selectOverlaps.length === 0,
+        `the updated Select set has no two variants overlapping (${selectOverlaps.slice(0, 3).join("; ")})`,
+      );
+    }
+
+    // A Build draws the same 8: 6 Closed, 2 Open.
+    {
+      const buildPage = new MockNode("PAGE", "Components");
+      const file = own([buildPage, iconsPage()]);
+      const built = await file.plugin.buildSelectComponent();
+      const set = buildPage.children.find(
+        (node) => node.type === "COMPONENT_SET" && node.name === "Select",
+      );
+      const names = set ? set.children.map((child) => child.name).sort() : [];
+      const want = [];
+      for (const state of ["Default", "Focus", "Disabled", "Mixed"])
+        for (const status of ["Default", "Error"])
+          want.push(`State=${state}, Status=${status}, Content=Closed`);
+      for (const status of ["Default", "Error"])
+        want.push(`State=Default, Status=${status}, Content=Open`);
+      want.sort();
+      ok(
+        built.created === true &&
+          built.variants === 10 &&
+          names.join(" | ") === want.join(" | "),
+        `Select Build draws 8 Closed (Mixed among them) and State=Default's 2 Open variants, no Mixed Open (${built.variants}: ${names.filter((n) => /Open/.test(n)).join(" | ")})`,
+      );
+    }
+
+    // A set an earlier run gave all six Open variants keeps them: removing a
+    // variant would break the instances that use it.
+    {
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Select");
+      const ids = {};
+      for (const state of ["Default", "Focus", "Disabled"])
+        for (const status of ["Default", "Error"])
+          for (const content of ["Closed", "Open"]) {
+            const name = `State=${state}, Status=${status}, Content=${content}`;
+            const variant = new MockNode("COMPONENT", name);
+            liveSet.appendChild(variant);
+            ids[name] = variant.id;
+          }
+      livePage.appendChild(liveSet);
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateSelectComponent();
+      const kept = Object.entries(ids).filter(([name, id]) =>
+        liveSet.children.some(
+          (child) => child.id === id && child.name === name,
+        ),
+      );
+      const warned = (updated.warnings || []).filter((w) =>
+        /no longer generated/.test(w),
+      );
+      ok(
+        updated.variantsUpdated === 12 &&
+          // #521's two Mixed Closed variants; no Mixed Open.
+          updated.variantsCreated === 2 &&
+          liveSet.children.length === 14 &&
+          kept.length === 12 &&
+          updated.variantsNotGenerated === 4 &&
+          warned.length === 4,
+        `Update keeps an earlier run's Focus and Disabled Open variants, ids and all, and warns of each (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${kept.length} kept, ${warned.length} warnings)`,
+      );
+    }
+  }
+}
+
 section("Decisions 115 and 26: the list rows draw React's rows");
 {
   // Figma comes from the developed components: Combobox's, MultiSelect's,
@@ -13027,7 +14204,13 @@ section("Figma draws React's values (the 4 Nov triage)");
   components.appendChild(
     mockComponentSet("Progress", [
       look(
-        { Shape: "Linear", Size: "Medium", Tone: "Themed", Value: "50" },
+        {
+          Shape: "Linear",
+          Size: "Medium",
+          Tone: "Themed",
+          Value: "50",
+          Placement: "Inline",
+        },
         320,
         8,
         "NONE",
@@ -14577,6 +15760,562 @@ section(
     `Slider: Show Value (off) and Value Text ("50%") drive each variant's readout and nothing else (${showValue}, ${valueText}; ${shownValues.length} and ${wordedValues.length} of ${sliders.length})`,
   );
   sliderSet.remove();
+}
+
+// GAP-107: the rows' meta below the name, as React's metaPlacement="below":
+// a Meta line under the label, text-xs in the muted foreground, and the row
+// grows to take it, py-1.5 (py-1 compact) round the two lines: 48, 44
+// compact. Booleans, as Divided: Meta Below (off) shows the Meta layer and
+// Meta Text is its words, so an instance with it off is as it was. The row's
+// height becomes a floor (Min H, bound to Tree/item/height/*) and the row
+// hugs. Laid out with withAutoLayout, as the file lays it out.
+section("GAP-107: the tree rows' Meta Below");
+{
+  const painters = [
+    [
+      "updateTreeParentItemVariant",
+      { content: "Count", expanded: "True", state: "Idle" },
+    ],
+    ["updateTreeChildItemVariant", { content: "Actions", state: "Selected" }],
+    [
+      "updateTreeItemVariant",
+      { type: "Child", content: "Basic", expanded: "False", state: "Focus" },
+    ],
+  ];
+  const reachable = painters.every(([fn]) => typeof plugin[fn] === "function");
+  ok(reachable, "the three row painters are reachable");
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const find = (root, name) =>
+    root.findOne ? root.findOne((node) => node.name === name) : null;
+  for (const [fn, base] of reachable ? painters : []) {
+    for (const density of ["Default", "Compact"]) {
+      for (const depth of ["0", "2"]) {
+        const at = `${fn} ${density} Depth=${depth}`;
+        const floor = density === "Compact" ? 32 : 40;
+        const grown = density === "Compact" ? 44 : 48;
+        const pad = density === "Compact" ? 4 : 6;
+        const row = await draw(fn, Object.assign({ density, depth }, base));
+        const column = row.children.find(
+          (child) => child.name === "Tree Item Text",
+        );
+        const meta = column && find(column, "Meta");
+        ok(
+          column &&
+            column.layoutMode === "VERTICAL" &&
+            JSON.stringify(column.children.map((child) => child.name)) ===
+              JSON.stringify(["Tree Item Label", "Meta"]) &&
+            column.paddingTop === pad &&
+            column.paddingBottom === pad &&
+            menusBound(column, "paddingTop") ===
+              `Tree/item/padding/y/${density.toLowerCase()}` &&
+            menusBound(column, "paddingBottom") ===
+              `Tree/item/padding/y/${density.toLowerCase()}` &&
+            menusValueOf(`Tree/item/padding/y/${density.toLowerCase()}`) ===
+              pad,
+          `${at}: the label's line and a Meta line share a column padded ${pad}, Tree/item/padding/y (${column && column.children.map((child) => child.name).join(", ")}; ${column && column.paddingTop})`,
+        );
+        ok(
+          meta &&
+            meta.type === "TEXT" &&
+            meta.characters === "Changes awaiting publish" &&
+            meta.visible === false &&
+            meta.fontSize === 12 &&
+            meta.lineHeight.value === 16 &&
+            menusBound(meta, "fontSize") === "Tree/meta/font-size" &&
+            menusBound(meta, "lineHeight") === "Tree/meta/line-height" &&
+            menusValueOf("Tree/meta/font-size") === 12 &&
+            menusValueOf("Tree/meta/line-height") === 16 &&
+            boundVariableName(meta.fills[0]) === "Colors/foreground/400" &&
+            meta.getSharedPluginData("kozmos_ds_importer", "kind") ===
+              "tree-meta",
+          `${at}: Meta is "Changes awaiting publish", 12/16 (Tree/meta/*), Colors/foreground/400, hidden (${meta && `${meta.characters}, ${meta.fontSize}/${meta.lineHeight && meta.lineHeight.value}, ${boundVariableName(meta.fills[0])}, visible ${meta.visible}`})`,
+        );
+        ok(
+          meta &&
+            meta.layoutSizingHorizontal === "FIXED" &&
+            meta.textAutoResize === "HEIGHT" &&
+            meta.textTruncation === "ENDING" &&
+            meta.maxLines === 1 &&
+            meta.width >= 120,
+          `${at}: Meta is one line, truncated at the room the row gives it (${meta && `${meta.textAutoResize}, ${meta.textTruncation}, ${meta.maxLines} line, ${meta.width} wide`})`,
+        );
+        ok(
+          row.layoutSizingVertical === "HUG" &&
+            row.minHeight === floor &&
+            menusBound(row, "minHeight") ===
+              `Tree/item/height/${density.toLowerCase()}` &&
+            !menusBound(row, "height") &&
+            row.height === floor,
+          `${at}: the row hugs above a floor of ${floor}, Tree/item/height on Min H and nothing on its height, and is ${floor} with Meta hidden (${row.layoutSizingVertical}, ${row.minHeight}, ${menusBound(row, "minHeight")}, ${menusBound(row, "height")}, ${row.height})`,
+        );
+        if (meta) {
+          await withAutoLayout(async () => {
+            meta.visible = true;
+            // A write the stand-in lays the row out again after.
+            row.resizeWithoutConstraints(row.width, row.height);
+          });
+        }
+        const divider = row.children.find((child) => child.name === "Divider");
+        ok(
+          meta &&
+            row.height === grown &&
+            meta.y === pad + 20 &&
+            divider &&
+            divider.y === grown - 1,
+          `${at}: Meta shown, the row grows to ${grown}, Meta under the label and the divider still on the row's bottom edge (${row.height}, Meta at ${meta && meta.y}, divider at ${divider && divider.y})`,
+        );
+      }
+    }
+  }
+
+  // A row an older build drew carries a bound height, which would hold it
+  // fixed; Update drops it and binds the floor instead.
+  if (reachable) {
+    const old = figma.createComponent();
+    old.setBoundVariable("height", { id: "Tree/item/height/default" });
+    await withAutoLayout(() =>
+      plugin.updateTreeChildItemVariant(old, {
+        props: {
+          content: "Basic",
+          depth: "0",
+          density: "Default",
+          state: "Idle",
+        },
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    ok(
+      !menusBound(old, "height") &&
+        menusBound(old, "minHeight") === "Tree/item/height/default" &&
+        old.layoutSizingVertical === "HUG",
+      `Update drops an older row's bound height for a bound floor, and the row hugs (${menusBound(old, "height")}, ${menusBound(old, "minHeight")}, ${old.layoutSizingVertical})`,
+    );
+  }
+
+  // The sets' properties: Meta Below, off, shows each row's Meta and
+  // nothing else; Meta Text, "Changes awaiting publish", is its words.
+  for (const [setName, fn, props] of [
+    [
+      "TreeParentItem",
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "False", state: "Idle" },
+    ],
+    ["TreeChildItem", "updateTreeChildItemVariant", { content: "Count" }],
+    [
+      "TreeItem",
+      "updateTreeItemVariant",
+      { type: "Parent", content: "Actions", expanded: "True" },
+    ],
+  ]) {
+    if (!reachable) break;
+    const variants = [];
+    for (const state of ["Idle", "Selected"]) {
+      variants.push(
+        await draw(
+          fn,
+          Object.assign({ depth: "0", density: "Default" }, props, { state }),
+        ),
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    await plugin.configureTreeItemProperties(
+      set,
+      freshStats(),
+      menusTokens.variableByName,
+    );
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name, type) =>
+      Object.keys(definitions).find(
+        (key) => key.split("#")[0] === name && definitions[key].type === type,
+      );
+    const below = keyOf("Meta Below", "BOOLEAN");
+    const words = keyOf("Meta Text", "TEXT");
+    const shown = set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.visible === below,
+    );
+    const worded = set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.characters === words,
+    );
+    ok(
+      below &&
+        definitions[below].defaultValue === false &&
+        shown.length === 2 &&
+        shown.every((node) => node.name === "Meta"),
+      `${setName}: Meta Below, off by default, shows each row's Meta and nothing else (${below}, ${shown.map((node) => node.name).join(", ")})`,
+    );
+    ok(
+      words &&
+        definitions[words].defaultValue === "Changes awaiting publish" &&
+        worded.length === 2 &&
+        worded.every((node) => node.name === "Meta"),
+      `${setName}: Meta Text, "Changes awaiting publish", is each Meta's words (${words}, ${worded.length})`,
+    );
+    set.remove();
+  }
+
+  // Update over the three sets as the file has them: every variant keeps its
+  // node id and name, none is added, and each gains a hidden Meta, shown by
+  // Meta Below and worded by Meta Text.
+  const icons = () => {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    return [page];
+  };
+  const names = (setName) => {
+    const out = [];
+    for (const type of setName === "TreeItem" ? ["Parent", "Child"] : [null])
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                out.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return out;
+  };
+  for (const [setName, update, total] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72],
+    ["TreeItem", "updateTreeItemComponent", 216],
+  ]) {
+    const oldNames = names(setName);
+    const replay = await replayUpdate(setName, oldNames, update, icons());
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const below = Object.keys(defs).find(
+      (k) => k.split("#")[0] === "Meta Below" && defs[k].type === "BOOLEAN",
+    );
+    const words = Object.keys(defs).find(
+      (k) => k.split("#")[0] === "Meta Text" && defs[k].type === "TEXT",
+    );
+    const metas = replay.liveSet.findAll((n) => n.name === "Meta");
+    ok(
+      replay.result.variantsUpdated === total &&
+        replay.result.variantsCreated === 0 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) => variant && variant.name === oldNames[i],
+        ) &&
+        below &&
+        defs[below].defaultValue === false &&
+        words &&
+        defs[words].defaultValue === "Changes awaiting publish" &&
+        metas.length === total &&
+        metas.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences &&
+            n.componentPropertyReferences.visible === below &&
+            n.componentPropertyReferences.characters === words,
+        ),
+      `${setName}: Update keeps all ${total} variants and their ids, and gives each a hidden Meta shown by Meta Below and worded by Meta Text (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${metas.length} Meta, ${below}, ${words})`,
+    );
+  }
+
+  // The audit expects the Meta's own style, Text / XS / Normal, not the row's.
+  const auditSet = new MockNode("COMPONENT_SET", "TreeChildItem");
+  const auditVariant = new MockNode("COMPONENT", "Content=Basic");
+  const auditMeta = new MockNode("TEXT", "Meta");
+  auditVariant.appendChild(auditMeta);
+  auditSet.appendChild(auditVariant);
+  ok(
+    plugin.inferTextStyleKeyForComponentText(auditMeta, auditSet) ===
+      plugin.textStyleKeyForText("XS", "Normal"),
+    `the audit expects Text / XS / Normal on a row's Meta (${plugin.inferTextStyleKeyForComponentText(auditMeta, auditSet)})`,
+  );
+}
+
+// GAP-151: React's TreeSectionRow, a section's heading: min-h-8 (min-h-6
+// compact), ps depth × 20 + 8, pe 8, its name 11px medium in text-primary
+// (theme 600) and the rows' count pill gap-1.5 after it; no surface, no
+// divider. Figma's TreeSection: Density and Depth axes, Label Text, Count
+// Text and Show Count (on). New in 0.16.0, so the owner's Update builds it.
+section("GAP-151: TreeSection draws a section's heading");
+{
+  const painted =
+    typeof plugin.updateTreeSectionVariant === "function" &&
+    typeof plugin.configureTreeSectionProperties === "function" &&
+    typeof plugin.buildTreeSectionComponent === "function" &&
+    typeof plugin.updateTreeSectionComponent === "function" &&
+    typeof plugin.rebuildTreeSectionComponent === "function";
+  ok(
+    painted,
+    "TreeSection's painter, properties, Build, Update and Rebuild are reachable",
+  );
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("TreeSection"),
+    ) ===
+      JSON.stringify({
+        Density: ["Default", "Compact"],
+        Depth: ["0", "1", "2"],
+      }),
+    `TreeSection's axes are Density (Default, Compact) and Depth (0, 1, 2) (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("TreeSection"))})`,
+  );
+  const sequence = (plugin.CORE_UPDATE_SEQUENCE || []).map(([name]) => name);
+  const dataDisplay = (plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || []).find(
+    (s) => s.title === "Data display",
+  );
+  ok(
+    sequence.indexOf("TreeSection") !== -1 &&
+      sequence.indexOf("TreeSection") < sequence.indexOf("Tree") &&
+      dataDisplay &&
+      dataDisplay.components.indexOf("TreeSection") ===
+        dataDisplay.components.indexOf("TreeItem") + 1 &&
+      (plugin.COMPONENT_DOCS || []).some(
+        (doc) => doc.componentSetName === "TreeSection",
+      ) &&
+      plugin.shouldAuditLayoutBindings("TreeSection"),
+    `TreeSection is in Update All Core before Tree, beside the row sets on the page, documented, and its layout bindings audited (sequence ${sequence.indexOf("TreeSection")}, page ${dataDisplay && dataDisplay.components.join(", ")})`,
+  );
+  const ui = fs.readFileSync(
+    path.join(path.dirname(PLUGIN), "ui.html"),
+    "utf8",
+  );
+  ok(
+    /<option value="treeSection">TreeSection<\/option>/.test(ui) &&
+      /build: "build-tree-section"/.test(ui) &&
+      /update: "update-tree-section"/.test(ui) &&
+      /rebuild: "rebuild-tree-section"/.test(ui),
+    "the panel lists TreeSection with its Build, Update and Rebuild",
+  );
+
+  // Without the painter, an empty component, so every assertion below runs,
+  // and fails, against a plugin that has none.
+  const draw = async (props) => {
+    const component = figma.createComponent();
+    if (typeof plugin.updateTreeSectionVariant !== "function") return component;
+    await withAutoLayout(() =>
+      plugin.updateTreeSectionVariant(component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const variants = [];
+  for (const density of ["Default", "Compact"]) {
+    for (const depth of ["0", "1", "2"]) {
+      const at = `${density} Depth=${depth}`;
+      const key = density.toLowerCase();
+      const height = density === "Compact" ? 24 : 32;
+      const section = await draw({ density, depth });
+      variants.push(section);
+      const parsed =
+        typeof plugin.parseTreeSectionVariantName === "function"
+          ? plugin.parseTreeSectionVariantName(section.name)
+          : null;
+      ok(
+        section.name === `Density=${density}, Depth=${depth}` &&
+          parsed &&
+          parsed.density === density &&
+          parsed.depth === depth,
+        `${at}: named Density=${density}, Depth=${depth}, and reads back as itself (${section.name})`,
+      );
+      ok(
+        JSON.stringify(section.children.map((child) => child.name)) ===
+          JSON.stringify(["Label Text", "Count"]) &&
+          section.fills.length === 0 &&
+          section.strokes.length === 0 &&
+          !section.findOne((node) => node.name === "Divider"),
+        `${at}: its name then the count pill, no fill, no edge, no divider (${section.children.map((child) => child.name).join(", ")})`,
+      );
+      ok(
+        section.layoutMode === "HORIZONTAL" &&
+          section.counterAxisAlignItems === "CENTER" &&
+          section.layoutSizingVertical === "HUG" &&
+          section.height === height &&
+          section.minHeight === height &&
+          menusBound(section, "minHeight") === `Tree/section/height/${key}` &&
+          menusValueOf(`Tree/section/height/${key}`) === height &&
+          section.width === 320 &&
+          menusBound(section, "width") === "Tree/width/default",
+        `${at}: 320 wide, hugging above a floor of ${height}, Tree/section/height/${key} (${section.width}x${section.height}, ${section.minHeight}, ${menusBound(section, "minHeight")})`,
+      );
+      ok(
+        section.paddingLeft === Number(depth) * 20 + 8 &&
+          section.paddingRight === 8 &&
+          menusBound(section, "paddingRight") === "Tree/item/padding/x" &&
+          section.itemSpacing === 6 &&
+          menusBound(section, "itemSpacing") === "Tree/section/gap" &&
+          menusValueOf("Tree/section/gap") === 6,
+        `${at}: inset ${Number(depth) * 20 + 8} at the start and 8 at the end, the pill 6 after the name, Tree/section/gap (${section.paddingLeft}, ${section.paddingRight}, ${section.itemSpacing})`,
+      );
+      const label = section.children[0];
+      ok(
+        label &&
+          label.type === "TEXT" &&
+          label.characters === "POI" &&
+          label.fontName &&
+          label.fontName.style === FONTS.medium.style &&
+          label.fontSize === 11 &&
+          label.lineHeight.value === 14 &&
+          menusBound(label, "fontSize") === "Tree/section/font-size" &&
+          menusBound(label, "lineHeight") === "Tree/section/line-height" &&
+          menusValueOf("Tree/section/font-size") === 11 &&
+          boundVariableName(label.fills[0]) === "Colors/theme/600",
+        `${at}: "POI" in 11/14 medium, Tree/section/*, in the theme's 600, text-primary (${label && label.type === "TEXT" && `${label.characters}, ${label.fontName && label.fontName.style} ${label.fontSize}/${label.lineHeight && label.lineHeight.value}, ${boundVariableName(label.fills[0])}`})`,
+      );
+      const count = section.children[1];
+      const countText = count && count.children && count.children[0];
+      ok(
+        count &&
+          count.getSharedPluginData("kozmos_ds_importer", "kind") ===
+            "tree-count" &&
+          boundVariableName(count.fills[0]) === "Colors/background/100" &&
+          boundVariableName(count.strokes[0]) === "Border/Subtle" &&
+          countText &&
+          countText.name === "Count Text" &&
+          countText.characters === "120",
+        `${at}: the rows' count pill, "120" (${count && count.getSharedPluginData("kozmos_ds_importer", "kind")}, ${countText && countText.characters})`,
+      );
+    }
+  }
+
+  if (variants.length === 6) {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "TreeSection";
+    if (typeof plugin.configureTreeSectionProperties === "function")
+      plugin.configureTreeSectionProperties(set, freshStats());
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name, type) =>
+      Object.keys(definitions).find(
+        (key) => key.split("#")[0] === name && definitions[key].type === type,
+      );
+    const showCount = keyOf("Show Count", "BOOLEAN");
+    const labelText = keyOf("Label Text", "TEXT");
+    const countText = keyOf("Count Text", "TEXT");
+    const refs = (field, key) =>
+      set.findAll(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences[field] === key,
+      );
+    ok(
+      showCount &&
+        definitions[showCount].defaultValue === true &&
+        refs("visible", showCount).length === 6 &&
+        refs("visible", showCount).every((node) => node.name === "Count"),
+      `Show Count, on by default, shows each variant's pill and nothing else (${showCount}, ${refs("visible", showCount).length})`,
+    );
+    ok(
+      labelText &&
+        definitions[labelText].defaultValue === "POI" &&
+        refs("characters", labelText).length === 6 &&
+        countText &&
+        definitions[countText].defaultValue === "120" &&
+        refs("characters", countText).length === 6,
+      `Label Text ("POI") and Count Text ("120") word every variant (${labelText}, ${countText})`,
+    );
+    const name = set.children[0].children[0];
+    const pill =
+      set.children[0].children[1] && set.children[0].children[1].children[0];
+    const expected = (node) =>
+      node ? plugin.inferTextStyleKeyForComponentText(node, set) : null;
+    ok(
+      expected(name) === "treeSection" && expected(pill) === "counterSmall",
+      `the audit expects Tree / Section on the name and Counter / Small in the pill (${expected(name)}, ${expected(pill)})`,
+    );
+    set.remove();
+  }
+
+  // Update on a file with no TreeSection builds it: six variants, reported
+  // updated so Update All Core stamps it done. A second Update keeps the set
+  // and every variant's id.
+  {
+    const components = new MockNode("PAGE", "Components");
+    const fileFigma = createFigmaMock({
+      pages: [components, new MockNode("PAGE", "Icons")],
+    });
+    const file = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: fileFigma,
+      append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+    });
+    let first = null;
+    let second = null;
+    let error = null;
+    try {
+      first = await file.updateTreeSectionComponent();
+    } catch (caught) {
+      error = caught;
+    }
+    const built = components.children.find(
+      (node) => node.type === "COMPONENT_SET" && node.name === "TreeSection",
+    );
+    const ids = built ? built.children.map((child) => child.id) : [];
+    ok(
+      !error &&
+        first &&
+        first.updated === true &&
+        built &&
+        built.children.length === 6 &&
+        first.componentSetId === built.id,
+      `Update builds TreeSection when the file has none, six variants, reported updated (${error ? error.message : first && `${first.updated}, ${built && built.children.length}`})`,
+    );
+    try {
+      second = await file.updateTreeSectionComponent();
+    } catch (caught) {
+      error = caught;
+    }
+    ok(
+      !error &&
+        second &&
+        second.updated === true &&
+        second.componentSetId === (built && built.id) &&
+        second.variantsUpdated === 6 &&
+        second.variantsCreated === 0 &&
+        second.variantsRemoved === 0 &&
+        built.children.map((child) => child.id).join() === ids.join(),
+      `a second Update keeps the set and its six variants' ids (${error ? error.message : second && `${second.variantsUpdated} updated, ${second.variantsCreated} created, ${second.variantsRemoved} removed`})`,
+    );
+  }
 }
 
 // --- Summary ---------------------------------------------------------------------

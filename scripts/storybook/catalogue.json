@@ -768,7 +768,9 @@
         "Expanded",
         "Emergency",
         "SingleLine",
-        "SearchWithAi"
+        "SearchWithAi",
+        "SuccessProgressAndDone",
+        "Success"
       ]
     },
     {
@@ -948,7 +950,9 @@
         "Tones",
         "SelectedSection",
         "LivePosition",
-        "AnimatedUpdate"
+        "AnimatedUpdate",
+        "Indeterminate",
+        "TopOfPage"
       ]
     },
     {
@@ -1109,6 +1113,8 @@
         "WithScroll",
         "Disabled",
         "WithError",
+        "OptionCounts",
+        "OptionCountsOpen",
         "MixedValue"
       ]
     },
@@ -1201,7 +1207,7 @@
       "id": "components-tabs",
       "title": "Core/Layout/Tabs",
       "component": "Tabs",
-      "exports": ["Default"]
+      "exports": ["Default", "IconOverLabel", "IconOverLabelRightToLeft"]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",
@@ -1272,11 +1278,14 @@
       "title": "Core/Data display/Tree",
       "component": "Tree",
       "exports": [
-        "Default",
-        "WithRowActions",
         "Composed",
+        "Default",
+        "Divided",
         "RowPrimitive",
-        "Divided"
+        "SectionsAndRanges",
+        "Virtualized",
+        "VirtualizedInPanel",
+        "WithRowActions"
       ]
     },
     {

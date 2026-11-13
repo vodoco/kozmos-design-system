@@ -83,3 +83,39 @@ export const SearchWithAi: Story = {
     ),
   },
 };
+
+/**
+ * GAP-160: the building editor's geometry notices. A warning with its
+ * action under the words (MAP-587's "Alert action", GAP-033), the save in
+ * progress with the loading arc where the mark is, and done, which ends in
+ * a check at the inline end.
+ */
+export const SuccessProgressAndDone: Story = {
+  args: { summary: "Set Geometry" },
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <Notice
+        tone="warning"
+        summary="Set Geometry"
+        collapsible={false}
+        action={
+          <Button onClick={fn()} size="sm" variant="outline">
+            Set Building Boundary
+          </Button>
+        }
+      >
+        Draw the building&apos;s outline on the map.
+      </Notice>
+      <Notice tone="info" status="progress" summary="Saving the geometry" />
+      <Notice tone="success" status="done" summary="Geometry is set" />
+    </div>
+  ),
+};
+
+/** The success tone, with its own mark: Toast's check. */
+export const Success: Story = {
+  args: {
+    tone: "success",
+    summary: "Your changes are published.",
+  },
+};

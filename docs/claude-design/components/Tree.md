@@ -4,7 +4,7 @@
 
 Tree presents hierarchical data with disclosure, selection, keyboard navigation, optional counts, metadata, and safe nested row actions. Use `TreeParentItemRow` and `TreeChildItemRow` when product screens need to compose custom trees from reusable parent and terminal row primitives.
 
-- **Import:** `import { Tree, TreeChildItemRow, TreeItemRow, TreeParentItemRow } from "@kozmos-ds/react";`
+- **Import:** `import { Tree, TreeChildItemRow, TreeItemRow, TreeParentItemRow, TreeSectionRow } from "@kozmos-ds/react";`
 - **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-tree--docs>
@@ -76,6 +76,63 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
 
 - `indent`: `number`, optional, default `20`.
 - `activationMode`: `TreeActivationMode`, optional, default `"select-toggle"`.
+- `selectionMode`: `TreeSelectionMode`, optional, default `"single"`.
+
+  `"multiple"` holds a set of rows (GAP-151): a click selects one row,
+  Ctrl or Cmd with a click adds or takes away a row, and Shift with a click
+  selects the rows from the last one chosen; Shift with the arrows, Home
+  and End selects as focus moves, Space adds or takes away the focused row
+  and Ctrl or Cmd+A selects every row. Ranges pass over disabled rows and
+  section headings. `"single"`, the default, is one `selectedId`.
+
+- `selectedIds`: `string[]`, optional.
+
+  The selected rows of a `"multiple"` tree, controlled.
+
+- `defaultSelectedIds`: `string[]`, optional.
+
+  The rows a `"multiple"` tree starts with selected.
+
+- `onSelectedIdsChange`: `(ids: string[]) => void`, optional.
+
+  Every change to a `"multiple"` tree's selected rows.
+
+- `metaPlacement`: `TreeMetaPlacement`, optional.
+
+  Where each row's meta goes: `"inline"`, after the name (the default), or
+  `"below"`, on a line of its own under it, so the name keeps the row's
+  width (GAP-107). Rows composed as children take it from here too.
+
+- `virtualized`: `boolean`, optional, default `false`.
+
+  Draws only the rows in view (GAP-151), for a tree of thousands: the Tree
+  scrolls itself, so give it a height. The focused row is always drawn, and
+  every row's level, place in its set and type-ahead come from `data`, so
+  the keyboard and a screen reader reach rows out of view.
+
+- `overscan`: `number`, optional, default `8`.
+
+  Rows drawn past each edge of the view when `virtualized`: 8 by default.
+
+- `onItemContextMenu`: `(item: TreeItem, event: React.MouseEvent) => void`, optional.
+
+  A right click, or the keyboard's menu key, on a row: the row takes focus
+  and, if it is not selected, the selection, then this runs. Wrap the Tree
+  in a `ContextMenuTrigger` for the menu itself (GAP-155).
+
+- `locale`: `string`, optional.
+
+  The locale a section's count is written in for a screen reader ("POI,
+  3,257"). Without it, the page's `lang`, read once the tree has mounted;
+  until then, and on a server render, en-US, so a server and its client
+  write the same words and hydration never disagrees.
+
+- `scrollerRef`: `React.Ref<HTMLDivElement>`, optional.
+
+  The element that scrolls a `virtualized` tree: a box inside the tree,
+  which `ref` is not. Use it to read or set the scroll position. Without
+  `virtualized` the tree does not scroll itself, and this stays null.
+
 - `defaultExpandedIds`: `string[]`, optional, default `[]`.
 - `expandedIds`: `string[]`, optional.
 - `onExpandedChange`: `(ids: string[]) => void`, optional.
@@ -114,6 +171,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, 
   As Tree's `divided`: a stroke under the row, and an open parent row on a
   surface, both reaching the Tree's `bleed` past it. Defaults to the
   Tree's.
+
+- `metaPlacement`: `TreeMetaPlacement`, optional.
+
+  As Tree's `metaPlacement`: `"below"` draws `meta` on a line under the
+  name (GAP-107). Defaults to the Tree's, else `"inline"`.
 
 - `focusVisible`: `boolean`, optional.
 - `icon`: `React.ReactNode`, optional.
@@ -167,6 +229,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which
 
   Whether a row with children shows them: its `aria-expanded`.
 
+- `metaPlacement`: `TreeMetaPlacement`, optional.
+
+  As Tree's `metaPlacement`: `"below"` draws `meta` on a line under the
+  name (GAP-107). Defaults to the Tree's, else `"inline"`.
+
 - `focusVisible`: `boolean`, optional, default `false`.
 - `hasChildren`: `boolean`, optional, default `false`.
 
@@ -216,6 +283,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
   surface, both reaching the Tree's `bleed` past it. Defaults to the
   Tree's.
 
+- `metaPlacement`: `TreeMetaPlacement`, optional.
+
+  As Tree's `metaPlacement`: `"below"` draws `meta` on a line under the
+  name (GAP-107). Defaults to the Tree's, else `"inline"`.
+
 - `focusVisible`: `boolean`, optional.
 - `icon`: `React.ReactNode`, optional.
 - `indent`: `number`, optional.
@@ -224,6 +296,27 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
 
   Its `aria-selected`, and the selected fill.
 
+- `children`: `ReactNode`, optional.
+
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## TreeSectionRow
+
+A section's heading (GAP-151): its name in the theme's colour, with a
+count, over the items it heads. It is for the eye, and hidden from a
+screen reader: put the section's items in a `<div role="group">` named by
+`aria-label`, as Tree does from `data`.
+
+It forwards its ref to `HTMLDivElement`. Its props are `TreeSectionRowProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
+
+- `name`: `React.ReactNode`, **required**.
+- `count`: `React.ReactNode`, optional.
+- `density`: `TreeDensity`, optional, default `"default"`.
+- `depth`: `number`, optional, default `0`.
+
+  The depth of the items it heads: its indent.
+
+- `indent`: `number`, optional, default `20`.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -240,6 +333,18 @@ interface TreeItem {
   name: React.ReactNode;
   children?: TreeItem[];
   disabled?: boolean;
+  /**
+   * A section heading (GAP-151): its name and count drawn as a heading over
+   * its `children`, which are the section's items, at the section's own depth.
+   * A section is always open, and is never focused, selected or counted as a
+   * row; its items are a set of their own, in a group named by it.
+   */
+  section?: boolean;
+  /**
+   * The item's words, for type-ahead and a section's group name, where
+   * `name` is not plain text.
+   */
+  textValue?: string;
   icon?: TreeItemSlot;
   count?: TreeItemSlot;
   meta?: TreeItemSlot;
@@ -262,6 +367,24 @@ From `@kozmos-ds/react`.
 
 ```ts
 type TreeActivationMode = "select" | "toggle" | "select-toggle";
+```
+
+### TreeSelectionMode
+
+From `@kozmos-ds/react`.
+
+```ts
+/** One selected row, or a set of them with ranges (GAP-151). */
+type TreeSelectionMode = "single" | "multiple";
+```
+
+### TreeMetaPlacement
+
+From `@kozmos-ds/react`.
+
+```ts
+/** Where a row's meta goes: after the name, or on a line under it (GAP-107). */
+type TreeMetaPlacement = "inline" | "below";
 ```
 
 ### TreeItemRenderContext

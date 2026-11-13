@@ -43,6 +43,7 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  Notice,
   Drawer,
   Toast,
   Breadcrumb,
@@ -179,6 +180,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Menu, menuTakes],
   [ContextMenu, menuTakes],
   [Kbd, D],
+  [Notice, { dom: true, own: ["onExpandedChange"] }],
   [Drawer, menuTakes],
   [
     Toast,
@@ -216,7 +218,12 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       except: ["onSelect"],
-      own: ["onExpandedChange", "onSelectionChange"],
+      own: [
+        "onExpandedChange",
+        "onItemContextMenu",
+        "onSelectedIdsChange",
+        "onSelectionChange",
+      ],
     },
   ],
   [Timeline, D],
@@ -673,6 +680,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Menu, menuBooleans],
   [ContextMenu, { flags: ["modal"], unions: [], texts: [] }],
   [Kbd, H],
+  [Notice, html(["collapsible", "defaultExpanded", "expanded"])],
   [Drawer, menuBooleans],
   [Toast, html(["asChild", "defaultOpen", "forceMount", "open"])],
   [Breadcrumb, H],
@@ -691,7 +699,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Tag, H],
   [List, H],
   [Table, H],
-  [Tree, html(["divided"])],
+  [Tree, html(["divided", "virtualized"])],
   [Timeline, H],
   [
     Tooltip,

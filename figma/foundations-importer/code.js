@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "5ee604557bd6";
+const PLUGIN_BUILD = "2c3aa417c5f1";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -173,6 +173,30 @@ const TREE_DIVIDED_SURFACE = {
   token: "Colors/background/50",
   fallback: "#F1F2F4",
 };
+// Meta below (GAP-107, decision 132), as React's `metaPlacement="below"` on
+// Tree and its rows: the row's meta on a second line under the name, in
+// text-xs and the muted foreground, and the row grows to take it. Booleans, as
+// Divided, for the same reason: an axis would double the three row sets. The
+// Meta layer is hidden until Meta Below shows it, so an instance looks as it
+// did, and Meta Text is its words.
+const TREE_META_BELOW_PROPERTY_NAME = "Meta Below";
+const TREE_META_TEXT_PROPERTY_NAME = "Meta Text";
+const TREE_META = {
+  name: "Meta",
+  kind: "tree-meta",
+  text: "Changes awaiting publish",
+  token: "Colors/foreground/400",
+  fallback: "#5D626F",
+};
+// The column the name and its meta share. Its vertical padding is the row's
+// py-1.5 (py-1 compact), so a row with its meta below is 48 (44 compact), as
+// in code, while a row without it stays at its minimum height.
+const TREE_ITEM_TEXT_COLUMN_NAME = "Tree Item Text";
+// TreeSectionRow (GAP-151, decision 132): a section's heading, its name in
+// 11px medium words in the theme's colour and the rows' count pill after it,
+// no surface and no divider. Depth indents it as a row; Density is its height.
+const TREE_SECTION_SAMPLE = { label: "POI", count: "120" };
+const TREE_SECTION_COLOR = { token: "Colors/theme/600", fallback: "#1051E8" };
 const TIMELINE_CONTENT = ["Basic", "Detailed"];
 const TIMELINE_DENSITIES = ["Default", "Compact"];
 const BREADCRUMB_CONTENT = ["Basic", "Ellipsis"];
@@ -400,6 +424,14 @@ const SEARCH_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const SEARCH_STATUSES = ["Default", "Error"];
 const SELECT_STATES = ["Default", "Focus", "Disabled", "Mixed"];
 const SELECT_STATUSES = ["Default", "Error"];
+// GAP-164 (decision 132): Open draws the trigger with its list under it, so a
+// row's count is visible in Figma. A variant drawn before the axis is Closed.
+const SELECT_CONTENT = ["Closed", "Open"];
+// An open list is neither disabled nor the trigger's focus-ring state, so
+// Open is drawn at State=Default only (#525 review): 6 Closed + 2 Open.
+function selectVariantIsGenerated(state, _status, content) {
+  return content !== "Open" || state === "Default";
+}
 const SLIDER_STATES = ["Default", "Focus", "Disabled"];
 const SLIDER_STATUSES = ["Default", "Error"];
 const SLIDER_TYPES = ["Single", "Range"];
@@ -435,7 +467,9 @@ const STEPPER_LABELS = [
   "Notify",
   "Done",
 ];
-const PROGRESS_VALUES = ["0", "25", "50", "75", "100"];
+// GAP-159: a bar with no value, Indeterminate, is the bar's own value; only
+// the bar takes it (a turning ring is Spinner).
+const PROGRESS_VALUES = ["0", "25", "50", "75", "100", "Indeterminate"];
 // Decision 131 (GAP-038): Progress's Shape, the bar or a ring, a ring's
 // Size, and its Tone (owner, 28 Oct: a status ring), as React's `shape`,
 // `size` and `tone`. The tones are Tag's and Button's emotions. A bar has one
@@ -452,16 +486,95 @@ const PROGRESS_TONES = [
   "Informative",
   "Alert",
 ];
-// No spread: the plugin sandbox's parser refuses it.
-const PROGRESS_FORMS = ["Linear/Medium/Themed"];
+// GAP-159: where a bar sits, React's `placement`. Inline is the 8 tall bar in
+// the flow; Top is the page's loading bar, 4 tall (spacing 50) and square,
+// fixed to the top of the window in code. A ring is Inline. A variant drawn
+// before the axis is Inline, and Update renames it in place.
+const PROGRESS_PLACEMENTS = ["Inline", "Top"];
+const PROGRESS_TOP_HEIGHT = 4;
+// The indeterminate segment's share of the track, as React's
+// kozmos-progress-sweep draws it.
+const PROGRESS_SWEEP_FRACTION = 0.25;
+// A form is Shape/Size/Tone/Placement. No spread: the plugin sandbox's parser
+// refuses it.
+const PROGRESS_FORMS = [
+  "Linear/Medium/Themed/Inline",
+  "Linear/Medium/Themed/Top",
+];
 for (const size of PROGRESS_SIZES) {
   for (const tone of PROGRESS_TONES) {
-    PROGRESS_FORMS.push(`Circular/${size}/${tone}`);
+    PROGRESS_FORMS.push(`Circular/${size}/${tone}/Inline`);
   }
+}
+/** The set is sparse: Indeterminate is a bar's value alone. */
+function progressHasCombination(value, second) {
+  return value !== "Indeterminate" || String(second).indexOf("Linear/") === 0;
 }
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
 const ALERT_VARIANTS = ["Default", "Destructive", "Success", "Warning", "Info"];
+// GAP-160 (decision 132): React's Notice. Tone is NoticeTone, Status its
+// `status`, None when it reports no work.
+const NOTICE_TONES = ["Warning", "Info", "Critical", "Success"];
+const NOTICE_STATUSES = ["None", "Progress", "Done"];
+const NOTICE_WIDTH = 344;
+const NOTICE_INSET = { x: 12, y: 8 };
+const NOTICE_GAP = 8;
+const NOTICE_ICON = 16;
+// React's mt-0.5: the mark sits 2 down, on the summary's first line.
+const NOTICE_ICON_DROP = 2;
+const NOTICE_DETAIL_GAP = 6;
+const NOTICE_ACTION_GAP = 12;
+const NOTICE_ACTION_VARIANT = {
+  Variant: "Outline",
+  Size: "Small",
+  State: "Default",
+};
+const NOTICE_SAMPLE = {
+  summary: "Check allergens with the venue.",
+  detail: "These results are AI-assisted and may be incomplete or out of date.",
+};
+// Each tone's fill and edge, its ramp's step as React's bg-<tone>/5 and
+// border-<tone>/50 draw them (critical's edge 60 %), and its words' and
+// marks' text role, React's text-<tone>-text.
+const NOTICE_TONE_SPECS = {
+  Warning: {
+    fill: { name: "Colors/emotional/alert/800", fallback: "#A06B04" },
+    edge: 0.5,
+    ink: { name: "Emotion/alert/text", fallback: "#744D03" },
+    icon: "alert-triangle",
+  },
+  Info: {
+    fill: { name: "Colors/emotional/info/700", fallback: "#2379A4" },
+    edge: 0.5,
+    ink: { name: "Emotion/informative/text", fallback: "#1C6082" },
+    icon: "info-circle",
+  },
+  Critical: {
+    fill: { name: "Colors/emotional/danger/600", fallback: "#D41C42" },
+    edge: 0.6,
+    ink: { name: "Emotion/danger/text", fallback: "#B01736" },
+    icon: "alert-circle",
+  },
+  // Success's edge is a step darker, 900: success 800's scopes are fills
+  // only, and 900 is the step Alert's success edge binds.
+  Success: {
+    fill: { name: "Colors/emotional/success/800", fallback: "#197F4C" },
+    stroke: { name: "Colors/emotional/success/900", fallback: "#14653D" },
+    edge: 0.5,
+    ink: { name: "Emotion/success/text", fallback: "#14653D" },
+    icon: "check",
+  },
+};
+const NOTICE_DESCRIPTION = [
+  "Kozmos Notice component set generated from React Notice API (GAP-160).",
+  "Tone maps to Notice.tone: Warning, Info, Critical or Success.",
+  "Status maps to Notice.status: None (no status), Progress or Done.",
+  "Progress turns the loading arc where the mark is (still here; code turns it, and stills it under reduced motion), and code sets aria-busy.",
+  "Done ends the summary in a check at its inline end and draws no mark at its start.",
+  "Summary maps to Notice.summary; Detail, shown by Show Detail, to its children.",
+  "Show Icon off is icon={null}; Show Action shows Notice.action, a Button under the text.",
+];
 // How much room an empty state takes. Default pads 32 and fills its region,
 // which is right when the empty state IS the screen; Compact is for a slot
 // that already draws a box round it. Measured on the web, the same content
@@ -874,6 +987,9 @@ const TOAST_TONES = ["Neutral", "Success", "Info", "Warning", "Critical"];
 const TABS_COUNTS = ["Two", "Three", "Four"];
 const TABS_ACTIVE = ["One", "Two", "Three", "Four"];
 const TABS_STATES = ["Default", "Focus", "Disabled"];
+// GAP-152 (decision 132): a trigger's words alone, or a 20 icon 4 above them.
+// A variant drawn before the axis is Label.
+const TABS_CONTENT = ["Label", "Icon Over Label"];
 const TOOLTIP_SIDES = ["Top", "Right", "Bottom", "Left"];
 const BACKDROP_VISIBILITY = ["Visible", "Hidden"];
 // Whether the scrim lights a target (GAP-189): Cut-out leaves an example
@@ -1292,6 +1408,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   TreeParentItem: 2500,
   TreeChildItem: 1900,
   TreeItem: 2600,
+  TreeSection: 260,
   Tree: 520,
   Timeline: 520,
   Breadcrumb: 260,
@@ -1333,6 +1450,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Rating: 360,
   Textarea: 760,
   Alert: 260,
+  Notice: 700,
   Stepper: 420,
   Progress: 260,
   Skeleton: 260,
@@ -1368,6 +1486,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "TreeParentItem",
       "TreeChildItem",
       "TreeItem",
+      "TreeSection",
       "Tree",
       "Timeline",
     ],
@@ -1469,6 +1588,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     title: "Feedback",
     components: [
       "Alert",
+      "Notice",
       "EmptyState",
       "Progress",
       "Skeleton",
@@ -1600,7 +1720,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Select",
-          variantName: "State=Default, Status=Default",
+          variantName: "State=Default, Status=Default, Content=Closed",
           text: { "Placeholder Text": "Destination" },
         },
         {
@@ -1644,7 +1764,8 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Progress",
-          variantName: "Shape=Linear, Size=Medium, Tone=Themed, Value=50",
+          variantName:
+            "Shape=Linear, Size=Medium, Tone=Themed, Value=50, Placement=Inline",
         },
         {
           componentSetName: "Spinner",
@@ -3292,6 +3413,7 @@ const COMPONENT_DOCS = [
       "State maps to idle, hover, selected, and focus-visible treatment.",
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3302,6 +3424,7 @@ const COMPONENT_DOCS = [
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
       "Divided",
+      "Meta Below, Meta Text",
     ],
     accessibility: [
       "TreeParentItem rows should expose aria-expanded in product code.",
@@ -3326,6 +3449,7 @@ const COMPONENT_DOCS = [
       "State maps to idle, hover, selected, and focus-visible treatment.",
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3335,6 +3459,7 @@ const COMPONENT_DOCS = [
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
       "Divided",
+      "Meta Below, Meta Text",
     ],
     accessibility: [
       "TreeChildItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
@@ -3361,6 +3486,7 @@ const COMPONENT_DOCS = [
       "State maps to idle, hover, selected, and focus-visible row treatment.",
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -3372,11 +3498,41 @@ const COMPONENT_DOCS = [
       "State: Idle, Hover, Selected, Focus",
       "Label Text, Count Text",
       "Divided",
+      "Meta Below, Meta Text",
     ],
     accessibility: [
       "TreeItem rows should live inside a semantic Tree or equivalent platform hierarchy.",
       "Parent rows need an expanded/collapsed state in product code.",
       "Nested actions must preserve labels, focus states, and event handling.",
+    ],
+  },
+  {
+    componentName: "TreeSection",
+    componentSetName: "TreeSection",
+    category: "Data Display",
+    summary:
+      "TreeSection is a section's heading in a tree: its name and its count, over the rows the section holds (GAP-151).",
+    usage: [
+      "Use TreeSection to group a level's rows under named sections, as Map Content's POI, Interior asset, Structural and Virtual.",
+      "The section's rows sit at the section's own depth: a section adds no indent of its own.",
+      "Turn Show Count off when the section has no count.",
+    ],
+    api: [
+      "TreeSection maps to a TreeItem with section: true in Tree, and to TreeSectionRow in a composed tree.",
+      "Label Text maps to the item's name; Count Text to its count, drawn in the rows' count pill; Show Count off leaves count unset.",
+      "Depth maps to depth, indenting as a row does (depth × 20 + 8).",
+      "Density maps to density: at least 32 tall, 24 compact.",
+      "The heading is 11px medium words in Colors/theme/600 (text-primary), with no surface and no divider.",
+    ],
+    properties: [
+      "Density: Default, Compact",
+      "Depth: 0, 1, 2",
+      "Label Text, Count Text",
+      "Show Count",
+    ],
+    accessibility: [
+      "A section is never focusable, selectable or expandable.",
+      "In code the heading row is hidden from assistive technology and its rows are a group labelled with its name.",
     ],
   },
   {
@@ -3422,13 +3578,17 @@ const COMPONENT_DOCS = [
       "Count maps to the number of TabsTrigger examples.",
       "Active maps to Tabs.defaultValue in Code Connect.",
       "State maps to disabled and focus examples for the generated triggers.",
+      "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them, a 56 trigger in a 64 list (GAP-152).",
       "Tab 1 Text through Tab 4 Text map to TabsTrigger children.",
+      "Tab 1 Icon through Tab 4 Icon map to each TabsTrigger.icon in Icon Over Label.",
     ],
     properties: [
       "Count: Two, Three, Four",
       "Active: One, Two, Three, Four",
       "State: Default, Focus, Disabled",
+      "Content: Label, Icon Over Label",
       "Tab 1 Text, Tab 2 Text, Tab 3 Text, Tab 4 Text, Focus Visible",
+      "Tab 1 Icon, Tab 2 Icon, Tab 3 Icon, Tab 4 Icon",
     ],
     accessibility: [
       "The tab list keeps a 44px outer interaction frame.",
@@ -4336,14 +4496,20 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option 1 Text through Option 3 Text map to SelectItem children.",
+      "Option 1 Count through Option 3 Count map to SelectItem.count, drawn as the neutral Counter; Show Counts shows them. Every row keeps the check's 16 at its end, so the counts form one column.",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Mixed",
       "Status: Default, Error",
+      "Content: Closed, Open",
       "Placeholder Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
+      "Option 1 Text, Option 2 Text, Option 3 Text",
+      "Option 1 Count, Option 2 Count, Option 3 Count, Show Counts",
     ],
     accessibility: [
       "Trigger height meets the 44px minimum target.",
@@ -4416,12 +4582,13 @@ const COMPONENT_DOCS = [
     usage: [
       "Use when a task has measurable completion.",
       "Use the Circular shape for a count out of a total, with its count in the centre label.",
-      "Use Spinner instead when progress cannot be estimated.",
+      "Use Value Indeterminate for a bar whose wait cannot be estimated, and Placement Top for the page's loading bar (GAP-159); use Spinner for a wait in a small place.",
       "Avoid using Progress as an interactive input.",
     ],
     api: [
       "Value maps to Progress.value in Code Connect.",
-      "Value variants cover 0, 25, 50, 75, and 100 percent examples.",
+      "Value variants cover 0, 25, 50, 75, and 100 percent examples; Indeterminate is a bar with no value, its quarter-wide segment drawn at the inline start (code sweeps it every 2 s and stills it centred under reduced motion).",
+      "Placement maps to Progress.placement: Inline, or Top, the page's loading bar, 4 tall and square, fixed to the top of the window in code. A ring is Inline.",
       "Shape maps to Progress.shape; Size, Tone and Label to a ring's size, tone and label; Label Beside to labelPlacement end.",
       "At Small and 100 the hole draws a check in the ring's tone, as code does with no label: \"100%\" does not fit. A product's own label wins in code; Show Label has nothing to draw on those variants.",
       "Progress is non-interactive and does not expose focus or disabled states.",
@@ -4430,7 +4597,8 @@ const COMPONENT_DOCS = [
       "Shape: Linear, Circular",
       "Size: Small, Medium, Large (a ring's; a bar is Medium)",
       "Tone: Themed, Neutral, Success, Danger, Informative, Alert (a ring's; a bar is Themed)",
-      "Value: 0, 25, 50, 75, 100",
+      "Value: 0, 25, 50, 75, 100, Indeterminate (a bar's)",
+      "Placement: Inline, Top (a bar's; a ring is Inline)",
       "Label, Show Label, Label Beside",
     ],
     accessibility: [
@@ -4439,6 +4607,7 @@ const COMPONENT_DOCS = [
       "A ring fills from 12 o'clock clockwise and does not mirror right to left.",
       "The visual bar is non-interactive, so it does not need a 44px target.",
       "Code should provide an accessible progress value; a ring's centre label names it.",
+      "An indeterminate bar is named Loading, or its label, and says it once as the wait starts; the sweep says nothing more.",
       "A small ring's check is decoration: the ring still says 100%, in name and value.",
     ],
   },
@@ -4514,6 +4683,33 @@ const COMPONENT_DOCS = [
       "Text, icon, and border contrast pass in Light and Dark modes.",
       "Alert is non-interactive, so focus states are not exposed.",
       "Use semantic live-region behavior in product code only when the message is dynamic.",
+    ],
+  },
+  {
+    componentName: "Notice",
+    componentSetName: "Notice",
+    category: "Feedback",
+    summary:
+      "Notice is a short notice that opens for the long version, in a tone, with what the work it reports on has got to (GAP-160).",
+    usage: [
+      "Keep the summary informative on its own: it is the one line always shown.",
+      'Use Success with Status Done for finished work ("Geometry is set"), Progress while it runs.',
+      "Use Critical with Show Action and the detail shown for an emergency: nothing to discover.",
+    ],
+    api: [
+      "Tone maps to Notice.tone; Status to Notice.status (None is no status).",
+      "Summary maps to Notice.summary; Detail to its children, revealed by its More disclosure in code.",
+      "Show Icon off maps to icon={null}; Show Action to Notice.action, a Button under the text.",
+    ],
+    properties: [
+      "Tone: Warning, Info, Critical, Success",
+      "Status: None, Progress, Done",
+      "Summary, Detail, Show Icon, Show Detail, Show Action",
+    ],
+    accessibility: [
+      "In code the notice is a polite status by default; live sets off or assertive.",
+      "Progress marks the notice busy; the marks are decoration, and the summary says what happened.",
+      "Text and marks take the tone's text role, 4.5:1 on the tinted fill in Light and Dark.",
     ],
   },
   {
@@ -6343,6 +6539,44 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-107: the name and its meta below share a column padded as React's
+  // row, py-1.5 (py-1 compact), and the meta is text-xs.
+  {
+    name: "Tree/item/padding/y/default",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Tree/item/padding/y/compact",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Tree/meta/font-size",
+    value: 12,
+    alias: "Text/font-size/xs",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Tree/meta/line-height",
+    value: 16,
+    alias: "Text/line-height/xs",
+    scopes: ["LINE_HEIGHT"],
+  },
+  // GAP-151: React's TreeSectionRow, min-h-8 (min-h-6 compact), its name
+  // 11px medium and the count pill gap-1.5 after it.
+  { name: "Tree/section/height/default", value: 32, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Tree/section/height/compact", value: 24, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Tree/section/gap",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  { name: "Tree/section/font-size", value: 11, scopes: ["FONT_SIZE"] },
+  { name: "Tree/section/line-height", value: 14, scopes: ["LINE_HEIGHT"] },
   { name: "NavigationItem/width/side", value: 248, scopes: ["WIDTH_HEIGHT"] },
   { name: "NavigationItem/width/rail", value: 72, scopes: ["WIDTH_HEIGHT"] },
   {
@@ -6666,6 +6900,32 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 20,
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
+  },
+  // Icon Over Label (GAP-152): a 20 icon 4 above the words, 6 above and
+  // below, so a trigger is 56 and the list, inside 4 all round, 64. Their own
+  // heights, so the Label variants keep 32 and 40.
+  {
+    name: "Tabs/list/height/stacked",
+    value: 64,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  { name: "Tabs/trigger/height/stacked", value: 56, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Tabs/trigger/padding/y",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Tabs/trigger/icon/size",
+    value: 20,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Tabs/trigger/icon/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
   },
   { name: "Checkbox/width/default", value: 176, scopes: ["WIDTH_HEIGHT"] },
   {
@@ -7886,6 +8146,62 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // Content=Open (GAP-164): the list SelectContent draws 4 under the trigger
+  // (translate-y-1), its rows Combobox's (owned-selection.css), so each
+  // carries Combobox's value and alias.
+  {
+    name: "Select/listbox/offset",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/padding",
+    value: POPOVER_ROW_INSET,
+    alias: spacingAliasFor(POPOVER_ROW_INSET),
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/gap",
+    value: 2,
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Select/listbox/stroke/width",
+    value: 1,
+    alias: "Border Width/sm",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "Select/option/height",
+    value: 44,
+    alias: "Button/height/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Select/option/padding/x",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/option/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/option/radius",
+    value: 4,
+    alias: "Radius/sm",
+    scopes: ["CORNER_RADIUS"],
+  },
   {
     name: "Combobox/width/default",
     value: 320,
@@ -8987,6 +9303,13 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   { name: "Progress/height/default", value: 8, scopes: ["WIDTH_HEIGHT"] },
+  // GAP-159: the page's top loading bar, React's kozmos-progress-top.
+  {
+    name: "Progress/height/top",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["WIDTH_HEIGHT"],
+  },
   {
     name: "Progress/radius",
     value: 9999,
@@ -9052,6 +9375,39 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 20,
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
+  },
+  // GAP-160: React's Notice, w-[22rem] in its stories, px-3 py-2 gap-2,
+  // rounded-container, its marks h-4 w-4.
+  { name: "Notice/width/default", value: 344, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Notice/padding/x",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Notice/padding/y",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Notice/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Notice/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Notice/icon/size",
+    value: 16,
+    alias: "Button/icon/size",
+    scopes: ["WIDTH_HEIGHT"],
   },
   { name: "Alert/width/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
   {
@@ -11151,6 +11507,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Spinner", updateSpinnerComponent],
   ["Avatar", updateAvatarComponent],
   ["Alert", updateAlertComponent],
+  ["Notice", updateNoticeComponent],
   ["EmptyState", updateEmptyStateComponent],
   ["Toast", updateToastComponent],
   ["Tag", updateTagComponent],
@@ -11166,6 +11523,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["TreeItem", updateTreeItemComponent],
   ["TreeChildItem", updateTreeChildItemComponent],
   ["TreeParentItem", updateTreeParentItemComponent],
+  ["TreeSection", updateTreeSectionComponent],
   ["Tree", updateTreeComponent],
   ["Timeline", updateTimelineComponent],
 ];
@@ -11384,6 +11742,9 @@ async function updateAllCoreComponents() {
 
 function additionalComponentActionHandlers() {
   return {
+    "build-notice": buildNoticeComponent,
+    "update-notice": updateNoticeComponent,
+    "rebuild-notice": rebuildNoticeComponent,
     "build-kbd": buildKbdComponent,
     "update-kbd": updateKbdComponent,
     "rebuild-kbd": rebuildKbdComponent,
@@ -11436,6 +11797,9 @@ function additionalComponentActionHandlers() {
     "build-tree-item": buildTreeItemComponent,
     "update-tree-item": updateTreeItemComponent,
     "rebuild-tree-item": rebuildTreeItemComponent,
+    "build-tree-section": buildTreeSectionComponent,
+    "update-tree-section": updateTreeSectionComponent,
+    "rebuild-tree-section": rebuildTreeSectionComponent,
     "build-timeline": buildTimelineComponent,
     "update-timeline": updateTimelineComponent,
     "rebuild-timeline": rebuildTimelineComponent,
@@ -12310,10 +12674,11 @@ async function buildSettingsExampleTemplate({
   panel.appendChild(
     await createExampleInstance({
       componentSetName: "Select",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      // The closed trigger; a file whose Select predates Content has only it.
+      variantProperties: [
+        { State: "Default", Status: "Default", Content: "Closed" },
+        { State: "Default", Status: "Default" },
+      ],
       name: "Default Building Select",
       textProperties: {
         "Placeholder Text": "Default building",
@@ -13026,6 +13391,7 @@ async function buildSdkRouteFlowExampleTemplate({
         Size: "Medium",
         Tone: "Themed",
         Value: "50",
+        Placement: "Inline",
       },
       name: "Route Progress",
       width: contentWidth - 40,
@@ -17944,6 +18310,7 @@ function shouldAuditLayoutBindings(name) {
       "TreeParentItem",
       "TreeChildItem",
       "TreeItem",
+      "TreeSection",
       "Tree",
       "Table",
       "NavigationItem",
@@ -17972,6 +18339,7 @@ function shouldAuditLayoutBindings(name) {
       "Spinner",
       "Avatar",
       "Alert",
+      "Notice",
     ].indexOf(name) !== -1
   );
 }
@@ -18501,6 +18869,13 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "TreeSection") {
+    return {
+      Density: TREE_DENSITIES,
+      Depth: TREE_ITEM_DEPTHS,
+    };
+  }
+
   if (canonicalName === "TreeItem") {
     return {
       Type: TREE_ITEM_TYPES,
@@ -18524,6 +18899,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Count: TABS_COUNTS,
       Active: TABS_ACTIVE,
       State: TABS_STATES,
+      Content: TABS_CONTENT,
     };
   }
 
@@ -18778,6 +19154,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       State: SELECT_STATES,
       Status: SELECT_STATUSES,
+      Content: SELECT_CONTENT,
     };
   }
 
@@ -18811,6 +19188,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Size: PROGRESS_SIZES,
       Tone: PROGRESS_TONES,
       Value: PROGRESS_VALUES,
+      Placement: PROGRESS_PLACEMENTS,
     };
   }
 
@@ -18829,6 +19207,13 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Alert") {
     return {
       Variant: ALERT_VARIANTS,
+    };
+  }
+
+  if (canonicalName === "Notice") {
+    return {
+      Tone: NOTICE_TONES,
+      Status: NOTICE_STATUSES,
     };
   }
 
@@ -24658,6 +25043,15 @@ function addComponentTextStyleSpecs(specs, fonts) {
   addTextStyleSpec(specs, "treeItem", "Tree / Item", fonts.regular, 14, 20);
   addTextStyleSpec(
     specs,
+    "treeSection",
+    "Tree / Section",
+    fonts.medium,
+    11,
+    14,
+    "Typography contract for a tree section's heading: 11/14 medium (GAP-151).",
+  );
+  addTextStyleSpec(
+    specs,
     "navigationItem",
     "NavigationItem / Label",
     fonts.medium,
@@ -25323,6 +25717,9 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   if (setName === "Alert") {
     return textName === "Title" ? "alertTitle" : "alertDescription";
   }
+  if (setName === "Notice") {
+    return textName === "Summary" ? "alertTitle" : "alertDescription";
+  }
   if (setName === "EmptyState") {
     return textName === "Title Text"
       ? "emptyStateTitle"
@@ -25351,7 +25748,12 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     // them, and an Update could never clear it because the painter and the
     // expectation disagreed with each other.
     if (/Count Text$/.test(textName)) return "counterSmall";
+    if (textName === TREE_META.name) return textStyleKeyForText("XS", "Normal");
     return "treeItem";
+  }
+  if (setName === "TreeSection") {
+    if (/Count Text$/.test(textName)) return "counterSmall";
+    return "treeSection";
   }
   if (setName === "Table") {
     if (/^Header \d+ Text$/.test(textName)) return "tableHeader";
@@ -27660,9 +28062,12 @@ function bindTreeGeometryVariables(
   );
 
   for (const row of rows) {
+    // A floor, not a height (GAP-107): the row hugs, so it grows to take its
+    // meta below. The height binding an older build left would hold it fixed.
+    clearBoundVariable(row, "height", stats);
     bindFloatVariable(
       row,
-      "height",
+      "minHeight",
       `Tree/item/height/${key}`,
       variableByName,
       stats,
@@ -27819,12 +28224,13 @@ function bindTabsGeometryVariables(
   triggers,
   variableByName,
   stats,
+  stacked,
 ) {
   const widthToken = `Tabs/width/${String(count).toLowerCase()}`;
   bindSizeVariables(
     component,
     widthToken,
-    "Tabs/list/height",
+    stacked ? "Tabs/list/height/stacked" : "Tabs/list/height",
     variableByName,
     stats,
   );
@@ -27875,10 +28281,33 @@ function bindTabsGeometryVariables(
     bindFloatVariable(
       trigger,
       "height",
-      "Tabs/trigger/height",
+      stacked ? "Tabs/trigger/height/stacked" : "Tabs/trigger/height",
       variableByName,
       stats,
     );
+    if (stacked) {
+      bindFloatVariable(
+        trigger,
+        "paddingTop",
+        "Tabs/trigger/padding/y",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        trigger,
+        "paddingBottom",
+        "Tabs/trigger/padding/y",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        trigger,
+        "itemSpacing",
+        "Tabs/trigger/icon/gap",
+        variableByName,
+        stats,
+      );
+    }
     bindFloatVariable(
       trigger,
       "paddingLeft",
@@ -29339,7 +29768,90 @@ function bindSelectGeometryVariables(
   icon,
   variableByName,
   stats,
+  listbox,
 ) {
+  if (listbox) {
+    bindFloatVariable(
+      component,
+      "itemSpacing",
+      "Select/listbox/offset",
+      variableByName,
+      stats,
+    );
+    for (const field of [
+      "paddingLeft",
+      "paddingRight",
+      "paddingTop",
+      "paddingBottom",
+    ]) {
+      bindFloatVariable(
+        listbox,
+        field,
+        "Select/listbox/padding",
+        variableByName,
+        stats,
+      );
+    }
+    bindFloatVariable(
+      listbox,
+      "itemSpacing",
+      "Select/listbox/gap",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      listbox,
+      "cornerRadius",
+      "Select/listbox/radius",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      listbox,
+      "strokeWeight",
+      "Select/listbox/stroke/width",
+      variableByName,
+      stats,
+    );
+    for (const option of listbox.children) {
+      bindFloatVariable(
+        option,
+        "height",
+        "Select/option/height",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "paddingLeft",
+        "Select/option/padding/x",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "paddingRight",
+        "Select/option/padding/x",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "itemSpacing",
+        "Select/option/gap",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "cornerRadius",
+        "Select/option/radius",
+        variableByName,
+        stats,
+      );
+    }
+  }
+
   bindFloatVariable(
     component,
     "width",
@@ -30944,11 +31456,16 @@ function bindProgressGeometryVariables(
   range,
   variableByName,
   stats,
+  top,
 ) {
+  // GAP-159: the page's top bar is Progress/height/top, 4 (spacing 50), and
+  // square: its corners and its edge are unbound, or the bound pill radius
+  // would beat the painter's 0.
+  const heightToken = top ? "Progress/height/top" : "Progress/height/default";
   bindSizeVariables(
     component,
     "Progress/width/default",
-    "Progress/height/default",
+    heightToken,
     variableByName,
     stats,
   );
@@ -30957,41 +31474,54 @@ function bindProgressGeometryVariables(
     bindSizeVariables(
       track,
       "Progress/width/default",
-      "Progress/height/default",
+      heightToken,
       variableByName,
       stats,
     );
-    bindFloatVariable(
-      track,
-      "cornerRadius",
-      "Progress/radius",
-      variableByName,
-      stats,
-    );
-    bindFloatVariable(
-      track,
-      "strokeWeight",
-      "Progress/stroke/width",
-      variableByName,
-      stats,
-    );
+    if (top) {
+      clearBoundVariable(track, "topLeftRadius", stats);
+      clearBoundVariable(track, "topRightRadius", stats);
+      clearBoundVariable(track, "bottomLeftRadius", stats);
+      clearBoundVariable(track, "bottomRightRadius", stats);
+      clearBoundVariable(track, "cornerRadius", stats);
+      clearBoundVariable(track, "strokeWeight", stats);
+      track.cornerRadius = KOZMOS_RADIUS.none;
+    } else {
+      bindFloatVariable(
+        track,
+        "cornerRadius",
+        "Progress/radius",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        track,
+        "strokeWeight",
+        "Progress/stroke/width",
+        variableByName,
+        stats,
+      );
+    }
   }
 
   if (range) {
-    bindFloatVariable(
-      range,
-      "height",
-      "Progress/height/default",
-      variableByName,
-      stats,
-    );
-    bindFloatVariable(
-      range,
-      "cornerRadius",
-      "Progress/radius",
-      variableByName,
-      stats,
-    );
+    bindFloatVariable(range, "height", heightToken, variableByName, stats);
+    if (top) {
+      clearBoundVariable(range, "topLeftRadius", stats);
+      clearBoundVariable(range, "topRightRadius", stats);
+      clearBoundVariable(range, "bottomLeftRadius", stats);
+      clearBoundVariable(range, "bottomRightRadius", stats);
+      clearBoundVariable(range, "cornerRadius", stats);
+      range.cornerRadius = KOZMOS_RADIUS.none;
+    } else {
+      bindFloatVariable(
+        range,
+        "cornerRadius",
+        "Progress/radius",
+        variableByName,
+        stats,
+      );
+    }
   }
 }
 
@@ -34214,6 +34744,7 @@ async function buildTabsComponent() {
       count: combination.count,
       active: combination.active,
       state: combination.state,
+      content: combination.content,
       variableByName,
       fonts,
       stats,
@@ -34234,7 +34765,9 @@ async function buildTabsComponent() {
     "Count maps to the number of TabsTrigger examples.",
     "Active maps to Tabs.defaultValue.",
     "State maps to disabled and focus examples.",
+    "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them (GAP-152).",
     "Tab text properties map to TabsTrigger children.",
+    "Tab 1 Icon through Tab 4 Icon swap each trigger's icon in Icon Over Label.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutTabsVariants(componentSet);
@@ -34248,7 +34781,7 @@ async function buildTabsComponent() {
     expectedVariantAxesForComponentSetName(componentSet.name),
     stats,
   );
-  configureTabsProperties(componentSet, stats);
+  await configureTabsProperties(componentSet, stats, variableByName);
   return stats;
 }
 
@@ -34258,7 +34791,7 @@ async function updateTabsComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
-    variantsMissing: 0,
+    variantsCreated: 0,
     warnings: [],
   };
 
@@ -34287,7 +34820,9 @@ async function updateTabsComponent() {
     "Count maps to the number of TabsTrigger examples.",
     "Active maps to Tabs.defaultValue.",
     "State maps to disabled and focus examples.",
+    "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them (GAP-152).",
     "Tab text properties map to TabsTrigger children.",
+    "Tab 1 Icon through Tab 4 Icon swap each trigger's icon in Icon Over Label.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -34301,11 +34836,14 @@ async function updateTabsComponent() {
       continue;
     }
 
-    seenKeys[`${props.count}/${props.active}/${props.state}`] = true;
+    // A variant drawn before the Content axis parses as Label and is renamed
+    // in place, so the node ids Code Connect and instances pin survive.
+    seenKeys[tabsVariantKey(props)] = true;
     await updateTabsVariant(child, {
       count: props.count,
       active: props.active,
       state: props.state,
+      content: props.content,
       variableByName,
       fonts,
       stats,
@@ -34314,11 +34852,21 @@ async function updateTabsComponent() {
   }
 
   for (const combination of tabsVariantCombinations()) {
-    const key = `${combination.count}/${combination.active}/${combination.state}`;
-    if (!seenKeys[key]) {
-      stats.variantsMissing += 1;
-      stats.warnings.push(`Missing Tabs variant ${key}.`);
-    }
+    const key = tabsVariantKey(combination);
+    if (seenKeys[key]) continue;
+
+    const component = await createTabsVariant({
+      count: combination.count,
+      active: combination.active,
+      state: combination.state,
+      content: combination.content,
+      variableByName,
+      fonts,
+      stats,
+    });
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
 
   layoutTabsVariants(existing);
@@ -34330,7 +34878,7 @@ async function updateTabsComponent() {
     expectedVariantAxesForComponentSetName(existing.name),
     stats,
   );
-  configureTabsProperties(existing, stats);
+  await configureTabsProperties(existing, stats, variableByName);
   return stats;
 }
 
@@ -38140,18 +38688,23 @@ async function buildSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
+    types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     x: 80,
     y: 3280,
     xStep: 360,
     yStep: 96,
+    layoutVariants: layoutSelectVariants,
     createVariant: createSelectVariant,
     configureProperties: configureSelectProperties,
     description: [
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
   });
@@ -38163,8 +38716,11 @@ async function updateSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
+    types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     xStep: 360,
     yStep: 96,
+    layoutVariants: layoutSelectVariants,
     createVariant: createSelectVariant,
     updateVariant: updateSelectVariant,
     parseVariantName: parseSelectVariantName,
@@ -38174,8 +38730,10 @@ async function updateSelectComponent() {
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -38282,6 +38840,11 @@ async function buildStateStatusComponent(config) {
       const status = config.statuses[statusIndex];
       for (let typeIndex = 0; typeIndex < types.length; typeIndex += 1) {
         const type = types[typeIndex];
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
         const component = await config.createVariant({
           state,
           status,
@@ -38316,6 +38879,7 @@ async function buildStateStatusComponent(config) {
     config.description,
   );
   clearComponentSetContainerFill(componentSet);
+  if (config.layoutVariants) config.layoutVariants(componentSet);
 
   stats.created = true;
   stats.componentSetId = componentSet.id;
@@ -38395,6 +38959,18 @@ async function updateStateStatusComponent(config) {
 
     const type = props.type || null;
     seenKeys[stateStatusComponentKey(props.state, props.status, type)] = true;
+    if (
+      config.includeVariant &&
+      !config.includeVariant(props.state, props.status, type)
+    ) {
+      // A combination the set no longer generates, drawn by an earlier run.
+      // Kept and redrawn, never removed: instances and Code Connect may pin
+      // it. Delete it by hand once nothing uses it.
+      stats.variantsNotGenerated = (stats.variantsNotGenerated || 0) + 1;
+      stats.warnings.push(
+        `${config.componentName} variant "${child.name}" is no longer generated; kept and updated. Delete it by hand once no instance uses it.`,
+      );
+    }
     await config.updateVariant(child, {
       state: props.state,
       status: props.status,
@@ -38411,6 +38987,11 @@ async function updateStateStatusComponent(config) {
       for (const type of types) {
         const key = stateStatusComponentKey(state, status, type);
         if (seenKeys[key]) continue;
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
 
         const component = await config.createVariant({
           state,
@@ -38427,7 +39008,11 @@ async function updateStateStatusComponent(config) {
     }
   }
 
-  layoutStateStatusVariants(existing, config);
+  if (config.layoutVariants) {
+    config.layoutVariants(existing);
+  } else {
+    layoutStateStatusVariants(existing, config);
+  }
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -38993,6 +39578,39 @@ async function rebuildTreeItemComponent() {
     componentName: "TreeItem",
     componentSetName: "TreeItem",
     build: buildTreeItemComponent,
+  });
+}
+
+function buildTreeSectionComponent() {
+  return buildPlannedMatrixComponent(treeSectionComponentConfig());
+}
+
+/**
+ * Update, and Build when the file has no TreeSection yet (GAP-151): the set is
+ * new in 0.16.0, and the owner's Update (one set or Update All Core) is what
+ * puts it in the file. Built, it reports updated, so a bulk run stamps it done.
+ * Once it exists this is a plain Update, which keeps its node id.
+ */
+async function updateTreeSectionComponent() {
+  const config = treeSectionComponentConfig();
+  const page = await ensurePage("Components");
+  await figma.setCurrentPageAsync(page);
+  await page.loadAsync();
+  const existing = findComponentSetOnPage(page, config.componentSetName);
+  if (existing && existing.type === "COMPONENT_SET") {
+    return updatePlannedMatrixComponent(config);
+  }
+  const stats = await buildPlannedMatrixComponent(config);
+  stats.updated = Boolean(stats.created);
+  stats.variantsCreated = stats.variants || 0;
+  return stats;
+}
+
+async function rebuildTreeSectionComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "TreeSection",
+    componentSetName: "TreeSection",
+    build: buildTreeSectionComponent,
   });
 }
 
@@ -39823,6 +40441,31 @@ function treeItemComponentConfig() {
   };
 }
 
+function treeSectionComponentConfig() {
+  return {
+    componentName: "TreeSection",
+    componentSetName: "TreeSection",
+    x: 80,
+    y: 17840,
+    combinations: treeSectionVariantCombinations,
+    keyForProps: treeSectionVariantKey,
+    parseVariantName: parseTreeSectionVariantName,
+    createVariant: createTreeSectionVariant,
+    updateVariant: updateTreeSectionVariant,
+    layoutVariants: layoutTreeSectionVariants,
+    configureProperties: configureTreeSectionProperties,
+    removeUnexpectedVariants: true,
+    removeDuplicateVariantKeys: true,
+    description: [
+      "Kozmos TreeSection component set generated from React TreeSectionRow anatomy (GAP-151).",
+      "TreeSection maps to a TreeItem with section: true, and to TreeSectionRow in a composed tree.",
+      "Density maps to density: at least 32 tall, 24 compact.",
+      "Depth maps to depth, indenting as a row does.",
+      "Label Text maps to name; Count Text to count; Show Count off leaves count unset.",
+    ],
+  };
+}
+
 function tagVariantCombinations() {
   const combinations = [];
   for (const variant of TAG_VARIANTS) {
@@ -40094,6 +40737,33 @@ function parseTreeVariantName(name) {
     return null;
   }
   return { density };
+}
+
+function treeSectionVariantCombinations() {
+  const combinations = [];
+  for (const density of TREE_DENSITIES) {
+    for (const depth of TREE_ITEM_DEPTHS) {
+      combinations.push({ density, depth });
+    }
+  }
+  return combinations;
+}
+
+function treeSectionVariantKey(props) {
+  return `${props.density}/${props.depth}`;
+}
+
+function parseTreeSectionVariantName(name) {
+  const values = parseVariantValueMap(name);
+  const density = values.Density || "Default";
+  const depth = values.Depth || "0";
+  if (
+    TREE_DENSITIES.indexOf(density) === -1 ||
+    TREE_ITEM_DEPTHS.indexOf(depth) === -1
+  ) {
+    return null;
+  }
+  return { density, depth };
 }
 
 function treeParentItemVariantCombinations() {
@@ -40659,6 +41329,12 @@ async function syncTreeRowNode(
   rowNode.paddingTop = 0;
   rowNode.paddingBottom = 0;
   rowNode.resizeWithoutConstraints(metrics.width, metrics.rowHeight);
+  // The row's height is a floor (GAP-107): React's min-h-10 (min-h-8
+  // compact). It hugs once its children are in, so a meta below grows it.
+  // A row an older build drew has its height bound, which would hold it
+  // fixed; the binding goes before the row is asked to hug.
+  clearBoundVariable(rowNode, "height", stats);
+  setNodePropertyIfSupported(rowNode, "minHeight", metrics.rowHeight);
   rowNode.cornerRadius = KOZMOS_RADIUS.control;
   rowNode.clipsContent = false;
   rowNode.fills = highlighted
@@ -40751,8 +41427,31 @@ async function syncTreeRowNode(
     setHugChildSizing(count);
   }
 
-  rowNode.appendChild(labelGroup);
+  // The name's line and the meta under it share a column (GAP-107), padded
+  // as React's row is, so the row is its minimum height without the meta and
+  // 48 (44 compact) with it.
+  const textColumn = createTreeItemTextColumn(props.density);
+  textColumn.appendChild(labelGroup);
   setHugChildSizing(labelGroup);
+  const meta = await createTreeMetaText(row, metrics, {
+    variableByName,
+    fonts,
+    stats,
+  });
+  textColumn.appendChild(meta);
+  setLayoutSizingHorizontal(meta, "FIXED");
+  setLayoutSizingVertical(meta, "HUG");
+  setNodePropertyIfSupported(meta, "maxLines", 1);
+  meta.visible = false;
+  bindTreeItemTextColumnPadding(
+    textColumn,
+    props.density,
+    variableByName,
+    stats,
+  );
+
+  rowNode.appendChild(textColumn);
+  setHugChildSizing(textColumn);
 
   const spacer = createTreeItemSpacer(metrics);
   rowNode.appendChild(spacer);
@@ -40769,6 +41468,8 @@ async function syncTreeRowNode(
     setHugChildSizing(actions.node);
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
+
+  setLayoutSizingVertical(rowNode, "HUG");
 
   if (asComponentVariant) {
     syncTreeDividedLayers(rowNode, { row, metrics, variableByName, stats });
@@ -40878,6 +41579,13 @@ function shouldShowTreeActions(row) {
 }
 
 function treeLabelTextWidth(row, metrics) {
+  const availableWidth = treeLabelAvailableWidth(row, metrics, true);
+  const naturalWidth = String(row.text).length * 7.25 + 2;
+
+  return Math.max(40, Math.min(Math.floor(availableWidth), naturalWidth));
+}
+
+function treeLabelAvailableWidth(row, metrics, withCount) {
   const rowPaddingLeft = metrics.paddingX + row.depth * metrics.indent;
   const rowPaddingRight = metrics.paddingX;
   const iconWidth = 16 + metrics.iconSize;
@@ -40899,12 +41607,13 @@ function treeLabelTextWidth(row, metrics) {
       : 0;
   const directChildGapCount = visibleActions.length > 0 ? 4 : 3;
   const countMetrics = counterMetrics("Small");
-  const countWidth = row.count
-    ? Math.max(
-        countMetrics.minWidth,
-        String(row.count).length * 7 + countMetrics.paddingX * 2,
-      ) + 6
-    : 0;
+  const countWidth =
+    withCount && row.count
+      ? Math.max(
+          countMetrics.minWidth,
+          String(row.count).length * 7 + countMetrics.paddingX * 2,
+        ) + 6
+      : 0;
   const availableWidth =
     metrics.width -
     rowPaddingLeft -
@@ -40913,9 +41622,107 @@ function treeLabelTextWidth(row, metrics) {
     actionsWidth -
     directChildGapCount * metrics.gap -
     countWidth;
-  const naturalWidth = String(row.text).length * 7.25 + 2;
+  return availableWidth;
+}
 
-  return Math.max(40, Math.min(Math.floor(availableWidth), naturalWidth));
+function treeItemPaddingY(density) {
+  return density === "Compact" ? 4 : 6;
+}
+
+function createTreeItemTextColumn(density) {
+  const paddingY = treeItemPaddingY(density);
+  const column = figma.createFrame();
+  column.name = TREE_ITEM_TEXT_COLUMN_NAME;
+  column.layoutMode = "VERTICAL";
+  column.primaryAxisSizingMode = "AUTO";
+  column.counterAxisSizingMode = "AUTO";
+  column.primaryAxisAlignItems = "MIN";
+  column.counterAxisAlignItems = "MIN";
+  column.itemSpacing = 0;
+  column.paddingLeft = 0;
+  column.paddingRight = 0;
+  column.paddingTop = paddingY;
+  column.paddingBottom = paddingY;
+  column.resizeWithoutConstraints(120, 20 + paddingY * 2);
+  column.cornerRadius = KOZMOS_RADIUS.none;
+  column.clipsContent = false;
+  column.fills = [];
+  column.strokes = [];
+  column.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-item-text");
+  return column;
+}
+
+function bindTreeItemTextColumnPadding(column, density, variableByName, stats) {
+  const key =
+    String(density).toLowerCase() === "compact" ? "compact" : "default";
+  for (const side of ["paddingTop", "paddingBottom"]) {
+    bindFloatVariable(
+      column,
+      side,
+      `Tree/item/padding/y/${key}`,
+      variableByName,
+      stats,
+    );
+  }
+}
+
+/**
+ * The row's meta below its name (GAP-107): Text / XS in the muted foreground,
+ * one line, truncated at the room the row has for it. Hidden until Meta Below
+ * shows it.
+ */
+async function createTreeMetaText(
+  row,
+  metrics,
+  { variableByName, fonts, stats },
+) {
+  const text = figma.createText();
+  text.name = TREE_META.name;
+  text.fontName = fonts.regular;
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  await applyTextStyleToNodeAsync(
+    text,
+    textStyleKeyForText("XS", "Normal"),
+    stats,
+  );
+  bindFloatVariable(
+    text,
+    "fontSize",
+    "Tree/meta/font-size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    text,
+    "lineHeight",
+    "Tree/meta/line-height",
+    variableByName,
+    stats,
+  );
+  text.characters = TREE_META.text;
+  text.fills = [
+    paintFromVariable(
+      TREE_META.token,
+      TREE_META.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  text.textAlignVertical = "CENTER";
+  setTextAutoResize(text, "TRUNCATE");
+  text.resizeWithoutConstraints(treeMetaTextWidth(row, metrics), 16);
+  text.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_META.kind);
+  return text;
+}
+
+/**
+ * The meta's width: the room the row leaves its name column, with no count
+ * beside it, as the label's would be. Shown, the column takes it and the
+ * spacer gives it up.
+ */
+function treeMetaTextWidth(row, metrics) {
+  return Math.max(40, Math.floor(treeLabelAvailableWidth(row, metrics, false)));
 }
 
 function createTreeItemSpacer(metrics) {
@@ -41068,6 +41875,199 @@ async function createTreeChevron(row, variableByName, stats) {
     : "Disclosure Icon";
   chevron.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-disclosure-icon");
   return chevron;
+}
+
+// --- TreeSection ---------------------------------------------------------------
+// GAP-151: React's TreeSectionRow, a section's heading. min-h-8 (min-h-6
+// compact), ps depth × 20 + 8 and pe 8, its name 11px medium in text-primary
+// (theme 600) and the rows' count pill gap-1.5 after it; no surface, no
+// divider, no state of its own: a section is never focused or selected.
+async function createTreeSectionVariant({
+  props,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateTreeSectionVariant(component, {
+    props,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function treeSectionMetrics(props) {
+  const base = treeMetrics({ density: props.density, expanded: "False" });
+  const depth = Number(props.depth) || 0;
+  return {
+    width: base.width,
+    minHeight: props.density === "Compact" ? 24 : 32,
+    paddingStart: base.paddingX + depth * base.indent,
+    paddingEnd: base.paddingX,
+    gap: 6,
+  };
+}
+
+async function updateTreeSectionVariant(
+  component,
+  { props, variableByName, fonts, stats },
+) {
+  const metrics = treeSectionMetrics(props);
+  const key = props.density === "Compact" ? "compact" : "default";
+
+  component.name = `Density=${props.density}, Depth=${props.depth}`;
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "FIXED";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = metrics.gap;
+  component.paddingLeft = metrics.paddingStart;
+  component.paddingRight = metrics.paddingEnd;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.resizeWithoutConstraints(metrics.width, metrics.minHeight);
+  setNodePropertyIfSupported(component, "minHeight", metrics.minHeight);
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "TreeSection");
+
+  removeDirectChildren(component);
+
+  const label = figma.createText();
+  label.name = "Label Text";
+  label.fontName = fonts.medium;
+  label.fontSize = 11;
+  label.lineHeight = { unit: "PIXELS", value: 14 };
+  await applyTextStyleToNodeAsync(label, "treeSection", stats);
+  bindFloatVariable(
+    label,
+    "fontSize",
+    "Tree/section/font-size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    label,
+    "lineHeight",
+    "Tree/section/line-height",
+    variableByName,
+    stats,
+  );
+  label.characters = TREE_SECTION_SAMPLE.label;
+  label.fills = [
+    paintFromVariable(
+      TREE_SECTION_COLOR.token,
+      TREE_SECTION_COLOR.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  label.textAlignVertical = "CENTER";
+  setTextAutoResize(label, "WIDTH_AND_HEIGHT");
+  component.appendChild(label);
+  setHugChildSizing(label);
+
+  const count = await createTreeCount({
+    name: "Count Text",
+    value: TREE_SECTION_SAMPLE.count,
+    variableByName,
+    fonts,
+    stats,
+  });
+  component.appendChild(count);
+  setHugChildSizing(count);
+
+  setLayoutSizingVertical(component, "HUG");
+
+  bindFloatVariable(
+    component,
+    "width",
+    "Tree/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "minHeight",
+    `Tree/section/height/${key}`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingRight",
+    "Tree/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "Tree/section/gap",
+    variableByName,
+    stats,
+  );
+}
+
+function layoutTreeSectionVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+    const props = parseTreeSectionVariantName(child.name);
+    if (!props) continue;
+    child.x = TREE_DENSITIES.indexOf(props.density) * 380;
+    child.y = TREE_ITEM_DEPTHS.indexOf(props.depth) * 56;
+  }
+
+  resizeComponentSetToContainChildren(componentSet);
+}
+
+/**
+ * Label Text, Show Count (on by default) and Count Text. Show Count off is a
+ * section with no count.
+ */
+function configureTreeSectionProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label Text",
+    TREE_SECTION_SAMPLE.label,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Count Text",
+    "Count Text",
+    TREE_SECTION_SAMPLE.count,
+    stats,
+  );
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    "Show Count",
+    true,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+  (function walk(node) {
+    if (generatedKind(node) === "tree-count") {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+
+  stats.treeSectionCountBindings = boundCount;
 }
 
 async function createTimelineVariant({ props, variableByName, fonts, stats }) {
@@ -43928,7 +44928,43 @@ async function configureTreeItemProperties(
   configureFocusVisibleProperty(componentSet, stats);
   configureTreeActionVisibilityProperties(componentSet, stats);
   configureTreeDividedProperty(componentSet, stats);
+  configureTreeMetaProperties(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Meta Below, a boolean off by default, showing every row's Meta line under
+ * its label, and Meta Text, its words (GAP-107). Off, an instance draws as it
+ * did before either existed.
+ */
+function configureTreeMetaProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    TREE_META.name,
+    TREE_META_TEXT_PROPERTY_NAME,
+    TREE_META.text,
+    stats,
+  );
+  const propertyName = ensureBooleanProperty(
+    componentSet,
+    TREE_META_BELOW_PROPERTY_NAME,
+    false,
+    stats,
+  );
+  if (!propertyName) return;
+
+  let boundCount = 0;
+  (function walk(node) {
+    if (generatedKind(node) === TREE_META.kind) {
+      bindVisibilityProperty(node, propertyName, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+
+  stats.treeMetaBelowBindings = boundCount;
 }
 
 /**
@@ -44858,6 +45894,46 @@ function configureSelectProperties(componentSet, stats) {
   configurePlaceholderTextProperty(componentSet, "Select an option", stats);
   configureResetMixedProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  // Content=Open's rows (GAP-164).
+  for (let index = 0; index < SELECT_OPTION_DEFAULTS.length; index += 1) {
+    const text = `Option ${index + 1} Text`;
+    const count = `Option ${index + 1} Count`;
+    configureNamedTextProperty(
+      componentSet,
+      text,
+      text,
+      SELECT_OPTION_DEFAULTS[index].text,
+      stats,
+    );
+    configureNamedTextProperty(
+      componentSet,
+      count,
+      count,
+      SELECT_OPTION_DEFAULTS[index].count,
+      stats,
+    );
+  }
+  const showCounts = ensureBooleanProperty(
+    componentSet,
+    "Show Counts",
+    true,
+    stats,
+  );
+  if (!showCounts) return;
+  let boundCount = 0;
+  (function walk(node) {
+    if (
+      node.type === "FRAME" &&
+      sharedPluginDataValue(node, RUN_NAMESPACE, "kind") === "option-count"
+    ) {
+      bindVisibilityProperty(node, showCounts, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+  stats.selectCountVisibilityBindings = boundCount;
 }
 
 function configureFormFieldProperties(componentSet, stats) {
@@ -45791,6 +46867,7 @@ async function buildProgressComponent() {
     values: PROGRESS_VALUES,
     axis2Name: "Shape",
     axis2Values: PROGRESS_FORMS,
+    hasCombination: progressHasCombination,
     yStep: 152,
     x: 80,
     y: 3700,
@@ -45805,6 +46882,8 @@ async function buildProgressComponent() {
       "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
       "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
       "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
+      "Value Indeterminate is a bar with no value (GAP-159): a segment a quarter of the track wide, drawn here at the inline start; code sweeps it to the inline end every 2 s, linear, and stills it in the middle of the track under reduced motion.",
+      "Placement maps to Progress.placement: Inline, the 8 tall bar, or Top, the page's loading bar, 4 tall and square, fixed to the top of the window in code. A ring is Inline.",
       "Progress is non-interactive and does not expose focus or disabled states.",
     ],
   });
@@ -45818,6 +46897,7 @@ async function updateProgressComponent() {
     values: PROGRESS_VALUES,
     axis2Name: "Shape",
     axis2Values: PROGRESS_FORMS,
+    hasCombination: progressHasCombination,
     yStep: 152,
     xStep: 360,
     createVariant: createProgressVariant,
@@ -45832,6 +46912,8 @@ async function updateProgressComponent() {
       "Tone maps to a ring's tone, Tag's emotions; Themed is the bar's theme 600.",
       "Label maps to a ring's label: Show Label draws it in the hole, Label Beside at the inline end.",
       "At Small and 100 the hole draws a check in the ring's tone, as code does with no label.",
+      "Value Indeterminate is a bar with no value (GAP-159): a segment a quarter of the track wide, drawn here at the inline start; code sweeps it to the inline end every 2 s, linear, and stills it in the middle of the track under reduced motion.",
+      "Placement maps to Progress.placement: Inline, the 8 tall bar, or Top, the page's loading bar, 4 tall and square, fixed to the top of the window in code. A ring is Inline.",
       "Progress is non-interactive and does not expose focus or disabled states.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -54798,9 +55880,17 @@ function layoutTabsVariants(componentSet) {
     const countIndex = TABS_COUNTS.indexOf(props.count);
     const activeIndex = TABS_ACTIVE_TO_INDEX[props.active];
     const stateIndex = TABS_STATES.indexOf(props.state);
+    const row = countIndex * TABS_STATES.length + stateIndex;
     child.x = activeIndex * 700;
-    child.y = (countIndex * TABS_STATES.length + stateIndex) * 76;
+    // Label where it always stood, 76 a row; Icon Over Label's 64-tall lists
+    // under them, 100 a row.
+    child.y =
+      props.content === "Icon Over Label"
+        ? TABS_COUNTS.length * TABS_STATES.length * 76 + 40 + row * 100
+        : row * 76;
   }
+
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 function layoutToggleButtonVariants(componentSet) {
@@ -55370,7 +56460,7 @@ function configureTableProperties(componentSet, stats) {
   }
 }
 
-function configureTabsProperties(componentSet, stats) {
+async function configureTabsProperties(componentSet, stats, variableByName) {
   const defaults = ["Overview", "Details", "Usage", "History"];
   for (let index = 0; index < defaults.length; index += 1) {
     const label = `Tab ${index + 1} Text`;
@@ -55384,6 +56474,38 @@ function configureTabsProperties(componentSet, stats) {
   }
 
   configureFocusVisibleProperty(componentSet, stats);
+  await configureTabsIconSlots(componentSet, stats, variableByName);
+}
+
+// Icon Over Label's icons (GAP-152): Tab N Icon swaps the Tab N Icon layer
+// of every stacked variant, offering the curated icons, as Tree's slots do.
+async function configureTabsIconSlots(componentSet, stats, variableByName) {
+  if (!componentSet || !componentSet.children) return;
+
+  const iconSourceComponents = await findKozmosIconSourceComponents();
+  const preferredValues = iconPreferredValues(iconSourceComponents);
+  const fallback = await resolveDefaultIconSourceComponent(
+    variableByName,
+    stats,
+  );
+  for (let index = 0; index < TABS_DEFAULT_ICONS.length; index += 1) {
+    const name = `Tab ${index + 1} Icon`;
+    const defaultComponent =
+      (await findKozmosIconSourceComponent(TABS_DEFAULT_ICONS[index])) ||
+      fallback;
+    if (!defaultComponent) continue;
+
+    const propertyName = ensureInstanceSwapProperty(
+      componentSet,
+      name,
+      defaultComponent.id,
+      stats,
+      preferredValues,
+    );
+    if (!propertyName) continue;
+
+    bindTreeItemIconSlotInstances(componentSet, name, propertyName, stats);
+  }
 }
 
 function configureTooltipProperties(componentSet, stats) {
@@ -60432,6 +61554,7 @@ async function createTabsVariant({
   count,
   active,
   state,
+  content,
   variableByName,
   fonts,
   stats,
@@ -60441,6 +61564,7 @@ async function createTabsVariant({
     count,
     active,
     state,
+    content,
     variableByName,
     fonts,
     stats,
@@ -60460,10 +61584,14 @@ function parseTabsVariantName(name) {
     values[key] = value;
   }
 
+  // A variant drawn before the Content axis is Label, so Update renames it in
+  // place and its node id survives.
+  const content = values.Content || "Label";
   if (
     TABS_COUNTS.indexOf(values.Count) === -1 ||
     TABS_ACTIVE.indexOf(values.Active) === -1 ||
     TABS_STATES.indexOf(values.State) === -1 ||
+    TABS_CONTENT.indexOf(content) === -1 ||
     !tabsActiveIsValidForCount(values.Active, values.Count)
   ) {
     return null;
@@ -60473,17 +61601,20 @@ function parseTabsVariantName(name) {
     count: values.Count,
     active: values.Active,
     state: values.State,
+    content,
   };
 }
 
 async function updateTabsVariant(
   component,
-  { count, active, state, variableByName, fonts, stats },
+  { count, active, state, content, variableByName, fonts, stats },
 ) {
   const tabCount = TABS_COUNT_TO_NUMBER[count];
   const width = tabsWidthForCount(count);
+  const tabsContent = content || "Label";
+  const stacked = tabsContent === "Icon Over Label";
 
-  component.name = `Count=${count}, Active=${active}, State=${state}`;
+  component.name = `Count=${count}, Active=${active}, State=${state}, Content=${tabsContent}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -60494,8 +61625,9 @@ async function updateTabsVariant(
   component.paddingRight = 4;
   component.paddingTop = 4;
   component.paddingBottom = 4;
-  // React's h-10: a 32 trigger inside 4 all round.
-  component.resizeWithoutConstraints(width, 40);
+  // React's h-10: a 32 trigger inside 4 all round; stacked, a 56 trigger
+  // (6, the 20 icon, 4, the 20 line, 6) inside the same 4 is 64.
+  component.resizeWithoutConstraints(width, stacked ? 64 : 40);
   component.cornerRadius = KOZMOS_RADIUS.container;
   component.clipsContent = false;
   component.fills = [
@@ -60515,6 +61647,7 @@ async function updateTabsVariant(
     count,
     active,
     state,
+    content: tabsContent,
     tabCount,
     width,
     variableByName,
@@ -63985,6 +65118,7 @@ async function updateSearchVariant(
 async function createSelectVariant({
   state,
   status,
+  type,
   variableByName,
   fonts,
   stats,
@@ -63993,6 +65127,7 @@ async function createSelectVariant({
   await updateSelectVariant(component, {
     state,
     status,
+    type,
     variableByName,
     fonts,
     stats,
@@ -64000,25 +65135,40 @@ async function createSelectVariant({
   return component;
 }
 
+// The state-status builders carry a third axis as `type`; Select's is
+// Content. A variant drawn before the axis is Closed, so Update renames it in
+// place and its node id survives.
 function parseSelectVariantName(name) {
-  return parseStateStatusVariantName(name, SELECT_STATES, SELECT_STATUSES);
+  const props = parseStateStatusVariantName(
+    name,
+    SELECT_STATES,
+    SELECT_STATUSES,
+  );
+  if (!props) return null;
+  const match = /(?:^|,)\s*Content=([^,]+)/.exec(name);
+  const content = match ? match[1].trim() : "Closed";
+  if (SELECT_CONTENT.indexOf(content) === -1) return null;
+  return { state: props.state, status: props.status, type: content };
 }
 
 async function updateSelectVariant(
   component,
-  { state, status, variableByName, fonts, stats },
+  { state, status, type, variableByName, fonts, stats },
 ) {
   const config = inputConfig(state, status);
+  const content = type || "Closed";
+  const isOpen = content === "Open";
 
-  component.name = `State=${state}, Status=${status}`;
+  component.name = `State=${state}, Status=${status}, Content=${content}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "MIN";
   // React's FieldWrapper gap, between the trigger and Reset Mixed when it
-  // shows (GAP-153); nothing else shares the column.
-  component.itemSpacing = 6;
+  // shows (GAP-153); Open: SelectContent's translate-y-1, 4 under the
+  // trigger (GAP-164), with Reset Mixed (hidden by default) between them.
+  component.itemSpacing = isOpen ? 4 : 6;
   component.paddingLeft = 0;
   component.paddingRight = 0;
   component.paddingTop = 0;
@@ -64035,11 +65185,37 @@ async function updateSelectVariant(
     component,
     state,
     status,
+    content,
     config,
     variableByName,
     fonts,
     stats,
   });
+}
+
+// Closed where the set always drew them, 360 by 96; Open, each a trigger and
+// its list, to their right, 240 a row.
+function layoutSelectVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+
+    const props = parseSelectVariantName(child.name);
+    if (!props) continue;
+
+    const stateIndex = SELECT_STATES.indexOf(props.state);
+    const statusIndex = SELECT_STATUSES.indexOf(props.status);
+    if (props.type === "Open") {
+      child.x = (SELECT_STATUSES.length + statusIndex) * 360;
+      child.y = stateIndex * 240;
+    } else {
+      child.x = statusIndex * 360;
+      child.y = stateIndex * 96;
+    }
+  }
+
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createSliderVariant({
@@ -64865,17 +66041,27 @@ function parseProgressVariantName(name) {
   const shape = variantAxisValue(name, "Shape") || "Linear";
   const size = variantAxisValue(name, "Size") || "Medium";
   const tone = variantAxisValue(name, "Tone") || "Themed";
-  const second = `${shape}/${size}/${tone}`;
+  // GAP-159: a variant drawn before Placement is Inline.
+  const placement = variantAxisValue(name, "Placement") || "Inline";
+  const second = `${shape}/${size}/${tone}/${placement}`;
   if (PROGRESS_FORMS.indexOf(second) === -1) return null;
+  if (!progressHasCombination(base.value, second)) return null;
   return { value: base.value, second };
 }
 
-/** A Progress form's Shape, Size and Tone, from the row it is drawn in. */
+/**
+ * A Progress form's Shape, Size, Tone and Placement, from the row it is
+ * drawn in.
+ */
 function progressForm(second) {
-  const form =
-    PROGRESS_FORMS.indexOf(second) === -1 ? PROGRESS_FORMS[0] : second;
-  const [shape, size, tone] = form.split("/");
-  return { shape, size, tone };
+  // A form named before Placement (Shape/Size/Tone) is Inline.
+  const named =
+    typeof second === "string" && second.split("/").length === 3
+      ? `${second}/Inline`
+      : second;
+  const form = PROGRESS_FORMS.indexOf(named) === -1 ? PROGRESS_FORMS[0] : named;
+  const [shape, size, tone, placement] = form.split("/");
+  return { shape, size, tone, placement };
 }
 
 async function updateProgressVariant(
@@ -64895,10 +66081,11 @@ async function updateProgressVariant(
     return;
   }
   const config = progressConfig(value);
+  const top = form.placement === "Top";
 
-  component.name = `Shape=Linear, Size=Medium, Tone=Themed, Value=${value}`;
+  component.name = `Shape=Linear, Size=Medium, Tone=Themed, Value=${value}, Placement=${top ? "Top" : "Inline"}`;
   component.layoutMode = "NONE";
-  component.resizeWithoutConstraints(320, 8);
+  component.resizeWithoutConstraints(320, top ? PROGRESS_TOP_HEIGHT : 8);
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -64910,6 +66097,7 @@ async function updateProgressVariant(
     component,
     value,
     config,
+    top,
     variableByName,
     stats,
   });
@@ -64978,7 +66166,7 @@ async function updateProgressRingVariant(
   const fill = progressRingToneFill(tone);
   const toneName = PROGRESS_TONES.indexOf(tone) === -1 ? "Themed" : tone;
 
-  component.name = `Shape=Circular, Size=${size}, Tone=${toneName}, Value=${value}`;
+  component.name = `Shape=Circular, Size=${size}, Tone=${toneName}, Value=${value}, Placement=Inline`;
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -65166,6 +66354,460 @@ async function syncProgressRingCheck(
     fill.name,
     fill.fallback,
     variableByName,
+    stats,
+  );
+}
+
+// --- Notice -------------------------------------------------------------------
+
+// GAP-160, decision 132: React's Notice, a short notice that opens for the
+// long version, in its look (decision 151): 344 wide (the stories' 22rem),
+// 12 across and 8 down inside a container corner, its tone's fill at 5 % and
+// its edge at 50 % (critical 60 %), each a layer of its own at that strength,
+// as TourStep's instruction draws it. A row of the tone's 16 mark 2 down
+// beside the 14 summary, 8 apart; the detail 6 under it, indented past the
+// mark, and the action, a live Button, 12 under the text. Status is
+// React's `status`: Progress turns the loading arc where the mark is, Done
+// ends the summary in a 16 check and draws no mark at its start.
+async function createNoticeVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateNoticeVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseNoticeVariantName(name) {
+  const base = parseSingleAxisVariantName(name, "Tone", NOTICE_TONES);
+  if (!base) return null;
+  const second = variantAxisValue(name, "Status") || "None";
+  if (NOTICE_STATUSES.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+/** A tone's colours: the fill and edge's ramp step, and its text role. */
+function noticeToneSpec(tone) {
+  return NOTICE_TONE_SPECS[tone] || NOTICE_TONE_SPECS.Warning;
+}
+
+/** A line of the notice: 14 on 20, in its tone's text role, with its style. */
+async function noticeText({
+  name,
+  characters,
+  styleKey,
+  font,
+  ink,
+  variableByName,
+  stats,
+}) {
+  const text = figma.createText();
+  text.name = name;
+  text.fontName = font;
+  text.fontSize = 14;
+  text.lineHeight = { unit: "PIXELS", value: 20 };
+  text.characters = characters;
+  text.textAlignHorizontal = "LEFT";
+  await applyTextStyleToNodeAsync(text, styleKey, stats);
+  text.fills = [
+    paintFromVariable(ink.name, ink.fallback, variableByName, stats),
+  ];
+  return text;
+}
+
+function noticeFrame(name, direction) {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = direction;
+  frame.primaryAxisSizingMode = direction === "HORIZONTAL" ? "FIXED" : "AUTO";
+  frame.counterAxisSizingMode = direction === "HORIZONTAL" ? "AUTO" : "FIXED";
+  frame.primaryAxisAlignItems = "MIN";
+  frame.counterAxisAlignItems = "MIN";
+  frame.itemSpacing = 0;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  return frame;
+}
+
+async function updateNoticeVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const tone = NOTICE_TONES.indexOf(value) === -1 ? "Warning" : value;
+  const status = NOTICE_STATUSES.indexOf(second) === -1 ? "None" : second;
+  const spec = noticeToneSpec(tone);
+  const inner = NOTICE_WIDTH - 2 * NOTICE_INSET.x;
+  // Done moves the mark to the summary's end; the start then has none, and
+  // the detail and the action start where the summary does.
+  const leading = status !== "Done";
+  const indent = leading ? NOTICE_ICON + NOTICE_GAP : 0;
+
+  component.name = `Tone=${tone}, Status=${status}`;
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 0;
+  component.paddingLeft = NOTICE_INSET.x;
+  component.paddingRight = NOTICE_INSET.x;
+  component.paddingTop = NOTICE_INSET.y;
+  component.paddingBottom = NOTICE_INSET.y;
+  component.resizeWithoutConstraints(NOTICE_WIDTH, 40);
+  component.cornerRadius = KOZMOS_RADIUS.container;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "Notice");
+  component.setSharedPluginData(RUN_NAMESPACE, "tone", tone);
+  component.setSharedPluginData(RUN_NAMESPACE, "status", status);
+  removeDirectChildren(component);
+
+  // The summary's row: the mark, the words, and Done's check.
+  const row = noticeFrame("Summary Row", "HORIZONTAL");
+  row.itemSpacing = NOTICE_GAP;
+  row.resizeWithoutConstraints(inner, 20);
+  if (status === "Progress") {
+    row.appendChild(noticeProgressMark(spec, variableByName, stats));
+  } else if (leading) {
+    const slot = noticeFrame("Icon", "VERTICAL");
+    slot.paddingTop = NOTICE_ICON_DROP;
+    slot.primaryAxisSizingMode = "AUTO";
+    slot.counterAxisSizingMode = "AUTO";
+    const icon = await createFixedIconInstance(
+      spec.icon,
+      spec.ink.name,
+      spec.ink.fallback,
+      variableByName,
+      stats,
+      NOTICE_ICON,
+      "Notice/icon/size",
+    );
+    icon.name = "Mark";
+    scaleIconStrokes(icon, NOTICE_ICON);
+    icon.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-mark");
+    slot.appendChild(icon);
+    row.appendChild(slot);
+  }
+  const summary = await noticeText({
+    name: "Summary",
+    characters: NOTICE_SAMPLE.summary,
+    styleKey: "alertTitle",
+    font: fonts.medium,
+    ink: spec.ink,
+    variableByName,
+    stats,
+  });
+  summary.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-summary");
+  row.appendChild(summary);
+  setTextAutoResize(summary, "HEIGHT");
+  setLayoutSizingHorizontal(summary, "FILL");
+  if (status === "Done") {
+    const slot = noticeFrame("Done", "VERTICAL");
+    slot.paddingTop = NOTICE_ICON_DROP;
+    slot.primaryAxisSizingMode = "AUTO";
+    slot.counterAxisSizingMode = "AUTO";
+    const check = await createFixedIconInstance(
+      "check",
+      spec.ink.name,
+      spec.ink.fallback,
+      variableByName,
+      stats,
+      NOTICE_ICON,
+      "Notice/icon/size",
+    );
+    check.name = "Done Check";
+    scaleIconStrokes(check, NOTICE_ICON);
+    check.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-done");
+    slot.appendChild(check);
+    row.appendChild(slot);
+  }
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
+
+  // The detail, hidden until Show Detail: 6 under the summary, past the mark.
+  const detailRow = noticeFrame("Detail Row", "VERTICAL");
+  detailRow.paddingTop = NOTICE_DETAIL_GAP;
+  detailRow.paddingLeft = indent;
+  detailRow.resizeWithoutConstraints(inner, 26);
+  const detail = await noticeText({
+    name: "Detail",
+    characters: NOTICE_SAMPLE.detail,
+    styleKey: "alertDescription",
+    font: fonts.regular,
+    ink: spec.ink,
+    variableByName,
+    stats,
+  });
+  detail.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-detail");
+  detailRow.appendChild(detail);
+  setTextAutoResize(detail, "HEIGHT");
+  setLayoutSizingHorizontal(detail, "FILL");
+  component.appendChild(detailRow);
+  setLayoutSizingHorizontal(detailRow, "FILL");
+
+  // The action, hidden until Show Action: a live Button, 12 under the text.
+  const actionRow = noticeFrame("Action Row", "VERTICAL");
+  actionRow.paddingTop = NOTICE_ACTION_GAP;
+  actionRow.paddingLeft = indent;
+  actionRow.resizeWithoutConstraints(inner, 44);
+  actionRow.appendChild(await createNoticeActionButton(stats));
+  component.appendChild(actionRow);
+  setLayoutSizingHorizontal(actionRow, "FILL");
+  // Off by default, as React's detail is collapsed and it draws no action
+  // until one is given; Show Detail and Show Action turn them on.
+  detailRow.visible = false;
+  actionRow.visible = false;
+
+  // The tone's fill at 5 % and its edge at 50 % (critical 60 %), each a
+  // layer of its own, out of the flow, stretched to the notice: a strength on
+  // a bound paint does not hold.
+  insertTranslucentTokenLayer(component, {
+    name: "Notice Fill",
+    token: spec.fill,
+    opacity: 0.05,
+    cornerRadius: KOZMOS_RADIUS.container,
+    variableByName,
+    stats,
+  });
+  const edge = figma.createRectangle();
+  edge.name = "Notice Edge";
+  edge.resize(component.width, component.height);
+  edge.cornerRadius = KOZMOS_RADIUS.container;
+  edge.fills = [];
+  setTranslucentTokenPaint(
+    edge,
+    "strokes",
+    spec.stroke || spec.fill,
+    spec.edge,
+    variableByName,
+    stats,
+  );
+  edge.strokeWeight = 1;
+  edge.strokeAlign = "INSIDE";
+  edge.setSharedPluginData(RUN_NAMESPACE, "role", "translucent-token-layer");
+  component.insertChild(1, edge);
+  edge.layoutPositioning = "ABSOLUTE";
+  edge.x = 0;
+  edge.y = 0;
+  edge.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+  holdNoticeLayers(component, stats);
+  bindNoticeGeometryVariables(component, row, variableByName, stats);
+}
+
+/**
+ * Progress's mark: the system's loading arc, Spinner's three quarters of a
+ * circle from 12 o'clock, radius 9 and 2 thick on the icons' 24 grid, drawn
+ * at 16 in the tone's ink. A frame cannot turn; code turns it, and stills it
+ * under reduced motion.
+ */
+function noticeProgressMark(spec, variableByName, stats) {
+  const slot = noticeFrame("Progress Mark", "NONE");
+  slot.layoutMode = "NONE";
+  slot.resizeWithoutConstraints(NOTICE_ICON, NOTICE_ICON + NOTICE_ICON_DROP);
+  const outer = (NOTICE_ICON * 10) / 24;
+  const arc = figma.createEllipse();
+  arc.name = "Progress Arc";
+  arc.resize(2 * outer, 2 * outer);
+  arc.x = NOTICE_ICON / 2 - outer;
+  arc.y = NOTICE_ICON_DROP + NOTICE_ICON / 2 - outer;
+  arc.arcData = {
+    startingAngle: -Math.PI / 2,
+    endingAngle: Math.PI,
+    innerRadius: 0.8,
+  };
+  arc.strokes = [];
+  arc.fills = [
+    paintFromVariable(spec.ink.name, spec.ink.fallback, variableByName, stats),
+  ];
+  arc.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-progress-arc");
+  slot.appendChild(arc);
+  slot.setSharedPluginData(RUN_NAMESPACE, "kind", "notice-progress");
+  return slot;
+}
+
+/** The fill and edge are the notice's size once it hugs its content. */
+function holdNoticeLayers(component, stats) {
+  for (const name of ["Notice Fill", "Notice Edge"]) {
+    const layer = directChildNamed(component, name);
+    if (!layer) continue;
+    layer.x = 0;
+    layer.y = 0;
+    layer.resizeWithoutConstraints(component.width, component.height);
+    if (
+      Math.abs(layer.width - component.width) > 0.5 ||
+      Math.abs(layer.height - component.height) > 0.5
+    ) {
+      stats.warnings.push(
+        `Notice: ${name} is ${layer.width} by ${layer.height} in a ${component.width} by ${component.height} notice.`,
+      );
+    }
+  }
+}
+
+async function createNoticeActionButton(stats) {
+  let action = null;
+  let buttonSet = null;
+  const created = await createNestedComponentInstance({
+    componentSetName: "Button",
+    variantProperties: NOTICE_ACTION_VARIANT,
+    name: "Action",
+    stats,
+  });
+  if (!created) {
+    action = createMissingNestedComponentNode(
+      "Action",
+      "Build Button before updating Notice.",
+      stats,
+    );
+  } else {
+    action = created.instance;
+    buttonSet = created.componentSet;
+  }
+  if (action.type === "INSTANCE" && buttonSet) {
+    try {
+      action.setProperties(NOTICE_ACTION_VARIANT);
+    } catch (error) {
+      stats.warnings.push(
+        `Notice Action: could not set Button variant properties (${messageFor(error)}).`,
+      );
+    }
+    setInstanceTextProperty(action, buttonSet, "Label Text", "Action", stats);
+    markNestedComponentInstance(action, "Button", "notice-action");
+  }
+  if (action.setSharedPluginData) {
+    action.setSharedPluginData(RUN_NAMESPACE, "role", "notice-action");
+  }
+  return action;
+}
+
+function bindNoticeGeometryVariables(component, row, variableByName, stats) {
+  bindFloatVariable(
+    component,
+    "width",
+    "Notice/width/default",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"]) {
+    bindFloatVariable(
+      component,
+      side,
+      "Notice/padding/x",
+      variableByName,
+      stats,
+    );
+  }
+  for (const side of ["paddingTop", "paddingBottom"]) {
+    bindFloatVariable(
+      component,
+      side,
+      "Notice/padding/y",
+      variableByName,
+      stats,
+    );
+  }
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "Notice/radius",
+    variableByName,
+    stats,
+  );
+  if (row) {
+    bindFloatVariable(row, "itemSpacing", "Notice/gap", variableByName, stats);
+  }
+}
+
+async function buildNoticeComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Notice",
+    componentSetName: "Notice",
+    axisName: "Tone",
+    values: NOTICE_TONES,
+    axis2Name: "Status",
+    axis2Values: NOTICE_STATUSES,
+    yStep: 200,
+    x: 80,
+    y: 4200,
+    xStep: 400,
+    createVariant: createNoticeVariant,
+    configureProperties: configureNoticeProperties,
+    description: NOTICE_DESCRIPTION,
+  });
+}
+
+async function updateNoticeComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Notice",
+    componentSetName: "Notice",
+    axisName: "Tone",
+    values: NOTICE_TONES,
+    axis2Name: "Status",
+    axis2Values: NOTICE_STATUSES,
+    yStep: 200,
+    xStep: 400,
+    createVariant: createNoticeVariant,
+    updateVariant: updateNoticeVariant,
+    parseVariantName: parseNoticeVariantName,
+    configureProperties: configureNoticeProperties,
+    description: NOTICE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildNoticeComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "Notice",
+    componentSetName: "Notice",
+    build: buildNoticeComponent,
+  });
+}
+
+function configureNoticeProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Summary",
+    "Summary",
+    NOTICE_SAMPLE.summary,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Detail",
+    "Detail",
+    NOTICE_SAMPLE.detail,
+    stats,
+  );
+  configureNamedBooleanProperty(componentSet, "Icon", "Show Icon", true, stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Detail Row",
+    "Show Detail",
+    false,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Action Row",
+    "Show Action",
+    false,
     stats,
   );
 }
@@ -66890,6 +68532,7 @@ async function syncTabsVariantChildren({
   count,
   active,
   state,
+  content,
   tabCount,
   width,
   variableByName,
@@ -66898,6 +68541,11 @@ async function syncTabsVariantChildren({
 }) {
   const triggerWidth = (width - 8) / tabCount;
   const triggers = [];
+  const icons = [];
+  // Icon Over Label (GAP-152): the icon 4 above the words, both centred, 6
+  // above and below, so the trigger is 56. Label draws as it always has.
+  const stacked = content === "Icon Over Label";
+  const triggerHeight = stacked ? 56 : 32;
 
   const existingChildren = [];
   for (const child of component.children) existingChildren.push(child);
@@ -66925,17 +68573,17 @@ async function syncTabsVariantChildren({
       trigger.name = triggerName;
     }
 
-    trigger.layoutMode = "HORIZONTAL";
+    trigger.layoutMode = stacked ? "VERTICAL" : "HORIZONTAL";
     trigger.primaryAxisSizingMode = "FIXED";
     trigger.counterAxisSizingMode = "FIXED";
     trigger.primaryAxisAlignItems = "CENTER";
     trigger.counterAxisAlignItems = "CENTER";
-    trigger.itemSpacing = 0;
+    trigger.itemSpacing = stacked ? 4 : 0;
     trigger.paddingLeft = 12;
     trigger.paddingRight = 12;
-    trigger.paddingTop = 0;
-    trigger.paddingBottom = 0;
-    trigger.resizeWithoutConstraints(triggerWidth, 32);
+    trigger.paddingTop = stacked ? 6 : 0;
+    trigger.paddingBottom = stacked ? 6 : 0;
+    trigger.resizeWithoutConstraints(triggerWidth, triggerHeight);
     trigger.cornerRadius = 12;
     trigger.clipsContent = false;
     trigger.fills = config.background
@@ -66960,6 +68608,56 @@ async function syncTabsVariantChildren({
       trigger.layoutGrow = 1;
     } catch (_error) {
       // layoutGrow is unavailable on older plugin runtimes.
+    }
+
+    const iconName = `Tab ${index + 1} Icon`;
+    let icon = directChildNamed(trigger, iconName);
+    if (icon && (!stacked || icon.type !== "INSTANCE")) {
+      icon.remove();
+      icon = null;
+    }
+    if (stacked) {
+      if (icon) {
+        // Kept, so a swap made on the main component survives an Update;
+        // only its paint and size are the painter's.
+        icon.resize(20, 20);
+        bindSizeVariables(
+          icon,
+          "Tabs/trigger/icon/size",
+          "Tabs/trigger/icon/size",
+          variableByName,
+          stats,
+        );
+        storeIconSlotAuditMetadata(
+          icon,
+          config.foreground,
+          config.foregroundFallback,
+          stats,
+        );
+        applyIconColorOverrides(
+          icon,
+          config.foreground,
+          config.foregroundFallback,
+          variableByName,
+          stats,
+        );
+      } else {
+        icon = await createFixedIconInstance(
+          TABS_DEFAULT_ICONS[index],
+          config.foreground,
+          config.foregroundFallback,
+          variableByName,
+          stats,
+          20,
+          "Tabs/trigger/icon/size",
+        );
+        icon.name = iconName;
+      }
+      icon.setSharedPluginData(RUN_NAMESPACE, "kind", "tabs-trigger-icon");
+      // First in the trigger, above the words.
+      trigger.insertChild(0, icon);
+      setFixedChildSizing(icon);
+      icons.push(icon);
     }
 
     let text = directChildNamed(trigger, textName);
@@ -66989,7 +68687,7 @@ async function syncTabsVariantChildren({
     syncFocusRing(trigger, {
       enabled: state === "Focus" && isActive,
       width: triggerWidth,
-      height: 32,
+      height: triggerHeight,
       radius: 12,
       variableName: "Colors/theme/600",
       fallback: "#1051E8",
@@ -67002,7 +68700,14 @@ async function syncTabsVariantChildren({
     triggers.push(trigger);
   }
 
-  bindTabsGeometryVariables(component, count, triggers, variableByName, stats);
+  bindTabsGeometryVariables(
+    component,
+    count,
+    triggers,
+    variableByName,
+    stats,
+    stacked,
+  );
 }
 
 async function syncTooltipVariantChildren({
@@ -73348,9 +75053,13 @@ async function createOptionGroupLabel({
   return row;
 }
 
+// Select's rows pass their own tokenPrefix and a count (GAP-164); without
+// them the row is Combobox's, as MultiSelect and Listbox have always drawn it.
 async function createComboboxOption({
   index,
   text,
+  count,
+  tokenPrefix,
   selected,
   active,
   focused,
@@ -73359,8 +75068,9 @@ async function createComboboxOption({
   fonts,
   stats,
 }) {
+  const prefix = tokenPrefix || "Combobox";
   const option = figma.createFrame();
-  option.name = `Combobox Option ${index + 1}`;
+  option.name = `${prefix} Option ${index + 1}`;
   option.layoutMode = "HORIZONTAL";
   option.primaryAxisSizingMode = "FIXED";
   option.counterAxisSizingMode = "FIXED";
@@ -73406,13 +75116,7 @@ async function createComboboxOption({
 
   const label = figma.createText();
   label.name = `Option ${index + 1} Text`;
-  await applyFieldTextTypography(
-    label,
-    fonts,
-    "Combobox",
-    variableByName,
-    stats,
-  );
+  await applyFieldTextTypography(label, fonts, prefix, variableByName, stats);
   label.characters = text;
   setHorizontalFillTextSizing(label);
   setTextAutoResize(label, "TRUNCATE");
@@ -73427,6 +75131,27 @@ async function createComboboxOption({
   label.textAlignVertical = "CENTER";
   option.appendChild(label);
 
+  // SelectItem's count, between the words and the check.
+  if (typeof count === "string") {
+    // The words take the row's slack, so the count sits against the check's
+    // 16 rather than floating between SPACE_BETWEEN's ends. FILL set before
+    // the append has no auto-layout parent and may not hold; set it again.
+    // SPACE_BETWEEN with a filling child lays no gap, so the row packs from
+    // the start and its 8 (Select/option/gap) parts words, count and check.
+    setLayoutSizingHorizontal(label, "FILL");
+    option.primaryAxisAlignItems = "MIN";
+    option.appendChild(
+      await createOptionCount({
+        index,
+        text: count,
+        disabled,
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+  }
+
   if (selected) {
     const icon = await createFixedIconInstance(
       "check",
@@ -73435,9 +75160,29 @@ async function createComboboxOption({
       variableByName,
       stats,
       16,
-      "Combobox/icon/size",
+      `${prefix}/icon/size`,
     );
     option.appendChild(icon);
+  } else if (typeof count === "string") {
+    // Decision 1 (#525 review): with counts, every row keeps the check's 16 at
+    // its end, so the counts form one column whichever row is chosen. Rows
+    // with no count (Combobox, MultiSelect, Listbox) draw as they always have.
+    const slot = figma.createFrame();
+    slot.name = "Check Slot";
+    slot.fills = [];
+    slot.strokes = [];
+    slot.clipsContent = false;
+    slot.resizeWithoutConstraints(16, 16);
+    slot.setSharedPluginData(RUN_NAMESPACE, "kind", "option-check-slot");
+    bindSizeVariables(
+      slot,
+      `${prefix}/icon/size`,
+      `${prefix}/icon/size`,
+      variableByName,
+      stats,
+    );
+    option.appendChild(slot);
+    setFixedChildSizing(slot);
   }
 
   return option;
@@ -76911,10 +78656,15 @@ async function createColorPickerPaletteSelect({
 }) {
   const created = await createNestedComponentInstance({
     componentSetName: "Select",
-    variantProperties: {
-      State: disabled ? "Disabled" : "Default",
-      Status: "Default",
-    },
+    // The closed trigger; a file whose Select predates Content has only it.
+    variantProperties: [
+      {
+        State: disabled ? "Disabled" : "Default",
+        Status: "Default",
+        Content: "Closed",
+      },
+      { State: disabled ? "Disabled" : "Default", Status: "Default" },
+    ],
     name: "ColorPicker Palette Select",
     role: "palette-select",
     stats,
@@ -77739,11 +79489,23 @@ async function syncSelectVariantChildren({
   component,
   state,
   status,
+  content,
   config,
   variableByName,
   fonts,
   stats,
 }) {
+  const preservedText = collectDescendantTextCharactersByName(component, [
+    "Option 1 Text",
+    "Option 2 Text",
+    "Option 3 Text",
+    "Option 1 Count",
+    "Option 2 Count",
+    "Option 3 Count",
+  ]);
+  const staleListbox = directChildNamed(component, "Select Listbox");
+  if (staleListbox) staleListbox.remove();
+
   let trigger = directChildNamed(component, "Select Trigger");
   if (trigger && trigger.type !== "FRAME") {
     trigger.remove();
@@ -77852,7 +79614,25 @@ async function syncSelectVariantChildren({
     stats,
   });
 
-  bindSelectGeometryVariables(component, trigger, icon, variableByName, stats);
+  const listbox =
+    content === "Open"
+      ? await createSelectListbox({
+          state,
+          preservedText,
+          variableByName,
+          fonts,
+          stats,
+        })
+      : null;
+
+  bindSelectGeometryVariables(
+    component,
+    trigger,
+    icon,
+    variableByName,
+    stats,
+    listbox,
+  );
 
   component.appendChild(trigger);
   setLayoutSizingHorizontal(trigger, "FILL");
@@ -77862,7 +79642,139 @@ async function syncSelectVariantChildren({
     variableByName,
     stats,
   });
+  if (listbox) {
+    component.appendChild(listbox);
+    setLayoutSizingHorizontal(listbox, "FILL");
+  }
   normalizeInputFamilyChildSizing(component);
+}
+
+// GAP-164: Select's open list, so a row's count is visible in Figma. It is
+// SelectContent as React draws it: Combobox's list (Surface/0, Border/Subtle,
+// the control radius, the overlay elevation, the row inset all round, 2
+// between rows) and its rows, the first chosen with its check, the second
+// under the pointer, each SelectItem's `[words] [count] [check]` with the
+// count the neutral Counter. Show Counts hides the counts.
+const SELECT_OPTION_DEFAULTS = [
+  { text: "Everything", count: "128" },
+  { text: "POI", count: "96" },
+  { text: "Interior asset", count: "32" },
+];
+
+async function createSelectListbox({
+  state,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const listbox = figma.createFrame();
+  listbox.name = "Select Listbox";
+  listbox.layoutMode = "VERTICAL";
+  listbox.primaryAxisSizingMode = "AUTO";
+  listbox.counterAxisSizingMode = "FIXED";
+  listbox.primaryAxisAlignItems = "MIN";
+  listbox.counterAxisAlignItems = "MIN";
+  listbox.itemSpacing = 2;
+  listbox.paddingLeft = POPOVER_ROW_INSET;
+  listbox.paddingRight = POPOVER_ROW_INSET;
+  listbox.paddingTop = POPOVER_ROW_INSET;
+  listbox.paddingBottom = POPOVER_ROW_INSET;
+  listbox.resizeWithoutConstraints(320, 160);
+  listbox.cornerRadius = KOZMOS_RADIUS.control;
+  listbox.clipsContent = false;
+  listbox.setSharedPluginData(RUN_NAMESPACE, "kind", "select-listbox");
+  listbox.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  listbox.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  listbox.strokeWeight = 1;
+  listbox.effects = [elevationEffect("overlay")];
+
+  for (let index = 0; index < SELECT_OPTION_DEFAULTS.length; index += 1) {
+    const fallback = SELECT_OPTION_DEFAULTS[index];
+    const option = await createComboboxOption({
+      index,
+      text: preservedText[`Option ${index + 1} Text`] || fallback.text,
+      count: preservedText[`Option ${index + 1} Count`] || fallback.count,
+      tokenPrefix: "Select",
+      selected: index === 0,
+      active: index === 1,
+      focused: state === "Focus",
+      disabled,
+      variableByName,
+      fonts,
+      stats,
+    });
+    listbox.appendChild(option);
+  }
+
+  return listbox;
+}
+
+// React's Counter at its default size in the neutral tone, as the Counter set
+// paints it (counterConfig, counterMetrics): a 20 pill at least 20 wide, 6 at
+// the sides, 12/16 digits. A drawn pill rather than a Counter instance, since
+// a set's TEXT property cannot drive a text inside a nested instance, and
+// Option N Count must.
+async function createOptionCount({
+  index,
+  text,
+  disabled,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const config = counterConfig("Neutral");
+  const metrics = counterMetrics("Default");
+  const pill = figma.createFrame();
+  pill.name = `Option ${index + 1} Counter`;
+  pill.layoutMode = "HORIZONTAL";
+  pill.primaryAxisSizingMode = "AUTO";
+  pill.counterAxisSizingMode = "FIXED";
+  pill.primaryAxisAlignItems = "CENTER";
+  pill.counterAxisAlignItems = "CENTER";
+  pill.itemSpacing = 0;
+  pill.paddingLeft = metrics.paddingX;
+  pill.paddingRight = metrics.paddingX;
+  pill.paddingTop = 0;
+  pill.paddingBottom = 0;
+  pill.resizeWithoutConstraints(metrics.minWidth, metrics.height);
+  setNodePropertyIfSupported(pill, "minWidth", metrics.minWidth);
+  pill.cornerRadius = KOZMOS_RADIUS.pill;
+  pill.clipsContent = false;
+  pill.fills = [
+    paintFromVariable(
+      config.background,
+      config.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  pill.strokes = [];
+  pill.setSharedPluginData(RUN_NAMESPACE, "kind", "option-count");
+  bindCounterGeometryVariables(pill, metrics, variableByName, stats);
+
+  const digits = figma.createText();
+  digits.name = `Option ${index + 1} Count`;
+  await applyCounterTypography(digits, "Default", fonts, variableByName, stats);
+  digits.characters = text;
+  digits.fills = [
+    paintFromVariable(
+      disabled ? "Colors/foreground/500" : config.foreground,
+      disabled ? "#747B8B" : config.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  digits.textAlignHorizontal = "CENTER";
+  digits.textAlignVertical = "CENTER";
+  pill.appendChild(digits);
+  setHugChildSizing(digits);
+  return pill;
 }
 
 async function syncSliderVariantChildren({
@@ -78230,9 +80142,12 @@ async function syncProgressVariantChildren({
   component,
   value,
   config,
+  top,
   variableByName,
   stats,
 }) {
+  const height = top ? PROGRESS_TOP_HEIGHT : 8;
+  const indeterminate = value === "Indeterminate";
   let track = directChildNamed(component, "Progress Track");
   if (track && track.type !== "FRAME") {
     track.remove();
@@ -78245,10 +80160,12 @@ async function syncProgressVariantChildren({
   }
 
   track.layoutMode = "NONE";
-  track.resizeWithoutConstraints(320, 8);
+  track.resizeWithoutConstraints(320, height);
   track.x = 0;
   track.y = 0;
-  track.cornerRadius = KOZMOS_RADIUS.pill;
+  // The page's top bar is square and has no edge: it runs off both sides of
+  // the window, as React's kozmos-progress-top draws it.
+  track.cornerRadius = top ? KOZMOS_RADIUS.none : KOZMOS_RADIUS.pill;
   track.fills = [
     paintFromVariable(
       config.trackFill,
@@ -78266,6 +80183,7 @@ async function syncProgressVariantChildren({
     ),
   ];
   track.strokeWeight = 1;
+  if (top) track.strokes = [];
   track.clipsContent = true;
   track.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-track");
 
@@ -78280,11 +80198,16 @@ async function syncProgressVariantChildren({
     range.name = "Progress Range";
   }
 
-  const rangeWidth = Math.max(1, Math.round((Number(value) / 100) * 320));
-  range.resizeWithoutConstraints(rangeWidth, 8);
+  // Indeterminate (GAP-159): the sweeping segment, a quarter of the track,
+  // drawn where it enters at the inline start. A frame cannot move; code
+  // sweeps it every 2 s and stills it centred under reduced motion.
+  const rangeWidth = indeterminate
+    ? Math.round(320 * PROGRESS_SWEEP_FRACTION)
+    : Math.max(1, Math.round((Number(value) / 100) * 320));
+  range.resizeWithoutConstraints(rangeWidth, height);
   range.x = 0;
   range.y = 0;
-  range.cornerRadius = KOZMOS_RADIUS.pill;
+  range.cornerRadius = top ? KOZMOS_RADIUS.none : KOZMOS_RADIUS.pill;
   range.visible = value !== "0";
   range.fills = [
     paintFromVariable(
@@ -78296,10 +80219,22 @@ async function syncProgressVariantChildren({
   ];
   range.strokes = [];
   range.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-range");
+  range.setSharedPluginData(
+    RUN_NAMESPACE,
+    "progress-indeterminate",
+    indeterminate ? "true" : "",
+  );
 
   track.appendChild(range);
   component.appendChild(track);
-  bindProgressGeometryVariables(component, track, range, variableByName, stats);
+  bindProgressGeometryVariables(
+    component,
+    track,
+    range,
+    variableByName,
+    stats,
+    top,
+  );
 }
 
 async function syncSpinnerVariantChildren({
@@ -79481,6 +81416,7 @@ const INPUT_FAMILY_VERTICAL_FIXED_FILL_NODE_NAMES = new Set([
 
 const INPUT_FAMILY_VERTICAL_HUG_FILL_NODE_NAMES = new Set([
   "Combobox Listbox",
+  "Select Listbox",
   "MultiSelect Listbox",
   "TimePicker Listbox",
   "DatePicker Calendar",
@@ -82500,17 +84436,28 @@ function tabsActiveIsValidForCount(active, count) {
 function tabsVariantCombinations() {
   const combinations = [];
 
-  for (const count of TABS_COUNTS) {
-    for (const active of TABS_ACTIVE) {
-      if (!tabsActiveIsValidForCount(active, count)) continue;
-      for (const state of TABS_STATES) {
-        combinations.push({ count, active, state });
+  // Label first, so a Build lays down today's 27 before the stacked ones.
+  for (const content of TABS_CONTENT) {
+    for (const count of TABS_COUNTS) {
+      for (const active of TABS_ACTIVE) {
+        if (!tabsActiveIsValidForCount(active, count)) continue;
+        for (const state of TABS_STATES) {
+          combinations.push({ count, active, state, content });
+        }
       }
     }
   }
 
   return combinations;
 }
+
+function tabsVariantKey(props) {
+  return `${props.content || "Label"}/${props.count}/${props.active}/${props.state}`;
+}
+
+// A trigger's icon in Icon Over Label, one per tab, as configureTabsProperties
+// offers it through Tab N Icon.
+const TABS_DEFAULT_ICONS = ["home-line", "info-circle", "activity", "clock"];
 
 /**
  * A tab's paint. The active tab is React's raised segment (decision 65,
