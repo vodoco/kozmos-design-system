@@ -128,11 +128,16 @@ const KeyValueList = React.forwardRef<HTMLDivElement, KeyValueListProps>(
     // Where focus goes once the rows have drawn: a row's name, or the add
     // button (null).
     const [focus, setFocus] = React.useState<string | null | undefined>();
+    // A product that commits the new row a tick later draws it later: the
+    // pending focus waits for the row's name to exist.
     React.useEffect(() => {
       if (focus === undefined) return;
-      (focus === null ? add.current : names.current.get(focus))?.focus();
+      const target = focus === null ? add.current : names.current.get(focus);
+      if (!target) return;
+      target.focus();
       setFocus(undefined);
     }, [focus, rows]);
+    const mixedId = React.useId();
 
     const change = (next: KeyValueRow[]) => {
       if (valueProp === undefined) setHeld(next);
@@ -193,43 +198,74 @@ const KeyValueList = React.forwardRef<HTMLDivElement, KeyValueListProps>(
                   ))}
                 </SelectContent>
               </Select>
-              {row.type === "boolean" ? (
-                <Switch
-                  aria-label={`${label} value`}
-                  checked={row.value === true}
-                  disabled={disabled}
-                  onCheckedChange={(checked) =>
-                    edit(row.id, { value: checked, mixed: false })
-                  }
-                />
-              ) : row.type === "number" ? (
-                <NumberInput
-                  aria-label={`${label} value`}
-                  value={typeof row.value === "number" ? row.value : ""}
-                  disabled={disabled}
-                  mixed={mixed}
-                  mixedLabel={mixedLabel}
-                  onResetMixed={reset}
-                  onValueChange={(value) =>
-                    edit(row.id, { value, mixed: false })
-                  }
-                />
-              ) : (
-                <Input
-                  aria-label={`${label} value`}
-                  value={typeof row.value === "string" ? row.value : ""}
-                  disabled={disabled}
-                  error={json ? invalidJsonLabel : undefined}
-                  mixed={mixed}
-                  mixedLabel={mixedLabel}
-                  onResetMixed={reset}
-                  onChange={(event) =>
-                    edit(row.id, { value: event.target.value, mixed: false })
-                  }
-                />
-              )}
+              {/* The value and the delete button are placed by class: a Select
+                  inside a <form> adds a hidden native select to the row, so
+                  the children's order is not the layout's. */}
+              <div
+                className={clsx(
+                  "kozmos-key-value-value",
+                  row.type === "boolean" && "kozmos-key-value-value-boolean",
+                )}
+              >
+                {row.type === "boolean" ? (
+                  <>
+                    <Switch
+                      aria-label={`${label} value`}
+                      aria-describedby={
+                        mixed ? `${mixedId}-${row.id}` : undefined
+                      }
+                      checked={row.value === true}
+                      disabled={disabled}
+                      onCheckedChange={(checked) =>
+                        edit(row.id, { value: checked, mixed: false })
+                      }
+                    />
+                    {/* A switch has no third state: a mixed one says so. */}
+                    {mixed ? (
+                      <span
+                        id={`${mixedId}-${row.id}`}
+                        className="kozmos-key-value-mixed"
+                      >
+                        {mixedLabel}
+                      </span>
+                    ) : null}
+                  </>
+                ) : row.type === "number" ? (
+                  <NumberInput
+                    aria-label={`${label} value`}
+                    // Any decimal is a value: the default step of 1 would make
+                    // 2.5 invalid and block the form's submit. Core's steppers
+                    // call stepUp(), which a step of "any" refuses, so the
+                    // field draws none rather than two dead buttons.
+                    step="any"
+                    showSteppers={false}
+                    value={typeof row.value === "number" ? row.value : ""}
+                    disabled={disabled}
+                    mixed={mixed}
+                    mixedLabel={mixedLabel}
+                    onResetMixed={reset}
+                    onValueChange={(value) =>
+                      edit(row.id, { value, mixed: false })
+                    }
+                  />
+                ) : (
+                  <Input
+                    aria-label={`${label} value`}
+                    value={typeof row.value === "string" ? row.value : ""}
+                    disabled={disabled}
+                    error={json ? invalidJsonLabel : undefined}
+                    mixed={mixed}
+                    mixedLabel={mixedLabel}
+                    onResetMixed={reset}
+                    onChange={(event) =>
+                      edit(row.id, { value: event.target.value, mixed: false })
+                    }
+                  />
+                )}
+              </div>
               <IconButton
                 emotion="danger"
+                className="kozmos-key-value-remove"
                 aria-label={removeLabel(label)}
                 disabled={disabled}
                 onClick={() => {

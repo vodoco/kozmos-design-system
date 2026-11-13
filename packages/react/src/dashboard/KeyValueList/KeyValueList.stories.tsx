@@ -36,12 +36,16 @@ export const Default: Story = {
 /** No rows yet: the add button alone. */
 export const Empty: Story = {};
 
-/** A multi-selection whose values differ in a row (GAP-153). */
+/**
+ * A multi-selection whose values differ in a row (GAP-153). A switch has no
+ * third state, so a mixed Boolean says "Multiple values" beside it.
+ */
 export const Mixed: Story = {
   args: {
     defaultValue: [
       { id: "a", name: "vendor", type: "text", value: "", mixed: true },
       { id: "c", name: "floors", type: "number", value: null, mixed: true },
+      { id: "d", name: "public", type: "boolean", value: false, mixed: true },
     ],
   },
 };

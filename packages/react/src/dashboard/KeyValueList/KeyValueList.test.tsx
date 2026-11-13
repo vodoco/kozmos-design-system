@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import React from "react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
@@ -142,6 +143,99 @@ describe("KeyValueList", () => {
       screen.getByRole("button", { name: "Reset to multiple values" }),
     );
     expect(reset).toHaveBeenCalledTimes(1);
+  });
+
+  it("places the value and the delete button by class, inside a form too", () => {
+    // In a <form> Radix Select adds a hidden native select after its
+    // trigger: the value is no longer the row's third child, nor the delete
+    // button its fourth, so the sheet must not place them by position.
+    const { container } = render(
+      <form>
+        <KeyValueList defaultValue={rows} />
+      </form>,
+    );
+    const row = screen.getByRole("group", { name: "Field 1" });
+    expect(row.querySelector("select")).not.toBeNull();
+    const children = Array.from(row.children);
+    const value = row.querySelector(":scope > .kozmos-key-value-value");
+    const remove = row.querySelector(":scope > .kozmos-key-value-remove");
+    expect(value).toContainElement(named("Field 1 value"));
+    expect(remove).toBe(screen.getByRole("button", { name: "Remove Field 1" }));
+    // The order a :nth-child sheet would have misread.
+    expect(children.indexOf(value!)).toBe(3);
+    expect(children.indexOf(remove!)).toBe(4);
+    expect(container.querySelectorAll(".kozmos-key-value-value")).toHaveLength(
+      3,
+    );
+  });
+
+  it("takes a decimal Number value without blocking the form", async () => {
+    const user = userEvent.setup();
+    render(
+      <form>
+        <KeyValueList
+          defaultValue={[{ id: "a", name: "ratio", type: "number", value: 1 }]}
+        />
+      </form>,
+    );
+    const field = screen.getByRole("spinbutton", { name: "Field 1 value" });
+    await user.clear(field);
+    await user.type(field, "2.5");
+    expect(field).toHaveValue(2.5);
+    expect((field as HTMLInputElement).validity.valid).toBe(true);
+    expect((field as HTMLInputElement).form!.checkValidity()).toBe(true);
+    // No steppers that a step of "any" would leave dead.
+    expect(
+      screen.queryByRole("button", { name: /increase|decrease/i }),
+    ).toBeNull();
+  });
+
+  it("says a mixed Boolean is mixed, beside its switch", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <KeyValueList
+        defaultValue={[
+          {
+            id: "a",
+            name: "public",
+            type: "boolean",
+            value: false,
+            mixed: true,
+          },
+        ]}
+        mixedLabel="Several values"
+        onValueChange={onValueChange}
+      />,
+    );
+    const toggle = screen.getByRole("switch", { name: "Field 1 value" });
+    expect(screen.getByText("Several values")).toBeInTheDocument();
+    expect(toggle).toHaveAccessibleDescription("Several values");
+    await user.click(toggle);
+    expect(onValueChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ value: true, mixed: false }),
+    ]);
+    expect(screen.queryByText("Several values")).toBeNull();
+  });
+
+  it("keeps focus for a new row a product commits a tick later", async () => {
+    const user = userEvent.setup();
+    function Host() {
+      const [value, setValue] = React.useState<KeyValueRow[]>([]);
+      return (
+        <KeyValueList
+          value={value}
+          createId={createId}
+          onValueChange={(next) => setTimeout(() => setValue(next), 0)}
+        />
+      );
+    }
+    render(<Host />);
+    await user.click(screen.getByRole("button", { name: "Add field" }));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    expect(named("Field 1 name")).toHaveFocus();
   });
 
   it("has no axe violations", async () => {
