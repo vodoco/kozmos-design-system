@@ -21,6 +21,10 @@ class KozmosMenuBasicConnect {
     @FigmaProperty(FigmaType.Text, "Item 3 Text")
     val item3: String = "Archive"
 
+    // Decision 152: External shows the new-tab icon on the second item.
+    @FigmaProperty(FigmaType.Boolean, "External")
+    val external: Boolean = false
+
     @FigmaProperty(FigmaType.Text, "Shortcut Text")
     val shortcut: String = "R"
 
@@ -33,7 +37,7 @@ class KozmosMenuBasicConnect {
                 label = label,
                 items = listOf(
                     KozmosMenuItem(text = item1, shortcut = shortcut),
-                    KozmosMenuItem(text = item2),
+                    KozmosMenuItem(text = item2, external = external),
                     KozmosMenuItem(text = item3)
                 ),
                 contentType = KozmosMenuContentType.Basic
@@ -123,6 +127,10 @@ class KozmosMenuSubmenuConnect {
     @FigmaProperty(FigmaType.Text, "Item 3 Text")
     val item3: String = "Share"
 
+    // Decision 152: External shows the new-tab icon on the second item.
+    @FigmaProperty(FigmaType.Boolean, "External")
+    val external: Boolean = false
+
     @Composable
     fun ComponentExample() {
         KozmosMenu(
@@ -132,7 +140,7 @@ class KozmosMenuSubmenuConnect {
                 label = label,
                 items = listOf(
                     KozmosMenuItem(text = item1),
-                    KozmosMenuItem(text = item2),
+                    KozmosMenuItem(text = item2, external = external),
                     KozmosMenuItem(
                         text = item3,
                         submenuItems = listOf("Invite people", "Export")

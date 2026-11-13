@@ -18,6 +18,10 @@ struct KozmosMenuBasicConnect: FigmaConnect {
     @FigmaString("Item 3 Text")
     var item3: String = "Archive"
 
+    // Decision 152: External shows the new-tab icon on the second item.
+    @FigmaBoolean("External")
+    var external: Bool = false
+
     @FigmaString("Shortcut Text")
     var shortcut: String = "R"
 
@@ -28,7 +32,7 @@ struct KozmosMenuBasicConnect: FigmaConnect {
                 label: self.label,
                 items: [
                     KozmosMenuItem(text: self.item1, shortcut: self.shortcut),
-                    KozmosMenuItem(text: self.item2),
+                    KozmosMenuItem(text: self.item2, external: self.external),
                     KozmosMenuItem(text: self.item3)
                 ],
                 contentType: .basic
@@ -120,6 +124,10 @@ struct KozmosMenuSubmenuConnect: FigmaConnect {
     @FigmaString("Item 3 Text")
     var item3: String = "Share"
 
+    // Decision 152: External shows the new-tab icon on the second item.
+    @FigmaBoolean("External")
+    var external: Bool = false
+
     var body: some View {
         KozmosMenu(
             title: "Workspace",
@@ -127,7 +135,7 @@ struct KozmosMenuSubmenuConnect: FigmaConnect {
                 label: self.label,
                 items: [
                     KozmosMenuItem(text: self.item1),
-                    KozmosMenuItem(text: self.item2),
+                    KozmosMenuItem(text: self.item2, external: self.external),
                     KozmosMenuItem(
                         text: self.item3,
                         submenuItems: ["Invite people", "Export"]
