@@ -2385,4 +2385,36 @@
       outline: none;
     }
   }
+  /* PersonaMark (GAP-106): a persona's colour as a diamond, 12 by 12, its
+     points on the box's edges, in the colour the product gives
+     (--kozmos-persona-color, the persona's own, drawn as given in both
+     themes). It sits on the text's middle, beside a name in a label or a
+     row. A group's marks are layout spacing 25 (2) apart. Two classes: a
+     scoped preflight weighs one and wins a tie on proximity, and its svg
+     rule would make the shape a block. Forced colours replace the page's
+     colours with the system's, so there the diamond is CanvasText: the
+     shape stays, and the persona is said by its name, never by colour
+     alone. */
+  .kozmos-persona-mark,
+  .kozmos-persona-marks {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .kozmos-persona-marks {
+    gap: calc(var(--primitives-layout-spacing-25) * 1px);
+  }
+  .kozmos-persona-mark .kozmos-persona-mark-shape {
+    display: block;
+    width: 12px;
+    height: 12px;
+    fill: var(--kozmos-persona-color, currentColor);
+  }
+  @media (forced-colors: active) {
+    .kozmos-persona-mark .kozmos-persona-mark-shape {
+      forced-color-adjust: none;
+      fill: CanvasText;
+    }
+  }
 }

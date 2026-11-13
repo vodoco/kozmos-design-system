@@ -1,0 +1,127 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as PersonaMarkStories from "./PersonaMark.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
+
+<Meta of={PersonaMarkStories} />
+
+# PersonaMark
+
+A persona's colour, drawn as a small diamond beside its name: the feature panel's persona visibility list marks each
+persona with it, and a tree row shows the personas it is visible to as a group of them (GAP-106).
+
+<Canvas>
+  <Story of={PersonaMarkStories.Default} />
+</Canvas>
+
+<Controls />
+
+## The persona's colour
+
+`color` is the persona's colour as the product holds it, any CSS colour such as `"#FF9800"`. It is product data, so
+Kozmos draws it as given, in both themes, and maps it to no token. The diamond is 12 by 12.
+
+In forced colours, where the system's colours replace the page's, the diamond is drawn in the text colour: the shape
+stays, and the persona is told by its name, never by its colour alone.
+
+## Beside its name, or alone
+
+Beside the persona's name, as in a checkbox's label, the mark is decoration: it is hidden from assistive technology, so
+the name is read once. Give it `name` where it stands alone, and it is an image named by the persona.
+
+<Canvas>
+  <Story of={PersonaMarkStories.InAPersonaList} />
+</Canvas>
+
+<Canvas>
+  <Story of={PersonaMarkStories.Named} />
+</Canvas>
+
+## A group
+
+`PersonaMarkGroup` draws the personas a row is visible to, their marks 2 apart, in the order given. It is one image to
+assistive technology, read as its `label` and every persona's name: "Assigned personas: Customer, Visitor, Staff". The
+label is English by default; pass the product's own words. With no persona it draws nothing.
+
+<Canvas>
+  <Story of={PersonaMarkStories.Group} />
+</Canvas>
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { Checkbox, Label, PersonaMark, PersonaMarkGroup } from "@kozmos-ds/react";
+export function Example() {
+  return (
+    <>
+      <Checkbox id="persona-customer" />
+      <Label htmlFor="persona-customer">
+        <PersonaMark color="#FF9800" /> Customer
+      </Label>
+      <PersonaMarkGroup
+        personas={[
+          { name: "Customer", color: "#FF9800" },
+          { name: "Visitor", color: "#2196F3" },
+        ]}
+      />
+    </>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosPersonaMark, KozmosPersonaMarkGroup } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <span><KozmosPersonaMark color="#FF9800" /> Customer</span>
+  <KozmosPersonaMarkGroup :personas="[{ name: 'Customer', color: '#FF9800' }]" />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Beside the persona's name the mark is decoration: VoiceOver reads this row
+// "Customer". KozmosPersonaMark(color:name:) standing alone is an image named
+// by the persona; KozmosPersonaMarkGroup draws a row's personas, read
+// "Assigned personas: Customer, Visitor".
+struct PersonaRow: View {
+    var body: some View {
+        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            KozmosPersonaMark(color: .orange)
+            KozmosText("Customer")
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import com.kozmos.components.personamark.KozmosPersonaMark
+import com.kozmos.components.text.KozmosText
+import com.kozmos.tokens.KozmosDimensions
+
+// Beside the persona's name the mark is decoration: TalkBack reads this row
+// "Customer". With name, a mark standing alone is an image named by the
+// persona; KozmosPersonaMarkGroup draws a row's personas, read
+// "Assigned personas: Customer, Visitor".
+@Composable
+fun PersonaRow() {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        KozmosPersonaMark(color = Color(0xFFFF9800))
+        KozmosText(text = "Customer")
+    }
+}
+`}
+
+/>

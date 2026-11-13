@@ -785,6 +785,10 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosMenu: { slot: true },
   KozmosContextMenu: { slot: true },
   KozmosKbd: { props: { keys: ["Esc"] } },
+  KozmosPersonaMark: { props: { color: "#FF9800", name: "Customer" } },
+  KozmosPersonaMarkGroup: {
+    props: { personas: [{ name: "Customer", color: "#FF9800" }] },
+  },
   KozmosDrawer: { slot: true },
   KozmosBreadcrumb: { slot: true },
   KozmosPagination: { slot: true },
