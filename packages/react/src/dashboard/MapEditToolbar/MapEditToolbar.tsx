@@ -208,10 +208,16 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
     useLayoutEffect(() => {
       const row = strip.current;
       if (widths.current || !row || shown !== items.length) return;
-      widths.current = Array.from(
-        row.children,
-        (child) => (child as HTMLElement).getBoundingClientRect().width,
-      ).slice(0, items.length);
+      // An item takes its box and its inline margins (the divider's 4 + 4):
+      // the box alone let the strip run past the card.
+      widths.current = Array.from(row.children, (child) => {
+        const margins = getComputedStyle(child);
+        return (
+          (child as HTMLElement).getBoundingClientRect().width +
+          px(margins.marginLeft) +
+          px(margins.marginRight)
+        );
+      }).slice(0, items.length);
       fit();
     });
     React.useEffect(() => {

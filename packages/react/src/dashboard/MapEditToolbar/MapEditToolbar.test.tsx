@@ -348,18 +348,32 @@ describe("MapEditToolbar (CLOUD-UI-005)", () => {
   });
 
   describe("overflow on a narrow map", () => {
-    // jsdom lays nothing out: every item is 56 wide, a divider 1, and the
-    // frame as wide as the map gives it.
+    // jsdom lays nothing out: every item is 56 wide, a divider 1 with the
+    // stylesheet's 4 + 4 inline margins, and the frame as wide as the map
+    // gives it.
     function emulateMap(width: { current: number }) {
+      const isDivider = (node: Element) =>
+        node.classList.contains("kozmos-map-edit-toolbar-divider");
       vi.spyOn(
         HTMLElement.prototype,
         "getBoundingClientRect",
       ).mockImplementation(function (this: HTMLElement) {
-        const w = this.classList.contains("kozmos-map-edit-toolbar-divider")
-          ? 1
-          : 56;
-        return new DOMRect(0, 0, w, 48);
+        return new DOMRect(0, 0, isDivider(this) ? 1 : 56, 48);
       });
+      const computed = window.getComputedStyle.bind(window);
+      vi.spyOn(window, "getComputedStyle").mockImplementation(
+        (node: Element, pseudo?: string | null) => {
+          const style = computed(node, pseudo);
+          if (!isDivider(node)) return style;
+          return new Proxy(style, {
+            get(target, key) {
+              if (key === "marginLeft" || key === "marginRight") return "4px";
+              const value = Reflect.get(target, key);
+              return typeof value === "function" ? value.bind(target) : value;
+            },
+          });
+        },
+      );
       vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(
         function (this: HTMLElement) {
           return this.classList.contains("kozmos-map-edit-toolbar-frame")
@@ -397,7 +411,8 @@ describe("MapEditToolbar (CLOUD-UI-005)", () => {
     });
 
     it("puts what does not fit, from the end, behind More", async () => {
-      // Polygon, Point, Circle, a divider and More: 56 × 4 + 1 = 225.
+      // Polygon, Point, Circle and More: 56 × 4 = 224. The divider after
+      // Circle, 1 + 4 + 4, would make 233.
       emulateMap({ current: 230 });
       const user = userEvent.setup();
       const onAction = vi.fn();
@@ -444,6 +459,18 @@ describe("MapEditToolbar (CLOUD-UI-005)", () => {
         }),
       );
       expect(onValueChange).toHaveBeenLastCalledWith("json");
+    });
+
+    it("counts an item's inline margins", () => {
+      // Seven items and two dividers: 56 × 7 + 1 × 2 = 394 by their boxes,
+      // 410 with the dividers' margins, so 400 cannot hold them all.
+      const map = emulateMap({ current: 400 });
+      render(<MapEditToolbar label="Geometry tools" items={CREATE} />);
+      expect(
+        within(toolbar()).getByRole("button", { name: "More" }),
+      ).toBeInTheDocument();
+      map.resize(410);
+      expect(within(toolbar()).getAllByRole("button")).toHaveLength(7);
     });
 
     it("keeps More in the arrows' order", () => {
