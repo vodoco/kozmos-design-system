@@ -26,7 +26,8 @@ at the item that has focus. Its parts are Menu's, named `ContextMenu…`, and dr
   opens it on touch, a secondary click with a pointer, and VoiceOver offers it as the element's menu. The system draws
   it, as it draws KozmosMenu.
 - **Compose**: `KozmosContextMenuArea` opens KozmosMenu's items where the area is pressed: a long press on touch, a
-  right click with a mouse, and the Menu key or Shift+F10 at what has focus. Its content keeps its own focus stops: mark
+  right click with a mouse, and the Menu key or Shift+F10 at what has focus. A long press opens it over a button or a
+  row inside too, and their own tap still clicks them, so a pressable child needs no long press of its own. Its content keeps its own focus stops: mark
   each element TalkBack stops on with `Modifier.kozmosContextMenuTarget()`, which offers "Show menu" as that
   element's action and opens the menu at it. With nothing marked, the area is one stop named by its `label` ("More
   options" by default; pass the product's words) that offers the menu.
