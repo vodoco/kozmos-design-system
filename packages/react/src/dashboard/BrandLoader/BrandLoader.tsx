@@ -116,47 +116,60 @@ const SWALLOWED = {
  * `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` after
  * the package's style.css.
  */
-const BrandLoader = React.forwardRef<HTMLDivElement, BrandLoaderProps>(
-  ({ className, label = "Loading", overlay = false, ...props }, ref) => {
-    const reduced = useReducedMotion();
-    const [said, setSaid] = React.useState<string | null>(null);
-    React.useEffect(() => {
-      setSaid(label);
-    }, [label]);
+/**
+ * The loader itself, its status region. The words are its own state, set
+ * after it mounts: an overlay's Backdrop draws into the theme's portal a
+ * render later than the BrandLoader, so words held by the BrandLoader were
+ * already there when the region appeared, and nothing was announced.
+ */
+const Loader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { label: string }
+>(({ className, label, ...props }, ref) => {
+  const reduced = useReducedMotion();
+  const [said, setSaid] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    setSaid(label);
+  }, [label]);
+  return (
+    <div
+      ref={ref}
+      role="status"
+      // Said as well as implied: an open Select or Menu hides every box
+      // not marked aria-live (GAP-193).
+      aria-live="polite"
+      data-motion={reduced ? "reduced" : undefined}
+      className={clsx("kozmos-brand-loader", className)}
+      {...props}
+    >
+      <span aria-hidden="true" className="kozmos-brand-loader-ring" />
+      <span
+        aria-hidden="true"
+        className="kozmos-brand-loader-ring"
+        data-ring="second"
+      />
+      <MarkerPin01
+        aria-hidden="true"
+        focusable="false"
+        width={32}
+        height={32}
+        className="kozmos-brand-loader-pin"
+      />
+      <span className="kozmos-brand-loader-label">{said}</span>
+    </div>
+  );
+});
+Loader.displayName = "BrandLoaderStatus";
 
+const BrandLoader = React.forwardRef<HTMLDivElement, BrandLoaderProps>(
+  ({ label = "Loading", overlay = false, ...props }, ref) => {
     const [scrim, setScrim] = React.useState<HTMLDivElement | null>(null);
     React.useEffect(() => {
       if (!overlay || !scrim) return;
       return coverPage(scrim);
     }, [overlay, scrim]);
 
-    const loader = (
-      <div
-        ref={ref}
-        role="status"
-        // Said as well as implied: an open Select or Menu hides every box
-        // not marked aria-live (GAP-193).
-        aria-live="polite"
-        data-motion={reduced ? "reduced" : undefined}
-        className={clsx("kozmos-brand-loader", className)}
-        {...props}
-      >
-        <span aria-hidden="true" className="kozmos-brand-loader-ring" />
-        <span
-          aria-hidden="true"
-          className="kozmos-brand-loader-ring"
-          data-ring="second"
-        />
-        <MarkerPin01
-          aria-hidden="true"
-          focusable="false"
-          width={32}
-          height={32}
-          className="kozmos-brand-loader-pin"
-        />
-        <span className="kozmos-brand-loader-label">{said}</span>
-      </div>
-    );
+    const loader = <Loader ref={ref} label={label} {...props} />;
 
     if (!overlay) return loader;
     return (

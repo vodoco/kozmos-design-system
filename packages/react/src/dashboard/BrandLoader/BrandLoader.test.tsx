@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { BrandLoader } from "./BrandLoader";
+import { ThemeProvider } from "../../components/ThemeProvider";
 import * as dashboard from "../index";
 
 /** matchMedia as a reader who asks for reduced motion, or not, would have it. */
@@ -108,6 +109,50 @@ describe("BrandLoader (CLOUD-UI-008)", () => {
   });
 
   describe("as an overlay", () => {
+    it("mounts its status empty under a ThemeProvider, the words after it", async () => {
+      // The theme's portal draws the overlay a render late: the region must
+      // still appear empty, and its words arrive as a change to it.
+      const seen: Array<{ kind: "region" | "words"; text: string }> = [];
+      const observer = new MutationObserver((records) => {
+        for (const record of records)
+          for (const node of Array.from(record.addedNodes)) {
+            if (node instanceof Element) {
+              const region = node.matches('[role="status"]')
+                ? node
+                : node.querySelector('[role="status"]');
+              if (region)
+                seen.push({ kind: "region", text: region.textContent ?? "" });
+            }
+            if (
+              record.target instanceof Element &&
+              record.target.matches(".kozmos-brand-loader-label")
+            )
+              seen.push({ kind: "words", text: node.textContent ?? "" });
+          }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      render(
+        <ThemeProvider defaultTheme="light">
+          <BrandLoader label="Loading Pointr Cloud" overlay />
+        </ThemeProvider>,
+      );
+      await act(async () => {});
+      observer.disconnect();
+      expect(
+        document.querySelector(".kozmos-brand-loader-overlay [role='status']"),
+      ).toHaveTextContent(/^Loading Pointr Cloud$/);
+      // The region is inserted (its text read later, when the observer
+      // runs), and then the words are inserted into it, a mutation of their
+      // own: mounted already filled, the region's insertion carries them
+      // and no such mutation happens.
+      const kinds = seen.map((entry) => entry.kind);
+      expect(kinds[0]).toBe("region");
+      expect(seen.filter((entry) => entry.kind === "words")).toEqual([
+        { kind: "words", text: "Loading Pointr Cloud" },
+      ]);
+      expect(kinds.lastIndexOf("region")).toBeLessThan(kinds.indexOf("words"));
+    });
+
     it("covers the window with the theme's scrim, the loader in it", () => {
       const { container } = render(<BrandLoader overlay />);
       // In the theme's portal, not where it was rendered.
