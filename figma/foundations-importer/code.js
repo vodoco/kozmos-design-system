@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "49134d802d94";
+const PLUGIN_BUILD = "6b5c152b159b";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1044,17 +1044,16 @@ const MAP_EDIT_TOOLBAR_ITEMS = (() => {
     t("Split", "split", "Disabled"),
     a("Straighten", "straighten", "Disabled"),
     d,
-    ...history("Disabled", "Disabled"),
-  ];
-  const geometry = (redo) => [
-    t("Adjust", "adjust", "On"),
-    d,
-    t("Cut-out", "cutOut"),
-    t("Split", "split"),
-    a("Straighten", "straighten"),
-    d,
-    ...history("Off", redo),
-  ];
+  ].concat(history("Disabled", "Disabled"));
+  const geometry = (redo) =>
+    [
+      t("Adjust", "adjust", "On"),
+      d,
+      t("Cut-out", "cutOut"),
+      t("Split", "split"),
+      a("Straighten", "straighten"),
+      d,
+    ].concat(history("Off", redo));
   return {
     Create: [
       t("Polygon", "polygon"),
@@ -1063,18 +1062,15 @@ const MAP_EDIT_TOOLBAR_ITEMS = (() => {
       d,
       t("JSON", "json"),
       d,
-      ...history("Disabled", "Disabled"),
-    ],
+    ].concat(history("Disabled", "Disabled")),
     "Draw Polygon": drawing,
     "Draw Circle": drawing,
-    "Draw Point": [
-      t("Draw", "draw", "On"),
-      d,
-      ...history("Disabled", "Disabled"),
-    ],
+    "Draw Point": [t("Draw", "draw", "On"), d].concat(
+      history("Disabled", "Disabled"),
+    ),
     "Geometry Set": geometry("Disabled"),
-    JSON: [...history("Off", "Disabled"), a("Reset", "reset")],
-    "Edit Existing": [...geometry("Off"), a("Reset", "reset")],
+    JSON: history("Off", "Disabled").concat([a("Reset", "reset")]),
+    "Edit Existing": geometry("Off").concat([a("Reset", "reset")]),
   };
 })();
 const MAP_VIEW_CONTENT = ["Empty", "Overlay"];
