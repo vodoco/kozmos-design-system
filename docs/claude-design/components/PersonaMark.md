@@ -6,7 +6,7 @@ A persona's colour, drawn as a small diamond beside its name: the feature panel'
 
 - **Import:** `import { PersonaMark, PersonaMarkGroup } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-personamark--docs>
 
 ## Example

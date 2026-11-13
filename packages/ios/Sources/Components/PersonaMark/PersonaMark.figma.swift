@@ -1,15 +1,13 @@
 import SwiftUI
 import Figma
 
-// GAP-106: a new set, so its node id is written once the importer has built
-// it in the live file; until then this file stays out of
-// figma.linked.config.json. Form is the mark's form: Single is one persona's
-// diamond, Group the diamonds of the personas a row is visible to. The
-// colour is the persona's, product data that Figma holds as the diamond's
-// fill, not as a property.
+// GAP-106: the PersonaMark set, built by the importer at 2446:23172. Form
+// is the mark's form: Single is one persona's diamond, Group the diamonds of
+// the personas a row is visible to. The colour is the persona's, product
+// data that Figma holds as the diamond's fill, not as a property.
 struct KozmosPersonaMarkSingleConnect: FigmaConnect {
     let component = KozmosPersonaMark.self
-    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD"
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23172"
     var variant = ["Form": "Single"]
 
     var body: some View {
@@ -19,7 +17,7 @@ struct KozmosPersonaMarkSingleConnect: FigmaConnect {
 
 struct KozmosPersonaMarkGroupConnect: FigmaConnect {
     let component = KozmosPersonaMarkGroup.self
-    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD"
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23172"
     var variant = ["Form": "Group"]
 
     var body: some View {

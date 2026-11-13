@@ -103,6 +103,8 @@
       "src/components/Separator/Separator.tsx",
       "src/components/Kbd/Kbd.figma.tsx",
       "src/components/Kbd/Kbd.tsx",
+      "src/components/PersonaMark/PersonaMark.figma.tsx",
+      "src/components/PersonaMark/PersonaMark.tsx",
       "src/components/Skeleton/Skeleton.figma.tsx",
       "src/components/Skeleton/Skeleton.tsx",
       "src/components/Box/Box.figma.tsx",

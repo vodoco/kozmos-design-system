@@ -1,11 +1,9 @@
 import figma from "@figma/code-connect";
 import { PersonaMark, PersonaMarkGroup } from "./PersonaMark";
 
-// GAP-106: a new set, so its node id is written once the importer has built
-// it in the live file; until then this file stays out of
-// figma.linked.config.json.
+// GAP-106: the PersonaMark set, built by the importer at 2446:23172.
 const personaMarkUrl =
-  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD";
+  "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23172";
 
 // Form is the mark's form. Single is one persona's diamond; Group is the
 // diamonds of the personas a row is visible to. The colour is the persona's,
