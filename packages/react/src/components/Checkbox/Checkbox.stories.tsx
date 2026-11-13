@@ -39,3 +39,12 @@ export const Error: Story = {
     label: "Accept terms and conditions",
   },
 };
+
+// GAP-162: a description under the label, read as the checkbox's
+// description, never as part of its name.
+export const WithDescription: Story = {
+  args: {
+    label: "Route updates",
+    description: "Tell me when a faster route opens",
+  },
+};

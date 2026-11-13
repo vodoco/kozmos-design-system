@@ -25,6 +25,8 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
@@ -36,9 +38,12 @@ import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.combobox.selectionFieldColors
+import com.kozmos.components.counter.CounterTone
+import com.kozmos.components.counter.KozmosCounter
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
+import java.text.NumberFormat
 
 /**
  * How a trigger inside [KozmosSelect] opens and closes the menu from a
@@ -173,6 +178,22 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
     }
 }
 
+/**
+ * One option in a [KozmosSelect]'s menu: its [label], and, with [count], the
+ * neutral Counter at the row's end, outside the label (GAP-164). The count
+ * is written in the current locale's grouping, "1,234" in English, and
+ * TalkBack hears that same text: the row is one stop, named "Cafés, 1,234",
+ * the label, a comma and a space, and the count (decision 5b).
+ *
+ * The counters form one column (decision 1): each sits at its row's end,
+ * past the label, and an option draws no mark of its own selection, so a
+ * counter's end edge is the same on every row and stays put as the
+ * selection changes.
+ *
+ * The count belongs to the open list only: pass [KozmosSelectTrigger] the
+ * label alone as its value, so the closed select never repeats it. Unset,
+ * the option is drawn as it always was.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KozmosSelectItem(
@@ -180,17 +201,24 @@ fun KozmosSelectItem(
     label: String,
     onValueChange: (String) -> Unit,
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    count: Int? = null
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
+    val locale = LocalConfiguration.current.locales[0]
+    val countText = remember(count, locale) { count?.let { NumberFormat.getIntegerInstance(locale).format(it.toLong()) } }
     DropdownMenuItem(
         text = { Text(label) },
+        trailingIcon = countText?.let { { KozmosCounter(text = it, tone = CounterTone.Neutral) } },
         onClick = {
             trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Select", eventName = "select_value_changed", properties = mapOf("value" to value.toString())))
             onValueChange(value)
             onDismissRequest()
         },
         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-        modifier = modifier
+        // The item merges its children into one stop; naming it says the
+        // label and the drawn count in one fixed form, which TalkBack reads
+        // in place of the two texts.
+        modifier = if (countText == null) modifier else modifier.semantics { contentDescription = "$label, $countText" }
     )
 }

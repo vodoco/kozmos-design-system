@@ -291,7 +291,7 @@
       "id": "components-checkbox",
       "title": "Core/Inputs/Checkbox",
       "component": "Checkbox",
-      "exports": ["Default", "Checked", "Disabled", "Error"]
+      "exports": ["Default", "Checked", "Disabled", "Error", "WithDescription"]
     },
     {
       "file": "packages/react/src/components/Chip/Chip.stories.tsx",
@@ -768,7 +768,9 @@
         "Expanded",
         "Emergency",
         "SingleLine",
-        "SearchWithAi"
+        "SearchWithAi",
+        "SuccessProgressAndDone",
+        "Success"
       ]
     },
     {
@@ -948,7 +950,9 @@
         "Tones",
         "SelectedSection",
         "LivePosition",
-        "AnimatedUpdate"
+        "AnimatedUpdate",
+        "Indeterminate",
+        "TopOfPage"
       ]
     },
     {
@@ -956,7 +960,14 @@
       "id": "components-radiogroup",
       "title": "Core/Inputs/RadioGroup",
       "component": "Radio",
-      "exports": ["Default", "Disabled", "Error"]
+      "exports": [
+        "Default",
+        "Disabled",
+        "Error",
+        "WithDescription",
+        "Cards",
+        "Tiles"
+      ]
     },
     {
       "file": "packages/react/src/components/Rating/Rating.stories.tsx",
@@ -1102,6 +1113,8 @@
         "WithScroll",
         "Disabled",
         "WithError",
+        "OptionCounts",
+        "OptionCountsOpen",
         "MixedValue"
       ]
     },
@@ -1173,7 +1186,14 @@
       "id": "components-switch",
       "title": "Core/Inputs/Switch",
       "component": "Switch",
-      "exports": ["Default", "Checked", "Disabled", "Error"]
+      "exports": [
+        "Default",
+        "Checked",
+        "Disabled",
+        "Error",
+        "WithDescription",
+        "StateLabel"
+      ]
     },
     {
       "file": "packages/react/src/components/Table/Table.stories.tsx",
@@ -1187,7 +1207,7 @@
       "id": "components-tabs",
       "title": "Core/Layout/Tabs",
       "component": "Tabs",
-      "exports": ["Default"]
+      "exports": ["Default", "IconOverLabel", "IconOverLabelRightToLeft"]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",

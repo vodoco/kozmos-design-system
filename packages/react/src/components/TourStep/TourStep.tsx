@@ -18,7 +18,7 @@ import {
   PopoverArrow,
   PopoverContent,
 } from "../Popover/Popover";
-import { Progress } from "../Progress/Progress";
+import { ProgressBar } from "../Progress/ProgressBar";
 import { Text } from "../Text/Text";
 
 /**
@@ -570,9 +570,11 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
               ) : null}
               {count > 0 ? (
                 <div className="kozmos-tour-step-progress">
-                  <Progress
+                  {/* Progress's bar alone: TourStep has no ring to carry. */}
+                  <ProgressBar
                     value={shown}
                     max={count}
+                    percentage={(shown / count) * 100}
                     aria-label={progressLabel}
                     // Read as the position, "2 of 5", not as a percentage.
                     getValueLabel={() => position ?? ""}

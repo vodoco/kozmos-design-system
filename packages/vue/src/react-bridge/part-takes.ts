@@ -43,6 +43,7 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  Notice,
   Drawer,
   Toast,
   Breadcrumb,
@@ -179,6 +180,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Menu, menuTakes],
   [ContextMenu, menuTakes],
   [Kbd, D],
+  [Notice, { dom: true, own: ["onExpandedChange"] }],
   [Drawer, menuTakes],
   [
     Toast,
@@ -613,7 +615,14 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [
     Switch,
     html(
-      ["asChild", "checked", "disabled", "formNoValidate", "required"],
+      [
+        "asChild",
+        "checked",
+        "disabled",
+        "formNoValidate",
+        "required",
+        "showStateLabel",
+      ],
       [],
       ["error"],
     ),
@@ -671,6 +680,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Menu, menuBooleans],
   [ContextMenu, { flags: ["modal"], unions: [], texts: [] }],
   [Kbd, H],
+  [Notice, html(["collapsible", "defaultExpanded", "expanded"])],
   [Drawer, menuBooleans],
   [Toast, html(["asChild", "defaultOpen", "forceMount", "open"])],
   [Breadcrumb, H],
