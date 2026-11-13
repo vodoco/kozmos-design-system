@@ -119,7 +119,7 @@ const MAX_VUE_BRIDGE_GZIP_KB = 11.5;
 // app's own. The sheet is measured as style.css is, whole. The caps follow
 // the same rule, 110% of the first measurement to the next half kilobyte:
 // on 13 Nov 2026, with BrandLoader alone (CLOUD-UI-008), the entry measured
-// 0.99 KB here and the sheet 0.67 KB, so 1.5 and 1. Main's lines did not
+// 0.99 KB here and the sheet 0.71 KB, so 1.5 and 1. Main's lines did not
 // move: its built files are byte for byte what they were. A module that
 // follows raises them with its own measurement, as the bridge's did.
 const MAX_DASHBOARD_GZIP_KB = 1.5;
