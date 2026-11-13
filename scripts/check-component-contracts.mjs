@@ -1744,6 +1744,12 @@ assertContains(
   "Table Code Connect cell text mapping",
 );
 assertContains(
+  files.reactTableFigma,
+  source.reactTableFigma,
+  "<Table framed",
+  "Table Code Connect framed, as Figma draws it (decision 159)",
+);
+assertContains(
   files.iosDrawer,
   source.iosDrawer,
   "public enum KozmosDrawerSide",

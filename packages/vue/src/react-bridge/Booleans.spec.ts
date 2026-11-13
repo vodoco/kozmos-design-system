@@ -215,6 +215,17 @@ const CASES: Case[] = [
     drawn: () => $("[aria-label='Show password']") !== null,
     byDefault: true,
   },
+  {
+    // Decision 159: a border and the control radius round the table.
+    name: "KozmosTable",
+    part: KozmosReact.Table,
+    prop: "framed",
+    attribute: "framed",
+    template: (a) => `<KozmosTable aria-label="Places" ${a} />`,
+    drawn: () =>
+      $("table")!.parentElement!.classList.contains("rounded-control"),
+    byDefault: false,
+  },
 ];
 
 describe("a boolean prop's attribute, as Vue reads a declared Boolean prop", () => {

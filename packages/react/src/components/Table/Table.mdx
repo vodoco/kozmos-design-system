@@ -14,7 +14,18 @@ The wrapper supports horizontal overflow and keyboard scrolling; sorting, select
   <Story of={TableStories.Default} />
 </Canvas>
 
-<Controls />
+## Framed
+
+`framed` draws a 1px border round the table and the control radius, 16, at its corners, as Figma, SwiftUI and
+Compose draw a table (decision 159). The header and the rows are clipped inside the frame, so a row's hover and
+selected fills follow its corners, and a caption sits inside it, at its foot. It is off by default, so a dense
+page's table runs edge to edge and existing tables do not change.
+
+<Canvas>
+  <Story of={TableStories.Framed} />
+</Canvas>
+
+<Controls of={TableStories.Framed} />
 
 ## Implementation
 
@@ -33,7 +44,7 @@ import {
 } from "@kozmos-ds/react";
 export function Example() {
   return (
-    <Table>
+    <Table framed>
       <TableCaption>Places in this venue</TableCaption>
       <TableHeader>
         <TableRow>
@@ -67,7 +78,8 @@ import Kozmos
 // The table draws a row for each element of your data, which is
 // Identifiable, and a cell takes a String. It has no header row, header
 // cell or caption: React's TableHeader, TableHead and TableCaption have no
-// counterpart here.
+// counterpart here. It is always framed, a border and the control radius,
+// as React's Table is with framed.
 struct PlacesTable: View {
     struct Place: Identifiable {
         let name: String
@@ -97,6 +109,8 @@ import com.kozmos.components.table.KozmosTableRow
 // The header row goes in header, the body rows in the content. A cell takes
 // a String, and the cells in a row share its width by weight, 1 each by
 // default. There is no caption: React's TableCaption has no counterpart.
+// It is always framed, a border and the control radius, as React's Table is
+// with framed.
 @Composable
 fun PlacesTable() {
     KozmosTable(

@@ -2,22 +2,39 @@ import React from "react";
 import { cn } from "../../utils";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 
-const Table = React.forwardRef<
-  HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div
-    tabIndex={0}
-    onKeyDown={scrollHorizontalWithKeyboard}
-    className="relative w-full overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-  >
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
-      {...props}
-    />
-  </div>
-));
+export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
+  /**
+   * A 1px border round the table and the control radius, 16, at its corners
+   * (decision 159), as Figma, SwiftUI and Compose draw it. The header and the
+   * rows are clipped inside it, so a row's hover and selected fills keep its
+   * corners, and a caption sits inside the frame, at its foot. Off by
+   * default: a dense page's table runs edge to edge.
+   */
+  framed?: boolean;
+}
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, framed = false, ...props }, ref) => (
+    <div
+      tabIndex={0}
+      onKeyDown={scrollHorizontalWithKeyboard}
+      className={cn(
+        "relative w-full overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+        framed && "rounded-control border border-border",
+      )}
+    >
+      <table
+        ref={ref}
+        className={cn(
+          "w-full caption-bottom text-sm",
+          framed && "[&>caption]:mb-4",
+          className,
+        )}
+        {...props}
+      />
+    </div>
+  ),
+);
 Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<
