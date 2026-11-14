@@ -245,29 +245,33 @@ const OpeningHoursEditor = React.forwardRef<
           return (
             // The day's choice is named by the day, and its times carry the
             // day in theirs: a group round them would say the day twice.
+            // The name and the choice share a line while both fit; in a
+            // narrow column the choice goes under the name.
             <div key={day} className="kozmos-opening-hours-day">
-              <Text id={nameId} as="span" size="sm" weight="medium">
-                {name}
-              </Text>
-              <SegmentedControl
-                size="sm"
-                aria-labelledby={nameId}
-                items={items}
-                value={mixed ? null : mode}
-                disabled={disabled}
-                onValueChange={(next) => {
-                  if (!next || (next === mode && !mixed)) return;
-                  if (mode === "hours") last.current[day] = hours;
-                  set(
-                    day,
-                    next === "hours"
-                      ? (last.current[day] ?? HOURS)
-                      : next === "closed"
-                        ? CLOSED
-                        : { alwaysOpen: true },
-                  );
-                }}
-              />
+              <div className="kozmos-opening-hours-head">
+                <Text id={nameId} as="span" size="sm" weight="medium">
+                  {name}
+                </Text>
+                <SegmentedControl
+                  size="sm"
+                  aria-labelledby={nameId}
+                  items={items}
+                  value={mixed ? null : mode}
+                  disabled={disabled}
+                  onValueChange={(next) => {
+                    if (!next || (next === mode && !mixed)) return;
+                    if (mode === "hours") last.current[day] = hours;
+                    set(
+                      day,
+                      next === "hours"
+                        ? (last.current[day] ?? HOURS)
+                        : next === "closed"
+                          ? CLOSED
+                          : { alwaysOpen: true },
+                    );
+                  }}
+                />
+              </div>
               {mixed ? (
                 <Text size="sm" color="muted">
                   {mixedLabel}

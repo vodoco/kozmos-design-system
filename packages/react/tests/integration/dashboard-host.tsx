@@ -75,7 +75,7 @@ const ROWS: KeyValueRow[] = [
  * The other modules, drawn when the check sets `window.__dashboardModules`
  * (the loader's overlay above would make them inert): MapEditToolbar on maps
  * 640, 700 and 760 wide, a PropertyPicker, a KeyValueList outside and
- * inside a <form>, and an OpeningHoursEditor.
+ * inside a <form>, and an OpeningHoursEditor 640 wide and in a 296 column.
  */
 function Modules() {
   return (
@@ -113,6 +113,19 @@ function Modules() {
       </div>
       <div data-testid="hours" style={{ width: 640 }}>
         <OpeningHoursEditor locale="en-GB" />
+      </div>
+      {/* A 320 window's column, inside a story's 12 each side, in English
+          and in German's longer words. */}
+      <div data-testid="hours-narrow" style={{ width: 296 }}>
+        <OpeningHoursEditor locale="en-GB" />
+      </div>
+      <div data-testid="hours-narrow-de" style={{ width: 296 }}>
+        <OpeningHoursEditor
+          locale="de-DE"
+          hoursLabel="Öffnungszeiten"
+          closedLabel="Geschlossen"
+          alwaysOpenLabel="Immer geöffnet"
+        />
       </div>
     </ThemeProvider>
   );

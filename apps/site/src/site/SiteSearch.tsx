@@ -16,7 +16,7 @@ import {
 } from "@kozmos-ds/react";
 import { examples } from "../examples/manifest";
 import { foundationPages } from "../foundations/nav";
-import { componentIndex, laneTitle } from "../reference/nav";
+import { componentIndex, lanesInWords, laneTitle } from "../reference/nav";
 import { withoutCode } from "./inline-code";
 
 interface Entry {
@@ -44,7 +44,7 @@ const entries: readonly Entry[] = [
   {
     to: "/components",
     label: "Components",
-    description: `${componentIndex.components.length} components in four lanes, and where each one exists.`,
+    description: `${componentIndex.components.length} components in ${lanesInWords}, and where each one exists.`,
     group: "Pages",
   },
   {

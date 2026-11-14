@@ -1,7 +1,11 @@
 /* OpeningHoursEditor (CLOUD-UI-004, decision 179): a day a row, its name
    and its Hours / Closed / Always open choice on one line, its two times
-   under them, "+1 day" after an overnight close. The times share the line
-   and wrap under each other in a narrow column. Logical sides throughout. */
+   under them, "+1 day" after an overnight close. In a column too narrow for
+   the name and the choice side by side (a 320 window, or German's longer
+   words) the choice wraps under the name, and is held to the column: wider
+   than it, SegmentedControl scrolls its options inside its own box. The
+   times share the line and wrap under each other in a narrow column.
+   Logical sides throughout. */
 @kozmos-owned {
   .kozmos-opening-hours {
     display: flex;
@@ -9,13 +13,29 @@
     gap: calc(var(--primitives-layout-spacing-150) * 1px);
   }
   .kozmos-opening-hours-day {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    min-inline-size: 0;
+  }
+  /* A line is broken by the name's and the choice's own widths, then the
+     name grows: the choice sits at the line's end, or at its start under
+     the name. */
+  .kozmos-opening-hours-head {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: calc(var(--primitives-layout-spacing-100) * 1px);
   }
-  .kozmos-opening-hours-day > :nth-child(n + 3) {
-    grid-column: 1 / -1;
+  .kozmos-opening-hours-head > :first-child {
+    flex: 1 0 auto;
+  }
+  /* The choice's field box is full width wherever it sits; here its basis
+     is its options' own width, so it shares the name's line when it fits. */
+  .kozmos-opening-hours-head > :last-child {
+    flex: 0 1 max-content;
+    min-inline-size: 0;
+    max-inline-size: 100%;
   }
   .kozmos-opening-hours-times {
     display: flex;
@@ -31,6 +51,6 @@
     flex: none;
   }
   .kozmos-opening-hours-reset {
-    justify-self: start;
+    align-self: flex-start;
   }
 }

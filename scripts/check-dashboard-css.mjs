@@ -17,7 +17,9 @@
  * KeyValueList (CLOUD-UI-004): a row lays out the same inside a <form>,
  * where a Select adds a hidden native select to it, as outside one.
  * OpeningHoursEditor (CLOUD-UI-004): a time field's arrows step its 5
- * minutes, carrying into the hour, not the browser's one part by one.
+ * minutes, carrying into the hour, not the browser's one part by one; 640
+ * wide a day's choice is beside its name, in a 296 column (a 320 window's
+ * story) under it, and nothing runs past the column, in English or German.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -413,7 +415,9 @@ try {
     // The hours: a time field's own Down Arrow steps the editor's 5
     // minutes, carrying into the hour, whichever part of the time has focus
     // (the browser's would make 07:00 or 08:59).
-    const opening = page.getByLabel("Monday opening time", { exact: true });
+    const opening = page
+      .getByTestId("hours")
+      .getByLabel("Monday opening time", { exact: true });
     await opening.focus();
     await page.keyboard.press("ArrowDown");
     assert.equal(
@@ -428,6 +432,63 @@ try {
       "08:05",
       `${mode} hours: Up Arrow twice from 07:55`,
     );
+    // The hours' layout: wide, a day's name and its choice share a line;
+    // in a 296 column (a 320 window's story) the choice goes under the name
+    // and nothing runs past the column, times included. A choice wider than
+    // the column scrolls inside its own box, as SegmentedControl does.
+    for (const id of ["hours", "hours-narrow", "hours-narrow-de"]) {
+      const drawn = await page.getByTestId(id).evaluate((root) => {
+        const edge = root.getBoundingClientRect();
+        const days = [...root.querySelectorAll(".kozmos-opening-hours-day")];
+        // A day's choice: the toggle group its name labels.
+        const choiceOf = (day) =>
+          day.querySelector(
+            `[aria-labelledby="${day.querySelector("[id]").id}"]`,
+          );
+        const choices = days.map(choiceOf);
+        const past = [];
+        for (const node of root.querySelectorAll("*")) {
+          // What a scroller holds is the scroller's to show.
+          if (choices.some((c) => c !== node && c.contains(node))) continue;
+          const r = node.getBoundingClientRect();
+          if (r.width === 0) continue;
+          if (r.right > edge.right + 0.5 || r.left < edge.left - 0.5)
+            past.push(
+              `${node.tagName}.${String(node.className).slice(0, 40)} ${Math.round(r.left - edge.left)}..${Math.round(r.right - edge.left)}`,
+            );
+        }
+        const lines = days.map((day) => {
+          const name = day.querySelector("[id]").getBoundingClientRect();
+          const choice = choiceOf(day).getBoundingClientRect();
+          return choice.top < name.bottom && choice.bottom > name.top
+            ? "beside"
+            : choice.top >= name.bottom
+              ? "under"
+              : "above";
+        });
+        return {
+          days: days.length,
+          scrollWidth: root.scrollWidth,
+          clientWidth: root.clientWidth,
+          past: past.slice(0, 6),
+          lines: [...new Set(lines)],
+        };
+      });
+      assert.equal(drawn.days, 7, `${mode} ${id}: seven days`);
+      assert.ok(
+        drawn.scrollWidth <= drawn.clientWidth && drawn.past.length === 0,
+        `${mode} ${id}: nothing past the column (scrollWidth ${drawn.scrollWidth} of ${drawn.clientWidth}; ${drawn.past.join(", ")})`,
+      );
+      // Without @scope the choice's options lose their utility widths and
+      // fit beside the name even in the column: only the wide line is a
+      // promise there.
+      if (id !== "hours" && mode !== "full") continue;
+      assert.deepEqual(
+        drawn.lines,
+        [id === "hours" ? "beside" : "under"],
+        `${mode} ${id}: each day's choice ${id === "hours" ? "beside" : "under"} its name`,
+      );
+    }
     assert.deepEqual(errors, [], `${mode} modules: page errors`);
     passed.push(`${mode} modules`);
     await page.close();
@@ -436,5 +497,5 @@ try {
   await browser.close();
 }
 console.log(
-  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay; MapEditToolbar inside its card at 640, 700 and 760; PropertyPicker's status region rendered before its words; KeyValueList's rows inside a form as outside; OpeningHoursEditor's arrows (${passed.join("; ")})`,
+  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay; MapEditToolbar inside its card at 640, 700 and 760; PropertyPicker's status region rendered before its words; KeyValueList's rows inside a form as outside; OpeningHoursEditor's arrows, and its day rows 640 wide and in a 296 column, English and German (${passed.join("; ")})`,
 );

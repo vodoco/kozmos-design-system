@@ -99,8 +99,9 @@ export function readStatusReport() {
  *    says a component has no Figma component set by design (a provider, a
  *    typography primitive, a nonvisual utility); otherwise `not-yet`.
  *
- * Nothing says a component will never reach SwiftUI or Compose, so those are
- * never `not-expected`: the status script would have to say so first.
+ * SwiftUI and Compose are `not-expected` only for the status script's
+ * Dashboard lane, whose modules are web parts (decision 88); any other
+ * component missing there is `not-yet`.
  */
 export function platformsOf(status) {
   // A Dashboard module is a web part (decisions 88, 183): no SwiftUI or

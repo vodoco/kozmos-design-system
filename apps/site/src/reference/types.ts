@@ -13,9 +13,10 @@ export type Platform = "react" | "swiftui" | "compose" | "figma";
 /**
  * What exists on one platform. `implemented`: the platform's library has the
  * component. `linked`: Figma only — a Code Connect mapping ties it to a real
- * node in the Figma library. `not-yet`: not there yet. `not-expected`: Figma
- * only — a provider, a typography primitive or a nonvisual utility, which has
- * no Figma component set by design.
+ * node in the Figma library. `not-yet`: not there yet. `not-expected`: not
+ * coming by design — in Figma, a provider, a typography primitive or a
+ * nonvisual utility, which has no Figma component set; in SwiftUI and Compose,
+ * a Dashboard module, which is a web part (decision 88).
  */
 export type PlatformState =
   | "implemented"
