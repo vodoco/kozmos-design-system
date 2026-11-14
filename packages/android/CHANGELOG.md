@@ -39,6 +39,7 @@ Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is
 
 ### Fixed
 
+- **A long press opens `KozmosContextMenuArea`'s menu over pressable content:** over a button, a row or anything clickable inside the area, a long press opened nothing, because the child's click took the press as it went down and the area read that as another handler's press. Only a press whose movement another handler takes (a scroller, a drag) is now not the menu's; a long press anywhere in the area opens it where it was pressed, its release clicks nothing, and a tap still clicks the child. `KozmosTree` no longer gives its rows a long click of their own for it: its rows open their menu through the area. `KozmosContextMenuAreaTest.aLongPressOverAClickableChildOpensTheMenuAndATapStillClicks` and `KozmosTreeSelectionTest.aFingersLongPressOnARowOpensThatRowsMenuWhereItWasPressed`.
 - **An expanded sidebar is 256 wide (decision 157):** `KozmosSidebar`'s expanded variant was 280; it is 256, as React's `w-64` and SwiftUI draw it, and as Figma's token is. A rail stays 96. A product's screenshots of an expanded sidebar are 24 narrower. `KozmosSidebarInsetTest.anExpandedSidebarIs256`.
 - **Alert and Drawer have the container's corners (decision 156):** `KozmosAlert` and `KozmosDrawer` drew the control's 16; they draw 20, `semanticsRadiusContainer`, as React's `rounded-container` and as `KozmosCard` does. A drawer still rounds only the two corners that face the page. `KozmosContainerCornerTest` reads the alert's corner off what it draws.
 

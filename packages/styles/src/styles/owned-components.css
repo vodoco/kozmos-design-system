@@ -302,11 +302,18 @@
      Kozmos Button here grows to two lines rather than overflow and keeps its
      44px; aria-disabled reads unavailable without dropping focus, as a
      disabled button would. Owned, so it holds without @scope. Grid columns,
-     not flex: a flex basis of 0 still adds an outline button's border. */
+     not flex: a flex basis of 0 still adds an outline button's border.
+     The row is max-content, not auto: WebKit can keep an auto row at the
+     height its stretched buttons had in a narrower first layout. A map
+     shell lays its panel out at width 0 before it measures, where
+     "Previous" breaks a letter to a line, and the row stayed that tall
+     once the panel widened: the sheet fitted to it settled 134px too tall,
+     or not, depending on when WebKit next laid the row out. */
   .kozmos-route-summary-actions {
     display: grid;
     grid-auto-columns: minmax(0, 1fr);
     grid-auto-flow: column;
+    grid-auto-rows: max-content;
     gap: 0.5rem;
   }
   .kozmos-route-summary-actions > * {
