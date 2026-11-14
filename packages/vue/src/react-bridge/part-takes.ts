@@ -698,7 +698,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [AvatarFallback, boxBooleans],
   [Tag, H],
   [List, H],
-  [Table, H],
+  [Table, html(["framed"])],
   [Tree, html(["divided", "virtualized"])],
   [Timeline, H],
   [
