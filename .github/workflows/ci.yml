@@ -629,7 +629,10 @@ jobs:
       # TimePicker's trigger) draw their hover fill 4 inside themselves, its
       # corners the field's less 4, and keep the field's edge drawn on hover,
       # in forced colours too; a focused one rings alone
-      # (scripts/check-field-actions.mjs, decision 164).
+      # (scripts/check-field-actions.mjs, decision 164). A chip longer than
+      # its room shrinks, its label truncated: in MultiSelect it stays clear
+      # of the clear and open, and every remove is 24 by 24 or more and hit
+      # at its middle (scripts/check-chip-shrink.mjs).
       - name: Verify Field Styles
         run: |
           pnpm test:field-styles
