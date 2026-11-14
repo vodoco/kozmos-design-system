@@ -12182,6 +12182,8 @@ for (const [file, symbols] of [
     ".kozmos-route-summary-actions {",
     "grid-auto-columns: minmax(0, 1fr);",
     "grid-auto-flow: column;",
+    // WebKit kept an auto row at a narrow first layout's height.
+    "grid-auto-rows: max-content;",
     ".kozmos-route-summary-actions > .kozmos-button {",
     "min-height: 2.75rem;",
     '.kozmos-route-summary-actions > .kozmos-button[aria-disabled="true"] {',
