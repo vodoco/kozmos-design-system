@@ -45,6 +45,7 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  Notice,
   Drawer,
   Toast,
   Breadcrumb,
@@ -348,6 +349,11 @@ export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
 export const KozmosKbd = createVueWrapper(Kbd);
+// Its disclosure is a model: v-model:expanded, as React's expanded and
+// onExpandedChange are.
+export const KozmosNotice = createVueWrapper(Notice, {
+  expanded: { prop: "expanded", callback: "onExpandedChange", empty: false },
+});
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);

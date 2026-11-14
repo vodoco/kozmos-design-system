@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
 import { Switch } from "./Switch";
 import "@testing-library/jest-dom/vitest";
@@ -80,5 +81,83 @@ describe("Switch", () => {
   it("keeps a caller's aria-invalid when it sets no error", () => {
     render(<Switch label="Gate alerts" aria-invalid />);
     expect(screen.getByRole("switch")).toHaveAttribute("aria-invalid", "true");
+  });
+});
+
+describe("Switch description and state label (GAP-162)", () => {
+  it("reads the description as the switch's description, not its name", () => {
+    render(
+      <Switch
+        label="Gate alerts"
+        description="Sends a push when your gate changes"
+      />,
+    );
+    const switchEl = screen.getByRole("switch");
+    expect(switchEl).toHaveAccessibleName("Gate alerts");
+    expect(switchEl).toHaveAccessibleDescription(
+      "Sends a push when your gate changes",
+    );
+  });
+
+  it("joins the caller's description, its own and the error, in that order", () => {
+    render(
+      <>
+        <p id="switch-hint">Alerts use data</p>
+        <Switch
+          label="Gate alerts"
+          description="Sends a push"
+          aria-describedby="switch-hint"
+          error="Turn this on to continue"
+        />
+      </>,
+    );
+    expect(screen.getByRole("switch")).toHaveAccessibleDescription(
+      "Alerts use data Sends a push Turn this on to continue",
+    );
+  });
+
+  it("says its state in words that follow it and are not read", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Switch label="Gate alerts" showStateLabel />);
+    const words = container.querySelector('[data-slot="state-label"]');
+    expect(words).toHaveTextContent("Off");
+    expect(words).toHaveAttribute("aria-hidden", "true");
+    await user.click(screen.getByRole("switch"));
+    expect(words).toHaveTextContent("On");
+    // The switch is named by its label alone; its role says on or off.
+    expect(screen.getByRole("switch")).toHaveAccessibleName("Gate alerts");
+  });
+
+  it("takes the words, and a controlled state", () => {
+    const { container, rerender } = render(
+      <Switch
+        label="Alertes"
+        showStateLabel
+        onLabel="Activé"
+        offLabel="Désactivé"
+        checked
+      />,
+    );
+    const words = () => container.querySelector('[data-slot="state-label"]');
+    expect(words()).toHaveTextContent("Activé");
+    rerender(
+      <Switch
+        label="Alertes"
+        showStateLabel
+        onLabel="Activé"
+        offLabel="Désactivé"
+        checked={false}
+      />,
+    );
+    expect(words()).toHaveTextContent("Désactivé");
+  });
+
+  it("starts its words from defaultChecked", () => {
+    const { container } = render(
+      <Switch label="Gate alerts" showStateLabel defaultChecked />,
+    );
+    expect(
+      container.querySelector('[data-slot="state-label"]'),
+    ).toHaveTextContent("On");
   });
 });

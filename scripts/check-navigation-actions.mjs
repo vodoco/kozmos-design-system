@@ -83,12 +83,41 @@ try {
             `<!doctype html><html dir="${direction}"><head></head><body style="margin:16px"><div id="root" data-kozmos-root class="${theme}"></div></body></html>`,
           );
           await page.addStyleTag({ content: css });
+          // Mounted at width 0, as a map shell lays its panel out before it
+          // measures, and then widened: the row must be as tall as a fresh
+          // layout of it. WebKit kept an auto row at the height a letter to a
+          // line gave it, and a sheet fitted to it settled 134px too tall.
           await page.evaluate((value) => {
             window.navigationAction = value;
+            document.getElementById("root").style.width = "0px";
           }, action);
           await page.addScriptTag({ content: fixture.code });
           const row = page.locator(".kozmos-route-summary-actions");
-          await row.waitFor();
+          await row.waitFor({ state: "attached" });
+          await page.evaluate(() => {
+            const root = document.getElementById("root");
+            void root.offsetHeight;
+            root.style.width = "";
+          });
+          await settleLayout(page);
+          const widened = await row.evaluate((node) => {
+            const heights = () =>
+              Array.from(
+                node.children,
+                (child) => child.getBoundingClientRect().height,
+              );
+            const kept = heights();
+            node.style.display = "none";
+            void node.offsetHeight;
+            node.style.display = "";
+            return { kept, fresh: heights() };
+          });
+          assert.ok(
+            widened.kept.every(
+              (height, index) => Math.abs(height - widened.fresh[index]) <= 0.5,
+            ),
+            `${label}: mounted at width 0 and widened, the actions are ${JSON.stringify(widened.kept)} tall, laid out afresh ${JSON.stringify(widened.fresh)}`,
+          );
           const actions = row.getByRole("button");
           assert.equal(await actions.count(), 2, `${label}: two actions`);
           if (action === "summary-preview")
@@ -237,7 +266,7 @@ try {
             `${label}: an action submitted the host form`,
           );
           console.log(
-            `ok ${label}: 320px, text 100/200%, 44px, equal columns, reading order, host form`,
+            `ok ${label}: 320px, text 100/200%, 44px, equal columns, reading order, host form, widened from 0 as tall as laid out afresh`,
           );
           await page.close();
         }

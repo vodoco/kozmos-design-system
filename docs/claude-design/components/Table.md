@@ -60,7 +60,15 @@ export function TableExample() {
 
 ## Table
 
-It forwards its ref to `HTMLTableElement`. Its props are `React.HTMLAttributes<HTMLTableElement>`.
+It forwards its ref to `HTMLTableElement`. Its props are `TableProps`, which extends `React.HTMLAttributes<HTMLTableElement>`.
+
+- `framed`: `boolean`, optional, default `false`.
+
+  A 1px border round the table and the control radius, 16, at its corners
+  (decision 159), as Figma, SwiftUI and Compose draw it. The header and the
+  rows are clipped inside it, so a row's hover and selected fills keep its
+  corners, and a caption sits inside the frame, at its foot. Off by
+  default: a dense page's table runs edge to edge.
 
 - `children`: `ReactNode`, optional.
 
