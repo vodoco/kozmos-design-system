@@ -795,9 +795,7 @@ final class InteractionTests: XCTestCase {
     /// A chip's remove is drawn 20 but takes a tap 44 square, Apple's minimum
     /// and Kozmos's SwiftUI one, at every size, with the chip no taller for
     /// it, and a tap on the chip's words is never a remove, up to their last
-    /// point. It took a tap only on the 20; once its target was 44, a touch
-    /// 2 before it, on the words' end, removed the chip: on iOS a touch takes
-    /// the frontmost control near it.
+    /// point. It took a tap only on the 20.
     func testAChipsRemoveTakesATap44SquareWhileTheChipKeepsItsHeight() {
         launch("chip-remove-targets")
         XCTAssertEqual(app.staticTexts["chip-heights"].label, "28|32|36", "a remove target made a chip taller")
@@ -817,13 +815,14 @@ final class InteractionTests: XCTestCase {
                 XCTAssertEqual(last(), "remove \(text)", "\(text): a tap at \(x),\(y) in the remove's \(frame)")
             }
             // Across the words to their last point, every tap is the chip's.
+            // The words stop where the remove's target starts, 4 before the
+            // mark; the chip's element reads as the whole chip on iOS, so its
+            // frame does not say where they stop.
             let words = app.buttons[text]
-            for x in [0.5, 1.0] {
-                for back in [1.0, 2.0, 4.0] where x == 1.0 || back == 1.0 {
-                    words.coordinate(withNormalizedOffset: CGVector(dx: x, dy: 0.5))
-                        .withOffset(CGVector(dx: x == 1.0 ? -back : 0, dy: 0)).tap()
-                    XCTAssertEqual(last(), text, "\(text): a tap \(back) before the words' end, \(words.frame)")
-                }
+            for back in [1.0, 2.0, 4.0, 8.0] {
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.minX - back, dy: frame.midY)).tap()
+                XCTAssertEqual(last(), text, "\(text): a tap \(back) before the remove's \(frame), on the words")
             }
             // Where the target's leading edge yields to the words, for the
             // record: printed, not asserted.

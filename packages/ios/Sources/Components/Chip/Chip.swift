@@ -138,13 +138,11 @@ public struct KozmosChip<Icon: View>: View {
     }
 
     /// The chip's own target, over its words, from its leading edge to where
-    /// the words stop, when it has a remove. On iOS a touch takes the
-    /// frontmost control near it, not only one under it, so the remove beside
-    /// the words, laid over the chip, took a tap on their end
-    /// (`testAChipsRemoveTakesATap44SquareWhileTheChipKeepsItsHeight`). In
-    /// front of the remove, the words keep every tap on them; with no action,
-    /// a tap on them does nothing. Hidden from VoiceOver, which reads the chip
-    /// and its remove as before.
+    /// the words stop, when it has a remove, which is laid over the chip and
+    /// runs up to the words. In front of the remove, the words keep every tap
+    /// on them, whatever room iOS gives a touch round the remove's target;
+    /// with no action, a tap on them does nothing. Hidden from VoiceOver,
+    /// which reads the chip and its remove as before.
     @ViewBuilder
     private var wordsTarget: some View {
         if onRemove != nil {
