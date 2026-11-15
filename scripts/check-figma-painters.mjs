@@ -42,6 +42,7 @@ import {
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  propertiesBoundToNoLayer,
   strokeLayoutsThatDisagree,
   variantsThatOverlap,
 } from "./lib/figma-verify-rules.mjs";
@@ -13367,6 +13368,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         `Select: Reset Mixed is bound on every variant but Mixed, which has none, 6 under the trigger as React's field gap (${key})`,
       );
     }
+    // The live file (figma:verify, 15 Nov) held Combobox's Reset Mixed and
+    // Reset Mixed Text declared and referenced by no layer, which blocks
+    // publishing: an Update from a build older than #521 redrew its variants
+    // without the reset and left the properties behind. Each of the four
+    // sets GAP-153 reaches, painted with a Default and a Mixed variant (and
+    // Open, where the set has it, for the list's properties) and its
+    // properties configured, declares nothing a layer does not reference.
+    for (const [setName, update, configure, variants] of [
+      ["Input", "updateInputVariant", null, [{ action: "None" }]],
+      ["NumberInput", "updateNumberInputVariant", null, [{ steppers: "True" }]],
+      [
+        "Combobox",
+        "updateComboboxVariant",
+        "configureComboboxProperties",
+        [{ content: "Closed" }, { content: "Open" }],
+      ],
+      [
+        "Select",
+        "updateSelectVariant",
+        "configureSelectProperties",
+        // Select's painter names its Content `type`.
+        [{ type: "Closed" }, { type: "Open" }],
+      ],
+    ]) {
+      const set = new MockNode("COMPONENT_SET", setName);
+      for (const state of ["Default", "Mixed"]) {
+        for (const extra of variants) {
+          set.appendChild(
+            await paint(
+              update,
+              Object.assign({ state, status: "Default" }, extra),
+            ),
+          );
+        }
+      }
+      const stats = freshStats();
+      await attempt(() =>
+        configure
+          ? controls[configure](set, stats)
+          : controls.configureResetMixedProperty(set, stats),
+      );
+      const unbound = propertiesBoundToNoLayer(set).map(
+        (property) => property.split("#")[0],
+      );
+      ok(
+        propertyNamed(set, "Reset Mixed", "BOOLEAN") &&
+          propertyNamed(set, "Reset Mixed Text", "TEXT") &&
+          unbound.length === 0,
+        `${setName}: every property it declares is bound to a layer, Reset Mixed and Reset Mixed Text among them (unbound: ${unbound.join(", ") || "none"})`,
+      );
+    }
   }
 
   // GAP-165: EmptyState's list ------------------------------------------------
@@ -13431,6 +13483,42 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
             "Colors/foreground/400",
         ),
       `the list's three items, each a bullet and its words in foreground 400 (${words.map((text) => text.characters).join(" | ")})`,
+    );
+    // React's bullet is a list marker (list-style: disc in a 1.25rem
+    // padding-inline-start), not a character in the text, so the painter
+    // draws it as a shape: a 5 disc in foreground 400 inside a 20 column, at
+    // Chromium's marker place (4 in, 8 down a 20 line), the words starting
+    // 20 in as React's do. A typed "•" read as an icon typed as a character
+    // to figma:verify (15 Nov).
+    const rows = lists[0] ? lists[0].children : [];
+    const typed = rows.flatMap((row) =>
+      row.findAll((child) => isTypedGlyph(child)).map((child) => child.name),
+    );
+    const marks = rows.map((row) => {
+      const column = named(row, "Bullet");
+      const dot = column && named(column, "Bullet Dot");
+      return { row, column, dot };
+    });
+    ok(
+      rows.length === 3 &&
+        typed.length === 0 &&
+        marks.every(
+          ({ row, column, dot }) =>
+            column &&
+            column.type === "FRAME" &&
+            column.width === 20 &&
+            column.height === 20 &&
+            row.children[0] === column &&
+            row.itemSpacing === 0 &&
+            dot &&
+            dot.type === "ELLIPSE" &&
+            dot.width === 5 &&
+            dot.height === 5 &&
+            dot.x === 4 &&
+            dot.y === 8 &&
+            boundVariableName((dot.fills || [])[0]) === "Colors/foreground/400",
+        ),
+      `each item's bullet is a 5 disc in foreground 400 in a 20 column, as React's disc marker, not a typed character (typed: ${typed.join(", ") || "none"}; ${marks[0] && marks[0].column ? `${marks[0].column.type} ${marks[0].column.width}` : "no Bullet"})`,
     );
     controls.configureEmptyStateProperties(set, freshStats());
     const list = propertyNamed(set, "List", "BOOLEAN");
@@ -13852,6 +13940,14 @@ section("An edge takes room in every variant or in none");
         ...drawn,
         stats: freshStats(),
       }),
+    Select: (pair) =>
+      plugin.createSelectVariant({
+        state: pair[0],
+        status: pair[1],
+        type: pair[2],
+        ...drawn,
+        stats: freshStats(),
+      }),
   };
   // The variants each set had before, and the ones the Update added to it.
   const eras = {
@@ -13906,6 +14002,18 @@ section("An edge takes room in every variant or in none");
       [
         ["Basic", "Success"],
         ["Action", "Info"],
+      ],
+    ],
+    // figma:verify, 15 Nov: Select Trigger laid out in the 4 variants #521
+    // and GAP-164 added (Mixed, Open), not in the 6 drawn before.
+    Select: [
+      [
+        ["Default", "Default", "Closed"],
+        ["Focus", "Error", "Closed"],
+      ],
+      [
+        ["Mixed", "Default", "Closed"],
+        ["Default", "Default", "Open"],
       ],
     ],
   };
@@ -16423,6 +16531,34 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       `a second Update keeps the set and its six variants' ids (${error ? error.message : second && `${second.variantsUpdated} updated, ${second.variantsCreated} created, ${second.variantsRemoved} removed`})`,
     );
   }
+}
+
+section("figma:verify reads each set's axes as the plugin declares them");
+{
+  // figma:verify reads the axes from code.js's text, without running it. It
+  // read only quoted strings, so Input's and NumberInput's State
+  // (INPUT_STATES.concat([MIXED_FIELD_STATE])) dropped out and Combobox's
+  // MIXED_FIELD_STATE went unread: on 15 Nov it called the live file's
+  // correct State=Mixed drift on three sets. Every set it expects, it reads
+  // exactly as the plugin's own expectedVariantAxesForComponentSetName.
+  const { names, axes } = expectations();
+  const wrong = [];
+  for (const name of new Set([...names, ...Object.keys(axes)])) {
+    const declared = plugin.expectedVariantAxesForComponentSetName(name);
+    const want = JSON.stringify(
+      Object.fromEntries(
+        Object.entries(declared || {}).filter(
+          ([, values]) => Array.isArray(values) && values.length,
+        ),
+      ),
+    );
+    const read = JSON.stringify(axes[name] || {});
+    if (read !== want) wrong.push(`${name}: read ${read}, declared ${want}`);
+  }
+  ok(
+    wrong.length === 0 && axes.Input && axes.Combobox,
+    `figma:verify reads every set's axes as the plugin declares them${wrong.length ? ` (${wrong.length}: ${wrong.slice(0, 3).join("; ")})` : ""}`,
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------
