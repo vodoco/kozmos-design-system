@@ -884,6 +884,11 @@ struct KozmosTreeDividedRow: View {
                     .font(.caption.weight(.semibold))
                     .rotationEffect(.degrees(open ? 90 : 0))
                     .foregroundColor(KozmosColors.primitivesColorsForeground400)
+            } else if checked != nil {
+                // A checkable leaf keeps the chevron's room, so its box lines
+                // up with its parent's, as React's does; an empty Group would
+                // take none.
+                Color.clear.frame(height: 1)
             }
         }
         .frame(width: 16)
