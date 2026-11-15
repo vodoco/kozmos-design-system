@@ -11,16 +11,16 @@
   "figma": {
     "knownFileKeys": ["Yj4O8p6Y9h2Sa9zJVoAiVY"],
     "publishCommand": "pnpm figma:publish:dry",
-    "publishStatus": "blocked for all-component React publish until non-core node-id=TBD scaffolds are linked; use linked publish for Core",
+    "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 107 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 108 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 107 Core SwiftUI and 107 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 108 Core SwiftUI and 108 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15719,8 +15719,8 @@
       "tests": 128,
       "exported": 128,
       "codeConnectFiles": 105,
-      "codeConnectScaffolds": 1,
-      "codeConnectLinked": 104
+      "codeConnectScaffolds": 0,
+      "codeConnectLinked": 105
     },
     "firstBatch": [
       "Accordion",
@@ -17704,11 +17704,11 @@
         "exported": true,
         "codeConnect": {
           "file": "packages/react/src/components/ImageCropper/ImageCropper.figma.tsx",
-          "linked": false,
-          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
-          "needsNodeId": true,
-          "status": "scaffold",
-          "issues": ["node-id=TBD"],
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2516-15104",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
           "connectedComponents": ["ImageCropper"],
           "mappedProps": ["alt", "aspectRatio", "showZoomControls", "src"],
           "unmappedProps": []
