@@ -29,20 +29,15 @@ const ToggleButton = React.forwardRef<
       <TogglePrimitive.Root
         ref={ref}
         className={cn(
-          // GAP-75: eight between an icon and its label, the spacing scale's
-          // 100 — as SwiftUI's `HStack(spacing: spacing100)` and Compose's
-          // spacer between the icon and the text already draw it, and as
-          // `Button` does since GAP-56. This is a Radix Toggle styled on its
-          // own, so fixing `.kozmos-button` left it at zero. On, it is a
-          // prominent fill: the theme fill and the theme foreground, the same
-          // in both themes (decision 59), and hovered the themed Button's
-          // hover token; the plain hover fill never showed on it. Focused from
-          // the keyboard it draws Button's offset ring, a band of the page's
-          // colour and then the theme's 600, 3:1 on the fill and the page:
-          // the 1px 600 ring it had read 1.11:1 on the fill.
-          "inline-flex items-center justify-center gap-2 rounded-control text-sm font-medium transition-colors hover:bg-hover-fill hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-theme-fill data-[state=on]:text-theme-fill-foreground data-[state=on]:hover:bg-[var(--components-primary-buttons-themed-button-background-hover)]",
-          variant === "outline" &&
-            "border border-input bg-transparent shadow-raised hover:bg-accent hover:text-accent-foreground",
+          // Its look is owned CSS, kozmos-toggle-button (GAP-262), so the
+          // pressed fill, the focus ring and the disabled half-strength hold
+          // in a host where no @scope rule applies. Pressed is read from
+          // aria-pressed, never data-state (GAP-261): a trigger this button
+          // is the child of (TooltipTrigger asChild) writes its own
+          // data-state over Toggle's "on", and the pressed fill was lost.
+          // The sizes stay utilities.
+          "kozmos-toggle-button",
+          variant === "outline" && "kozmos-toggle-button-outline",
           size === "default" && "h-9 px-3",
           size === "sm" && "h-8 px-2",
           size === "lg" && "h-10 px-3",

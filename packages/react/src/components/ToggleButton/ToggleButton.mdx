@@ -16,6 +16,16 @@ Use `pressed` and `onPressedChange` for controlled state, or `defaultPressed` fo
 
 <Controls />
 
+## With a tooltip
+
+A ToggleButton can be a tooltip's trigger, `TooltipTrigger asChild`, and it keeps its pressed look:
+the trigger writes the tooltip's `data-state` onto the button, so the pressed fill is read from
+`aria-pressed`, which no trigger touches. To restyle the pressed look, key on `aria-pressed` too.
+
+<Canvas>
+  <Story of={ToggleButtonStories.InTooltip} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>

@@ -152,12 +152,12 @@ const RadioGroupItem = React.forwardRef<
             // heavier by owned CSS (kozmos-radio-card, an inset shadow that
             // the focus ring adds to), and the ring's dot or the tile's
             // check shows: the choice is never colour alone.
-            "kozmos-radio-card group relative flex w-full min-w-0 rounded-container border border-border p-3 text-foreground transition-colors hover:bg-hover-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary",
+            "kozmos-radio-card group relative flex w-full min-w-0 rounded-container border border-border p-3 text-foreground transition-colors hover:bg-hover-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-primary",
             tile
               ? "min-h-24 flex-col items-center justify-center gap-1 text-center"
               : "flex-col items-stretch gap-3 text-start",
             error &&
-              "border-destructive focus-visible:ring-destructive data-[state=checked]:border-destructive",
+              "border-destructive focus-visible:ring-destructive aria-checked:border-destructive",
             className,
           )}
           {...props}
@@ -171,7 +171,7 @@ const RadioGroupItem = React.forwardRef<
                 // A tile's icon turns theme 600 when chosen, as SwiftUI's and
                 // Compose's do; a card's image keeps its own colours.
                 tile
-                  ? "items-center justify-center text-foreground group-data-[state=checked]:text-primary"
+                  ? "items-center justify-center text-foreground group-aria-checked:text-primary"
                   : // Concentric with the card: its radius less the card's
                     // 12 inset (docs/nested-radius.md), owned CSS.
                     "kozmos-radio-card-media w-full overflow-hidden text-foreground",
@@ -217,9 +217,9 @@ const RadioGroupItem = React.forwardRef<
                 aria-hidden="true"
                 data-slot="mark"
                 className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-pill border border-input text-theme-fill group-data-[state=checked]:border-primary",
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-pill border border-input text-theme-fill group-aria-checked:border-primary",
                   error &&
-                    "border-destructive text-destructive-text group-data-[state=checked]:border-destructive",
+                    "border-destructive text-destructive-text group-aria-checked:border-destructive",
                 )}
               >
                 <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
@@ -264,9 +264,9 @@ const RadioGroupItem = React.forwardRef<
             // The ring is a border on the surface, theme 600; the dot is a fill,
             // the theme fill, theme 500 in both themes (decision 59). The dot
             // draws in currentColor, so the text colour is the dot's.
-            "peer aspect-square h-5 w-5 shrink-0 rounded-pill border border-input text-theme-fill ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:text-theme-fill",
+            "peer aspect-square h-5 w-5 shrink-0 rounded-pill border border-input text-theme-fill ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-primary aria-checked:text-theme-fill",
             error &&
-              "border-destructive text-destructive-text focus-visible:ring-destructive data-[state=checked]:border-destructive data-[state=checked]:text-destructive-text",
+              "border-destructive text-destructive-text focus-visible:ring-destructive aria-checked:border-destructive aria-checked:text-destructive-text",
             className,
           )}
           aria-invalid={error || undefined}

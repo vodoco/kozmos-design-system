@@ -88,6 +88,39 @@ describe("Chip", () => {
     expect(remove).not.toHaveClass("h-5");
   });
 
+  it("shrinks to its room and truncates its label, still named by the whole label", () => {
+    // A chip's automatic minimum was its words, which never wrap, so a long
+    // label ran past its room — in MultiSelect under the field's clear
+    // (#537's audit). It now shrinks, its label ends in an ellipsis, and
+    // every word stays for the remove's name and the chip's text.
+    const { container } = render(
+      <Chip onRemove={() => undefined}>Step-free access from the street</Chip>,
+    );
+    const chip = container.querySelector('[data-slot="chip"]');
+    const label = container.querySelector('[data-slot="chip-label"]');
+    expect(chip).toHaveClass("min-w-0", "max-w-full");
+    expect(label).toHaveClass("min-w-0", "truncate");
+    expect(label?.parentElement).toHaveClass("min-w-0");
+    expect(label).toHaveTextContent("Step-free access from the street");
+    const remove = screen.getByRole("button", {
+      name: "Remove Step-free access from the street",
+    });
+    expect(remove).toHaveClass("shrink-0", "h-6", "w-6");
+  });
+
+  it("truncates a pressable chip's label and keeps its whole name", () => {
+    render(
+      <Chip onClick={() => undefined}>Step-free access from the street</Chip>,
+    );
+    const button = screen.getByRole("button", {
+      name: "Step-free access from the street",
+    });
+    expect(button).toHaveClass("min-w-0");
+    expect(button.querySelector('[data-slot="chip-label"]')).toHaveClass(
+      "truncate",
+    );
+  });
+
   describe("a one-of-several choice (row 37)", () => {
     // 'Whole airport / Terminal 2' is one choice. As two toggles it was
     // announced as two unrelated buttons, each "not pressed" or "pressed".

@@ -5,7 +5,12 @@ import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
 export const chipVariants = cva(
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+  // min-w-0 and max-w-full: a chip shrinks to its room, its label truncating,
+  // rather than running past it. A flex item's automatic minimum is its
+  // content, and the words never wrap, so a long label ran out of its
+  // ChipGroup and, in MultiSelect, under the field's clear and open, which
+  // covered the chip's remove (#537's audit, WCAG 2.5.8).
+  "inline-flex min-w-0 max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
   {
     variants: {
       variant: {
@@ -103,7 +108,7 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
     const isInteractive = isChoice || Boolean(onClick);
     const label = chipLabel(children);
     const contentClassName = cn(
-      "inline-flex min-h-[inherit] items-center justify-center gap-1.5 rounded-pill text-inherit",
+      "inline-flex min-h-[inherit] min-w-0 items-center justify-center gap-1.5 rounded-pill text-inherit",
       chipContentPadding[size ?? "default"],
       onRemove && "pr-2",
     );
@@ -119,7 +124,12 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
             {icon}
           </span>
         ) : null}
-        <span data-slot="chip-label">{children}</span>
+        {/* The words end in an ellipsis when the chip is narrower than
+            them; all of them stay in the DOM, so the chip, and its remove
+            ("Remove …"), are named by the whole label. */}
+        <span className="min-w-0 truncate" data-slot="chip-label">
+          {children}
+        </span>
       </>
     );
 
