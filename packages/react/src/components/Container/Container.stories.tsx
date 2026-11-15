@@ -67,3 +67,37 @@ export const InAPanel: Story = {
     </div>
   ),
 };
+
+/**
+ * GAP-116: a region's own top and bottom space. A page column under a top
+ * bar takes `block="sm"`, 16 above and below, rather than a Box around it;
+ * PageHeader takes `{ start: "lg", end: "md" }`, 32 above and 24 below.
+ */
+export const BlockInset: Story = {
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <div className="flex flex-col gap-6 p-6">
+      {(["sm", "md", "lg"] as const).map((block) => (
+        <div key={block} className="rounded-container border">
+          <Container centered={false} inset="panel" block={block}>
+            <div className="border border-dashed bg-muted p-4 text-center">
+              block=&quot;{block}&quot;
+            </div>
+          </Container>
+        </div>
+      ))}
+      <div className="rounded-container border">
+        <Container
+          centered={false}
+          inset="panel"
+          block={{ start: "lg", end: "md" }}
+        >
+          <div className="border border-dashed bg-muted p-4 text-center">
+            block=&#123;&#123; start: &quot;lg&quot;, end: &quot;md&quot;
+            &#125;&#125;
+          </div>
+        </Container>
+      </div>
+    </div>
+  ),
+};
