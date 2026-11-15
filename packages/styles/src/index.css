@@ -17,6 +17,8 @@
 @import "./styles/owned-client-app-banner.css";
 /* After the popover's rules, which the step card's own outweigh by class. */
 @import "./styles/owned-tour-step.css";
+/* After the Button's rules, which a modal close's place outweighs by order. */
+@import "./styles/owned-overlays.css";
 
 @tailwind base;
 @tailwind components;
