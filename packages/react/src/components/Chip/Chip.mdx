@@ -68,6 +68,15 @@ On SwiftUI this is available in both initializers. On Compose the localized over
 requires `removeLabel`; the original positional signature and trailing `onClick`
 lambda remain valid. The app supplies the translation; Kozmos does not choose a locale.
 
+## Longer than its room
+
+A chip is never wider than what holds it. When its words do not fit, they end in an ellipsis and
+the remove stays whole, its full target beside them; every word is still the chip's text, so the
+chip and its remove are named by the whole label. In MultiSelect this keeps a long chip clear of
+the field's clear and open buttons. On Compose the words take what the icon and remove leave; in
+a row that scrolls sideways, which sets no width, a chip is as wide as its words. On SwiftUI a
+ChipGroup that does not fit scrolls sideways, so each chip keeps its words.
+
 ## Android Jetpack Compose
 
 ```kotlin
