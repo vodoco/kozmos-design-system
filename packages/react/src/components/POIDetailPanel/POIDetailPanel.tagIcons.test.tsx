@@ -282,7 +282,8 @@ describe("POIDetailPanel tag icons", () => {
       ...kozmosIconNames,
       ...(Object.keys(kozmosIconAliases) as KozmosIconKey[]),
     ];
-    expect(names).toHaveLength(72 + 57);
+    // 73 registry names since crop-01 (GAP-264), and 57 aliases.
+    expect(names).toHaveLength(73 + 57);
     const iconOf = renderTags(names);
     for (const name of names) {
       expect(iconOf(name)?.outerHTML, name).toBe(
