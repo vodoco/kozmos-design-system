@@ -14783,9 +14783,11 @@ section("GAP-156: Kbd draws a key cap, one key or a combination");
           boundVariableName(text.fills[0]) === "Colors/foreground/0",
         `${at}: 12/16 medium in the foreground (${text.fontName.style}, ${text.fontSize}/${text.lineHeight.value}, ${boundVariableName(text.fills[0])})`,
       );
+      // Down to its 20 floor (Kbd/min-width), which the stand-in keeps as
+      // Figma does.
       ok(
-        Math.abs(cap.width - (text.width + 2 * 4 + 2 * 1)) < 0.01,
-        `${at}: the cap hugs its key, 4 and the 1 edge each side (${cap.width} for ${text.width})`,
+        Math.abs(cap.width - Math.max(20, text.width + 2 * 4 + 2 * 1)) < 0.01,
+        `${at}: the cap hugs its key, 4 and the 1 edge each side, 20 at least (${cap.width} for ${text.width})`,
       );
     }
     // An Update redraws the same layers, once.
@@ -16334,6 +16336,37 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// --- The audit's expected sets are sets, never a section's title ------------------
+
+// figma:verify reads the sets it expects off the Components page's layout. A
+// section's title is not a set: the Dashboard section's, new with decision
+// 183, was read as one and reported missing on the live file (15 Nov).
+section("The audit expects every section's sets and no section's title");
+{
+  const { names } = expectations();
+  const sections = plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || [];
+  const sets = [...new Set(sections.flatMap((entry) => entry.components))];
+  const titles = sections
+    .map((entry) => entry.title)
+    .filter((title) => !sets.includes(title));
+  ok(
+    titles.every((title) => !names.includes(title)),
+    `no section title is an expected set (${titles.filter((title) => names.includes(title)).join(", ") || "none"})`,
+  );
+  ok(
+    names.length === sets.length && sets.every((name) => names.includes(name)),
+    `the expected sets are the sections' sets, ${sets.length} (${names.length}: ${names.filter((name) => !sets.includes(name)).join(", ") || "none extra"})`,
+  );
+  const dashboard = sections.find((entry) => entry.title === "Dashboard");
+  ok(
+    dashboard &&
+      dashboard.components.length === 8 &&
+      dashboard.components.every((name) => names.includes(name)) &&
+      !names.includes("Dashboard"),
+    `the Dashboard section's eight modules are expected, "Dashboard" is not (${dashboard && dashboard.components.join(", ")})`,
+  );
+}
+
 // --- ImageField (Dashboard, CLOUD-UI-004) ---------------------------------------
 
 // Pointr Cloud's image field, as React's ImageField draws it: a bordered group
@@ -16397,6 +16430,47 @@ section("ImageField (Dashboard)");
       named(field, "Add Button"),
     "Default: the 112 drop zone and the URL row with Add",
   );
+  {
+    // With the curated icons on the Icons page, Add draws plus as every
+    // Button does, never a typed "+". Frame's crop-01 is not curated yet (it
+    // has no library key), so it alone keeps its typed glyph, and says so.
+    const iconsPage =
+      figma.root.children.find((page) => page.name === "Icons") ||
+      (() => {
+        const page = figma.createPage();
+        page.name = "Icons";
+        return page;
+      })();
+    for (const name of ["eye", "trash-01", "plus"])
+      if (!iconsPage.findOne((node) => node.name === `Icon / ${name}`))
+        iconsPage.appendChild(mockIconComponent(name));
+    const { component: drawn } = await paint("Default");
+    const add = named(drawn, "Add Button");
+    const icon = add && named(add, "Add Button Icon");
+    ok(
+      icon &&
+        icon.type === "INSTANCE" &&
+        icon.mainComponent &&
+        icon.mainComponent.name === "Icon / plus" &&
+        icon.width === 16 &&
+        !named(add, "Add Button Glyph") &&
+        named(add, "Add Button Label"),
+      `Default: Add draws the curated plus, 16, before its label, no typed "+" (${add ? add.children.map((child) => child.name).join(", ") : "no Add"})`,
+    );
+    const frame = named(drawn, "Frame Button");
+    ok(
+      named(drawn, "Preview Button Icon") &&
+        named(drawn, "Remove Button Icon") &&
+        frame &&
+        named(frame, "Frame Button Glyph") &&
+        Array.isArray(plugin.KOSMOS_ICON_DEFINITIONS) &&
+        plugin.KOSMOS_ICON_DEFINITIONS.some((entry) => entry.name === "plus") &&
+        !plugin.KOSMOS_ICON_DEFINITIONS.some(
+          (entry) => entry.name === "crop-01",
+        ),
+      `Default: Preview and Remove draw eye and trash-01; Frame keeps its typed glyph while crop-01 is not curated (${frame ? frame.children.map((child) => child.name).join(", ") : "no Frame"})`,
+    );
+  }
   ok(
     framesLargerThanAsked(field).length === 0,
     `Default: no frame larger than it was drawn (${framesLargerThanAsked(field)
@@ -16641,11 +16715,27 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
           state === "On"
             ? "Primary Buttons/themed/button/foreground/content/idle"
             : "Colors/foreground/400";
+        // React's item is min-inline-size 56 and inline-size auto: it hugs
+        // its label, 4 each side, and stops at 56 (Straighten is wider). The
+        // label never runs out of the item's content box.
+        const hugged = label ? Math.max(56, label.width + 2 * 4) : NaN;
+        ok(
+          item.counterAxisSizingMode === "AUTO" &&
+            item.minWidth === 56 &&
+            menusBound(item, "minWidth") === "MapEditToolbar/item/width" &&
+            menusBound(item, "height") === "MapEditToolbar/item/height" &&
+            Math.abs(item.width - hugged) < 0.01 &&
+            label.width <= item.width - 2 * 4 + 0.01,
+          `${at}: ${item.name} hugs its label, at least 56 (MapEditToolbar/item/width as its minimum), the label inside its content box (${item.width} for a ${label && label.width} label, min ${item.minWidth}, ${item.counterAxisSizingMode})`,
+        );
+        if (item.name === "Straighten")
+          ok(
+            item.width > 56,
+            `${at}: Straighten, longer than 56 holds, is wider than 56 (${item.width})`,
+          );
         ok(
           item.layoutMode === "VERTICAL" &&
-            item.width === 56 &&
             item.height === 48 &&
-            menusBound(item, "width") === "MapEditToolbar/item/width" &&
             item.cornerRadius === 8 &&
             icon &&
             icon.width === 24 &&
@@ -16659,7 +16749,7 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
                 "Primary Buttons/themed/button/background/idle"
               : item.fills.length === 0) &&
             item.opacity === (state === "Disabled" ? 0.5 : 1),
-          `${at}: ${item.name} is 56 × 48, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : "no fill"}${state === "Disabled" ? ", at half strength" : ""} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : "no fill"}${state === "Disabled" ? ", at half strength" : ""} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
         );
       }
       card.remove();
@@ -16684,6 +16774,91 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
     );
     set.remove();
   }
+}
+
+// --- RatingEditor (CLOUD-UI-004), a Dashboard module -----------------------------
+
+// React's preview (rating-editor.css): the stars and the words on one line
+// that wraps, 8 apart either way, the words their own width — in the 340
+// editor they go under the stars, whole. The stars are Rating's Readonly
+// instance at 4.3 of 5's nearest half, 4.5 (decision 181), where Rating's set
+// has half values, and 4 where it has whole values only.
+section("RatingEditor: the preview's words wrap whole, the stars at the half");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const hidden = [];
+  for (const page of figma.root.children)
+    for (const node of page.findAll((n) => n.type === "COMPONENT_SET"))
+      if (node.name === "Rating") {
+        node.name = "Rating (set aside)";
+        hidden.push(node);
+      }
+  const ratingSet = (values) =>
+    mockComponentSet(
+      "Rating",
+      values.flatMap((value) =>
+        ["Default", "Readonly"].map((state) => ({
+          properties: { Value: value, State: state },
+          build: (variant) => variant.resize(208, 40),
+        })),
+      ),
+    );
+  const paint = async (values) => {
+    const set = ratingSet(values);
+    figma.currentPage.appendChild(set);
+    const component = figma.createComponent();
+    const stats = freshStats();
+    if (typeof plugin.updateRatingEditorVariant === "function")
+      await withAutoLayout(() =>
+        plugin.updateRatingEditorVariant(component, {
+          value: "Default",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
+    set.remove();
+    return component;
+  };
+  const valueOf = (component) => {
+    const stars = named(component, "Stars");
+    const main = stars && stars.mainComponent;
+    return main
+      ? `${main.variantProperties.Value}/${main.variantProperties.State}`
+      : "none";
+  };
+
+  const halves = await paint(["0", "1", "2", "3", "4", "4.5", "5"]);
+  ok(
+    valueOf(halves) === "4.5/Readonly",
+    `a Rating set with half values: the stars are Value=4.5, Readonly, 4.3 to the nearest half (${valueOf(halves)})`,
+  );
+  const wholes = await paint(["0", "1", "2", "3", "4", "5"]);
+  ok(
+    valueOf(wholes) === "4/Readonly",
+    `a Rating set with whole values only: the stars are Value=4, Readonly (${valueOf(wholes)})`,
+  );
+
+  const preview = named(halves, "Preview");
+  const words = preview && named(preview, "Summary Text");
+  const need = words ? words.characters.length * words.fontSize * 0.55 : NaN;
+  ok(
+    preview &&
+      preview.layoutMode === "HORIZONTAL" &&
+      preview.layoutWrap === "WRAP" &&
+      preview.itemSpacing === 8 &&
+      preview.counterAxisSpacing === 8 &&
+      words &&
+      words.characters === "4.3 of 5 · 120 ratings" &&
+      words.textAutoResize === "WIDTH_AND_HEIGHT" &&
+      words.textTruncation === "DISABLED" &&
+      words.layoutSizingHorizontal !== "FILL" &&
+      words.width >= need - 0.01,
+    `the preview wraps, 8 apart both ways, and its words hug, untruncated (${preview ? `${preview.layoutWrap}, ${preview.itemSpacing}/${preview.counterAxisSpacing}` : "no preview"}; ${words ? `${words.textAutoResize}, ${words.textTruncation}, ${words.layoutSizingHorizontal}, ${words.width} for ${need}` : "no words"})`,
+  );
+  for (const node of hidden) node.name = "Rating";
+  halves.remove();
+  wholes.remove();
 }
 
 // --- PropertyPicker (CLOUD-UI-003), a Dashboard module ---------------------------
@@ -16720,7 +16895,9 @@ section("PropertyPicker: the subtle Button and its popup");
       .findAll(() => true)
       .flatMap((node) =>
         [...(node.fills || []), ...(node.strokes || [])]
-          .filter((paint) => paint.type === "SOLID" && !boundVariableName(paint))
+          .filter(
+            (paint) => paint.type === "SOLID" && !boundVariableName(paint),
+          )
           .map(() => node.name),
       );
     ok(
@@ -16772,7 +16949,9 @@ section("PropertyPicker: the subtle Button and its popup");
       named(suggested, "Tabs") &&
       named(suggested, "Suggested Tab Label").characters === "Suggested" &&
       named(suggested, "Others Tab Label").characters === "Others" &&
-      named(suggested, "List").children.map((row) => row.name).join() ===
+      named(suggested, "List")
+        .children.map((row) => row.name)
+        .join() ===
         "Access Restrictions,Description,Has Assistance,Has Wifi,Occupancy Status",
     ),
     "Suggested: the Suggested and Others tabs over Booth's five",

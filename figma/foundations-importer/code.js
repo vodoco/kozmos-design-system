@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "7103069d9876";
+const PLUGIN_BUILD = "00512d3d297e";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -995,8 +995,8 @@ const MAP_EDIT_TOOLBAR_MODES = [
 ];
 const MAP_EDIT_TOOLBAR_OVERFLOW = ["False", "True"];
 // React's .kozmos-map-edit-toolbar: the card 60 tall (6 + 48 + 6), padding 8
-// at the sides, corner 16, 8 between the field and the items; items 56 × 48,
-// 4 apart, padded 4, corner 8 (16 less the card's padding), a 24 icon over an
+// at the sides, corner 16, 8 between the field and the items; items 48 tall
+// and at least 56 wide (each hugs its label), 4 apart, padded 4, corner 8 (16 less the card's padding), a 24 icon over an
 // 11/14 label 2 below it; dividers 1 × 32 with 4 of margin; the JSON field an
 // Input, 200 wide.
 const MAP_EDIT_TOOLBAR_GEOMETRY = {
@@ -2627,7 +2627,7 @@ const COMPONENT_DOCS = [
     api: [
       "Three NumberInputs: rating (one decimal, 0 or more), max (1 or more) and count (a whole number, 0 or more).",
       "The preview is always five stars, the rating's share of its max rounded to the nearest half (decision 181), and its words carry the exact value: 4.3 of 5 · 120 ratings.",
-      "Stars is Rating's own Readonly instance; Figma's Rating has whole values, so 4½ is drawn as 4.",
+      "Stars is Rating's own Readonly instance at Value=4.5 where Figma's Rating has half values, 4 where it has whole values only.",
     ],
     properties: ["State: Default, Error, Mixed"],
     accessibility: [
@@ -9822,8 +9822,9 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "BrandLoader/pin/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
   // MapEditToolbar (CLOUD-UI-005, decisions 139 and 151): React's card, 60
-  // tall, padded 6 and 8, the Control corner; items 56 × 48, 4 apart, corner
-  // 8; a 24 icon; dividers 32 tall with 4 of margin.
+  // tall, padded 6 and 8, the Control corner; items 48 tall and at least 56
+  // wide (item/width is their minimum), 4 apart, corner 8; a 24 icon;
+  // dividers 32 tall with 4 of margin.
   { name: "MapEditToolbar/height", value: 60, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "MapEditToolbar/padding/x",
@@ -56432,6 +56433,8 @@ async function updateImageFieldVariant(
     spacing: 4,
   });
   details.appendChild(actions);
+  // crop-01 is not a curated icon yet (no library key), so Frame draws its
+  // typed glyph until Curated Icons carries it.
   for (const [name, iconName, glyph] of [
     ["Preview Button", "eye", "◉"],
     ["Frame Button", "crop-01", "⌗"],
@@ -56488,9 +56491,12 @@ async function updateImageFieldVariant(
     muted: true,
   });
   appendWithSizing(url, urlField, "FILL", "FIXED");
+  // The curated plus, as every Button draws it; "+" only in a file without
+  // the curated icons.
   const add = await productSdkControlButton({
     name: "Add Button",
     glyph: "+",
+    iconName: "plus",
     label: "Add",
     filled: false,
     fonts,
@@ -56566,7 +56572,8 @@ async function rebuildImageFieldComponent() {
 // packages/styles/src/dashboard/map-edit-toolbar.css draw it: a card of
 // Surface/0 with no edge (a map control's, decision 40), 60 tall, padding 6
 // and 8, the Control corner (16) and map chrome's floating elevation; items
-// 56 × 48, a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
+// 48 tall and at least 56 wide, hugging their labels (React's min-inline-size),
+// a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
 // 4 between items; a chosen tool is a pressed ToggleButton, the theme fill
 // under its ink; every other item is Cloud's grey ink (foreground 400), and a
 // disabled one is drawn at half strength, as every Kozmos button is. Dividers
@@ -56592,22 +56599,20 @@ function parseMapEditToolbarVariantName(name) {
 
 /**
  * How many of a mode's items a card `width` wide shows: React's
- * fitMapEditToolbarItems, with a divider left at the end dropped.
+ * fitMapEditToolbarItems over the widths the items were drawn at (an item
+ * hugs its label, 56 at least), with a divider left at the end dropped.
  */
-function mapEditToolbarVisibleCount(items, width, withField) {
+function mapEditToolbarVisibleCount(items, widths, width, withField, more) {
   const g = MAP_EDIT_TOOLBAR_GEOMETRY;
-  const widthOf = (item) =>
-    item.kind === "divider" ? 1 + 2 * g.dividerMargin : g.itemWidth;
   let available = width - 2 * g.paddingX;
   if (withField) available -= g.fieldWidth + g.cardGap;
   const total = (count) =>
-    items.slice(0, count).reduce((sum, item) => sum + widthOf(item), 0) +
+    widths.slice(0, count).reduce((sum, w) => sum + w, 0) +
     Math.max(0, count - 1) * g.itemGap;
   let count = items.length;
   if (total(count) > available) {
     count -= 1;
-    while (count > 0 && total(count) + g.itemGap + g.itemWidth > available)
-      count -= 1;
+    while (count > 0 && total(count) + g.itemGap + more > available) count -= 1;
   }
   while (count > 0 && items[count - 1].kind === "divider") count -= 1;
   return count;
@@ -56621,11 +56626,6 @@ async function updateMapEditToolbarVariant(
   const overflow = second === "True";
   const json = value === "JSON";
   const all = MAP_EDIT_TOOLBAR_ITEMS[value];
-  const shown = overflow
-    ? mapEditToolbarVisibleCount(all, g.narrowMap, json)
-    : all.length;
-  const items = all.slice(0, shown);
-  const more = shown < all.length;
 
   productSdkVariantRoot(
     component,
@@ -56710,23 +56710,44 @@ async function updateMapEditToolbarVariant(
   );
   component.appendChild(row);
 
-  for (const item of items) {
-    if (item.kind === "divider") {
-      row.appendChild(createMapEditToolbarDivider(variableByName, stats));
-      continue;
-    }
-    row.appendChild(
-      await createMapEditToolbarItem(item, { fonts, variableByName, stats }),
-    );
+  // Every item drawn first, as React measures them all, then the ones that
+  // do not fit a 320 map taken off from the end and More put after the rest.
+  const nodes = [];
+  for (const item of all) {
+    const node =
+      item.kind === "divider"
+        ? createMapEditToolbarDivider(variableByName, stats)
+        : await createMapEditToolbarItem(item, {
+            fonts,
+            variableByName,
+            stats,
+          });
+    row.appendChild(node);
+    nodes.push(node);
   }
-  if (more) {
-    row.appendChild(
-      await createMapEditToolbarItem(
-        { kind: "action", label: "More", icon: "dots-horizontal" },
-        { fonts, variableByName, stats },
-      ),
-    );
-  }
+  if (!overflow) return;
+  const more = await createMapEditToolbarItem(
+    { kind: "action", label: "More", icon: "dots-horizontal" },
+    { fonts, variableByName, stats },
+  );
+  row.appendChild(more);
+  const moreWidth = more.width;
+  more.remove();
+  const shown = mapEditToolbarVisibleCount(
+    all,
+    nodes.map((node) => node.width),
+    g.narrowMap,
+    json,
+    moreWidth,
+  );
+  if (shown === all.length) return;
+  for (const node of nodes.slice(shown)) node.remove();
+  row.appendChild(
+    await createMapEditToolbarItem(
+      { kind: "action", label: "More", icon: "dots-horizontal" },
+      { fonts, variableByName, stats },
+    ),
+  );
 }
 
 /** One item: the icon over its label, in the item's state. */
@@ -56739,11 +56760,13 @@ async function createMapEditToolbarItem(
   const ink = on
     ? THEME_FILL_FOREGROUND
     : { name: "Colors/foreground/400", fallback: "#5D626F" };
+  // React's item is min-inline-size 56, inline-size auto: it hugs its
+  // label, 4 each side, and stops at 56, so "Straighten" is wider than 56.
   const frame = figma.createFrame();
   frame.name = item.label;
   frame.layoutMode = "VERTICAL";
   frame.primaryAxisSizingMode = "FIXED";
-  frame.counterAxisSizingMode = "FIXED";
+  frame.counterAxisSizingMode = "AUTO";
   frame.primaryAxisAlignItems = "CENTER";
   frame.counterAxisAlignItems = "CENTER";
   frame.itemSpacing = g.labelGap;
@@ -56752,6 +56775,7 @@ async function createMapEditToolbarItem(
   frame.paddingTop = 0;
   frame.paddingBottom = 0;
   frame.resizeWithoutConstraints(g.itemWidth, g.itemHeight);
+  setNodePropertyIfSupported(frame, "minWidth", g.itemWidth);
   frame.cornerRadius = g.itemRadius;
   frame.clipsContent = false;
   frame.strokes = [];
@@ -56769,9 +56793,16 @@ async function createMapEditToolbarItem(
   frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
   frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
   frame.setSharedPluginData(RUN_NAMESPACE, "itemState", item.state || "Off");
-  bindSizeVariables(
+  bindFloatVariable(
     frame,
+    "minWidth",
     "MapEditToolbar/item/width",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    frame,
+    "height",
     "MapEditToolbar/item/height",
     variableByName,
     stats,
@@ -56816,6 +56847,8 @@ async function createMapEditToolbarItem(
     stats,
     width: g.itemWidth - 2 * g.itemPaddingX,
   });
+  // The label is drawn whole, as React's nowrap label is; the item hugs it.
+  label.textTruncation = "DISABLED";
   label.textAutoResize = "WIDTH_AND_HEIGHT";
   label.textAlignHorizontal = "CENTER";
   frame.appendChild(label);
@@ -56935,7 +56968,7 @@ const MAP_EDIT_TOOLBAR_DESCRIPTION = [
   "Mode is one of Pointr Cloud's seven toolbars (CLOUD-UI-005), with Cloud's items; in code the items are MapEditToolbar.items, the product's.",
   "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is at half strength. In code the chosen tool is MapEditToolbar.value.",
   "Overflow True draws a 320 map: what does not fit goes into More, from the end. In code it follows the width; it is no prop.",
-  "The card is 60 tall, padding 6 and 8, corner 16; items 56 × 48, a 24 icon over an 11/14 label (decisions 139 and 151).",
+  "The card is 60 tall, padding 6 and 8, corner 16; items 48 tall and at least 56 wide, hugging their labels, a 24 icon over an 11/14 label (decisions 139 and 151).",
 ];
 
 async function buildMapEditToolbarComponent() {
@@ -58049,6 +58082,9 @@ async function updateRatingEditorVariant(
     );
   }
   if (value !== "Default") return;
+  // React's preview wraps (rating-editor.css): the stars and the words, 8
+  // apart either way, the words their own width, so in the 340 editor they
+  // go under the stars whole rather than cut short beside them.
   const preview = productSdkFrame("Preview", {
     direction: "horizontal",
     primarySizing: "FIXED",
@@ -58058,13 +58094,20 @@ async function updateRatingEditorVariant(
     width: DASHBOARD_EDITOR_WIDTH,
     height: 24,
   });
-  // Rating's own read-only stars: React draws 4.3 of 5 as 4½ (decision 181);
-  // Rating's set has whole values, so the nearest below it.
+  setNodePropertyIfSupported(preview, "layoutWrap", "WRAP");
+  setNodePropertyIfSupported(preview, "counterAxisSpacing", 8);
+  // Rating's own read-only stars: React draws 4.3 of 5 as 4½ (decision 181).
+  // A Rating set with half values has Value=4.5; one with whole values only
+  // (before #538's Update) the nearest below it, 4.
   const nested = await createNestedComponentInstance({
     componentSetName: "Rating",
     name: "Stars",
     role: "rating-editor-preview",
-    variantProperties: [{ Value: "4", State: "Readonly" }, { Value: "4" }],
+    variantProperties: [
+      { Value: "4.5", State: "Readonly" },
+      { Value: "4", State: "Readonly" },
+      { Value: "4" },
+    ],
     stats,
   });
   appendWithSizing(
@@ -58087,7 +58130,9 @@ async function updateRatingEditorVariant(
     160,
     context,
   );
-  appendWithSizing(preview, words, "FILL", null);
+  words.textTruncation = "DISABLED";
+  words.textAutoResize = "WIDTH_AND_HEIGHT";
+  preview.appendChild(words);
   appendWithSizing(component, preview, "FILL", "HUG");
 }
 

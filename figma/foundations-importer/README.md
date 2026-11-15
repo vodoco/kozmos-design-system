@@ -185,7 +185,9 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   177–181). PropertyField is the frame (`Removable` True or False, a `Name`
   text property, a `Content Slot` for the editor); OpeningHoursEditor's
   `State` is Default, Overnight (+1 day) or Mixed; RatingEditor's is Default
-  (with its preview, Rating's own Readonly instance), Error or Mixed;
+  (with its preview, Rating's own Readonly instance at Value=4.5 when the
+  Rating set has half values, else 4, and the words wrapped under it whole),
+  Error or Mixed;
   KeyValueList's is Default, Empty or Mixed. Their fields are drawn as Core's
   fields look, not nested, so an Update keeps their words. Run Core and
   Curated Icons first.
@@ -203,8 +205,9 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   drawn with Cloud's items, and `Overflow` True draws it on a 320 map, the
   items that do not fit behind More. A card of `Surface/0` with no edge, 60
   tall (`MapEditToolbar/height`), padding 6 and 8, corner 16, the floating
-  elevation; items 56 × 48 (`MapEditToolbar/item/*`), a 24 icon over an 11/14
-  label (MapEditToolbar / Label); a chosen tool is the theme fill, a disabled
+  elevation; items 48 tall and at least 56 wide, each hugging its label as
+  React's do (`MapEditToolbar/item/*`, the width their minimum), a 24 icon
+  over an 11/14 label (MapEditToolbar / Label); a chosen tool is the theme fill, a disabled
   item at half strength; dividers `Border/Subtle`, 32 tall. Its icons are UI
   icons the Pointr library holds (decision 121); run Curated Icons first.
 - **ImageField** — Pointr Cloud's image field (CLOUD-UI-004's image part,
