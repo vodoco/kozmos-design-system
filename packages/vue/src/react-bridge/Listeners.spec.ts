@@ -785,6 +785,7 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosMenu: { slot: true },
   KozmosContextMenu: { slot: true },
   KozmosKbd: { props: { keys: ["Esc"] } },
+  KozmosNotice: { props: { summary: "Geometry is set" } },
   KozmosDrawer: { slot: true },
   KozmosBreadcrumb: { slot: true },
   KozmosPagination: { slot: true },

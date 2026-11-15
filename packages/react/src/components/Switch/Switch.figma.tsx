@@ -25,13 +25,28 @@ figma.connect(
         Error: true,
       }),
       label: figma.string("Label Text"),
+      // GAP-162: the line under the label, read as its description.
+      description: figma.boolean("Show Description", {
+        true: figma.string("Description Text"),
+        false: undefined,
+      }),
+      showStateLabel: figma.boolean("Show State Label"),
     },
-    example: ({ checked, disabled, error, label }) => (
+    example: ({
+      checked,
+      disabled,
+      error,
+      label,
+      description,
+      showStateLabel,
+    }) => (
       <Switch
         checked={checked}
         disabled={disabled}
         error={error}
         label={label}
+        description={description}
+        showStateLabel={showStateLabel}
       />
     ),
   },

@@ -1,5 +1,11 @@
 import figma from "@figma/code-connect";
-import { Select, SelectTrigger, SelectValue } from "./Select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./Select";
 
 figma.connect(
   SelectTrigger,
@@ -32,26 +38,66 @@ figma.connect(
         Error: true,
       }),
       placeholder: figma.string("Placeholder Text"),
+      open: figma.enum("Content", {
+        Closed: undefined,
+        Open: true,
+      }),
+      option1: figma.string("Option 1 Text"),
+      option2: figma.string("Option 2 Text"),
+      option3: figma.string("Option 3 Text"),
+      // GAP-164: each option's count, beside its words, outside the item
+      // text the closed select repeats.
+      count1: figma.boolean("Show Counts", {
+        true: figma.string("Option 1 Count"),
+        false: undefined,
+      }),
+      count2: figma.boolean("Show Counts", {
+        true: figma.string("Option 2 Count"),
+        false: undefined,
+      }),
+      count3: figma.boolean("Show Counts", {
+        true: figma.string("Option 3 Count"),
+        false: undefined,
+      }),
     },
     example: ({
       autoFocus,
+      count1,
+      count2,
+      count3,
       disabled,
       error,
       mixed,
       mixedLabel,
       onResetMixed,
-      resetMixedLabel,
+      open,
+      option1,
+      option2,
+      option3,
       placeholder,
+      resetMixedLabel,
     }) => (
       <Select
         mixed={mixed}
         mixedLabel={mixedLabel}
         onResetMixed={onResetMixed}
+        open={open}
         resetMixedLabel={resetMixedLabel}
       >
         <SelectTrigger autoFocus={autoFocus} disabled={disabled} error={error}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
+        <SelectContent>
+          <SelectItem count={count1} value="option-1">
+            {option1}
+          </SelectItem>
+          <SelectItem count={count2} value="option-2">
+            {option2}
+          </SelectItem>
+          <SelectItem count={count3} value="option-3">
+            {option3}
+          </SelectItem>
+        </SelectContent>
       </Select>
     ),
   },

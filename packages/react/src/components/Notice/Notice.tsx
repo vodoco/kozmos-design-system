@@ -2,13 +2,23 @@ import React from "react";
 import {
   AlertCircle,
   AlertTriangle,
+  Check,
   ChevronDown,
   InfoCircle,
 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { impliedLive } from "../../utils/live-region";
+import { SpinnerArc } from "../Spinner/SpinnerArc";
 
-export type NoticeTone = "warning" | "info" | "critical";
+export type NoticeTone = "warning" | "info" | "critical" | "success";
+
+/**
+ * Where the work the notice reports on has got (GAP-160). `progress` turns
+ * the system's loading arc where the tone's mark is; `done` draws a check
+ * at the summary's inline end, in the tone's colour, in place of the mark
+ * at its start.
+ */
+export type NoticeStatus = "progress" | "done";
 
 /**
  * How loudly the notice announces itself. The same three values Alert takes,
@@ -44,9 +54,25 @@ export interface NoticeProps extends Omit<
   children?: React.ReactNode;
   tone?: NoticeTone;
   /**
+   * Where the work the notice reports on has got (GAP-160): `"progress"`
+   * while it runs, `"done"` when it has finished, as "Geometry is set" ends
+   * in a check. Left out, the notice reports no work.
+   *
+   * `progress` draws the system's loading arc, Spinner's, in the icon's
+   * column (still under reduced motion). The notice is not marked busy: on
+   * its own live region `aria-busy` would hold back the words that say what
+   * is running ("Saving the geometry"). `done` draws a
+   * check at the summary's inline end and no mark at its start unless `icon`
+   * gives one. The summary's words say what happened; the marks are hidden
+   * from assistive technology.
+   */
+  status?: NoticeStatus;
+  /**
    * Replaces the tone's own mark: a triangle for `warning`, an info circle for
-   * `info`, an alert circle for `critical`. `null` or `false` draws none, and
-   * leaves no empty column before the summary (GAP-118).
+   * `info`, an alert circle for `critical`, a check for `success`. `null` or
+   * `false` draws none, and leaves no empty column before the summary
+   * (GAP-118). While `status` is `"progress"` the loading arc takes its
+   * place.
    */
   icon?: React.ReactNode;
   /**
@@ -88,13 +114,15 @@ const toneStyles: Record<NoticeTone, string> = {
   warning: "border-warning/50 bg-warning/5 text-warning-text",
   info: "border-info/50 bg-info/5 text-info-text",
   critical: "border-destructive/60 bg-destructive/5 text-destructive-text",
+  success: "border-success/50 bg-success/5 text-success-text",
 };
 
-/** Each tone's own mark, the ones Toast draws for the same three tones. */
+/** Each tone's own mark, the ones Toast draws for the same four tones. */
 const toneMarks: Record<NoticeTone, typeof AlertTriangle> = {
   warning: AlertTriangle,
   info: InfoCircle,
   critical: AlertCircle,
+  success: Check,
 };
 
 /**
@@ -124,6 +152,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
       summary,
       children,
       tone = "warning",
+      status,
       icon,
       iconAlign = "start",
       defaultExpanded = false,
@@ -153,19 +182,26 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
       onExpandedChange?.(next);
     };
 
+    const resolvedTone: NoticeTone = toneMarks[tone] ? tone : "warning";
+    const working = status === "progress";
+    const done = status === "done";
     // No icon, no column: the detail and the action then start where the
-    // summary does.
-    const drawsIcon = icon !== null && icon !== false;
+    // summary does. Done moves the mark to the inline end, so its start has
+    // none unless the product gives one; progress always turns the arc.
+    const drawsIcon =
+      working || (icon !== null && icon !== false && !(done && icon == null));
     const resolvedRole = role ?? LIVE_ROLE[live];
-    const ToneMark = toneMarks[tone];
+    const ToneMark = toneMarks[resolvedTone];
 
     return (
       <div
         className={cn(
           "w-full rounded-container border px-3 py-2",
-          toneStyles[tone],
+          toneStyles[resolvedTone],
           className,
         )}
+        data-tone={resolvedTone}
+        data-status={status}
         ref={ref}
         // Fixed at `status` until row 54: a notice could be read politely or
         // not at all, and an emergency had no way to interrupt. A caller's own
@@ -188,12 +224,30 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
               aria-hidden="true"
               className={cn("shrink-0", iconAlign === "start" && "mt-0.5")}
             >
-              {icon ?? <ToneMark className="h-4 w-4" />}
+              {working ? (
+                <SpinnerArc className="h-4 w-4" size={16} />
+              ) : (
+                (icon ?? <ToneMark className="h-4 w-4" />)
+              )}
             </span>
           )}
-          <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">
+          {/* Boxes, not paragraphs: a summary or detail may hold a control or
+              a framework's wrapper (Vue's bridge draws a slot in a div), which
+              a <p> may not hold. */}
+          <div className="min-w-0 flex-1 text-sm font-semibold leading-snug">
             {summary}
-          </p>
+          </div>
+          {done && (
+            <Check
+              aria-hidden="true"
+              focusable="false"
+              data-kozmos-notice-done=""
+              className={cn(
+                "h-4 w-4 shrink-0",
+                iconAlign === "start" && "mt-0.5",
+              )}
+            />
+          )}
           {hasDetail && canCollapse && (
             <button
               aria-controls={detailId}
@@ -230,7 +284,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
             hidden={!detailVisible}
             id={detailId}
           >
-            <p className="text-sm leading-snug">{children}</p>
+            <div className="text-sm leading-snug">{children}</div>
           </div>
         )}
         {action && (

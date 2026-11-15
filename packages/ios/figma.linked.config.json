@@ -136,6 +136,8 @@
       "Sources/Components/Rating/Rating.swift",
       "Sources/Components/Progress/Progress.figma.swift",
       "Sources/Components/Progress/Progress.swift",
+      "Sources/Components/Notice/Notice.figma.swift",
+      "Sources/Components/Notice/Notice.swift",
       "Sources/Components/Spinner/Spinner.figma.swift",
       "Sources/Components/Spinner/Spinner.swift",
       "Sources/Components/Alert/Alert.figma.swift",
