@@ -291,7 +291,7 @@
       "id": "components-checkbox",
       "title": "Core/Inputs/Checkbox",
       "component": "Checkbox",
-      "exports": ["Default", "Checked", "Disabled", "Error"]
+      "exports": ["Default", "Checked", "Disabled", "Error", "WithDescription"]
     },
     {
       "file": "packages/react/src/components/Chip/Chip.stories.tsx",
@@ -326,7 +326,7 @@
       "id": "foundations-container",
       "title": "Core/Layout/Container",
       "component": "Container",
-      "exports": ["Default", "Fluid", "InAPanel"]
+      "exports": ["Default", "Fluid", "InAPanel", "BlockInset"]
     },
     {
       "file": "packages/react/src/components/ContextMenu/ContextMenu.stories.tsx",
@@ -525,6 +525,13 @@
       "exports": ["Default", "Combination", "InAHint"]
     },
     {
+      "file": "packages/react/src/components/PersonaMark/PersonaMark.stories.tsx",
+      "id": "data-display-personamark",
+      "title": "Core/Data display/PersonaMark",
+      "component": "PersonaMark",
+      "exports": ["Default", "Named", "Group", "InAPersonaList"]
+    },
+    {
       "file": "packages/react/src/components/Label/Label.stories.tsx",
       "id": "components-label",
       "title": "Core/Inputs/Label",
@@ -564,7 +571,14 @@
       "id": "data-display-list",
       "title": "Core/Data display/List",
       "component": "List",
-      "exports": ["Default", "Compact"]
+      "exports": ["Default", "Compact", "Checklist", "PersonaVisibility"]
+    },
+    {
+      "file": "packages/react/src/components/SettingsRow/SettingsRow.stories.tsx",
+      "id": "data-display-settingsrow",
+      "title": "Core/Data display/SettingsRow",
+      "component": "SettingsRow",
+      "exports": ["Default", "SdkConfiguration", "Compact"]
     },
     {
       "file": "packages/react/src/components/Listbox/Listbox.stories.tsx",
@@ -897,6 +911,13 @@
       ]
     },
     {
+      "file": "packages/react/src/components/PageHeader/PageHeader.stories.tsx",
+      "id": "navigation-pageheader",
+      "title": "Core/Layout/PageHeader",
+      "component": "PageHeader",
+      "exports": ["Default", "Landing", "WithInfo", "Plain"]
+    },
+    {
       "file": "packages/react/src/components/Pagination/Pagination.stories.tsx",
       "id": "navigation-pagination",
       "title": "Core/Layout/Pagination",
@@ -960,7 +981,14 @@
       "id": "components-radiogroup",
       "title": "Core/Inputs/RadioGroup",
       "component": "Radio",
-      "exports": ["Default", "Disabled", "Error"]
+      "exports": [
+        "Default",
+        "Disabled",
+        "Error",
+        "WithDescription",
+        "Cards",
+        "Tiles"
+      ]
     },
     {
       "file": "packages/react/src/components/Rating/Rating.stories.tsx",
@@ -1179,14 +1207,21 @@
       "id": "components-switch",
       "title": "Core/Inputs/Switch",
       "component": "Switch",
-      "exports": ["Default", "Checked", "Disabled", "Error"]
+      "exports": [
+        "Default",
+        "Checked",
+        "Disabled",
+        "Error",
+        "WithDescription",
+        "StateLabel"
+      ]
     },
     {
       "file": "packages/react/src/components/Table/Table.stories.tsx",
       "id": "data-display-table",
       "title": "Core/Data display/Table",
       "component": "Table",
-      "exports": ["Default"]
+      "exports": ["Default", "Framed"]
     },
     {
       "file": "packages/react/src/components/Tabs/Tabs.stories.tsx",

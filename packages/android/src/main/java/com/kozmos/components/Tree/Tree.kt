@@ -6,9 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -606,14 +604,6 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
         return true
     }
 
-    /** [at], in a row's pixels, in the menu's area: where a long press opens it. */
-    fun pointIn(coordinates: LayoutCoordinates, at: Offset): IntOffset {
-        val area = area ?: return IntOffset.Zero
-        if (!area.isAttached || !coordinates.isAttached) return IntOffset.Zero
-        val point = area.localPositionOf(coordinates, at)
-        return IntOffset(point.x.toInt(), point.y.toInt())
-    }
-
     /** Where a row starts in the menu's area, for TalkBack's long press on it. */
     fun startOf(coordinates: LayoutCoordinates): IntOffset {
         val area = area ?: return IntOffset.Zero
@@ -801,11 +791,8 @@ private class TreePress {
     var shift = false
     var toggle = false
     var coordinates: LayoutCoordinates? = null
-    /** Where the last press went down, in the row's pixels. */
-    var at: Offset = Offset.Zero
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TreeRow(
     node: TreeNode,
@@ -876,19 +863,9 @@ private fun TreeRow(
                 }
             }
             // Disabled, it takes no press, no focus and no selection, and
-            // TalkBack reads it as disabled.
-            // A long press opens the row's menu here: the menu area's own long
-            // press never sees one over a pressable row, whose press detector
-            // takes the press first.
-            .combinedClickable(
-                enabled = !node.disabled,
-                onLongClick = tree?.menuState?.takeUnless { node.disabled }?.let { menu ->
-                    {
-                        tree.contextId = currentNode.id
-                        menu.openAt = press.coordinates?.let { tree.pointIn(it, press.at) } ?: IntOffset.Zero
-                    }
-                }
-            ) {
+            // TalkBack reads it as disabled. A long press is the menu area's,
+            // which opens the row's menu over its click.
+            .clickable(enabled = !node.disabled) {
                 if (tree != null) {
                     tree.click(currentNode, press.shift, press.toggle)
                     press.shift = false
@@ -990,7 +967,6 @@ private fun treeRowInput(
                         press.toggle = event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
                         // Any press may become a menu's: a right click, a long press.
                         tree.contextId = currentNode.id.takeUnless { currentNode.disabled }
-                        event.changes.firstOrNull()?.let { press.at = it.position }
                         // The area opened its menu on this same event, before
                         // this row saw it: a disabled row closes it at once.
                         if (currentNode.disabled && event.buttons.isSecondaryPressed) menu?.openAt = null

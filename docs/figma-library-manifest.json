@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 103 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 107 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 103 Core SwiftUI and 103 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 107 Core SwiftUI and 107 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15714,13 +15714,13 @@
   },
   "components": {
     "summary": {
-      "total": 124,
-      "stories": 124,
-      "tests": 124,
-      "exported": 124,
-      "codeConnectFiles": 101,
+      "total": 127,
+      "stories": 127,
+      "tests": 127,
+      "exported": 127,
+      "codeConnectFiles": 104,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 101
+      "codeConnectLinked": 104
     },
     "firstBatch": [
       "Accordion",
@@ -15781,8 +15781,10 @@
       "Notice",
       "NumberInput",
       "OTPInput",
+      "PageHeader",
       "Pagination",
       "PasswordInput",
+      "PersonaMark",
       "POICard",
       "POIDetailPanel",
       "POIMediaGallery",
@@ -15804,6 +15806,7 @@
       "SegmentedControl",
       "Select",
       "Separator",
+      "SettingsRow",
       "Sidebar",
       "Skeleton",
       "Slider",
@@ -16680,7 +16683,13 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Checkbox"],
-          "mappedProps": ["checked", "disabled", "error", "label"],
+          "mappedProps": [
+            "checked",
+            "description",
+            "disabled",
+            "error",
+            "label"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -16690,6 +16699,7 @@
           "checked",
           "children",
           "defaultChecked",
+          "description",
           "disabled",
           "error",
           "id",
@@ -16928,10 +16938,10 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Container"],
-          "mappedProps": ["centered"],
+          "mappedProps": ["block", "centered", "inset"],
           "unmappedProps": []
         },
-        "props": ["asChild", "centered", "children", "id", "inset"],
+        "props": ["asChild", "block", "centered", "children", "id", "inset"],
         "variants": {}
       },
       {
@@ -18732,6 +18742,51 @@
         "variants": {}
       },
       {
+        "name": "PageHeader",
+        "source": "packages/react/src/components/PageHeader/PageHeader.tsx",
+        "story": "packages/react/src/components/PageHeader/PageHeader.stories.tsx",
+        "test": "packages/react/src/components/PageHeader/PageHeader.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/PageHeader/PageHeader.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23074",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
+          "connectedComponents": ["PageHeader"],
+          "mappedProps": [
+            "actions",
+            "breadcrumb",
+            "description",
+            "info",
+            "size",
+            "title",
+            "tone"
+          ],
+          "unmappedProps": []
+        },
+        "props": [
+          "actions",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "breadcrumb",
+          "centered",
+          "children",
+          "description",
+          "id",
+          "info",
+          "inset",
+          "role",
+          "size",
+          "tabIndex",
+          "title",
+          "tone"
+        ],
+        "variants": {}
+      },
+      {
         "name": "Pagination",
         "source": "packages/react/src/components/Pagination/Pagination.tsx",
         "story": "packages/react/src/components/Pagination/Pagination.stories.tsx",
@@ -18813,6 +18868,39 @@
           "value",
           "visible",
           "wrapperClassName"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "PersonaMark",
+        "source": "packages/react/src/components/PersonaMark/PersonaMark.tsx",
+        "story": "packages/react/src/components/PersonaMark/PersonaMark.stories.tsx",
+        "test": "packages/react/src/components/PersonaMark/PersonaMark.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/PersonaMark/PersonaMark.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23172",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
+          "connectedComponents": ["PersonaMark", "PersonaMarkGroup"],
+          "mappedProps": ["color", "personas"],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "color",
+          "id",
+          "label",
+          "name",
+          "personas",
+          "role",
+          "tabIndex",
+          "title"
         ],
         "variants": {}
       },
@@ -19181,7 +19269,15 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Radio", "RadioGroupItem"],
-          "mappedProps": ["disabled", "error", "label", "value"],
+          "mappedProps": [
+            "description",
+            "disabled",
+            "error",
+            "label",
+            "media",
+            "value",
+            "variant"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -19190,15 +19286,18 @@
           "aria-label",
           "checked",
           "children",
+          "description",
           "disabled",
           "error",
           "id",
           "label",
+          "media",
           "required",
           "role",
           "tabIndex",
           "title",
-          "value"
+          "value",
+          "variant"
         ],
         "variants": {}
       },
@@ -19818,6 +19917,44 @@
         "variants": {}
       },
       {
+        "name": "SettingsRow",
+        "source": "packages/react/src/components/SettingsRow/SettingsRow.tsx",
+        "story": "packages/react/src/components/SettingsRow/SettingsRow.stories.tsx",
+        "test": "packages/react/src/components/SettingsRow/SettingsRow.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/SettingsRow/SettingsRow.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23163",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
+          "connectedComponents": ["SettingsRow"],
+          "mappedProps": [
+            "control",
+            "description",
+            "disabled",
+            "disabledReason",
+            "label",
+            "state"
+          ],
+          "unmappedProps": []
+        },
+        "props": [
+          "control",
+          "description",
+          "disabled",
+          "disabledReason",
+          "id",
+          "inheritedLabel",
+          "label",
+          "overriddenLabel",
+          "resetLabel",
+          "state"
+        ],
+        "variants": {}
+      },
+      {
         "name": "Sidebar",
         "source": "packages/react/src/components/Sidebar/Sidebar.tsx",
         "story": "packages/react/src/components/Sidebar/Sidebar.stories.tsx",
@@ -20125,7 +20262,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Switch"],
-          "mappedProps": ["checked", "disabled", "error", "label"],
+          "mappedProps": [
+            "checked",
+            "description",
+            "disabled",
+            "error",
+            "label",
+            "showStateLabel"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -20135,12 +20279,15 @@
           "checked",
           "children",
           "defaultChecked",
+          "description",
           "disabled",
           "error",
           "id",
           "label",
+          "offLabel",
           "required",
           "role",
+          "showStateLabel",
           "tabIndex",
           "title",
           "value",
@@ -20162,7 +20309,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Table"],
-          "mappedProps": [],
+          "mappedProps": ["framed"],
           "unmappedProps": []
         },
         "props": [
@@ -20170,6 +20317,7 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "framed",
           "id",
           "role",
           "tabIndex",

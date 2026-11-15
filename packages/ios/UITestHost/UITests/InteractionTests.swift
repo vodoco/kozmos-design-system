@@ -1145,15 +1145,25 @@ final class InteractionTests: XCTestCase {
             launch(scenario)
             let rtl = scenario == "selection-controls-large-rtl"
             for name in ["Ramp", "Stairs", "Step-free", "Bare checkbox", "Announce turns", "Bare switch"] {
-                assertTouchTarget(app.buttons[name])
+                assertTouchTarget(selectionControl(name))
             }
             for name in ["Stairs", "Bare checkbox"] {
-                app.buttons[name].coordinate(withNormalizedOffset: CGVector(dx: rtl ? 1 : 0, dy: 0.5))
+                selectionControl(name).coordinate(withNormalizedOffset: CGVector(dx: rtl ? 1 : 0, dy: 0.5))
                     .withOffset(CGVector(dx: rtl ? -36 : 36, dy: 0)).tap()
             }
             received("radio stairs|bare checkbox true")
             app.terminate()
         }
+    }
+
+    /// A radio, checkbox or switch by its name, whatever type XCUITest gives
+    /// it: a radio is a button, but from iOS 17 a checkbox or switch carries
+    /// the toggle trait (#523), so VoiceOver says it can be switched, and
+    /// XCUITest no longer lists it among the buttons.
+    private func selectionControl(_ name: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@ AND elementType != %d", name, XCUIElement.ElementType.staticText.rawValue))
+            .firstMatch
     }
 
     /// The trigger takes a tap across its row, between its title and its
@@ -1470,6 +1480,15 @@ final class InteractionTests: XCTestCase {
         let field = app.textFields["Full search"]
         XCTAssertTrue(field.waitForExistence(timeout: 3), "nothing presented", file: file, line: line)
         field.tap()
+        // The Escape is the field's only while the field has the focus. On a
+        // CI simulator a tap is sometimes lost (8 Nov ruling: re-run, no
+        // retry): say so, rather than "none" after Escape, which read as
+        // Escape not clearing (13–15 Nov, three times).
+        let focused = expectation(for: NSPredicate(format: "hasKeyboardFocus == true"), evaluatedWith: field)
+        guard XCTWaiter().wait(for: [focused], timeout: 2) == .completed else {
+            XCTFail("the tap on the field never focused it: a lost tap, not Escape", file: file, line: line)
+            return
+        }
         escape()
         let events = app.staticTexts["escape-events"]
         let shown = events.waitForExistence(timeout: 1)

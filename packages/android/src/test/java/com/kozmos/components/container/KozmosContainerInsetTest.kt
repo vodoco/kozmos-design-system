@@ -104,6 +104,67 @@ class KozmosContainerInsetTest {
         }
     }
 
+    // GAP-116: the block (top and bottom) inset.
+    @Test fun blockStepsAreTheLayoutSpacingTokens() {
+        assertEquals(0.dp, KozmosContainerBlockInset.None.length)
+        assertEquals(16.dp, KozmosContainerBlockInset.Sm.length)
+        assertEquals(24.dp, KozmosContainerBlockInset.Md.length)
+        assertEquals(32.dp, KozmosContainerBlockInset.Lg.length)
+        assertEquals(KozmosContainerBlock(KozmosContainerBlockInset.Sm, KozmosContainerBlockInset.Sm), KozmosContainerBlock.Sm)
+        assertEquals(KozmosContainerBlock(KozmosContainerBlockInset.Lg, KozmosContainerBlockInset.Lg), KozmosContainerBlock.Lg)
+        assertEquals(KozmosContainerBlock(), KozmosContainerBlock.None)
+    }
+
+    @Test fun blockPadsAboveAndBelowAtEveryStep() {
+        for ((block, step) in listOf(KozmosContainerBlock.Sm to 16f, KozmosContainerBlock.Md to 24f, KozmosContainerBlock.Lg to 32f)) {
+            blockProbe(block, top = step, bottom = step)
+        }
+    }
+
+    @Test fun blockPadsTheTopAndTheBottomApart() =
+        blockProbe(KozmosContainerBlock(KozmosContainerBlockInset.Lg, KozmosContainerBlockInset.Md), top = 32f, bottom = 24f)
+
+    @Test fun noBlockPadsNeitherAsBefore() = blockProbe(KozmosContainerBlock.None, top = 0f, bottom = 0f)
+
+    /** A row that matches heights asks for the intrinsic height: it includes the block. */
+    @Test fun blockIsInTheIntrinsicHeight() {
+        var density = 1f
+        val tree = paparazzi.readSemantics {
+            density = LocalDensity.current.density
+            KozmosMaterialTheme {
+                Row(Modifier.requiredWidth(400.dp).height(IntrinsicSize.Min)) {
+                    KozmosContainer(KozmosContainerInset.Panel, Modifier.weight(1f), block = KozmosContainerBlock.Md) {
+                        Box(Modifier.fillMaxWidth().height(40.dp))
+                    }
+                    Box(Modifier.width(8.dp).fillMaxHeight().semantics { contentDescription = "rule" })
+                }
+            }
+        }
+        assertEquals(88f, tree.named("rule").frame.height / density, 1f)
+    }
+
+    private fun blockProbe(block: KozmosContainerBlock, top: Float, bottom: Float) {
+        var density = 1f
+        val tree = paparazzi.readSemantics {
+            density = LocalDensity.current.density
+            KozmosMaterialTheme {
+                KozmosContainer(
+                    KozmosContainerInset.Panel,
+                    Modifier.requiredWidth(360.dp).semantics { contentDescription = "container" },
+                    block = block
+                ) {
+                    Box(Modifier.fillMaxWidth().height(40.dp).semantics { contentDescription = "probe" })
+                }
+            }
+        }
+        val container = tree.named("container").frame
+        val probe = tree.named("probe").frame
+        assertEquals("$block: above", top, (probe.top - container.top) / density, 1f)
+        assertEquals("$block: below", bottom, (container.bottom - probe.bottom) / density, 1f)
+        assertEquals("$block: the sides stay the panel's", 16f, (probe.left - container.left) / density, 1f)
+        assertEquals("$block: its height", 40f + top + bottom, container.height / density, 1f)
+    }
+
     private fun probe(inset: KozmosContainerInset?, width: Dp, side: Float, top: Float) {
         var density = 1f
         val tree = paparazzi.readSemantics {

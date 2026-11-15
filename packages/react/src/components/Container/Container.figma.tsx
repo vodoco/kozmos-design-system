@@ -10,10 +10,22 @@ figma.connect(
         True: true,
         False: false,
       }),
+      inset: figma.enum("Inset", {
+        Window: "window",
+        Panel: "panel",
+      }),
+      block: figma.enum("Block", {
+        None: undefined,
+        Small: "sm",
+        Medium: "md",
+        Large: "lg",
+      }),
       children: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
     },
-    example: ({ centered, children }) => (
-      <Container centered={centered}>{children}</Container>
+    example: ({ centered, inset, block, children }) => (
+      <Container centered={centered} inset={inset} block={block}>
+        {children}
+      </Container>
     ),
   },
 );

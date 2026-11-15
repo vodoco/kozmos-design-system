@@ -14,7 +14,18 @@ The wrapper supports horizontal overflow and keyboard scrolling; sorting, select
   <Story of={TableStories.Default} />
 </Canvas>
 
-<Controls />
+## Framed
+
+`framed` draws a 1px border round the table and the control radius, 16, at its corners, as Figma, SwiftUI and
+Compose draw a table (decision 159). The header and the rows are clipped inside the frame, so a row's hover and
+selected fills follow its corners, and a caption sits inside it, at its foot. It is off by default, so a dense
+page's table runs edge to edge and existing tables do not change.
+
+<Canvas>
+  <Story of={TableStories.Framed} />
+</Canvas>
+
+<Controls of={TableStories.Framed} />
 
 ## Implementation
 
@@ -33,7 +44,7 @@ import {
 } from "@kozmos-ds/react";
 export function Example() {
   return (
-    <Table>
+    <Table framed>
       <TableCaption>Places in this venue</TableCaption>
       <TableHeader>
         <TableRow>

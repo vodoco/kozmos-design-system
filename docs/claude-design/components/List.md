@@ -4,7 +4,7 @@
 
 A bordered vertical list with standard or compact row density. Compose ListItem children for content rows; use POIResultList for SDK search results and their selection/action contract.
 
-- **Import:** `import { List, ListItem } from "@kozmos-ds/react";`
+- **Import:** `import { List, ListItem, ListItemStatus } from "@kozmos-ds/react";`
 - **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-list--docs>
@@ -40,9 +40,63 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## ListItem
 
-It forwards its ref to `HTMLLIElement`. Its props are `React.HTMLAttributes<HTMLLIElement>`.
+It forwards its ref to `HTMLLIElement`. Its props are `ListItemProps`, which extends `Omit<React.LiHTMLAttributes<HTMLLIElement>, "title">, ListItemSlotProps`.
+
+- `selected`: `boolean`, optional.
+
+  Tinted, theme 0 (CardHeader's subtle strip): a row whose box is ticked,
+  as Pointr Cloud's Map Persona Visibility rows are. It is drawn only:
+  the row's control says it is checked.
+
+- `leading`: `React.ReactNode`, optional.
+
+  At the start, centred on the title's line: a ListItemStatus, an icon, a
+  persona's mark. It is read first, so a status is heard with the name.
+
+- `title`: `React.ReactNode`, optional.
+
+  The row's name, 14 medium in the foreground colour.
+
+- `titleAddon`: `React.ReactNode`, optional.
+
+  Beside the title, on its line, wrapping under it when the row is
+  narrow: a role Tag, an info IconButton, a settings row's state.
+
+- `description`: `React.ReactNode`, optional.
+
+  Under the title, 14 in the muted colour.
+
+- `meta`: `React.ReactNode`, optional.
+
+  Under the description, 12 in the muted colour: a duration, a date.
+
+- `trailing`: `React.ReactNode`, optional.
+
+  At the end, centred on the row: one action, a Checkbox, a Switch, a
+  field. It is the row's one control; the row itself is not pressable.
 
 - `children`: `ReactNode`, optional.
+
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## ListItemStatus
+
+A checklist row's status mark, for ListItem's `leading`: Stepper's step
+marks at 20. Done is the theme fill with a check; in progress a theme
+ring around a dot; not started a ring in the muted line colour. The mark
+is drawn only; its words are read, first in the row, so a screen reader
+hears the status with the name.
+
+It forwards its ref to `HTMLSpanElement`. Its props are `ListItemStatusProps`, which extends `Omit<React.HTMLAttributes<HTMLSpanElement>, "children">`.
+
+- `status`: `ListItemStatusValue`, **required**.
+
+  Not started, in progress or done: a checklist row's mark (GAP-195).
+
+- `label`: `string`, optional.
+
+  What a screen reader hears before the row's title. English by default:
+  "Not started", "In progress", "Done".
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
@@ -55,3 +109,48 @@ From `@kozmos-ds/react`.
 ```ts
 type ListDensity = "default" | "compact";
 ```
+
+### ListItemStatusValue
+
+From `@kozmos-ds/react`.
+
+```ts
+type ListItemStatusValue = "todo" | "inProgress" | "done";
+```
+
+## Also exported
+
+- `ListItemSlotProps` (interface). A row's slots (GAP-195, decision 135): the checklist row and the settings row are one ListItem, filled in.
+
+  ```ts
+  /**
+   * A row's slots (GAP-195, decision 135): the checklist row and the settings
+   * row are one ListItem, filled in. Give any of them and the row is drawn as
+   * a mark at the start, a title with something beside it, a description and a
+   * meta line under it, and one thing at the end; give none and the row is its
+   * children, as it always was.
+   */
+  interface ListItemSlotProps {
+    /**
+     * At the start, centred on the title's line: a ListItemStatus, an icon, a
+     * persona's mark. It is read first, so a status is heard with the name.
+     */
+    leading?: React.ReactNode;
+    /** The row's name, 14 medium in the foreground colour. */
+    title?: React.ReactNode;
+    /**
+     * Beside the title, on its line, wrapping under it when the row is
+     * narrow: a role Tag, an info IconButton, a settings row's state.
+     */
+    titleAddon?: React.ReactNode;
+    /** Under the title, 14 in the muted colour. */
+    description?: React.ReactNode;
+    /** Under the description, 12 in the muted colour: a duration, a date. */
+    meta?: React.ReactNode;
+    /**
+     * At the end, centred on the row: one action, a Checkbox, a Switch, a
+     * field. It is the row's one control; the row itself is not pressable.
+     */
+    trailing?: React.ReactNode;
+  }
+  ```

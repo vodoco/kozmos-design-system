@@ -1584,8 +1584,20 @@ assertContains(
 assertContains(
   files.reactCardFigma,
   source.reactCardFigma,
-  "<CardHeader actions={headerActions}>",
-  "Card Code Connect header composition, with its actions (GAP-169)",
+  "<CardHeader actions={headerActions} tone={tone}>",
+  "Card Code Connect header composition, with its actions (GAP-169) and its tone (CLOUD-UI-001)",
+);
+assertContains(
+  files.reactCardFigma,
+  source.reactCardFigma,
+  'tone: figma.enum("HeaderTone", { Default: undefined, Subtle: "subtle" })',
+  "Card Code Connect header tone mapping (CLOUD-UI-001)",
+);
+assertContains(
+  files.reactCardFigma,
+  source.reactCardFigma,
+  "<CardTitle size={titleSize}>{title}</CardTitle>",
+  "Card Code Connect title size (GAP-035)",
 );
 assertContains(
   files.reactCardFigma,
@@ -1742,6 +1754,12 @@ assertContains(
   source.reactTableFigma,
   'row3Cell3: figma.string("Row 3 Cell 3 Text")',
   "Table Code Connect cell text mapping",
+);
+assertContains(
+  files.reactTableFigma,
+  source.reactTableFigma,
+  "<Table framed",
+  "Table Code Connect framed, as Figma draws it (decision 159)",
 );
 assertContains(
   files.iosDrawer,
@@ -12170,6 +12188,8 @@ for (const [file, symbols] of [
     ".kozmos-route-summary-actions {",
     "grid-auto-columns: minmax(0, 1fr);",
     "grid-auto-flow: column;",
+    // WebKit kept an auto row at a narrow first layout's height.
+    "grid-auto-rows: max-content;",
     ".kozmos-route-summary-actions > .kozmos-button {",
     "min-height: 2.75rem;",
     '.kozmos-route-summary-actions > .kozmos-button[aria-disabled="true"] {',

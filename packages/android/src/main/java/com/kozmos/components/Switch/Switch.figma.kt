@@ -24,6 +24,15 @@ class KozmosSwitchConnect {
         "Error" to "error"
     )
 
+    @FigmaProperty(FigmaType.Boolean, "Show Description")
+    val showDescription: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Description Text")
+    val description: String = "Sends a push when your gate changes"
+
+    @FigmaProperty(FigmaType.Boolean, "Show State Label")
+    val showStateLabel: Boolean = false
+
     @Composable
     fun ComponentExample() {
         KozmosSwitch(
@@ -31,7 +40,9 @@ class KozmosSwitchConnect {
             onCheckedChange = {},
             label = label,
             enabled = state != "disabled",
-            error = state == "error"
+            error = state == "error",
+            description = if (showDescription) description else null,
+            showStateLabel = showStateLabel
         )
     }
 }
