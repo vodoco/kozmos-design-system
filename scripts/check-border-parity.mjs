@@ -126,7 +126,10 @@ for (const role of ["Border/Subtle", "Border/Input"]) {
 // painter is still caught — allow-listing a whole function is how
 // createTreeCount kept a dark grey badge outline for a month.
 const STROKE_MARKS_ALLOWED = {
-  createRatingStar: {
+  // The star's glyph moved into its own function when Rating drew halves
+  // (decision 181): the half star is the empty glyph under a clipped filled
+  // one, so both stars are drawn by createRatingStarGlyph.
+  createRatingStarGlyph: {
     primitive: "Colors/foreground/500",
     why: "an unfilled star's outline is the mark itself",
   },

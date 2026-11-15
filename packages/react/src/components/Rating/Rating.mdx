@@ -16,6 +16,18 @@ Use `value` and `onChange` for input, `readOnly` for display, and the label prop
 
 <Controls />
 
+## Read-only halves
+
+A read-only star rating shows a score to the nearest half: an average of reviews is rarely whole.
+The value is rounded half up on its double, `Math.round(value * 2) / 2`, so 4.3 draws as 4.5, 4.2 as 4 and 4.25 as 4.5.
+The accessible name states the rounded value, "Rated 4.5 out of 5 stars", and `valueLabel` is given it.
+The half is the filled star clipped to its inline start, the right half in a right-to-left page.
+Editing stays whole stars. SwiftUI's `KozmosRating(rating:)` and Compose's `KozmosRating(rating = …)` take the score.
+
+<Canvas>
+  <Story of={RatingStories.ReadOnlyHalves} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>

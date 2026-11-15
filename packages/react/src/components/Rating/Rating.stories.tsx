@@ -57,3 +57,29 @@ export const ReadOnly: Story = {
     </div>
   ),
 };
+
+/**
+ * A read-only star rating shows a score to the nearest half (decision 181): an
+ * average of reviews is rarely whole. 4.3 draws as 4.5, 4.2 as 4 and 4.25 as
+ * 4.5 — the doubled value rounded half up, `Math.round(value * 2) / 2` — and
+ * the label says what is drawn, "Rated 4.5 out of 5 stars".
+ *
+ * The half is the filled star clipped to its inline start over the empty
+ * star: the left half here, the right half in a right-to-left page. Editing
+ * stays whole stars.
+ */
+export const ReadOnlyHalves: Story = {
+  render: () => (
+    <div className="flex flex-col items-start gap-3">
+      {[4.3, 4.2, 4.25, 0.5, 2.75].map((value) => (
+        <div className="flex items-center gap-3" key={value}>
+          <Rating readOnly value={value} />
+          <p className="text-sm text-muted-foreground">value: {value}</p>
+        </div>
+      ))}
+      <div dir="rtl">
+        <Rating readOnly value={3.5} />
+      </div>
+    </div>
+  ),
+};
