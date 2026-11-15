@@ -3,12 +3,18 @@ import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { Check, Minus } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { Label } from "../Label";
+import { ControlText } from "../Label/ControlText";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface CheckboxProps extends React.ComponentPropsWithoutRef<
   typeof CheckboxPrimitive.Root
 > {
   label?: string;
+  /**
+   * A line under the label, read as the checkbox's description
+   * (`aria-describedby`), never as part of its name (GAP-162).
+   */
+  description?: string;
   error?: boolean | string;
   wrapperClassName?: string;
 }
@@ -16,82 +22,103 @@ export interface CheckboxProps extends React.ComponentPropsWithoutRef<
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
->(({ className, label, error, wrapperClassName, ...rest }, ref) => {
-  // The caller's description is joined with the error's rather than
-  // replacing it, as Switch and Slider join theirs.
-  const {
-    "aria-describedby": ariaDescribedBy,
-    "aria-invalid": ariaInvalid,
-    ...props
-  } = rest;
-  const defaultId = React.useId();
-  const inputId = props.id || defaultId;
-  const errorId = React.useId();
-  const hasError = !!error;
-  const isStringError = typeof error === "string";
-  const { trackEvent } = useKozmosAnalytics();
+>(
+  (
+    { className, label, description, error, wrapperClassName, ...rest },
+    ref,
+  ) => {
+    // The caller's description is joined with the error's rather than
+    // replacing it, as Switch and Slider join theirs.
+    const {
+      "aria-describedby": ariaDescribedBy,
+      "aria-invalid": ariaInvalid,
+      ...props
+    } = rest;
+    const defaultId = React.useId();
+    const inputId = props.id || defaultId;
+    const errorId = React.useId();
+    const descriptionId = React.useId();
+    const hasError = !!error;
+    const isStringError = typeof error === "string";
+    const { trackEvent } = useKozmosAnalytics();
 
-  return (
-    <div className={cn("flex flex-col gap-1.5 w-full", wrapperClassName)}>
-      <div className="flex min-h-11 items-center gap-2">
-        <CheckboxPrimitive.Root
-          id={inputId}
-          ref={ref}
+    return (
+      <div className={cn("flex flex-col gap-1.5 w-full", wrapperClassName)}>
+        <div
           className={cn(
-            // `indeterminate` is painted exactly like `checked` — same border, same fill. It is a
-            // real answer ("these disagree"), not a disabled or half-pressed control, so it must not
-            // read as weaker than the other two. Only the mark inside differs.
-            "peer h-5 w-5 shrink-0 rounded-marker border border-input ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-theme-fill data-[state=checked]:bg-theme-fill data-[state=checked]:text-theme-fill-foreground data-[state=indeterminate]:border-theme-fill data-[state=indeterminate]:bg-theme-fill data-[state=indeterminate]:text-theme-fill-foreground",
-            hasError && "border-destructive focus-visible:ring-destructive",
-            className,
+            "flex min-h-11 gap-2",
+            description ? "items-start" : "items-center",
           )}
-          // The caller's props first, then the handler that wraps theirs:
-          // spread last, a caller's onCheckedChange replaced the wrapper and
-          // the toggle was never reported.
-          {...props}
-          aria-invalid={hasError || ariaInvalid}
-          aria-describedby={mergeAriaIds(
-            ariaDescribedBy,
-            hasError && isStringError ? errorId : undefined,
-          )}
-          onCheckedChange={(checked) => {
-            trackEvent("Checkbox", "checkbox_toggled", { checked });
-            props.onCheckedChange?.(checked);
-          }}
         >
-          {/*
+          <CheckboxPrimitive.Root
+            id={inputId}
+            ref={ref}
+            className={cn(
+              // `indeterminate` is painted exactly like `checked` — same border, same fill. It is a
+              // real answer ("these disagree"), not a disabled or half-pressed control, so it must not
+              // read as weaker than the other two. Only the mark inside differs.
+              "peer h-5 w-5 shrink-0 rounded-marker border border-input ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-theme-fill data-[state=checked]:bg-theme-fill data-[state=checked]:text-theme-fill-foreground data-[state=indeterminate]:border-theme-fill data-[state=indeterminate]:bg-theme-fill data-[state=indeterminate]:text-theme-fill-foreground",
+              hasError && "border-destructive focus-visible:ring-destructive",
+              className,
+            )}
+            // The caller's props first, then the handler that wraps theirs:
+            // spread last, a caller's onCheckedChange replaced the wrapper and
+            // the toggle was never reported.
+            {...props}
+            aria-invalid={hasError || ariaInvalid}
+            aria-describedby={mergeAriaIds(
+              ariaDescribedBy,
+              description ? descriptionId : undefined,
+              hasError && isStringError ? errorId : undefined,
+            )}
+            onCheckedChange={(checked) => {
+              trackEvent("Checkbox", "checkbox_toggled", { checked });
+              props.onCheckedChange?.(checked);
+            }}
+          >
+            {/*
             Radix renders this for BOTH `checked` and `indeterminate`, so the mark has to say which
             one it is. Before this it always drew a tick, and an indeterminate box was
             indistinguishable from a checked one — the third state existed in the API and nowhere on
             screen.
           */}
-          <CheckboxPrimitive.Indicator
-            className={cn("flex items-center justify-center text-current")}
-          >
-            {props.checked === "indeterminate" ? (
-              <Minus className="h-4 w-4" aria-hidden />
-            ) : (
-              <Check className="h-4 w-4" aria-hidden />
-            )}
-          </CheckboxPrimitive.Indicator>
-        </CheckboxPrimitive.Root>
-        {label && (
-          <Label
-            htmlFor={inputId}
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
-          >
-            {label}
-          </Label>
+            <CheckboxPrimitive.Indicator
+              className={cn("flex items-center justify-center text-current")}
+            >
+              {props.checked === "indeterminate" ? (
+                <Minus className="h-4 w-4" aria-hidden />
+              ) : (
+                <Check className="h-4 w-4" aria-hidden />
+              )}
+            </CheckboxPrimitive.Indicator>
+          </CheckboxPrimitive.Root>
+          {description ? (
+            <ControlText
+              inputId={inputId}
+              label={label}
+              description={description}
+              descriptionId={descriptionId}
+            />
+          ) : (
+            label && (
+              <Label
+                htmlFor={inputId}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+              >
+                {label}
+              </Label>
+            )
+          )}
+        </div>
+        {isStringError && (
+          <p id={errorId} className="text-sm text-destructive-text">
+            {error}
+          </p>
         )}
       </div>
-      {isStringError && (
-        <p id={errorId} className="text-sm text-destructive-text">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-});
+    );
+  },
+);
 Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
 export { Checkbox };

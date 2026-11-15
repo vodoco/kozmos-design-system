@@ -45,9 +45,13 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  PersonaMark,
+  PersonaMarkGroup,
+  Notice,
   Drawer,
   Toast,
   Breadcrumb,
+  PageHeader,
   Pagination,
   Stepper,
   Alert as ReactAlert,
@@ -351,9 +355,17 @@ export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
 export const KozmosKbd = createVueWrapper(Kbd);
+export const KozmosPersonaMark = createVueWrapper(PersonaMark);
+export const KozmosPersonaMarkGroup = createVueWrapper(PersonaMarkGroup);
+// Its disclosure is a model: v-model:expanded, as React's expanded and
+// onExpandedChange are.
+export const KozmosNotice = createVueWrapper(Notice, {
+  expanded: { prop: "expanded", callback: "onExpandedChange", empty: false },
+});
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);
+export const KozmosPageHeader = createVueWrapper(PageHeader);
 export const KozmosPagination = createVueWrapper(Pagination);
 export const KozmosStepper = createVueWrapper(Stepper);
 // `positionLabel` may be a function: declared as a prop, it is handed to

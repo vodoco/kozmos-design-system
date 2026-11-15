@@ -26,6 +26,20 @@ figma.connect(Tabs, tabsUrl, {
     tab2Text: figma.string("Tab 2 Text"),
     tab3Text: figma.string("Tab 3 Text"),
     tab4Text: figma.string("Tab 4 Text"),
+    // GAP-152: at Content=Icon Over Label each tab draws its icon over its
+    // words, from the set's Tab N Icon swaps.
+    tab1Icon: figma.enum("Content", {
+      "Icon Over Label": figma.instance("Tab 1 Icon"),
+    }),
+    tab2Icon: figma.enum("Content", {
+      "Icon Over Label": figma.instance("Tab 2 Icon"),
+    }),
+    tab3Icon: figma.enum("Content", {
+      "Icon Over Label": figma.instance("Tab 3 Icon"),
+    }),
+    tab4Icon: figma.enum("Content", {
+      "Icon Over Label": figma.instance("Tab 4 Icon"),
+    }),
   },
   example: ({
     autoFocus,
@@ -35,19 +49,28 @@ figma.connect(Tabs, tabsUrl, {
     tab2Text,
     tab3Text,
     tab4Text,
+    tab1Icon,
+    tab2Icon,
+    tab3Icon,
+    tab4Icon,
   }) => (
     <Tabs defaultValue={defaultValue}>
       <TabsList>
-        <TabsTrigger autoFocus={autoFocus} disabled={disabled} value="one">
+        <TabsTrigger
+          autoFocus={autoFocus}
+          disabled={disabled}
+          icon={tab1Icon}
+          value="one"
+        >
           {tab1Text}
         </TabsTrigger>
-        <TabsTrigger disabled={disabled} value="two">
+        <TabsTrigger disabled={disabled} icon={tab2Icon} value="two">
           {tab2Text}
         </TabsTrigger>
-        <TabsTrigger disabled={disabled} value="three">
+        <TabsTrigger disabled={disabled} icon={tab3Icon} value="three">
           {tab3Text}
         </TabsTrigger>
-        <TabsTrigger disabled={disabled} value="four">
+        <TabsTrigger disabled={disabled} icon={tab4Icon} value="four">
           {tab4Text}
         </TabsTrigger>
       </TabsList>

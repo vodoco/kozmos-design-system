@@ -9,22 +9,105 @@ import com.figma.code.connect.FigmaType
 import com.figma.code.connect.FigmaVariant
 import com.kozmos.components.KozmosEmotion
 
-// The bar: the set's Shape=Linear variants.
+// The bar: the set's Shape=Linear variants with a value, in the flow or at
+// the top (Placement, GAP-159). One mapping per Value, so Value=Indeterminate
+// (below) matches only the indeterminate bar's: a mapping on Shape alone
+// matched it too, and Figma could show a value for a bar that has none.
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252")
 @FigmaVariant("Shape", "Linear")
-class KozmosProgressConnect {
-    @FigmaProperty(FigmaType.Enum, "Value")
-    val value: String = Figma.mapping(
-        "0" to "0",
-        "25" to "25",
-        "50" to "50",
-        "75" to "75",
-        "100" to "100"
+@FigmaVariant("Value", "0")
+class KozmosProgress0Connect {
+    @FigmaProperty(FigmaType.Enum, "Placement")
+    val placement: KozmosProgressPlacement = Figma.mapping(
+        "Inline" to KozmosProgressPlacement.Inline,
+        "Top" to KozmosProgressPlacement.Top
     )
 
     @Composable
     fun ComponentExample() {
-        KozmosProgress(progress = (value.toFloatOrNull() ?: 0f) / 100f)
+        KozmosProgress(progress = 0f, placement = placement)
+    }
+}
+
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252")
+@FigmaVariant("Shape", "Linear")
+@FigmaVariant("Value", "25")
+class KozmosProgress25Connect {
+    @FigmaProperty(FigmaType.Enum, "Placement")
+    val placement: KozmosProgressPlacement = Figma.mapping(
+        "Inline" to KozmosProgressPlacement.Inline,
+        "Top" to KozmosProgressPlacement.Top
+    )
+
+    @Composable
+    fun ComponentExample() {
+        KozmosProgress(progress = 0.25f, placement = placement)
+    }
+}
+
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252")
+@FigmaVariant("Shape", "Linear")
+@FigmaVariant("Value", "50")
+class KozmosProgress50Connect {
+    @FigmaProperty(FigmaType.Enum, "Placement")
+    val placement: KozmosProgressPlacement = Figma.mapping(
+        "Inline" to KozmosProgressPlacement.Inline,
+        "Top" to KozmosProgressPlacement.Top
+    )
+
+    @Composable
+    fun ComponentExample() {
+        KozmosProgress(progress = 0.5f, placement = placement)
+    }
+}
+
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252")
+@FigmaVariant("Shape", "Linear")
+@FigmaVariant("Value", "75")
+class KozmosProgress75Connect {
+    @FigmaProperty(FigmaType.Enum, "Placement")
+    val placement: KozmosProgressPlacement = Figma.mapping(
+        "Inline" to KozmosProgressPlacement.Inline,
+        "Top" to KozmosProgressPlacement.Top
+    )
+
+    @Composable
+    fun ComponentExample() {
+        KozmosProgress(progress = 0.75f, placement = placement)
+    }
+}
+
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252")
+@FigmaVariant("Shape", "Linear")
+@FigmaVariant("Value", "100")
+class KozmosProgress100Connect {
+    @FigmaProperty(FigmaType.Enum, "Placement")
+    val placement: KozmosProgressPlacement = Figma.mapping(
+        "Inline" to KozmosProgressPlacement.Inline,
+        "Top" to KozmosProgressPlacement.Top
+    )
+
+    @Composable
+    fun ComponentExample() {
+        KozmosProgress(progress = 1f, placement = placement)
+    }
+}
+
+// The indeterminate bar (GAP-159): Shape=Linear, Value=Indeterminate, a
+// segment sweeping from the inline start, in the flow or at the top.
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=83-252")
+@FigmaVariant("Shape", "Linear")
+@FigmaVariant("Value", "Indeterminate")
+class KozmosProgressIndeterminateConnect {
+    @FigmaProperty(FigmaType.Enum, "Placement")
+    val placement: KozmosProgressPlacement = Figma.mapping(
+        "Inline" to KozmosProgressPlacement.Inline,
+        "Top" to KozmosProgressPlacement.Top
+    )
+
+    @Composable
+    fun ComponentExample() {
+        KozmosProgress(placement = placement)
     }
 }
 

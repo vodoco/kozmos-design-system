@@ -83,6 +83,58 @@
       forced-color-adjust: none;
     }
   }
+  /* Progress's indeterminate bar (GAP-159): a segment a quarter of the track
+     wide, theme 600 as the bar's fill is, sweeping from the inline start to
+     the inline end every 2 s, linear, for as long as the wait lasts (Pointr
+     Cloud's loading bar). It enters wholly before the start and leaves wholly
+     past the end; right to left it runs from the right. Under reduced
+     motion, the system's or DesignConfigProvider's, it stands still in the
+     middle of the track, where it reads as a wait and not as a value. */
+  .kozmos-progress-sweep {
+    --kozmos-progress-sweep-sign: calc(1 - 2 * var(--kozmos-rtl, 0));
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 25%;
+    border-radius: inherit;
+    background: var(--primitives-colors-theme-600);
+    animation: progress-sweep 2s linear infinite;
+  }
+  @keyframes progress-sweep {
+    from {
+      transform: translateX(calc(-100% * var(--kozmos-progress-sweep-sign)));
+    }
+    to {
+      transform: translateX(calc(400% * var(--kozmos-progress-sweep-sign)));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-progress-sweep {
+      animation: none;
+      transform: translateX(calc(150% * var(--kozmos-progress-sweep-sign)));
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-progress-sweep {
+    animation: none;
+    transform: translateX(calc(150% * var(--kozmos-progress-sweep-sign)));
+  }
+  /* The page's loading bar (GAP-159): fixed to the top of the window, under
+     the notch or status bar's safe area, edge to edge, 4 tall (spacing 50)
+     and square, over the page's content. */
+  .kozmos-progress-top {
+    position: fixed;
+    inset-block-start: env(safe-area-inset-top, 0px);
+    inset-inline: 0;
+    z-index: var(--primitives-layer-50);
+    height: calc(var(--primitives-layout-spacing-50) * 1px);
+    border-radius: 0;
+  }
+  @media (forced-colors: active) {
+    .kozmos-progress-sweep {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
+  }
   /* Progress's ring (decision 131): a dial 48, 96 or 128 across (spacing
      600, 900 and 1000), its label centred in the hole and kept inside the
      square the hole holds, or beside the dial at the inline end. The arc is
@@ -250,11 +302,18 @@
      Kozmos Button here grows to two lines rather than overflow and keeps its
      44px; aria-disabled reads unavailable without dropping focus, as a
      disabled button would. Owned, so it holds without @scope. Grid columns,
-     not flex: a flex basis of 0 still adds an outline button's border. */
+     not flex: a flex basis of 0 still adds an outline button's border.
+     The row is max-content, not auto: WebKit can keep an auto row at the
+     height its stretched buttons had in a narrower first layout. A map
+     shell lays its panel out at width 0 before it measures, where
+     "Previous" breaks a letter to a line, and the row stayed that tall
+     once the panel widened: the sheet fitted to it settled 134px too tall,
+     or not, depending on when WebKit next laid the row out. */
   .kozmos-route-summary-actions {
     display: grid;
     grid-auto-columns: minmax(0, 1fr);
     grid-auto-flow: column;
+    grid-auto-rows: max-content;
     gap: 0.5rem;
   }
   .kozmos-route-summary-actions > * {
@@ -992,6 +1051,39 @@
       var(--primitives-colors-background-0)
     );
   }
+  /* A radio card or tile (GAP-158): chosen, its 1px edge turns theme 600 and
+     a second pixel inside it draws it heavier, so the choice is told by
+     weight and by the ring's dot or the tile's check, never by colour alone.
+     The second pixel is an inset shadow held in --tw-shadow, the slot the
+     ring utilities compose their box-shadow with: focused, the ring is drawn
+     around it and the heavier edge stays. An outline did not survive focus,
+     as the scoped focus-visible:outline-none outweighs this rule. */
+  .kozmos-radio-card[data-state="checked"] {
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-theme-600);
+    box-shadow:
+      var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--tw-shadow);
+  }
+  .kozmos-radio-card[data-state="checked"][data-error] {
+    --tw-shadow: inset 0 0 0 1px var(--primitives-colors-emotional-danger-600);
+  }
+  /* A card's image sits 12 in from its edge, so its corners are the card's
+     less those 12, concentric with it (docs/nested-radius.md): 20 - 12 = 8. */
+  .kozmos-radio-card-media {
+    border-radius: calc(
+      var(--semantics-radius-container) * 1px -
+        var(--primitives-layout-spacing-150) * 1px
+    );
+  }
+  /* Forced colours draw no box-shadow, so there the chosen box's heavier
+     edge is a 2px outline inside it in Highlight: the choice still shows
+     by weight, as well as by the dot or the check. */
+  @media (forced-colors: active) {
+    .kozmos-radio-card[data-state="checked"] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map
      leaves room for, so it is a scroll box, and a scroll box clips at its
      padding edge. With no padding, that edge sat on the map chrome itself and
@@ -1711,6 +1803,61 @@
   }
   .kozmos-card-header-subtle > .kozmos-card-header-actions {
     block-size: 1.75rem;
+  }
+  /* PageHeader (GAP-036, decision 135): a band across the page, its content
+     in a Container with the block inset (GAP-116) 32 above and 24 below. The
+     subtle tone is CardHeader's subtle strip's pale theme tint. */
+  .kozmos-page-header {
+    inline-size: 100%;
+  }
+  .kozmos-page-header-subtle {
+    background-color: var(--primitives-colors-theme-0);
+  }
+  .kozmos-page-header-breadcrumb {
+    margin-block-end: 0.5rem;
+  }
+  /* The text takes the line and the actions its end; where both don't fit
+     (a phone) the actions wrap under the text, at its start. */
+  .kozmos-page-header-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .kozmos-page-header-text {
+    display: flex;
+    flex: 1 1 16rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-inline-size: 0;
+  }
+  /* A title that wraps keeps the info button on its first line. */
+  .kozmos-page-header-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-inline-size: 0;
+  }
+  .kozmos-page-header-title > :first-child {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+  /* The info button and the actions are centred on the title's line, 32 for
+     md and 36 for lg, and spill past it evenly, so a 40 button makes the
+     header no taller. */
+  .kozmos-page-header-info,
+  .kozmos-page-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    block-size: 2rem;
+  }
+  .kozmos-page-header-actions {
+    gap: 0.5rem;
+  }
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-info,
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-actions {
+    block-size: 2.25rem;
   }
   /* IconButton's counter (GAP-197): over the icon's top-end corner, its
      bottom edge on the button's centre line and its start edge 2px past it,
@@ -2490,6 +2637,38 @@
     .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
       background-color: Highlight;
       outline: none;
+    }
+  }
+  /* PersonaMark (GAP-106): a persona's colour as a diamond, 12 by 12, its
+     points on the box's edges, in the colour the product gives
+     (--kozmos-persona-color, the persona's own, drawn as given in both
+     themes). It sits on the text's middle, beside a name in a label or a
+     row. A group's marks are layout spacing 25 (2) apart. Two classes: a
+     scoped preflight weighs one and wins a tie on proximity, and its svg
+     rule would make the shape a block. Forced colours replace the page's
+     colours with the system's, so there the diamond is CanvasText: the
+     shape stays, and the persona is said by its name, never by colour
+     alone. */
+  .kozmos-persona-mark,
+  .kozmos-persona-marks {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .kozmos-persona-marks {
+    gap: calc(var(--primitives-layout-spacing-25) * 1px);
+  }
+  .kozmos-persona-mark .kozmos-persona-mark-shape {
+    display: block;
+    width: 12px;
+    height: 12px;
+    fill: var(--kozmos-persona-color, currentColor);
+  }
+  @media (forced-colors: active) {
+    .kozmos-persona-mark .kozmos-persona-mark-shape {
+      forced-color-adjust: none;
+      fill: CanvasText;
     }
   }
 }

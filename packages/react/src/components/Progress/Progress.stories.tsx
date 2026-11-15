@@ -26,6 +26,25 @@ export const Default: Story = {
   },
 };
 
+// GAP-159: no value, so a quarter-wide segment sweeps from the inline start
+// to the inline end every 2 s, and stands still in the middle under reduced
+// motion. It is named "Loading" and says so once as it appears.
+export const Indeterminate: Story = {
+  args: { className: "w-3/5" },
+};
+
+// GAP-159: the page's loading bar, 4 tall, edge to edge and square, fixed to
+// the top of the window over the page while it loads.
+export const TopOfPage: Story = {
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <Box className="p-6">
+      <Progress placement="top" label="Loading the map" />
+      <Text>Map content loads under the bar.</Text>
+    </Box>
+  ),
+};
+
 // Decision 131 (GAP-038): a count out of a total, as a ring. It fills from
 // 12 o'clock clockwise, the same right to left, with its label centred.
 export const Circular: Story = {

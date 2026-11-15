@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public struct KozmosProgressRange: Hashable, Sendable {
     public let start: Double
@@ -140,6 +143,116 @@ public enum KozmosProgressLabelPlacement: String, CaseIterable, Sendable {
     case end
 }
 
+/// Where a bar sits, React's `placement` (GAP-159). A ring has one placement.
+public enum KozmosProgressPlacement: String, CaseIterable, Sendable {
+    /// In the flow: the bar as it is drawn anywhere else.
+    case inline
+    /// The screen's loading bar: edge to edge, 4 tall (layout spacing 50)
+    /// and square. Where it sits is the caller's: put it at the top of the
+    /// screen with `.overlay(alignment: .top) { KozmosProgress(placement:
+    /// .top) }`, or `.safeAreaInset(edge: .top)` to push the content down.
+    case top
+
+    /// The bar's thickness: 8 in the flow, as React's `h-2`, and 4 at the
+    /// top, as React's `.kozmos-progress-top` and Pointr Cloud's loading bar.
+    public var height: CGFloat {
+        switch self {
+        case .inline: return KozmosDimensions.primitivesLayoutSpacing100
+        case .top: return KozmosDimensions.primitivesLayoutSpacing50
+        }
+    }
+}
+
+/// The indeterminate bar's sweep (GAP-159), React's `kozmos-progress-sweep`:
+/// a segment a quarter of the track wide goes from wholly before the inline
+/// start to wholly past the inline end every 2 s, linear, for as long as the
+/// wait lasts. Under Reduce Motion it stands still in the middle of the
+/// track, where it reads as a wait and not as a value. Kept apart from the
+/// view so the motion can be tested without drawing.
+enum KozmosProgressSweep {
+    /// A quarter of the track.
+    static let width: Double = 0.25
+    /// One sweep, start to end: Pointr Cloud's 2 s.
+    static let period: Double = 2
+    /// Where the segment's inline start stands under Reduce Motion: centred.
+    static let still: Double = (1 - width) / 2
+
+    /// Where the segment's inline start is, as a fraction of the track from
+    /// its inline start, at `time` seconds: -0.25 as a sweep begins, 1 as it
+    /// ends.
+    static func start(at time: Double, reduceMotion: Bool) -> Double {
+        guard !reduceMotion, time.isFinite else { return still }
+        let phase = time.truncatingRemainder(dividingBy: period) / period
+        let wrapped = phase < 0 ? phase + 1 : phase
+        return -width + (1 + width) * wrapped
+    }
+
+    /// The segment's left edge in a track `trackWidth` across: right to left
+    /// the inline start is the right edge, so the sweep runs from the right.
+    static func x(start: Double, trackWidth: CGFloat, direction: LayoutDirection) -> CGFloat {
+        let left = direction == .rightToLeft ? 1 - start - width : start
+        return CGFloat(left) * trackWidth
+    }
+}
+
+/// When indeterminate bars speak (GAP-159): once per wait, as React's
+/// `Progress` does. A wait is the time a bar is indeterminate. It keeps its
+/// identity in the bar's own state, so a bar that leaves the screen and
+/// comes back while it still waits (a row scrolled out of a List or a
+/// LazyVStack and back, a tab switched away and back) is not said again,
+/// and its label, read once as the wait starts, is not said again when it
+/// changes. Only bars that start together share one announcement: waits
+/// starting within `window` of a group's first are that group, and only
+/// its first speaks, so five uploads starting together are one "Loading".
+/// A wait that starts later speaks, even while an earlier, long wait still
+/// runs. A value ends the wait; the next wait is said again.
+struct KozmosProgressWaits: Equatable {
+    /// How close together waits start to be one group: 500 ms, React's.
+    static let window: TimeInterval = 0.5
+    /// Waits that have started and not ended: said, or kept quiet because
+    /// their group's first spoke. A wait leaves when it ends or its bar
+    /// goes for good, so this holds only the bars that still exist.
+    private(set) var settled: Set<UUID> = []
+    /// When the latest group's first wait started.
+    private(set) var groupStart: TimeInterval?
+
+    /// A waiting bar is on screen at `now`. Returns its words if it is to
+    /// say them: once per wait, and only for the first of a group.
+    mutating func appear(_ wait: UUID, label: String, at now: TimeInterval) -> String? {
+        guard !settled.contains(wait) else { return nil }
+        settled.insert(wait)
+        if let start = groupStart, now - start <= Self.window { return nil }
+        groupStart = now
+        return label.isEmpty ? nil : label
+    }
+
+    /// A wait ended: the bar got a value, or went for good.
+    mutating func end(_ wait: UUID) {
+        settled.remove(wait)
+    }
+}
+
+/// The app's waits, shared by every bar on screen, and the clock a wait's
+/// start is read from (replaced in tests).
+@MainActor
+enum KozmosProgressWaitRegistry {
+    static var waits = KozmosProgressWaits()
+    static var now: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+}
+
+/// A bar's wait, owned by the bar for as long as SwiftUI keeps the bar: it
+/// outlives the bar leaving the screen and coming back, and when the bar
+/// goes for good its wait leaves the registry, so the registry never grows
+/// past the bars that exist.
+final class KozmosProgressWaitToken: ObservableObject {
+    var wait: UUID?
+
+    deinit {
+        guard let wait else { return }
+        Task { @MainActor in KozmosProgressWaitRegistry.waits.end(wait) }
+    }
+}
+
 public struct KozmosProgress: View {
     let value: Double
     let total: Double
@@ -148,17 +261,59 @@ public struct KozmosProgress: View {
     let tone: KozmosEmotion
     let labelPlacement: KozmosProgressLabelPlacement
     let label: AnyView?
+    let placement: KozmosProgressPlacement
+    let indeterminate: Bool
+    let spokenLabel: String
+    let accessibilityName: String
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// This bar's wait, while it is indeterminate: kept in the bar's own
+    /// state object, so it outlives the bar leaving the screen and coming
+    /// back, and leaves the registry when the bar goes for good.
+    @StateObject private var token = KozmosProgressWaitToken()
+
+    /// The indeterminate bar (GAP-159): a segment sweeping from the inline
+    /// start to the inline end every 2 s, theme 600 on the bar's track, for
+    /// as long as the wait lasts; still and centred under Reduce Motion.
+    /// `placement: .top` is the screen's 4 tall loading bar.
+    ///
+    /// VoiceOver reads it as `label`, with no value, and it is announced
+    /// once per wait, politely, as the wait starts: not again when the bar
+    /// comes back on screen while it still waits, nor when the label
+    /// changes, and only by the first of several bars waiting at once.
+    ///
+    /// At the top, put it in an overlay of the screen's content,
+    /// `.overlay(alignment: .top)`: an overlay is laid out in the content's
+    /// frame, inside the safe area, so the bar sits under the status bar,
+    /// the notch or the navigation bar, never behind them.
+    public init(placement: KozmosProgressPlacement = .inline, label: String = "Loading") {
+        self.value = 0
+        self.total = 1.0
+        self.shape = .linear
+        self.size = .md
+        self.tone = .themed
+        self.labelPlacement = .center
+        self.label = nil
+        self.placement = placement
+        self.indeterminate = true
+        self.spokenLabel = label
+        self.accessibilityName = label
+    }
 
     /// A bar, or with `shape: .circular` a ring of `size` whose arc is
     /// `tone`'s colour: Tag's and Button's emotions, `.themed` (the bar's
     /// own theme 600) by default.
+    /// A bar takes `placement: .top` to be the screen's 4 tall loading bar
+    /// (GAP-159); a ring ignores it. The top bar is a progress bar to
+    /// VoiceOver, as the inline one is: named `accessibilityName`
+    /// ("Progress" unless given), with its value as a percentage.
     public init(
         value: Double,
         total: Double = 1.0,
         shape: KozmosProgressShape = .linear,
         size: KozmosProgressSize = .md,
-        tone: KozmosEmotion = .themed
+        tone: KozmosEmotion = .themed,
+        placement: KozmosProgressPlacement = .inline,
+        accessibilityName: String = "Progress"
     ) {
         self.value = value
         self.total = total
@@ -167,6 +322,10 @@ public struct KozmosProgress: View {
         self.tone = tone
         self.labelPlacement = .center
         self.label = nil
+        self.placement = placement
+        self.indeterminate = false
+        self.spokenLabel = ""
+        self.accessibilityName = accessibilityName
     }
 
     /// A ring with `label` in its centre, or beside it with
@@ -191,6 +350,10 @@ public struct KozmosProgress: View {
         self.tone = tone
         self.labelPlacement = labelPlacement
         self.label = AnyView(label())
+        self.placement = .inline
+        self.indeterminate = false
+        self.spokenLabel = ""
+        self.accessibilityName = ""
     }
 
     /// How much of the turn is done, from 0 to 1, as `ProgressView` clamps
@@ -214,9 +377,26 @@ public struct KozmosProgress: View {
         reduceMotion ? nil : KozmosMotion.standard
     }
 
+    /// Where a bar sits: a ring is always in the flow.
+    var resolvedPlacement: KozmosProgressPlacement {
+        shape == .circular ? .inline : placement
+    }
+
     public var body: some View {
         if shape == .circular {
             ring
+        } else if indeterminate {
+            KozmosIndeterminateBar(placement: resolvedPlacement)
+                // To VoiceOver it is the system's indeterminate progress
+                // indicator, named by its words, as React's is a progressbar
+                // with no value and Compose's an Indeterminate range.
+                .accessibilityRepresentation {
+                    ProgressView { Text(spokenLabel) }
+                }
+                .onAppear { appear() }
+        } else if resolvedPlacement == .top {
+            KozmosTopBar(fraction: fraction, accessibilityName: accessibilityName)
+                .onAppear { endWait() }
         } else {
             ProgressView(value: value, total: total)
                 // The theme's primary, as React's bg-primary (theme 600, light and
@@ -225,6 +405,7 @@ public struct KozmosProgress: View {
                 // is deprecated.
                 .progressViewStyle(.linear)
                 .tint(KozmosColors.primitivesColorsTheme600)
+                .onAppear { endWait() }
         }
     }
 
@@ -289,4 +470,121 @@ public struct KozmosProgress: View {
         }
         .frame(width: size.diameter, height: size.diameter)
     }
+}
+
+extension KozmosProgress {
+    /// A waiting bar is on screen: it starts its wait, or goes on with the
+    /// one it has, and says the words if the wait is to be said.
+    fileprivate func appear() {
+        let wait = token.wait ?? UUID()
+        if token.wait == nil { token.wait = wait }
+        guard let message = KozmosProgressWaitRegistry.waits.appear(
+            wait, label: spokenLabel, at: KozmosProgressWaitRegistry.now()) else { return }
+        #if canImport(UIKit)
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: NSAttributedString(
+                string: message,
+                attributes: [.accessibilitySpeechQueueAnnouncement: true]
+            )
+        )
+        #endif
+    }
+
+    /// The bar has a value: its wait, if it had one, is over.
+    fileprivate func endWait() {
+        guard let wait = token.wait else { return }
+        KozmosProgressWaitRegistry.waits.end(wait)
+        token.wait = nil
+    }
+}
+
+/// The indeterminate bar's drawing: the track, the bar's own background 200
+/// (React's `bg-secondary`), and the theme 600 segment, clipped to it. In the
+/// flow its ends are round; at the top it is square. The clock runs only
+/// while the scene is active and motion is allowed.
+struct KozmosIndeterminateBar: View {
+    let placement: KozmosProgressPlacement
+    @Environment(\.layoutDirection) private var direction
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Group {
+            if reduceMotion {
+                drawing(start: KozmosProgressSweep.still)
+            } else {
+                TimelineView(.animation(minimumInterval: 1 / 60, paused: scenePhase != .active)) { timeline in
+                    drawing(start: KozmosProgressSweep.start(
+                        at: timeline.date.timeIntervalSinceReferenceDate, reduceMotion: false))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: placement.height)
+    }
+
+    /// The segment's outline: the track's own, a capsule in the flow and a
+    /// rectangle at the top.
+    static func segmentShape(_ placement: KozmosProgressPlacement) -> KozmosProgressBarShape {
+        KozmosProgressBarShape(placement: placement)
+    }
+
+    private func drawing(start: Double) -> some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            ZStack(alignment: .topLeading) {
+                Rectangle().fill(KozmosColors.primitivesColorsBackground200)
+                // The segment takes the track's corners, as React's does
+                // (border-radius: inherit): a capsule on the rounded bar,
+                // square at the top. The track's clip only rounds the bar's
+                // ends, so a segment in the middle drew square ends.
+                Self.segmentShape(placement)
+                    .fill(KozmosColors.primitivesColorsTheme600)
+                    .frame(width: width * CGFloat(KozmosProgressSweep.width), height: geometry.size.height)
+                    .offset(x: KozmosProgressSweep.x(start: start, trackWidth: width, direction: direction))
+            }
+            // Placed in physical points already: SwiftUI must not mirror it again.
+            .environment(\.layoutDirection, .leftToRight)
+            .clipShape(KozmosProgressBarShape(placement: placement))
+        }
+    }
+}
+
+/// A determinate bar at the top (GAP-159): 4 tall and square, filled from
+/// the inline start as far as the value, theme 600 on background 200. To
+/// VoiceOver it is the system's progress bar, as the inline bar is: named,
+/// with its value as a percentage.
+struct KozmosTopBar: View {
+    let fraction: Double
+    var accessibilityName: String = "Progress"
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Rectangle().fill(KozmosColors.primitivesColorsBackground200)
+                Rectangle()
+                    .fill(KozmosColors.primitivesColorsTheme600)
+                    .frame(width: geometry.size.width * CGFloat(fraction))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: KozmosProgressPlacement.top.height)
+        .accessibilityRepresentation {
+            ProgressView(value: fraction) { Text(accessibilityName) }
+        }
+    }
+}
+
+/// The bar's outline: a capsule in the flow, a rectangle at the top.
+struct KozmosProgressBarShape: Shape {
+    let placement: KozmosProgressPlacement
+    func path(in rect: CGRect) -> Path {
+        placement == .top ? Rectangle().path(in: rect) : Capsule().path(in: rect)
+    }
+
+    /// Symmetric either way, so nothing to mirror: fixed, as the track's
+    /// line is, so no deployment target mirrors it differently.
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
