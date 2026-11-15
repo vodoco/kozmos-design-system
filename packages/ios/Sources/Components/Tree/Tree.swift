@@ -1032,7 +1032,7 @@ struct KozmosTreeCheckBox: View {
         ZStack {
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
                 .stroke(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
-                        : KozmosColors.primitivesColorsForeground500, lineWidth: 1)
+                        : KozmosColors.semanticsBorderInput, lineWidth: 1)
                 .background(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
                 .frame(width: 20, height: 20)
                 .cornerRadius(KozmosDimensions.semanticsRadiusMarker)

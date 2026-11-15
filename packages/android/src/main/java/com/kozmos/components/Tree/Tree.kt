@@ -1083,7 +1083,7 @@ internal fun TreeCheckBox(checked: Boolean, modifier: Modifier = Modifier) {
         modifier = modifier
             .size(20.dp)
             .background(if (checked) fill else Color.Transparent, shape)
-            .border(1.dp, if (checked) fill else KozmosThemeTokens.primitivesColorsForeground500, shape)
+            .border(1.dp, if (checked) fill else KozmosThemeTokens.semanticsBorderInput, shape)
     ) {
         if (checked) {
             Icon(

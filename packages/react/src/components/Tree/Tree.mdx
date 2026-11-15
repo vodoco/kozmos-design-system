@@ -181,39 +181,6 @@ Pointr Cloud's Map Content tree holds thousands of items under a level, in secti
   <Story of={TreeStories.VirtualizedInPanel} />
 </Canvas>
 
-## Checkable rows
-
-Pointr Cloud's Add New Access picks several clients, or some of a client's sites, at once (GAP-277).
-
-- **A checkbox on every row:** `checkable` draws Checkbox's box before each row's icon. The checks are the tree's
-  set of rows, as `selectionMode="multiple"` holds them: `selectedIds` (or `defaultSelectedIds`) and
-  `onSelectedIdsChange`. The tree is `aria-multiselectable` and each row is `aria-checked`, with no `aria-selected`;
-  the box is for the eye, and the row is the control a screen reader hears as checked.
-- **Checking:** a click on a row, Space or Enter checks or clears it; `activationMode` does not apply. The
-  disclosure, and the Right and Left arrows, open and close it; the other keys (arrows, Home, End, PageUp, PageDown,
-  `*`, type-ahead) move as in every tree. Shift ranges and Ctrl or Cmd+A, which would check a client with its sites,
-  do not apply. A disabled row never checks, and a section is never checked. Closing a parent leaves its rows' checks
-  as they are.
-- **A client or its sites:** `checkRule="exclusive"`, the default, never checks a row together with a row above or
-  below it: checking a client clears its sites' checks, and checking a site clears its client's, open or closed. A
-  client checked is the whole client, its sites to come among them; some of its sites checked is those sites alone.
-  The conventional tri-state rule, where checking a parent checks all its children and a parent with some children
-  checked is drawn mixed, cannot tell the two apart, which is why Kozmos keeps them exclusive.
-  `checkRule="independent"` leaves every other row as it is.
-- **The disclosure at the end:** `disclosurePosition="end"` (on Tree, or a row of its own) draws a row's chevron at its
-  end, after its meta and actions, as Pointr Cloud's scope picker has it; `"start"`, the default, keeps it before the
-  name.
-- **Composing:** `TreeItemRow`, `TreeParentItemRow` and `TreeChildItemRow` take `checked`, which draws the box and is
-  the row's `aria-checked`, and `disclosurePosition`.
-
-<Canvas>
-  <Story of={TreeStories.Checkable} />
-</Canvas>
-
-SwiftUI's `KozmosTree(checkable:)` and Compose's `KozmosTree(checkable = true)` take the same: the checks are the tree's
-selection (`selection` / `selectedIds`), with the check rule and the disclosure position. On SwiftUI each row is heard as a toggle that is on or off; on Compose each row
-is a checkbox in TalkBack (`toggleableState`).
-
 SwiftUI's `KozmosTree` and Compose's `KozmosTree` take the same: sections (`Node.section` / `TreeNode(section = true)`),
 a selection mode and a set of selected ids, `metaPlacement`, and a menu per row through the platform's Kozmos context
 menu, over a lazy list of the rows in view. A tap in a multiple SwiftUI tree adds or takes away a row, as touch has no
@@ -413,6 +380,39 @@ fun MapContentTree() {
 }
 `}
 />
+
+## Checkable rows
+
+Pointr Cloud's Add New Access picks several clients, or some of a client's sites, at once (GAP-277).
+
+- **A checkbox on every row:** `checkable` draws Checkbox's box before each row's icon. The checks are the tree's
+  set of rows, as `selectionMode="multiple"` holds them: `selectedIds` (or `defaultSelectedIds`) and
+  `onSelectedIdsChange`. The tree is `aria-multiselectable` and each row is `aria-checked`, with no `aria-selected`;
+  the box is for the eye, and the row is the control a screen reader hears as checked.
+- **Checking:** a click on a row, Space or Enter checks or clears it; `activationMode` does not apply. The
+  disclosure, and the Right and Left arrows, open and close it; the other keys (arrows, Home, End, PageUp, PageDown,
+  `*`, type-ahead) move as in every tree. Shift ranges and Ctrl or Cmd+A, which would check a client with its sites,
+  do not apply. A disabled row never checks, and a section is never checked. Closing a parent leaves its rows' checks
+  as they are.
+- **A client or its sites:** `checkRule="exclusive"`, the default, never checks a row together with a row above or
+  below it: checking a client clears its sites' checks, and checking a site clears its client's, open or closed. A
+  client checked is the whole client, its sites to come among them; some of its sites checked is those sites alone.
+  The conventional tri-state rule, where checking a parent checks all its children and a parent with some children
+  checked is drawn mixed, cannot tell the two apart, which is why Kozmos keeps them exclusive.
+  `checkRule="independent"` leaves every other row as it is.
+- **The disclosure at the end:** `disclosurePosition="end"` (on Tree, or a row of its own) draws a row's chevron at its
+  end, after its meta and actions, as Pointr Cloud's scope picker has it; `"start"`, the default, keeps it before the
+  name.
+- **Composing:** `TreeItemRow`, `TreeParentItemRow` and `TreeChildItemRow` take `checked`, which draws the box and is
+  the row's `aria-checked`, and `disclosurePosition`.
+
+<Canvas>
+  <Story of={TreeStories.Checkable} />
+</Canvas>
+
+SwiftUI's `KozmosTree(checkable:)` and Compose's `KozmosTree(checkable = true)` take the same: the checks are the tree's
+selection (`selection` / `selectedIds`), with the check rule and the disclosure position. On SwiftUI each row is heard as a toggle that is on or off; on Compose each row
+is a checkbox in TalkBack (`toggleableState`).
 
 ## Implementation
 
