@@ -119,6 +119,8 @@
       "src/main/java/com/kozmos/components/TimePicker/TimePicker.kt",
       "src/main/java/com/kozmos/components/FileUpload/FileUpload.figma.kt",
       "src/main/java/com/kozmos/components/FileUpload/FileUpload.kt",
+      "src/main/java/com/kozmos/components/ImageCropper/ImageCropper.figma.kt",
+      "src/main/java/com/kozmos/components/ImageCropper/ImageCropper.kt",
       "src/main/java/com/kozmos/components/ColorPicker/ColorPicker.figma.kt",
       "src/main/java/com/kozmos/components/ColorPicker/ColorPicker.kt",
       "src/main/java/com/kozmos/components/Textarea/Textarea.figma.kt",

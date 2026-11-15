@@ -1,12 +1,11 @@
 import SwiftUI
 import Figma
 
-// GAP-273: the ImageCropper set. Its node id is a placeholder until the set
-// is built in the live file, so this file stays out of figma.linked.config.json.
+// GAP-273: the ImageCropper set, built by the importer in the live file.
 // Ratio is the frame's shape: Square is 1, Landscape 16:9.
 struct KozmosImageCropperConnect: FigmaConnect {
     let component = KozmosImageCropper.self
-    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD"
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2516-15104"
 
     @FigmaEnum(
         "Ratio",
