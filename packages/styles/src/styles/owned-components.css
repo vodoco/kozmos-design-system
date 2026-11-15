@@ -1804,6 +1804,64 @@
   .kozmos-card-header-subtle > .kozmos-card-header-actions {
     block-size: 1.75rem;
   }
+  /* ImageCropper (GAP-273): the frame is the box, in the cropper's ratio; the
+     image moves and scales under it, at physical left and top, because an
+     image's pixels do not mirror right to left. A 1 inner edge in the input
+     border draws the frame; the zoom row under it is Zoom out, the zoom
+     Slider and Zoom in, its sides logical. */
+  .kozmos-image-cropper {
+    display: grid;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    min-inline-size: 0;
+  }
+  .kozmos-image-cropper-frame {
+    position: relative;
+    overflow: hidden;
+    inline-size: 100%;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background-color: var(--primitives-colors-background-100);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .kozmos-image-cropper-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: var(--primitives-border-width-sm) solid
+      var(--semantics-border-input);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .kozmos-image-cropper-frame:active {
+    cursor: grabbing;
+  }
+  .kozmos-image-cropper[data-disabled] .kozmos-image-cropper-frame {
+    cursor: default;
+    opacity: 0.5;
+  }
+  .kozmos-image-cropper-frame > .kozmos-image-cropper-image {
+    position: absolute;
+    display: block;
+    max-inline-size: none;
+    max-block-size: none;
+    pointer-events: none;
+  }
+  .kozmos-image-cropper-zoom {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-image-cropper-slider {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+  /* A zoom at its limit is unavailable, not disabled, so it keeps focus:
+     drawn as a disabled button is, at half opacity. */
+  .kozmos-image-cropper-zoom > [aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: default;
+  }
   /* PageHeader (GAP-036, decision 135): a band across the page, its content
      in a Container with the block inset (GAP-116) 32 above and 24 below. The
      subtle tone is CardHeader's subtle strip's pale theme tint. */

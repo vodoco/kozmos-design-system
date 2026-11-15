@@ -11,7 +11,7 @@
   "figma": {
     "knownFileKeys": ["Yj4O8p6Y9h2Sa9zJVoAiVY"],
     "publishCommand": "pnpm figma:publish:dry",
-    "publishStatus": "ready",
+    "publishStatus": "blocked for all-component React publish until non-core node-id=TBD scaffolds are linked; use linked publish for Core",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
     "linkedPublishStatus": "ready for the current 107 Core React component-set mappings",
@@ -15714,12 +15714,12 @@
   },
   "components": {
     "summary": {
-      "total": 127,
-      "stories": 127,
-      "tests": 127,
-      "exported": 127,
-      "codeConnectFiles": 104,
-      "codeConnectScaffolds": 0,
+      "total": 128,
+      "stories": 128,
+      "tests": 128,
+      "exported": 128,
+      "codeConnectFiles": 105,
+      "codeConnectScaffolds": 1,
       "codeConnectLinked": 104
     },
     "firstBatch": [
@@ -15761,6 +15761,7 @@
       "Grid",
       "Icon",
       "IconButton",
+      "ImageCropper",
       "Input",
       "Itinerary",
       "Kbd",
@@ -17694,6 +17695,49 @@
             "secondary"
           ]
         }
+      },
+      {
+        "name": "ImageCropper",
+        "source": "packages/react/src/components/ImageCropper/ImageCropper.tsx",
+        "story": "packages/react/src/components/ImageCropper/ImageCropper.stories.tsx",
+        "test": "packages/react/src/components/ImageCropper/ImageCropper.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/ImageCropper/ImageCropper.figma.tsx",
+          "linked": false,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
+          "needsNodeId": true,
+          "status": "scaffold",
+          "issues": ["node-id=TBD"],
+          "connectedComponents": ["ImageCropper"],
+          "mappedProps": ["alt", "aspectRatio", "showZoomControls", "src"],
+          "unmappedProps": []
+        },
+        "props": [
+          "alt",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "aspectRatio",
+          "children",
+          "defaultValue",
+          "disabled",
+          "id",
+          "instructions",
+          "label",
+          "maxZoom",
+          "role",
+          "showZoomControls",
+          "src",
+          "statusLabel",
+          "tabIndex",
+          "title",
+          "value",
+          "zoomInLabel",
+          "zoomLabel",
+          "zoomOutLabel"
+        ],
+        "variants": {}
       },
       {
         "name": "Input",

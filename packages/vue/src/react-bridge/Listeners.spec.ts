@@ -830,6 +830,7 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Floor plan" },
     click: (drawn) => drawn.querySelector("input[type=file]")?.parentElement,
   },
+  KozmosImageCropper: { props: { src: "logo.png", alt: "Logo" } },
   KozmosDatePicker: { props: { "aria-label": "Date" }, click: first("input") },
   KozmosTimePicker: { props: { "aria-label": "Time" }, click: first("input") },
   KozmosFloatingActionButton: { slot: true },

@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d51462572a1e";
+const PLUGIN_BUILD = "14ceccf62a50";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1011,6 +1011,10 @@ const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 // `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
 // first, so the set's default is the plain cap.
 const KBD_KEYS = ["Single", "Combination"];
+// GAP-273: React's ImageCropper `aspectRatio`, the frame's shape: Square is
+// 1, MAP-32's logo and the default, Landscape 16:9, a cover. Square comes
+// first, so the set's default is React's.
+const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1494,6 +1498,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DateRangePicker: 2400,
   TimePicker: 1380,
   FileUpload: 1420,
+  ImageCropper: 560,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1638,6 +1643,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "DateRangePicker",
       "TimePicker",
       "FileUpload",
+      "ImageCropper",
       "ColorPicker",
       "SearchBar",
       "Search",
@@ -4512,6 +4518,30 @@ const COMPONENT_DOCS = [
       "The field and list options meet the 44px minimum interactive target.",
       "Time-list surface, option states, text, icons, helper copy, and boundaries pass contrast in both modes.",
       "Product code preserves native time input semantics and accessible descriptions.",
+    ],
+  },
+  {
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    category: "Forms",
+    summary:
+      "ImageCropper frames an image to an aspect ratio: the frame is the box, the image moves and scales under it, and the result is the frame as fractions of the image (GAP-273).",
+    usage: [
+      "Use to choose the part of an image a product keeps: a client's square logo (MAP-32), a cover at 16:9.",
+      "Put it in a Dialog with Apply and Cancel when the crop is a step; the cropper itself has no buttons but its zoom row.",
+      "Leave the zoom row out (Zoom Controls off) only where the product zooms another way; the keyboard still zooms.",
+    ],
+    api: [
+      "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9.",
+      "Zoom Controls maps to showZoomControls: Zoom out, the zoom Slider (100% to maxZoom) and Zoom in.",
+      "onCrop hands back { x, y, width, height }, each a fraction of the image's width or height, once the image loads and after every change; the product crops.",
+    ],
+    properties: ["Ratio: Square, Landscape", "Zoom Controls"],
+    accessibility: [
+      "The frame is one tab stop named by label, described by its instructions: the arrow keys move it by a tenth of itself, plus and minus zoom.",
+      "Each change is said in a polite live region: where the frame is and its zoom, in whole percentages.",
+      "A zoom button at its limit is unavailable, not disabled, so it keeps focus.",
+      "The arrows are physical in right to left too: an image does not mirror.",
     ],
   },
   {
@@ -9193,6 +9223,32 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "DatePicker/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-273: React's ImageCropper, a frame and its zoom row, gap-150 (12)
+  // apart, the zoom row's parts gap-100 (8) apart, the frame on the control
+  // radius. 320 wide as drawn; it fills its column in code.
+  {
+    name: "ImageCropper/width/default",
+    value: 320,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ImageCropper/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/zoom/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/radius",
+    value: KOZMOS_RADIUS.control,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
   {
     name: "FileUpload/width/default",
     value: 384,
@@ -11758,6 +11814,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["DateRangePicker", updateDateRangePickerComponent],
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
+  ["ImageCropper", updateImageCropperComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -12016,6 +12073,9 @@ function additionalComponentActionHandlers() {
     "build-page-header": buildPageHeaderComponent,
     "update-page-header": updatePageHeaderComponent,
     "rebuild-page-header": rebuildPageHeaderComponent,
+    "build-image-cropper": buildImageCropperComponent,
+    "update-image-cropper": updateImageCropperComponent,
+    "rebuild-image-cropper": rebuildImageCropperComponent,
     "build-list-item": buildListItemComponent,
     "update-list-item": updateListItemComponent,
     "rebuild-list-item": rebuildListItemComponent,
@@ -19414,6 +19474,12 @@ function expectedVariantAxesForComponentSetName(name) {
       State: TIME_PICKER_STATES,
       Status: TIME_PICKER_STATUSES,
       Content: TIME_PICKER_CONTENT,
+    };
+  }
+
+  if (canonicalName === "ImageCropper") {
+    return {
+      Ratio: IMAGE_CROPPER_RATIOS,
     };
   }
 
@@ -63756,6 +63822,226 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// --- ImageCropper ----------------------------------------------------------------
+
+// GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
+// column 320 wide (ImageCropper/width/default), the frame and the zoom row 12
+// apart (ImageCropper/gap). The frame is the box, in the Ratio's shape (320
+// square, or 320 by 180 at 16:9), on the control radius (ImageCropper/radius)
+// in Colors/background/100 with a 1 inner edge in Border/Input; the image is
+// the product's, so an Image slot stands in for it. The zoom row is Zoom out,
+// the zoom Slider and Zoom in, 8 apart (ImageCropper/zoom/gap): two 44
+// outline icon buttons and a Slider slot, Core's own set, as ImageField draws
+// its Core parts. `Zoom Controls` shows the row. React's zoom-in and zoom-out
+// magnifiers are not curated icons yet, so the buttons draw the curated plus
+// and minus, as MapControlsGroup's zoom does.
+const IMAGE_CROPPER_GEOMETRY = {
+  width: 320,
+  landscapeHeight: 180,
+  gap: 12,
+  zoomGap: 8,
+  control: 44,
+  imageInset: 16,
+};
+const IMAGE_CROPPER_ZOOM_ROW_NAME = "Zoom Row";
+
+async function createImageCropperVariant(args) {
+  const component = figma.createComponent();
+  await updateImageCropperVariant(component, args);
+  return component;
+}
+
+function parseImageCropperVariantName(name) {
+  return productSdkVariantValues(name, "Ratio", IMAGE_CROPPER_RATIOS);
+}
+
+async function updateImageCropperVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = IMAGE_CROPPER_GEOMETRY;
+  const frameHeight =
+    value === "Landscape" ? geometry.landscapeHeight : geometry.width;
+  productSdkVariantRoot(component, "ImageCropper", "Ratio=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.gap,
+    width: geometry.width,
+    height: frameHeight + geometry.gap + geometry.control,
+  });
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ImageCropper/gap",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "width",
+    "ImageCropper/width/default",
+    variableByName,
+    stats,
+  );
+
+  const frame = productSdkFrame("Frame", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: geometry.width,
+    height: frameHeight,
+  });
+  frame.cornerRadius = KOZMOS_RADIUS.control;
+  frame.clipsContent = true;
+  frame.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  frame.strokeWeight = 1;
+  frame.strokeAlign = "INSIDE";
+  frame.strokes = [
+    paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
+  ];
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", "image-cropper-frame");
+  bindFloatVariable(
+    frame,
+    "cornerRadius",
+    "ImageCropper/radius",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, frame, "FILL", "FIXED");
+  const image = await productSdkSlot({
+    name: "Image Slot",
+    label: "Image",
+    width: geometry.width - 2 * geometry.imageInset,
+    height: frameHeight - 2 * geometry.imageInset,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: geometry.imageInset,
+  });
+  frame.appendChild(image);
+
+  const row = productSdkFrame(IMAGE_CROPPER_ZOOM_ROW_NAME, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: geometry.zoomGap,
+    width: geometry.width,
+    height: geometry.control,
+  });
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "ImageCropper/zoom/gap",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, row, "FILL", "HUG");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom Out Button",
+      glyph: "−",
+      iconName: "minus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+  const slider = await productSdkSlot({
+    name: "Zoom Slider Slot",
+    label: "Slider · Zoom",
+    width: geometry.width - 2 * geometry.control - 2 * geometry.zoomGap,
+    height: geometry.control,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(row, slider, "FILL", "FIXED");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom In Button",
+      glyph: "+",
+      iconName: "plus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+}
+
+function configureImageCropperProperties(componentSet, stats) {
+  configureNamedBooleanProperty(
+    componentSet,
+    IMAGE_CROPPER_ZOOM_ROW_NAME,
+    "Zoom Controls",
+    true,
+    stats,
+  );
+}
+
+const IMAGE_CROPPER_DESCRIPTION = [
+  "Kozmos ImageCropper component set generated from React ImageCropper API (GAP-273).",
+  "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9. Zoom Controls maps to showZoomControls.",
+  "The image is the product's: the Image slot stands in for it. onCrop hands back the frame as fractions of the image.",
+];
+
+async function buildImageCropperComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    x: 80,
+    y: 20400,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION,
+  });
+}
+
+async function updateImageCropperComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    updateVariant: updateImageCropperVariant,
+    parseVariantName: parseImageCropperVariantName,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildImageCropperComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    build: buildImageCropperComponent,
+  });
 }
 
 // --- PageHeader ---------------------------------------------------------------

@@ -328,6 +328,49 @@ const PARTS: Part[] = [
     listener: "onFloorSelect",
   },
   {
+    // A 1600 × 1200 image: the model is its frame, as fractions of it. The
+    // frame starts at the image's top-left, 0.375 × 0.5 (zoom 200%), and
+    // ArrowRight moves it right by a tenth of itself.
+    name: "KozmosImageCropper",
+    props: { src: "logo.png", alt: "Logo" },
+    // Loaded at once: jsdom loads no image, and the cropper reads one that
+    // is complete when it mounts.
+    env: () => {
+      const proto = HTMLImageElement.prototype;
+      const faked = { naturalWidth: 1600, naturalHeight: 1200, complete: true };
+      const own = Object.keys(faked).map(
+        (key) => [key, Object.getOwnPropertyDescriptor(proto, key)] as const,
+      );
+      for (const [key, value] of Object.entries(faked))
+        Object.defineProperty(proto, key, {
+          configurable: true,
+          get: () => value,
+        });
+      return () => {
+        for (const [key, descriptor] of own)
+          if (descriptor) Object.defineProperty(proto, key, descriptor);
+          else delete (proto as unknown as Record<string, unknown>)[key];
+      };
+    },
+    start: { x: 0, y: 0, width: 0.375, height: 0.5 },
+    before: "0%",
+    field: () => $("[role=application]"),
+    change: (frame) => press(frame, "ArrowRight"),
+    next: { x: 0.375 * 0.1, y: 0, width: 0.375, height: 0.5 },
+    shown: () =>
+      ($("[role=application] img") as HTMLElement | null)?.style.left,
+    shows: "-10%",
+    // Null frames the middle at 100%: 0.75 wide, 0.125 in.
+    nothing: "-16.6667%",
+    fromNothing: {
+      next: { x: 0.125 + 0.75 * 0.1, y: 0, width: 0.75, height: 1 },
+      shows: "-26.6667%",
+    },
+    listener: "onCrop",
+    // Its own frame starts in the middle.
+    alone: "-26.6667%",
+  },
+  {
     name: "KozmosFileUpload",
     props: { label: "Floor plan" },
     start: [],

@@ -17280,6 +17280,136 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// --- ImageCropper (GAP-273) ----------------------------------------------------
+
+// React's ImageCropper: a column 320 wide, the frame and the zoom row 12
+// apart; the frame in the Ratio's shape on the control radius, muted, with a
+// 1 inner edge in Border/Input, clipping an Image slot; the zoom row Zoom out,
+// a Slider slot and Zoom in, 8 apart, shown by Zoom Controls. One Ratio axis,
+// Square first, in Update All Core and the page's Inputs section.
+section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
+{
+  const ready =
+    Array.isArray(plugin.IMAGE_CROPPER_RATIOS) &&
+    typeof plugin.updateImageCropperVariant === "function" &&
+    typeof plugin.configureImageCropperProperties === "function";
+  ok(ready, "ImageCropper's painter and properties are reachable");
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateImageCropperVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  for (const [value, height] of ready
+    ? [
+        ["Square", 320],
+        ["Landscape", 180],
+      ]
+    : []) {
+    const { component, stats } = await paint(value);
+    ok(
+      component.name === `Ratio=${value}` &&
+        plugin.parseImageCropperVariantName(component.name).value === value,
+      `${value}: named Ratio=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(["Frame", "Zoom Row"]) &&
+        component.width === 320 &&
+        menusBound(component, "width") === "ImageCropper/width/default" &&
+        component.itemSpacing === 12 &&
+        menusBound(component, "itemSpacing") === "ImageCropper/gap" &&
+        menusValueOf("ImageCropper/gap") === 12 &&
+        component.fills.length === 0,
+      `${value}: an unpainted column 320 wide, the frame and the zoom row 12 apart (${component.children.map((child) => child.name)}, ${component.width}, ${component.itemSpacing}, ${menusBound(component, "itemSpacing")})`,
+    );
+    const frame = named(component, "Frame");
+    ok(
+      frame &&
+        frame.width === 320 &&
+        frame.height === height &&
+        frame.clipsContent === true &&
+        frame.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        menusBound(frame, "cornerRadius") === "ImageCropper/radius" &&
+        boundVariableName(frame.fills[0]) === "Colors/background/100" &&
+        frame.strokeWeight === 1 &&
+        frame.strokeAlign === "INSIDE" &&
+        boundVariableName(frame.strokes[0]) === "Border/Input",
+      `${value}: the frame is 320 × ${height} on the control radius, muted, a 1 inner edge in Border/Input (${frame && `${frame.width} × ${frame.height}, r${frame.cornerRadius}, ${boundVariableName(frame.strokes[0])}`})`,
+    );
+    const image = frame && named(frame, "Image Slot");
+    ok(
+      image && image.width === 288 && image.height === height - 32,
+      `${value}: the Image slot sits 16 inside the frame (${image && `${image.width} × ${image.height}`})`,
+    );
+    const row = named(component, "Zoom Row");
+    const parts = row ? row.children.map((child) => child.name) : [];
+    ok(
+      JSON.stringify(parts) ===
+        JSON.stringify([
+          "Zoom Out Button",
+          "Zoom Slider Slot",
+          "Zoom In Button",
+        ]) &&
+        row.itemSpacing === 8 &&
+        menusBound(row, "itemSpacing") === "ImageCropper/zoom/gap" &&
+        menusValueOf("ImageCropper/zoom/gap") === 8,
+      `${value}: the zoom row is Zoom out, the Slider slot and Zoom in, 8 apart (${parts}, ${row && row.itemSpacing})`,
+    );
+    ok(
+      ["Zoom Out Button", "Zoom In Button"].every((name) => {
+        const button = named(component, name);
+        return (
+          button &&
+          button.width === 44 &&
+          button.height === 44 &&
+          boundVariableName(button.strokes[0]) === "Border/Subtle"
+        );
+      }) && named(component, "Zoom Slider Slot").width === 320 - 88 - 16,
+      `${value}: two 44 outline buttons, the Slider slot filling between (${named(component, "Zoom Slider Slot") && named(component, "Zoom Slider Slot").width})`,
+    );
+    ok(
+      framesLargerThanAsked(component).length === 0,
+      `${value}: no frame larger than it was drawn (${framesLargerThanAsked(
+        component,
+      )
+        .map((node) => node.name)
+        .join(", ")})`,
+    );
+    ok(
+      // The stand-in file has no Icons page, so every icon warns; nothing else may.
+      stats.warnings.every((warning) =>
+        /is not on the Icons page/.test(warning),
+      ),
+      `${value}: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+    );
+  }
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ImageCropper"),
+      ) === JSON.stringify({ Ratio: ["Square", "Landscape"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ImageCropper" &&
+          update === plugin.updateImageCropperComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Inputs" &&
+          entry.components.includes("ImageCropper"),
+      ),
+    "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
+  );
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(

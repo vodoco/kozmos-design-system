@@ -491,6 +491,20 @@
       "exports": ["Default", "Variants", "Sizes", "Counter"]
     },
     {
+      "file": "packages/react/src/components/ImageCropper/ImageCropper.stories.tsx",
+      "id": "components-imagecropper",
+      "title": "Core/Inputs/ImageCropper",
+      "component": "ImageCropper",
+      "exports": [
+        "Default",
+        "Landscape",
+        "CropResult",
+        "InADialog",
+        "WithoutZoomControls",
+        "Disabled"
+      ]
+    },
+    {
       "file": "packages/react/src/components/Input/Input.stories.tsx",
       "id": "components-input",
       "title": "Core/Inputs/Input",
