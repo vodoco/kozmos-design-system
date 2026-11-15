@@ -319,6 +319,17 @@ const NATIVE_MARKS_ALLOWED = {
     primitive: "primitivesColorsForeground500",
     why: "a pending step's ring is its glyph, as in Figma",
   },
+  // A not-started checklist row's status (ListItemStatus, GAP-195): its 1
+  // ring is the mark, in foreground 500 as a pending step's, as React's
+  // .kozmos-list-item-status draws it.
+  "List.swift": {
+    primitive: "primitivesColorsForeground500",
+    why: "a not-started status's ring is its glyph, as a pending step's",
+  },
+  "List.kt": {
+    primitive: "primitivesColorsForeground500",
+    why: "a not-started status's ring is its glyph, as a pending step's",
+  },
   "ColorPicker.swift": {
     primitive: "primitivesColorsForeground0",
     why: "the handle needs a hard ring to stay visible on any colour beneath it, as in Figma",

@@ -169,12 +169,22 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
       [disabled, resolvedMaxFiles, trackEvent, updateFiles, validateFiles],
     );
 
+    // The picker keeps no selection of its own: once FileUpload has copied
+    // the chosen files out, the input is emptied, so choosing the same file
+    // again fires `change` again (a browser fires none for an unchanged
+    // selection). A drop never fills the input, so it has nothing to empty.
+    // The input has no `name` and submits nothing with a form: the files
+    // live in FileUpload's state and reach the host by its callbacks.
+    const clearInput = () => {
+      if (inputRef.current) inputRef.current.value = "";
+    };
+
     const removeFile = (fileToRemove: File) => {
       const nextFiles = files.filter((file) => file !== fileToRemove);
       setInternalError(null);
       updateFiles(nextFiles);
       trackEvent("FileUpload", "file_removed", { name: fileToRemove.name });
-      if (inputRef.current) inputRef.current.value = "";
+      clearInput();
     };
 
     const openPicker = () => {
@@ -220,7 +230,10 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
             disabled={disabled}
             aria-describedby={describedBy || undefined}
             aria-invalid={resolvedStatus === "error" || undefined}
-            onChange={(event) => handleFiles(event.target.files)}
+            onChange={(event) => {
+              handleFiles(event.target.files);
+              clearInput();
+            }}
           />
           <button
             type="button"

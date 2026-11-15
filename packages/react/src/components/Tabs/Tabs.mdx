@@ -32,6 +32,22 @@ Every platform draws the same tabs: a muted track (background/100), and the sele
 
 SwiftUI's `KozmosTabsTrigger(value:title:selection:icon:)` and Compose's `KozmosTabsTrigger(..., icon = { ... })` draw the same stack, and there too every tab in a list with an icon takes the stacked height. Only tabs inside the list do: a SwiftUI trigger standing alone keeps its own height. Compose's `KozmosTabsList` sizes its tabs by their intrinsic height, so put only `KozmosTabsTrigger`s in it: a composable placed straight in the list that cannot be measured that way, a `SubcomposeLayout` such as `BoxWithConstraints`, a lazy list or `SubcomposeAsyncImage`, throws there. A trigger's `icon` may be any of these, because it is drawn in a fixed 20dp box.
 
+## When the tabs don't fit
+
+A list wider than the space it is given scrolls sideways inside its own track (GAP-254, decision 182). The track stays the width of the space, so the page never widens; each tab keeps its natural width, its words never cut short or wrapped. No scroll bar is drawn, on any platform; touch, a trackpad and a wheel scroll it. The selected tab is in view when the list is first shown (Structural below, without scrolling) and is brought into view, by the least distance, whenever the selection moves; a tab the keyboard focuses is brought into view too. The move is animated unless motion is reduced. Right to left the list starts at the right and scrolls the other way. It is still one tablist of tabs; the track adds no role and no tab stop.
+
+A list that fits is drawn exactly as before. Only a list that overflows becomes a scroll container, because a scroll container clips what is drawn past its edge: the track's 4px padding is inside it, so the raised segment, its shadow and the focus ring are drawn in the track, and only the shadow's faintest tail, which reaches 2px below the track, is cut at its edge. A list that fits keeps that tail.
+
+<Canvas>
+  <Story of={TabsStories.ManyTabsNarrow} />
+</Canvas>
+
+<Canvas>
+  <Story of={TabsStories.ManyTabsNarrowRightToLeft} />
+</Canvas>
+
+SwiftUI's `KozmosTabsList` lays out today's row while its tabs' natural widths fit, and otherwise a horizontal `ScrollView` with no indicators, the track as its background and clip, scrolling the selected tab into view with a `ScrollViewReader`. Compose's `KozmosTabsList` lays its tabs out as a `Row` would while they fit, weights and all, and otherwise at their natural widths in a `horizontalScroll`, scrolled to the selected tab, animated unless the system has removed animations. Neither needs anything from you.
+
 ## Implementation
 
 <div className="subheading">Code</div>
@@ -72,7 +88,8 @@ import Kozmos
 // The list is a background/100 track. The selected tab is a background/0
 // segment 4pt inside it, raised by KozmosShadows.semanticsElevationRaised,
 // with foreground/0 words; the other tabs' words are foreground/400. No theme
-// colour, as on the web and in Compose (decision 65).
+// colour, as on the web and in Compose (decision 65). A list wider than its
+// space scrolls inside the track, the selected tab in view (decision 182).
 struct PlaceDetailsTabs: View {
     @State private var selection = "overview"
 
@@ -107,7 +124,8 @@ import com.kozmos.components.tabs.KozmosTabsTrigger
 // The list is a background/100 track. The selected tab is a background/0
 // segment 4dp inside it, raised by KozmosShadows.semanticsElevationRaised,
 // with foreground/0 words; the other tabs' words are foreground/400. No theme
-// colour, as on the web and in SwiftUI (decision 65).
+// colour, as on the web and in SwiftUI (decision 65). A list wider than its
+// space scrolls inside the track, the selected tab in view (decision 182).
 @Composable
 fun PlaceDetailsTabs() {
     var selected by remember { mutableStateOf("overview") }
