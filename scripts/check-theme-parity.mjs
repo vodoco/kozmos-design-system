@@ -192,7 +192,13 @@ for (const [file, role] of [
   ["packages/ios/Sources/Components/Drawer/Drawer.swift", "KozmosColors.semanticsOverlayScrim"],
   ["packages/android/src/main/java/com/kozmos/components/Backdrop/Backdrop.kt", "KozmosThemeTokens.semanticsOverlayScrim"],
   ["packages/android/src/main/java/com/kozmos/components/Drawer/Drawer.kt", "KozmosThemeTokens.semanticsOverlayScrim"],
-  ["packages/react/src/components/Backdrop/Backdrop.tsx", "bg-overlay-scrim"],
+  // React's Backdrop dims with an owned rule (GAP-262), which applies the
+  // role, so the dim holds where no @scope rule does.
+  ["packages/react/src/components/Backdrop/Backdrop.tsx", "kozmos-backdrop-solid"],
+  [
+    "packages/styles/src/styles/owned-components.css",
+    ".kozmos-backdrop-layer.kozmos-backdrop-solid {\n    @apply bg-overlay-scrim;",
+  ],
 ]) {
   if (blankComments(read(file)).includes(role)) ok(`${path.basename(file)} dims with ${role}`);
   else fail(`${file} does not dim with ${role}`);

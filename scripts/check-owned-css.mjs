@@ -1947,6 +1947,232 @@ try {
       "1px",
       `${mode}: the solid surface has no edge`,
     );
+    // GAP-261: a part whose look is its state draws it as a tooltip's
+    // trigger too. Radix's tooltip trigger writes its own data-state
+    // (closed, delayed-open, instant-open) over the part's, so a look read
+    // from data-state was lost there: a pressed ToggleButton in a tooltip
+    // drew unpressed. Each part in a tooltip is drawn as the same part out
+    // of one, with the tooltip closed and open; the ToggleButton's look is
+    // owned (GAP-262), so it is held without @scope too, and the others,
+    // scoped utilities, with it. GAP-262: the pressed ToggleButton's fill,
+    // ink, focus ring and half-strength disabled look, and a Backdrop's
+    // scrim with and without a target, draw without @scope and under the
+    // host's hostile button rule.
+    for (const id of ["outer", "nested"]) {
+      const theme = id === "outer" ? "dark" : "light";
+      const looks = page.getByTestId(`${id}-state-looks`);
+      await looks.scrollIntoViewIfNeeded();
+      const away = async () => {
+        await page.mouse.move(1099, 1);
+      };
+      // The look of a part and everything in it, once its transitions end.
+      const lookOf = (testId) =>
+        page.getByTestId(testId).evaluate(async (node) => {
+          await Promise.all(
+            node.getAnimations({ subtree: true }).map((a) => a.finished),
+          );
+          return [node, ...node.querySelectorAll("*")].map((at) => {
+            const s = getComputedStyle(at);
+            return [
+              at.tagName,
+              s.backgroundColor,
+              s.color,
+              s.borderTopColor,
+              s.borderInlineStartColor,
+              s.boxShadow,
+              s.opacity,
+              s.transform,
+            ].join(" | ");
+          });
+        });
+      const stateOf = (testId) =>
+        page.getByTestId(testId).getAttribute("data-state");
+      const pairs =
+        mode === "full"
+          ? ["toggle-on", "switch-on", "check-on", "check-mixed", "radio-on", "radio-card-on", "tab-on", "accordion-on"]
+          : ["toggle-on"];
+      for (const part of pairs) {
+        const plain = `${id}-${part}`;
+        const tipped = `${id}-${part}-tip`;
+        await away();
+        const closed = await stateOf(tipped);
+        assert.equal(
+          closed,
+          "closed",
+          `${mode}, ${theme}: ${part}'s tooltip trigger is not the tooltip's (data-state ${closed})`,
+        );
+        assert.deepEqual(
+          await lookOf(tipped),
+          await lookOf(plain),
+          `${mode}, ${theme}: ${part} in a closed tooltip's trigger does not draw as it does alone`,
+        );
+        await page.getByTestId(plain).hover();
+        const hovered = await lookOf(plain);
+        await page.getByTestId(tipped).hover();
+        await page.waitForFunction(
+          (testId) =>
+            /open/.test(
+              document
+                .querySelector(`[data-testid="${testId}"]`)
+                .getAttribute("data-state"),
+            ),
+          tipped,
+        );
+        assert.deepEqual(
+          await lookOf(tipped),
+          hovered,
+          `${mode}, ${theme}: ${part} in an open tooltip's trigger does not draw as it does alone, hovered`,
+        );
+        await away();
+        await page.keyboard.press("Escape");
+        await page
+          .waitForFunction(
+            (testId) =>
+              document
+                .querySelector(`[data-testid="${testId}"]`)
+                .getAttribute("data-state") === "closed",
+            tipped,
+            { timeout: 5000 },
+          )
+          .catch(async () => {
+            throw new Error(
+              `${mode}, ${theme}: ${part}'s tooltip did not close: ${await stateOf(tipped)}`,
+            );
+          });
+      }
+      console.log(
+        `PASS GAP-261, ${theme}, ${mode}: ${pairs.join(", ")} draw alike alone and as a tooltip's trigger, closed and open`,
+      );
+      // The ToggleButton's owned look (GAP-262).
+      const fill = await value(
+        `${id}-state-looks`,
+        "--primitives-colors-theme-500",
+      );
+      const ink = await value(
+        `${id}-state-looks`,
+        "--components-primary-buttons-themed-button-foreground-content-idle",
+      );
+      const ring = await value(
+        `${id}-state-looks`,
+        "--primitives-colors-theme-600",
+      );
+      await away();
+      await page
+        .getByTestId(`${id}-toggle-off`)
+        .evaluate((node) =>
+          Promise.all(node.getAnimations().map((a) => a.finished)),
+        );
+      const off = await measure(page.getByTestId(`${id}-toggle-off`));
+      assert.equal(
+        off.backgroundColor,
+        "rgba(0, 0, 0, 0)",
+        `${mode}, ${theme}: an unpressed ToggleButton is filled ${off.backgroundColor}, not clear`,
+      );
+      for (const testId of [
+        `${id}-toggle-on`,
+        `${id}-toggle-on-tip`,
+        `${id}-toggle-on-outline`,
+        `${id}-toggle-on-disabled`,
+      ]) {
+        const on = await page
+          .getByTestId(testId)
+          .evaluate(async (node) => {
+            await Promise.all(node.getAnimations().map((a) => a.finished));
+            const s = getComputedStyle(node);
+            return { fill: s.backgroundColor, ink: s.color, opacity: s.opacity };
+          });
+        assert.equal(
+          on.fill,
+          fill,
+          `${mode}, ${theme}: ${testId} is not the theme fill when pressed (${on.fill})`,
+        );
+        assert.equal(
+          on.ink,
+          ink,
+          `${mode}, ${theme}: ${testId} is not the theme ink when pressed (${on.ink})`,
+        );
+        assert.equal(
+          on.opacity,
+          testId.endsWith("-disabled") ? "0.5" : "1",
+          `${mode}, ${theme}: ${testId}'s opacity is ${on.opacity}`,
+        );
+      }
+      await page.getByTestId(`${id}-toggle-off`).focus();
+      await page.keyboard.press("Tab");
+      const focused = await page
+        .getByTestId(`${id}-toggle-on`)
+        .evaluate((node) => ({
+          active: node === document.activeElement,
+          visible: node.matches(":focus-visible"),
+          shadow: getComputedStyle(node).boxShadow,
+          outline: getComputedStyle(node).outlineStyle,
+        }));
+      assert.ok(
+        focused.active && focused.visible,
+        `${mode}, ${theme}: Tab did not focus the pressed ToggleButton from the keyboard`,
+      );
+      assert.ok(
+        focused.shadow.includes(`${ring} 0px 0px 0px 4px`) ||
+          focused.shadow.includes(`0px 0px 0px 4px ${ring}`),
+        `${mode}, ${theme}: the pressed ToggleButton's focus ring is not the theme 600 offset ring: ${focused.shadow}`,
+      );
+      await page.evaluate(() => document.activeElement?.blur());
+      // Backdrop: the overlay scrim over its box, with and without a target.
+      const scrim = await page
+        .getByTestId(`${id}-backdrop-box`)
+        .evaluate((node) => {
+          const probe = document.createElement("span");
+          probe.style.backgroundColor = "var(--semantics-overlay-scrim)";
+          node.parentElement.append(probe);
+          const colour = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return colour;
+        });
+      for (const [testId, boxId, layer] of [
+        [`${id}-backdrop`, `${id}-backdrop-box`, null],
+        [
+          `${id}-backdrop-targeted`,
+          `${id}-backdrop-target-box`,
+          ".kozmos-backdrop-scrim",
+        ],
+      ]) {
+        const box = await page.getByTestId(boxId).boundingBox();
+        const drawn = await page
+          .getByTestId(testId)
+          .evaluate((node, selector) => {
+            const s = getComputedStyle(node);
+            const r = node.getBoundingClientRect();
+            const dim = selector ? node.querySelector(selector) : node;
+            return {
+              position: s.position,
+              zIndex: s.zIndex,
+              width: r.width,
+              height: r.height,
+              x: r.x,
+              y: r.y,
+              scrim: dim ? getComputedStyle(dim).backgroundColor : null,
+            };
+          }, layer);
+        assert.deepEqual(
+          [drawn.position, drawn.x, drawn.y, drawn.width, drawn.height],
+          ["absolute", box.x, box.y, box.width, box.height],
+          `${mode}, ${theme}: ${testId} does not cover its box: ${JSON.stringify(drawn)}`,
+        );
+        assert.equal(
+          drawn.zIndex,
+          "50",
+          `${mode}, ${theme}: ${testId} is not on layer 50`,
+        );
+        assert.equal(
+          drawn.scrim,
+          scrim,
+          `${mode}, ${theme}: ${testId} draws ${drawn.scrim}, not the overlay scrim ${scrim}`,
+        );
+      }
+      console.log(
+        `PASS GAP-262, ${theme}, ${mode}: a pressed ToggleButton is ${fill} under ${ink} (outline too; disabled at 0.5), clear unpressed, with the theme 600 ring from the keyboard; a Backdrop with and without a target covers its box in ${scrim}`,
+      );
+    }
     // Rotate/reflow a narrow host and switch direction without remounting. This
     // checks composition geometry, not certification of physical foldable devices.
     const outer = page.getByTestId("outer");
