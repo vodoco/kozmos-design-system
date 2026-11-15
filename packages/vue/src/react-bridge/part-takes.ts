@@ -64,6 +64,9 @@ import {
   AvatarFallback,
   Tag,
   List,
+  ListItem,
+  ListItemStatus,
+  SettingsRow,
   Table,
   Tree,
   Timeline,
@@ -218,6 +221,9 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [AvatarFallback, D],
   [Tag, { dom: true, own: ["onRemove"] }],
   [List, D],
+  [ListItem, D],
+  [ListItemStatus, D],
+  [SettingsRow, D],
   [Table, D],
   [
     Tree,
@@ -494,6 +500,7 @@ const menuBooleans = {
   texts: [],
 };
 const backdropBooleans = html(["visible"]);
+const settingsRowBooleans = html(["disabled"]);
 const datePickerBooleans = html(
   [
     "checked",
@@ -707,6 +714,9 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [AvatarFallback, boxBooleans],
   [Tag, H],
   [List, H],
+  [ListItem, html(["selected"])],
+  [ListItemStatus, H],
+  [SettingsRow, settingsRowBooleans],
   [Table, html(["framed"])],
   [Tree, html(["divided", "virtualized"])],
   [Timeline, H],
@@ -740,7 +750,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
   [FloatingActionButton, floatingActionButtonBooleans],
-  [SplitButton, html(["disabled"])],
+  [SplitButton, settingsRowBooleans],
   [
     ToggleButton,
     html([
