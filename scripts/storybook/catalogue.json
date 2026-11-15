@@ -1263,7 +1263,7 @@
       "id": "action-togglebutton",
       "title": "Core/Actions/ToggleButton",
       "component": "ToggleButton",
-      "exports": ["Default", "On"]
+      "exports": ["Default", "On", "InTooltip"]
     },
     {
       "file": "packages/react/src/components/Tooltip/Tooltip.stories.tsx",
