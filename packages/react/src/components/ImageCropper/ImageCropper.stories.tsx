@@ -48,7 +48,8 @@ export const Landscape: Story = {
 
 /**
  * What `onCrop` hands back: the frame as fractions of the image, never
- * pixels. The product crops.
+ * pixels. The product crops. `onImageLoad` hands back the starting frame,
+ * which a product applies if the person changes nothing.
  */
 export const CropResult: Story = {
   render: (args) => {
@@ -56,7 +57,7 @@ export const CropResult: Story = {
     const percent = (value: number) => `${Math.round(value * 100)}%`;
     return (
       <div style={{ display: "grid", gap: 12 }}>
-        <ImageCropper {...args} onCrop={setCrop} />
+        <ImageCropper {...args} onImageLoad={setCrop} onCrop={setCrop} />
         <Text size="sm" color="muted">
           {crop
             ? `x ${percent(crop.x)}, y ${percent(crop.y)}, ${percent(crop.width)} × ${percent(crop.height)} of the image`
