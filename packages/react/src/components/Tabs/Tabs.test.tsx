@@ -41,7 +41,7 @@ describe("Tabs", () => {
     expect(tab.className).toMatch(/\bgap-1\b/);
     // The raised active tab is kept (decision 65).
     expect(tab).toHaveAttribute("data-state", "active");
-    expect(tab.className).toContain("data-[state=active]:shadow-raised");
+    expect(tab.className).toContain("aria-selected:shadow-raised");
     // The list's height (measured in e2e/Tabs.spec.tsx) comes from rules a
     // caller's own height class beats.
     expect(screen.getByRole("tablist").className).toContain(

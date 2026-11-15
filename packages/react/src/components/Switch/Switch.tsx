@@ -80,9 +80,9 @@ const Switch = React.forwardRef<
           <SwitchPrimitive.Root
             id={inputId}
             className={cn(
-              "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-pill border-2 border-muted-foreground bg-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-theme-fill data-[state=checked]:bg-theme-fill",
+              "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-pill border-2 border-muted-foreground bg-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-theme-fill aria-checked:bg-theme-fill",
               hasError &&
-                "border-destructive focus-visible:ring-destructive data-[state=checked]:border-destructive data-[state=checked]:bg-destructive",
+                "border-destructive focus-visible:ring-destructive aria-checked:border-destructive aria-checked:bg-destructive",
               className,
             )}
             {...props}
