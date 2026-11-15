@@ -15047,6 +15047,13 @@ section(
           action.mainComponent.parent === buttonSet,
         `${at}: the action is a live Button`,
       );
+      // React's action is as wide as its words: Button's Default variant is
+      // fixed at 112, where "Save changes" ran 14 past its padding
+      // (figma:verify, 15 Nov), so the instance hugs.
+      ok(
+        action && action.layoutSizingHorizontal === "HUG",
+        `${at}: the action hugs its label (${action && action.layoutSizingHorizontal})`,
+      );
       // An Update redraws the same layers, once.
       await draw(tone, size, component);
       ok(

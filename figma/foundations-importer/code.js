@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "6ec6c4844554";
+const PLUGIN_BUILD = "9dc7b179368e";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -63944,6 +63944,9 @@ async function updatePageHeaderVariant(
       stats,
     );
     actions.appendChild(created.instance);
+    // As wide as its words, as React's: Button's Default variant is fixed at
+    // 112, and "Save changes" ran 14 past its padding.
+    setLayoutSizingHorizontal(created.instance, "HUG");
   } else {
     actions.appendChild(
       createMissingNestedComponentNode(
