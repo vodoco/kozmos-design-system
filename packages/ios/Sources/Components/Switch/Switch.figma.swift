@@ -27,12 +27,26 @@ struct KozmosSwitchConnect: FigmaConnect {
     )
     var state: String = "default"
 
+    // GAP-162: the description, shown or not.
+    @FigmaBoolean("Show Description")
+    var showDescription: Bool = false
+
+    @FigmaString("Description Text")
+    var descriptionText: String = "Description"
+
+    // GAP-162: the state in words beside the track; the words are the
+    // onLabel and offLabel defaults, "On" and "Off".
+    @FigmaBoolean("Show State Label")
+    var showStateLabel: Bool = false
+
     var body: some View {
         KozmosSwitch(
             checked: .constant(self.checked),
             label: self.label,
+            description: self.showDescription ? self.descriptionText : nil,
             disabled: self.state == "disabled",
-            error: self.state == "error"
+            error: self.state == "error",
+            showStateLabel: self.showStateLabel
         )
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.LiveSemantics
 import com.kozmos.components.ReadNode
@@ -207,6 +208,38 @@ class KozmosTreeSelectionTest {
             assertNotNull("the Menu key opened no menu", state.openAt)
             assertEquals("the Menu key's menu is not the row's", "q", asked.last())
             assertEquals(setOf("q"), selected)
+        }
+    }
+
+    /**
+     * A finger's long press on a row opens that row's menu where it was
+     * pressed, from the menu area's own long press: the row's click takes
+     * the down, and the area still sees the long press (#517's defect, which
+     * the row worked around with a long click of its own until 13 Nov). The
+     * release is not a click: an open parent stays open.
+     */
+    @Test fun aFingersLongPressOnARowOpensThatRowsMenuWhereItWasPressed() {
+        selected = emptySet()
+        val asked = mutableListOf<String>()
+        val state = KozmosContextMenuState()
+        val menu = { node: TreeNode ->
+            asked += node.id
+            KozmosMenuContent(items = listOf(KozmosMenuItem(text = "Rename")))
+        }
+        paparazzi.live(content = tree(menu = menu, menuState = state)) {
+            frames(2)
+            val b1 = row("B1")
+            val at = Offset(b1.bounds.left + 40f, b1.bounds.center.y)
+            touch(MotionEvent.ACTION_DOWN, at)
+            frames(30) // a second of frames, past the long-press timeout
+            assertNotNull("a long press on a row opened no menu", state.openAt)
+            touch(MotionEvent.ACTION_UP, at)
+            frames(3)
+            assertEquals("the menu is not the row's", "b1", asked.last())
+            assertEquals("the row is not selected", setOf("b1"), selected)
+            // The tree is at the window's top left, so the area's pixels are the window's.
+            assertEquals("not where it was pressed", IntOffset(at.x.toInt(), at.y.toInt()), state.openAt)
+            assertNotNull("the release clicked the open parent closed", row("B1").collapse)
         }
     }
 

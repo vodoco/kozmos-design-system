@@ -200,6 +200,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [PageHeader](components/PageHeader.md): The top of a page: where the page is (a breadcrumb), its title with an info button beside it, a line that says what the page is for, and the page's actions (GAP-036).
 - [Pagination](components/Pagination.md): Composes page navigation from numbered links, previous/next controls and ellipses.
 - [PasswordInput](components/PasswordInput.md): A text input for secrets, with a toggle that reveals what has been typed.
+- [PersonaMark](components/PersonaMark.md): A persona's colour, drawn as a small diamond beside its name: the feature panel's persona visibility list marks each persona with it, and a tree row shows the personas it is visible to as a group of them (GAP-106).
 - [Popover](components/Popover.md): An anchored surface for supporting content or small interactions, composed from a trigger and content, or opened by the product beside any element or rect through PopoverAnchor.
 - [Progress](components/Progress.md): Communicates progress with an accessible name.
 - [Radio](components/Radio.md): A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time.

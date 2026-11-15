@@ -1093,6 +1093,7 @@
               <optgroup label="Data display">
                 <option value="list">List</option>
                 <option value="metaStrip">MetaStrip</option>
+                <option value="personaMark">PersonaMark</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
                 <option value="tree">Tree</option>
@@ -1153,6 +1154,7 @@
               </optgroup>
               <optgroup label="Feedback">
                 <option value="alert">Alert</option>
+                <option value="notice">Notice</option>
                 <option value="emptyState">EmptyState</option>
                 <option value="progress">Progress</option>
                 <option value="skeleton">Skeleton</option>
@@ -1761,6 +1763,13 @@
           rebuild: "rebuild-separator",
           hint: "Build creates Separator with Horizontal and Vertical orientation variants. Update preserves its future Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
+        personaMark: {
+          label: "PersonaMark",
+          build: "build-persona-mark",
+          update: "update-persona-mark",
+          rebuild: "rebuild-persona-mark",
+          hint: "Build creates PersonaMark (GAP-106), a persona's colour as a 12 diamond, with Single and Group Form variants: one mark, or three marks 2 apart. The diamond's fill is the persona's colour, product data: override it. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
         kbd: {
           label: "Kbd",
           build: "build-kbd",
@@ -2264,6 +2273,13 @@
           update: "update-alert",
           rebuild: "rebuild-alert",
           hint: "Build creates Alert with Variant axis plus editable Title and Description text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        notice: {
+          label: "Notice",
+          build: "build-notice",
+          update: "update-notice",
+          rebuild: "rebuild-notice",
+          hint: "Build creates Notice (GAP-160) with Tone (Warning, Info, Critical, Success) and Status (None, Progress, Done) axes, editable Summary and Detail, and Show Icon, Show Detail and Show Action. Build Button first: the action is a live Button. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         emptyState: {
           label: "EmptyState",
