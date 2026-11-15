@@ -1480,6 +1480,15 @@ final class InteractionTests: XCTestCase {
         let field = app.textFields["Full search"]
         XCTAssertTrue(field.waitForExistence(timeout: 3), "nothing presented", file: file, line: line)
         field.tap()
+        // The Escape is the field's only while the field has the focus. On a
+        // CI simulator a tap is sometimes lost (8 Nov ruling: re-run, no
+        // retry): say so, rather than "none" after Escape, which read as
+        // Escape not clearing (13–15 Nov, three times).
+        let focused = expectation(for: NSPredicate(format: "hasKeyboardFocus == true"), evaluatedWith: field)
+        guard XCTWaiter().wait(for: [focused], timeout: 2) == .completed else {
+            XCTFail("the tap on the field never focused it: a lost tap, not Escape", file: file, line: line)
+            return
+        }
         escape()
         let events = app.staticTexts["escape-events"]
         let shown = events.waitForExistence(timeout: 1)

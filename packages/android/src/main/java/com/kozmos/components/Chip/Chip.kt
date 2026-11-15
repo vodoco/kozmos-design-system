@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -27,8 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -100,8 +102,7 @@ fun KozmosChip(
         contentColor = colors.content,
         border = BorderStroke(1.dp, colors.border)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        ChipLine(
             modifier = Modifier
                 .heightIn(min = metrics.minHeight)
                 .then(
@@ -137,12 +138,19 @@ fun KozmosChip(
                 Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing50))
             }
 
+            // The words take what the icon and the remove leave, and end in an
+            // ellipsis there (ChipLine). In a Row, measured first with the
+            // whole width, a long label took all of it and left the remove no
+            // width: in a narrow field a chosen chip had no remove to press
+            // (#537's audit, where React's chip ran under MultiSelect's clear).
             Text(
                 text = text,
+                modifier = Modifier.layoutId(ChipLabel),
                 color = colors.content,
                 fontSize = metrics.fontSize,
                 fontWeight = FontWeight.Medium,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             if (onRemove != null) {
@@ -161,6 +169,39 @@ fun KozmosChip(
                         tint = colors.content
                     )
                 }
+            }
+        }
+    }
+}
+
+private const val ChipLabel = "chip-label"
+
+/**
+ * A chip's line: its icon, its words and its remove, side by side and
+ * centred across it, as a Row lays them out, except that the words are
+ * measured last, in what the rest leave. So a chip narrower than its words
+ * keeps its remove whole and its words end in their ellipsis; with no bound
+ * on the width (a row that scrolls sideways) the words are drawn whole. A
+ * Row's weight cannot say that: it measures a weighted child of an unbounded
+ * Row to nothing.
+ */
+@Composable
+private fun ChipLine(modifier: Modifier, content: @Composable () -> Unit) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val others = measurables.filter { it.layoutId != ChipLabel }.map { it to it.measure(loose) }.toMap()
+        val taken = others.values.sumOf { it.width }
+        val label = measurables.firstOrNull { it.layoutId == ChipLabel }?.measure(
+            if (loose.hasBoundedWidth) loose.copy(maxWidth = (loose.maxWidth - taken).coerceAtLeast(0)) else loose
+        )
+        val placeables = measurables.map { if (it.layoutId == ChipLabel) label!! else others.getValue(it) }
+        val width = (taken + (label?.width ?: 0)).coerceIn(constraints.minWidth, constraints.maxWidth)
+        val height = (placeables.maxOfOrNull { it.height } ?: 0).coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(width, height) {
+            var x = 0
+            for (placeable in placeables) {
+                placeable.placeRelative(x, Alignment.CenterVertically.align(placeable.height, height))
+                x += placeable.width
             }
         }
     }

@@ -18,7 +18,8 @@ import com.kozmos.components.tabs.KozmosTabsTrigger
 // The list is a background/100 track. The selected tab is a background/0
 // segment 4dp inside it, raised by KozmosShadows.semanticsElevationRaised,
 // with foreground/0 words; the other tabs' words are foreground/400. No theme
-// colour, as on the web and in SwiftUI (decision 65).
+// colour, as on the web and in SwiftUI (decision 65). A list wider than its
+// space scrolls inside the track, the selected tab in view (decision 182).
 @Composable
 fun PlaceDetailsTabs() {
     var selected by remember { mutableStateOf("overview") }
