@@ -98,6 +98,33 @@ describe("Toast", () => {
     ).not.toBeInTheDocument();
   });
 
+  // GAP-268: the close was opacity-0 until the toast was hovered or the
+  // button focused, so a visitor who never hovered never saw how to close it.
+  it("shows the close only on hover or focus by default, and all the time when asked", () => {
+    render(
+      <ToastProvider>
+        <Toast open={true}>
+          <ToastTitle>Saved</ToastTitle>
+          <ToastClose aria-label="Close on hover" />
+        </Toast>
+        <Toast open={true}>
+          <ToastTitle>Units merged</ToastTitle>
+          <ToastClose aria-label="Close always" visible="always" />
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>,
+    );
+    const hover = screen.getByRole("button", { name: "Close on hover" });
+    expect(hover).toHaveClass(
+      "opacity-0",
+      "group-hover:opacity-100",
+      "focus:opacity-100",
+    );
+    const always = screen.getByRole("button", { name: "Close always" });
+    expect(always.className).not.toMatch(/opacity-0|opacity-100/);
+    expect(always).not.toHaveAttribute("visible");
+  });
+
   // GAP-167: toast()'s tones, on the part as well. A tone draws its icon in
   // the start padding, in the tone's text colour; no tone changes nothing.
   it("draws a tone's icon in the tone's colour, and nothing without one", () => {

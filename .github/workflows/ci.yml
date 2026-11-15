@@ -487,6 +487,17 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:card-padding
           ADAPTIVE_BROWSER=firefox pnpm test:card-padding
 
+      # GAP-269: Alert's space above and below its words. A title-less
+      # description after the icon is centred on it with a margin, 14 above
+      # and 14 below, not lifted with a transform that left 13 above and 19
+      # below; a titled or icon-less alert is 16 and 16 as before, in every
+      # variant (scripts/check-alert-spacing.mjs).
+      - name: Verify Alert Spacing
+        run: |
+          pnpm test:alert-spacing
+          ADAPTIVE_BROWSER=webkit pnpm test:alert-spacing
+          ADAPTIVE_BROWSER=firefox pnpm test:alert-spacing
+
       # GAP-188: TourStep. The card is 372 wide, 432 with the dismiss link
       # and 420 with no target, on Popover's surface with its edge all round,
       # from its tokens, with and without @scope, light and dark; its arrow's

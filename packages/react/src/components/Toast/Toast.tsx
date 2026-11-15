@@ -129,6 +129,15 @@ const ToastAction = React.forwardRef<
 ));
 ToastAction.displayName = ToastPrimitive.Action.displayName;
 
+/**
+ * When the close button shows. `hover`, the default, is only while the toast
+ * is hovered or the button has focus; `always` is the whole time the toast
+ * shows, so a visitor who never hovers it still sees how to close it
+ * (GAP-268). SwiftUI's and Compose's toasts have no hover: their close always
+ * shows, as `always` does.
+ */
+type ToastCloseVisibility = "hover" | "always";
+
 type ToastCloseProps = React.ComponentPropsWithoutRef<
   typeof ToastPrimitive.Close
 > & {
@@ -138,6 +147,8 @@ type ToastCloseProps = React.ComponentPropsWithoutRef<
    * product that translates passes its own.
    */
   "aria-label"?: string;
+  /** When it shows: `hover` (the default) or `always`. */
+  visible?: ToastCloseVisibility;
 };
 
 const ToastClose = React.forwardRef<
@@ -145,7 +156,12 @@ const ToastClose = React.forwardRef<
   ToastCloseProps
 >(
   (
-    { className, "aria-label": ariaLabel = "Dismiss notification", ...props },
+    {
+      className,
+      "aria-label": ariaLabel = "Dismiss notification",
+      visible = "hover",
+      ...props
+    },
     ref,
   ) => (
     <ToastPrimitive.Close
@@ -156,7 +172,9 @@ const ToastClose = React.forwardRef<
       // fill's own ink and the fill, never Tailwind's red-300 to red-600 — fixed
       // colours a re-themed product never reached.
       className={cn(
-        "absolute end-2 top-2 rounded-control p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-destructive-foreground/70 group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive-foreground group-[.destructive]:focus:ring-offset-destructive",
+        "absolute end-2 top-2 rounded-control p-1 text-foreground/50 transition-opacity hover:text-foreground focus:outline-none focus:ring-2 group-[.destructive]:text-destructive-foreground/70 group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive-foreground group-[.destructive]:focus:ring-offset-destructive",
+        visible === "hover" &&
+          "opacity-0 focus:opacity-100 group-hover:opacity-100",
         className,
       )}
       toast-close=""
@@ -204,4 +222,4 @@ export {
   ToastClose,
   ToastAction,
 };
-export type { ToastProps, ToastActionElement };
+export type { ToastProps, ToastActionElement, ToastCloseVisibility };

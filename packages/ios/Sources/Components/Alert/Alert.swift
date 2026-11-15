@@ -47,6 +47,7 @@ public struct KozmosAlert<Content: View>: View {
         // The icon, title and description inside take the alert's variant,
         // as React's inherit its colour and Figma binds them to it.
         .environment(\.kozmosAlertVariant, variant.shared)
+        .environment(\.isInKozmosAlert, true)
         .padding()
         .background(KozmosColors.semanticsSurface0)
         // A container's corner, 20, as React's rounded-container (decision 156).
@@ -77,17 +78,46 @@ private struct KozmosAlertVariantKey: EnvironmentKey {
     static let defaultValue: KozmosAlert<AnyView>.KozmosAlertVariant = .default
 }
 
+private struct IsInKozmosAlertKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     /// The variant of the alert a part is in: `.default` outside one.
     var kozmosAlertVariant: KozmosAlert<AnyView>.KozmosAlertVariant {
         get { self[KozmosAlertVariantKey.self] }
         set { self[KozmosAlertVariantKey.self] = newValue }
     }
+
+    /// Whether a part is in an alert's row, where words shorter than the
+    /// icon are centred on it.
+    var isInKozmosAlert: Bool {
+        get { self[IsInKozmosAlertKey.self] }
+        set { self[IsInKozmosAlertKey.self] = newValue }
+    }
+}
+
+/// The icon's line: 24 at the default text size, as Figma's and Compose's
+/// alert icon, growing as Dynamic Type grows the icon's title3.
+private let kozmosAlertIconLine = KozmosDimensions.primitivesLayoutSpacing300
+
+extension View {
+    /// Words shorter than the icon's `line` sit centred on it, in the
+    /// alert's row: one line of description with no title, which sat at the
+    /// icon's top with the icon's extra height below it, 16 above the words
+    /// and 20.7 below (GAP-269). Words as tall as the icon or taller, a
+    /// title and its description or a longer description, stay at the top.
+    func kozmosAlertCentredOnIcon(line: CGFloat, in alert: Bool) -> some View {
+        alignmentGuide(.top) { d in
+            alert ? -max(0, line - d.height) / 2 : d[.top]
+        }
+    }
 }
 
 public struct KozmosAlertIcon: View {
     let variant: KozmosAlert<AnyView>.KozmosAlertVariant?
     @Environment(\.kozmosAlertVariant) private var alertVariant
+    @ScaledMetric(relativeTo: .title3) private var line: CGFloat = kozmosAlertIconLine
 
     /// `variant` nil, the default, draws the symbol and colour of the alert
     /// the icon is in. It drew the default's info symbol in foreground/0
@@ -101,11 +131,16 @@ public struct KozmosAlertIcon: View {
         Image(systemName: shown.icon)
             .foregroundColor(shown.foregroundColor)
             .font(KozmosTypography.title3)
+            // On a line of its own, every symbol the same height: a line of
+            // words shorter than it is centred on it.
+            .frame(height: line)
     }
 }
 
 public struct KozmosAlertContent<Content: View>: View {
     let content: Content
+    @Environment(\.isInKozmosAlert) private var inAlert
+    @ScaledMetric(relativeTo: .title3) private var line: CGFloat = kozmosAlertIconLine
 
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -115,6 +150,7 @@ public struct KozmosAlertContent<Content: View>: View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
             content
         }
+        .kozmosAlertCentredOnIcon(line: line, in: inAlert)
     }
 }
 
@@ -143,6 +179,8 @@ public struct KozmosAlertDescription: View {
     let description: String
     let color: Color?
     @Environment(\.kozmosAlertVariant) private var alertVariant
+    @Environment(\.isInKozmosAlert) private var inAlert
+    @ScaledMetric(relativeTo: .title3) private var line: CGFloat = kozmosAlertIconLine
 
     /// `color` nil, the default, is the colour of the alert the description
     /// is in, as Figma draws it and React's inherits it: foreground/0 in a
@@ -156,5 +194,6 @@ public struct KozmosAlertDescription: View {
         Text(description)
             .font(KozmosTypography.subheadline)
             .foregroundColor(color ?? alertVariant.foregroundColor)
+            .kozmosAlertCentredOnIcon(line: line, in: inAlert)
     }
 }

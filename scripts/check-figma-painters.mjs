@@ -4202,6 +4202,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// GAP-268: ToastClose's `visible`. The set's Close Always Visible boolean, on
+// by default so the file draws as it did, shows the close at rest in every
+// variant: React's visible="always". Off is the default "hover" close.
+section("Toast's Close Always Visible (GAP-268)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const variants = [];
+  for (const value of ["Basic", "Action"])
+    for (const tone of ["Neutral", "Critical"])
+      variants.push(
+        await plugin.createToastVariant({
+          value,
+          second: tone,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "Toast";
+  plugin.configureToastProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const key = Object.keys(definitions).find(
+    (name) =>
+      name.split("#")[0] === "Close Always Visible" &&
+      definitions[name].type === "BOOLEAN",
+  );
+  ok(
+    key && definitions[key].defaultValue === true,
+    "Toast: a Close Always Visible boolean, on by default",
+  );
+  ok(
+    variants.every((variant) => {
+      const close = named(variant, "Toast Close");
+      return (
+        close &&
+        close.componentPropertyReferences &&
+        close.componentPropertyReferences.visible === key
+      );
+    }),
+    "Toast: Close Always Visible shows the close in all four variants drawn",
+  );
+  ok(
+    ["Title Text", "Description Text", "Action Text"].every((name) =>
+      Object.keys(definitions).some((key) => key.split("#")[0] === name),
+    ),
+    "Toast: its text properties are kept",
+  );
+  set.remove();
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary

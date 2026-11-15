@@ -163,6 +163,34 @@ describe("toast() and Toaster", () => {
     );
   });
 
+  // GAP-268: a product shows every toast's close all the time, or one
+  // toast's; the Toaster's choice is the default a toast's own overrides.
+  it("shows the close on hover by default, always when the Toaster or the toast says", async () => {
+    const close = (title: string) =>
+      within(screen.getByText(title).closest("li")!).getByRole("button", {
+        name: "Dismiss notification",
+      });
+    const { unmount } = render(<Page />);
+    show("Saved", { duration: Infinity });
+    show("Units merged", { duration: Infinity, closeVisible: "always" });
+    await screen.findByText("Units merged");
+    expect(close("Saved")).toHaveClass("opacity-0", "group-hover:opacity-100");
+    expect(close("Units merged").className).not.toMatch(/opacity-0/);
+    unmount();
+    act(() => toast.dismiss());
+
+    render(
+      <ThemeProvider theme="light">
+        <Toaster closeVisible="always" />
+      </ThemeProvider>,
+    );
+    show("Published", { duration: Infinity });
+    show("Draft kept", { duration: Infinity, closeVisible: "hover" });
+    await screen.findByText("Draft kept");
+    expect(close("Published").className).not.toMatch(/opacity-0/);
+    expect(close("Draft kept")).toHaveClass("opacity-0");
+  });
+
   it("names the close Dismiss notification by default, as the natives do", async () => {
     render(<Page />);
     show("Saved");
