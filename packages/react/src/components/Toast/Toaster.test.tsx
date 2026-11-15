@@ -174,7 +174,10 @@ describe("toast() and Toaster", () => {
     show("Saved", { duration: Infinity });
     show("Units merged", { duration: Infinity, closeVisible: "always" });
     await screen.findByText("Units merged");
-    expect(close("Saved")).toHaveClass("opacity-0", "group-hover:opacity-100");
+    expect(close("Saved")).toHaveClass(
+      "[@media(hover:hover)_and_(pointer:fine)]:opacity-0",
+      "group-hover:opacity-100",
+    );
     expect(close("Units merged").className).not.toMatch(/opacity-0/);
     unmount();
     act(() => toast.dismiss());
@@ -188,7 +191,9 @@ describe("toast() and Toaster", () => {
     show("Draft kept", { duration: Infinity, closeVisible: "hover" });
     await screen.findByText("Draft kept");
     expect(close("Published").className).not.toMatch(/opacity-0/);
-    expect(close("Draft kept")).toHaveClass("opacity-0");
+    expect(close("Draft kept")).toHaveClass(
+      "[@media(hover:hover)_and_(pointer:fine)]:opacity-0",
+    );
   });
 
   it("names the close Dismiss notification by default, as the natives do", async () => {

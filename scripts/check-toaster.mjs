@@ -726,6 +726,49 @@ await scenario(
 );
 
 await browser.close();
+
+// GAP-268 on a device whose primary input cannot hover (a phone): the
+// default "hover" close could never show, as nothing hovers it. It shows
+// there as "always" does; with a mouse it still waits for hover.
+{
+  const name =
+    "on a touch device, where nothing hovers, the default close shows at rest";
+  const touch = await launchFixtureBrowser({ pointer: "touch" });
+  const page = await touch.newPage({
+    viewport: { width: 390, height: 700 },
+    hasTouch: true,
+  });
+  try {
+    assert.deepEqual(
+      await page.evaluate(() => ({
+        fineHover: matchMedia("(hover: hover) and (pointer: fine)").matches,
+        coarseNoHover: matchMedia("(hover: none) and (pointer: coarse)")
+          .matches,
+      })),
+      { fineHover: false, coarseNoHover: true },
+      "browser input capability precondition",
+    );
+    await page.setContent(
+      `<!doctype html><html lang="en"><head><title>Toaster</title><style>body{margin:0}</style><style>${css}</style></head><body><div id="fixture"></div></body></html>`,
+    );
+    await page.addScriptTag({ content: code });
+    await page.evaluate(() =>
+      window.toaster.mount({ toaster: { duration: Infinity } }),
+    );
+    await show(page, "Saved");
+    await arrived(page, "Saved");
+    const opacity = await closeOpacity(page, "Saved");
+    assert.equal(opacity, 1, "the default close at rest");
+    passed += 1;
+    console.log(`PASS ${name}: opacity ${opacity}`);
+  } catch (error) {
+    failures.push(name);
+    console.error(`FAIL ${name}\n${error.stack ?? error}`);
+  } finally {
+    await touch.close();
+  }
+}
+
 if (failures.length) {
   console.error(`\n${failures.length} of ${passed + failures.length} failed`);
   process.exit(1);

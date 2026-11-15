@@ -15,6 +15,10 @@
  * - Title-less with an action in the description: as much above as below.
  * - Titled, and with no icon: 16 above and 16 below, as before; a titled
  *   alert's icon centred on its title.
+ * - Left to right and right to left: the icon 16 from the inline start and
+ *   the words 44, so right to left both are at the right. Alert placed them
+ *   with left-4 and pl-7, so right to left the icon stayed at the left, and
+ *   the words, padded from the left, ran over it from the right.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-alert-spacing.mjs
@@ -59,7 +63,24 @@ try {
       const icon = part("icon");
       const line = parseFloat(getComputedStyle(part("first")).lineHeight);
       const round = (value) => Math.round(value * 10) / 10;
+      // From the inline start, inside the border: the icon's start edge, and
+      // where the first words begin.
+      const rtl = style.direction === "rtl";
+      const left = box.left + parseFloat(style.borderLeftWidth);
+      const right = box.right - parseFloat(style.borderRightWidth);
+      const fromStart = (rect) =>
+        round(rtl ? right - rect.right : rect.left - left);
+      const range = document.createRange();
+      const walker = document.createTreeWalker(
+        part("first"),
+        NodeFilter.SHOW_TEXT,
+      );
+      range.selectNodeContents(walker.nextNode());
+      const firstLine = range.getClientRects()[0];
       return {
+        direction: style.direction,
+        iconAtStart: icon ? fromStart(icon.getBoundingClientRect()) : null,
+        wordsAtStart: fromStart(firstLine),
         above: round(first.top - top),
         below: round(bottom - last.bottom),
         iconOffFirstLine: icon
@@ -80,33 +101,50 @@ try {
       );
   };
 
-  for (const variant of VARIANTS) {
-    const titled = await read(`titled-${variant}`);
-    expect(`${variant} titled`, titled, {
-      above: 16,
-      below: 16,
-      iconOffFirstLine: 0,
-    });
-    for (const shape of ["title-less", "title-less-two-lines"]) {
-      expect(`${variant} ${shape}`, await read(`${shape}-${variant}`), {
-        above: 14,
-        below: 14,
+  for (const [dir, prefix] of [
+    ["ltr", ""],
+    ["rtl", "rtl-"],
+  ])
+    for (const variant of VARIANTS) {
+      const at = (shape) => `${prefix}${shape}-${variant}`;
+      const titled = await read(at("titled"));
+      // The icon 16 from the inline start, and the words 28 past that: the
+      // right in a right-to-left alert (it stayed at the left, over nothing,
+      // with the words padded from the left).
+      expect(`${dir} ${variant} titled`, titled, {
+        direction: dir,
+        iconAtStart: 16,
+        wordsAtStart: 44,
+        above: 16,
+        below: 16,
         iconOffFirstLine: 0,
       });
+      for (const shape of ["title-less", "title-less-two-lines"]) {
+        expect(`${dir} ${variant} ${shape}`, await read(at(shape)), {
+          direction: dir,
+          iconAtStart: 16,
+          wordsAtStart: 44,
+          above: 14,
+          below: 14,
+          iconOffFirstLine: 0,
+        });
+      }
+      const action = await read(at("title-less-action"));
+      expect(
+        `${dir} ${variant} title-less with an action, below less above (${action.above} above, ${action.below} below)`,
+        Math.round((action.below - action.above) * 10) / 10,
+        0,
+      );
+      const plain = await read(at("no-icon"));
+      expect(`${dir} ${variant} no icon`, plain, {
+        direction: dir,
+        iconAtStart: null,
+        wordsAtStart: 16,
+        above: 16,
+        below: 16,
+        iconOffFirstLine: null,
+      });
     }
-    const action = await read(`title-less-action-${variant}`);
-    expect(
-      `${variant} title-less with an action, below less above (${action.above} above, ${action.below} below)`,
-      Math.round((action.below - action.above) * 10) / 10,
-      0,
-    );
-    const plain = await read(`no-icon-${variant}`);
-    expect(`${variant} no icon`, plain, {
-      above: 16,
-      below: 16,
-      iconOffFirstLine: null,
-    });
-  }
   if (errors.length) failures.push(`page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
@@ -114,12 +152,15 @@ try {
 
 const engine = process.env.ADAPTIVE_BROWSER ?? "chromium";
 if (failures.length) {
-  console.error(`FAIL alert spacing in ${engine} (${failures.length} of ${checked}):`);
+  console.error(
+    `FAIL alert spacing in ${engine} (${failures.length} of ${checked}):`,
+  );
   for (const failure of failures) console.error(`  ${failure}`);
   process.exit(1);
 }
 console.log(
-  `PASS alert spacing in ${engine}: ${checked} alerts, ${VARIANTS.length} variants — a title-less description ` +
+  `PASS alert spacing in ${engine}: ${checked} alerts, ${VARIANTS.length} variants, left to right and right to left — ` +
+    "the icon 16 and the words 44 from the inline start, a title-less description " +
     "14 above and 14 below on one line and two, centred on the icon, as much above as below with an action, " +
     "and a titled or icon-less alert 16 and 16 as before",
 );

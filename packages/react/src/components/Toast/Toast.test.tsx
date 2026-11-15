@@ -116,7 +116,7 @@ describe("Toast", () => {
     );
     const hover = screen.getByRole("button", { name: "Close on hover" });
     expect(hover).toHaveClass(
-      "opacity-0",
+      "[@media(hover:hover)_and_(pointer:fine)]:opacity-0",
       "group-hover:opacity-100",
       "focus:opacity-100",
     );

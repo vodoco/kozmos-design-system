@@ -12,9 +12,10 @@ import {
 
 /**
  * Alerts in the built package, for scripts/check-alert-spacing.mjs (GAP-269):
- * every variant in each shape a product builds. The check reads the space
- * between the alert's edge (inside its border) and its first and last
- * content, and where the icon sits against the words beside it.
+ * every variant in each shape a product builds, left to right and right to
+ * left. The check reads the space between the alert's edge (inside its
+ * border) and its first and last content, and where the icon sits against
+ * the words beside it.
  */
 const VARIANTS: NonNullable<AlertProps["variant"]>[] = [
   "default",
@@ -26,9 +27,15 @@ const VARIANTS: NonNullable<AlertProps["variant"]>[] = [
 
 const icon = <InfoCircle className="h-4 w-4" data-part="icon" />;
 
-function Shapes({ variant }: { variant: NonNullable<AlertProps["variant"]> }) {
+function Shapes({
+  variant,
+  dir = "ltr",
+}: {
+  variant: NonNullable<AlertProps["variant"]>;
+  dir?: "ltr" | "rtl";
+}) {
   const at = (shape: string) => ({
-    "data-case": `${shape}-${variant}`,
+    "data-case": `${dir === "rtl" ? "rtl-" : ""}${shape}-${variant}`,
     variant,
   });
   return (
@@ -81,13 +88,23 @@ function Shapes({ variant }: { variant: NonNullable<AlertProps["variant"]> }) {
 
 function Page() {
   return (
-    <ThemeProvider theme="light">
-      <div style={{ display: "grid", gap: 16, width: 360, padding: 16 }}>
-        {VARIANTS.map((variant) => (
-          <Shapes key={variant} variant={variant} />
-        ))}
-      </div>
-    </ThemeProvider>
+    <>
+      <ThemeProvider theme="light">
+        <div style={{ display: "grid", gap: 16, width: 360, padding: 16 }}>
+          {VARIANTS.map((variant) => (
+            <Shapes key={variant} variant={variant} />
+          ))}
+        </div>
+      </ThemeProvider>
+      {/* Right to left: the icon at the inline start, the right. */}
+      <ThemeProvider theme="light" dir="rtl">
+        <div style={{ display: "grid", gap: 16, width: 360, padding: 16 }}>
+          {VARIANTS.map((variant) => (
+            <Shapes key={variant} variant={variant} dir="rtl" />
+          ))}
+        </div>
+      </ThemeProvider>
+    </>
   );
 }
 

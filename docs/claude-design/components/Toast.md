@@ -268,8 +268,9 @@ From `@kozmos-ds/react`.
 ```ts
 /**
  * When the close button shows. `hover`, the default, is only while the toast
- * is hovered or the button has focus; `always` is the whole time the toast
- * shows, so a visitor who never hovers it still sees how to close it
+ * is hovered or the button has focus, where the primary input can hover (on
+ * a touch screen, where nothing hovers, it shows as `always` does); `always`
+ * is the whole time the toast shows, so a visitor who never hovers it still sees how to close it
  * (GAP-268). SwiftUI's and Compose's toasts have no hover: their close always
  * shows, as `always` does.
  */

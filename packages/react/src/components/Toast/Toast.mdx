@@ -46,7 +46,8 @@ config's reduced motion reaches it there.
 - **The queue:** `limit` (3) show at once, oldest first, and the rest wait their turn. `toast()`
   returns an id: pass it back as `id` to replace that toast where it is, announced again ("Saving…"
   becomes "Saved"), or to `toast.dismiss(id)`. `toast.dismiss()` closes them all.
-- **The close button:** it shows while the toasts are hovered or it has focus, by default. Give the
+- **The close button:** it shows while the toasts are hovered or it has focus, by default; on a touch
+  screen, where nothing hovers, it shows the whole time. Give the
   Toaster `closeVisible="always"`, or one toast `closeVisible: "always"`, to show it the whole time,
   so a visitor who never hovers still sees how to close it (GAP-268); a toast's own wins over the
   Toaster's. On the parts it is `<ToastClose visible="always" />`. SwiftUI's and Compose's toasts
