@@ -94,6 +94,8 @@ public struct KozmosChip<Icon: View>: View {
         // After the chip's capsule: a content shape bounds every tap inside
         // what it shapes, and the remove's target reaches past the chip.
         .overlay(alignment: .trailing) { removeButton }
+        // In front of the remove, so a tap on the words is never a remove.
+        .overlay(alignment: .leading) { wordsTarget }
         .opacity(disabled ? 0.5 : 1)
         .modifier(ChipSemantics(text: text, selected: selected, disabled: disabled, action: action,
                                 role: onRemove == nil ? .chip : .container))
@@ -132,6 +134,28 @@ public struct KozmosChip<Icon: View>: View {
             .accessibilityLabel(removeLabel)
             // The mark's end on the chip's end padding.
             .padding(.trailing, horizontalPadding - (Self.removeTarget - Self.removeMark - Self.removeLeadingReach))
+        }
+    }
+
+    /// The chip's own target, over its words, from its leading edge to where
+    /// the words stop, when it has a remove. On iOS a touch takes the
+    /// frontmost control near it, not only one under it, so the remove beside
+    /// the words, laid over the chip, took a tap on their end
+    /// (`testAChipsRemoveTakesATap44SquareWhileTheChipKeepsItsHeight`). In
+    /// front of the remove, the words keep every tap on them; with no action,
+    /// a tap on them does nothing. Hidden from VoiceOver, which reads the chip
+    /// and its remove as before.
+    @ViewBuilder
+    private var wordsTarget: some View {
+        if onRemove != nil {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard !disabled else { return }
+                    action?()
+                }
+                .padding(.trailing, horizontalPadding + Self.removeMark + KozmosDimensions.primitivesLayoutSpacing50)
+                .accessibilityHidden(true)
         }
     }
 
