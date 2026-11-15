@@ -792,6 +792,32 @@ final class InteractionTests: XCTestCase {
         received("Coffee|remove Coffee|remove Open now")
     }
 
+    /// A chip's remove is drawn 20 but takes a tap 44 square, Apple's minimum
+    /// and Kozmos's SwiftUI one, at every size, with the chip no taller for
+    /// it and its own words still the chip's. It took a tap only on the 20.
+    func testAChipsRemoveTakesATap44SquareWhileTheChipKeepsItsHeight() {
+        launch("chip-remove-targets")
+        XCTAssertEqual(app.staticTexts["chip-heights"].label, "28|32|36", "a remove target made a chip taller")
+        var taps: [String] = []
+        for text in ["Lift", "Coffee", "Gate"] {
+            let remove = app.buttons["Remove \(text)"]
+            XCTAssertTrue(remove.waitForExistence(timeout: 3), text)
+            XCTAssertGreaterThanOrEqual(remove.frame.width, 44, "\(text): \(remove.frame)")
+            XCTAssertGreaterThanOrEqual(remove.frame.height, 44, "\(text): \(remove.frame)")
+            // 2 in from each corner of the 44 square, round the drawn mark.
+            for (x, y) in [(2.0, 2.0), (42.0, 2.0), (2.0, 42.0), (42.0, 42.0)] {
+                remove.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: y)).tap()
+                taps.append("remove \(text)")
+                received(taps.joined(separator: "|"))
+            }
+            // Just before the target, the words' end is still the chip's.
+            app.buttons[text].coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
+                .withOffset(CGVector(dx: -2, dy: 0)).tap()
+            taps.append(text)
+            received(taps.joined(separator: "|"))
+        }
+    }
+
     func testTheDocsExampleSaysWhichCategoryIsSelected() {
         launch("chip-docs")
         XCTAssertTrue(app.buttons["All"].isSelected)
