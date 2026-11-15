@@ -19,7 +19,7 @@ These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose
 being built on Reka UI (Vue 3 Phase 0), and not yet something to install.
 There is no React Native package.
 
-## Components (125)
+## Components (126)
 
 A row is a directory of `packages/react/src/components`, linked to its API card,
 which lists every part to import and every prop. **iOS** and **Android** say
@@ -34,7 +34,7 @@ component has no such prop; **unknown** means the checker could not resolve it.
 
 `Radio` is a directory whose name is not an export: import the parts named in its row instead.
 
-### Core (79)
+### Core (80)
 
 | Component                                                                            | iOS | Android | Variants                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ------------------------------------------------------------------------------------ | :-: | :-----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
