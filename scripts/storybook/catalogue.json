@@ -326,7 +326,7 @@
       "id": "foundations-container",
       "title": "Core/Layout/Container",
       "component": "Container",
-      "exports": ["Default", "Fluid", "InAPanel"]
+      "exports": ["Default", "Fluid", "InAPanel", "BlockInset"]
     },
     {
       "file": "packages/react/src/components/ContextMenu/ContextMenu.stories.tsx",
@@ -525,6 +525,13 @@
       "exports": ["Default", "Combination", "InAHint"]
     },
     {
+      "file": "packages/react/src/components/PersonaMark/PersonaMark.stories.tsx",
+      "id": "data-display-personamark",
+      "title": "Core/Data display/PersonaMark",
+      "component": "PersonaMark",
+      "exports": ["Default", "Named", "Group", "InAPersonaList"]
+    },
+    {
       "file": "packages/react/src/components/Label/Label.stories.tsx",
       "id": "components-label",
       "title": "Core/Inputs/Label",
@@ -564,7 +571,14 @@
       "id": "data-display-list",
       "title": "Core/Data display/List",
       "component": "List",
-      "exports": ["Default", "Compact"]
+      "exports": ["Default", "Compact", "Checklist", "PersonaVisibility"]
+    },
+    {
+      "file": "packages/react/src/components/SettingsRow/SettingsRow.stories.tsx",
+      "id": "data-display-settingsrow",
+      "title": "Core/Data display/SettingsRow",
+      "component": "SettingsRow",
+      "exports": ["Default", "SdkConfiguration", "Compact"]
     },
     {
       "file": "packages/react/src/components/Listbox/Listbox.stories.tsx",
@@ -897,6 +911,13 @@
       ]
     },
     {
+      "file": "packages/react/src/components/PageHeader/PageHeader.stories.tsx",
+      "id": "navigation-pageheader",
+      "title": "Core/Layout/PageHeader",
+      "component": "PageHeader",
+      "exports": ["Default", "Landing", "WithInfo", "Plain"]
+    },
+    {
       "file": "packages/react/src/components/Pagination/Pagination.stories.tsx",
       "id": "navigation-pagination",
       "title": "Core/Layout/Pagination",
@@ -974,7 +995,7 @@
       "id": "input-rating",
       "title": "Core/Inputs/Rating",
       "component": "Rating",
-      "exports": ["Default", "Thumbs", "ReadOnly"]
+      "exports": ["Default", "Thumbs", "ReadOnly", "ReadOnlyHalves"]
     },
     {
       "file": "packages/react/src/components/RouteLocationField/RouteLocationField.stories.tsx",
@@ -1207,7 +1228,13 @@
       "id": "components-tabs",
       "title": "Core/Layout/Tabs",
       "component": "Tabs",
-      "exports": ["Default", "IconOverLabel", "IconOverLabelRightToLeft"]
+      "exports": [
+        "Default",
+        "IconOverLabel",
+        "IconOverLabelRightToLeft",
+        "ManyTabsNarrow",
+        "ManyTabsNarrowRightToLeft"
+      ]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",
@@ -1263,7 +1290,7 @@
       "id": "action-togglebutton",
       "title": "Core/Actions/ToggleButton",
       "component": "ToggleButton",
-      "exports": ["Default", "On"]
+      "exports": ["Default", "On", "InTooltip"]
     },
     {
       "file": "packages/react/src/components/Tooltip/Tooltip.stories.tsx",

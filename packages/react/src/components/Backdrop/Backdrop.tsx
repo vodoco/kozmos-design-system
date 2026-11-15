@@ -140,7 +140,16 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
     useIsomorphicLayoutEffect(() => cutout.release, [cutout]);
 
     if (!visible) return null;
-    const position = placement === "inline" ? "absolute" : "fixed";
+    // Its place and its scrim are owned rules (GAP-262), so they hold where
+    // no @scope rule applies: a backdrop with no target, drawn with scoped
+    // utilities alone, collapsed there and drew no scrim, and one with a
+    // target lost the place its scrim fills. Fixed over the window, or
+    // absolute over its box inline, on layer 50; a caller's utilities still
+    // outweigh both.
+    const layer = cn(
+      "kozmos-backdrop-layer",
+      placement === "inline" && "kozmos-backdrop-inline",
+    );
     // With no target, the one scrim it always was, its children inside.
     // With one, the dim is an inner scrim that the cut-out is cut from and
     // that takes the pointer outside it; the backdrop's own children sit
@@ -149,7 +158,7 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
       target === undefined ? (
         <div
           ref={setRef}
-          className={cn(position, "inset-0 z-50 bg-overlay-scrim", className)}
+          className={cn(layer, "kozmos-backdrop-solid", className)}
           {...props}
         >
           {children}
@@ -157,7 +166,7 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
       ) : (
         <div
           ref={setRef}
-          className={cn("kozmos-backdrop", position, "inset-0 z-50", className)}
+          className={cn("kozmos-backdrop", layer, className)}
           {...props}
         >
           <div ref={scrim} aria-hidden="true" className="kozmos-backdrop-scrim">

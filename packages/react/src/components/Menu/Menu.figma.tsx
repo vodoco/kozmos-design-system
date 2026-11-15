@@ -26,9 +26,11 @@ figma.connect(MenuContent, menuUrl, {
     item1: figma.string("Item 1 Text"),
     item2: figma.string("Item 2 Text"),
     item3: figma.string("Item 3 Text"),
+    // Decision 152: External shows the new-tab icon on the second item.
+    external: figma.boolean("External", { true: true, false: undefined }),
     shortcut: figma.string("Shortcut Text"),
   },
-  example: ({ item1, item2, item3, label, shortcut }) => (
+  example: ({ external, item1, item2, item3, label, shortcut }) => (
     <Menu>
       <MenuTrigger asChild>
         <Button variant="outline">Open menu</Button>
@@ -40,7 +42,7 @@ figma.connect(MenuContent, menuUrl, {
           {item1}
           <MenuShortcut>{shortcut}</MenuShortcut>
         </MenuItem>
-        <MenuItem>{item2}</MenuItem>
+        <MenuItem external={external}>{item2}</MenuItem>
         <MenuItem>{item3}</MenuItem>
       </MenuContent>
     </Menu>
@@ -104,8 +106,10 @@ figma.connect(MenuContent, menuUrl, {
     item1: figma.string("Item 1 Text"),
     item2: figma.string("Item 2 Text"),
     item3: figma.string("Item 3 Text"),
+    // Decision 152: External shows the new-tab icon on the second item.
+    external: figma.boolean("External", { true: true, false: undefined }),
   },
-  example: ({ item1, item2, item3, label }) => (
+  example: ({ external, item1, item2, item3, label }) => (
     <Menu>
       <MenuTrigger asChild>
         <Button variant="outline">Workspace</Button>
@@ -114,7 +118,7 @@ figma.connect(MenuContent, menuUrl, {
         <MenuLabel>{label}</MenuLabel>
         <MenuSeparator />
         <MenuItem>{item1}</MenuItem>
-        <MenuItem>{item2}</MenuItem>
+        <MenuItem external={external}>{item2}</MenuItem>
         <MenuSub>
           <MenuSubTrigger>{item3}</MenuSubTrigger>
           <MenuSubContent>
