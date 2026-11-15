@@ -6,7 +6,7 @@ An image framed to an aspect ratio (GAP-273): the frame is the box, and the imag
 
 - **Import:** `import { ImageCropper } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-imagecropper--docs>
 
 ## Example
