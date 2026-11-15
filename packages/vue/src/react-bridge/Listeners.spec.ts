@@ -789,6 +789,7 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosPersonaMarkGroup: {
     props: { personas: [{ name: "Customer", color: "#FF9800" }] },
   },
+  KozmosNotice: { props: { summary: "Geometry is set" } },
   KozmosDrawer: { slot: true },
   KozmosBreadcrumb: { slot: true },
   KozmosPagination: { slot: true },

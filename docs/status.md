@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 77         | 77/77 | 77/77     | 71/77   | 71/77 | 71/77   | 72/77   | 71/77       |
+| Core                   | 77         | 77/77 | 77/77     | 72/77   | 72/77 | 72/77   | 73/77   | 72/77       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -76,7 +76,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | MultiSelect          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Navbar               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | NavigationItem       | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
-| Notice               | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| Notice               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | NumberInput          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | OTPInput             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Pagination           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -195,15 +195,15 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 - Web components: 125/125
 - Web stories: 125/125
 - Web tests: 125/125
-- Web Code Connect files: 101/120
+- Web Code Connect files: 102/120
 - Web Code Connect scaffolds: 0/120
-- Web Code Connect linked: 101/120
-- iOS components: 114/125
-- iOS Code Connect files: 101/120
+- Web Code Connect linked: 102/120
+- iOS components: 115/125
+- iOS Code Connect files: 102/120
 - iOS Code Connect scaffolds: 0/120
-- iOS Code Connect linked: 101/120
-- Android components: 115/125
-- Android Code Connect files: 101/120
+- iOS Code Connect linked: 102/120
+- Android components: 116/125
+- Android Code Connect files: 102/120
 - Android Code Connect scaffolds: 0/120
-- Android Code Connect linked: 101/120
+- Android Code Connect linked: 102/120
 - Code Connect not applicable: 5/125

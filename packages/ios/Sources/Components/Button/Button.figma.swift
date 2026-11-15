@@ -17,7 +17,8 @@ struct KozmosButtonConnect: FigmaConnect {
             "Secondary": KozmosButtonVariant.secondary,
             "Ghost": KozmosButtonVariant.ghost,
             "Link": KozmosButtonVariant.link,
-            "Glass": KozmosButtonVariant.glass
+            "Glass": KozmosButtonVariant.glass,
+            "Subtle": KozmosButtonVariant.subtle
         ]
     )
     var buttonVariant: KozmosButtonVariant = .default

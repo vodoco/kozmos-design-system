@@ -37,3 +37,28 @@ export const Error: Story = {
     />
   ),
 };
+
+// GAP-162: a description under the label, read as the switch's description.
+export const WithDescription: Story = {
+  render: () => (
+    <Switch
+      id="gate-alerts"
+      label="Gate alerts"
+      description="Sends a push when your gate changes"
+      defaultChecked
+    />
+  ),
+};
+
+// GAP-162: the state in words beside the track. The words are not read: the
+// switch says on or off itself, in the reader's language.
+export const StateLabel: Story = {
+  render: () => (
+    <Switch
+      id="gate-alerts-state"
+      label="Gate alerts"
+      description="Sends a push when your gate changes"
+      showStateLabel
+    />
+  ),
+};

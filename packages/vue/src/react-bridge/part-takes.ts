@@ -45,6 +45,7 @@ import {
   Kbd,
   PersonaMark,
   PersonaMarkGroup,
+  Notice,
   Drawer,
   Toast,
   Breadcrumb,
@@ -183,6 +184,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Kbd, D],
   [PersonaMark, D],
   [PersonaMarkGroup, D],
+  [Notice, { dom: true, own: ["onExpandedChange"] }],
   [Drawer, menuTakes],
   [
     Toast,
@@ -617,7 +619,14 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [
     Switch,
     html(
-      ["asChild", "checked", "disabled", "formNoValidate", "required"],
+      [
+        "asChild",
+        "checked",
+        "disabled",
+        "formNoValidate",
+        "required",
+        "showStateLabel",
+      ],
       [],
       ["error"],
     ),
@@ -677,6 +686,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Kbd, H],
   [PersonaMark, H],
   [PersonaMarkGroup, H],
+  [Notice, html(["collapsible", "defaultExpanded", "expanded"])],
   [Drawer, menuBooleans],
   [Toast, html(["asChild", "defaultOpen", "forceMount", "open"])],
   [Breadcrumb, H],
@@ -694,7 +704,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [AvatarFallback, boxBooleans],
   [Tag, H],
   [List, H],
-  [Table, H],
+  [Table, html(["framed"])],
   [Tree, html(["divided", "virtualized"])],
   [Timeline, H],
   [

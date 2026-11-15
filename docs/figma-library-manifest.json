@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 103 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 104 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 103 Core SwiftUI and 103 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 104 Core SwiftUI and 104 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15718,9 +15718,9 @@
       "stories": 125,
       "tests": 125,
       "exported": 125,
-      "codeConnectFiles": 101,
+      "codeConnectFiles": 102,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 101
+      "codeConnectLinked": 102
     },
     "firstBatch": [
       "Accordion",
@@ -15778,6 +15778,7 @@
       "MultiSelect",
       "Navbar",
       "NavigationItem",
+      "Notice",
       "NumberInput",
       "OTPInput",
       "Pagination",
@@ -16680,7 +16681,13 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Checkbox"],
-          "mappedProps": ["checked", "disabled", "error", "label"],
+          "mappedProps": [
+            "checked",
+            "description",
+            "disabled",
+            "error",
+            "label"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -16690,6 +16697,7 @@
           "checked",
           "children",
           "defaultChecked",
+          "description",
           "disabled",
           "error",
           "id",
@@ -18580,14 +18588,21 @@
         "test": "packages/react/src/components/Notice/Notice.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/Notice/Notice.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21502",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["Notice"],
+          "mappedProps": [
+            "action",
+            "defaultExpanded",
+            "icon",
+            "status",
+            "summary",
+            "tone"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -18605,6 +18620,7 @@
           "id",
           "live",
           "role",
+          "status",
           "summary",
           "tabIndex",
           "title",
@@ -19163,6 +19179,7 @@
           "mappedProps": [
             "label",
             "labelPlacement",
+            "placement",
             "shape",
             "size",
             "tone",
@@ -19180,6 +19197,7 @@
           "label",
           "labelPlacement",
           "max",
+          "placement",
           "role",
           "shape",
           "size",
@@ -19204,7 +19222,15 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Radio", "RadioGroupItem"],
-          "mappedProps": ["disabled", "error", "label", "value"],
+          "mappedProps": [
+            "description",
+            "disabled",
+            "error",
+            "label",
+            "media",
+            "value",
+            "variant"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -19213,15 +19239,18 @@
           "aria-label",
           "checked",
           "children",
+          "description",
           "disabled",
           "error",
           "id",
           "label",
+          "media",
           "required",
           "role",
           "tabIndex",
           "title",
-          "value"
+          "value",
+          "variant"
         ],
         "variants": {}
       },
@@ -19779,6 +19808,7 @@
             "error",
             "mixed",
             "mixedLabel",
+            "open",
             "resetMixedLabel"
           ],
           "unmappedProps": []
@@ -20147,7 +20177,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Switch"],
-          "mappedProps": ["checked", "disabled", "error", "label"],
+          "mappedProps": [
+            "checked",
+            "description",
+            "disabled",
+            "error",
+            "label",
+            "showStateLabel"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -20157,12 +20194,15 @@
           "checked",
           "children",
           "defaultChecked",
+          "description",
           "disabled",
           "error",
           "id",
           "label",
+          "offLabel",
           "required",
           "role",
+          "showStateLabel",
           "tabIndex",
           "title",
           "value",
@@ -20184,7 +20224,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Table"],
-          "mappedProps": [],
+          "mappedProps": ["framed"],
           "unmappedProps": []
         },
         "props": [
@@ -20192,6 +20232,7 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "framed",
           "id",
           "role",
           "tabIndex",

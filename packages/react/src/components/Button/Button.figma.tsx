@@ -17,6 +17,7 @@ figma.connect(
         Ghost: "ghost",
         Link: "link",
         Glass: "glass",
+        Subtle: "subtle",
       }),
       size: figma.enum("Size", {
         Default: "default",

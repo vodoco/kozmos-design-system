@@ -161,7 +161,16 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## SelectItem
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.SelectItemProps & React.RefAttributes<HTMLDivElement>, "ref">`.
+It forwards its ref to `HTMLDivElement`. Its props are `SelectItemProps`, which extends `React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>`.
+
+- `count`: `React.ReactNode`, optional.
+
+  A count beside the option's words (GAP-164), as a neutral Counter at the
+  row's end, before the check's place. It sits outside the item text, so
+  the closed select shows the words alone. A number is written in the
+  app's grouping (the document's `lang`, as Calendar reads it: "1,234",
+  "1.234" in German), and the option is named by its words, then its
+  count: "POI, 96". A caller's own `aria-label` wins.
 
 - `asChild`: `boolean`, optional.
 - `disabled`: `boolean`, optional.
