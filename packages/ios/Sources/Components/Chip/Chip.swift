@@ -240,12 +240,16 @@ public struct KozmosChip<Icon: View>: View {
 }
 
 /// The remove mark's circle inside its larger target: `diameter` across,
-/// `leading` in from the target's leading edge, centred top to bottom. A
-/// shape's path is not mirrored right to left, so it is told the direction.
+/// `leading` in from the target's leading edge, centred top to bottom. It is
+/// told the direction and is `.fixed`: iOS 17 mirrors a shape right to left
+/// by default and iOS 16 does not, so the flag is the one flip on both.
 private struct ChipRemoveMarkShape: Shape {
     let leading: CGFloat
     let diameter: CGFloat
     let rightToLeft: Bool
+
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 
     func path(in rect: CGRect) -> Path {
         let x = rightToLeft ? rect.maxX - leading - diameter : rect.minX + leading
