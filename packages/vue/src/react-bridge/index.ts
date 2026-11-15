@@ -51,6 +51,7 @@ import {
   Drawer,
   Toast,
   Breadcrumb,
+  PageHeader,
   Pagination,
   Stepper,
   Alert as ReactAlert,
@@ -361,6 +362,7 @@ export const KozmosNotice = createVueWrapper(Notice, {
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);
+export const KozmosPageHeader = createVueWrapper(PageHeader);
 export const KozmosPagination = createVueWrapper(Pagination);
 export const KozmosStepper = createVueWrapper(Stepper);
 // `positionLabel` may be a function: declared as a prop, it is handed to
