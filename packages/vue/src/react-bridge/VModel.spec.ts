@@ -32,6 +32,7 @@ import {
   byText,
   choose,
   commit,
+  eventually,
   heard,
   mount,
   press,
@@ -1226,9 +1227,10 @@ describe("a typed query is not the value", () => {
     const input = await until(() => $<HTMLInputElement>("input"));
     input.focus();
     type(input, "Ap");
-    await settle();
-    expect(input.value).toBe("Ap");
-    expect(texts("[role=option]")).toEqual(["Apple"]);
+    await eventually(() => {
+      expect(input.value).toBe("Ap");
+      expect(texts("[role=option]")).toEqual(["Apple"]);
+    });
   });
 
   it("KozmosCombobox with v-model filters as you type, and emits only a choice", async () => {
@@ -1238,9 +1240,12 @@ describe("a typed query is not the value", () => {
     const input = await until(() => $<HTMLInputElement>("input"));
     input.focus();
     type(input, "Ap");
+    // A fixed wait: nothing may be emitted.
     await settle();
-    expect(input.value).toBe("Ap");
-    expect(texts("[role=option]")).toEqual(["Apple"]);
+    await eventually(() => {
+      expect(input.value).toBe("Ap");
+      expect(texts("[role=option]")).toEqual(["Apple"]);
+    });
     expect(emitted).toEqual([]);
     expect(model.value).toBe("banana");
   });
@@ -1252,8 +1257,9 @@ describe("a typed query is not the value", () => {
     const input = await until(() => $<HTMLInputElement>("input"));
     input.focus();
     type(input, "Ba");
+    // A fixed wait: nothing may be emitted.
     await settle();
-    expect(texts("[role=option]")).toEqual(["Banana"]);
+    await eventually(() => expect(texts("[role=option]")).toEqual(["Banana"]));
     expect(emitted).toEqual([]);
     expect(model.value).toEqual(["apple"]);
   });
@@ -1294,12 +1300,12 @@ describe("each model's other changes", () => {
     );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "ADA1");
-    await settle();
-    expect(input.value).toBe("ADA");
+    await eventually(() => expect(input.value).toBe("ADA"));
     type(input, "ADAl");
-    await settle();
-    expect(value.value).toBe("ADAL");
-    expect(input.value).toBe("ADAL");
+    await eventually(() => {
+      expect(value.value).toBe("ADAL");
+      expect(input.value).toBe("ADAL");
+    });
   });
 
   it("KozmosSearch's clear empties v-model, emits clear and hands the focus back (GAP-161)", async () => {
@@ -1319,12 +1325,17 @@ describe("each model's other changes", () => {
     (await until(() =>
       $<HTMLButtonElement>("button[aria-label='Aramayı temizle']"),
     ))!.click();
+    // A fixed wait: clear is emitted once, and no more.
     await settle();
-    expect(value.value).toBe("");
-    expect(input.value).toBe("");
+    await eventually(() => {
+      expect(value.value).toBe("");
+      expect(input.value).toBe("");
+    });
     expect(cleared).toHaveBeenCalledTimes(1);
-    expect(document.activeElement).toBe(input);
-    expect($("button[aria-label='Aramayı temizle']")).toBeNull();
+    await eventually(() => {
+      expect(document.activeElement).toBe(input);
+      expect($("button[aria-label='Aramayı temizle']")).toBeNull();
+    });
   });
 
   it("KozmosNumberInput's steppers emit a number, and a cleared field null", async () => {
@@ -1333,13 +1344,14 @@ describe("each model's other changes", () => {
     });
     const input = await until(() => $<HTMLInputElement>("input"));
     $<HTMLButtonElement>("button[aria-label='Increase value']")!.click();
+    // Fixed waits: each change is emitted once, and no more.
     await settle();
     expect(emitted).toEqual([2]);
-    expect(input.value).toBe("2");
+    await eventually(() => expect(input.value).toBe("2"));
     type(input, "");
     await settle();
     expect(emitted).toEqual([2, null]);
-    expect(input.value).toBe("");
+    await eventually(() => expect(input.value).toBe(""));
   });
 
   it("KozmosSegmentedControl's choice taken back is undefined, and the control holds nothing", async () => {
@@ -1347,9 +1359,12 @@ describe("each model's other changes", () => {
       vModel: true,
     });
     (await until(() => byText("[role=radio]", "Walk")))!.click();
+    // A fixed wait: the change is emitted once, and no more.
     await settle();
     expect(emitted).toEqual([undefined]);
-    expect($("[role=radio][aria-checked=true]")).toBeNull();
+    await eventually(() =>
+      expect($("[role=radio][aria-checked=true]")).toBeNull(),
+    );
   });
 
   it("an empty model leaves a text field controlled", async () => {
@@ -1362,9 +1377,10 @@ describe("each model's other changes", () => {
     );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "A");
-    await settle();
-    expect(value.value).toBe("A");
-    expect(input.value).toBe("A");
+    await eventually(() => {
+      expect(value.value).toBe("A");
+      expect(input.value).toBe("A");
+    });
   });
 
   it("KozmosCombobox chosen twice and reset to null shows nothing, not its first choice", async () => {
@@ -1381,8 +1397,9 @@ describe("each model's other changes", () => {
     }
     expect(model.value).toBe("banana");
     model.value = null;
-    await settle();
-    expect($<HTMLInputElement>("input")!.value).toBe("");
+    await eventually(() =>
+      expect($<HTMLInputElement>("input")!.value).toBe(""),
+    );
   });
 
   it("KozmosCombobox keeps each character typed when the product clears its model as the visitor types (GAP-232)", async () => {
@@ -1397,11 +1414,11 @@ describe("each model's other changes", () => {
       }),
     );
     const input = await until(() => $<HTMLInputElement>("input"));
-    await settle();
-    expect(input.value).toBe("Banana");
+    await eventually(() => expect(input.value).toBe("Banana"));
     input.focus();
     for (const text of ["C", "Ch", "Che"]) {
       type(input, text);
+      // A fixed wait: what was typed may not be taken back.
       await settle();
       expect(input.value).toBe(text);
     }
@@ -1425,8 +1442,7 @@ describe("createVueWrapper's models", () => {
 
   it("gives React no callback while nobody listens", async () => {
     mount(() => h(Wrapper, { modelValue: "a" }));
-    await settle();
-    expect(given).toEqual({ value: "a" });
+    await eventually(() => expect(given).toEqual({ value: "a" }));
   });
 
   it("hears a listener by each name Vue's emit calls; with no value given, React keeps its own", async () => {
@@ -1438,10 +1454,11 @@ describe("createVueWrapper's models", () => {
     ]) {
       const listener = vi.fn();
       mount(() => h(Wrapper, { [key]: listener }));
-      await settle();
-      expect(given, key).not.toHaveProperty("value");
-      (given.onValueChange as (value: string) => void)("b");
-      expect(listener, key).toHaveBeenCalledWith("b");
+      await eventually(() => {
+        expect(given, key).not.toHaveProperty("value");
+        (given.onValueChange as (value: string) => void)("b");
+        expect(listener, key).toHaveBeenCalledWith("b");
+      });
       unmount();
     }
   });
@@ -1456,10 +1473,11 @@ describe("createVueWrapper's models", () => {
         onValueChange: own,
       }),
     );
-    await settle();
-    (given.onValueChange as (value: string) => void)("b");
-    expect(own).toHaveBeenCalledWith("b");
-    expect(listener).toHaveBeenCalledWith("b");
+    await eventually(() => {
+      (given.onValueChange as (value: string) => void)("b");
+      expect(own).toHaveBeenCalledWith("b");
+      expect(listener).toHaveBeenCalledWith("b");
+    });
   });
 
   it("takes v-model:open and v-model:checked as Radix's pairs, beside the user's handlers", async () => {
@@ -1475,15 +1493,16 @@ describe("createVueWrapper's models", () => {
         "onUpdate:checked": checked,
       }),
     );
-    await settle();
-    expect(given.open).toBe(true);
-    expect(given.checked).toBe(false);
-    expect(given).not.toHaveProperty("onUpdate:open");
-    (given.onOpenChange as (value: boolean) => void)(false);
-    (given.onCheckedChange as (value: boolean) => void)(true);
-    expect(ownOpen).toHaveBeenCalledWith(false);
-    expect(opened).toHaveBeenCalledWith(false);
-    expect(checked).toHaveBeenCalledWith(true);
+    await eventually(() => {
+      expect(given.open).toBe(true);
+      expect(given.checked).toBe(false);
+      expect(given).not.toHaveProperty("onUpdate:open");
+      (given.onOpenChange as (value: boolean) => void)(false);
+      (given.onCheckedChange as (value: boolean) => void)(true);
+      expect(ownOpen).toHaveBeenCalledWith(false);
+      expect(opened).toHaveBeenCalledWith(false);
+      expect(checked).toHaveBeenCalledWith(true);
+    });
   });
 
   it("a wrapper with no model gives React neither modelValue nor its listener, and says so", async () => {
@@ -1497,8 +1516,9 @@ describe("createVueWrapper's models", () => {
         title: "kept",
       }),
     );
+    // A fixed wait: the console is told each thing once, and nothing more.
     await settle();
-    expect(given).toEqual({ title: "kept" });
+    await eventually(() => expect(given).toEqual({ title: "kept" }));
     expect(heard()).toEqual([
       expect.stringContaining(
         "Probe has no v-model: modelValue and its listener are not given to React. Give React's own prop instead, such as :value.",
@@ -1541,8 +1561,9 @@ describe("createVueWrapper's models", () => {
     unmount();
     mount(page(`<KozmosProgress :value="40" />`));
     const shown = await until(() => $("[role=progressbar]"));
-    await settle();
-    expect(shown.getAttribute("aria-valuenow")).toBe("40");
+    await eventually(() =>
+      expect(shown.getAttribute("aria-valuenow")).toBe("40"),
+    );
   });
 });
 
@@ -1629,8 +1650,7 @@ describe("a model's nothing, read from React's props", () => {
           [`onUpdate:${model}`]: () => {},
         }),
       );
-      await settle();
-      expect(given[binding.prop]).toEqual(nothing);
+      await eventually(() => expect(given[binding.prop]).toEqual(nothing));
     },
   );
 
@@ -1642,12 +1662,12 @@ describe("a model's nothing, read from React's props", () => {
     byText("button", "Item b")!.click();
     await settle();
     byText("button", "Item a")!.click();
+    // A fixed wait: each change is emitted once, and no more.
     await settle();
     expect(emitted).toEqual([["b"], ["b", "a"]]);
-    expect(part.shown()).toEqual(["Item a", "Item b"]);
+    await eventually(() => expect(part.shown()).toEqual(["Item a", "Item b"]));
     model.value = null;
-    await settle();
-    expect(part.shown()).toEqual([]);
+    await eventually(() => expect(part.shown()).toEqual([]));
   });
 });
 
@@ -1794,9 +1814,8 @@ describe("a model's change goes through Vue's emit", () => {
     );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "Ada L");
-    await settle();
     // The parent holds "Ada", which the field shows again.
-    expect(input.value).toBe("Ada");
+    await eventually(() => expect(input.value).toBe("Ada"));
     type(input, "Ada M");
     await settle();
     expect(once.mock.calls).toEqual([["Ada L"]]);
@@ -1857,12 +1876,12 @@ describe("every spelling of a model", () => {
       name.value = "Bob";
       mount(render);
       const input = await until(() => $<HTMLInputElement>("input"));
-      await settle();
-      expect(input.value).toBe("Bob");
+      await eventually(() => expect(input.value).toBe("Bob"));
       type(input, "Bobby");
-      await settle();
-      expect(name.value).toBe("Bobby");
-      expect(input.value).toBe("Bobby");
+      await eventually(() => {
+        expect(name.value).toBe("Bobby");
+        expect(input.value).toBe("Bobby");
+      });
       expect(input.getAttributeNames()).toEqual(
         expect.not.arrayContaining(["model-value", "modelvalue"]),
       );
@@ -1877,12 +1896,12 @@ describe("every spelling of a model", () => {
       ),
     );
     const input = await until(() => $<HTMLInputElement>("input"));
-    await settle();
-    expect(input.value).toBe("Bob");
+    await eventually(() => expect(input.value).toBe("Bob"));
     type(input, "Bobby");
-    await settle();
-    expect(state.name.value).toBe("Bobby");
-    expect(input.value).toBe("Bobby");
+    await eventually(() => {
+      expect(state.name.value).toBe("Bobby");
+      expect(input.value).toBe("Bobby");
+    });
     expect(input.getAttributeNames()).not.toContain("model-value");
   });
 
@@ -1892,12 +1911,12 @@ describe("every spelling of a model", () => {
       page(`<KozmosWayfindingInputRow v-model:origin-value="origin" />`, state),
     );
     const input = await until(() => $$<HTMLInputElement>("input")[0]);
-    await settle();
-    expect(input.value).toBe("Entrance A");
+    await eventually(() => expect(input.value).toBe("Entrance A"));
     type(input, "Gate 42");
-    await settle();
-    expect(state.origin.value).toBe("Gate 42");
-    expect(input.value).toBe("Gate 42");
+    await eventually(() => {
+      expect(state.origin.value).toBe("Gate 42");
+      expect(input.value).toBe("Gate 42");
+    });
     expect(input.getAttributeNames()).not.toContain("origin-value");
   });
 
@@ -1930,12 +1949,12 @@ describe("every spelling of a model", () => {
     );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "Bobb");
-    await settle();
-    expect(state.name.value).toBe("Bobb");
+    await eventually(() => expect(state.name.value).toBe("Bobb"));
     type(input, "Bobby");
+    // A fixed wait: the model may not take the second change.
     await settle();
     expect(state.name.value).toBe("Bobb");
-    expect(input.value).toBe("Bobb");
+    await eventually(() => expect(input.value).toBe("Bobb"));
   });
 });
 
@@ -1959,6 +1978,7 @@ describe("v-model's modifiers", () => {
     mount(page(`<KozmosInput aria-label="Name" v-model.trim="name" />`, state));
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "Ada ");
+    // Fixed waits where what was typed may not be taken back.
     await settle();
     expect(state.name.value).toBe("Ada");
     expect(input.value).toBe("Ada ");
@@ -1967,11 +1987,9 @@ describe("v-model's modifiers", () => {
     expect(state.name.value).toBe("Ada L");
     expect(input.value).toBe("Ada L ");
     commit(input);
-    await settle();
-    expect(input.value).toBe("Ada L");
+    await eventually(() => expect(input.value).toBe("Ada L"));
     state.name.value = "Grace";
-    await settle();
-    expect(input.value).toBe("Grace");
+    await eventually(() => expect(input.value).toBe("Grace"));
     expect(input.getAttributeNames()).not.toContain("modelmodifiers");
   });
 
@@ -2000,19 +2018,16 @@ describe("v-model's modifiers", () => {
     );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "42");
-    await settle();
-    expect(state.guests.value).toBe(42);
+    await eventually(() => expect(state.guests.value).toBe(42));
     type(input, "4.");
     await settle();
     expect(state.guests.value).toBe(4);
     expect(input.value).toBe("4.");
     commit(input);
-    await settle();
-    expect(input.value).toBe("4");
+    await eventually(() => expect(input.value).toBe("4"));
     type(input, "four");
-    await settle();
     // What parseFloat cannot read stays as typed, as Vue's looseToNumber leaves it.
-    expect(state.guests.value).toBe("four");
+    await eventually(() => expect(state.guests.value).toBe("four"));
     expect(input.getAttributeNames()).not.toContain("modelmodifiers");
   });
 
@@ -2021,8 +2036,7 @@ describe("v-model's modifiers", () => {
     mount(page(`<KozmosInput aria-label="Name" v-model.lazy="name" />`, state));
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "Ada L");
-    await settle();
-    expect(state.name.value).toBe("Ada L");
+    await eventually(() => expect(state.name.value).toBe("Ada L"));
     expect(input.getAttributeNames()).not.toContain("modelmodifiers");
   });
 });
@@ -2057,12 +2071,13 @@ describe("handlers given as an array", () => {
     );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "Ada L");
+    // A fixed wait: each handler is called once, and no more.
     await settle();
     expect(inner).toHaveBeenCalledTimes(1);
     expect(outer).toHaveBeenCalledTimes(1);
     expect(first).toHaveBeenCalledWith("Ada L");
     expect(value.value).toBe("Ada L");
-    expect(input.value).toBe("Ada L");
+    await eventually(() => expect(input.value).toBe("Ada L"));
   });
 
   it("KozmosCombobox's @value-change as an array, beside v-model", async () => {
@@ -2115,6 +2130,8 @@ describe("a listener that comes and goes after mount", () => {
     );
     return { value, emitted };
   };
+  // A fixed wait after each choice: most checks after it are that nothing
+  // was emitted.
   const choose = async (label: string) => {
     (await until(() => byText("[role=option]", label)))!.click();
     await settle();
