@@ -171,6 +171,8 @@ final class KozmosMixedValueTests: XCTestCase {
     private final class Written {
         var values: [String] = []
         var texts: [String] = []
+        /// Set when a scripted view has made its last change.
+        var scriptDone = false
     }
 
     /// A mixed Combobox the visitor types a query into once it is drawn.
@@ -244,6 +246,7 @@ final class KozmosMixedValueTests: XCTestCase {
                     try? await Task.sleep(nanoseconds: 300_000_000)
                     mixed = true
                 }
+                written.scriptDone = true
             }
         }
     }
@@ -254,7 +257,7 @@ final class KozmosMixedValueTests: XCTestCase {
         // to mixed, never as the field appears.
         let window = host(Turning(written: written, startsMixed: true, text: "Gate B2", comesBack: false))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 1_200_000_000)
+        try await untilScripted(written)
         XCTAssertEqual(written.texts, [""], "the text goes on the turn to mixed, and only then")
     }
 
@@ -262,7 +265,7 @@ final class KozmosMixedValueTests: XCTestCase {
         let written = Written()
         let window = host(Turning(written: written, startsMixed: true, text: "B", comesBack: true))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 600_000_000)
+        try await untilScripted(written)
         XCTAssertEqual(written.texts, [], "nothing empties the visitor's query")
         let field = try XCTUnwrap(textFields(in: window).first)
         XCTAssertEqual(field.text, "B")
@@ -311,6 +314,18 @@ final class KozmosMixedValueTests: XCTestCase {
     @MainActor private func textFields(in view: UIView) -> [UITextField] {
         if let field = view as? UITextField { return [field] }
         return view.subviews.flatMap { textFields(in: $0) }
+    }
+
+    /// Waits for a scripted view's last change, however late a busy simulator
+    /// starts its task, then lets the change it made settle before the test
+    /// reads what was written. A fixed wait read too early on a slow runner.
+    @MainActor private func untilScripted(_ written: Written) async throws {
+        let deadline = Date().addingTimeInterval(10)
+        while !written.scriptDone {
+            if Date() > deadline { XCTFail("the scripted view never finished"); return }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        try await Task.sleep(nanoseconds: 300_000_000)
     }
 
     @MainActor private func host<V: View>(_ view: V) -> UIWindow {
