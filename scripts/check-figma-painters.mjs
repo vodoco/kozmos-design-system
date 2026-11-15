@@ -7573,6 +7573,8 @@ section("Typography inference");
     ["FormField", "Required Mark", "fieldLabel"],
     ["FileUpload", "Browse Text", "fieldLabel"],
     ["FileUpload", "Drop Text", "fieldText"],
+    // GAP-270: Content=Preview's Change button, drawn as Browse Text is.
+    ["FileUpload", "Change Text", "fieldLabel"],
     ["Input", "Label Text", "fieldLabel"],
     ["Input", "Optional Text", "fieldMeta"],
     ["Input", "Value Text", "fieldText"],
@@ -14442,6 +14444,44 @@ section("Figma draws React's values (the 4 Nov triage)");
       shown(dropzone, "paddingLeft") === 16 &&
       shown(dropzone, "paddingRight") === 16,
     `FileUpload's dropzone draws 20 corners and React's px-4 (${shown(dropzone, "cornerRadius")}, ${shown(dropzone, "paddingLeft")} through ${boundName(dropzone, "paddingLeft")})`,
+  );
+
+  // GAP-270: Content=Preview is React's preview="image" holding its image:
+  // no drop area, the image round at Avatar's 40, an outline Change button
+  // at Button's small height, its words a set property, and the remove icon
+  // last. Focus rings Change, where React moves focus once an image is chosen.
+  const previewVariant = await paint("updateFileUploadVariant", {
+    state: "Focus",
+    status: "Error",
+    content: "Preview",
+  });
+  const previewRow = find(previewVariant, "FileUpload Preview");
+  const previewImage = find(previewVariant, "Preview Image");
+  const changeButton = find(previewVariant, "Change Button");
+  const changeText = find(previewVariant, "Change Text");
+  const previewOrder = previewRow
+    ? previewRow.children.map((node) => node.name)
+    : [];
+  ok(
+    !find(previewVariant, "FileUpload Dropzone") &&
+      previewVariant.name === "State=Focus, Status=Error, Content=Preview" &&
+      shown(previewImage, "width") === 40 &&
+      shown(previewImage, "cornerRadius") >= 20 &&
+      boundName(previewImage, "width") === "Avatar/size/default" &&
+      shown(changeButton, "height") === 44 &&
+      boundName(changeButton, "paddingLeft") === "Button/padding/x/small" &&
+      changeText &&
+      changeText.characters === "Change" &&
+      Boolean(find(changeButton, "Focus Ring")) &&
+      previewOrder[0] === "Preview Image" &&
+      previewOrder[previewOrder.length - 2] === "Change Button" &&
+      previewOrder[previewOrder.length - 1] === "Remove Icon",
+    `FileUpload's Preview draws the image at Avatar's 40, then Change and Remove, with no drop area (${JSON.stringify(previewOrder)}, image ${shown(previewImage, "width")} via ${boundName(previewImage, "width")}, Change ${shown(changeButton, "height")} "${changeText && changeText.characters}", ring ${Boolean(find(changeButton, "Focus Ring"))})`,
+  );
+  ok(
+    JSON.stringify(plugin.FILE_UPLOAD_CONTENT) ===
+      JSON.stringify(["Dropzone", "Files", "Preview"]),
+    `FileUpload's Content axis carries Preview after the two it had (${JSON.stringify(plugin.FILE_UPLOAD_CONTENT)})`,
   );
 
   // The control's corner, 16.

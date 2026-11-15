@@ -21,6 +21,14 @@ figma.connect(
       multiple: figma.enum("Content", {
         Dropzone: false,
         Files: true,
+        Preview: false,
+      }),
+      // GAP-270: one image, shown with Change and Remove.
+      preview: figma.enum("Content", {
+        Preview: "image",
+      }),
+      changeLabel: figma.enum("Content", {
+        Preview: figma.string("Change Text"),
       }),
       label: figma.string("Label Text"),
       browseLabel: figma.string("Browse Text"),
@@ -33,17 +41,20 @@ figma.connect(
     },
     example: ({
       browseLabel,
+      changeLabel,
       disabled,
       dropLabel,
       emptyDescription,
       helperText,
       label,
       multiple,
+      preview,
       status,
     }) => (
       <FileUpload
         accept=".jpg,.png,.pdf"
         browseLabel={browseLabel}
+        changeLabel={changeLabel}
         disabled={disabled}
         dropLabel={dropLabel}
         emptyDescription={emptyDescription}
@@ -51,6 +62,7 @@ figma.connect(
         label={label}
         maxSize={8 * 1024 * 1024}
         multiple={multiple}
+        preview={preview}
         status={status}
       />
     ),

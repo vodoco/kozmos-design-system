@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d51462572a1e";
+const PLUGIN_BUILD = "ed533f71f813";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -445,7 +445,11 @@ const TIME_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const TIME_PICKER_CONTENT = ["Closed", "Open"];
 const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
 const FILE_UPLOAD_STATUSES = ["Default", "Error", "Warning", "Success"];
-const FILE_UPLOAD_CONTENT = ["Dropzone", "Files"];
+// Preview: React's `preview="image"` holding its image, the thumbnail with
+// Change and Remove where the drop area was (GAP-270).
+const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"];
+// One status's columns, a content each, 440 apart.
+const FILE_UPLOAD_STATUS_STRIDE = FILE_UPLOAD_CONTENT.length * 440;
 const COLOR_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const COLOR_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const COLOR_PICKER_CONTENT = ["Closed", "Open"];
@@ -26138,7 +26142,8 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       /Label Text$/.test(textName) ||
       /Month Text$/.test(textName) ||
       textName === "Required Mark" ||
-      textName === "Browse Text"
+      textName === "Browse Text" ||
+      (setName === "FileUpload" && textName === "Change Text")
     ) {
       return "fieldLabel";
     }
@@ -38572,7 +38577,8 @@ async function buildFileUploadComponent() {
           fonts,
           stats,
         });
-        component.x = statusIndex * 880 + contentIndex * 440;
+        component.x =
+          statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
         component.y = stateIndex * 390;
         page.appendChild(component);
         components.push(component);
@@ -38591,7 +38597,7 @@ async function buildFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -38646,7 +38652,7 @@ async function updateFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -46721,6 +46727,14 @@ function configureFileUploadProperties(componentSet, stats) {
     "File Meta Text",
     "File Meta Text",
     "2.4 MB",
+    stats,
+  );
+  // GAP-270: Content=Preview's Change button, React's `changeLabel`.
+  configureNamedTextProperty(
+    componentSet,
+    "Change Text",
+    "Change Text",
+    "Change",
     stats,
   );
   configureHelperTextProperty(componentSet, "Upload a PDF or image.", stats);
@@ -66670,6 +66684,7 @@ async function updateFileUploadVariant(
 ) {
   const config = inputConfig(state, status);
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
 
   component.name = `State=${state}, Status=${status}, Content=${content}`;
   component.layoutMode = "VERTICAL";
@@ -66682,7 +66697,10 @@ async function updateFileUploadVariant(
   component.paddingRight = 0;
   component.paddingTop = 0;
   component.paddingBottom = 0;
-  component.resizeWithoutConstraints(384, hasFiles ? 302 : 218);
+  component.resizeWithoutConstraints(
+    384,
+    hasFiles ? 302 : isPreview ? 130 : 218,
+  );
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -66714,7 +66732,7 @@ function layoutFileUploadVariants(componentSet) {
     const stateIndex = FILE_UPLOAD_STATES.indexOf(props.state);
     const statusIndex = FILE_UPLOAD_STATUSES.indexOf(props.status);
     const contentIndex = FILE_UPLOAD_CONTENT.indexOf(props.content);
-    child.x = statusIndex * 880 + contentIndex * 440;
+    child.x = statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
     child.y = stateIndex * 390;
   }
 }
@@ -79400,6 +79418,7 @@ async function syncFileUploadVariantChildren({
     "Description Text",
     "File Name Text",
     "File Meta Text",
+    "Change Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -79410,6 +79429,7 @@ async function syncFileUploadVariantChildren({
   const disabled = state === "Disabled";
   const isDragging = state === "Dragging";
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
   const dropzoneStroke = isDragging ? "Colors/theme/600" : config.fieldStroke;
   const dropzoneStrokeFallback = isDragging
     ? "#1051E8"
@@ -79438,6 +79458,21 @@ async function syncFileUploadVariantChildren({
     ),
   ];
   label.textAlignVertical = "CENTER";
+
+  if (isPreview) {
+    await syncFileUploadPreviewChildren({
+      component,
+      label,
+      state,
+      status,
+      config,
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
 
   const dropzone = figma.createFrame();
   dropzone.name = "FileUpload Dropzone";
@@ -79678,6 +79713,229 @@ async function syncFileUploadVariantChildren({
     component.appendChild(fileList);
     setLayoutSizingHorizontal(fileList, "FILL");
   }
+  component.appendChild(helper);
+  normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Content=Preview, React's `preview="image"` holding its image (GAP-270): in
+ * place of the drop area, a file row with the image as an avatar-sized
+ * thumbnail (Avatar's 40, round), the file's name and size, an outline
+ * Change button and the remove icon. The row's border takes the status's
+ * colour, as React's does; React's preview takes no drop, so Dragging
+ * draws as Default, and Focus rings the Change button, where focus lands
+ * once an image is chosen.
+ */
+async function syncFileUploadPreviewChildren({
+  component,
+  label,
+  state,
+  status,
+  config,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const preview = await createFileUploadFileRow({
+    index: 0,
+    fileName: preservedText["File Name Text"] || "acme-logo.png",
+    fileMeta: preservedText["File Meta Text"] || "24 KB",
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  const row = preview.row;
+  row.name = "FileUpload Preview";
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "file-upload-preview");
+  if (status !== "Default") {
+    row.strokes = [
+      paintFromVariable(
+        config.fieldStroke,
+        config.fieldStrokeFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+
+  // The thumbnail stands where the file icon stood.
+  preview.fileIcon.remove();
+  const thumbnail = figma.createFrame();
+  thumbnail.name = "Preview Image";
+  thumbnail.layoutMode = "NONE";
+  thumbnail.resizeWithoutConstraints(40, 40);
+  thumbnail.cornerRadius = KOZMOS_RADIUS.pill;
+  thumbnail.clipsContent = true;
+  thumbnail.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  thumbnail.strokes = [];
+  thumbnail.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-image");
+  const picture = await createFixedIconInstance(
+    "building-01",
+    disabled ? "Colors/foreground/500" : "Colors/foreground/400",
+    disabled ? "#747B8B" : "#5D626F",
+    variableByName,
+    stats,
+    20,
+    null,
+  );
+  picture.x = 10;
+  picture.y = 10;
+  thumbnail.appendChild(picture);
+  bindAvatarGeometryVariables(thumbnail, variableByName, stats);
+  row.insertChild(0, thumbnail);
+
+  const change = figma.createFrame();
+  change.name = "Change Button";
+  change.layoutMode = "HORIZONTAL";
+  change.primaryAxisSizingMode = "AUTO";
+  change.counterAxisSizingMode = "FIXED";
+  change.primaryAxisAlignItems = "CENTER";
+  change.counterAxisAlignItems = "CENTER";
+  change.itemSpacing = 0;
+  change.paddingLeft = 12;
+  change.paddingRight = 12;
+  change.paddingTop = 0;
+  change.paddingBottom = 0;
+  change.resizeWithoutConstraints(84, 44);
+  change.cornerRadius = KOZMOS_RADIUS.control;
+  change.clipsContent = false;
+  change.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-change");
+  const outline = buttonConfig("Outline", disabled ? "Disabled" : "Default");
+  change.fills = [
+    paintFromVariable(
+      outline.background,
+      outline.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokes = [
+    paintFromVariable(
+      outline.stroke,
+      outline.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokeWeight = 1;
+  bindFloatVariable(
+    change,
+    "height",
+    "Button/height/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingLeft",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingRight",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "cornerRadius",
+    "Button/radius",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "strokeWeight",
+    "Button/stroke/width",
+    variableByName,
+    stats,
+  );
+
+  const changeText = figma.createText();
+  changeText.name = "Change Text";
+  // React draws Button's medium 14/20 label; the field label style is the
+  // same face and size, attached as Browse Text's is.
+  await applyFieldLabelTypography(
+    changeText,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  changeText.characters = preservedText["Change Text"] || "Change";
+  changeText.fills = [
+    paintFromVariable(
+      outline.foreground,
+      outline.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  changeText.textAlignVertical = "CENTER";
+  change.appendChild(changeText);
+  syncFocusRing(change, {
+    enabled: state === "Focus",
+    width: 84,
+    height: 44,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+  row.insertChild(row.children.indexOf(preview.removeIcon), change);
+
+  const helper = figma.createText();
+  helper.name = "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  helper.characters =
+    preservedText["Helper Text"] || helperTextForInputStatus(status);
+  helper.visible = status !== "Default";
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  helper.resizeWithoutConstraints(384, 20);
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  helper.textAlignVertical = "CENTER";
+
+  bindFileUploadGeometryVariables(
+    component,
+    null,
+    null,
+    [row],
+    [preview.removeIcon],
+    variableByName,
+    stats,
+  );
+
+  component.appendChild(label);
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
 }
