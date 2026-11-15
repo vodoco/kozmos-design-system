@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d51462572a1e";
+const PLUGIN_BUILD = "deec6270f09e";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -219,6 +219,36 @@ const TREE_META = {
   text: "Changes awaiting publish",
   token: "Colors/foreground/400",
   fallback: "#5D626F",
+};
+// Checkable rows and the disclosure at the end (GAP-277), as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`, on Tree
+// and its rows. Booleans, as Divided and Meta Below, for the same reason: an
+// axis would double the three row sets. Checkable shows Checkbox's box
+// before the leading icon, and Checked the box's checked fill and mark
+// inside it, both hidden until shown. Disclosure Start (on) shows the
+// disclosure before the label, as every row has it, and Disclosure End (off)
+// one at the row's end: a designer turns the first off and the second on,
+// since a boolean can show a layer but not hide another. On a row with no
+// children each is the empty 16 a disclosure would take.
+const TREE_CHECKABLE_PROPERTY_NAME = "Checkable";
+const TREE_CHECKED_PROPERTY_NAME = "Checked";
+const TREE_DISCLOSURE_START_PROPERTY_NAME = "Disclosure Start";
+const TREE_DISCLOSURE_END_PROPERTY_NAME = "Disclosure End";
+const TREE_CHECKBOX = {
+  name: "Checkbox",
+  kind: "tree-checkbox",
+  stroke: "Border/Input",
+  strokeFallback: "#747B8B",
+};
+const TREE_CHECKBOX_CHECKED = {
+  name: "Checkbox Checked",
+  kind: "tree-checkbox-checked",
+  markName: "Checkbox Mark",
+};
+const TREE_DISCLOSURE_END = {
+  name: "Disclosure End",
+  iconKind: "tree-disclosure-end-icon",
+  spacerKind: "tree-disclosure-end-spacer",
 };
 // The column the name and its meta share. Its vertical padding is the row's
 // py-1.5 (py-1 compact), so a row with its meta below is 48 (44 compact), as
@@ -3592,6 +3622,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3628,6 +3659,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3665,6 +3697,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -41520,6 +41553,8 @@ function treeIconNodesForBinding(root) {
       (node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
         "tree-disclosure-icon" ||
         node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
+          TREE_DISCLOSURE_END.iconKind ||
+        node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
           "icon-slot-instance")
     ) {
       icons.push(node);
@@ -41721,6 +41756,12 @@ async function syncTreeRowNode(
   setFixedChildSizing(chevron);
   iconNodes.push(chevron);
 
+  // GAP-277: Checkbox's box before the leading icon, hidden until Checkable.
+  const checkbox = await createTreeCheckbox(row, variableByName, stats);
+  rowNode.appendChild(checkbox);
+  setFixedChildSizing(checkbox);
+  checkbox.visible = false;
+
   const typeIcon = await createFixedIconInstance(
     row.iconName || (row.expandable ? "map-01" : "marker-pin-01"),
     row.selected ? "Colors/theme/600" : "Colors/foreground/400",
@@ -41825,6 +41866,17 @@ async function syncTreeRowNode(
     setHugChildSizing(actions.node);
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
+
+  // GAP-277: the disclosure at the row's end, after its actions, hidden
+  // until Disclosure End.
+  const endDisclosure = await createTreeEndDisclosure(
+    row,
+    variableByName,
+    stats,
+  );
+  rowNode.appendChild(endDisclosure);
+  setFixedChildSizing(endDisclosure);
+  endDisclosure.visible = false;
 
   setLayoutSizingVertical(rowNode, "HUG");
 
@@ -42232,6 +42284,97 @@ async function createTreeChevron(row, variableByName, stats) {
     : "Disclosure Icon";
   chevron.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-disclosure-icon");
   return chevron;
+}
+
+/**
+ * Checkbox's box (GAP-277), as React's checkable row draws it: 20 square,
+ * radius marker, a 1px Border/Input edge; inside it Checkbox Checked, the
+ * theme fill with its own edge and the check mark in the theme foreground
+ * (decision 59), hidden until Checked shows it.
+ */
+async function createTreeCheckbox(row, variableByName, stats) {
+  const box = figma.createFrame();
+  box.name = TREE_CHECKBOX.name;
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(20, 20);
+  box.cornerRadius = KOZMOS_RADIUS.marker;
+  box.clipsContent = false;
+  box.fills = [];
+  box.strokes = [
+    paintFromVariable(
+      TREE_CHECKBOX.stroke,
+      TREE_CHECKBOX.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  box.strokeWeight = 1;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_CHECKBOX.kind);
+
+  const checked = figma.createFrame();
+  checked.name = TREE_CHECKBOX_CHECKED.name;
+  checked.layoutMode = "NONE";
+  checked.resizeWithoutConstraints(20, 20);
+  checked.x = 0;
+  checked.y = 0;
+  checked.cornerRadius = KOZMOS_RADIUS.marker;
+  checked.clipsContent = false;
+  checked.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokeWeight = 1;
+  checked.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    TREE_CHECKBOX_CHECKED.kind,
+  );
+
+  const mark = await createFixedIconInstance(
+    "check",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    16,
+    "Tree/icon/size",
+  );
+  mark.name = TREE_CHECKBOX_CHECKED.markName;
+  checked.appendChild(mark);
+  mark.x = 2;
+  mark.y = 2;
+  box.appendChild(checked);
+  checked.visible = false;
+  return box;
+}
+
+/**
+ * The disclosure at the row's end (GAP-277): the row's chevron, or on a row
+ * with no children the empty 16 one would take.
+ */
+async function createTreeEndDisclosure(row, variableByName, stats) {
+  const node = await createTreeChevron(row, variableByName, stats);
+  node.name = TREE_DISCLOSURE_END.name;
+  node.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    row.expandable
+      ? TREE_DISCLOSURE_END.iconKind
+      : TREE_DISCLOSURE_END.spacerKind,
+  );
+  return node;
 }
 
 // --- TreeSection ---------------------------------------------------------------
@@ -45286,7 +45429,68 @@ async function configureTreeItemProperties(
   configureTreeActionVisibilityProperties(componentSet, stats);
   configureTreeDividedProperty(componentSet, stats);
   configureTreeMetaProperties(componentSet, stats);
+  configureTreeCheckableProperties(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Checkable and Checked, booleans off by default, showing each row's
+ * Checkbox and its checked fill; Disclosure Start, on, and Disclosure End,
+ * off, showing the disclosure before the label and at the row's end
+ * (GAP-277). With all four at their defaults an instance draws as it did
+ * before any existed.
+ */
+function configureTreeCheckableProperties(componentSet, stats) {
+  const bindings = [
+    [
+      TREE_CHECKABLE_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX.kind,
+    ],
+    [
+      TREE_CHECKED_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX_CHECKED.kind,
+    ],
+    // The start disclosure is a row's own child, as drawn before GAP-277.
+    [
+      TREE_DISCLOSURE_START_PROPERTY_NAME,
+      true,
+      (node) =>
+        node.parent &&
+        node.parent.type === "COMPONENT" &&
+        (generatedKind(node) === "tree-disclosure-icon" ||
+          generatedKind(node) === "tree-icon-spacer"),
+    ],
+    [
+      TREE_DISCLOSURE_END_PROPERTY_NAME,
+      false,
+      (node) =>
+        generatedKind(node) === TREE_DISCLOSURE_END.iconKind ||
+        generatedKind(node) === TREE_DISCLOSURE_END.spacerKind,
+    ],
+  ];
+  stats.treeCheckableBindings = {};
+  for (const [name, defaultValue, matches] of bindings) {
+    const propertyName = ensureBooleanProperty(
+      componentSet,
+      name,
+      defaultValue,
+      stats,
+    );
+    if (!propertyName) continue;
+    let boundCount = 0;
+    (function walk(node) {
+      if (matches(node)) {
+        bindVisibilityProperty(node, propertyName, stats);
+        boundCount += 1;
+      }
+      if (node.children) {
+        for (const child of node.children) walk(child);
+      }
+    })(componentSet);
+    stats.treeCheckableBindings[name] = boundCount;
+  }
 }
 
 /**

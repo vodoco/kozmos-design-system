@@ -806,6 +806,24 @@ const PARTS: Part[] = [
     alone: ["b.ts"],
   },
   {
+    // A checkable tree's checks are its selected ids too (GAP-277): a click
+    // checks a row, and the checks are its aria-checked.
+    name: "KozmosTree",
+    model: "selectedIds",
+    props: { data: tree, checkable: true },
+    start: ["1"],
+    before: ["src"],
+    field: () => byText("[role=treeitem]", "b.ts"),
+    change: (item) => item.click(),
+    next: ["1", "3"],
+    shown: () => texts("[role=treeitem][aria-checked=true]"),
+    shows: ["src", "b.ts"],
+    nothing: [],
+    fromNothing: { next: ["3"], shows: ["b.ts"] },
+    listener: "onSelectedIdsChange",
+    alone: ["b.ts"],
+  },
+  {
     // A phone-sized shell, so the sheet and its handle are drawn.
     name: "KozmosAdaptiveMapShell",
     model: "panelDetent",
