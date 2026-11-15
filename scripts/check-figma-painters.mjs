@@ -16441,7 +16441,7 @@ section("ImageField (Dashboard)");
         page.name = "Icons";
         return page;
       })();
-    for (const name of ["eye", "trash-01", "plus"])
+    for (const name of ["eye", "crop-01", "trash-01", "plus"])
       if (!iconsPage.findOne((node) => node.name === `Icon / ${name}`))
         iconsPage.appendChild(mockIconComponent(name));
     const { component: drawn } = await paint("Default");
@@ -16458,17 +16458,22 @@ section("ImageField (Dashboard)");
       `Default: Add draws the curated plus, 16, before its label, no typed "+" (${add ? add.children.map((child) => child.name).join(", ") : "no Add"})`,
     );
     const frame = named(drawn, "Frame Button");
+    const frameIcon = frame && named(frame, "Frame Button Icon");
     ok(
       named(drawn, "Preview Button Icon") &&
         named(drawn, "Remove Button Icon") &&
-        frame &&
-        named(frame, "Frame Button Glyph") &&
+        frameIcon &&
+        frameIcon.type === "INSTANCE" &&
+        frameIcon.mainComponent &&
+        frameIcon.mainComponent.name === "Icon / crop-01" &&
+        !named(frame, "Frame Button Glyph") &&
         Array.isArray(plugin.KOSMOS_ICON_DEFINITIONS) &&
-        plugin.KOSMOS_ICON_DEFINITIONS.some((entry) => entry.name === "plus") &&
-        !plugin.KOSMOS_ICON_DEFINITIONS.some(
-          (entry) => entry.name === "crop-01",
+        plugin.KOSMOS_ICON_DEFINITIONS.some(
+          (entry) =>
+            entry.name === "crop-01" &&
+            entry.componentKey === "fddad04e9391ca336ab6424463793db41ee7aaed",
         ),
-      `Default: Preview and Remove draw eye and trash-01; Frame keeps its typed glyph while crop-01 is not curated (${frame ? frame.children.map((child) => child.name).join(", ") : "no Frame"})`,
+      `Default: Preview, Frame and Remove draw eye, crop-01 (the Pointr library's, docs/figma-pointr-icon-catalog.json) and trash-01, no typed glyph (${frame ? frame.children.map((child) => child.name).join(", ") : "no Frame"})`,
     );
   }
   ok(

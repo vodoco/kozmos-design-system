@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "00512d3d297e";
+const PLUGIN_BUILD = "a7dd4d512bce";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -5452,6 +5452,13 @@ const KOSMOS_ICON_DEFINITIONS = [
     category: "General",
     componentKey: "603f88cb20da15763ca714a7abb6a0dfc1a4335f",
     description: "Show or preview.",
+  },
+  {
+    name: "crop-01",
+    figmaName: "crop-01",
+    category: "Editor",
+    componentKey: "fddad04e9391ca336ab6424463793db41ee7aaed",
+    description: "Frame an image to its aspect ratio (ImageField's cropper).",
   },
   {
     name: "feather",
@@ -56433,8 +56440,8 @@ async function updateImageFieldVariant(
     spacing: 4,
   });
   details.appendChild(actions);
-  // crop-01 is not a curated icon yet (no library key), so Frame draws its
-  // typed glyph until Curated Icons carries it.
+  // Each glyph is the fallback only, drawn when Curated Icons has not run:
+  // eye, crop-01 (the Pointr library's) and trash-01 are curated.
   for (const [name, iconName, glyph] of [
     ["Preview Button", "eye", "◉"],
     ["Frame Button", "crop-01", "⌗"],

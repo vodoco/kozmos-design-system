@@ -218,8 +218,8 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   112 tall; and the URL row, an Input slot and an outline Add. `State` is
   Default, Full (the count at max, the drop zone and URL row at 50%) and
   Disabled (the whole field at 50%). The cropper and the full-screen preview
-  are dialogs React opens, not drawn. `crop-01` is not a curated icon yet, so
-  the Frame button draws a typed glyph and the run warns until it is added.
+  are dialogs React opens, not drawn. Run Curated Icons first: it carries
+  `crop-01` from the Pointr icon library, which the Frame button draws.
 
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 
