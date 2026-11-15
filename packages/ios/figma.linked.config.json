@@ -14,6 +14,8 @@
       "Sources/Components/Separator/Separator.swift",
       "Sources/Components/Kbd/Kbd.figma.swift",
       "Sources/Components/Kbd/Kbd.swift",
+      "Sources/Components/PersonaMark/PersonaMark.figma.swift",
+      "Sources/Components/PersonaMark/PersonaMark.swift",
       "Sources/Components/Skeleton/Skeleton.figma.swift",
       "Sources/Components/Skeleton/Skeleton.swift",
       "Sources/Components/Box/Box.figma.swift",

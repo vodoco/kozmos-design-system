@@ -38,6 +38,7 @@ export * from "./components/Sidebar/Sidebar";
 export * from "./components/Menu/Menu";
 export * from "./components/ContextMenu/ContextMenu";
 export * from "./components/Kbd/Kbd";
+export * from "./components/PersonaMark/PersonaMark";
 export * from "./components/Drawer/Drawer";
 export * from "./components/Toast/Toast";
 export * from "./components/Toast/Toaster";

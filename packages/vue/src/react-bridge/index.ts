@@ -45,6 +45,8 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  PersonaMark,
+  PersonaMarkGroup,
   Notice,
   Drawer,
   Toast,
@@ -349,6 +351,8 @@ export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
 export const KozmosKbd = createVueWrapper(Kbd);
+export const KozmosPersonaMark = createVueWrapper(PersonaMark);
+export const KozmosPersonaMarkGroup = createVueWrapper(PersonaMarkGroup);
 // Its disclosure is a model: v-model:expanded, as React's expanded and
 // onExpandedChange are.
 export const KozmosNotice = createVueWrapper(Notice, {

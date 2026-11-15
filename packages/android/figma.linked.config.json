@@ -10,6 +10,8 @@
       "src/main/java/com/kozmos/components/Separator/Separator.kt",
       "src/main/java/com/kozmos/components/Kbd/Kbd.figma.kt",
       "src/main/java/com/kozmos/components/Kbd/Kbd.kt",
+      "src/main/java/com/kozmos/components/PersonaMark/PersonaMark.figma.kt",
+      "src/main/java/com/kozmos/components/PersonaMark/PersonaMark.kt",
       "src/main/java/com/kozmos/components/Skeleton/Skeleton.figma.kt",
       "src/main/java/com/kozmos/components/Skeleton/Skeleton.kt",
       "src/main/java/com/kozmos/components/Box/Box.figma.kt",

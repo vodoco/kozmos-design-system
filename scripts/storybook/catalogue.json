@@ -525,6 +525,13 @@
       "exports": ["Default", "Combination", "InAHint"]
     },
     {
+      "file": "packages/react/src/components/PersonaMark/PersonaMark.stories.tsx",
+      "id": "data-display-personamark",
+      "title": "Core/Data display/PersonaMark",
+      "component": "PersonaMark",
+      "exports": ["Default", "Named", "Group", "InAPersonaList"]
+    },
+    {
       "file": "packages/react/src/components/Label/Label.stories.tsx",
       "id": "components-label",
       "title": "Core/Inputs/Label",
