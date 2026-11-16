@@ -20,6 +20,71 @@ it always has.
 
 <Controls />
 
+## Top and bottom space
+
+`block` gives a region its own clear space above and below (GAP-116): `sm` 16, `md` 24 or `lg` 32, or
+`block={{ start: "lg", end: "md" }}` for the top and the bottom apart. A page column that starts under a top bar takes
+`block="sm"` rather than a Box around it. It is none by default, so a Container pads its sides only, as it always has,
+and it holds whatever the window does. PageHeader sets its content with `block={{ start: "lg", end: "md" }}`.
+
+SwiftUI and Compose take the same steps with `inset`: `KozmosContainer(inset: .panel, block: .sm)`, or
+`.init(start: .lg, end: .md)`; on Compose `KozmosContainerBlock.Sm`, or `KozmosContainerBlock(start, end)`.
+
+<Canvas>
+  <Story of={ContainerStories.BlockInset} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { Container, Text } from "@kozmos-ds/react";
+export function MapContentColumn() {
+  return (
+    <Container inset="panel" block="sm">
+      <Text>Map content</Text>
+    </Container>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosContainer } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosContainer inset="panel" block="sm" />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A page column's own space: 16 above and below it, and 16 a side.
+struct MapContentColumn: View {
+    var body: some View {
+        KozmosContainer(inset: .panel, block: .sm) {
+            KozmosText("Map content")
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.container.KozmosContainer
+import com.kozmos.components.container.KozmosContainerBlock
+import com.kozmos.components.container.KozmosContainerInset
+import com.kozmos.components.text.KozmosText
+
+// A page column's own space: 16 above and below it, and 16 a side.
+@Composable
+fun MapContentColumn() {
+    KozmosContainer(KozmosContainerInset.Panel, block = KozmosContainerBlock.Sm) {
+        KozmosText(text = "Map content")
+    }
+}
+`}
+
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

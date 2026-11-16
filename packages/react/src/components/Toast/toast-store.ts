@@ -40,6 +40,11 @@ export interface ToastOptions {
   /** The `id` of the Toaster that draws it, when a page has more than one. */
   toaster?: string;
   /**
+   * When its close button shows: `hover`, only while the toasts are hovered
+   * or it has focus, or `always`. Defaults to the Toaster's `closeVisible`.
+   */
+  closeVisible?: "hover" | "always";
+  /**
    * Runs once when it closes, however it closes. Being replaced is not
    * closing: a replaced toast's `onDismiss` runs when its replacement
    * closes, before the replacement's own (one function given to both runs

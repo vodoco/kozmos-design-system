@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "2c3aa417c5f1";
+const PLUGIN_BUILD = "6d44f59370a7";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -86,6 +86,38 @@ function containerInsetToken(inset) {
     : "Container/padding/x/window";
 }
 const CONTAINER_CENTERED = ["True", "False"];
+// GAP-116 (decision 132): React's `block`, the clear space above and below the
+// content: none, 16, 24 or 32, the layout spacing steps 200, 300 and 400. It
+// holds whatever the window does. Figma draws one step on both edges; React's
+// `{ start, end }` sets them apart. None comes first: a variant drawn before
+// the axis is None, so Update renames it rather than replacing it.
+const CONTAINER_BLOCKS = ["None", "Small", "Medium", "Large"];
+function containerBlockPadding(block) {
+  if (block === "Small") return 16;
+  if (block === "Medium") return 24;
+  if (block === "Large") return 32;
+  return 0;
+}
+function containerBlockToken(block) {
+  if (block === "Small") return "Container/padding/y/small";
+  if (block === "Medium") return "Container/padding/y/medium";
+  if (block === "Large") return "Container/padding/y/large";
+  return null;
+}
+// The set's second axis is Inset and Block together, one row per pair: the
+// single-axis painter takes two axes, and this keeps the node ids of the
+// Centered x Inset variants the set had before Block.
+const CONTAINER_INSET_BLOCKS = [];
+for (const inset of CONTAINER_INSETS)
+  for (const block of CONTAINER_BLOCKS)
+    CONTAINER_INSET_BLOCKS.push(`${inset}/${block}`);
+function splitContainerInsetBlock(second) {
+  const [inset, block] = String(second || "").split("/");
+  return {
+    inset: CONTAINER_INSETS.indexOf(inset) === -1 ? "Window" : inset,
+    block: CONTAINER_BLOCKS.indexOf(block) === -1 ? "None" : block,
+  };
+}
 const SCROLL_AREA_ORIENTATIONS = ["Vertical", "Horizontal", "Both"];
 const SCROLL_AREA_SCROLLBARS = ["Hidden", "Visible"];
 const TREE_CONTENT = ["Basic", "Count", "Actions"];
@@ -187,6 +219,36 @@ const TREE_META = {
   text: "Changes awaiting publish",
   token: "Colors/foreground/400",
   fallback: "#5D626F",
+};
+// Checkable rows and the disclosure at the end (GAP-277), as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`, on Tree
+// and its rows. Booleans, as Divided and Meta Below, for the same reason: an
+// axis would double the three row sets. Checkable shows Checkbox's box
+// before the leading icon, and Checked the box's checked fill and mark
+// inside it, both hidden until shown. Disclosure Start (on) shows the
+// disclosure before the label, as every row has it, and Disclosure End (off)
+// one at the row's end: a designer turns the first off and the second on,
+// since a boolean can show a layer but not hide another. On a row with no
+// children each is the empty 16 a disclosure would take.
+const TREE_CHECKABLE_PROPERTY_NAME = "Checkable";
+const TREE_CHECKED_PROPERTY_NAME = "Checked";
+const TREE_DISCLOSURE_START_PROPERTY_NAME = "Disclosure Start";
+const TREE_DISCLOSURE_END_PROPERTY_NAME = "Disclosure End";
+const TREE_CHECKBOX = {
+  name: "Checkbox",
+  kind: "tree-checkbox",
+  stroke: "Border/Input",
+  strokeFallback: "#747B8B",
+};
+const TREE_CHECKBOX_CHECKED = {
+  name: "Checkbox Checked",
+  kind: "tree-checkbox-checked",
+  markName: "Checkbox Mark",
+};
+const TREE_DISCLOSURE_END = {
+  name: "Disclosure End",
+  iconKind: "tree-disclosure-end-icon",
+  spacerKind: "tree-disclosure-end-spacer",
 };
 // The column the name and its meta share. Its vertical padding is the row's
 // py-1.5 (py-1 compact), so a row with its meta below is 48 (44 compact), as
@@ -413,7 +475,11 @@ const TIME_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const TIME_PICKER_CONTENT = ["Closed", "Open"];
 const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
 const FILE_UPLOAD_STATUSES = ["Default", "Error", "Warning", "Success"];
-const FILE_UPLOAD_CONTENT = ["Dropzone", "Files"];
+// Preview: React's `preview="image"` holding its image, the thumbnail with
+// Change and Remove where the drop area was (GAP-270).
+const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"];
+// One status's columns, a content each, 440 apart.
+const FILE_UPLOAD_STATUS_STRIDE = FILE_UPLOAD_CONTENT.length * 440;
 const COLOR_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const COLOR_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const COLOR_PICKER_CONTENT = ["Closed", "Open"];
@@ -445,8 +511,26 @@ const RATING_STATES = ["Default", "Readonly"];
 // a Current past its Count.
 const RATING_SCALES = ["Stars", "Thumbs"];
 const RATING_THUMB_VALUES = ["0", "1", "2"];
-function ratingValuesForScale(scale) {
-  return scale === "Thumbs" ? RATING_THUMB_VALUES : RATING_VALUES;
+// A read-only star rating shows a score to the nearest half (decision 181),
+// so Scale=Stars, State=Readonly also takes the halves; editing stays whole
+// stars and thumbs are a choice, so no other row draws one.
+const RATING_HALF_VALUES = ["0.5", "1.5", "2.5", "3.5", "4.5"];
+const RATING_READONLY_STAR_VALUES = [
+  "0",
+  "0.5",
+  "1",
+  "1.5",
+  "2",
+  "2.5",
+  "3",
+  "3.5",
+  "4",
+  "4.5",
+  "5",
+];
+function ratingValuesForScale(scale, state) {
+  if (scale === "Thumbs") return RATING_THUMB_VALUES;
+  return state === "Readonly" ? RATING_READONLY_STAR_VALUES : RATING_VALUES;
 }
 // How the steps are drawn (GAP-191): Numbered, a numbered circle over each
 // label, or Dots, a tour's progress, one dot per step with no label shown.
@@ -591,6 +675,9 @@ const EMPTY_STATE_CONTENT = ["Basic", "Icon", "Action"];
 // Found"). A layer in every variant, shown by the List boolean, its three
 // items' words List Item 1 Text to List Item 3 Text.
 const EMPTY_STATE_LIST_PROPERTY = "List";
+// React's marker column (padding-inline-start 1.25rem) and its disc.
+const EMPTY_STATE_LIST_MARKER_COLUMN = 20;
+const EMPTY_STATE_LIST_MARKER_SIZE = 5;
 const EMPTY_STATE_LIST_ITEMS = [
   "Check the building and level",
   "Clear the type filters",
@@ -979,6 +1066,26 @@ const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 // `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
 // first, so the set's default is the plain cap.
 const KBD_KEYS = ["Single", "Combination"];
+// GAP-273: React's ImageCropper `aspectRatio`, the frame's shape: Square is
+// 1, MAP-32's logo and the default, Landscape 16:9, a cover. Square comes
+// first, so the set's default is React's.
+const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
+// GAP-106: React's PersonaMark draws one persona's diamond, and
+// PersonaMarkGroup the diamonds of the personas a row is visible to. One
+// mark comes first, so the set's default is the plain diamond.
+const PERSONA_MARK_FORMS = ["Single", "Group"];
+// GAP-036 (decision 135): React's PageHeader `tone`, the tinted band or none,
+// and `size`, the title at Heading 3's 24 (md) or Heading 2's 30 (lg). The
+// band comes first, as React's default.
+const PAGE_HEADER_TONES = ["Subtle", "Default"];
+const PAGE_HEADER_SIZES = ["Medium", "Large"];
+// GAP-195, decision 135: ListItem's slots, the checklist row. Selected is
+// the row's tint, React's `selected`; the plain row comes first.
+const LIST_ITEM_SELECTED = ["False", "True"];
+// GAP-040, decision 135: SettingsRow. State is where the value comes from,
+// None (no system value), Inherited or Overridden; Disabled is the row's.
+const SETTINGS_ROW_STATES = ["None", "Inherited", "Overridden"];
+const SETTINGS_ROW_DISABLED = ["False", "True"];
 const TOAST_CONTENT = ["Basic", "Action"];
 // toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
 // in the tone's text colour, on the same surface. A variant drawn before the
@@ -1358,6 +1465,10 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Link: 260,
   Separator: 260,
   Kbd: 260,
+  PersonaMark: 260,
+  PageHeader: 560,
+  ListItem: 260,
+  SettingsRow: 520,
   Button: 900,
   IconButton: 820,
   ToggleButton: 620,
@@ -1442,6 +1553,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DateRangePicker: 2400,
   TimePicker: 1380,
   FileUpload: 1420,
+  ImageCropper: 560,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1475,12 +1587,22 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
   { title: "Selection", components: ["Chip", "SegmentedControl"] },
   {
     title: "Layout",
-    components: ["Box", "Card", "Container", "Grid", "ScrollArea", "Stack"],
+    components: [
+      "Box",
+      "Card",
+      "Container",
+      "Grid",
+      "PageHeader",
+      "ScrollArea",
+      "Stack",
+    ],
   },
   {
     title: "Data display",
     components: [
       "List",
+      "ListItem",
+      "SettingsRow",
       "MetaStrip",
       "Table",
       "TreeParentItem",
@@ -1489,6 +1611,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "TreeSection",
       "Tree",
       "Timeline",
+      "PersonaMark",
     ],
   },
   {
@@ -1575,6 +1698,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "DateRangePicker",
       "TimePicker",
       "FileUpload",
+      "ImageCropper",
       "ColorPicker",
       "SearchBar",
       "Search",
@@ -2602,6 +2726,29 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    category: "Data display",
+    summary:
+      "PersonaMark draws a persona's colour as a small diamond beside its name; a group draws the personas a row is visible to (GAP-106).",
+    usage: [
+      "Use beside a persona's name: in a persona visibility list's checkbox labels, a persona menu or a tree row.",
+      "The colour is the persona's, product data: override the diamond's fill with it; no token holds it.",
+      "Use Group for the personas a row is visible to, in the order the product gives them.",
+    ],
+    api: [
+      "Form maps to the part: Single is <PersonaMark color={persona.color} />, Group is <PersonaMarkGroup personas={personas} />.",
+      "name, on a mark that stands alone, names it; label, on a group, is read before the personas' names.",
+    ],
+    properties: ["Form: Single, Group"],
+    accessibility: [
+      "In code a mark beside its name is hidden from assistive technology, so the name is read once.",
+      "A mark standing alone is an image named by the persona; a group is one image, read as its label and every name.",
+      "In forced colours the diamond is drawn in the text colour: the shape stays, and the persona is said by its name.",
+      "PersonaMark is non-interactive.",
+    ],
+  },
+  {
     componentName: "Skeleton",
     componentSetName: "Skeleton",
     category: "Feedback",
@@ -2737,17 +2884,55 @@ const COMPONENT_DOCS = [
       "Use Centered True for regular page sections and bounded reading layouts.",
       "Use Centered False when the layout should fill the available width.",
       "Keep Container focused on outer page structure; use Box or Card for local surfaces.",
+      "Use Block for a page region's own top and bottom space (GAP-116), rather than a Box around it.",
     ],
     api: [
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset: Window steps with the viewport, Panel holds 16.",
+      "Block maps to Container.block: None, Small 16, Medium 24, Large 32 above and below.",
       "Content Slot maps to Container children in Code Connect.",
       "Responsive breakpoints and max-width behavior remain runtime CSS concerns.",
     ],
-    properties: ["Centered: True, False", "Content Slot"],
+    properties: [
+      "Centered: True, False",
+      "Inset: Window, Panel",
+      "Block: None, Small, Medium, Large",
+      "Content Slot",
+    ],
     accessibility: [
       "Container is non-interactive unless composed around interactive children.",
       "Gutters and max-width should support readable line length without hiding content.",
       "Child controls must preserve their own semantic labels and focus states.",
+    ],
+  },
+  {
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    category: "Layout",
+    summary:
+      "PageHeader is the top of a page: a breadcrumb, the title with an info button, a description and the page's actions, on a tinted band (GAP-036, decision 135).",
+    usage: [
+      "Use one PageHeader at the top of every page: Home's band and a settings page's header are the same part.",
+      "Use Size Large for a landing page's title, Medium within a section.",
+      "Use Tone Default where the header sits on the page's own background.",
+    ],
+    api: [
+      "Tone maps to PageHeader.tone: Subtle is the theme 0 band, Default none.",
+      "Size maps to PageHeader.size: Medium is Heading 3 (24/32), Large Heading 2 (30/36).",
+      "Title Text maps to title; Description Text to description.",
+      "Breadcrumb, Info and Actions show the breadcrumb, info and actions React is given.",
+      "Its content takes Container's window inset and block inset, 32 above and 24 below (GAP-116).",
+    ],
+    properties: [
+      "Tone: Subtle, Default",
+      "Size: Medium, Large",
+      "Title Text, Description Text",
+      "Breadcrumb, Info, Description, Actions",
+    ],
+    accessibility: [
+      "In code the title is the page's one h1 at either size.",
+      "The info button names itself and is not part of the heading.",
+      "The actions follow the title and description in reading order.",
     ],
   },
   {
@@ -3343,6 +3528,60 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    category: "Data Display",
+    summary:
+      "ListItem's slots draw a row with a mark at the start, a title with an addon, a description, a meta line and one control at the end (GAP-195, decision 135): the Get started checklist row and the persona visibility row.",
+    usage: [
+      "Use inside a List for a checklist of tours, a list of personas to show, or any row with one control.",
+      "Leading holds a status mark, an icon or a persona's mark; Trailing holds one action, a Checkbox or a Switch.",
+      "Use Selected for a ticked row: it tints the row; the control still says it is checked.",
+    ],
+    api: [
+      "Title Text maps to title, Addon Text to titleAddon, Description Text to description, Meta Text to meta, Action Text to trailing's Button.",
+      "Leading maps to leading, a ListItemStatus; Show Leading, Show Title Addon, Show Description, Show Meta and Show Trailing show each slot.",
+      "Selected maps to selected.",
+    ],
+    properties: [
+      "Selected: False, True",
+      "Title Text, Addon Text, Description Text, Meta Text, Action Text",
+      "Show Leading, Show Title Addon, Show Description, Show Meta, Show Trailing",
+    ],
+    accessibility: [
+      "The status mark is read before the title, in words: Done, In progress, Not started.",
+      "The row is not pressable; its one control is.",
+      "The tint is drawn only: a ticked row's checkbox says it is checked.",
+    ],
+  },
+  {
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    category: "Data Display",
+    summary:
+      "SettingsRow is one setting in a List: a label, a description, its control at the end, where its value comes from (inherited or overridden, with Reset to default), and why it is disabled (GAP-040, decision 135).",
+    usage: [
+      "Use one row per setting on a settings page, in a List, which draws the dividers.",
+      "Use Inherited for a system value the site has not changed and Overridden for the site's own; Overridden offers Reset to default.",
+      "Use Disabled with Reason Text to say why a setting cannot change.",
+    ],
+    api: [
+      "Label Text maps to label, Description Text to description, Reason Text to disabledReason.",
+      "State maps to state (None is unset); Disabled maps to disabled.",
+      "The switch stands for the control prop: any Kozmos control goes there.",
+    ],
+    properties: [
+      "State: None, Inherited, Overridden",
+      "Disabled: False, True",
+      "Label Text, Description Text, Reason Text, Show Description",
+    ],
+    accessibility: [
+      "The label names the control; the description, the state and the reason are read with it.",
+      "Reset to default is a button; pressed, focus goes to the control.",
+      "A disabled row disables its control and offers no reset.",
+    ],
+  },
+  {
     componentName: "Table",
     componentSetName: "Table",
     category: "Data Display",
@@ -3414,6 +3653,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3450,6 +3690,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3487,6 +3728,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -3904,11 +4146,13 @@ const COMPONENT_DOCS = [
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when the Action content variant is used.",
+      'Close Always Visible maps to ToastClose visible="always"; off is the default, shown on hover or focus.',
     ],
     properties: [
       "Content: Basic, Action",
       "Tone: Neutral, Success, Info, Warning, Critical",
       "Title Text, Description Text, Action Text",
+      "Close Always Visible (boolean, on)",
     ],
     accessibility: [
       "Toast is non-modal status feedback and should use runtime live-region semantics.",
@@ -4334,6 +4578,30 @@ const COMPONENT_DOCS = [
       "The field and list options meet the 44px minimum interactive target.",
       "Time-list surface, option states, text, icons, helper copy, and boundaries pass contrast in both modes.",
       "Product code preserves native time input semantics and accessible descriptions.",
+    ],
+  },
+  {
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    category: "Forms",
+    summary:
+      "ImageCropper frames an image to an aspect ratio: the frame is the box, the image moves and scales under it, and the result is the frame as fractions of the image (GAP-273).",
+    usage: [
+      "Use to choose the part of an image a product keeps: a client's square logo (MAP-32), a cover at 16:9.",
+      "Put it in a Dialog with Apply and Cancel when the crop is a step; the cropper itself has no buttons but its zoom row.",
+      "Leave the zoom row out (Zoom Controls off) only where the product zooms another way; the keyboard still zooms.",
+    ],
+    api: [
+      "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9.",
+      "Zoom Controls maps to showZoomControls: Zoom out, the zoom Slider (100% to maxZoom) and Zoom in.",
+      "onCrop hands back { x, y, width, height }, each a fraction of the image's width or height, once the image loads and after every change; the product crops.",
+    ],
+    properties: ["Ratio: Square, Landscape", "Zoom Controls"],
+    accessibility: [
+      "The frame is one tab stop named by label, described by its instructions: the arrow keys move it by a tenth of itself, plus and minus zoom.",
+      "Each change is said in a polite live region: where the frame is and its zoom, in whole percentages.",
+      "A zoom button at its limit is unavailable, not disabled, so it keeps focus.",
+      "The arrows are physical in right to left too: an image does not mirror.",
     ],
   },
   {
@@ -7882,6 +8150,66 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Kbd/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "Kbd/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
+  // GAP-106: React's PersonaMark, a 12 diamond, and a group's marks
+  // layout spacing 25 (2) apart.
+  { name: "PersonaMark/size", value: 12, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "PersonaMark/gap",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  // GAP-036: PageHeader. Its padding is Container's (Container/padding/x/window
+  // and Container/padding/y/large and medium, GAP-116); these are its own.
+  { name: "PageHeader/width/default", value: 960, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "PageHeader/breadcrumb/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/gap",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/title/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/text/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  // GAP-195: ListItem's slots, 12 between the mark, the body and the
+  // control (gap-3), the body's lines 2 apart, the title's addon 8 after it
+  // (gap-2), the status mark 20 (h-5 w-5).
+  {
+    name: "ListItem/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ListItem/body/gap",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ListItem/heading/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  { name: "ListItem/status/size", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  // GAP-040: a settings row is drawn 560 wide, a settings page's column.
+  { name: "SettingsRow/width/default", value: 560, scopes: ["WIDTH_HEIGHT"] },
   { name: "Toast/width/default", value: 420, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Toast/padding",
@@ -8955,6 +9283,32 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "DatePicker/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-273: React's ImageCropper, a frame and its zoom row, gap-150 (12)
+  // apart, the zoom row's parts gap-100 (8) apart, the frame on the control
+  // radius. 320 wide as drawn; it fills its column in code.
+  {
+    name: "ImageCropper/width/default",
+    value: 320,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ImageCropper/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/zoom/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/radius",
+    value: KOZMOS_RADIUS.control,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
   {
     name: "FileUpload/width/default",
     value: 384,
@@ -9752,6 +10106,25 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "Container/padding/x/panel",
     value: 16,
     alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  // GAP-116: the block inset's steps, React's pt-4/pt-6/pt-8 and pb-*.
+  {
+    name: "Container/padding/y/small",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/y/medium",
+    value: 24,
+    alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/y/large",
+    value: 32,
+    alias: "Layout/spacing/400",
     scopes: ["GAP"],
   },
   {
@@ -11367,7 +11740,8 @@ const SETS_THAT_OVERRIDE_INSIDE = {
   Counter: ["CategoryTile"],
   // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
   // each tinted again after the swap.
-  IconButton: ["TourStep", "Card"],
+  // PageHeader's Info: info-circle (GAP-036).
+  IconButton: ["TourStep", "Card", "PageHeader"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -11453,6 +11827,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Label", updateLabelComponent],
   ["Separator", updateSeparatorComponent],
   ["Kbd", updateKbdComponent],
+  ["PersonaMark", updatePersonaMarkComponent],
   ["MetaStrip", updateMetaStripComponent],
   ["Skeleton", updateSkeletonComponent],
   ["Box", updateBoxComponent],
@@ -11472,7 +11847,10 @@ const CORE_UPDATE_SEQUENCE = [
   ["Chip", updateChipComponent],
   ["SegmentedControl", updateSegmentedControlComponent],
   ["Card", updateCardComponent],
+  ["PageHeader", updatePageHeaderComponent],
   ["List", updateListComponent],
+  ["ListItem", updateListItemComponent],
+  ["SettingsRow", updateSettingsRowComponent],
   ["Table", updateTableComponent],
   ["Tabs", updateTabsComponent],
   ["Tooltip", updateTooltipComponent],
@@ -11496,6 +11874,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["DateRangePicker", updateDateRangePickerComponent],
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
+  ["ImageCropper", updateImageCropperComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -11748,6 +12127,21 @@ function additionalComponentActionHandlers() {
     "build-kbd": buildKbdComponent,
     "update-kbd": updateKbdComponent,
     "rebuild-kbd": rebuildKbdComponent,
+    "build-persona-mark": buildPersonaMarkComponent,
+    "update-persona-mark": updatePersonaMarkComponent,
+    "rebuild-persona-mark": rebuildPersonaMarkComponent,
+    "build-page-header": buildPageHeaderComponent,
+    "update-page-header": updatePageHeaderComponent,
+    "rebuild-page-header": rebuildPageHeaderComponent,
+    "build-image-cropper": buildImageCropperComponent,
+    "update-image-cropper": updateImageCropperComponent,
+    "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-list-item": buildListItemComponent,
+    "update-list-item": updateListItemComponent,
+    "rebuild-list-item": rebuildListItemComponent,
+    "build-settings-row": buildSettingsRowComponent,
+    "update-settings-row": updateSettingsRowComponent,
+    "rebuild-settings-row": rebuildSettingsRowComponent,
     "build-context-menu": buildContextMenuComponent,
     "update-context-menu": updateContextMenuComponent,
     "rebuild-context-menu": rebuildContextMenuComponent,
@@ -18289,10 +18683,12 @@ function shouldAuditLayoutBindings(name) {
       "Link",
       "Separator",
       "Kbd",
+      "PersonaMark",
       "Skeleton",
       "Box",
       "Stack",
       "Container",
+      "PageHeader",
       "Breadcrumb",
       "Pagination",
       "Accordion",
@@ -18307,6 +18703,8 @@ function shouldAuditLayoutBindings(name) {
       "SegmentedControl",
       "Card",
       "List",
+      "ListItem",
+      "SettingsRow",
       "TreeParentItem",
       "TreeChildItem",
       "TreeItem",
@@ -18715,6 +19113,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Centered: CONTAINER_CENTERED,
       Inset: CONTAINER_INSETS,
+      Block: CONTAINER_BLOCKS,
     };
   }
 
@@ -18996,6 +19395,32 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "ListItem") {
+    return {
+      Selected: LIST_ITEM_SELECTED,
+    };
+  }
+
+  if (canonicalName === "SettingsRow") {
+    return {
+      State: SETTINGS_ROW_STATES,
+      Disabled: SETTINGS_ROW_DISABLED,
+    };
+  }
+
+  if (canonicalName === "PageHeader") {
+    return {
+      Tone: PAGE_HEADER_TONES,
+      Size: PAGE_HEADER_SIZES,
+    };
+  }
+
+  if (canonicalName === "PersonaMark") {
+    return {
+      Form: PERSONA_MARK_FORMS,
+    };
+  }
+
   if (canonicalName === "Toast") {
     return {
       Content: TOAST_CONTENT,
@@ -19112,6 +19537,12 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "ImageCropper") {
+    return {
+      Ratio: IMAGE_CROPPER_RATIOS,
+    };
+  }
+
   if (canonicalName === "FileUpload") {
     return {
       State: FILE_UPLOAD_STATES,
@@ -19169,7 +19600,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Rating") {
     return {
       Scale: RATING_SCALES,
-      Value: RATING_VALUES,
+      Value: RATING_READONLY_STAR_VALUES,
       State: RATING_STATES,
     };
   }
@@ -25773,6 +26204,16 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return "popoverDescription";
   }
   if (setName === "Kbd") return textStyleKeyForText("XS", "Medium");
+  if (setName === "PageHeader") {
+    if (textName === "Description Text")
+      return textStyleKeyForText("Small", "Normal");
+    const props = component && parsePageHeaderVariantName(component.name);
+    return textStyleKeyForHeading(
+      pageHeaderTitleMetrics(props ? props.second : "Medium").level,
+    );
+  }
+  if (setName === "ListItem" || setName === "SettingsRow")
+    return listItemTextStyleKey(textName);
   if (setName === "Menu" || setName === "ContextMenu") {
     if (textName === "Shortcut Text") return "menuShortcut";
     if (textName === "Label Text") return "menuItemStrong";
@@ -25823,7 +26264,8 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       /Label Text$/.test(textName) ||
       /Month Text$/.test(textName) ||
       textName === "Required Mark" ||
-      textName === "Browse Text"
+      textName === "Browse Text" ||
+      (setName === "FileUpload" && textName === "Change Text")
     ) {
       return "fieldLabel";
     }
@@ -33499,7 +33941,7 @@ async function buildContainerComponent() {
     axisName: "Centered",
     values: CONTAINER_CENTERED,
     axis2Name: "Inset",
-    axis2Values: CONTAINER_INSETS,
+    axis2Values: CONTAINER_INSET_BLOCKS,
     yStep: 180,
     x: 80,
     y: 11380,
@@ -33509,6 +33951,7 @@ async function buildContainerComponent() {
     description: [
       "Kozmos Container component set generated from React Container API.",
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset; Block to Container.block (GAP-116).",
       "Content Slot maps to children in Code Connect.",
       "Responsive padding and max-width behavior remain runtime CSS concerns.",
     ],
@@ -33522,7 +33965,7 @@ async function updateContainerComponent() {
     axisName: "Centered",
     values: CONTAINER_CENTERED,
     axis2Name: "Inset",
-    axis2Values: CONTAINER_INSETS,
+    axis2Values: CONTAINER_INSET_BLOCKS,
     yStep: 180,
     xStep: 560,
     createVariant: createContainerVariant,
@@ -33532,6 +33975,7 @@ async function updateContainerComponent() {
     description: [
       "Kozmos Container component set generated from React Container API.",
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset; Block to Container.block (GAP-116).",
       "Content Slot maps to children in Code Connect.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -35197,6 +35641,46 @@ async function updateKbdComponent() {
       "Key Text maps to the key; Modifier Text to the first of keys.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
+  });
+}
+
+// GAP-106: PersonaMark, a persona's colour as a diamond. Form is one mark or
+// a group's row of them.
+const PERSONA_MARK_DESCRIPTION = [
+  "Kozmos PersonaMark component set generated from React PersonaMark API.",
+  "Form maps to one persona's mark (PersonaMark) or a group's (PersonaMarkGroup).",
+  "The diamond's fill is the persona's colour, product data: override it.",
+];
+
+async function buildPersonaMarkComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    axisName: "Form",
+    values: PERSONA_MARK_FORMS,
+    x: 80,
+    y: 7260,
+    xStep: 120,
+    createVariant: createPersonaMarkVariant,
+    configureProperties: configurePersonaMarkProperties,
+    description: PERSONA_MARK_DESCRIPTION,
+  });
+}
+
+async function updatePersonaMarkComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    axisName: "Form",
+    values: PERSONA_MARK_FORMS,
+    xStep: 120,
+    createVariant: createPersonaMarkVariant,
+    updateVariant: updatePersonaMarkVariant,
+    parseVariantName: parsePersonaMarkVariantName,
+    configureProperties: configurePersonaMarkProperties,
+    description: PERSONA_MARK_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
   });
 }
 
@@ -38215,7 +38699,8 @@ async function buildFileUploadComponent() {
           fonts,
           stats,
         });
-        component.x = statusIndex * 880 + contentIndex * 440;
+        component.x =
+          statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
         component.y = stateIndex * 390;
         page.appendChild(component);
         components.push(component);
@@ -38234,7 +38719,7 @@ async function buildFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -38289,7 +38774,7 @@ async function updateFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -41163,6 +41648,8 @@ function treeIconNodesForBinding(root) {
       (node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
         "tree-disclosure-icon" ||
         node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
+          TREE_DISCLOSURE_END.iconKind ||
+        node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
           "icon-slot-instance")
     ) {
       icons.push(node);
@@ -41364,6 +41851,12 @@ async function syncTreeRowNode(
   setFixedChildSizing(chevron);
   iconNodes.push(chevron);
 
+  // GAP-277: Checkbox's box before the leading icon, hidden until Checkable.
+  const checkbox = await createTreeCheckbox(row, variableByName, stats);
+  rowNode.appendChild(checkbox);
+  setFixedChildSizing(checkbox);
+  checkbox.visible = false;
+
   const typeIcon = await createFixedIconInstance(
     row.iconName || (row.expandable ? "map-01" : "marker-pin-01"),
     row.selected ? "Colors/theme/600" : "Colors/foreground/400",
@@ -41468,6 +41961,17 @@ async function syncTreeRowNode(
     setHugChildSizing(actions.node);
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
+
+  // GAP-277: the disclosure at the row's end, after its actions, hidden
+  // until Disclosure End.
+  const endDisclosure = await createTreeEndDisclosure(
+    row,
+    variableByName,
+    stats,
+  );
+  rowNode.appendChild(endDisclosure);
+  setFixedChildSizing(endDisclosure);
+  endDisclosure.visible = false;
 
   setLayoutSizingVertical(rowNode, "HUG");
 
@@ -41875,6 +42379,97 @@ async function createTreeChevron(row, variableByName, stats) {
     : "Disclosure Icon";
   chevron.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-disclosure-icon");
   return chevron;
+}
+
+/**
+ * Checkbox's box (GAP-277), as React's checkable row draws it: 20 square,
+ * radius marker, a 1px Border/Input edge; inside it Checkbox Checked, the
+ * theme fill with its own edge and the check mark in the theme foreground
+ * (decision 59), hidden until Checked shows it.
+ */
+async function createTreeCheckbox(row, variableByName, stats) {
+  const box = figma.createFrame();
+  box.name = TREE_CHECKBOX.name;
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(20, 20);
+  box.cornerRadius = KOZMOS_RADIUS.marker;
+  box.clipsContent = false;
+  box.fills = [];
+  box.strokes = [
+    paintFromVariable(
+      TREE_CHECKBOX.stroke,
+      TREE_CHECKBOX.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  box.strokeWeight = 1;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_CHECKBOX.kind);
+
+  const checked = figma.createFrame();
+  checked.name = TREE_CHECKBOX_CHECKED.name;
+  checked.layoutMode = "NONE";
+  checked.resizeWithoutConstraints(20, 20);
+  checked.x = 0;
+  checked.y = 0;
+  checked.cornerRadius = KOZMOS_RADIUS.marker;
+  checked.clipsContent = false;
+  checked.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokeWeight = 1;
+  checked.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    TREE_CHECKBOX_CHECKED.kind,
+  );
+
+  const mark = await createFixedIconInstance(
+    "check",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    16,
+    "Tree/icon/size",
+  );
+  mark.name = TREE_CHECKBOX_CHECKED.markName;
+  checked.appendChild(mark);
+  mark.x = 2;
+  mark.y = 2;
+  box.appendChild(checked);
+  checked.visible = false;
+  return box;
+}
+
+/**
+ * The disclosure at the row's end (GAP-277): the row's chevron, or on a row
+ * with no children the empty 16 one would take.
+ */
+async function createTreeEndDisclosure(row, variableByName, stats) {
+  const node = await createTreeChevron(row, variableByName, stats);
+  node.name = TREE_DISCLOSURE_END.name;
+  node.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    row.expandable
+      ? TREE_DISCLOSURE_END.iconKind
+      : TREE_DISCLOSURE_END.spacerKind,
+  );
+  return node;
 }
 
 // --- TreeSection ---------------------------------------------------------------
@@ -44929,7 +45524,68 @@ async function configureTreeItemProperties(
   configureTreeActionVisibilityProperties(componentSet, stats);
   configureTreeDividedProperty(componentSet, stats);
   configureTreeMetaProperties(componentSet, stats);
+  configureTreeCheckableProperties(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Checkable and Checked, booleans off by default, showing each row's
+ * Checkbox and its checked fill; Disclosure Start, on, and Disclosure End,
+ * off, showing the disclosure before the label and at the row's end
+ * (GAP-277). With all four at their defaults an instance draws as it did
+ * before any existed.
+ */
+function configureTreeCheckableProperties(componentSet, stats) {
+  const bindings = [
+    [
+      TREE_CHECKABLE_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX.kind,
+    ],
+    [
+      TREE_CHECKED_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX_CHECKED.kind,
+    ],
+    // The start disclosure is a row's own child, as drawn before GAP-277.
+    [
+      TREE_DISCLOSURE_START_PROPERTY_NAME,
+      true,
+      (node) =>
+        node.parent &&
+        node.parent.type === "COMPONENT" &&
+        (generatedKind(node) === "tree-disclosure-icon" ||
+          generatedKind(node) === "tree-icon-spacer"),
+    ],
+    [
+      TREE_DISCLOSURE_END_PROPERTY_NAME,
+      false,
+      (node) =>
+        generatedKind(node) === TREE_DISCLOSURE_END.iconKind ||
+        generatedKind(node) === TREE_DISCLOSURE_END.spacerKind,
+    ],
+  ];
+  stats.treeCheckableBindings = {};
+  for (const [name, defaultValue, matches] of bindings) {
+    const propertyName = ensureBooleanProperty(
+      componentSet,
+      name,
+      defaultValue,
+      stats,
+    );
+    if (!propertyName) continue;
+    let boundCount = 0;
+    (function walk(node) {
+      if (matches(node)) {
+        bindVisibilityProperty(node, propertyName, stats);
+        boundCount += 1;
+      }
+      if (node.children) {
+        for (const child of node.children) walk(child);
+      }
+    })(componentSet);
+    stats.treeCheckableBindings[name] = boundCount;
+  }
 }
 
 /**
@@ -46366,6 +47022,14 @@ function configureFileUploadProperties(componentSet, stats) {
     "2.4 MB",
     stats,
   );
+  // GAP-270: Content=Preview's Change button, React's `changeLabel`.
+  configureNamedTextProperty(
+    componentSet,
+    "Change Text",
+    "Change Text",
+    "Change",
+    stats,
+  );
   configureHelperTextProperty(componentSet, "Upload a PDF or image.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
@@ -46525,7 +47189,7 @@ async function buildRatingComponent() {
       // Thumbs has no third, fourth or fifth value: the set skips them rather
       // than drawing variants that mean nothing, as Stepper skips a Current
       // past its Count.
-      for (const value of ratingValuesForScale(scale)) {
+      for (const value of ratingValuesForScale(scale, state)) {
         const component = await createRatingVariant({
           scale,
           value,
@@ -46551,7 +47215,7 @@ async function buildRatingComponent() {
     "Kozmos Rating component set generated from React Rating API.",
     "Scale maps to Rating.variant: Stars is the ordinal scale, Thumbs is a choice of two.",
     "Value maps to Rating.value in Code Connect. 0 is unanswered; on Thumbs 1 is down and 2 is up.",
-    "State maps to Rating.readOnly.",
+    "State maps to Rating.readOnly. A read-only star rating also takes the halves, 0.5 to 4.5: a score to the nearest half.",
     "Max is fixed to five on the Stars scale.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -46603,7 +47267,7 @@ async function updateRatingComponent() {
   applyComponentSetDescription(existing, "Rating", true, [
     "Kozmos Rating component set generated from React Rating API.",
     "Value maps to Rating.value in Code Connect.",
-    "State maps to Rating.readOnly.",
+    "State maps to Rating.readOnly. A read-only star rating also takes the halves, 0.5 to 4.5: a score to the nearest half.",
     "Max is fixed to five for the Core component.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -46639,7 +47303,7 @@ async function updateRatingComponent() {
 
   for (const scale of RATING_SCALES) {
     for (const state of RATING_STATES) {
-      for (const value of ratingValuesForScale(scale)) {
+      for (const value of ratingValuesForScale(scale, state)) {
         const key = `${scale}/${value}/${state}`;
         if (seenKeys[key]) continue;
 
@@ -47117,6 +47781,7 @@ async function buildToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
     ],
   });
 }
@@ -47142,6 +47807,7 @@ async function updateToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -56656,6 +57322,10 @@ function configureKbdProperties(componentSet, stats) {
   );
 }
 
+// PersonaMark has no component property: the persona's name is never drawn,
+// and its colour is the diamond's fill, which a designer overrides.
+function configurePersonaMarkProperties() {}
+
 function configureToastProperties(componentSet, stats) {
   configureNamedTextProperty(
     componentSet,
@@ -56676,6 +57346,17 @@ function configureToastProperties(componentSet, stats) {
     "Action Text",
     "Action Text",
     "Undo",
+    stats,
+  );
+  // GAP-268: ToastClose's `visible`. On, the default, the close is drawn as
+  // it always was, shown at rest: React's visible="always". Off draws the
+  // toast at rest with the default "hover" close, which shows only while the
+  // toast is hovered or the button has focus.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Toast Close",
+    "Close Always Visible",
+    true,
     stats,
   );
 }
@@ -56765,6 +57446,14 @@ async function rebuildKbdComponent() {
     componentName: "Kbd",
     componentSetName: "Kbd",
     build: buildKbdComponent,
+  });
+}
+
+async function rebuildPersonaMarkComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    build: buildPersonaMarkComponent,
   });
 }
 
@@ -59456,13 +60145,16 @@ function parseContainerVariantName(name) {
   if (CONTAINER_CENTERED.indexOf(values.Centered) === -1) return null;
 
   // A variant drawn before the Inset axis carries none and is the page's,
-  // so Update renames it rather than replacing it.
-  const second = values.Inset || "Window";
-  if (CONTAINER_INSETS.indexOf(second) === -1) return null;
+  // and one drawn before the Block axis carries none and pads no top or
+  // bottom, so Update renames either rather than replacing it.
+  const inset = values.Inset || "Window";
+  if (CONTAINER_INSETS.indexOf(inset) === -1) return null;
+  const block = values.Block || "None";
+  if (CONTAINER_BLOCKS.indexOf(block) === -1) return null;
 
   return {
     value: values.Centered,
-    second,
+    second: `${inset}/${block}`,
     centered: values.Centered,
   };
 }
@@ -59472,8 +60164,11 @@ async function updateContainerVariant(
   { value, second, variableByName, stats },
 ) {
   const centered = value === "True";
-  const inset = CONTAINER_INSETS.indexOf(second) === -1 ? "Window" : second;
-  component.name = `Centered=${value}, Inset=${inset}`;
+  // `second` is "Inset/Block"; a bare inset, as an older caller passes it,
+  // is that inset with no block.
+  const { inset, block } = splitContainerInsetBlock(second);
+  const blockPadding = containerBlockPadding(block);
+  component.name = `Centered=${value}, Inset=${inset}, Block=${block}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -59482,9 +60177,14 @@ async function updateContainerVariant(
   component.itemSpacing = 0;
   component.paddingLeft = containerInsetPadding(inset);
   component.paddingRight = containerInsetPadding(inset);
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(480, 120);
+  component.paddingTop = blockPadding;
+  component.paddingBottom = blockPadding;
+  // With no block the example is 120 tall, as it was; with one it is the
+  // content and the space above and below it, so the step shows.
+  component.resizeWithoutConstraints(
+    480,
+    blockPadding === 0 ? 120 : 64 + 2 * blockPadding,
+  );
   component.fills = [];
   component.strokes = [];
   component.strokeWeight = 0;
@@ -59492,13 +60192,34 @@ async function updateContainerVariant(
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Container");
 
-  bindSizeVariables(
-    component,
-    "Container/width/default",
-    "Container/min-height/default",
-    variableByName,
-    stats,
-  );
+  if (blockPadding === 0) {
+    bindSizeVariables(
+      component,
+      "Container/width/default",
+      "Container/min-height/default",
+      variableByName,
+      stats,
+    );
+    clearBoundVariable(component, "paddingTop", stats);
+    clearBoundVariable(component, "paddingBottom", stats);
+  } else {
+    bindFloatVariable(
+      component,
+      "width",
+      "Container/width/default",
+      variableByName,
+      stats,
+    );
+    clearBoundVariable(component, "height", stats);
+    for (const field of ["paddingTop", "paddingBottom"])
+      bindFloatVariable(
+        component,
+        field,
+        containerBlockToken(block),
+        variableByName,
+        stats,
+      );
+  }
   bindFloatVariable(
     component,
     "paddingLeft",
@@ -63357,6 +64078,1662 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
   );
 }
 
+// --- ImageCropper ----------------------------------------------------------------
+
+// GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
+// column 320 wide (ImageCropper/width/default), the frame and the zoom row 12
+// apart (ImageCropper/gap). The frame is the box, in the Ratio's shape (320
+// square, or 320 by 180 at 16:9), on the control radius (ImageCropper/radius)
+// in Colors/background/100 with a 1 inner edge in Border/Input; the image is
+// the product's, so an Image slot stands in for it. The zoom row is Zoom out,
+// the zoom Slider and Zoom in, 8 apart (ImageCropper/zoom/gap): two 44
+// outline icon buttons and a Slider slot, Core's own set, as ImageField draws
+// its Core parts. `Zoom Controls` shows the row. React's zoom-in and zoom-out
+// magnifiers are not curated icons yet, so the buttons draw the curated plus
+// and minus, as MapControlsGroup's zoom does.
+const IMAGE_CROPPER_GEOMETRY = {
+  width: 320,
+  landscapeHeight: 180,
+  gap: 12,
+  zoomGap: 8,
+  control: 44,
+  imageInset: 16,
+};
+const IMAGE_CROPPER_ZOOM_ROW_NAME = "Zoom Row";
+
+async function createImageCropperVariant(args) {
+  const component = figma.createComponent();
+  await updateImageCropperVariant(component, args);
+  return component;
+}
+
+function parseImageCropperVariantName(name) {
+  return productSdkVariantValues(name, "Ratio", IMAGE_CROPPER_RATIOS);
+}
+
+async function updateImageCropperVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = IMAGE_CROPPER_GEOMETRY;
+  const frameHeight =
+    value === "Landscape" ? geometry.landscapeHeight : geometry.width;
+  productSdkVariantRoot(component, "ImageCropper", "Ratio=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.gap,
+    width: geometry.width,
+    height: frameHeight + geometry.gap + geometry.control,
+  });
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ImageCropper/gap",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "width",
+    "ImageCropper/width/default",
+    variableByName,
+    stats,
+  );
+
+  const frame = productSdkFrame("Frame", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: geometry.width,
+    height: frameHeight,
+  });
+  frame.cornerRadius = KOZMOS_RADIUS.control;
+  frame.clipsContent = true;
+  frame.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  frame.strokeWeight = 1;
+  frame.strokeAlign = "INSIDE";
+  frame.strokes = [
+    paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
+  ];
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", "image-cropper-frame");
+  bindFloatVariable(
+    frame,
+    "cornerRadius",
+    "ImageCropper/radius",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, frame, "FILL", "FIXED");
+  const image = await productSdkSlot({
+    name: "Image Slot",
+    label: "Image",
+    width: geometry.width - 2 * geometry.imageInset,
+    height: frameHeight - 2 * geometry.imageInset,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: geometry.imageInset,
+  });
+  frame.appendChild(image);
+
+  const row = productSdkFrame(IMAGE_CROPPER_ZOOM_ROW_NAME, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: geometry.zoomGap,
+    width: geometry.width,
+    height: geometry.control,
+  });
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "ImageCropper/zoom/gap",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, row, "FILL", "HUG");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom Out Button",
+      glyph: "−",
+      iconName: "minus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+  const slider = await productSdkSlot({
+    name: "Zoom Slider Slot",
+    label: "Slider · Zoom",
+    width: geometry.width - 2 * geometry.control - 2 * geometry.zoomGap,
+    height: geometry.control,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(row, slider, "FILL", "FIXED");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom In Button",
+      glyph: "+",
+      iconName: "plus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+}
+
+function configureImageCropperProperties(componentSet, stats) {
+  configureNamedBooleanProperty(
+    componentSet,
+    IMAGE_CROPPER_ZOOM_ROW_NAME,
+    "Zoom Controls",
+    true,
+    stats,
+  );
+}
+
+const IMAGE_CROPPER_DESCRIPTION = [
+  "Kozmos ImageCropper component set generated from React ImageCropper API (GAP-273).",
+  "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9. Zoom Controls maps to showZoomControls.",
+  "The image is the product's: the Image slot stands in for it. onCrop hands back the frame as fractions of the image.",
+];
+
+async function buildImageCropperComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    x: 80,
+    y: 20400,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION,
+  });
+}
+
+async function updateImageCropperComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    updateVariant: updateImageCropperVariant,
+    parseVariantName: parseImageCropperVariantName,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildImageCropperComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    build: buildImageCropperComponent,
+  });
+}
+
+// --- PageHeader ---------------------------------------------------------------
+
+// GAP-036 (decision 135): React's PageHeader, a band across the page. Its
+// content is a Container's: the window's widest side step, 24
+// (Container/padding/x/window), and GAP-116's block inset, 32 above
+// (Container/padding/y/large) and 24 below (Container/padding/y/medium). The
+// Subtle tone is the band in theme 0, CardHeader's subtle strip's tint; the
+// Default tone paints none. Top to bottom: the Breadcrumb, a live Breadcrumb
+// instance 8 above the title; then a row of the text column and the Actions,
+// 16 apart. The column is the title's line, the Title Text (Heading 3, 24/32,
+// at Medium; Heading 2, 30/36, at Large) with the Info button 8 after it, and
+// the Description Text 4 under it, 14/20 in foreground/400. Info is a live
+// IconButton (Ghost, Small) with info-circle, and Actions a live Button; each
+// sits in a frame as tall as the title's line and is centred on it, so a
+// taller button spills past the line evenly and the header grows no taller.
+// The Breadcrumb, Info, Description and Actions booleans show each, as
+// React draws each only when it is given.
+const PAGE_HEADER_ACTIONS_NAME = "Actions";
+const PAGE_HEADER_INFO_NAME = "Info";
+const PAGE_HEADER_BREADCRUMB_NAME = "Breadcrumb";
+
+function pageHeaderTitleMetrics(size) {
+  return size === "Large"
+    ? { level: "H2", fontSize: 30, lineHeight: 36, token: "3xl" }
+    : { level: "H3", fontSize: 24, lineHeight: 32, token: "2xl" };
+}
+
+async function createPageHeaderVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updatePageHeaderVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parsePageHeaderVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (PAGE_HEADER_TONES.indexOf(values.Tone) === -1) return null;
+  const size = values.Size || "Medium";
+  if (PAGE_HEADER_SIZES.indexOf(size) === -1) return null;
+  return { value: values.Tone, second: size };
+}
+
+function pageHeaderFrame(name, kind, layoutMode) {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = layoutMode;
+  frame.primaryAxisSizingMode = "AUTO";
+  frame.counterAxisSizingMode = "AUTO";
+  frame.primaryAxisAlignItems = "MIN";
+  frame.counterAxisAlignItems = "MIN";
+  frame.itemSpacing = 0;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", kind);
+  return frame;
+}
+
+async function updatePageHeaderVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const tone = PAGE_HEADER_TONES.indexOf(value) === -1 ? "Subtle" : value;
+  const size = PAGE_HEADER_SIZES.indexOf(second) === -1 ? "Medium" : second;
+  const metrics = pageHeaderTitleMetrics(size);
+  component.name = `Tone=${tone}, Size=${size}`;
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 8;
+  component.paddingLeft = 24;
+  component.paddingRight = 24;
+  component.paddingTop = 32;
+  component.paddingBottom = 24;
+  component.resizeWithoutConstraints(960, 160);
+  component.fills =
+    tone === "Subtle"
+      ? [paintFromVariable("Colors/theme/0", "#F1F5FE", variableByName, stats)]
+      : [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "PageHeader");
+  bindFloatVariable(
+    component,
+    "width",
+    "PageHeader/width/default",
+    variableByName,
+    stats,
+  );
+  for (const field of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      component,
+      field,
+      "Container/padding/x/window",
+      variableByName,
+      stats,
+    );
+  bindFloatVariable(
+    component,
+    "paddingTop",
+    "Container/padding/y/large",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingBottom",
+    "Container/padding/y/medium",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "PageHeader/breadcrumb/gap",
+    variableByName,
+    stats,
+  );
+
+  // Redrawn whole on every Update: the layers hold nothing a designer
+  // overrides but the texts and the booleans, which the properties carry.
+  removeDirectChildren(component);
+
+  const breadcrumb = await createPageHeaderInstance({
+    componentSetName: "Breadcrumb",
+    variantProperties: { Content: "Basic" },
+    name: PAGE_HEADER_BREADCRUMB_NAME,
+    role: "page-header-breadcrumb",
+    stats,
+  });
+  component.appendChild(breadcrumb);
+
+  const row = pageHeaderFrame("Header Row", "page-header-row", "HORIZONTAL");
+  row.itemSpacing = 16;
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "PageHeader/gap",
+    variableByName,
+    stats,
+  );
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
+
+  const text = pageHeaderFrame("Header Text", "page-header-text", "VERTICAL");
+  text.itemSpacing = 4;
+  bindFloatVariable(
+    text,
+    "itemSpacing",
+    "PageHeader/text/gap",
+    variableByName,
+    stats,
+  );
+  row.appendChild(text);
+  setLayoutSizingHorizontal(text, "FILL");
+
+  const line = pageHeaderFrame("Title Row", "page-header-title", "HORIZONTAL");
+  line.itemSpacing = 8;
+  bindFloatVariable(
+    line,
+    "itemSpacing",
+    "PageHeader/title/gap",
+    variableByName,
+    stats,
+  );
+  text.appendChild(line);
+
+  const title = figma.createText();
+  title.name = "Title Text";
+  title.fontName = fonts.bold || fonts.medium;
+  title.fontSize = metrics.fontSize;
+  title.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
+  title.textAutoResize = "WIDTH_AND_HEIGHT";
+  await applyTextStyleToNodeAsync(
+    title,
+    textStyleKeyForHeading(metrics.level),
+    stats,
+  );
+  bindFloatVariable(
+    title,
+    "fontSize",
+    `Text/font-size/${metrics.token}`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    title,
+    "lineHeight",
+    `Text/line-height/${metrics.token}`,
+    variableByName,
+    stats,
+  );
+  title.characters = "Settings";
+  title.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  line.appendChild(title);
+  setHugChildSizing(title);
+
+  const info = pageHeaderLine(PAGE_HEADER_INFO_NAME, metrics.lineHeight);
+  line.appendChild(info);
+  const infoButton = await createPageHeaderInfoButton({
+    variableByName,
+    stats,
+  });
+  if (infoButton) info.appendChild(infoButton);
+  // Off by default, as React draws no info button until it is given one.
+  info.visible = false;
+
+  const description = figma.createText();
+  description.name = "Description Text";
+  description.fontName = fonts.regular;
+  description.fontSize = 14;
+  description.lineHeight = { unit: "PIXELS", value: 20 };
+  await applyTextStyleToNodeAsync(
+    description,
+    textStyleKeyForText("Small", "Normal"),
+    stats,
+  );
+  bindFloatVariable(
+    description,
+    "fontSize",
+    "Text/font-size/sm",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    description,
+    "lineHeight",
+    "Text/line-height/sm",
+    variableByName,
+    stats,
+  );
+  description.characters =
+    "Manage the site's map, its levels and who can edit them.";
+  description.fills = [
+    paintFromVariable(
+      "Colors/foreground/400",
+      "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+  text.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+
+  const actions = pageHeaderLine(PAGE_HEADER_ACTIONS_NAME, metrics.lineHeight);
+  actions.itemSpacing = 8;
+  bindFloatVariable(
+    actions,
+    "itemSpacing",
+    "PageHeader/title/gap",
+    variableByName,
+    stats,
+  );
+  row.appendChild(actions);
+  const created = await createNestedComponentInstance({
+    componentSetName: "Button",
+    variantProperties: {
+      Variant: "Default",
+      Size: "Default",
+      State: "Default",
+    },
+    name: "Primary Action",
+    role: "page-header-action",
+    stats,
+  });
+  if (created) {
+    setInstanceTextProperty(
+      created.instance,
+      created.componentSet,
+      "Label Text",
+      "Save changes",
+      stats,
+    );
+    actions.appendChild(created.instance);
+    // As wide as its words, as React's: Button's Default variant is fixed at
+    // 112, and "Save changes" ran 14 past its padding.
+    setLayoutSizingHorizontal(created.instance, "HUG");
+  } else {
+    actions.appendChild(
+      createMissingNestedComponentNode(
+        "Primary Action",
+        "Build Button before updating PageHeader.",
+        stats,
+      ),
+    );
+  }
+}
+
+/**
+ * A frame as tall as the title's line that hugs what it holds and centres
+ * it, so a taller button spills past the line evenly.
+ */
+function pageHeaderLine(name, lineHeight) {
+  const frame = pageHeaderFrame(name, "page-header-line", "HORIZONTAL");
+  frame.counterAxisSizingMode = "FIXED";
+  frame.counterAxisAlignItems = "CENTER";
+  frame.resizeWithoutConstraints(44, lineHeight);
+  return frame;
+}
+
+async function createPageHeaderInstance({
+  componentSetName,
+  variantProperties,
+  name,
+  role,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name,
+    role,
+    stats,
+  });
+  if (!created)
+    return createMissingNestedComponentNode(
+      name,
+      `Build ${componentSetName} before updating PageHeader.`,
+      stats,
+    );
+  return created.instance;
+}
+
+/**
+ * The info button: IconButton's Ghost at Small with info-circle. With no
+ * info-circle on the Icons page the frame is left empty and the run says so:
+ * the IconButton's own default icon would be the wrong glyph.
+ */
+async function createPageHeaderInfoButton({ variableByName, stats }) {
+  const glyph = await findImporterIconSource(
+    "info-circle",
+    "PageHeader",
+    stats,
+  );
+  if (!glyph) return null;
+  const created = await createNestedComponentInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: "Ghost", Size: "Small", State: "Default" },
+    name: "Info Button",
+    role: "page-header-info",
+    stats,
+  });
+  if (!created)
+    return createMissingNestedComponentNode(
+      "Info Button",
+      "Build IconButton before updating PageHeader.",
+      stats,
+    );
+  setInstanceSwapProperty(
+    created.instance,
+    created.componentSet,
+    BUTTON_ICON_PROPERTY,
+    glyph.id,
+    stats,
+  );
+  retintPageHeaderInfoIcon(created.instance, variableByName, stats);
+  return created.instance;
+}
+
+/**
+ * Swapping the IconButton's Icon replaces the layer its tint was laid on, so
+ * info-circle would draw in its source's black in both themes: the tint the
+ * ghost button gives its icon is laid again on the swapped-in layers.
+ */
+function retintPageHeaderInfoIcon(instance, variableByName, stats) {
+  const config = buttonConfig("Ghost", "Default");
+  const icon = instance.findOne(
+    (node) =>
+      node.type === "INSTANCE" &&
+      (node.name === "Icon" ||
+        Boolean(
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent,
+        )),
+  );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "page-header-info-icon",
+      "PageHeader: the Info Button has no Icon layer to tint.",
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+}
+
+function configurePageHeaderProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    "Settings",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Manage the site's map, its levels and who can edit them.",
+    stats,
+  );
+  // As the native Code Connect reads them: a breadcrumb, a description and
+  // an action by default, no info button.
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_BREADCRUMB_NAME,
+    "Breadcrumb",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_INFO_NAME,
+    "Info",
+    false,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Description",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_ACTIONS_NAME,
+    "Actions",
+    true,
+    stats,
+  );
+}
+
+const PAGE_HEADER_DESCRIPTION = [
+  "Kozmos PageHeader component set generated from React PageHeader API (GAP-036).",
+  "Tone maps to PageHeader.tone; Size to PageHeader.size (Medium md, Large lg).",
+  "Title Text maps to title; Description Text to description.",
+  "Breadcrumb, Info, Description and Actions show what React draws when it is given each.",
+];
+
+async function buildPageHeaderComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    axisName: "Tone",
+    values: PAGE_HEADER_TONES,
+    axis2Name: "Size",
+    axis2Values: PAGE_HEADER_SIZES,
+    x: 80,
+    y: 12600,
+    xStep: 1000,
+    yStep: 240,
+    createVariant: createPageHeaderVariant,
+    configureProperties: configurePageHeaderProperties,
+    description: PAGE_HEADER_DESCRIPTION,
+  });
+}
+
+async function updatePageHeaderComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    axisName: "Tone",
+    values: PAGE_HEADER_TONES,
+    axis2Name: "Size",
+    axis2Values: PAGE_HEADER_SIZES,
+    xStep: 1000,
+    yStep: 240,
+    createVariant: createPageHeaderVariant,
+    updateVariant: updatePageHeaderVariant,
+    parseVariantName: parsePageHeaderVariantName,
+    configureProperties: configurePageHeaderProperties,
+    description: PAGE_HEADER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildPageHeaderComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    build: buildPageHeaderComponent,
+  });
+}
+
+// --- PersonaMark ------------------------------------------------------------
+
+// GAP-106: React's PersonaMark, a persona's colour as a diamond: 12 by 12
+// (PersonaMark/size), a square turned an eighth with its points on the box's
+// edges, drawn as a path so it lays out at its own size. Its fill is the
+// persona's colour, product data that no variable holds: an example persona's
+// here, which a designer overrides. A group is its marks 2 apart
+// (PersonaMark/gap, layout spacing 25) in a row that hugs them. Each variant is
+// redrawn whole on every Update: it holds no instance and no text.
+const PERSONA_MARK_PATH = "M 6 0 L 12 6 L 6 12 L 0 6 Z";
+// Example personas' colours, as Pointr Cloud's Customer, Visitor and Staff.
+const PERSONA_MARK_EXAMPLES = ["#FF9800", "#2196F3", "#4CAF50"];
+
+async function createPersonaMarkVariant({ value, variableByName, stats }) {
+  const component = figma.createComponent();
+  await updatePersonaMarkVariant(component, { value, variableByName, stats });
+  return component;
+}
+
+function parsePersonaMarkVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (PERSONA_MARK_FORMS.indexOf(values.Form) === -1) return null;
+  return { value: values.Form };
+}
+
+async function updatePersonaMarkVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  component.name = `Form=${value}`;
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = 2;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.fills = [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "PersonaMark");
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "PersonaMark/gap",
+    variableByName,
+    stats,
+  );
+
+  removeDirectChildren(component);
+  const colours =
+    value === "Group"
+      ? PERSONA_MARK_EXAMPLES
+      : PERSONA_MARK_EXAMPLES.slice(0, 1);
+  colours.forEach((colour, index) => {
+    const mark = figma.createVector();
+    mark.name = value === "Group" ? `Mark ${index + 1}` : "Mark";
+    mark.vectorPaths = [{ windingRule: "NONZERO", data: PERSONA_MARK_PATH }];
+    mark.resizeWithoutConstraints(12, 12);
+    mark.fills = [paintFromHex(colour)];
+    mark.strokes = [];
+    mark.setSharedPluginData(RUN_NAMESPACE, "kind", "persona-mark");
+    component.appendChild(mark);
+    bindFloatVariable(mark, "width", "PersonaMark/size", variableByName, stats);
+    bindFloatVariable(
+      mark,
+      "height",
+      "PersonaMark/size",
+      variableByName,
+      stats,
+    );
+  });
+}
+
+// --- ListItem and SettingsRow -------------------------------------------------
+
+// GAP-195, decision 135: React's ListItem filled in, the Get started
+// checklist row. A row 360 wide (List/width/default) padded 16 across
+// (List/item/padding/x) and 12 down (List/item/padding/y/default), its three
+// columns 12 apart (ListItem/gap): a status mark at the start, 20 across
+// (ListItem/status/size), on the title's 20 line; the body, which takes the
+// rest, its lines 2 apart (ListItem/body/gap): the title 14/20 medium in the
+// foreground with a role tag 8 after it (ListItem/heading/gap), the
+// description 14/20 in the muted foreground and the meta 12/16 in it too;
+// one action at the end, centred on the row. Selected tints the row theme 0,
+// as React's `selected` does. Each slot is shown by its boolean; the texts
+// are properties.
+const LIST_ITEM_BODY_NAME = "Body";
+const LIST_ITEM_HEADING_NAME = "Heading";
+
+async function createListItemVariant({ value, variableByName, fonts, stats }) {
+  const component = figma.createComponent();
+  await updateListItemVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseListItemVariantName(name) {
+  const values = parseVariantNameParts(name);
+  if (LIST_ITEM_SELECTED.indexOf(values.Selected) === -1) return null;
+  return { value: values.Selected };
+}
+
+function parseVariantNameParts(name) {
+  const values = {};
+  for (const part of String(name).split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  return values;
+}
+
+/** The row's own frame: React's padded ListItem, one per variant. */
+function applyListItemRowFrame(component, selected, variableByName, stats) {
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "FIXED";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.paddingLeft = 16;
+  component.paddingRight = 16;
+  component.paddingTop = 12;
+  component.paddingBottom = 12;
+  component.itemSpacing = 12;
+  component.resizeWithoutConstraints(360, 48);
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = selected
+    ? [paintFromVariable("Colors/theme/0", "#EDF2FE", variableByName, stats)]
+    : [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "width",
+    "List/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingLeft",
+    "List/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingRight",
+    "List/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingTop",
+    "List/item/padding/y/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingBottom",
+    "List/item/padding/y/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ListItem/gap",
+    variableByName,
+    stats,
+  );
+}
+
+async function createListItemText({
+  name,
+  characters,
+  role,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const text = figma.createText();
+  text.name = name;
+  const meta = role === "meta";
+  text.fontName = role === "title" ? fonts.medium : fonts.regular;
+  text.fontSize = meta ? 12 : 14;
+  text.lineHeight = { unit: "PIXELS", value: meta ? 16 : 20 };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, listItemTextStyleKey(name), stats);
+  text.fills = [
+    role === "title"
+      ? paintFromVariable(
+          "Colors/foreground/0",
+          "#0B0D12",
+          variableByName,
+          stats,
+        )
+      : paintFromVariable(
+          "Colors/foreground/400",
+          "#5D626F",
+          variableByName,
+          stats,
+        ),
+  ];
+  if (!meta) {
+    bindFloatVariable(
+      text,
+      "fontSize",
+      "List/item/font-size",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      text,
+      "lineHeight",
+      "List/item/line-height",
+      variableByName,
+      stats,
+    );
+  }
+  return text;
+}
+
+/** The text style the audit expects on a ListItem's or SettingsRow's text. */
+function listItemTextStyleKey(textName) {
+  if (textName === "Title Text" || textName === "Label Text")
+    return textStyleKeyForText("Small", "Medium");
+  if (textName === "Addon Text" || textName === "State Text")
+    return textStyleKeyForText("XS", "Semibold");
+  if (textName === "Meta Text" || textName === "Reason Text")
+    return textStyleKeyForText("XS", "Normal");
+  if (textName === "Action Text" || textName === "Reset Text")
+    return textStyleKeyForText("Small", "Medium");
+  return textStyleKeyForText("Small", "Normal");
+}
+
+/** A vertical column that takes the rest of the row: the row's body. */
+function createListItemBody(variableByName, stats) {
+  const body = figma.createFrame();
+  body.name = LIST_ITEM_BODY_NAME;
+  body.layoutMode = "VERTICAL";
+  body.primaryAxisSizingMode = "AUTO";
+  body.counterAxisSizingMode = "FIXED";
+  body.primaryAxisAlignItems = "MIN";
+  body.counterAxisAlignItems = "MIN";
+  body.itemSpacing = 2;
+  body.paddingLeft = 0;
+  body.paddingRight = 0;
+  body.paddingTop = 0;
+  body.paddingBottom = 0;
+  body.fills = [];
+  body.strokes = [];
+  body.clipsContent = false;
+  bindFloatVariable(
+    body,
+    "itemSpacing",
+    "ListItem/body/gap",
+    variableByName,
+    stats,
+  );
+  return body;
+}
+
+/** The title's line: the title, and what sits beside it. */
+function createListItemHeading(variableByName, stats) {
+  const heading = figma.createFrame();
+  heading.name = LIST_ITEM_HEADING_NAME;
+  heading.layoutMode = "HORIZONTAL";
+  heading.primaryAxisSizingMode = "AUTO";
+  heading.counterAxisSizingMode = "AUTO";
+  heading.primaryAxisAlignItems = "MIN";
+  heading.counterAxisAlignItems = "CENTER";
+  heading.itemSpacing = 8;
+  heading.paddingLeft = 0;
+  heading.paddingRight = 0;
+  heading.paddingTop = 0;
+  heading.paddingBottom = 0;
+  heading.fills = [];
+  heading.strokes = [];
+  heading.clipsContent = false;
+  bindFloatVariable(
+    heading,
+    "itemSpacing",
+    "ListItem/heading/gap",
+    variableByName,
+    stats,
+  );
+  return heading;
+}
+
+/**
+ * A tag beside the title: Tag's pill, 12 semibold on the muted fill
+ * (secondary) or on nothing with an edge (outline), 10 across and 2 down.
+ */
+async function createListItemTag({
+  name,
+  textName,
+  characters,
+  outline,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const tag = figma.createFrame();
+  tag.name = name;
+  tag.layoutMode = "HORIZONTAL";
+  tag.primaryAxisSizingMode = "AUTO";
+  tag.counterAxisSizingMode = "AUTO";
+  tag.primaryAxisAlignItems = "CENTER";
+  tag.counterAxisAlignItems = "CENTER";
+  tag.paddingLeft = 10;
+  tag.paddingRight = 10;
+  tag.paddingTop = 2;
+  tag.paddingBottom = 2;
+  tag.cornerRadius = KOZMOS_RADIUS.pill;
+  tag.clipsContent = false;
+  tag.fills = outline
+    ? []
+    : [
+        paintFromVariable(
+          "Colors/background/100",
+          "#E3E4E8",
+          variableByName,
+          stats,
+        ),
+      ];
+  setNodePropertyIfSupported(tag, "strokesIncludedInLayout", true);
+  tag.strokeWeight = 1;
+  tag.strokeAlign = "INSIDE";
+  tag.strokes = outline
+    ? [paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats)]
+    : [];
+  const text = figma.createText();
+  text.name = textName;
+  text.fontName = textFontForWeight("Semibold", fonts);
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, listItemTextStyleKey(textName), stats);
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
+  ];
+  tag.appendChild(text);
+  setHugChildSizing(text);
+  return tag;
+}
+
+/** The checklist's status mark, Done: the theme fill with a 12 check. */
+async function createListItemStatusMark(variableByName, stats) {
+  const mark = figma.createFrame();
+  mark.name = "Leading";
+  mark.layoutMode = "HORIZONTAL";
+  mark.primaryAxisSizingMode = "FIXED";
+  mark.counterAxisSizingMode = "FIXED";
+  mark.primaryAxisAlignItems = "CENTER";
+  mark.counterAxisAlignItems = "CENTER";
+  mark.resizeWithoutConstraints(20, 20);
+  mark.cornerRadius = KOZMOS_RADIUS.pill;
+  mark.clipsContent = false;
+  mark.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  mark.strokes = [];
+  bindFloatVariable(
+    mark,
+    "width",
+    "ListItem/status/size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    mark,
+    "height",
+    "ListItem/status/size",
+    variableByName,
+    stats,
+  );
+  mark.setSharedPluginData(RUN_NAMESPACE, "kind", "list-item-status");
+  const check = await createFixedIconInstance(
+    "check",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    12,
+    null,
+  );
+  check.name = "Status Icon";
+  mark.appendChild(check);
+  return mark;
+}
+
+/** One small outline button: the row's action, Button's sm outline. */
+async function createListItemAction(fonts, variableByName, stats) {
+  const action = figma.createFrame();
+  action.name = "Trailing";
+  action.layoutMode = "HORIZONTAL";
+  action.primaryAxisSizingMode = "AUTO";
+  action.counterAxisSizingMode = "FIXED";
+  action.primaryAxisAlignItems = "CENTER";
+  action.counterAxisAlignItems = "CENTER";
+  action.paddingLeft = 12;
+  action.paddingRight = 12;
+  action.paddingTop = 0;
+  action.paddingBottom = 0;
+  action.resizeWithoutConstraints(72, 32);
+  action.cornerRadius = KOZMOS_RADIUS.control;
+  action.clipsContent = false;
+  action.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  setNodePropertyIfSupported(action, "strokesIncludedInLayout", true);
+  action.strokeWeight = 1;
+  action.strokeAlign = "INSIDE";
+  action.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  const text = figma.createText();
+  text.name = "Action Text";
+  text.fontName = fonts.medium;
+  text.fontSize = 14;
+  text.lineHeight = { unit: "PIXELS", value: 20 };
+  text.characters = "Replay";
+  await applyTextStyleToNodeAsync(
+    text,
+    listItemTextStyleKey("Action Text"),
+    stats,
+  );
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
+  ];
+  action.appendChild(text);
+  setHugChildSizing(text);
+  return action;
+}
+
+async function updateListItemVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  component.name = `Selected=${value}`;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "ListItem");
+  applyListItemRowFrame(component, value === "True", variableByName, stats);
+
+  // Redrawn whole on every Update: the row holds no designer's override but
+  // its texts and its booleans, which the properties carry.
+  removeDirectChildren(component);
+  const leading = await createListItemStatusMark(variableByName, stats);
+  component.appendChild(leading);
+  setFixedChildSizing(leading);
+  setNodePropertyIfSupported(leading, "layoutAlign", "INHERIT");
+
+  const body = createListItemBody(variableByName, stats);
+  component.appendChild(body);
+  const heading = createListItemHeading(variableByName, stats);
+  body.appendChild(heading);
+  const title = await createListItemText({
+    name: "Title Text",
+    characters: "Explore the map",
+    role: "title",
+    fonts,
+    variableByName,
+    stats,
+  });
+  heading.appendChild(title);
+  setHugChildSizing(title);
+  const addon = await createListItemTag({
+    name: "Title Addon",
+    textName: "Addon Text",
+    characters: "Viewer",
+    outline: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  heading.appendChild(addon);
+  setHugChildSizing(addon);
+  setHugChildSizing(heading);
+  setNodePropertyIfSupported(heading, "layoutAlign", "INHERIT");
+  const description = await createListItemText({
+    name: "Description Text",
+    characters: "Pan, zoom and change levels.",
+    role: "description",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+  const meta = await createListItemText({
+    name: "Meta Text",
+    characters: "2 min",
+    role: "meta",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(meta);
+  setLayoutSizingHorizontal(meta, "FILL");
+  setTextAutoResize(meta, "HEIGHT");
+  setLayoutSizingHorizontal(body, "FILL");
+  setLayoutSizingVertical(body, "HUG");
+
+  const trailing = await createListItemAction(fonts, variableByName, stats);
+  component.appendChild(trailing);
+  // Button's sm: 32 tall, as wide as its words and 12 either side.
+  setLayoutSizingHorizontal(trailing, "HUG");
+  setLayoutSizingVertical(trailing, "FIXED");
+  setNodePropertyIfSupported(trailing, "layoutAlign", "CENTER");
+}
+
+const LIST_ITEM_BOOLEANS = [
+  ["Leading", "Show Leading"],
+  ["Title Addon", "Show Title Addon"],
+  ["Description Text", "Show Description"],
+  ["Meta Text", "Show Meta"],
+  ["Trailing", "Show Trailing"],
+];
+
+function configureListItemProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    "Explore the map",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Addon Text",
+    "Addon Text",
+    "Viewer",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Pan, zoom and change levels.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Meta Text",
+    "Meta Text",
+    "2 min",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Action Text",
+    "Action Text",
+    "Replay",
+    stats,
+  );
+  for (const pair of LIST_ITEM_BOOLEANS) {
+    configureNamedBooleanProperty(componentSet, pair[0], pair[1], true, stats);
+  }
+}
+
+// GAP-195: ListItem. Selected is the row's tint.
+async function buildListItemComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    axisName: "Selected",
+    values: LIST_ITEM_SELECTED,
+    x: 80,
+    y: 7400,
+    xStep: 420,
+    createVariant: createListItemVariant,
+    configureProperties: configureListItemProperties,
+    description: listItemSetDescription(false),
+  });
+}
+
+async function updateListItemComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    axisName: "Selected",
+    values: LIST_ITEM_SELECTED,
+    xStep: 420,
+    createVariant: createListItemVariant,
+    updateVariant: updateListItemVariant,
+    parseVariantName: parseListItemVariantName,
+    configureProperties: configureListItemProperties,
+    description: listItemSetDescription(true),
+  });
+}
+
+function listItemSetDescription(updated) {
+  const lines = [
+    "Kozmos ListItem component set generated from React ListItem's slots (GAP-195, decision 135).",
+    "Leading maps to leading (a ListItemStatus), Title Text to title, Addon Text to titleAddon (a Tag), Description Text to description, Meta Text to meta and Action Text to trailing (one Button).",
+    "Selected maps to selected: the row tinted theme 0.",
+  ];
+  if (updated)
+    lines.push("Updated in place to preserve the Code Connect node ID.");
+  return lines;
+}
+
+async function rebuildListItemComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    build: buildListItemComponent,
+  });
+}
+
+// GAP-040, decision 135: SettingsRow, ListItem's row with a setting in it.
+// The label 14/20 medium and the state's tag beside it (Inherited, an
+// outline tag; Overridden, the secondary fill), the description under it,
+// and the control at the end: Switch's track 44 by 24, on in the theme fill.
+// Overridden draws Reset to default under the description, in the theme's
+// 600 at 14 medium; Disabled draws the reason there instead, the label in the
+// muted foreground and the switch at half, as React draws a disabled row.
+const SETTINGS_ROW_CONTROL_NAME = "Control";
+
+async function createSettingsRowVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateSettingsRowVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseSettingsRowVariantName(name) {
+  const values = parseVariantNameParts(name);
+  if (SETTINGS_ROW_STATES.indexOf(values.State) === -1) return null;
+  const disabled = values.Disabled === undefined ? "False" : values.Disabled;
+  if (SETTINGS_ROW_DISABLED.indexOf(disabled) === -1) return null;
+  return { value: values.State, second: disabled };
+}
+
+/** Switch's track and thumb, on: React's h-6 w-11, the thumb 20. */
+function createSettingsRowSwitch(disabled, variableByName, stats) {
+  const track = figma.createFrame();
+  track.name = SETTINGS_ROW_CONTROL_NAME;
+  track.layoutMode = "HORIZONTAL";
+  track.primaryAxisSizingMode = "FIXED";
+  track.counterAxisSizingMode = "FIXED";
+  track.primaryAxisAlignItems = "MAX";
+  track.counterAxisAlignItems = "CENTER";
+  track.paddingLeft = 2;
+  track.paddingRight = 2;
+  track.paddingTop = 2;
+  track.paddingBottom = 2;
+  track.resizeWithoutConstraints(44, 24);
+  track.cornerRadius = KOZMOS_RADIUS.pill;
+  track.clipsContent = false;
+  track.opacity = disabled ? 0.5 : 1;
+  track.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  track.strokes = [];
+  bindFloatVariable(
+    track,
+    "width",
+    "Switch/track/width",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    track,
+    "height",
+    "Switch/track/height",
+    variableByName,
+    stats,
+  );
+  const thumb = figma.createEllipse();
+  thumb.name = "Thumb";
+  thumb.resize(20, 20);
+  thumb.fills = [
+    paintFromVariable(
+      THEME_FILL_FOREGROUND.name,
+      THEME_FILL_FOREGROUND.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  track.appendChild(thumb);
+  return track;
+}
+
+async function updateSettingsRowVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const disabled = second === "True";
+  component.name = `State=${state}, Disabled=${disabled ? "True" : "False"}`;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "SettingsRow");
+  applyListItemRowFrame(component, false, variableByName, stats);
+  component.resizeWithoutConstraints(560, 48);
+  bindFloatVariable(
+    component,
+    "width",
+    "SettingsRow/width/default",
+    variableByName,
+    stats,
+  );
+
+  removeDirectChildren(component);
+  const body = createListItemBody(variableByName, stats);
+  component.appendChild(body);
+  const heading = createListItemHeading(variableByName, stats);
+  body.appendChild(heading);
+  const label = await createListItemText({
+    name: "Label Text",
+    characters: "Show the banner",
+    role: "title",
+    fonts,
+    variableByName,
+    stats,
+  });
+  if (disabled) {
+    label.fills = [
+      paintFromVariable(
+        "Colors/foreground/400",
+        "#5D626F",
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+  heading.appendChild(label);
+  setHugChildSizing(label);
+  if (state !== "None") {
+    const tag = await createListItemTag({
+      name: "State",
+      textName: "State Text",
+      characters: state,
+      outline: state === "Inherited",
+      fonts,
+      variableByName,
+      stats,
+    });
+    heading.appendChild(tag);
+    setHugChildSizing(tag);
+  }
+  setHugChildSizing(heading);
+  setNodePropertyIfSupported(heading, "layoutAlign", "INHERIT");
+  const description = await createListItemText({
+    name: "Description Text",
+    characters: "A message above the map.",
+    role: "description",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+  if (disabled) {
+    const reason = await createListItemText({
+      name: "Reason Text",
+      characters: "Turn on Positioning first.",
+      role: "meta",
+      fonts,
+      variableByName,
+      stats,
+    });
+    body.appendChild(reason);
+    setLayoutSizingHorizontal(reason, "FILL");
+    setTextAutoResize(reason, "HEIGHT");
+  } else if (state === "Overridden") {
+    const reset = figma.createText();
+    reset.name = "Reset Text";
+    reset.fontName = fonts.medium;
+    reset.fontSize = 14;
+    reset.lineHeight = { unit: "PIXELS", value: 20 };
+    reset.characters = "Reset to default";
+    await applyTextStyleToNodeAsync(
+      reset,
+      listItemTextStyleKey("Reset Text"),
+      stats,
+    );
+    reset.fills = [
+      paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+    ];
+    body.appendChild(reset);
+    setHugChildSizing(reset);
+    setNodePropertyIfSupported(reset, "layoutAlign", "INHERIT");
+  }
+  setLayoutSizingHorizontal(body, "FILL");
+  setLayoutSizingVertical(body, "HUG");
+
+  const control = createSettingsRowSwitch(disabled, variableByName, stats);
+  component.appendChild(control);
+  setFixedChildSizing(control);
+}
+
+function configureSettingsRowProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label Text",
+    "Show the banner",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "A message above the map.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Reason Text",
+    "Reason Text",
+    "Turn on Positioning first.",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Show Description",
+    true,
+    stats,
+  );
+}
+
+// GAP-040: SettingsRow. State is the value's source; Disabled the row's.
+async function buildSettingsRowComponent() {
+  return buildSingleAxisComponent({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    axisName: "State",
+    values: SETTINGS_ROW_STATES,
+    axis2Values: SETTINGS_ROW_DISABLED,
+    x: 80,
+    y: 7640,
+    xStep: 620,
+    yStep: 140,
+    createVariant: createSettingsRowVariant,
+    configureProperties: configureSettingsRowProperties,
+    description: settingsRowSetDescription(false),
+  });
+}
+
+async function updateSettingsRowComponent() {
+  return updateSingleAxisComponent({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    axisName: "State",
+    values: SETTINGS_ROW_STATES,
+    axis2Values: SETTINGS_ROW_DISABLED,
+    xStep: 620,
+    yStep: 140,
+    createVariant: createSettingsRowVariant,
+    updateVariant: updateSettingsRowVariant,
+    parseVariantName: parseSettingsRowVariantName,
+    configureProperties: configureSettingsRowProperties,
+    description: settingsRowSetDescription(true),
+  });
+}
+
+function settingsRowSetDescription(updated) {
+  const lines = [
+    "Kozmos SettingsRow component set generated from React SettingsRow (GAP-040, decision 135), a ListItem with a setting in it.",
+    "State maps to state: None is unset, Inherited and Overridden draw their tag; Overridden offers Reset to default (onReset).",
+    "Disabled maps to disabled; Reason Text to disabledReason. Label Text maps to label, Description Text to description.",
+    "The switch stands for the control slot: any Kozmos control goes there.",
+  ];
+  if (updated)
+    lines.push("Updated in place to preserve the Code Connect node ID.");
+  return lines;
+}
+
+async function rebuildSettingsRowComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    build: buildSettingsRowComponent,
+  });
+}
+
 async function createCheckboxVariant({
   checked,
   state,
@@ -64833,6 +67210,7 @@ async function updateFileUploadVariant(
 ) {
   const config = inputConfig(state, status);
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
 
   component.name = `State=${state}, Status=${status}, Content=${content}`;
   component.layoutMode = "VERTICAL";
@@ -64845,7 +67223,10 @@ async function updateFileUploadVariant(
   component.paddingRight = 0;
   component.paddingTop = 0;
   component.paddingBottom = 0;
-  component.resizeWithoutConstraints(384, hasFiles ? 302 : 218);
+  component.resizeWithoutConstraints(
+    384,
+    hasFiles ? 302 : isPreview ? 130 : 218,
+  );
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -64877,7 +67258,7 @@ function layoutFileUploadVariants(componentSet) {
     const stateIndex = FILE_UPLOAD_STATES.indexOf(props.state);
     const statusIndex = FILE_UPLOAD_STATUSES.indexOf(props.status);
     const contentIndex = FILE_UPLOAD_CONTENT.indexOf(props.content);
-    child.x = statusIndex * 880 + contentIndex * 440;
+    child.x = statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
     child.y = stateIndex * 390;
   }
 }
@@ -65344,7 +67725,7 @@ function parseRatingVariantName(name) {
 
   if (
     RATING_SCALES.indexOf(scale) === -1 ||
-    ratingValuesForScale(scale).indexOf(value) === -1 ||
+    ratingValuesForScale(scale, state).indexOf(value) === -1 ||
     RATING_STATES.indexOf(state) === -1
   ) {
     return null;
@@ -65400,7 +67781,7 @@ function layoutRatingVariants(componentSet) {
     const props = parseRatingVariantName(child.name);
     if (!props) continue;
 
-    const valueIndex = RATING_VALUES.indexOf(props.value);
+    const valueIndex = RATING_READONLY_STAR_VALUES.indexOf(props.value);
     const stateIndex = RATING_STATES.indexOf(props.state);
     const scaleIndex = RATING_SCALES.indexOf(props.scale);
     child.x = valueIndex * 260;
@@ -65657,6 +68038,8 @@ async function syncRatingVariantChildren({
     const star = await createRatingStar({
       index,
       filled: index <= valueNumber,
+      // Only a read-only score's halves reach here (decision 181).
+      half: index - 0.5 === valueNumber,
       readonly,
       variableByName,
       fonts,
@@ -65737,9 +68120,36 @@ async function createRatingThumb({
   return cell;
 }
 
+/**
+ * One five-point star glyph: filled in Data/Yellow and outlined in it, or
+ * empty and outlined in foreground/500.
+ */
+function createRatingStarGlyph(filled, variableByName, stats) {
+  const glyph = figma.createStar();
+  glyph.name = filled ? "Star / filled" : "Star / empty";
+  glyph.pointCount = 5;
+  glyph.innerRadius = 0.45;
+  glyph.resizeWithoutConstraints(22, 22);
+  glyph.fills = filled
+    ? [paintFromVariable("Data/Yellow", "#A66A00", variableByName, stats)]
+    : [];
+  glyph.strokes = [
+    paintFromVariable(
+      filled ? "Data/Yellow" : "Colors/foreground/500",
+      filled ? "#A66A00" : "#747B8B",
+      variableByName,
+      stats,
+    ),
+  ];
+  glyph.strokeWeight = 1.5;
+  glyph.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-glyph");
+  return glyph;
+}
+
 async function createRatingStar({
   index,
   filled,
+  half = false,
   readonly,
   variableByName,
   fonts,
@@ -65761,26 +68171,41 @@ async function createRatingStar({
   cell.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-hit-area");
   setFixedChildSizing(cell);
 
+  if (typeof figma.createStar === "function" && half) {
+    // A score's half (decision 181): the empty star, and the filled one over
+    // it clipped to its start half, the left — Figma draws left to right.
+    // Same glyphs, size and colours as a full and an empty star.
+    const star = figma.createFrame();
+    star.name = "Star / half";
+    star.resizeWithoutConstraints(22, 22);
+    star.clipsContent = false;
+    star.fills = [];
+    star.strokes = [];
+    star.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-half");
+    const empty = createRatingStarGlyph(false, variableByName, stats);
+    star.appendChild(empty);
+    empty.x = 0;
+    empty.y = 0;
+    const clip = figma.createFrame();
+    clip.name = "Half Clip";
+    clip.resizeWithoutConstraints(11, 22);
+    clip.clipsContent = true;
+    clip.fills = [];
+    clip.strokes = [];
+    star.appendChild(clip);
+    clip.x = 0;
+    clip.y = 0;
+    const full = createRatingStarGlyph(true, variableByName, stats);
+    clip.appendChild(full);
+    full.x = 0;
+    full.y = 0;
+    cell.appendChild(star);
+    setFixedChildSizing(star);
+    return cell;
+  }
+
   if (typeof figma.createStar === "function") {
-    const glyph = figma.createStar();
-    glyph.name = filled ? "Star / filled" : "Star / empty";
-    glyph.pointCount = 5;
-    glyph.innerRadius = 0.45;
-    glyph.resizeWithoutConstraints(22, 22);
-    glyph.fills = filled
-      ? [paintFromVariable("Data/Yellow", "#A66A00", variableByName, stats)]
-      : [];
-    glyph.strokes = [
-      paintFromVariable(
-        filled ? "Data/Yellow" : "Colors/foreground/500",
-        filled ? "#A66A00" : "#747B8B",
-        variableByName,
-        stats,
-      ),
-    ];
-    glyph.strokeWeight = 1.5;
-    glyph.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-glyph");
-    cell.appendChild(glyph);
+    cell.appendChild(createRatingStarGlyph(filled, variableByName, stats));
     return cell;
   }
 
@@ -77563,6 +79988,7 @@ async function syncFileUploadVariantChildren({
     "Description Text",
     "File Name Text",
     "File Meta Text",
+    "Change Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -77573,6 +79999,7 @@ async function syncFileUploadVariantChildren({
   const disabled = state === "Disabled";
   const isDragging = state === "Dragging";
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
   const dropzoneStroke = isDragging ? "Colors/theme/600" : config.fieldStroke;
   const dropzoneStrokeFallback = isDragging
     ? "#1051E8"
@@ -77601,6 +80028,21 @@ async function syncFileUploadVariantChildren({
     ),
   ];
   label.textAlignVertical = "CENTER";
+
+  if (isPreview) {
+    await syncFileUploadPreviewChildren({
+      component,
+      label,
+      state,
+      status,
+      config,
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
 
   const dropzone = figma.createFrame();
   dropzone.name = "FileUpload Dropzone";
@@ -77841,6 +80283,229 @@ async function syncFileUploadVariantChildren({
     component.appendChild(fileList);
     setLayoutSizingHorizontal(fileList, "FILL");
   }
+  component.appendChild(helper);
+  normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Content=Preview, React's `preview="image"` holding its image (GAP-270): in
+ * place of the drop area, a file row with the image as an avatar-sized
+ * thumbnail (Avatar's 40, round), the file's name and size, an outline
+ * Change button and the remove icon. The row's border takes the status's
+ * colour, as React's does; React's preview takes no drop, so Dragging
+ * draws as Default, and Focus rings the Change button, where focus lands
+ * once an image is chosen.
+ */
+async function syncFileUploadPreviewChildren({
+  component,
+  label,
+  state,
+  status,
+  config,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const preview = await createFileUploadFileRow({
+    index: 0,
+    fileName: preservedText["File Name Text"] || "acme-logo.png",
+    fileMeta: preservedText["File Meta Text"] || "24 KB",
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  const row = preview.row;
+  row.name = "FileUpload Preview";
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "file-upload-preview");
+  if (status !== "Default") {
+    row.strokes = [
+      paintFromVariable(
+        config.fieldStroke,
+        config.fieldStrokeFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+
+  // The thumbnail stands where the file icon stood.
+  preview.fileIcon.remove();
+  const thumbnail = figma.createFrame();
+  thumbnail.name = "Preview Image";
+  thumbnail.layoutMode = "NONE";
+  thumbnail.resizeWithoutConstraints(40, 40);
+  thumbnail.cornerRadius = KOZMOS_RADIUS.pill;
+  thumbnail.clipsContent = true;
+  thumbnail.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  thumbnail.strokes = [];
+  thumbnail.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-image");
+  const picture = await createFixedIconInstance(
+    "building-01",
+    disabled ? "Colors/foreground/500" : "Colors/foreground/400",
+    disabled ? "#747B8B" : "#5D626F",
+    variableByName,
+    stats,
+    20,
+    null,
+  );
+  picture.x = 10;
+  picture.y = 10;
+  thumbnail.appendChild(picture);
+  bindAvatarGeometryVariables(thumbnail, variableByName, stats);
+  row.insertChild(0, thumbnail);
+
+  const change = figma.createFrame();
+  change.name = "Change Button";
+  change.layoutMode = "HORIZONTAL";
+  change.primaryAxisSizingMode = "AUTO";
+  change.counterAxisSizingMode = "FIXED";
+  change.primaryAxisAlignItems = "CENTER";
+  change.counterAxisAlignItems = "CENTER";
+  change.itemSpacing = 0;
+  change.paddingLeft = 12;
+  change.paddingRight = 12;
+  change.paddingTop = 0;
+  change.paddingBottom = 0;
+  change.resizeWithoutConstraints(84, 44);
+  change.cornerRadius = KOZMOS_RADIUS.control;
+  change.clipsContent = false;
+  change.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-change");
+  const outline = buttonConfig("Outline", disabled ? "Disabled" : "Default");
+  change.fills = [
+    paintFromVariable(
+      outline.background,
+      outline.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokes = [
+    paintFromVariable(
+      outline.stroke,
+      outline.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokeWeight = 1;
+  bindFloatVariable(
+    change,
+    "height",
+    "Button/height/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingLeft",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingRight",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "cornerRadius",
+    "Button/radius",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "strokeWeight",
+    "Button/stroke/width",
+    variableByName,
+    stats,
+  );
+
+  const changeText = figma.createText();
+  changeText.name = "Change Text";
+  // React draws Button's medium 14/20 label; the field label style is the
+  // same face and size, attached as Browse Text's is.
+  await applyFieldLabelTypography(
+    changeText,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  changeText.characters = preservedText["Change Text"] || "Change";
+  changeText.fills = [
+    paintFromVariable(
+      outline.foreground,
+      outline.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  changeText.textAlignVertical = "CENTER";
+  change.appendChild(changeText);
+  syncFocusRing(change, {
+    enabled: state === "Focus",
+    width: 84,
+    height: 44,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+  row.insertChild(row.children.indexOf(preview.removeIcon), change);
+
+  const helper = figma.createText();
+  helper.name = "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  helper.characters =
+    preservedText["Helper Text"] || helperTextForInputStatus(status);
+  helper.visible = status !== "Default";
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  helper.resizeWithoutConstraints(384, 20);
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  helper.textAlignVertical = "CENTER";
+
+  bindFileUploadGeometryVariables(
+    component,
+    null,
+    null,
+    [row],
+    [preview.removeIcon],
+    variableByName,
+    stats,
+  );
+
+  component.appendChild(label);
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
 }
@@ -79547,6 +82212,9 @@ async function syncSelectVariantChildren({
     ),
   ];
   trigger.strokeWeight = 1;
+  // Out, as Input's field: the variants #521 (Mixed) and GAP-164 (Open)
+  // added came out laid in beside the six drawn before (figma:verify, 15 Nov).
+  keepStrokeOutOfLayout(trigger);
   trigger.clipsContent = false;
 
   let placeholder = directChildNamed(trigger, "Placeholder Text");
@@ -80633,6 +83301,12 @@ async function syncEmptyStateVariantChildren({
  * 280 column from the start, each item a bullet and its words in
  * foreground/400 at the description's size, 4 between items. Hidden: the
  * List boolean shows it.
+ *
+ * React's bullet is a list marker (list-style: disc, padding-inline-start
+ * 1.25rem), not a character in the item, so it is drawn as one: a 5 disc in
+ * a 20 column, where Chromium puts the marker (4 in, 8 down a 20 line), and
+ * the words start 20 in as React's do. A typed "•" read to figma:verify as an
+ * icon typed as a character, and started the words 13 in.
  */
 async function appendEmptyStateList(
   component,
@@ -80663,7 +83337,7 @@ async function appendEmptyStateList(
     row.counterAxisSizingMode = "AUTO";
     row.primaryAxisAlignItems = "MIN";
     row.counterAxisAlignItems = "MIN";
-    row.itemSpacing = 8;
+    row.itemSpacing = 0;
     row.paddingLeft = 0;
     row.paddingRight = 0;
     row.paddingTop = 0;
@@ -80672,16 +83346,23 @@ async function appendEmptyStateList(
     row.strokes = [];
     row.clipsContent = false;
 
-    const bullet = figma.createText();
+    const bullet = figma.createFrame();
     bullet.name = "Bullet";
-    await applyEmptyStateDescriptionTypography(
-      bullet,
-      fonts,
-      variableByName,
-      stats,
+    bullet.layoutMode = "NONE";
+    bullet.resizeWithoutConstraints(
+      EMPTY_STATE_LIST_MARKER_COLUMN,
+      EMPTY_STATE_LIST_MARKER_COLUMN,
     );
-    bullet.characters = "\u2022";
-    setTextAutoResize(bullet, "WIDTH_AND_HEIGHT");
+    bullet.fills = [];
+    bullet.strokes = [];
+    bullet.clipsContent = false;
+    const dot = figma.createEllipse();
+    dot.name = "Bullet Dot";
+    dot.resize(EMPTY_STATE_LIST_MARKER_SIZE, EMPTY_STATE_LIST_MARKER_SIZE);
+    dot.strokes = [];
+    bullet.appendChild(dot);
+    dot.x = 4;
+    dot.y = 8;
 
     const words = figma.createText();
     words.name = `List Item ${index + 1} Text`;
@@ -80694,8 +83375,8 @@ async function appendEmptyStateList(
     words.characters = EMPTY_STATE_LIST_ITEMS[index];
     words.textAlignHorizontal = "LEFT";
 
-    for (const text of [bullet, words]) {
-      text.fills = [
+    for (const node of [dot, words]) {
+      node.fills = [
         paintFromVariable(
           "Colors/foreground/400",
           "#5E6575",

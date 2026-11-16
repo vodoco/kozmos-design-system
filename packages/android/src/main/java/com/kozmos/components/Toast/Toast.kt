@@ -51,6 +51,10 @@ data class KozmosToastContent(
     val title: String,
     val description: String? = null,
     val actionText: String? = null,
+    /**
+     * The close button, shown the whole time the toast is, or left out: there
+     * is no hover here, so it is React's `closeVisible = "always"` (GAP-268).
+     */
     val showCloseButton: Boolean = true,
     /**
      * The close button's spoken name, as React's ToastClose `aria-label`.

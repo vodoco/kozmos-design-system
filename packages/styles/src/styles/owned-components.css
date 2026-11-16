@@ -531,6 +531,113 @@
   .kozmos-field-message {
     @apply text-sm leading-5;
   }
+  /* ListItem's slots (GAP-195, decision 135): a mark at the start, centred
+     on the title's 20 line; the title, its addon beside it, the description
+     and the meta under it, taking the rest of the row; one control at the
+     end, centred on the row. 12 between the three. The list's density
+     still pads the row. */
+  .kozmos-list-item-slotted {
+    align-items: flex-start;
+    column-gap: 0.75rem;
+  }
+  /* A ticked row: theme 0, CardHeader's subtle strip. */
+  .kozmos-list-item-selected {
+    background-color: var(--primitives-colors-theme-0);
+  }
+  .kozmos-list-item-leading {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 1.25rem;
+  }
+  .kozmos-list-item-body {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    row-gap: 0.125rem;
+    min-inline-size: 0;
+  }
+  .kozmos-list-item-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.5rem;
+    row-gap: 0.25rem;
+    min-inline-size: 0;
+  }
+  .kozmos-list-item-title {
+    @apply text-sm font-medium leading-5 text-foreground;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-list-item-title-addon {
+    display: inline-flex;
+    align-items: center;
+    column-gap: 0.25rem;
+  }
+  .kozmos-list-item-description {
+    @apply text-sm leading-5 text-muted-foreground;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-list-item-meta {
+    @apply text-xs leading-4 text-muted-foreground;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+    padding-block-start: 0.125rem;
+  }
+  .kozmos-list-item-trailing {
+    display: flex;
+    flex-shrink: 0;
+    align-self: center;
+    align-items: center;
+    column-gap: 0.5rem;
+  }
+  /* A checklist row's status: Stepper's step marks at 20. Done, the theme
+     fill with a 12 check; in progress, a 2 theme ring round an 8 dot; not
+     started, a 1 ring in foreground 500, as a pending step's. */
+  .kozmos-list-item-status {
+    @apply rounded-pill;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border: 1px solid var(--primitives-colors-foreground-500);
+  }
+  .kozmos-list-item-status[data-status="done"] {
+    @apply border-theme-fill bg-theme-fill text-theme-fill-foreground;
+  }
+  .kozmos-list-item-status[data-status="inProgress"] {
+    @apply border-primary;
+    border-width: 2px;
+  }
+  .kozmos-list-item-status-check {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+  }
+  .kozmos-list-item-status-dot {
+    @apply rounded-pill bg-primary;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+  }
+  /* SettingsRow (GAP-040): the reason a setting is disabled reads as the
+     description does; the control column holds a field up to 240 wide. */
+  .kozmos-settings-row-reason {
+    @apply text-xs leading-4 text-muted-foreground;
+  }
+  .kozmos-settings-row-control {
+    display: flex;
+    align-items: center;
+    max-inline-size: 15rem;
+  }
+  .kozmos-settings-row[data-disabled] .kozmos-list-item-title {
+    @apply text-muted-foreground;
+  }
   .kozmos-field-default {
     @apply text-muted-foreground;
   }
@@ -951,13 +1058,13 @@
      ring utilities compose their box-shadow with: focused, the ring is drawn
      around it and the heavier edge stays. An outline did not survive focus,
      as the scoped focus-visible:outline-none outweighs this rule. */
-  .kozmos-radio-card[data-state="checked"] {
+  .kozmos-radio-card[aria-checked="true"] {
     --tw-shadow: inset 0 0 0 1px var(--primitives-colors-theme-600);
     box-shadow:
       var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
       var(--tw-shadow);
   }
-  .kozmos-radio-card[data-state="checked"][data-error] {
+  .kozmos-radio-card[aria-checked="true"][data-error] {
     --tw-shadow: inset 0 0 0 1px var(--primitives-colors-emotional-danger-600);
   }
   /* A card's image sits 12 in from its edge, so its corners are the card's
@@ -972,7 +1079,7 @@
      edge is a 2px outline inside it in Highlight: the choice still shows
      by weight, as well as by the dot or the check. */
   @media (forced-colors: active) {
-    .kozmos-radio-card[data-state="checked"] {
+    .kozmos-radio-card[aria-checked="true"] {
       outline: 2px solid Highlight;
       outline-offset: -2px;
     }
@@ -1697,6 +1804,119 @@
   .kozmos-card-header-subtle > .kozmos-card-header-actions {
     block-size: 1.75rem;
   }
+  /* ImageCropper (GAP-273): the frame is the box, in the cropper's ratio; the
+     image moves and scales under it, at physical left and top, because an
+     image's pixels do not mirror right to left. A 1 inner edge in the input
+     border draws the frame; the zoom row under it is Zoom out, the zoom
+     Slider and Zoom in, its sides logical. */
+  .kozmos-image-cropper {
+    display: grid;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    min-inline-size: 0;
+  }
+  .kozmos-image-cropper-frame {
+    position: relative;
+    overflow: hidden;
+    inline-size: 100%;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background-color: var(--primitives-colors-background-100);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .kozmos-image-cropper-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: var(--primitives-border-width-sm) solid
+      var(--semantics-border-input);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .kozmos-image-cropper-frame:active {
+    cursor: grabbing;
+  }
+  .kozmos-image-cropper[data-disabled] .kozmos-image-cropper-frame {
+    cursor: default;
+    opacity: 0.5;
+  }
+  .kozmos-image-cropper-frame > .kozmos-image-cropper-image {
+    position: absolute;
+    display: block;
+    max-inline-size: none;
+    max-block-size: none;
+    pointer-events: none;
+  }
+  .kozmos-image-cropper-zoom {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-image-cropper-slider {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+  /* A zoom at its limit is unavailable, not disabled, so it keeps focus:
+     drawn as a disabled button is, at half opacity. */
+  .kozmos-image-cropper-zoom > [aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: default;
+  }
+  /* PageHeader (GAP-036, decision 135): a band across the page, its content
+     in a Container with the block inset (GAP-116) 32 above and 24 below. The
+     subtle tone is CardHeader's subtle strip's pale theme tint. */
+  .kozmos-page-header {
+    inline-size: 100%;
+  }
+  .kozmos-page-header-subtle {
+    background-color: var(--primitives-colors-theme-0);
+  }
+  .kozmos-page-header-breadcrumb {
+    margin-block-end: 0.5rem;
+  }
+  /* The text takes the line and the actions its end; where both don't fit
+     (a phone) the actions wrap under the text, at its start. */
+  .kozmos-page-header-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .kozmos-page-header-text {
+    display: flex;
+    flex: 1 1 16rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-inline-size: 0;
+  }
+  /* A title that wraps keeps the info button on its first line. */
+  .kozmos-page-header-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-inline-size: 0;
+  }
+  .kozmos-page-header-title > :first-child {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+  /* The info button and the actions are centred on the title's line, 32 for
+     md and 36 for lg, and spill past it evenly, so a 40 button makes the
+     header no taller. */
+  .kozmos-page-header-info,
+  .kozmos-page-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    block-size: 2rem;
+  }
+  .kozmos-page-header-actions {
+    gap: 0.5rem;
+  }
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-info,
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-actions {
+    block-size: 2.25rem;
+  }
   /* IconButton's counter (GAP-197): over the icon's top-end corner, its
      bottom edge on the button's centre line and its start edge 2px past it,
      so it covers the same corner of the icon at every size and density, and
@@ -1858,13 +2078,13 @@
     line-height: calc(var(--primitives-typography-line-height-100) * 1rem / 16);
     @apply flex w-full cursor-pointer items-center gap-2 rounded-control border bg-background px-2 py-0.5 text-start font-normal text-foreground ring-offset-background hover:bg-hover-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground;
   }
-  .kozmos-accordion-trigger[data-state="open"]:enabled {
+  .kozmos-accordion-trigger[aria-expanded="true"]:enabled {
     border-color: transparent;
     background-color: var(--primitives-colors-theme-900);
     color: var(--primitives-colors-foreground-1000);
     --kz-label: var(--primitives-colors-theme-300);
   }
-  .kozmos-accordion-trigger[data-state="open"] > .kozmos-accordion-chevron {
+  .kozmos-accordion-trigger[aria-expanded="true"] > .kozmos-accordion-chevron {
     transform: rotate(180deg);
   }
   .kozmos-accordion-trigger:disabled > .kozmos-accordion-chevron {
@@ -2375,6 +2595,44 @@
     margin-top: -3px;
     background-color: var(--primitives-colors-emotional-success-800);
   }
+  /* ToggleButton (GAP-262): owned, so its pressed fill, its focus ring and
+     its half-strength disabled look hold where no @scope rule applies, as
+     the Button's do. GAP-75: eight between an icon and its label, the
+     spacing scale's 100, as SwiftUI and Compose draw it. Pressed is read
+     from aria-pressed, which Radix Toggle sets and no trigger touches
+     (GAP-261): TooltipTrigger asChild writes the tooltip's data-state
+     (closed, delayed-open) over Toggle's "on", and a look keyed on it was
+     lost. Pressed, it is a prominent fill: the theme fill under the theme's
+     ink, the same in both themes (decision 59), and hovered the themed
+     Button's hover token. Focused from the keyboard it draws Button's
+     offset ring, a band of the page's colour and then the theme's 600, 3:1
+     on the fill and the page. The outline's edge takes two classes: the
+     scoped preflight's border reset weighs one and wins a tie on
+     proximity. Pressed weighs three, as data-[state=on]:hover: did, so it
+     holds over the outline's hover; a caller's aria-pressed: or
+     data-[state=on]: utility outweighs it, as a plain one does the rest. */
+  .kozmos-toggle-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-control bg-transparent text-sm font-medium transition-colors hover:bg-hover-fill hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+  }
+  .kozmos-toggle-button.kozmos-toggle-button-outline {
+    @apply border border-input shadow-raised hover:bg-accent hover:text-accent-foreground;
+  }
+  .kozmos-toggle-button.kozmos-toggle-button[aria-pressed="true"] {
+    @apply bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)];
+  }
+  /* Backdrop's place and its scrim (GAP-262), owned so they hold where no
+     @scope rule applies: fixed over the window, or absolute over its box
+     inline, on layer 50, and with no target the overlay scrim itself. With
+     scoped utilities alone a backdrop there collapsed and drew no scrim. */
+  .kozmos-backdrop-layer {
+    @apply fixed inset-0 z-50;
+  }
+  .kozmos-backdrop-layer.kozmos-backdrop-inline {
+    position: absolute;
+  }
+  .kozmos-backdrop-layer.kozmos-backdrop-solid {
+    @apply bg-overlay-scrim;
+  }
   /* Backdrop's cut-out (GAP-189). The dim is an inner scrim, the overlay
      scrim token, whose clip-path leaves the target out: the page shows
      through and takes the pointer there. The backdrop itself takes none, so
@@ -2475,6 +2733,38 @@
     .kozmos-stepper-dots .kozmos-stepper-dot[data-state="current"] {
       background-color: Highlight;
       outline: none;
+    }
+  }
+  /* PersonaMark (GAP-106): a persona's colour as a diamond, 12 by 12, its
+     points on the box's edges, in the colour the product gives
+     (--kozmos-persona-color, the persona's own, drawn as given in both
+     themes). It sits on the text's middle, beside a name in a label or a
+     row. A group's marks are layout spacing 25 (2) apart. Two classes: a
+     scoped preflight weighs one and wins a tie on proximity, and its svg
+     rule would make the shape a block. Forced colours replace the page's
+     colours with the system's, so there the diamond is CanvasText: the
+     shape stays, and the persona is said by its name, never by colour
+     alone. */
+  .kozmos-persona-mark,
+  .kozmos-persona-marks {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .kozmos-persona-marks {
+    gap: calc(var(--primitives-layout-spacing-25) * 1px);
+  }
+  .kozmos-persona-mark .kozmos-persona-mark-shape {
+    display: block;
+    width: 12px;
+    height: 12px;
+    fill: var(--kozmos-persona-color, currentColor);
+  }
+  @media (forced-colors: active) {
+    .kozmos-persona-mark .kozmos-persona-mark-shape {
+      forced-color-adjust: none;
+      fill: CanvasText;
     }
   }
 }

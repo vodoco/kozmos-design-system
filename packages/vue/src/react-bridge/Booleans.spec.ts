@@ -23,6 +23,7 @@ import {
 import {
   $,
   bridgedParts,
+  eventually,
   mount,
   settle,
   unmount,
@@ -59,13 +60,21 @@ const page = (template: string) =>
 /** What React was last given as the props of `part`, while `run` drew it. */
 async function propsOf(part: unknown, run: () => void) {
   const created = vi.spyOn(React, "createElement");
-  run();
-  await settle();
-  const calls = created.mock.calls.filter(([type]) => type === part);
-  created.mockRestore();
-  const props = calls.at(-1)?.[1] as Record<string, unknown> | undefined;
-  if (!props) throw new Error("the part was never drawn");
-  return props;
+  const last = () => {
+    const calls = created.mock.calls.filter(([type]) => type === part);
+    const props = calls.at(-1)?.[1] as Record<string, unknown> | undefined;
+    if (!props) throw new Error("the part was never drawn");
+    return props;
+  };
+  try {
+    run();
+    await eventually(last);
+    // A fixed wait once it is drawn: the last draw is what React was given.
+    await settle();
+    return last();
+  } finally {
+    created.mockRestore();
+  }
 }
 
 // --------------------------------------------------------------------------

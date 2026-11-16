@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Check,
   ChevronDown,
   ChevronRight,
   File01 as File,
@@ -13,6 +14,15 @@ export type TreeActivationMode = "select" | "toggle" | "select-toggle";
 export type TreeSelectionMode = "single" | "multiple";
 /** Where a row's meta goes: after the name, or on a line under it (GAP-107). */
 export type TreeMetaPlacement = "inline" | "below";
+/**
+ * How a checkable tree's checks on a row and the rows under it go together
+ * (GAP-277). `"exclusive"`: a row and the rows above or below it are never
+ * checked together, so checking a row clears its ancestors' and its
+ * descendants' checks. `"independent"`: every row's check is its own.
+ */
+export type TreeCheckRule = "exclusive" | "independent";
+/** Where a row's disclosure goes: before its name, or at its end (GAP-277). */
+export type TreeDisclosurePosition = "start" | "end";
 
 export interface TreeItemRenderContext {
   item: TreeItem;
@@ -20,6 +30,8 @@ export interface TreeItemRenderContext {
   hasChildren: boolean;
   expanded: boolean;
   selected: boolean;
+  /** Whether a checkable tree's row is checked (GAP-277); false otherwise. */
+  checked: boolean;
   focused: boolean;
   disabled: boolean;
   toggle: (force?: boolean) => void;
@@ -98,6 +110,29 @@ export interface TreeProps extends Omit<
   /** Every change to a `"multiple"` tree's selected rows. */
   onSelectedIdsChange?: (ids: string[]) => void;
   /**
+   * A checkbox on every row (GAP-277): the tree is a set of rows, as
+   * `selectionMode="multiple"` is, held in `selectedIds` (or
+   * `defaultSelectedIds`) and `onSelectedIdsChange`, and each row's check is
+   * its `aria-checked`, with no `aria-selected`. A click on a row, Space or
+   * Enter checks or clears it; the disclosure, and the Right and Left
+   * arrows, open and close it. Shift ranges and Ctrl or Cmd+A do not apply,
+   * and closing a parent leaves its rows' checks as they are.
+   */
+  checkable?: boolean;
+  /**
+   * How a row's check and the checks above and below it go together:
+   * `"exclusive"` (the default) clears a row's ancestors and descendants
+   * when it is checked, so a client and its sites are never checked
+   * together; `"independent"` leaves every other row as it is.
+   */
+  checkRule?: TreeCheckRule;
+  /**
+   * Where each row's disclosure goes: `"start"`, before its name (the
+   * default), or `"end"`, at the row's end, after its meta and actions
+   * (GAP-277). Rows composed as children take it from here too.
+   */
+  disclosurePosition?: TreeDisclosurePosition;
+  /**
    * Where each row's meta goes: `"inline"`, after the name (the default), or
    * `"below"`, on a line of its own under it, so the name keeps the row's
    * width (GAP-107). Rows composed as children take it from here too.
@@ -168,6 +203,18 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
   focusVisible?: boolean;
   /** Draws the disclosure, and gives the row `aria-expanded`. */
   hasChildren?: boolean;
+  /**
+   * A checkbox before the row's icon, and the row's `aria-checked`
+   * (GAP-277): given, the row is a checkable tree's and has no
+   * `aria-selected`. The box is drawn for the eye; the row is what a
+   * screen reader hears as checked.
+   */
+  checked?: boolean;
+  /**
+   * As Tree's `disclosurePosition`: `"end"` draws the disclosure at the
+   * row's end. Defaults to the Tree's, else `"start"`.
+   */
+  disclosurePosition?: TreeDisclosurePosition;
   icon?: React.ReactNode;
   indent?: number;
   meta?: React.ReactNode;
@@ -221,6 +268,10 @@ const TreeScrollerContext = React.createContext(false);
 /** A Tree's `metaPlacement`, for the rows composed in it as children. */
 const TreeMetaPlacementContext = React.createContext<
   TreeMetaPlacement | undefined
+>(undefined);
+/** A Tree's `disclosurePosition`, for the rows composed in it as children. */
+const TreeDisclosurePositionContext = React.createContext<
+  TreeDisclosurePosition | undefined
 >(undefined);
 
 const countPillClass =
@@ -283,6 +334,7 @@ const sectionContext = (
   hasChildren: Boolean(item.children?.length),
   expanded: true,
   selected: false,
+  checked: false,
   focused: false,
   disabled: Boolean(item.disabled),
   toggle: () => undefined,
@@ -322,6 +374,9 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       selectedIds,
       defaultSelectedIds,
       onSelectedIdsChange,
+      checkable = false,
+      checkRule = "exclusive",
+      disclosurePosition,
       metaPlacement,
       virtualized = false,
       overscan = 8,
@@ -335,7 +390,8 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     },
     ref,
   ) => {
-    const multiple = selectionMode === "multiple";
+    // A checkable tree's checks are a multiple tree's set (GAP-277).
+    const multiple = selectionMode === "multiple" || checkable;
     const [internalExpandedIds, setInternalExpandedIds] = React.useState(
       () => new Set(defaultExpandedIds),
     );
@@ -446,7 +502,8 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     React.useEffect(() => {
       const before = drawnExpanded.current;
       drawnExpanded.current = expandedSet;
-      if (!multiple || before === expandedSet) return;
+      // A checkable tree keeps its checks through a collapse (GAP-277).
+      if (!multiple || checkable || before === expandedSet) return;
       const closed = Array.from(before).filter((id) => !expandedSet.has(id));
       if (closed.length === 0) return;
       const hidden = new Set<string>();
@@ -516,10 +573,19 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         anchorId.current = item.id;
         const next = new Set(selectedSet);
         if (next.has(item.id)) next.delete(item.id);
-        else next.add(item.id);
+        else {
+          next.add(item.id);
+          // GAP-277, exclusive: a row and the rows above or below it are
+          // never checked together, drawn or not.
+          if (checkable && checkRule === "exclusive") {
+            const related = new Set(treeAncestorIds(data, item.id));
+            collectDescendantIds(item, related);
+            for (const id of related) next.delete(id);
+          }
+        }
         setSelectedSet(next);
       },
-      [selectedSet, setSelectedSet],
+      [checkable, checkRule, data, selectedSet, setSelectedSet],
     );
 
     // ---- Virtualisation (GAP-151) ----------------------------------------
@@ -615,6 +681,14 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       (item: TreeItem, event?: React.MouseEvent) => {
         if (item.disabled || item.section) return;
 
+        // A checkable row's click checks or clears it; its disclosure opens
+        // it (GAP-277).
+        if (checkable) {
+          setFocusedId(item.id);
+          toggleSelected(item);
+          return;
+        }
+
         if (
           multiple &&
           event &&
@@ -640,6 +714,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       },
       [
         activationMode,
+        checkable,
         multiple,
         selectItem,
         selectRange,
@@ -651,11 +726,12 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     const handleItemContextMenu = React.useCallback(
       (item: TreeItem, event: React.MouseEvent) => {
         if (!onItemContextMenu || item.disabled || item.section) return;
-        if (!selectedSet.has(item.id)) selectItem(item);
+        // A checkable tree's menu leaves its checks as they are.
+        if (!checkable && !selectedSet.has(item.id)) selectItem(item);
         setFocusedId(item.id);
         onItemContextMenu(item, event);
       },
-      [onItemContextMenu, selectItem, selectedSet],
+      [checkable, onItemContextMenu, selectItem, selectedSet],
     );
 
     /** Type-ahead: the next row whose words start with what was typed. */
@@ -706,7 +782,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         const hasChildren = Boolean(item.children?.length);
         const isOpen = expandedSet.has(item.id);
         const command = event.ctrlKey || event.metaKey;
-        const extend = multiple && event.shiftKey;
+        const extend = multiple && !checkable && event.shiftKey;
         // Focus moves to `id`: with Shift in a multiple tree, the range from
         // the anchor goes with it; without, the anchor does.
         const moveTo = (id: string | undefined) => {
@@ -718,6 +794,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 
         if (
           multiple &&
+          !checkable &&
           command &&
           !event.altKey &&
           event.key.toLowerCase() === "a"
@@ -769,6 +846,13 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
               ? Math.min(enabledItems.length - 1, currentEnabledIndex + page)
               : Math.max(0, currentEnabledIndex - page);
           moveTo(enabledItems[target]?.item.id);
+          return;
+        }
+
+        // A checkable row: Space and Enter check or clear it (GAP-277).
+        if (checkable && (event.key === " " || event.key === "Enter")) {
+          event.preventDefault();
+          toggleSelected(item);
           return;
         }
 
@@ -839,6 +923,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       },
       [
         activateItem,
+        checkable,
         density,
         divided,
         expandedSet,
@@ -937,6 +1022,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     );
 
     const nodeProps: TreeNodeSharedProps = {
+      checkable,
       density,
       locale: locale ?? pageLocale,
       divided,
@@ -1029,39 +1115,42 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       >
         <TreeDividedContext.Provider value={!!divided}>
           <TreeMetaPlacementContext.Provider value={metaPlacement}>
-            <TreeScrollerContext.Provider value={virtualized}>
-              <TreeLocaleContext.Provider value={locale ?? pageLocale}>
-                {virtualized ? (
-                  // The scroller is inside the tree, so the product's width,
-                  // margin and height classes stay the tree's own. A scroller
-                  // clips what reaches past it: divided with a bleed, this one
-                  // reaches the bleed past the tree on each side, and keeps the
-                  // rows in place inside its padding, where each stroke meets
-                  // its edges with no sideways scroll.
-                  <div
-                    ref={setScrollerRef}
-                    data-tree-scroller=""
-                    className="relative min-h-0 flex-auto overflow-y-auto"
-                    style={
-                      divided && bleed !== undefined
-                        ? {
-                            marginInline: "calc(var(--kozmos-tree-bleed) * -1)",
-                            paddingInline: "var(--kozmos-tree-bleed)",
-                          }
-                        : undefined
-                    }
-                    onScroll={(event) => {
-                      setScrollTop(event.currentTarget.scrollTop);
-                      props.onScroll?.(event);
-                    }}
-                  >
-                    {content}
-                  </div>
-                ) : (
-                  content
-                )}
-              </TreeLocaleContext.Provider>
-            </TreeScrollerContext.Provider>
+            <TreeDisclosurePositionContext.Provider value={disclosurePosition}>
+              <TreeScrollerContext.Provider value={virtualized}>
+                <TreeLocaleContext.Provider value={locale ?? pageLocale}>
+                  {virtualized ? (
+                    // The scroller is inside the tree, so the product's width,
+                    // margin and height classes stay the tree's own. A scroller
+                    // clips what reaches past it: divided with a bleed, this one
+                    // reaches the bleed past the tree on each side, and keeps the
+                    // rows in place inside its padding, where each stroke meets
+                    // its edges with no sideways scroll.
+                    <div
+                      ref={setScrollerRef}
+                      data-tree-scroller=""
+                      className="relative min-h-0 flex-auto overflow-y-auto"
+                      style={
+                        divided && bleed !== undefined
+                          ? {
+                              marginInline:
+                                "calc(var(--kozmos-tree-bleed) * -1)",
+                              paddingInline: "var(--kozmos-tree-bleed)",
+                            }
+                          : undefined
+                      }
+                      onScroll={(event) => {
+                        setScrollTop(event.currentTarget.scrollTop);
+                        props.onScroll?.(event);
+                      }}
+                    >
+                      {content}
+                    </div>
+                  ) : (
+                    content
+                  )}
+                </TreeLocaleContext.Provider>
+              </TreeScrollerContext.Provider>
+            </TreeDisclosurePositionContext.Provider>
           </TreeMetaPlacementContext.Provider>
         </TreeDividedContext.Provider>
       </div>
@@ -1071,6 +1160,8 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 Tree.displayName = "Tree";
 
 interface TreeNodeSharedProps {
+  /** A checkable tree's rows draw their selection as a check. */
+  checkable: boolean;
   density: TreeDensity;
   /** The locale a section's count is written in, for its group's name. */
   locale?: string;
@@ -1125,6 +1216,7 @@ const TreeSectionHeading = ({
 const TreeNodeRow = ({
   item,
   depth,
+  checkable,
   density,
   divided,
   expandedSet,
@@ -1165,6 +1257,7 @@ const TreeNodeRow = ({
     hasChildren,
     expanded: isOpen,
     selected: isSelected,
+    checked: checkable && isSelected,
     focused: isFocused,
     disabled: isDisabled,
     toggle,
@@ -1205,6 +1298,7 @@ const TreeNodeRow = ({
       aria-posinset={visible?.posInSet}
       data-tree-id={item.id}
       actions={actions}
+      checked={checkable ? isSelected : undefined}
       count={count}
       density={density}
       depth={depth}
@@ -1217,7 +1311,7 @@ const TreeNodeRow = ({
       meta={meta}
       metaPlacement={metaPlacement}
       name={item.name}
-      selected={isSelected}
+      selected={!checkable && isSelected}
       className={item.className}
       onClick={(event) => onActivate(item, event)}
       onContextMenu={
@@ -1441,11 +1535,13 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     {
       actions,
       actionsVisibility = "auto",
+      checked,
       className,
       count,
       density = "default",
       depth = 0,
       disabled = false,
+      disclosurePosition: disclosurePositionProp,
       divided: dividedProp,
       expanded = false,
       focusVisible = false,
@@ -1486,6 +1582,32 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     // already takes. A caller's own role or aria-* wins; with another role,
     // the row adds no tree state to it.
     const treeitem = role === "treeitem";
+    // GAP-277: a check, and the disclosure at the start or the end.
+    const checkableRow = checked !== undefined;
+    const treeDisclosurePosition = React.useContext(
+      TreeDisclosurePositionContext,
+    );
+    const disclosureAtEnd =
+      (disclosurePositionProp ?? treeDisclosurePosition) === "end";
+    const disclosure = (
+      <span
+        aria-hidden="true"
+        data-tree-disclosure={disclosureAtEnd ? "end" : "start"}
+        className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground"
+        onClick={onDisclosureClick}
+      >
+        {hasChildren ? (
+          expanded ? (
+            <ChevronDown aria-hidden="true" className="h-4 w-4" />
+          ) : (
+            <ChevronRight
+              aria-hidden="true"
+              className="kozmos-rtl-mirror h-4 w-4"
+            />
+          )
+        ) : null}
+      </span>
+    );
 
     const row = (
       <div
@@ -1493,11 +1615,13 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
         role={role}
         aria-level={treeitem ? depth + 1 : undefined}
         aria-expanded={treeitem && hasChildren ? expanded : undefined}
-        aria-selected={treeitem ? selected : undefined}
+        aria-selected={treeitem && !checkableRow ? selected : undefined}
+        aria-checked={treeitem && checkableRow ? checked : undefined}
         aria-disabled={treeitem && disabled ? true : undefined}
         data-depth={depth}
         data-expanded={hasChildren ? expanded : undefined}
         data-selected={selected || undefined}
+        data-checked={checked || undefined}
         data-focus-visible={focusVisible || undefined}
         data-disabled={disabled || undefined}
         className={cn(
@@ -1521,22 +1645,23 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
         style={{ paddingInlineStart: depth * indent + 8, ...style }}
         {...props}
       >
-        <span
-          aria-hidden="true"
-          className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground"
-          onClick={onDisclosureClick}
-        >
-          {hasChildren ? (
-            expanded ? (
-              <ChevronDown aria-hidden="true" className="h-4 w-4" />
-            ) : (
-              <ChevronRight
-                aria-hidden="true"
-                className="kozmos-rtl-mirror h-4 w-4"
-              />
-            )
-          ) : null}
-        </span>
+        {!disclosureAtEnd && disclosure}
+        {checkableRow && (
+          // Checkbox's box and mark, drawn for the eye: the row is the
+          // control, and its aria-checked is what a screen reader hears.
+          <span
+            aria-hidden="true"
+            data-tree-check={checked ? "checked" : "unchecked"}
+            className={cn(
+              "flex h-5 w-5 shrink-0 items-center justify-center rounded-marker border",
+              checked
+                ? "border-theme-fill bg-theme-fill text-theme-fill-foreground"
+                : "border-input",
+            )}
+          >
+            {checked && <Check aria-hidden="true" className="h-4 w-4" />}
+          </span>
+        )}
         {icon !== null && (
           <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
             {icon}
@@ -1584,6 +1709,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
             {actions}
           </span>
         )}
+        {disclosureAtEnd && disclosure}
       </div>
     );
     // Divided (GAP-201): the stroke under the row and an open parent's
@@ -1756,6 +1882,23 @@ const findTreeItem = (items: TreeItem[], id: string): TreeItem | undefined => {
     if (found) return found;
   }
   return undefined;
+};
+
+/** The ids of the rows above `id`, nearest first, past any section. */
+const treeAncestorIds = (items: TreeItem[], id: string): string[] => {
+  const walk = (level: TreeItem[], path: string[]): string[] | undefined => {
+    for (const item of level) {
+      if (item.id === id) return path;
+      if (!item.children) continue;
+      const found = walk(
+        item.children,
+        item.section ? path : [item.id, ...path],
+      );
+      if (found) return found;
+    }
+    return undefined;
+  };
+  return walk(items, []) ?? [];
 };
 
 /** Every id under `item`, open or not. */

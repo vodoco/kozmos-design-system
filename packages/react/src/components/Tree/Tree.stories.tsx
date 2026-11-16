@@ -444,3 +444,51 @@ export const VirtualizedInPanel: Story = {
     </div>
   ),
 };
+
+// GAP-277: Add New Access's scope picker. A checkbox on each row: checking a
+// client clears its sites, and checking a site clears its client. The
+// chevron sits at the row's end.
+const accessScopes: TreeItem[] = [
+  {
+    id: "acme",
+    name: "Acme Airports",
+    icon: null,
+    children: [
+      { id: "acme-ist", name: "Istanbul Terminal 1", icon: null },
+      { id: "acme-saw", name: "Sabiha Gökçen", icon: null },
+      { id: "acme-esb", name: "Esenboğa", icon: null },
+    ],
+  },
+  {
+    id: "northwind",
+    name: "Northwind Health",
+    icon: null,
+    children: [
+      { id: "northwind-main", name: "Main campus", icon: null },
+      { id: "northwind-east", name: "East clinic", icon: null },
+    ],
+  },
+  { id: "contoso", name: "Contoso Retail", icon: null },
+];
+
+const AccessScopeTree = () => {
+  const [checked, setChecked] = useState<string[]>(["acme-saw", "contoso"]);
+  return (
+    <div style={{ width: 360 }}>
+      <Tree
+        ariaLabel="Access scope"
+        data={accessScopes}
+        checkable
+        selectedIds={checked}
+        onSelectedIdsChange={setChecked}
+        defaultExpandedIds={["acme"]}
+        disclosurePosition="end"
+        divided
+      />
+    </div>
+  );
+};
+
+export const Checkable: Story = {
+  render: () => <AccessScopeTree />,
+};

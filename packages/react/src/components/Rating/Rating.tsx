@@ -21,7 +21,11 @@ export interface RatingProps extends Omit<
   variant?: RatingVariant;
   /** Ignored when `variant` is `thumbs`, which is always a choice of two. */
   max?: number;
-  /** `0` is unanswered. Choosing what is already chosen returns to it. */
+  /**
+   * `0` is unanswered. Choosing what is already chosen returns to it. A
+   * read-only star rating draws a score that is not whole to the nearest
+   * half: `Math.round(value * 2) / 2`, so 4.3 is 4.5 and 4.2 is 4.
+   */
   value?: number;
   onChange?: (value: number) => void;
   readOnly?: boolean;
@@ -35,8 +39,20 @@ export interface RatingProps extends Omit<
    * fixed in English and wrong the moment the scale is thumbs.
    */
   itemLabel?: (value: number, max: number, variant: RatingVariant) => string;
-  /** How a chosen rating reads when `readOnly`. */
+  /**
+   * How a chosen rating reads when `readOnly`. On the stars it is given the
+   * value rounded to the nearest half, as it is drawn: 4.3 reads as 4.5.
+   */
   valueLabel?: (value: number, max: number, variant: RatingVariant) => string;
+}
+
+/**
+ * A read-only star rating's value, rounded to the nearest half (decision
+ * 181): 4.3 is 4.5, 4.2 is 4 and 4.25 is 4.5. It rounds the doubled value half
+ * up, `Math.round(value * 2) / 2`, as SwiftUI's and Compose's do.
+ */
+function roundRatingToHalf(value: number): number {
+  return Math.round(value * 2) / 2;
 }
 
 const defaultItemLabel: NonNullable<RatingProps["itemLabel"]> = (
@@ -97,13 +113,17 @@ const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
     // DISABLED radios, which drops out of the tab order entirely: a screen
     // reader user could not reach a rating they were only meant to read.
     if (readOnly) {
+      // A score read from somewhere else, an average of reviews, is rarely
+      // whole: the stars show it to the nearest half (decision 181), and the
+      // label says what is drawn. Thumbs are a choice, never an average.
+      const shown = thumbs ? value : roundRatingToHalf(value);
       const filled = (item: number) =>
-        thumbs ? item === value : item <= value;
+        thumbs ? item === shown : item <= shown;
       return (
         <div
           ref={setGroup}
           role="img"
-          aria-label={valueLabel(value, max, variant)}
+          aria-label={valueLabel(shown, max, variant)}
           className={cn("flex items-center gap-1", className)}
           {...props}
         >
@@ -111,6 +131,7 @@ const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
             <Face
               key={index}
               filled={filled(index + 1)}
+              half={!thumbs && index + 0.5 === shown}
               item={index + 1}
               thumbs={thumbs}
             />
@@ -223,13 +244,33 @@ Rating.displayName = "Rating";
 /** The mark itself, so the read-only and interactive forms cannot drift. */
 function Face({
   filled,
+  half = false,
   item,
   thumbs,
 }: {
   filled: boolean;
+  /** A read-only star filled to its middle: only its start half is drawn. */
+  half?: boolean;
   item: number;
   thumbs: boolean;
 }) {
+  if (!thumbs && half) {
+    // The empty star, and the filled one over it clipped to its inline start
+    // half: the left in a left-to-right page, the right in a right-to-left
+    // one, since `start-0` is a logical side and the clipped box's own
+    // content starts there too.
+    return (
+      <span aria-hidden="true" className="relative block h-6 w-6">
+        <Star className="block h-6 w-6 text-muted-foreground" />
+        <span
+          className="absolute inset-y-0 start-0 block w-1/2 overflow-hidden"
+          data-rating-half=""
+        >
+          <Star className="block h-6 w-6 fill-data-yellow text-data-yellow" />
+        </span>
+      </span>
+    );
+  }
   if (!thumbs) {
     return (
       <Star

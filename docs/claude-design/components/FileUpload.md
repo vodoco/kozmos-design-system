@@ -2,7 +2,7 @@
 
 # FileUpload
 
-A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback. Use its callbacks to receive files and perform uploads in the host; selecting a file does not upload it.
+A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback. Use its callbacks to receive files and perform uploads in the host; selecting a file does not upload it. Choosing a file the host has just removed, or the same file again, calls the callbacks again: FileUpload keeps no selection in its file input. That input has no `name`, so a `<form>` submits no files from it.
 
 - **Import:** `import { DropZone, FileUpload } from "@kozmos-ds/react";`
 - **Group:** Core
@@ -38,6 +38,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
 
 - `accept`: `string`, optional.
 - `browseLabel`: `string`, optional, default `"Click to upload"`.
+- `changeLabel`: `string`, optional, default `"Change"`.
+
+  The Change button's words in `preview="image"`, "Change" by default; its
+  spoken name adds the file's name, as the remove button's does.
+
 - `description`: `React.ReactNode`, optional.
 - `disabled`: `boolean`, optional.
 - `dropLabel`: `string`, optional, default `"or drag and drop"`.
@@ -50,6 +55,17 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
 - `multiple`: `boolean`, optional.
 - `onFileSelect`: `(file: File) => void`, optional.
 - `onFilesChange`: `(files: File[]) => void`, optional.
+- `preview`: `"image"`, optional.
+
+  `"image"`: one image, shown once chosen as an avatar-sized thumbnail with
+  Change and Remove in place of the drop area (GAP-270). It holds one file,
+  takes `image/*` unless `accept` says otherwise, and turns away a file
+  that is not an image, as it turns away one over `maxSize`.
+
+- `previewAlt`: `string`, optional.
+
+  The thumbnail's alt text in `preview="image"`; the file's name by default.
+
 - `removeLabel`: `string`, optional, default `"Remove file"`.
 - `status`: `FieldStatus`, optional, default `"default"`.
 - `value`: `File[]`, optional.
@@ -65,6 +81,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
 
 - `accept`: `string`, optional.
 - `browseLabel`: `string`, optional.
+- `changeLabel`: `string`, optional.
+
+  The Change button's words in `preview="image"`, "Change" by default; its
+  spoken name adds the file's name, as the remove button's does.
+
 - `description`: `React.ReactNode`, optional.
 - `disabled`: `boolean`, optional.
 - `dropLabel`: `string`, optional.
@@ -77,6 +98,17 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
 - `multiple`: `boolean`, optional.
 - `onFileSelect`: `(file: File) => void`, optional.
 - `onFilesChange`: `(files: File[]) => void`, optional.
+- `preview`: `"image"`, optional.
+
+  `"image"`: one image, shown once chosen as an avatar-sized thumbnail with
+  Change and Remove in place of the drop area (GAP-270). It holds one file,
+  takes `image/*` unless `accept` says otherwise, and turns away a file
+  that is not an image, as it turns away one over `maxSize`.
+
+- `previewAlt`: `string`, optional.
+
+  The thumbnail's alt text in `preview="image"`; the file's name by default.
+
 - `removeLabel`: `string`, optional.
 - `status`: `FieldStatus`, optional.
 - `value`: `File[]`, optional.

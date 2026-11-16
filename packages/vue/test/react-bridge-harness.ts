@@ -33,7 +33,36 @@ export async function until<T>(read: () => T | null | undefined | false) {
   throw new Error("timed out");
 }
 
-/** Lets React and Vue finish what a change started. */
+/**
+ * Waits for a change the test made to be seen: runs `assertion` every 10 ms
+ * until it passes, and returns what it returns. After `timeout` ms it throws
+ * what the assertion last threw, so a failure says what the page shows, not
+ * that time ran out. A loaded runner can take longer than any fixed wait to
+ * draw a change; this waits as long as it takes, and no longer.
+ */
+export async function eventually<T>(
+  assertion: () => T | Promise<T>,
+  timeout = 2000,
+): Promise<T> {
+  const deadline = Date.now() + timeout;
+  for (;;) {
+    try {
+      return await assertion();
+    } catch (error) {
+      if (Date.now() >= deadline) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}
+
+/**
+ * Lets React and Vue finish what a change started, for a fixed 40 ms. Use it
+ * only where the wait itself is the test: before checking that something did
+ * NOT happen (no draw, nothing emitted, a value not taken back), or before
+ * counting draws or calls once the last change is made, where waiting until
+ * a count is reached would miss one more. To see that a change HAS happened,
+ * use `eventually`: a fixed wait fails on a runner too slow to draw in time.
+ */
 export const settle = () => new Promise((resolve) => setTimeout(resolve, 40));
 
 /** Types into a field React controls, as a browser's input event does. */

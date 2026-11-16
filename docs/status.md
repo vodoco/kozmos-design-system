@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 76         | 76/76 | 76/76     | 71/76   | 71/76 | 71/76   | 72/76   | 71/76       |
+| Core                   | 80         | 80/80 | 80/80     | 75/80   | 75/80 | 75/80   | 76/80   | 75/80       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -66,6 +66,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Grid                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Icon                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | IconButton           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| ImageCropper         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Input                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Kbd                  | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Link                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -79,8 +80,10 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Notice               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | NumberInput          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | OTPInput             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| PageHeader           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Pagination           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | PasswordInput        | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| PersonaMark          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Popover              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Progress             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Radio                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -90,6 +93,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | SegmentedControl     | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Select               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Separator            | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| SettingsRow          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Sidebar              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Skeleton             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Slider               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -191,18 +195,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 124/124
-- Web stories: 124/124
-- Web tests: 124/124
-- Web Code Connect files: 101/119
-- Web Code Connect scaffolds: 0/119
-- Web Code Connect linked: 101/119
-- iOS components: 114/124
-- iOS Code Connect files: 101/119
-- iOS Code Connect scaffolds: 0/119
-- iOS Code Connect linked: 101/119
-- Android components: 115/124
-- Android Code Connect files: 101/119
-- Android Code Connect scaffolds: 0/119
-- Android Code Connect linked: 101/119
-- Code Connect not applicable: 5/124
+- Web components: 128/128
+- Web stories: 128/128
+- Web tests: 128/128
+- Web Code Connect files: 105/123
+- Web Code Connect scaffolds: 0/123
+- Web Code Connect linked: 105/123
+- iOS components: 118/128
+- iOS Code Connect files: 105/123
+- iOS Code Connect scaffolds: 0/123
+- iOS Code Connect linked: 105/123
+- Android components: 119/128
+- Android Code Connect files: 105/123
+- Android Code Connect scaffolds: 0/123
+- Android Code Connect linked: 105/123
+- Code Connect not applicable: 5/128

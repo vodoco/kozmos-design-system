@@ -155,6 +155,7 @@
         "Success",
         "Warning",
         "Info",
+        "WithoutTitle",
         "LivenessAndTitle"
       ]
     },
@@ -326,7 +327,7 @@
       "id": "foundations-container",
       "title": "Core/Layout/Container",
       "component": "Container",
-      "exports": ["Default", "Fluid", "InAPanel"]
+      "exports": ["Default", "Fluid", "InAPanel", "BlockInset"]
     },
     {
       "file": "packages/react/src/components/ContextMenu/ContextMenu.stories.tsx",
@@ -432,7 +433,13 @@
       "id": "components-fileupload",
       "title": "Core/Inputs/FileUpload",
       "component": "FileUpload",
-      "exports": ["Default", "Multiple", "Error"]
+      "exports": [
+        "Default",
+        "Multiple",
+        "Error",
+        "ImagePreview",
+        "ImagePreviewEmpty"
+      ]
     },
     {
       "file": "packages/react/src/components/FloatingActionButton/FloatingActionButton.stories.tsx",
@@ -491,6 +498,20 @@
       "exports": ["Default", "Variants", "Sizes", "Counter"]
     },
     {
+      "file": "packages/react/src/components/ImageCropper/ImageCropper.stories.tsx",
+      "id": "components-imagecropper",
+      "title": "Core/Inputs/ImageCropper",
+      "component": "ImageCropper",
+      "exports": [
+        "Default",
+        "Landscape",
+        "CropResult",
+        "InADialog",
+        "WithoutZoomControls",
+        "Disabled"
+      ]
+    },
+    {
       "file": "packages/react/src/components/Input/Input.stories.tsx",
       "id": "components-input",
       "title": "Core/Inputs/Input",
@@ -523,6 +544,13 @@
       "title": "Core/Data display/Kbd",
       "component": "Kbd",
       "exports": ["Default", "Combination", "InAHint"]
+    },
+    {
+      "file": "packages/react/src/components/PersonaMark/PersonaMark.stories.tsx",
+      "id": "data-display-personamark",
+      "title": "Core/Data display/PersonaMark",
+      "component": "PersonaMark",
+      "exports": ["Default", "Named", "Group", "InAPersonaList"]
     },
     {
       "file": "packages/react/src/components/Label/Label.stories.tsx",
@@ -564,7 +592,14 @@
       "id": "data-display-list",
       "title": "Core/Data display/List",
       "component": "List",
-      "exports": ["Default", "Compact"]
+      "exports": ["Default", "Compact", "Checklist", "PersonaVisibility"]
+    },
+    {
+      "file": "packages/react/src/components/SettingsRow/SettingsRow.stories.tsx",
+      "id": "data-display-settingsrow",
+      "title": "Core/Data display/SettingsRow",
+      "component": "SettingsRow",
+      "exports": ["Default", "SdkConfiguration", "Compact"]
     },
     {
       "file": "packages/react/src/components/Listbox/Listbox.stories.tsx",
@@ -897,6 +932,13 @@
       ]
     },
     {
+      "file": "packages/react/src/components/PageHeader/PageHeader.stories.tsx",
+      "id": "navigation-pageheader",
+      "title": "Core/Layout/PageHeader",
+      "component": "PageHeader",
+      "exports": ["Default", "Landing", "WithInfo", "Plain"]
+    },
+    {
       "file": "packages/react/src/components/Pagination/Pagination.stories.tsx",
       "id": "navigation-pagination",
       "title": "Core/Layout/Pagination",
@@ -974,7 +1016,7 @@
       "id": "input-rating",
       "title": "Core/Inputs/Rating",
       "component": "Rating",
-      "exports": ["Default", "Thumbs", "ReadOnly"]
+      "exports": ["Default", "Thumbs", "ReadOnly", "ReadOnlyHalves"]
     },
     {
       "file": "packages/react/src/components/RouteLocationField/RouteLocationField.stories.tsx",
@@ -1207,7 +1249,13 @@
       "id": "components-tabs",
       "title": "Core/Layout/Tabs",
       "component": "Tabs",
-      "exports": ["Default", "IconOverLabel", "IconOverLabelRightToLeft"]
+      "exports": [
+        "Default",
+        "IconOverLabel",
+        "IconOverLabelRightToLeft",
+        "ManyTabsNarrow",
+        "ManyTabsNarrowRightToLeft"
+      ]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",
@@ -1256,14 +1304,14 @@
       "id": "feedback-toast",
       "title": "Core/Feedback/Toast",
       "component": "Toast",
-      "exports": ["Default", "Open", "FromACall", "Tones"]
+      "exports": ["Default", "Open", "CloseAlwaysVisible", "FromACall", "Tones"]
     },
     {
       "file": "packages/react/src/components/ToggleButton/ToggleButton.stories.tsx",
       "id": "action-togglebutton",
       "title": "Core/Actions/ToggleButton",
       "component": "ToggleButton",
-      "exports": ["Default", "On"]
+      "exports": ["Default", "On", "InTooltip"]
     },
     {
       "file": "packages/react/src/components/Tooltip/Tooltip.stories.tsx",
@@ -1278,6 +1326,7 @@
       "title": "Core/Data display/Tree",
       "component": "Tree",
       "exports": [
+        "Checkable",
         "Composed",
         "Default",
         "Divided",

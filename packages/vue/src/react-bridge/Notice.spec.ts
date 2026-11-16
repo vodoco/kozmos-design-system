@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { defineComponent } from "vue";
 import { KozmosNotice } from "./index";
-import { $, heard, mount, settle } from "../../test/react-bridge-harness";
+import { $, eventually, heard, mount } from "../../test/react-bridge-harness";
 
 // The bridge draws a slot in a <div>. Notice's summary and detail were
 // paragraphs until #522's review, and a <div> in a <p> is markup React
@@ -16,9 +16,10 @@ describe("KozmosNotice's slots", () => {
         template: `<KozmosNotice summary="Check allergens." :collapsible="false">The full wording.</KozmosNotice>`,
       }),
     );
-    await settle();
+    await eventually(() =>
+      expect($("[role=status]")!.textContent).toContain("The full wording."),
+    );
     expect(heard()).toEqual([]);
-    expect($("[role=status]")!.textContent).toContain("The full wording.");
     expect(document.querySelector("p div, p p")).toBeNull();
   });
 });

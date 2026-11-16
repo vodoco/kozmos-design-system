@@ -43,10 +43,13 @@ import {
   Menu,
   ContextMenu,
   Kbd,
+  PersonaMark,
+  PersonaMarkGroup,
   Notice,
   Drawer,
   Toast,
   Breadcrumb,
+  PageHeader,
   Pagination,
   Stepper,
   Alert,
@@ -61,6 +64,9 @@ import {
   AvatarFallback,
   Tag,
   List,
+  ListItem,
+  ListItemStatus,
+  SettingsRow,
   Table,
   Tree,
   Timeline,
@@ -81,6 +87,7 @@ import {
   OTPInput,
   Rating,
   FileUpload,
+  ImageCropper,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -180,6 +187,8 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Menu, menuTakes],
   [ContextMenu, menuTakes],
   [Kbd, D],
+  [PersonaMark, D],
+  [PersonaMarkGroup, D],
   [Notice, { dom: true, own: ["onExpandedChange"] }],
   [Drawer, menuTakes],
   [
@@ -198,6 +207,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [Breadcrumb, D],
+  [PageHeader, D],
   [Pagination, D],
   [Stepper, D],
   [Alert, D],
@@ -212,6 +222,9 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [AvatarFallback, D],
   [Tag, { dom: true, own: ["onRemove"] }],
   [List, D],
+  [ListItem, D],
+  [ListItemStatus, D],
+  [SettingsRow, D],
   [Table, D],
   [
     Tree,
@@ -262,6 +275,10 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [
     FileUpload,
     { dom: true, except: ["onChange"], own: ["onFileSelect", "onFilesChange"] },
+  ],
+  [
+    ImageCropper,
+    { dom: true, except: ["onChange"], own: ["onCrop", "onImageLoad"] },
   ],
   [DatePicker, datePickerTakes],
   [TimePicker, datePickerTakes],
@@ -488,6 +505,7 @@ const menuBooleans = {
   texts: [],
 };
 const backdropBooleans = html(["visible"]);
+const settingsRowBooleans = html(["disabled"]);
 const datePickerBooleans = html(
   [
     "checked",
@@ -680,10 +698,13 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Menu, menuBooleans],
   [ContextMenu, { flags: ["modal"], unions: [], texts: [] }],
   [Kbd, H],
+  [PersonaMark, H],
+  [PersonaMarkGroup, H],
   [Notice, html(["collapsible", "defaultExpanded", "expanded"])],
   [Drawer, menuBooleans],
   [Toast, html(["asChild", "defaultOpen", "forceMount", "open"])],
   [Breadcrumb, H],
+  [PageHeader, html(["centered"])],
   [Pagination, H],
   [Stepper, H],
   [Alert, H],
@@ -698,8 +719,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [AvatarFallback, boxBooleans],
   [Tag, H],
   [List, H],
+  [ListItem, html(["selected"])],
+  [ListItemStatus, H],
+  [SettingsRow, settingsRowBooleans],
   [Table, html(["framed"])],
-  [Tree, html(["divided", "virtualized"])],
+  [Tree, html(["checkable", "divided", "virtualized"])],
   [Timeline, H],
   [
     Tooltip,
@@ -728,10 +752,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [OTPInput, html(["disabled", "readOnly"], [], ["error"])],
   [Rating, html(["readOnly"])],
   [FileUpload, html(["disabled", "multiple"], [], ["error"])],
+  [ImageCropper, html(["disabled", "showZoomControls"])],
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
   [FloatingActionButton, floatingActionButtonBooleans],
-  [SplitButton, html(["disabled"])],
+  [SplitButton, settingsRowBooleans],
   [
     ToggleButton,
     html([

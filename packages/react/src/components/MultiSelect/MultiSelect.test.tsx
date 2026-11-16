@@ -454,6 +454,30 @@ describe("MultiSelect: a choice leaves the active option where it is", () => {
   });
 });
 
+describe("MultiSelect: a long chip shrinks inside the field (#537)", () => {
+  it("truncates a chosen label and names its remove by the whole label", () => {
+    const label = "Step-free access from the street entrance";
+    render(
+      <MultiSelect
+        label="Amenities"
+        options={[{ value: "step-free", label }]}
+        defaultValue={["step-free"]}
+      />,
+    );
+    const remove = screen.getByRole("button", { name: `Remove ${label}` });
+    const chip = remove.closest('[data-slot="chip"]');
+    expect(chip).toHaveClass("min-w-0", "max-w-full");
+    const words = chip?.querySelector('[data-slot="chip-label"]');
+    expect(words).toHaveClass("truncate");
+    expect(words).toHaveTextContent(label);
+    // The chips sit in the area before the field's buttons, which may shrink.
+    expect(chip?.closest('[data-slot="chip-group"]')).toHaveClass(
+      "min-w-0",
+      "flex-1",
+    );
+  });
+});
+
 describe("MultiSelect", () => {
   it("selects and removes multiple options", async () => {
     const user = userEvent.setup();

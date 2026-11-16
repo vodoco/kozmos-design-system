@@ -9,6 +9,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback.
 Use its callbacks to receive files and perform uploads in the host; selecting a file does not upload it.
+Choosing a file the host has just removed, or the same file again, calls the callbacks again: FileUpload
+keeps no selection in its file input. That input has no `name`, so a `<form>` submits no files from it.
 
 <Canvas>
   <Story of={FileUploadStories.Default} />
@@ -16,12 +18,31 @@ Use its callbacks to receive files and perform uploads in the host; selecting a 
 
 <Controls />
 
+## Image preview
+
+`preview="image"` holds one image. Until one is chosen it is the drop area; once one is, the drop
+area gives way to the image as an avatar-sized thumbnail beside its name and size, with Change,
+which opens the picker again, and Remove, which brings the drop area back. Use it for a logo or a
+profile picture. It takes `image/*` unless `accept` says otherwise, and turns away a dropped file
+that is not an image as it turns away one over `maxSize`, keeping the image it shows.
+
+The thumbnail's alt text is `previewAlt`, the file's name if you leave it out. Change's words are
+`changeLabel`, "Change", and Remove is named by `removeLabel`; each adds the file's name to its
+spoken name. Focus moves to Change once an image is chosen, and back to the drop area once it is
+removed. The thumbnail is an object URL, revoked when the image changes or the part goes.
+
+<Canvas>
+  <Story of={FileUploadStories.ImagePreview} />
+</Canvas>
+
 ## Implementation
 
 SwiftUI's and Compose's FileUpload hold one file. Picking one calls `onFileSelected`, and removing
 it calls `onFileRemoved` with the same file, where React calls `onFilesChange` with the files left.
 Their drop area says `browseLabel`, "Tap to upload file" by default, and their remove button is
 named `removeLabel`, "Remove"; a product that translates passes its own.
+With `preview` set to image (`.image` in SwiftUI, `KozmosFileUploadPreview.Image` in Compose) they
+pick only images and show the chosen one as React does, with `changeLabel` and `previewAlt`.
 
 <div className="subheading">Code</div>
 
