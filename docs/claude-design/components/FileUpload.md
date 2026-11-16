@@ -2,7 +2,7 @@
 
 # FileUpload
 
-A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback. Use its callbacks to receive files and perform uploads in the host; selecting a file does not upload it.
+A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback. Use its callbacks to receive files and perform uploads in the host; selecting a file does not upload it. Choosing a file the host has just removed, or the same file again, calls the callbacks again: FileUpload keeps no selection in its file input. That input has no `name`, so a `<form>` submits no files from it.
 
 - **Import:** `import { DropZone, FileUpload } from "@kozmos-ds/react";`
 - **Group:** Core

@@ -488,7 +488,7 @@ for (const forced of ["none", "active"])
           if (
             target === "none" &&
             state.markup !==
-              '<div class="fixed inset-0 z-50 bg-overlay-scrim" id="backdrop" data-kozmos-density="touch"></div>'
+              '<div class="kozmos-backdrop-layer kozmos-backdrop-solid" id="backdrop" data-kozmos-density="touch"></div>'
           )
             problems.push(
               `with no target, Backdrop is not the element it was: ${state.markup}`,

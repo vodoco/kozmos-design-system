@@ -45,7 +45,7 @@ describe("Accordion", () => {
     expect(item.className).toBe("border-b");
     expect(header.className).toBe("flex");
     expect(trigger.className).toBe(
-      "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180",
+      "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[aria-expanded=true]>svg]:rotate-180",
     );
     expect(Array.from(trigger.childNodes, (node) => node.nodeName)).toEqual([
       "#text",
