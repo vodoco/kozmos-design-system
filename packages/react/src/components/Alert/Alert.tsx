@@ -4,7 +4,14 @@ import { cn } from "../../utils";
 import { impliedLive } from "../../utils/live-region";
 
 const alertVariants = cva(
-  "relative w-full rounded-container border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  // A description straight after the icon, with no title, is centred on the
+  // icon by a margin of -2 above and below it: its 20 line then runs 14 to 34,
+  // around the 16 icon's 16 to 32, and the alert's space is 14 above the words
+  // and 14 below them. It was lifted 3 with a transform, which moves the
+  // drawing but not the box, so the words had 13 above and 19 below (GAP-269).
+  // The icon and the room for it are at the inline start: they were left-4
+  // and pl-7, so right to left the icon stayed at the left.
+  "relative w-full rounded-container border p-4 [&>svg~*]:ps-7 [&>svg+div]:-my-0.5 [&>svg]:absolute [&>svg]:start-4 [&>svg]:top-4 [&>svg]:text-foreground",
   {
     variants: {
       variant: {

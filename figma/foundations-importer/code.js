@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "31eb13507a3f";
+const PLUGIN_BUILD = "ee641fa844d6";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -4142,11 +4142,13 @@ const COMPONENT_DOCS = [
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when the Action content variant is used.",
+      'Close Always Visible maps to ToastClose visible="always"; off is the default, shown on hover or focus.',
     ],
     properties: [
       "Content: Basic, Action",
       "Tone: Neutral, Success, Info, Warning, Critical",
       "Title Text, Description Text, Action Text",
+      "Close Always Visible (boolean, on)",
     ],
     accessibility: [
       "Toast is non-modal status feedback and should use runtime live-region semantics.",
@@ -47765,6 +47767,7 @@ async function buildToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
     ],
   });
 }
@@ -47790,6 +47793,7 @@ async function updateToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -57328,6 +57332,17 @@ function configureToastProperties(componentSet, stats) {
     "Action Text",
     "Action Text",
     "Undo",
+    stats,
+  );
+  // GAP-268: ToastClose's `visible`. On, the default, the close is drawn as
+  // it always was, shown at rest: React's visible="always". Off draws the
+  // toast at rest with the default "hover" close, which shows only while the
+  // toast is hovered or the button has focus.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Toast Close",
+    "Close Always Visible",
+    true,
     stats,
   );
 }

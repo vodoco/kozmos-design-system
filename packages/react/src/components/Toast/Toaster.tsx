@@ -10,6 +10,7 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
+  type ToastCloseVisibility,
 } from "./Toast";
 import {
   claim,
@@ -46,6 +47,12 @@ export interface ToasterProps {
   toastLabel?: string;
   /** Each toast's close button. "Dismiss notification". */
   closeLabel?: string;
+  /**
+   * When each toast's close button shows, unless the toast says:
+   * ToastClose's `visible`. `hover`, the default, shows it while the toasts
+   * are hovered or it has focus; `always` shows it the whole time (GAP-268).
+   */
+  closeVisible?: ToastCloseVisibility;
   /** The keys that move focus to the toasts. F8. */
   hotkey?: string[];
   /** The list's classes, as ToastViewport's. */
@@ -64,9 +71,11 @@ export interface ToasterProps {
 function ToasterItem({
   record,
   closeLabel,
+  closeVisible,
 }: {
   record: ToastRecord;
   closeLabel: string;
+  closeVisible: ToastCloseVisibility;
 }) {
   const { id, title, description, tone, live, duration, action, open } = record;
   // Stable, so the node is reported once as it is drawn and once as it goes,
@@ -109,7 +118,10 @@ function ToasterItem({
           {action.label}
         </ToastAction>
       )}
-      <ToastClose aria-label={closeLabel} />
+      <ToastClose
+        aria-label={closeLabel}
+        visible={record.closeVisible ?? closeVisible}
+      />
     </Toast>
   );
 }
@@ -131,6 +143,7 @@ export function Toaster({
   label,
   toastLabel,
   closeLabel = "Dismiss notification",
+  closeVisible = "hover",
   hotkey,
   className,
   style,
@@ -162,6 +175,7 @@ export function Toaster({
               key={record.key}
               record={record}
               closeLabel={closeLabel}
+              closeVisible={closeVisible}
             />
           ))}
       {!theme

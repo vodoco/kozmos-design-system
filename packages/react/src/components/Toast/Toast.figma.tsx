@@ -15,7 +15,8 @@ const toastUrl =
 // Tone is toast()'s tone and the part's (GAP-167): Neutral draws no icon, so
 // it passes none. A product shows one from anywhere with
 // `toast(title, { description, tone })` and a Toaster; these are the parts
-// that call draws.
+// that call draws. Close Always Visible is ToastClose's `visible` (GAP-268):
+// on, the file's default, is "always"; off is the default "hover".
 figma.connect(Toast, toastUrl, {
   variant: { Content: "Basic" },
   props: {
@@ -27,15 +28,19 @@ figma.connect(Toast, toastUrl, {
       Warning: "warning",
       Critical: "critical",
     }),
+    closeVisible: figma.boolean("Close Always Visible", {
+      true: "always",
+      false: undefined,
+    }),
   },
-  example: ({ description, title, tone }) => (
+  example: ({ closeVisible, description, title, tone }) => (
     <ToastProvider>
       <Toast open tone={tone}>
         <div className="grid gap-1">
           <ToastTitle>{title}</ToastTitle>
           <ToastDescription>{description}</ToastDescription>
         </div>
-        <ToastClose />
+        <ToastClose visible={closeVisible} />
       </Toast>
       <ToastViewport />
     </ToastProvider>
@@ -54,8 +59,12 @@ figma.connect(Toast, toastUrl, {
       Warning: "warning",
       Critical: "critical",
     }),
+    closeVisible: figma.boolean("Close Always Visible", {
+      true: "always",
+      false: undefined,
+    }),
   },
-  example: ({ action, description, title, tone }) => (
+  example: ({ action, closeVisible, description, title, tone }) => (
     <ToastProvider>
       <Toast open tone={tone}>
         <div className="grid gap-1">
@@ -63,7 +72,7 @@ figma.connect(Toast, toastUrl, {
           <ToastDescription>{description}</ToastDescription>
         </div>
         <ToastAction altText={action}>{action}</ToastAction>
-        <ToastClose />
+        <ToastClose visible={closeVisible} />
       </Toast>
       <ToastViewport />
     </ToastProvider>

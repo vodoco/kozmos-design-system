@@ -19,12 +19,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
@@ -40,6 +42,12 @@ fun KozmosAlert(
     content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit
 ) {
     val borderColor = alertBorderColor(status)
+    // One line of words with no title is centred on the icon; a title and
+    // its description, or a longer description, stay at the top. The words
+    // sat at the top of the icon's 24, so a title-less description had 16
+    // above it and 21 below (GAP-269).
+    val iconLine = with(LocalDensity.current) { KozmosDimensions.primitivesLayoutSpacing300.roundToPx() }
+    val alignment = remember(iconLine) { centredWithinLine(iconLine) }
 
     // The icon, title and description inside take the alert's status, as
     // React's inherit its colour and Figma binds them to it.
@@ -51,11 +59,25 @@ fun KozmosAlert(
                 .background(KozmosThemeTokens.semanticsSurface0, RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer))
                 .border(1.dp, borderColor, RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer))
                 .padding(KozmosDimensions.primitivesLayoutSpacing200),
-            verticalAlignment = Alignment.Top
+            verticalAlignment = alignment
         ) {
             content()
         }
     }
+}
+
+/**
+ * A child with less than half of [line] to spare beside the row's tallest is
+ * centred; one with more is at the top, as [Alignment.Top]. A Row hands its
+ * alignment only the room a child has to spare (`align(0, room)`), never the
+ * row's height. So a line of words beside the 24 icon (4 to spare) is centred
+ * on it, and so is the icon beside a line of larger words; the icon beside a
+ * title and its description, or beside a longer description (14 or more to
+ * spare), stays at the top, as before.
+ */
+internal fun centredWithinLine(line: Int) = Alignment.Vertical { size, space ->
+    val room = space - size
+    if (room * 2 < line) room / 2 else 0
 }
 
 /** The status of the alert a part is in: [AlertStatus.Default] outside one. */
