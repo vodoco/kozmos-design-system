@@ -1443,7 +1443,7 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["escape-events"].label, "none")
         app.textFields["Full search"].tap()
         escape()
-        XCTAssertEqual(app.staticTexts["search-query"].label, "empty")
+        XCTAssertEqual(app.staticTexts["search-query"].label, "empty", "after Escape; the app heard: \(heardKeys())")
         XCTAssertEqual(app.staticTexts["escape-events"].label, "clear full")
         XCTAssertEqual(app.textFields["Full search"].value(forKey: "hasKeyboardFocus") as? Bool, true,
                        "the field lost the focus")
