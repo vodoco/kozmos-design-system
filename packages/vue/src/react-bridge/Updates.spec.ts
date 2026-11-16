@@ -4,7 +4,14 @@ import { defineComponent, h, nextTick, reactive, ref } from "vue";
 import React from "react";
 import * as Bridge from "./index";
 import { createVueWrapper } from "./react-adapter";
-import { $, mount, settle, type, until } from "../../test/react-bridge-harness";
+import {
+  $,
+  eventually,
+  mount,
+  settle,
+  type,
+  until,
+} from "../../test/react-bridge-harness";
 
 // What a bridged wrapper is given after mount reaches React, once per Vue
 // update (react-adapter.ts, `onUpdated`). Until then React was drawn from a
@@ -49,22 +56,18 @@ describe("what a wrapper given nothing is given later", () => {
     await settle();
     expect(given).toEqual({});
     state.bound = { title: "t" };
-    await settle();
-    expect(given).toEqual({ title: "t" });
+    await eventually(() => expect(given).toEqual({ title: "t" }));
   });
 
   it("an attribute removed after it was added redraws React", async () => {
     const state = bindProbe({});
     await settle();
     state.bound = { title: "t", lang: "tr" };
-    await settle();
-    expect(given).toEqual({ title: "t", lang: "tr" });
+    await eventually(() => expect(given).toEqual({ title: "t", lang: "tr" }));
     state.bound = { title: "t" };
-    await settle();
-    expect(given).toEqual({ title: "t" });
+    await eventually(() => expect(given).toEqual({ title: "t" }));
     state.bound = {};
-    await settle();
-    expect(given).toEqual({});
+    await eventually(() => expect(given).toEqual({}));
   });
 
   it("a listener added later is heard, and one taken away is not", async () => {
@@ -73,12 +76,12 @@ describe("what a wrapper given nothing is given later", () => {
     await settle();
     expect(given).not.toHaveProperty("onClick");
     state.bound = { onClick: listener };
-    await settle();
-    (given.onClick as (event: unknown) => void)?.("tap");
-    expect(listener).toHaveBeenCalledWith("tap");
+    await eventually(() => {
+      (given.onClick as (event: unknown) => void)?.("tap");
+      expect(listener).toHaveBeenCalledWith("tap");
+    });
     state.bound = {};
-    await settle();
-    expect(given).not.toHaveProperty("onClick");
+    await eventually(() => expect(given).not.toHaveProperty("onClick"));
   });
 
   it("KozmosNavigationItem bound to an object that starts empty draws what it is given", async () => {
@@ -95,13 +98,13 @@ describe("what a wrapper given nothing is given later", () => {
     await settle();
     expect(item.hasAttribute("data-disabled")).toBe(false);
     state.bound = { title: "t", disabled: true };
-    await settle();
-    const drawn = $("[title=t]")!;
-    expect(drawn).not.toBeNull();
-    expect(drawn.getAttribute("data-disabled")).toBe("true");
+    await eventually(() => {
+      const drawn = $("[title=t]")!;
+      expect(drawn).not.toBeNull();
+      expect(drawn.getAttribute("data-disabled")).toBe("true");
+    });
     state.bound = { onClick };
-    await settle();
-    expect($("[title=t]")).toBeNull();
+    await eventually(() => expect($("[title=t]")).toBeNull());
     $("button")!.click();
     await settle();
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -183,8 +186,9 @@ describe("React is drawn once per change", () => {
     await settle();
     const before = draws;
     query.value = "b";
+    // A fixed wait: no draw may follow the change.
     await settle();
-    expect(document.body.textContent).toContain("b");
+    await eventually(() => expect(document.body.textContent).toContain("b"));
     expect(draws - before).toBe(0);
   });
 
@@ -204,8 +208,11 @@ describe("React is drawn once per change", () => {
     await settle();
     const before = draws;
     tick.value += 1;
+    // A fixed wait: no draw may follow the change.
     await settle();
-    expect(document.body.textContent).toContain("tick 1");
+    await eventually(() =>
+      expect(document.body.textContent).toContain("tick 1"),
+    );
     expect(draws - before).toBe(0);
     // And the same parent's change is drawn once.
     items.push("b");
@@ -228,11 +235,11 @@ describe("React is drawn once per change", () => {
     expect(given).not.toHaveProperty("actions");
     const before = draws;
     shown.value = true;
-    await settle();
-    expect(given).toHaveProperty("actions");
+    await eventually(() => expect(given).toHaveProperty("actions"));
     shown.value = false;
+    // A fixed wait: the draws are counted once the last change is made.
     await settle();
-    expect(given).not.toHaveProperty("actions");
+    await eventually(() => expect(given).not.toHaveProperty("actions"));
     expect(draws - before).toBe(2);
   });
 
@@ -315,11 +322,13 @@ describe("React is drawn once per change", () => {
       return fieldDraws - before;
     };
     expect(await typed("ab")).toBe(2);
-    expect(value.value).toBe("ab");
-    expect(field.value).toBe("ab");
+    await eventually(() => {
+      expect(value.value).toBe("ab");
+      expect(field.value).toBe("ab");
+    });
     refuse = true;
     expect(await typed("abc")).toBe(2);
     expect(value.value).toBe("ab");
-    expect(field.value).toBe("ab");
+    await eventually(() => expect(field.value).toBe("ab"));
   });
 });
