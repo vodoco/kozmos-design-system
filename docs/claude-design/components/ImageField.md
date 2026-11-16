@@ -181,6 +181,8 @@ interface ImageFieldLabels {
   cropStatus: (frame: { left: number; top: number; zoom: number }) => string;
   zoomIn: string;
   zoomOut: string;
+  /** The zoom Slider's name, between Zoom out and Zoom in. */
+  zoom: string;
   apply: string;
   cancel: string;
   close: string;

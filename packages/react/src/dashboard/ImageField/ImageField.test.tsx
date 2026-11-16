@@ -441,6 +441,45 @@ describe("ImageField", () => {
     expect(screen.getByRole("button", { name: "Frame image 1" })).toHaveFocus();
   });
 
+  it("frames with Core's ImageCropper, in the field's words", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <ImageField
+        label="Images"
+        max={7}
+        aspectRatio={1}
+        labels={{
+          cropRegion: "Logo frame",
+          cropHelp: "Drag the logo.",
+          zoom: "Logo zoom",
+          zoomIn: "Bigger",
+          zoomOut: "Smaller",
+          cropStatus: ({ zoom }) => `At ${zoom}.`,
+        }}
+      />,
+    );
+    await user.upload(fileInput(container), jpeg());
+    const dialog = await screen.findByRole("dialog");
+    // GAP-273's part, not a copy of it.
+    const part = dialog.querySelector('[data-slot="image-cropper"]');
+    expect(part).not.toBeNull();
+    const frame = within(dialog).getByRole("application", {
+      name: "Logo frame",
+    });
+    expect(part).toContainElement(frame);
+    expect(frame).toHaveAccessibleDescription("Drag the logo.");
+    fireEvent.load(frame.querySelector("img") as HTMLImageElement);
+    // Its zoom row: Smaller, the zoom slider, Bigger.
+    expect(
+      within(dialog).getByRole("slider", { name: "Logo zoom" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Smaller" }),
+    ).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Bigger" }));
+    expect(within(dialog).getByRole("status")).toHaveTextContent("At 125.");
+  });
+
   it("zooms with buttons, between 1 and 4", async () => {
     const user = userEvent.setup();
     render(

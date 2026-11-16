@@ -1,8 +1,9 @@
 import React from "react";
 import { clsx } from "clsx";
-import { Crop01, Eye, Trash01, ZoomIn, ZoomOut } from "@kozmos-ds/icons";
+import { Crop01, Eye, Trash01 } from "@kozmos-ds/icons";
 import { Button } from "../../components/Button/Button";
 import { IconButton } from "../../components/IconButton/IconButton";
+import { ImageCropper } from "../../components/ImageCropper/ImageCropper";
 import { Input } from "../../components/Input/Input";
 import { FileUpload } from "../../components/FileUpload/FileUpload";
 import {
@@ -85,6 +86,8 @@ export interface ImageFieldLabels {
   cropStatus: (frame: { left: number; top: number; zoom: number }) => string;
   zoomIn: string;
   zoomOut: string;
+  /** The zoom Slider's name, between Zoom out and Zoom in. */
+  zoom: string;
   apply: string;
   cancel: string;
   close: string;
@@ -119,6 +122,7 @@ const LABELS: ImageFieldLabels = {
     `Frame ${left}% from the left, ${top}% from the top, zoom ${zoom}%.`,
   zoomIn: "Zoom in",
   zoomOut: "Zoom out",
+  zoom: "Zoom",
   apply: "Apply",
   cancel: "Cancel",
   close: "Close",
@@ -158,9 +162,6 @@ export interface ImageFieldProps extends Omit<
 }
 
 const DEFAULT_ACCEPT = "image/jpeg,image/png";
-const MAX_ZOOM = 4;
-const ZOOM_STEP = 1.25;
-const PAN_STEP = 0.1;
 
 function formatBytes(bytes: number) {
   const units = ["B", "KB", "MB", "GB"];
@@ -227,9 +228,6 @@ function isWebAddress(text: string) {
   }
 }
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
-
 /**
  * The image drawn so that `crop` fills its box: the box has the crop's
  * shape, and the image is scaled and moved under it. Physical left and top,
@@ -244,15 +242,6 @@ function framedStyle(crop: ImageFieldCrop): React.CSSProperties {
   };
 }
 
-/** The image's frame at zoom 1: the largest of the ratio's shape it holds. */
-function baseFrame(natural: { width: number; height: number }, ratio: number) {
-  const width = Math.min(natural.width, natural.height * ratio);
-  return {
-    width: width / natural.width,
-    height: width / ratio / natural.height,
-  };
-}
-
 interface CropperProps {
   image: ImageFieldImage;
   aspectRatio: number;
@@ -262,11 +251,10 @@ interface CropperProps {
 }
 
 /**
- * A minimal accessible cropper, this module's own (no Core part frames an
- * image): the frame is the box, the image moves and scales under it. The
- * box is one tab stop; the arrow keys move the frame by a tenth of itself,
- * plus and minus zoom, a pointer drags the image, and each change is said in
- * a polite live region. It hands back the frame as fractions of the image.
+ * The crop dialog's body: Core's ImageCropper (GAP-273) in the field's
+ * ratio, between the dialog's title and its Cancel and Apply. The field
+ * hands it its words; Apply takes the frame the cropper reports, the one it
+ * drew the image in when nothing was moved.
  */
 function Cropper({
   image,
@@ -275,194 +263,28 @@ function Cropper({
   onApply,
   onCancel,
 }: CropperProps) {
-  const helpId = React.useId();
-  const [natural, setNatural] = React.useState<{
-    width: number;
-    height: number;
-  } | null>(null);
-  const [frame, setFrame] = React.useState<{
-    x: number;
-    y: number;
-    zoom: number;
-  } | null>(null);
-  const [said, setSaid] = React.useState("");
-  const drag = React.useRef<{
-    pointer: number;
-    clientX: number;
-    clientY: number;
-    x: number;
-    y: number;
-  } | null>(null);
-
-  const base = natural ? baseFrame(natural, aspectRatio) : null;
-  const crop =
-    base && frame
-      ? {
-          x: frame.x,
-          y: frame.y,
-          width: base.width / frame.zoom,
-          height: base.height / frame.zoom,
-        }
-      : null;
-
-  const onLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
-    const size = {
-      width: event.currentTarget.naturalWidth,
-      height: event.currentTarget.naturalHeight,
-    };
-    if (!size.width || !size.height) return;
-    const start = baseFrame(size, aspectRatio);
-    const given = image.crop;
-    const zoom = given ? clamp(start.width / given.width, 1, MAX_ZOOM) : 1;
-    const width = start.width / zoom;
-    const height = start.height / zoom;
-    setNatural(size);
-    setFrame({
-      x: clamp(given ? given.x : (1 - width) / 2, 0, 1 - width),
-      y: clamp(given ? given.y : (1 - height) / 2, 0, 1 - height),
-      zoom,
-    });
-  };
-
-  const move = (next: { x: number; y: number; zoom: number }) => {
-    if (!base) return;
-    const zoom = clamp(next.zoom, 1, MAX_ZOOM);
-    const width = base.width / zoom;
-    const height = base.height / zoom;
-    const placed = {
-      x: clamp(next.x, 0, 1 - width),
-      y: clamp(next.y, 0, 1 - height),
-      zoom,
-    };
-    setFrame(placed);
-    setSaid(
-      labels.cropStatus({
-        left: Math.round(placed.x * 100),
-        top: Math.round(placed.y * 100),
-        zoom: Math.round(zoom * 100),
-      }),
-    );
-  };
-
-  /** Zoom about the frame's middle, so what is centred stays centred. */
-  const zoomBy = (factor: number) => {
-    if (!crop || !frame || !base) return;
-    const zoom = clamp(frame.zoom * factor, 1, MAX_ZOOM);
-    move({
-      x: crop.x + crop.width / 2 - base.width / zoom / 2,
-      y: crop.y + crop.height / 2 - base.height / zoom / 2,
-      zoom,
-    });
-  };
-
-  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!crop || !frame) return;
-    const steps: Record<string, [number, number]> = {
-      ArrowLeft: [-1, 0],
-      ArrowRight: [1, 0],
-      ArrowUp: [0, -1],
-      ArrowDown: [0, 1],
-    };
-    const step = steps[event.key];
-    if (step) {
-      move({
-        x: crop.x + step[0] * crop.width * PAN_STEP,
-        y: crop.y + step[1] * crop.height * PAN_STEP,
-        zoom: frame.zoom,
-      });
-    } else if (event.key === "+" || event.key === "=") zoomBy(ZOOM_STEP);
-    else if (event.key === "-" || event.key === "_") zoomBy(1 / ZOOM_STEP);
-    else return;
-    event.preventDefault();
-  };
-
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!crop || event.button !== 0) return;
-    drag.current = {
-      pointer: event.pointerId,
-      clientX: event.clientX,
-      clientY: event.clientY,
-      x: crop.x,
-      y: crop.y,
-    };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
-
-  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const start = drag.current;
-    if (!start || start.pointer !== event.pointerId || !crop || !frame) return;
-    const box = event.currentTarget.getBoundingClientRect();
-    if (!box.width || !box.height) return;
-    // Dragging the image right shows more of its left: the frame moves left.
-    move({
-      x: start.x - ((event.clientX - start.clientX) / box.width) * crop.width,
-      y: start.y - ((event.clientY - start.clientY) / box.height) * crop.height,
-      zoom: frame.zoom,
-    });
-  };
-
-  const endDrag = () => {
-    drag.current = null;
-  };
-
+  const [crop, setCrop] = React.useState<ImageFieldCrop | null>(null);
   return (
     <>
       <DialogHeader>
         <DialogTitle>{labels.cropTitle}</DialogTitle>
-        <DialogDescription id={helpId}>{labels.cropHelp}</DialogDescription>
+        <DialogDescription>{labels.cropHelp}</DialogDescription>
       </DialogHeader>
-      <div
-        role="application"
-        aria-roledescription="cropper"
-        aria-label={labels.cropRegion}
-        aria-describedby={helpId}
-        tabIndex={0}
+      <ImageCropper
+        src={image.src}
+        alt={image.alt}
+        aspectRatio={aspectRatio}
+        defaultValue={image.crop}
+        onImageLoad={setCrop}
+        onCrop={setCrop}
+        label={labels.cropRegion}
+        instructions={labels.cropHelp}
+        statusLabel={labels.cropStatus}
+        zoomInLabel={labels.zoomIn}
+        zoomOutLabel={labels.zoomOut}
+        zoomLabel={labels.zoom}
         className="kozmos-image-field-cropper"
-        style={{ aspectRatio: String(aspectRatio) }}
-        onKeyDown={onKeyDown}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-      >
-        <img
-          src={image.src}
-          alt={image.alt}
-          draggable={false}
-          onLoad={onLoad}
-          className="kozmos-image-field-cropper-image"
-          style={crop ? framedStyle(crop) : { visibility: "hidden" }}
-        />
-      </div>
-      <span role="status" aria-live="polite" className="kozmos-image-field-sr">
-        {said}
-      </span>
-      {/* At a limit a zoom button is unavailable, not disabled: a disabled
-          button that has focus drops it to the page, out of the dialog. */}
-      <div className="kozmos-image-field-zoom">
-        <IconButton
-          type="button"
-          variant="outline"
-          aria-label={labels.zoomOut}
-          aria-disabled={!frame || frame.zoom <= 1 || undefined}
-          onClick={() => {
-            if (frame && frame.zoom > 1) zoomBy(1 / ZOOM_STEP);
-          }}
-        >
-          <ZoomOut aria-hidden="true" />
-        </IconButton>
-        <IconButton
-          type="button"
-          variant="outline"
-          aria-label={labels.zoomIn}
-          aria-disabled={!frame || frame.zoom >= MAX_ZOOM || undefined}
-          onClick={() => {
-            if (frame && frame.zoom < MAX_ZOOM) zoomBy(ZOOM_STEP);
-          }}
-        >
-          <ZoomIn aria-hidden="true" />
-        </IconButton>
-      </div>
+      />
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
           {labels.cancel}

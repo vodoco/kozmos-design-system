@@ -90,17 +90,6 @@
     flex: 1 1 auto;
     min-inline-size: 0;
   }
-  .kozmos-image-field-sr {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-  }
 
   /* The preview: Dialog over the whole window, less its usual 16 margin
      each side, the image as large as it fits inside. Dialog sizes itself
@@ -122,42 +111,8 @@
     object-fit: contain;
   }
 
-  /* The cropper: the frame is the box, in the field's ratio; the image moves
-     and scales under it. */
+  /* The cropper: Core's ImageCropper across the dialog's width. */
   .kozmos-image-field-cropper {
-    position: relative;
-    overflow: hidden;
     inline-size: 100%;
-    border-radius: calc(var(--semantics-radius-control) * 1px);
-    background-color: var(--primitives-colors-background-100);
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-  }
-  .kozmos-image-field-cropper:active {
-    cursor: grabbing;
-  }
-  .kozmos-image-field-cropper:focus-visible {
-    outline: var(--primitives-border-width-md) solid
-      var(--primitives-colors-theme-600);
-    outline-offset: var(--primitives-border-width-md);
-  }
-  .kozmos-image-field-cropper .kozmos-image-field-cropper-image {
-    position: absolute;
-    display: block;
-    max-inline-size: none;
-    max-block-size: none;
-    pointer-events: none;
-  }
-  .kozmos-image-field-zoom {
-    display: flex;
-    justify-content: center;
-    gap: calc(var(--primitives-layout-spacing-100) * 1px);
-  }
-  /* A zoom at its limit is unavailable, not disabled, so it keeps focus:
-     drawn as a disabled button is, at half opacity. */
-  .kozmos-image-field-zoom > [aria-disabled="true"] {
-    opacity: 0.5;
-    cursor: default;
   }
 }
