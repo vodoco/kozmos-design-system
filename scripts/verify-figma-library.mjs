@@ -29,6 +29,7 @@ import { fileURLToPath } from "node:url";
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  propertiesBoundToNoLayer,
   slotContentsThatDrift,
   strokeLayoutsThatDisagree,
   variantsThatOverlap,
@@ -62,10 +63,50 @@ function token() {
 export function expectations() {
   const source = fs.readFileSync(PLUGIN, "utf8");
 
-  const arrays = {};
-  for (const m of source.matchAll(/^const ([A-Z0-9_]+) = \[([^\]]*)\];/gm)) {
-    arrays[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((v) => v[1]);
+  // An axis's values are a top-level array of strings, but not always a
+  // literal one: GAP-153's Mixed state is a named string (MIXED_FIELD_STATE)
+  // inside COMBOBOX_STATES, and Input's states are INPUT_STATES.concat([…]).
+  // Reading only the quoted strings dropped those, and the live file's correct
+  // State=Mixed read as drift. Each element is a quoted string, a named string
+  // constant, or a spread of another array; a value list may also be one array
+  // concatenated with others.
+  const strings = {};
+  for (const m of source.matchAll(/^const ([A-Z0-9_]+) = "([^"]*)";/gm)) {
+    strings[m[1]] = m[2];
   }
+  const raw = {};
+  for (const m of source.matchAll(/^const ([A-Z0-9_]+) = \[([^\]]*)\];/gm)) {
+    raw[m[1]] = { items: m[2] };
+  }
+  for (const m of source.matchAll(
+    /^const ([A-Z0-9_]+) = ([A-Z0-9_]+)\.concat\(([^;]*)\);/gm,
+  )) {
+    raw[m[1]] = { base: m[2], items: m[3].replace(/[[\]]/g, "") };
+  }
+  const arrays = {};
+  const resolve = (name, seen = []) => {
+    if (name in arrays) return arrays[name];
+    const entry = raw[name];
+    if (!entry || seen.includes(name)) return undefined;
+    const values = entry.base
+      ? [...(resolve(entry.base, [...seen, name]) || [])]
+      : [];
+    // Strip line comments first: a quoted word in a comment is not a value.
+    const body = entry.items.replace(/\/\/[^\n]*/g, "");
+    for (const t of body.matchAll(
+      /"([^"]+)"|(\.\.\.)?\b([A-Z][A-Z0-9_]*)\b/g,
+    )) {
+      if (t[1] !== undefined) values.push(t[1]);
+      else if (t[2]) values.push(...(resolve(t[3], [...seen, name]) || []));
+      else if (t[3] in strings) values.push(strings[t[3]]);
+      // concat() spreads an array argument; inside a literal it would nest.
+      else if (entry.base && raw[t[3]])
+        values.push(...(resolve(t[3], [...seen, name]) || []));
+    }
+    arrays[name] = values;
+    return values;
+  };
+  for (const name of Object.keys(raw)) resolve(name);
 
   const sectionsBlock = source.match(
     /const COMPONENT_PAGE_LAYOUT_SECTIONS = \[([\s\S]*?)\n\];/,
@@ -297,20 +338,9 @@ async function main() {
   // condemn every set in the file.
   for (const [name, set] of Object.entries(sets)) {
     const definitions = set.componentPropertyDefinitions || {};
-    const referenced = new Set();
-    (function walk(node) {
-      const refs = node.componentPropertyReferences;
-      if (refs)
-        for (const field of Object.keys(refs)) referenced.add(refs[field]);
-      if (node.children) node.children.forEach(walk);
-    })(set);
-
-    for (const property of Object.keys(definitions)) {
-      const definition = definitions[property];
-      if (definition.type === "VARIANT") continue;
-      if (referenced.has(property)) continue;
+    for (const property of propertiesBoundToNoLayer(set)) {
       unbound.push(
-        `${name} / ${property.split("#")[0]} (${definition.type}) — declared, referenced by no layer`,
+        `${name} / ${property.split("#")[0]} (${definitions[property].type}) — declared, referenced by no layer`,
       );
     }
   }
