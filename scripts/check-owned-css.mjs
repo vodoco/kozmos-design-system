@@ -3396,6 +3396,284 @@ try {
     `PASS the AI search ring's band: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)} of 2.5, a spread of ${spread.toFixed(2)} on 36 rays`,
   );
   await sharp.close();
+
+  // GAP-262's family: a modal surface's overlay and its panel draw without
+  // @scope. Each was drawn with scoped utilities alone, so in a host where no
+  // @scope rule applies a Dialog's, a Drawer's and a BottomSheet's overlay
+  // had no place, no layer and no scrim, and covered nothing; the panel lost
+  // its place, its centre and its surface. Each part is opened on its own,
+  // in both themes, with and without @scope, under the host's hostile rules:
+  // the overlay covers the window (inline, its box) on layer 50 in the
+  // theme's scrim and takes what is behind it, and the panel sits above it
+  // where it is drawn, on the page's surface with its edge.
+  {
+    const { code: overlayCode } = await buildReactFixture(
+      "owned-css-overlays.tsx",
+    );
+    const [width, height] = [1000, 800];
+    const parts = [
+      "dialog",
+      "drawer-right",
+      "drawer-left",
+      "drawer-top",
+      "drawer-bottom",
+      "bottom-sheet",
+      "drawer-inline",
+    ];
+    for (const [mode, stylesheet] of [
+      ["full", css],
+      ["without-scope", root.toString()],
+    ]) {
+      const drawn = [];
+      for (const theme of ["light", "dark"]) {
+        for (const part of parts) {
+          const page = await browser.newPage({ viewport: { width, height } });
+          const errors = [];
+          page.on("pageerror", (error) => errors.push(error.message));
+          await page.setContent(`<!doctype html><html><head><style>
+            html {font-size:16px} body {margin:13px}
+            button {background:orange;border:3px solid purple;border-radius:3px}
+            p {margin:20px} .flex {display:block}
+          </style><script>
+            window.kozmosOverlay = ${JSON.stringify(part)};
+            window.kozmosOverlayTheme = ${JSON.stringify(theme)};
+          </script></head><body><button id="host">Host</button><div id="fixture"></div></body></html>`);
+          await page.addStyleTag({ content: stylesheet });
+          await page.addScriptTag({ content: overlayCode });
+          await page.getByTestId("panel").waitFor();
+          await settleLayout(page);
+          const got = await page.evaluate(async () => {
+            await Promise.all(
+              document.getAnimations().map((a) => a.finished.catch(() => {})),
+            );
+            const panel = document.querySelector('[data-testid="panel"]');
+            const overlay = panel.previousElementSibling;
+            const region = document.querySelector('[data-testid="region"]');
+            // The tokens the parts promise, as this root resolves them.
+            const token = (property, value) => {
+              const probe = document.createElement("div");
+              probe.style.setProperty(property, value);
+              panel.parentElement.append(probe);
+              const read = getComputedStyle(probe).getPropertyValue(property);
+              probe.remove();
+              return read;
+            };
+            const box = (node) => {
+              const r = node.getBoundingClientRect();
+              return {
+                x: Math.round(r.x * 100) / 100,
+                y: Math.round(r.y * 100) / 100,
+                width: Math.round(r.width * 100) / 100,
+                height: Math.round(r.height * 100) / 100,
+              };
+            };
+            const look = (node) => {
+              const s = getComputedStyle(node);
+              return {
+                position: s.position,
+                zIndex: s.zIndex,
+                background: s.backgroundColor,
+                ...box(node),
+              };
+            };
+            const host = document
+              .getElementById("host")
+              .getBoundingClientRect();
+            const p = panel.getBoundingClientRect();
+            const s = getComputedStyle(panel);
+            const edge = ["Top", "Right", "Bottom", "Left"].find(
+              (side) => s[`border${side}Width`] === "1px",
+            );
+            return {
+              overlayIsScrim:
+                overlay !== null &&
+                overlay.getAttribute("role") !== "dialog" &&
+                overlay.getAttribute("data-state") === "open",
+              overlay: overlay ? look(overlay) : null,
+              panel: look(panel),
+              region: region ? box(region) : null,
+              scrim: token(
+                "background-color",
+                "var(--semantics-overlay-scrim)",
+              ),
+              surface: token(
+                "background-color",
+                "var(--primitives-colors-background-0)",
+              ),
+              edgeColour: token(
+                "border-top-color",
+                "var(--semantics-border-subtle)",
+              ),
+              edge: edge
+                ? {
+                    side: edge,
+                    style: s[`border${edge}Style`],
+                    colour: s[`border${edge}Color`],
+                  }
+                : null,
+              // What a press lands on: the host's own button, at the page's
+              // start, is under the overlay or a panel drawn at that edge;
+              // the panel is above its overlay.
+              hostCovered: (() => {
+                const hit = document.elementFromPoint(
+                  host.x + host.width / 2,
+                  host.y + host.height / 2,
+                );
+                return hit === overlay || panel.contains(hit);
+              })(),
+              panelOnTop: panel.contains(
+                document.elementFromPoint(
+                  p.x + p.width / 2,
+                  p.y + Math.min(p.height / 2, 12),
+                ),
+              ),
+              // Its close, against the panel's padding box, and its name.
+              close: (() => {
+                const close = panel.querySelector("button");
+                const c = close.getBoundingClientRect();
+                const name = close.querySelector("span");
+                return {
+                  position: getComputedStyle(close).position,
+                  end:
+                    Math.round(
+                      (p.right - parseFloat(s.borderRightWidth) - c.right) *
+                        100,
+                    ) / 100,
+                  top:
+                    Math.round(
+                      (c.top - p.top - parseFloat(s.borderTopWidth)) * 100,
+                    ) / 100,
+                  width: c.width,
+                  height: c.height,
+                  nameDrawn: name
+                    ? name.getBoundingClientRect().width > 1
+                    : false,
+                };
+              })(),
+            };
+          });
+          const where = `${mode}, ${theme}, ${part}`;
+          assert.ok(
+            got.overlayIsScrim,
+            `${where}: no overlay before the panel`,
+          );
+          const inline = part === "drawer-inline";
+          const cover = inline ? got.region : { x: 0, y: 0, width, height };
+          assert.deepEqual(
+            got.overlay,
+            {
+              position: inline ? "absolute" : "fixed",
+              zIndex: "50",
+              background: got.scrim,
+              ...cover,
+            },
+            `${where}: the overlay does not cover ${inline ? "its box" : "the window"} on layer 50 in the scrim ${got.scrim}`,
+          );
+          if (!inline)
+            assert.ok(
+              got.hostCovered,
+              `${where}: the page behind the overlay is not covered`,
+            );
+          assert.ok(
+            got.panelOnTop,
+            `${where}: the panel is not above its overlay`,
+          );
+          assert.equal(
+            got.panel.position,
+            inline ? "absolute" : "fixed",
+            `${where}: the panel is ${got.panel.position}`,
+          );
+          assert.equal(
+            got.panel.zIndex,
+            "50",
+            `${where}: the panel is not on layer 50`,
+          );
+          assert.equal(
+            got.panel.background,
+            got.surface,
+            `${where}: the panel is not the page's surface ${got.surface}: ${got.panel.background}`,
+          );
+          // Where the panel is drawn, as its utilities place it.
+          const { x, y, width: w, height: h } = got.panel;
+          const expected = {
+            dialog: {
+              x: (width - Math.min(width - 32, 512)) / 2,
+              width: Math.min(width - 32, 512),
+              centreY: height / 2,
+              edge: "Top",
+            },
+            "drawer-right": {
+              x: width - 384,
+              y: 0,
+              width: 384,
+              height,
+              edge: "Left",
+            },
+            "drawer-left": { x: 0, y: 0, width: 384, height, edge: "Right" },
+            "drawer-top": { x: 0, y: 0, width, edge: "Bottom" },
+            "drawer-bottom": { x: 0, bottom: height, width, edge: "Top" },
+            "bottom-sheet": { x: 0, bottom: height, width, edge: "Top" },
+            "drawer-inline": got.region && {
+              x: got.region.x + got.region.width - 16 - 420,
+              y: got.region.y + 16,
+              width: 420,
+              edge: "Top",
+            },
+          }[part];
+          const placed = {
+            x,
+            width: w,
+            ...("y" in expected && { y }),
+            ...("height" in expected && { height: h }),
+            ...("bottom" in expected && {
+              bottom: Math.round((y + h) * 100) / 100,
+            }),
+            ...("centreY" in expected && {
+              centreY: Math.round((y + h / 2) * 2) / 2,
+            }),
+            edge: got.edge?.side,
+          };
+          assert.deepEqual(
+            placed,
+            expected,
+            `${where}: the panel is not where it is drawn: ${JSON.stringify(got.panel)}`,
+          );
+          assert.deepEqual(
+            [got.edge.style, got.edge.colour],
+            ["solid", got.edgeColour],
+            `${where}: the panel's edge is not the subtle border: ${JSON.stringify(got.edge)}`,
+          );
+          // The close, in the panel's top end corner (decision 82): 24 in
+          // on a Dialog, 16 on a Drawer, and on a BottomSheet at its end, 8
+          // down; the icon button's 44, its name never drawn.
+          const [end, top] =
+            part === "dialog"
+              ? [24, 24]
+              : part === "bottom-sheet"
+                ? [0, 8]
+                : [16, 16];
+          assert.deepEqual(
+            got.close,
+            {
+              position: "absolute",
+              end,
+              top,
+              width: 44,
+              height: 44,
+              nameDrawn: false,
+            },
+            `${where}: the close is not in the panel's top end corner`,
+          );
+          assert.deepEqual(errors, [], `${where}: page errors`);
+          drawn.push(`${theme} ${part}`);
+          await page.close();
+        }
+      }
+      console.log(
+        `PASS GAP-262 overlays, ${mode}: ${drawn.join(", ")} cover what is behind them on layer 50 in the theme's scrim, the panel above on the page's surface, where it is drawn, its close in its top end corner`,
+      );
+    }
+  }
 } finally {
   await browser.close();
 }

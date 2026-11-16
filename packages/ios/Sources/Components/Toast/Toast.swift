@@ -38,6 +38,8 @@ public struct KozmosToast: View {
         self.title = title
         self.description = description
         self.actionTitle = actionTitle
+        // Shown the whole time the toast is, or left out: there is no hover
+        // here, so it is React's `closeVisible="always"` (GAP-268).
         self.showsCloseButton = showsCloseButton
         // The close button's spoken name, as React's ToastClose `aria-label`;
         // a product that translates passes its own.

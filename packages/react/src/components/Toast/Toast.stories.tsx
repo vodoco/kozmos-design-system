@@ -6,6 +6,7 @@ import {
   ToastTitle,
   ToastDescription,
   ToastAction,
+  ToastClose,
 } from "./Toast";
 import { Toaster, toast, type ToastOptions } from "./Toaster";
 import { Button } from "../Button/Button";
@@ -57,6 +58,35 @@ export const Open: Story = {
           </ToastDescription>
         </div>
         <ToastAction altText="Goto schedule">Undo</ToastAction>
+      </Toast>
+      <ToastViewport />
+    </ToastProvider>
+  ),
+};
+
+/**
+ * The close shown the whole time, `visible="always"` (GAP-268), beside one
+ * shown on hover or focus, the default: a visitor who never hovers a toast
+ * still sees how to close it. The Toaster's `closeVisible`, or a toast's own,
+ * says the same for toast().
+ */
+export const CloseAlwaysVisible: Story = {
+  name: "Close always visible",
+  render: () => (
+    <ToastProvider duration={Infinity}>
+      <Toast defaultOpen>
+        <div className="grid gap-1">
+          <ToastTitle>Units merged</ToastTitle>
+          <ToastDescription>The merge is saved as a draft.</ToastDescription>
+        </div>
+        <ToastClose visible="always" />
+      </Toast>
+      <Toast defaultOpen>
+        <div className="grid gap-1">
+          <ToastTitle>Scheduled: Catch up</ToastTitle>
+          <ToastDescription>Hover it to show its close.</ToastDescription>
+        </div>
+        <ToastClose />
       </Toast>
       <ToastViewport />
     </ToastProvider>

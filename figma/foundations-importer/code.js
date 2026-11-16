@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "5a8121cef8bd";
+const PLUGIN_BUILD = "c9fde435ab08";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -219,6 +219,36 @@ const TREE_META = {
   text: "Changes awaiting publish",
   token: "Colors/foreground/400",
   fallback: "#5D626F",
+};
+// Checkable rows and the disclosure at the end (GAP-277), as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`, on Tree
+// and its rows. Booleans, as Divided and Meta Below, for the same reason: an
+// axis would double the three row sets. Checkable shows Checkbox's box
+// before the leading icon, and Checked the box's checked fill and mark
+// inside it, both hidden until shown. Disclosure Start (on) shows the
+// disclosure before the label, as every row has it, and Disclosure End (off)
+// one at the row's end: a designer turns the first off and the second on,
+// since a boolean can show a layer but not hide another. On a row with no
+// children each is the empty 16 a disclosure would take.
+const TREE_CHECKABLE_PROPERTY_NAME = "Checkable";
+const TREE_CHECKED_PROPERTY_NAME = "Checked";
+const TREE_DISCLOSURE_START_PROPERTY_NAME = "Disclosure Start";
+const TREE_DISCLOSURE_END_PROPERTY_NAME = "Disclosure End";
+const TREE_CHECKBOX = {
+  name: "Checkbox",
+  kind: "tree-checkbox",
+  stroke: "Border/Input",
+  strokeFallback: "#747B8B",
+};
+const TREE_CHECKBOX_CHECKED = {
+  name: "Checkbox Checked",
+  kind: "tree-checkbox-checked",
+  markName: "Checkbox Mark",
+};
+const TREE_DISCLOSURE_END = {
+  name: "Disclosure End",
+  iconKind: "tree-disclosure-end-icon",
+  spacerKind: "tree-disclosure-end-spacer",
 };
 // The column the name and its meta share. Its vertical padding is the row's
 // py-1.5 (py-1 compact), so a row with its meta below is 48 (44 compact), as
@@ -445,7 +475,11 @@ const TIME_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const TIME_PICKER_CONTENT = ["Closed", "Open"];
 const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
 const FILE_UPLOAD_STATUSES = ["Default", "Error", "Warning", "Success"];
-const FILE_UPLOAD_CONTENT = ["Dropzone", "Files"];
+// Preview: React's `preview="image"` holding its image, the thumbnail with
+// Change and Remove where the drop area was (GAP-270).
+const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"];
+// One status's columns, a content each, 440 apart.
+const FILE_UPLOAD_STATUS_STRIDE = FILE_UPLOAD_CONTENT.length * 440;
 const COLOR_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const COLOR_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const COLOR_PICKER_CONTENT = ["Closed", "Open"];
@@ -641,6 +675,9 @@ const EMPTY_STATE_CONTENT = ["Basic", "Icon", "Action"];
 // Found"). A layer in every variant, shown by the List boolean, its three
 // items' words List Item 1 Text to List Item 3 Text.
 const EMPTY_STATE_LIST_PROPERTY = "List";
+// React's marker column (padding-inline-start 1.25rem) and its disc.
+const EMPTY_STATE_LIST_MARKER_COLUMN = 20;
+const EMPTY_STATE_LIST_MARKER_SIZE = 5;
 const EMPTY_STATE_LIST_ITEMS = [
   "Check the building and level",
   "Clear the type filters",
@@ -1182,6 +1219,10 @@ const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 // `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
 // first, so the set's default is the plain cap.
 const KBD_KEYS = ["Single", "Combination"];
+// GAP-273: React's ImageCropper `aspectRatio`, the frame's shape: Square is
+// 1, MAP-32's logo and the default, Landscape 16:9, a cover. Square comes
+// first, so the set's default is React's.
+const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1673,6 +1714,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DateRangePicker: 2400,
   TimePicker: 1380,
   FileUpload: 1420,
+  ImageCropper: 560,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1833,6 +1875,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "DateRangePicker",
       "TimePicker",
       "FileUpload",
+      "ImageCropper",
       "ColorPicker",
       "SearchBar",
       "Search",
@@ -3979,6 +4022,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -4015,6 +4059,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -4052,6 +4097,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -4469,11 +4515,13 @@ const COMPONENT_DOCS = [
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when the Action content variant is used.",
+      'Close Always Visible maps to ToastClose visible="always"; off is the default, shown on hover or focus.',
     ],
     properties: [
       "Content: Basic, Action",
       "Tone: Neutral, Success, Info, Warning, Critical",
       "Title Text, Description Text, Action Text",
+      "Close Always Visible (boolean, on)",
     ],
     accessibility: [
       "Toast is non-modal status feedback and should use runtime live-region semantics.",
@@ -4899,6 +4947,30 @@ const COMPONENT_DOCS = [
       "The field and list options meet the 44px minimum interactive target.",
       "Time-list surface, option states, text, icons, helper copy, and boundaries pass contrast in both modes.",
       "Product code preserves native time input semantics and accessible descriptions.",
+    ],
+  },
+  {
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    category: "Forms",
+    summary:
+      "ImageCropper frames an image to an aspect ratio: the frame is the box, the image moves and scales under it, and the result is the frame as fractions of the image (GAP-273).",
+    usage: [
+      "Use to choose the part of an image a product keeps: a client's square logo (MAP-32), a cover at 16:9.",
+      "Put it in a Dialog with Apply and Cancel when the crop is a step; the cropper itself has no buttons but its zoom row.",
+      "Leave the zoom row out (Zoom Controls off) only where the product zooms another way; the keyboard still zooms.",
+    ],
+    api: [
+      "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9.",
+      "Zoom Controls maps to showZoomControls: Zoom out, the zoom Slider (100% to maxZoom) and Zoom in.",
+      "onCrop hands back { x, y, width, height }, each a fraction of the image's width or height, once the image loads and after every change; the product crops.",
+    ],
+    properties: ["Ratio: Square, Landscape", "Zoom Controls"],
+    accessibility: [
+      "The frame is one tab stop named by label, described by its instructions: the arrow keys move it by a tenth of itself, plus and minus zoom.",
+      "Each change is said in a polite live region: where the frame is and its zoom, in whole percentages.",
+      "A zoom button at its limit is unavailable, not disabled, so it keeps focus.",
+      "The arrows are physical in right to left too: an image does not mirror.",
     ],
   },
   {
@@ -9665,6 +9737,32 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "DatePicker/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-273: React's ImageCropper, a frame and its zoom row, gap-150 (12)
+  // apart, the zoom row's parts gap-100 (8) apart, the frame on the control
+  // radius. 320 wide as drawn; it fills its column in code.
+  {
+    name: "ImageCropper/width/default",
+    value: 320,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ImageCropper/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/zoom/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/radius",
+    value: KOZMOS_RADIUS.control,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
   {
     name: "FileUpload/width/default",
     value: 384,
@@ -12295,6 +12393,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["DateRangePicker", updateDateRangePickerComponent],
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
+  ["ImageCropper", updateImageCropperComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -12565,6 +12664,9 @@ function additionalComponentActionHandlers() {
     "build-page-header": buildPageHeaderComponent,
     "update-page-header": updatePageHeaderComponent,
     "rebuild-page-header": rebuildPageHeaderComponent,
+    "build-image-cropper": buildImageCropperComponent,
+    "update-image-cropper": updateImageCropperComponent,
+    "rebuild-image-cropper": rebuildImageCropperComponent,
     "build-list-item": buildListItemComponent,
     "update-list-item": updateListItemComponent,
     "rebuild-list-item": rebuildListItemComponent,
@@ -20031,6 +20133,12 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "ImageCropper") {
+    return {
+      Ratio: IMAGE_CROPPER_RATIOS,
+    };
+  }
+
   if (canonicalName === "FileUpload") {
     return {
       State: FILE_UPLOAD_STATES,
@@ -26764,7 +26872,8 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       /Label Text$/.test(textName) ||
       /Month Text$/.test(textName) ||
       textName === "Required Mark" ||
-      textName === "Browse Text"
+      textName === "Browse Text" ||
+      (setName === "FileUpload" && textName === "Change Text")
     ) {
       return "fieldLabel";
     }
@@ -39198,7 +39307,8 @@ async function buildFileUploadComponent() {
           fonts,
           stats,
         });
-        component.x = statusIndex * 880 + contentIndex * 440;
+        component.x =
+          statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
         component.y = stateIndex * 390;
         page.appendChild(component);
         components.push(component);
@@ -39217,7 +39327,7 @@ async function buildFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -39272,7 +39382,7 @@ async function updateFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -42146,6 +42256,8 @@ function treeIconNodesForBinding(root) {
       (node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
         "tree-disclosure-icon" ||
         node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
+          TREE_DISCLOSURE_END.iconKind ||
+        node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
           "icon-slot-instance")
     ) {
       icons.push(node);
@@ -42347,6 +42459,12 @@ async function syncTreeRowNode(
   setFixedChildSizing(chevron);
   iconNodes.push(chevron);
 
+  // GAP-277: Checkbox's box before the leading icon, hidden until Checkable.
+  const checkbox = await createTreeCheckbox(row, variableByName, stats);
+  rowNode.appendChild(checkbox);
+  setFixedChildSizing(checkbox);
+  checkbox.visible = false;
+
   const typeIcon = await createFixedIconInstance(
     row.iconName || (row.expandable ? "map-01" : "marker-pin-01"),
     row.selected ? "Colors/theme/600" : "Colors/foreground/400",
@@ -42451,6 +42569,17 @@ async function syncTreeRowNode(
     setHugChildSizing(actions.node);
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
+
+  // GAP-277: the disclosure at the row's end, after its actions, hidden
+  // until Disclosure End.
+  const endDisclosure = await createTreeEndDisclosure(
+    row,
+    variableByName,
+    stats,
+  );
+  rowNode.appendChild(endDisclosure);
+  setFixedChildSizing(endDisclosure);
+  endDisclosure.visible = false;
 
   setLayoutSizingVertical(rowNode, "HUG");
 
@@ -42858,6 +42987,97 @@ async function createTreeChevron(row, variableByName, stats) {
     : "Disclosure Icon";
   chevron.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-disclosure-icon");
   return chevron;
+}
+
+/**
+ * Checkbox's box (GAP-277), as React's checkable row draws it: 20 square,
+ * radius marker, a 1px Border/Input edge; inside it Checkbox Checked, the
+ * theme fill with its own edge and the check mark in the theme foreground
+ * (decision 59), hidden until Checked shows it.
+ */
+async function createTreeCheckbox(row, variableByName, stats) {
+  const box = figma.createFrame();
+  box.name = TREE_CHECKBOX.name;
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(20, 20);
+  box.cornerRadius = KOZMOS_RADIUS.marker;
+  box.clipsContent = false;
+  box.fills = [];
+  box.strokes = [
+    paintFromVariable(
+      TREE_CHECKBOX.stroke,
+      TREE_CHECKBOX.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  box.strokeWeight = 1;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_CHECKBOX.kind);
+
+  const checked = figma.createFrame();
+  checked.name = TREE_CHECKBOX_CHECKED.name;
+  checked.layoutMode = "NONE";
+  checked.resizeWithoutConstraints(20, 20);
+  checked.x = 0;
+  checked.y = 0;
+  checked.cornerRadius = KOZMOS_RADIUS.marker;
+  checked.clipsContent = false;
+  checked.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokeWeight = 1;
+  checked.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    TREE_CHECKBOX_CHECKED.kind,
+  );
+
+  const mark = await createFixedIconInstance(
+    "check",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    16,
+    "Tree/icon/size",
+  );
+  mark.name = TREE_CHECKBOX_CHECKED.markName;
+  checked.appendChild(mark);
+  mark.x = 2;
+  mark.y = 2;
+  box.appendChild(checked);
+  checked.visible = false;
+  return box;
+}
+
+/**
+ * The disclosure at the row's end (GAP-277): the row's chevron, or on a row
+ * with no children the empty 16 one would take.
+ */
+async function createTreeEndDisclosure(row, variableByName, stats) {
+  const node = await createTreeChevron(row, variableByName, stats);
+  node.name = TREE_DISCLOSURE_END.name;
+  node.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    row.expandable
+      ? TREE_DISCLOSURE_END.iconKind
+      : TREE_DISCLOSURE_END.spacerKind,
+  );
+  return node;
 }
 
 // --- TreeSection ---------------------------------------------------------------
@@ -45912,7 +46132,68 @@ async function configureTreeItemProperties(
   configureTreeActionVisibilityProperties(componentSet, stats);
   configureTreeDividedProperty(componentSet, stats);
   configureTreeMetaProperties(componentSet, stats);
+  configureTreeCheckableProperties(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Checkable and Checked, booleans off by default, showing each row's
+ * Checkbox and its checked fill; Disclosure Start, on, and Disclosure End,
+ * off, showing the disclosure before the label and at the row's end
+ * (GAP-277). With all four at their defaults an instance draws as it did
+ * before any existed.
+ */
+function configureTreeCheckableProperties(componentSet, stats) {
+  const bindings = [
+    [
+      TREE_CHECKABLE_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX.kind,
+    ],
+    [
+      TREE_CHECKED_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX_CHECKED.kind,
+    ],
+    // The start disclosure is a row's own child, as drawn before GAP-277.
+    [
+      TREE_DISCLOSURE_START_PROPERTY_NAME,
+      true,
+      (node) =>
+        node.parent &&
+        node.parent.type === "COMPONENT" &&
+        (generatedKind(node) === "tree-disclosure-icon" ||
+          generatedKind(node) === "tree-icon-spacer"),
+    ],
+    [
+      TREE_DISCLOSURE_END_PROPERTY_NAME,
+      false,
+      (node) =>
+        generatedKind(node) === TREE_DISCLOSURE_END.iconKind ||
+        generatedKind(node) === TREE_DISCLOSURE_END.spacerKind,
+    ],
+  ];
+  stats.treeCheckableBindings = {};
+  for (const [name, defaultValue, matches] of bindings) {
+    const propertyName = ensureBooleanProperty(
+      componentSet,
+      name,
+      defaultValue,
+      stats,
+    );
+    if (!propertyName) continue;
+    let boundCount = 0;
+    (function walk(node) {
+      if (matches(node)) {
+        bindVisibilityProperty(node, propertyName, stats);
+        boundCount += 1;
+      }
+      if (node.children) {
+        for (const child of node.children) walk(child);
+      }
+    })(componentSet);
+    stats.treeCheckableBindings[name] = boundCount;
+  }
 }
 
 /**
@@ -47349,6 +47630,14 @@ function configureFileUploadProperties(componentSet, stats) {
     "2.4 MB",
     stats,
   );
+  // GAP-270: Content=Preview's Change button, React's `changeLabel`.
+  configureNamedTextProperty(
+    componentSet,
+    "Change Text",
+    "Change Text",
+    "Change",
+    stats,
+  );
   configureHelperTextProperty(componentSet, "Upload a PDF or image.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
@@ -48100,6 +48389,7 @@ async function buildToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
     ],
   });
 }
@@ -48125,6 +48415,7 @@ async function updateToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -60001,6 +60292,17 @@ function configureToastProperties(componentSet, stats) {
     "Undo",
     stats,
   );
+  // GAP-268: ToastClose's `visible`. On, the default, the close is drawn as
+  // it always was, shown at rest: React's visible="always". Off draws the
+  // toast at rest with the default "hover" close, which shows only while the
+  // toast is hovered or the button has focus.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Toast Close",
+    "Close Always Visible",
+    true,
+    stats,
+  );
 }
 
 async function rebuildCardComponent() {
@@ -66720,6 +67022,226 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
   );
 }
 
+// --- ImageCropper ----------------------------------------------------------------
+
+// GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
+// column 320 wide (ImageCropper/width/default), the frame and the zoom row 12
+// apart (ImageCropper/gap). The frame is the box, in the Ratio's shape (320
+// square, or 320 by 180 at 16:9), on the control radius (ImageCropper/radius)
+// in Colors/background/100 with a 1 inner edge in Border/Input; the image is
+// the product's, so an Image slot stands in for it. The zoom row is Zoom out,
+// the zoom Slider and Zoom in, 8 apart (ImageCropper/zoom/gap): two 44
+// outline icon buttons and a Slider slot, Core's own set, as ImageField draws
+// its Core parts. `Zoom Controls` shows the row. React's zoom-in and zoom-out
+// magnifiers are not curated icons yet, so the buttons draw the curated plus
+// and minus, as MapControlsGroup's zoom does.
+const IMAGE_CROPPER_GEOMETRY = {
+  width: 320,
+  landscapeHeight: 180,
+  gap: 12,
+  zoomGap: 8,
+  control: 44,
+  imageInset: 16,
+};
+const IMAGE_CROPPER_ZOOM_ROW_NAME = "Zoom Row";
+
+async function createImageCropperVariant(args) {
+  const component = figma.createComponent();
+  await updateImageCropperVariant(component, args);
+  return component;
+}
+
+function parseImageCropperVariantName(name) {
+  return productSdkVariantValues(name, "Ratio", IMAGE_CROPPER_RATIOS);
+}
+
+async function updateImageCropperVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = IMAGE_CROPPER_GEOMETRY;
+  const frameHeight =
+    value === "Landscape" ? geometry.landscapeHeight : geometry.width;
+  productSdkVariantRoot(component, "ImageCropper", "Ratio=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.gap,
+    width: geometry.width,
+    height: frameHeight + geometry.gap + geometry.control,
+  });
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ImageCropper/gap",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "width",
+    "ImageCropper/width/default",
+    variableByName,
+    stats,
+  );
+
+  const frame = productSdkFrame("Frame", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: geometry.width,
+    height: frameHeight,
+  });
+  frame.cornerRadius = KOZMOS_RADIUS.control;
+  frame.clipsContent = true;
+  frame.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  frame.strokeWeight = 1;
+  frame.strokeAlign = "INSIDE";
+  frame.strokes = [
+    paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
+  ];
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", "image-cropper-frame");
+  bindFloatVariable(
+    frame,
+    "cornerRadius",
+    "ImageCropper/radius",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, frame, "FILL", "FIXED");
+  const image = await productSdkSlot({
+    name: "Image Slot",
+    label: "Image",
+    width: geometry.width - 2 * geometry.imageInset,
+    height: frameHeight - 2 * geometry.imageInset,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: geometry.imageInset,
+  });
+  frame.appendChild(image);
+
+  const row = productSdkFrame(IMAGE_CROPPER_ZOOM_ROW_NAME, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: geometry.zoomGap,
+    width: geometry.width,
+    height: geometry.control,
+  });
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "ImageCropper/zoom/gap",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, row, "FILL", "HUG");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom Out Button",
+      glyph: "−",
+      iconName: "minus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+  const slider = await productSdkSlot({
+    name: "Zoom Slider Slot",
+    label: "Slider · Zoom",
+    width: geometry.width - 2 * geometry.control - 2 * geometry.zoomGap,
+    height: geometry.control,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(row, slider, "FILL", "FIXED");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom In Button",
+      glyph: "+",
+      iconName: "plus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+}
+
+function configureImageCropperProperties(componentSet, stats) {
+  configureNamedBooleanProperty(
+    componentSet,
+    IMAGE_CROPPER_ZOOM_ROW_NAME,
+    "Zoom Controls",
+    true,
+    stats,
+  );
+}
+
+const IMAGE_CROPPER_DESCRIPTION = [
+  "Kozmos ImageCropper component set generated from React ImageCropper API (GAP-273).",
+  "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9. Zoom Controls maps to showZoomControls.",
+  "The image is the product's: the Image slot stands in for it. onCrop hands back the frame as fractions of the image.",
+];
+
+async function buildImageCropperComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    x: 80,
+    y: 20400,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION,
+  });
+}
+
+async function updateImageCropperComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    updateVariant: updateImageCropperVariant,
+    parseVariantName: parseImageCropperVariantName,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildImageCropperComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    build: buildImageCropperComponent,
+  });
+}
+
 // --- PageHeader ---------------------------------------------------------------
 
 // GAP-036 (decision 135): React's PageHeader, a band across the page. Its
@@ -69632,6 +70154,7 @@ async function updateFileUploadVariant(
 ) {
   const config = inputConfig(state, status);
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
 
   component.name = `State=${state}, Status=${status}, Content=${content}`;
   component.layoutMode = "VERTICAL";
@@ -69644,7 +70167,10 @@ async function updateFileUploadVariant(
   component.paddingRight = 0;
   component.paddingTop = 0;
   component.paddingBottom = 0;
-  component.resizeWithoutConstraints(384, hasFiles ? 302 : 218);
+  component.resizeWithoutConstraints(
+    384,
+    hasFiles ? 302 : isPreview ? 130 : 218,
+  );
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -69676,7 +70202,7 @@ function layoutFileUploadVariants(componentSet) {
     const stateIndex = FILE_UPLOAD_STATES.indexOf(props.state);
     const statusIndex = FILE_UPLOAD_STATUSES.indexOf(props.status);
     const contentIndex = FILE_UPLOAD_CONTENT.indexOf(props.content);
-    child.x = statusIndex * 880 + contentIndex * 440;
+    child.x = statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
     child.y = stateIndex * 390;
   }
 }
@@ -82406,6 +82932,7 @@ async function syncFileUploadVariantChildren({
     "Description Text",
     "File Name Text",
     "File Meta Text",
+    "Change Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -82416,6 +82943,7 @@ async function syncFileUploadVariantChildren({
   const disabled = state === "Disabled";
   const isDragging = state === "Dragging";
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
   const dropzoneStroke = isDragging ? "Colors/theme/600" : config.fieldStroke;
   const dropzoneStrokeFallback = isDragging
     ? "#1051E8"
@@ -82444,6 +82972,21 @@ async function syncFileUploadVariantChildren({
     ),
   ];
   label.textAlignVertical = "CENTER";
+
+  if (isPreview) {
+    await syncFileUploadPreviewChildren({
+      component,
+      label,
+      state,
+      status,
+      config,
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
 
   const dropzone = figma.createFrame();
   dropzone.name = "FileUpload Dropzone";
@@ -82684,6 +83227,229 @@ async function syncFileUploadVariantChildren({
     component.appendChild(fileList);
     setLayoutSizingHorizontal(fileList, "FILL");
   }
+  component.appendChild(helper);
+  normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Content=Preview, React's `preview="image"` holding its image (GAP-270): in
+ * place of the drop area, a file row with the image as an avatar-sized
+ * thumbnail (Avatar's 40, round), the file's name and size, an outline
+ * Change button and the remove icon. The row's border takes the status's
+ * colour, as React's does; React's preview takes no drop, so Dragging
+ * draws as Default, and Focus rings the Change button, where focus lands
+ * once an image is chosen.
+ */
+async function syncFileUploadPreviewChildren({
+  component,
+  label,
+  state,
+  status,
+  config,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const preview = await createFileUploadFileRow({
+    index: 0,
+    fileName: preservedText["File Name Text"] || "acme-logo.png",
+    fileMeta: preservedText["File Meta Text"] || "24 KB",
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  const row = preview.row;
+  row.name = "FileUpload Preview";
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "file-upload-preview");
+  if (status !== "Default") {
+    row.strokes = [
+      paintFromVariable(
+        config.fieldStroke,
+        config.fieldStrokeFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+
+  // The thumbnail stands where the file icon stood.
+  preview.fileIcon.remove();
+  const thumbnail = figma.createFrame();
+  thumbnail.name = "Preview Image";
+  thumbnail.layoutMode = "NONE";
+  thumbnail.resizeWithoutConstraints(40, 40);
+  thumbnail.cornerRadius = KOZMOS_RADIUS.pill;
+  thumbnail.clipsContent = true;
+  thumbnail.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  thumbnail.strokes = [];
+  thumbnail.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-image");
+  const picture = await createFixedIconInstance(
+    "building-01",
+    disabled ? "Colors/foreground/500" : "Colors/foreground/400",
+    disabled ? "#747B8B" : "#5D626F",
+    variableByName,
+    stats,
+    20,
+    null,
+  );
+  picture.x = 10;
+  picture.y = 10;
+  thumbnail.appendChild(picture);
+  bindAvatarGeometryVariables(thumbnail, variableByName, stats);
+  row.insertChild(0, thumbnail);
+
+  const change = figma.createFrame();
+  change.name = "Change Button";
+  change.layoutMode = "HORIZONTAL";
+  change.primaryAxisSizingMode = "AUTO";
+  change.counterAxisSizingMode = "FIXED";
+  change.primaryAxisAlignItems = "CENTER";
+  change.counterAxisAlignItems = "CENTER";
+  change.itemSpacing = 0;
+  change.paddingLeft = 12;
+  change.paddingRight = 12;
+  change.paddingTop = 0;
+  change.paddingBottom = 0;
+  change.resizeWithoutConstraints(84, 44);
+  change.cornerRadius = KOZMOS_RADIUS.control;
+  change.clipsContent = false;
+  change.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-change");
+  const outline = buttonConfig("Outline", disabled ? "Disabled" : "Default");
+  change.fills = [
+    paintFromVariable(
+      outline.background,
+      outline.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokes = [
+    paintFromVariable(
+      outline.stroke,
+      outline.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokeWeight = 1;
+  bindFloatVariable(
+    change,
+    "height",
+    "Button/height/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingLeft",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingRight",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "cornerRadius",
+    "Button/radius",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "strokeWeight",
+    "Button/stroke/width",
+    variableByName,
+    stats,
+  );
+
+  const changeText = figma.createText();
+  changeText.name = "Change Text";
+  // React draws Button's medium 14/20 label; the field label style is the
+  // same face and size, attached as Browse Text's is.
+  await applyFieldLabelTypography(
+    changeText,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  changeText.characters = preservedText["Change Text"] || "Change";
+  changeText.fills = [
+    paintFromVariable(
+      outline.foreground,
+      outline.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  changeText.textAlignVertical = "CENTER";
+  change.appendChild(changeText);
+  syncFocusRing(change, {
+    enabled: state === "Focus",
+    width: 84,
+    height: 44,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+  row.insertChild(row.children.indexOf(preview.removeIcon), change);
+
+  const helper = figma.createText();
+  helper.name = "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  helper.characters =
+    preservedText["Helper Text"] || helperTextForInputStatus(status);
+  helper.visible = status !== "Default";
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  helper.resizeWithoutConstraints(384, 20);
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  helper.textAlignVertical = "CENTER";
+
+  bindFileUploadGeometryVariables(
+    component,
+    null,
+    null,
+    [row],
+    [preview.removeIcon],
+    variableByName,
+    stats,
+  );
+
+  component.appendChild(label);
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
 }
@@ -84390,6 +85156,9 @@ async function syncSelectVariantChildren({
     ),
   ];
   trigger.strokeWeight = 1;
+  // Out, as Input's field: the variants #521 (Mixed) and GAP-164 (Open)
+  // added came out laid in beside the six drawn before (figma:verify, 15 Nov).
+  keepStrokeOutOfLayout(trigger);
   trigger.clipsContent = false;
 
   let placeholder = directChildNamed(trigger, "Placeholder Text");
@@ -85476,6 +86245,12 @@ async function syncEmptyStateVariantChildren({
  * 280 column from the start, each item a bullet and its words in
  * foreground/400 at the description's size, 4 between items. Hidden: the
  * List boolean shows it.
+ *
+ * React's bullet is a list marker (list-style: disc, padding-inline-start
+ * 1.25rem), not a character in the item, so it is drawn as one: a 5 disc in
+ * a 20 column, where Chromium puts the marker (4 in, 8 down a 20 line), and
+ * the words start 20 in as React's do. A typed "•" read to figma:verify as an
+ * icon typed as a character, and started the words 13 in.
  */
 async function appendEmptyStateList(
   component,
@@ -85506,7 +86281,7 @@ async function appendEmptyStateList(
     row.counterAxisSizingMode = "AUTO";
     row.primaryAxisAlignItems = "MIN";
     row.counterAxisAlignItems = "MIN";
-    row.itemSpacing = 8;
+    row.itemSpacing = 0;
     row.paddingLeft = 0;
     row.paddingRight = 0;
     row.paddingTop = 0;
@@ -85515,16 +86290,23 @@ async function appendEmptyStateList(
     row.strokes = [];
     row.clipsContent = false;
 
-    const bullet = figma.createText();
+    const bullet = figma.createFrame();
     bullet.name = "Bullet";
-    await applyEmptyStateDescriptionTypography(
-      bullet,
-      fonts,
-      variableByName,
-      stats,
+    bullet.layoutMode = "NONE";
+    bullet.resizeWithoutConstraints(
+      EMPTY_STATE_LIST_MARKER_COLUMN,
+      EMPTY_STATE_LIST_MARKER_COLUMN,
     );
-    bullet.characters = "\u2022";
-    setTextAutoResize(bullet, "WIDTH_AND_HEIGHT");
+    bullet.fills = [];
+    bullet.strokes = [];
+    bullet.clipsContent = false;
+    const dot = figma.createEllipse();
+    dot.name = "Bullet Dot";
+    dot.resize(EMPTY_STATE_LIST_MARKER_SIZE, EMPTY_STATE_LIST_MARKER_SIZE);
+    dot.strokes = [];
+    bullet.appendChild(dot);
+    dot.x = 4;
+    dot.y = 8;
 
     const words = figma.createText();
     words.name = `List Item ${index + 1} Text`;
@@ -85537,8 +86319,8 @@ async function appendEmptyStateList(
     words.characters = EMPTY_STATE_LIST_ITEMS[index];
     words.textAlignHorizontal = "LEFT";
 
-    for (const text of [bullet, words]) {
-      text.fills = [
+    for (const node of [dot, words]) {
+      node.fills = [
         paintFromVariable(
           "Colors/foreground/400",
           "#5E6575",

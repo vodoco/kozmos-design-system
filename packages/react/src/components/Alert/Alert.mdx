@@ -16,6 +16,17 @@ Displays a callout for user attention.
 
 <Controls />
 
+## Without a title
+
+An icon and a description alone: the words are centred on the icon's line, with as much space below
+them as above, on one line or several (GAP-269). The same on SwiftUI and Compose: one line of words
+beside the icon is centred on it, and a title and its description, or a longer description, start at
+the top. Right to left, the icon and the room for it are at the right, the inline start.
+
+<Canvas>
+  <Story of={AlertStories.WithoutTitle} />
+</Canvas>
+
 ## Implementation
 
 <div className="subheading">Code</div>

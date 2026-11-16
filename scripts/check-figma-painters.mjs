@@ -42,6 +42,7 @@ import {
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  propertiesBoundToNoLayer,
   strokeLayoutsThatDisagree,
   variantsThatOverlap,
 } from "./lib/figma-verify-rules.mjs";
@@ -4202,6 +4203,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// GAP-268: ToastClose's `visible`. The set's Close Always Visible boolean, on
+// by default so the file draws as it did, shows the close at rest in every
+// variant: React's visible="always". Off is the default "hover" close.
+section("Toast's Close Always Visible (GAP-268)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const variants = [];
+  for (const value of ["Basic", "Action"])
+    for (const tone of ["Neutral", "Critical"])
+      variants.push(
+        await plugin.createToastVariant({
+          value,
+          second: tone,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "Toast";
+  plugin.configureToastProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const key = Object.keys(definitions).find(
+    (name) =>
+      name.split("#")[0] === "Close Always Visible" &&
+      definitions[name].type === "BOOLEAN",
+  );
+  ok(
+    key && definitions[key].defaultValue === true,
+    "Toast: a Close Always Visible boolean, on by default",
+  );
+  ok(
+    variants.every((variant) => {
+      const close = named(variant, "Toast Close");
+      return (
+        close &&
+        close.componentPropertyReferences &&
+        close.componentPropertyReferences.visible === key
+      );
+    }),
+    "Toast: Close Always Visible shows the close in all four variants drawn",
+  );
+  ok(
+    ["Title Text", "Description Text", "Action Text"].every((name) =>
+      Object.keys(definitions).some((key) => key.split("#")[0] === name),
+    ),
+    "Toast: its text properties are kept",
+  );
+  set.remove();
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary
@@ -7573,6 +7625,8 @@ section("Typography inference");
     ["FormField", "Required Mark", "fieldLabel"],
     ["FileUpload", "Browse Text", "fieldLabel"],
     ["FileUpload", "Drop Text", "fieldText"],
+    // GAP-270: Content=Preview's Change button, drawn as Browse Text is.
+    ["FileUpload", "Change Text", "fieldLabel"],
     ["Input", "Label Text", "fieldLabel"],
     ["Input", "Optional Text", "fieldMeta"],
     ["Input", "Value Text", "fieldText"],
@@ -13578,6 +13632,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         `Select: Reset Mixed is bound on every variant but Mixed, which has none, 6 under the trigger as React's field gap (${key})`,
       );
     }
+    // The live file (figma:verify, 15 Nov) held Combobox's Reset Mixed and
+    // Reset Mixed Text declared and referenced by no layer, which blocks
+    // publishing: an Update from a build older than #521 redrew its variants
+    // without the reset and left the properties behind. Each of the four
+    // sets GAP-153 reaches, painted with a Default and a Mixed variant (and
+    // Open, where the set has it, for the list's properties) and its
+    // properties configured, declares nothing a layer does not reference.
+    for (const [setName, update, configure, variants] of [
+      ["Input", "updateInputVariant", null, [{ action: "None" }]],
+      ["NumberInput", "updateNumberInputVariant", null, [{ steppers: "True" }]],
+      [
+        "Combobox",
+        "updateComboboxVariant",
+        "configureComboboxProperties",
+        [{ content: "Closed" }, { content: "Open" }],
+      ],
+      [
+        "Select",
+        "updateSelectVariant",
+        "configureSelectProperties",
+        // Select's painter names its Content `type`.
+        [{ type: "Closed" }, { type: "Open" }],
+      ],
+    ]) {
+      const set = new MockNode("COMPONENT_SET", setName);
+      for (const state of ["Default", "Mixed"]) {
+        for (const extra of variants) {
+          set.appendChild(
+            await paint(
+              update,
+              Object.assign({ state, status: "Default" }, extra),
+            ),
+          );
+        }
+      }
+      const stats = freshStats();
+      await attempt(() =>
+        configure
+          ? controls[configure](set, stats)
+          : controls.configureResetMixedProperty(set, stats),
+      );
+      const unbound = propertiesBoundToNoLayer(set).map(
+        (property) => property.split("#")[0],
+      );
+      ok(
+        propertyNamed(set, "Reset Mixed", "BOOLEAN") &&
+          propertyNamed(set, "Reset Mixed Text", "TEXT") &&
+          unbound.length === 0,
+        `${setName}: every property it declares is bound to a layer, Reset Mixed and Reset Mixed Text among them (unbound: ${unbound.join(", ") || "none"})`,
+      );
+    }
   }
 
   // GAP-165: EmptyState's list ------------------------------------------------
@@ -13642,6 +13747,42 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
             "Colors/foreground/400",
         ),
       `the list's three items, each a bullet and its words in foreground 400 (${words.map((text) => text.characters).join(" | ")})`,
+    );
+    // React's bullet is a list marker (list-style: disc in a 1.25rem
+    // padding-inline-start), not a character in the text, so the painter
+    // draws it as a shape: a 5 disc in foreground 400 inside a 20 column, at
+    // Chromium's marker place (4 in, 8 down a 20 line), the words starting
+    // 20 in as React's do. A typed "•" read as an icon typed as a character
+    // to figma:verify (15 Nov).
+    const rows = lists[0] ? lists[0].children : [];
+    const typed = rows.flatMap((row) =>
+      row.findAll((child) => isTypedGlyph(child)).map((child) => child.name),
+    );
+    const marks = rows.map((row) => {
+      const column = named(row, "Bullet");
+      const dot = column && named(column, "Bullet Dot");
+      return { row, column, dot };
+    });
+    ok(
+      rows.length === 3 &&
+        typed.length === 0 &&
+        marks.every(
+          ({ row, column, dot }) =>
+            column &&
+            column.type === "FRAME" &&
+            column.width === 20 &&
+            column.height === 20 &&
+            row.children[0] === column &&
+            row.itemSpacing === 0 &&
+            dot &&
+            dot.type === "ELLIPSE" &&
+            dot.width === 5 &&
+            dot.height === 5 &&
+            dot.x === 4 &&
+            dot.y === 8 &&
+            boundVariableName((dot.fills || [])[0]) === "Colors/foreground/400",
+        ),
+      `each item's bullet is a 5 disc in foreground 400 in a 20 column, as React's disc marker, not a typed character (typed: ${typed.join(", ") || "none"}; ${marks[0] && marks[0].column ? `${marks[0].column.type} ${marks[0].column.width}` : "no Bullet"})`,
     );
     controls.configureEmptyStateProperties(set, freshStats());
     const list = propertyNamed(set, "List", "BOOLEAN");
@@ -14063,6 +14204,14 @@ section("An edge takes room in every variant or in none");
         ...drawn,
         stats: freshStats(),
       }),
+    Select: (pair) =>
+      plugin.createSelectVariant({
+        state: pair[0],
+        status: pair[1],
+        type: pair[2],
+        ...drawn,
+        stats: freshStats(),
+      }),
   };
   // The variants each set had before, and the ones the Update added to it.
   const eras = {
@@ -14117,6 +14266,18 @@ section("An edge takes room in every variant or in none");
       [
         ["Basic", "Success"],
         ["Action", "Info"],
+      ],
+    ],
+    // figma:verify, 15 Nov: Select Trigger laid out in the 4 variants #521
+    // and GAP-164 added (Mixed, Open), not in the 6 drawn before.
+    Select: [
+      [
+        ["Default", "Default", "Closed"],
+        ["Focus", "Error", "Closed"],
+      ],
+      [
+        ["Mixed", "Default", "Closed"],
+        ["Default", "Default", "Open"],
       ],
     ],
   };
@@ -14536,6 +14697,44 @@ section("Figma draws React's values (the 4 Nov triage)");
       shown(dropzone, "paddingLeft") === 16 &&
       shown(dropzone, "paddingRight") === 16,
     `FileUpload's dropzone draws 20 corners and React's px-4 (${shown(dropzone, "cornerRadius")}, ${shown(dropzone, "paddingLeft")} through ${boundName(dropzone, "paddingLeft")})`,
+  );
+
+  // GAP-270: Content=Preview is React's preview="image" holding its image:
+  // no drop area, the image round at Avatar's 40, an outline Change button
+  // at Button's small height, its words a set property, and the remove icon
+  // last. Focus rings Change, where React moves focus once an image is chosen.
+  const previewVariant = await paint("updateFileUploadVariant", {
+    state: "Focus",
+    status: "Error",
+    content: "Preview",
+  });
+  const previewRow = find(previewVariant, "FileUpload Preview");
+  const previewImage = find(previewVariant, "Preview Image");
+  const changeButton = find(previewVariant, "Change Button");
+  const changeText = find(previewVariant, "Change Text");
+  const previewOrder = previewRow
+    ? previewRow.children.map((node) => node.name)
+    : [];
+  ok(
+    !find(previewVariant, "FileUpload Dropzone") &&
+      previewVariant.name === "State=Focus, Status=Error, Content=Preview" &&
+      shown(previewImage, "width") === 40 &&
+      shown(previewImage, "cornerRadius") >= 20 &&
+      boundName(previewImage, "width") === "Avatar/size/default" &&
+      shown(changeButton, "height") === 44 &&
+      boundName(changeButton, "paddingLeft") === "Button/padding/x/small" &&
+      changeText &&
+      changeText.characters === "Change" &&
+      Boolean(find(changeButton, "Focus Ring")) &&
+      previewOrder[0] === "Preview Image" &&
+      previewOrder[previewOrder.length - 2] === "Change Button" &&
+      previewOrder[previewOrder.length - 1] === "Remove Icon",
+    `FileUpload's Preview draws the image at Avatar's 40, then Change and Remove, with no drop area (${JSON.stringify(previewOrder)}, image ${shown(previewImage, "width")} via ${boundName(previewImage, "width")}, Change ${shown(changeButton, "height")} "${changeText && changeText.characters}", ring ${Boolean(find(changeButton, "Focus Ring"))})`,
+  );
+  ok(
+    JSON.stringify(plugin.FILE_UPLOAD_CONTENT) ===
+      JSON.stringify(["Dropzone", "Files", "Preview"]),
+    `FileUpload's Content axis carries Preview after the two it had (${JSON.stringify(plugin.FILE_UPLOAD_CONTENT)})`,
   );
 
   // The control's corner, 16.
@@ -15570,11 +15769,15 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
     typeof plugin.configureListItemProperties === "function" &&
     typeof plugin.updateSettingsRowVariant === "function" &&
     typeof plugin.configureSettingsRowProperties === "function";
-  ok(painted, "ListItem's and SettingsRow's painters and properties are reachable");
+  ok(
+    painted,
+    "ListItem's and SettingsRow's painters and properties are reachable",
+  );
   ok(
     painted &&
-      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("ListItem")) ===
-        JSON.stringify({ Selected: ["False", "True"] }) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ListItem"),
+      ) === JSON.stringify({ Selected: ["False", "True"] }) &&
       JSON.stringify(
         plugin.expectedVariantAxesForComponentSetName("SettingsRow"),
       ) ===
@@ -15595,7 +15798,11 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
     );
     return component;
   };
-  const drawRow = async (value, second, component = figma.createComponent()) => {
+  const drawRow = async (
+    value,
+    second,
+    component = figma.createComponent(),
+  ) => {
     await withAutoLayout(() =>
       plugin.updateSettingsRowVariant(component, {
         value,
@@ -15617,7 +15824,8 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
         menusBound(component, "paddingLeft") === "List/item/padding/x" &&
         menusBound(component, "paddingRight") === "List/item/padding/x" &&
         menusBound(component, "paddingTop") === "List/item/padding/y/default" &&
-        menusBound(component, "paddingBottom") === "List/item/padding/y/default",
+        menusBound(component, "paddingBottom") ===
+          "List/item/padding/y/default",
       `${at}: padded 16 across and 12 down, List's own variables`,
     );
     ok(
@@ -15775,8 +15983,8 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
               (want === "outline"
                 ? tag.fills.length === 0 &&
                   boundVariableName(tag.strokes[0]) === "Border/Subtle"
-                : boundVariableName(tag.fills[0]) ===
-                    "Colors/background/100" && tag.strokes.length === 0),
+                : boundVariableName(tag.fills[0]) === "Colors/background/100" &&
+                  tag.strokes.length === 0),
         `${at}: ${want ? `the ${want} tag "${state}" beside the label` : "the label alone"} (${childNames(heading)})`,
       );
       textLooks(
@@ -17374,6 +17582,444 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       `a second Update keeps the set and its six variants' ids (${error ? error.message : second && `${second.variantsUpdated} updated, ${second.variantsCreated} created, ${second.variantsRemoved} removed`})`,
     );
   }
+}
+
+section("figma:verify reads each set's axes as the plugin declares them");
+{
+  // figma:verify reads the axes from code.js's text, without running it. It
+  // read only quoted strings, so Input's and NumberInput's State
+  // (INPUT_STATES.concat([MIXED_FIELD_STATE])) dropped out and Combobox's
+  // MIXED_FIELD_STATE went unread: on 15 Nov it called the live file's
+  // correct State=Mixed drift on three sets. Every set it expects, it reads
+  // exactly as the plugin's own expectedVariantAxesForComponentSetName.
+  const { names, axes } = expectations();
+  const wrong = [];
+  for (const name of new Set([...names, ...Object.keys(axes)])) {
+    const declared = plugin.expectedVariantAxesForComponentSetName(name);
+    const want = JSON.stringify(
+      Object.fromEntries(
+        Object.entries(declared || {}).filter(
+          ([, values]) => Array.isArray(values) && values.length,
+        ),
+      ),
+    );
+    const read = JSON.stringify(axes[name] || {});
+    if (read !== want) wrong.push(`${name}: read ${read}, declared ${want}`);
+  }
+  ok(
+    wrong.length === 0 && axes.Input && axes.Combobox,
+    `figma:verify reads every set's axes as the plugin declares them${wrong.length ? ` (${wrong.length}: ${wrong.slice(0, 3).join("; ")})` : ""}`,
+  );
+}
+
+// GAP-277: checkable rows and the disclosure at the end, as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`. Booleans
+// on the three row sets, as Divided and Meta Below: Checkable (off) shows
+// Checkbox's box before the leading icon, Checked (off) its checked fill and
+// mark, Disclosure Start (on) the disclosure before the label and Disclosure
+// End (off) one at the row's end. At their defaults a row draws as before.
+section("GAP-277: the tree rows' Checkable, Checked and Disclosure End");
+{
+  const painters = [
+    [
+      "updateTreeParentItemVariant",
+      { content: "Actions", expanded: "True", state: "Selected" },
+      true,
+    ],
+    ["updateTreeChildItemVariant", { content: "Count", state: "Idle" }, false],
+    [
+      "updateTreeItemVariant",
+      { type: "Parent", content: "Basic", expanded: "False", state: "Idle" },
+      true,
+    ],
+  ];
+  const reachable = painters.every(([fn]) => typeof plugin[fn] === "function");
+  ok(reachable, "the three row painters are reachable");
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const kindOf = (node) =>
+    node && node.getSharedPluginData("kozmos_ds_importer", "kind");
+  for (const [fn, base, parent] of reachable ? painters : []) {
+    for (const density of ["Default", "Compact"]) {
+      const at = `${fn} ${density}`;
+      const floor = density === "Compact" ? 32 : 40;
+      const row = await draw(fn, Object.assign({ density, depth: "1" }, base));
+      const flow = row.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const names = flow.map((child) => child.name);
+      const box = row.children.find((child) => child.name === "Checkbox");
+      const checked =
+        box && box.children.find((child) => child.name === "Checkbox Checked");
+      const mark =
+        checked &&
+        checked.children.find((child) => child.name === "Checkbox Mark");
+      const end = row.children.find((child) => child.name === "Disclosure End");
+      ok(
+        names.indexOf("Checkbox") === 1 &&
+          names[names.length - 1] === "Disclosure End" &&
+          ["tree-disclosure-icon", "tree-icon-spacer"].indexOf(
+            kindOf(flow[0]),
+          ) !== -1,
+        `${at}: the start disclosure, then Checkbox, and Disclosure End last (${names.join(", ")})`,
+      );
+      ok(
+        box &&
+          box.visible === false &&
+          kindOf(box) === "tree-checkbox" &&
+          box.width === 20 &&
+          box.height === 20 &&
+          box.cornerRadius === 4 &&
+          box.fills.length === 0 &&
+          boundVariableName(box.strokes[0]) === "Border/Input" &&
+          box.strokeWeight === 1,
+        `${at}: Checkbox is a hidden 20 box, radius 4, a 1px Border/Input edge and no fill (${box && `${box.visible}, ${box.width}x${box.height}, r${box.cornerRadius}, ${boundVariableName(box.strokes[0])}`})`,
+      );
+      ok(
+        checked &&
+          checked.visible === false &&
+          kindOf(checked) === "tree-checkbox-checked" &&
+          checked.width === 20 &&
+          checked.cornerRadius === 4 &&
+          boundVariableName(checked.fills[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          boundVariableName(checked.strokes[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          mark &&
+          mark.width === 16 &&
+          mark.x === 2 &&
+          mark.y === 2,
+        `${at}: Checkbox Checked, hidden in it, is the theme fill with a 16 mark at 2,2 (${checked && `${checked.visible}, ${boundVariableName(checked.fills[0])}, mark ${mark && `${mark.width} at ${mark.x},${mark.y}`}`})`,
+      );
+      ok(
+        end &&
+          end.visible === false &&
+          (parent
+            ? end.type === "INSTANCE" &&
+              kindOf(end) === "tree-disclosure-end-icon" &&
+              end.width === 16
+            : kindOf(end) === "tree-disclosure-end-spacer" &&
+              end.width === 16 &&
+              end.height === 16),
+        `${at}: Disclosure End is a hidden ${parent ? "chevron" : "16 spacer"} (${end && `${end.type}, ${kindOf(end)}, ${end.width}, ${end.visible}`})`,
+      );
+      ok(
+        row.height === floor,
+        `${at}: with them hidden the row is ${floor}, as before (${row.height})`,
+      );
+      if (box && end && checked) {
+        await withAutoLayout(async () => {
+          flow[0].visible = false;
+          box.visible = true;
+          checked.visible = true;
+          end.visible = true;
+          row.resizeWithoutConstraints(row.width, row.height);
+        });
+        const inset = 8 + 20;
+        ok(
+          box.x === inset &&
+            end.x + end.width === row.width - 8 &&
+            row.height === floor,
+          `${at}: shown, with the start disclosure off, Checkbox opens the row at its inset (${inset}), Disclosure End closes it 8 from its edge, and the row stays ${floor} (${box.x}, ${end.x + end.width} of ${row.width}, ${row.height})`,
+        );
+      }
+    }
+  }
+
+  // The sets' properties, each bound to its layers and nothing else.
+  for (const [setName, fn, props] of [
+    [
+      "TreeParentItem",
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "False" },
+    ],
+    ["TreeChildItem", "updateTreeChildItemVariant", { content: "Count" }],
+    [
+      "TreeItem",
+      "updateTreeItemVariant",
+      { type: "Child", content: "Actions", expanded: "False" },
+    ],
+  ]) {
+    if (!reachable) break;
+    const variants = [];
+    for (const state of ["Idle", "Selected"]) {
+      variants.push(
+        await draw(
+          fn,
+          Object.assign({ depth: "0", density: "Default" }, props, { state }),
+        ),
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    await plugin.configureTreeItemProperties(
+      set,
+      freshStats(),
+      menusTokens.variableByName,
+    );
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name) =>
+      Object.keys(definitions).find(
+        (key) =>
+          key.split("#")[0] === name && definitions[key].type === "BOOLEAN",
+      );
+    const shownBy = (key) =>
+      set.findAll(
+        (node) =>
+          key &&
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.visible === key,
+      );
+    for (const [name, defaultValue, layer] of [
+      ["Checkable", false, (node) => node.name === "Checkbox"],
+      ["Checked", false, (node) => node.name === "Checkbox Checked"],
+      [
+        "Disclosure Start",
+        true,
+        (node) =>
+          node.parent.type === "COMPONENT" &&
+          node.parent.children.indexOf(node) === 0 &&
+          /^Disclosure (Icon|Spacer)/.test(node.name),
+      ],
+      ["Disclosure End", false, (node) => node.name === "Disclosure End"],
+    ]) {
+      const key = keyOf(name);
+      const shown = shownBy(key);
+      ok(
+        key &&
+          definitions[key].defaultValue === defaultValue &&
+          shown.length === 2 &&
+          shown.every(layer),
+        `${setName}: ${name}, ${defaultValue ? "on" : "off"} by default, shows each row's ${name === "Disclosure Start" ? "start disclosure" : name === "Checkable" ? "Checkbox" : name === "Checked" ? "Checkbox Checked" : "Disclosure End"} and nothing else (${key}, ${shown.map((node) => node.name).join(", ")})`,
+      );
+    }
+    set.remove();
+  }
+
+  // Update over the three sets as the file has them: every variant keeps its
+  // node id and name, none is added, and each gains the four properties.
+  const icons = () => {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    return [page];
+  };
+  const names = (setName) => {
+    const out = [];
+    for (const type of setName === "TreeItem" ? ["Parent", "Child"] : [null])
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                out.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return out;
+  };
+  for (const [setName, update, total] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72],
+    ["TreeItem", "updateTreeItemComponent", 216],
+  ]) {
+    if (!reachable) break;
+    const oldNames = names(setName);
+    const replay = await replayUpdate(setName, oldNames, update, icons());
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const key = (name) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === "BOOLEAN",
+      );
+    const boxes = replay.liveSet.findAll((n) => n.name === "Checkbox");
+    const ends = replay.liveSet.findAll((n) => n.name === "Disclosure End");
+    ok(
+      replay.result.variantsUpdated === total &&
+        replay.result.variantsCreated === 0 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) => variant && variant.name === oldNames[i],
+        ) &&
+        ["Checkable", "Checked", "Disclosure Start", "Disclosure End"].every(
+          (name) => key(name),
+        ) &&
+        boxes.length === total &&
+        boxes.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Checkable"),
+        ) &&
+        ends.length === total &&
+        ends.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Disclosure End"),
+        ),
+      `${setName}: Update keeps all ${total} variants and their ids, and gives each a hidden Checkbox (Checkable) and Disclosure End (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${boxes.length} boxes, ${ends.length} ends)`,
+    );
+  }
+}
+
+// --- ImageCropper (GAP-273) ----------------------------------------------------
+
+// React's ImageCropper: a column 320 wide, the frame and the zoom row 12
+// apart; the frame in the Ratio's shape on the control radius, muted, with a
+// 1 inner edge in Border/Input, clipping an Image slot; the zoom row Zoom out,
+// a Slider slot and Zoom in, 8 apart, shown by Zoom Controls. One Ratio axis,
+// Square first, in Update All Core and the page's Inputs section.
+section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
+{
+  const ready =
+    Array.isArray(plugin.IMAGE_CROPPER_RATIOS) &&
+    typeof plugin.updateImageCropperVariant === "function" &&
+    typeof plugin.configureImageCropperProperties === "function";
+  ok(ready, "ImageCropper's painter and properties are reachable");
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateImageCropperVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  for (const [value, height] of ready
+    ? [
+        ["Square", 320],
+        ["Landscape", 180],
+      ]
+    : []) {
+    const { component, stats } = await paint(value);
+    ok(
+      component.name === `Ratio=${value}` &&
+        plugin.parseImageCropperVariantName(component.name).value === value,
+      `${value}: named Ratio=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(["Frame", "Zoom Row"]) &&
+        component.width === 320 &&
+        menusBound(component, "width") === "ImageCropper/width/default" &&
+        component.itemSpacing === 12 &&
+        menusBound(component, "itemSpacing") === "ImageCropper/gap" &&
+        menusValueOf("ImageCropper/gap") === 12 &&
+        component.fills.length === 0,
+      `${value}: an unpainted column 320 wide, the frame and the zoom row 12 apart (${component.children.map((child) => child.name)}, ${component.width}, ${component.itemSpacing}, ${menusBound(component, "itemSpacing")})`,
+    );
+    const frame = named(component, "Frame");
+    ok(
+      frame &&
+        frame.width === 320 &&
+        frame.height === height &&
+        frame.clipsContent === true &&
+        frame.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        menusBound(frame, "cornerRadius") === "ImageCropper/radius" &&
+        boundVariableName(frame.fills[0]) === "Colors/background/100" &&
+        frame.strokeWeight === 1 &&
+        frame.strokeAlign === "INSIDE" &&
+        boundVariableName(frame.strokes[0]) === "Border/Input",
+      `${value}: the frame is 320 × ${height} on the control radius, muted, a 1 inner edge in Border/Input (${frame && `${frame.width} × ${frame.height}, r${frame.cornerRadius}, ${boundVariableName(frame.strokes[0])}`})`,
+    );
+    const image = frame && named(frame, "Image Slot");
+    ok(
+      image && image.width === 288 && image.height === height - 32,
+      `${value}: the Image slot sits 16 inside the frame (${image && `${image.width} × ${image.height}`})`,
+    );
+    const row = named(component, "Zoom Row");
+    const parts = row ? row.children.map((child) => child.name) : [];
+    ok(
+      JSON.stringify(parts) ===
+        JSON.stringify([
+          "Zoom Out Button",
+          "Zoom Slider Slot",
+          "Zoom In Button",
+        ]) &&
+        row.itemSpacing === 8 &&
+        menusBound(row, "itemSpacing") === "ImageCropper/zoom/gap" &&
+        menusValueOf("ImageCropper/zoom/gap") === 8,
+      `${value}: the zoom row is Zoom out, the Slider slot and Zoom in, 8 apart (${parts}, ${row && row.itemSpacing})`,
+    );
+    ok(
+      ["Zoom Out Button", "Zoom In Button"].every((name) => {
+        const button = named(component, name);
+        return (
+          button &&
+          button.width === 44 &&
+          button.height === 44 &&
+          boundVariableName(button.strokes[0]) === "Border/Subtle"
+        );
+      }) && named(component, "Zoom Slider Slot").width === 320 - 88 - 16,
+      `${value}: two 44 outline buttons, the Slider slot filling between (${named(component, "Zoom Slider Slot") && named(component, "Zoom Slider Slot").width})`,
+    );
+    ok(
+      framesLargerThanAsked(component).length === 0,
+      `${value}: no frame larger than it was drawn (${framesLargerThanAsked(
+        component,
+      )
+        .map((node) => node.name)
+        .join(", ")})`,
+    );
+    ok(
+      // The stand-in file has no Icons page, so every icon warns; nothing else may.
+      stats.warnings.every((warning) =>
+        /is not on the Icons page/.test(warning),
+      ),
+      `${value}: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+    );
+  }
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ImageCropper"),
+      ) === JSON.stringify({ Ratio: ["Square", "Landscape"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ImageCropper" &&
+          update === plugin.updateImageCropperComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Inputs" &&
+          entry.components.includes("ImageCropper"),
+      ),
+    "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
+  );
 }
 
 // --- The audit's expected sets are sets, never a section's title ------------------

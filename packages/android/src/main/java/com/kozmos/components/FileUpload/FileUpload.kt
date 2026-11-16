@@ -7,9 +7,11 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -37,14 +40,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonSize
+import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.tokens.KozmosThemeTokens
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** What FileUpload shows of the file it holds, as React's `preview` prop. */
+enum class KozmosFileUploadPreview {
+    /** The file's name, with a remove button. */
+    None,
+
+    /**
+     * One image, shown once chosen as an avatar-sized thumbnail beside its
+     * name, with Change and Remove (GAP-270). The picker offers images only.
+     */
+    Image
+}
 
 @Composable
 fun KozmosFileUpload(
@@ -59,6 +80,15 @@ fun KozmosFileUpload(
      * translates passes its own.
      */
     removeLabel: String = "Remove",
+    /** [KozmosFileUploadPreview.Image] shows the chosen image; see there. */
+    preview: KozmosFileUploadPreview = KozmosFileUploadPreview.None,
+    /**
+     * The Change button's words in an image preview, "Change" by default; it
+     * opens the picker again.
+     */
+    changeLabel: String = "Change",
+    /** The thumbnail's content description; the file's name by default. */
+    previewAlt: String? = null,
     /**
      * Told the file the visitor removed, as React's `onFilesChange` is told
      * the files left. The new parameters come before [onFileSelected], so a
@@ -98,7 +128,62 @@ fun KozmosFileUpload(
         }
     }
 
-    if (fileName != null) {
+    val remove: () -> Unit = {
+        latest.incrementAndGet()
+        val removed = file
+        file = null
+        fileName = null
+        if (removed != null) onFileRemoved?.invoke(removed)
+    }
+    val pickerInput = if (preview == KozmosFileUploadPreview.Image) "image/*" else "*/*"
+
+    val shown = file
+    if (preview == KozmosFileUploadPreview.Image && fileName != null && shown != null) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(KozmosDimensions.primitivesLayoutSpacing100)
+                .border(1.dp, KozmosThemeTokens.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                .padding(KozmosDimensions.primitivesLayoutSpacing150),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar-sized and round, as KozmosAvatar: the muted fill shows
+            // until the image has drawn over it.
+            Box(
+                modifier = Modifier
+                    .size(KozmosDimensions.primitivesLayoutSizing500)
+                    .clip(CircleShape)
+                    .background(KozmosThemeTokens.primitivesColorsBackground300)
+            ) {
+                AsyncImage(
+                    model = shown,
+                    contentDescription = previewAlt ?: fileName,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
+            Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing150))
+            Text(
+                text = fileName!!,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = KozmosThemeTokens.primitivesColorsForeground100,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
+            KozmosButton(
+                onClick = { launcher.launch(pickerInput) },
+                variant = KozmosButtonVariant.Outline,
+                size = KozmosButtonSize.Sm
+            ) {
+                Text(changeLabel)
+            }
+            IconButton(onClick = remove) {
+                Icon(Icons.Default.Close, contentDescription = removeLabel)
+            }
+        }
+    } else if (fileName != null) {
         Row(
             modifier = modifier
                 .fillMaxWidth()
@@ -116,13 +201,7 @@ fun KozmosFileUpload(
                 style = MaterialTheme.typography.bodyMedium,
                 color = KozmosThemeTokens.primitivesColorsForeground100
             )
-            IconButton(onClick = {
-                latest.incrementAndGet()
-                val removed = file
-                file = null
-                fileName = null
-                removed?.let { onFileRemoved?.invoke(it) }
-            }) {
+            IconButton(onClick = remove) {
                 Icon(Icons.Default.Close, contentDescription = removeLabel)
             }
         }
@@ -139,7 +218,7 @@ fun KozmosFileUpload(
                     // Note: Dashed border support in Compose often requires custom Canvas drawing
                     // We'll stick to solid for now or implement custom modifier later if needed
                 )
-                .clickable { launcher.launch("*/*") },
+                .clickable { launcher.launch(pickerInput) },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {

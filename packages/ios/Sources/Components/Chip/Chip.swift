@@ -23,6 +23,7 @@ public struct KozmosChip<Icon: View>: View {
     public let icon: Icon?
     public let onRemove: (() -> Void)?
     public let action: (() -> Void)?
+    @Environment(\.layoutDirection) private var layoutDirection
 
     public init(
         text: String,
@@ -64,20 +65,12 @@ public struct KozmosChip<Icon: View>: View {
             .modifier(ChipSemantics(text: text, selected: selected, disabled: disabled, action: action,
                                     role: onRemove == nil ? .none : .chip))
 
-            if let onRemove {
-                Button {
-                    guard !disabled else { return }
-                    onRemove()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .frame(width: 20, height: 20)
-                        .contentShape(Circle())
-                }
-                // Disabled, it is drawn at half with the chip, below, as
-                // React's is; the plain style dimmed it again, to a quarter.
-                .buttonStyle(KozmosPlainPressButtonStyle(hoverShape: Circle()))
-                .accessibilityLabel(removeLabel)
+            if onRemove != nil {
+                // Where the remove mark is drawn; the button is laid over the
+                // chip, below, so its target can reach past the chip.
+                Color.clear
+                    .frame(width: Self.removeMark, height: Self.removeMark)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.horizontal, horizontalPadding)
@@ -93,12 +86,17 @@ public struct KozmosChip<Icon: View>: View {
         .overlay(
             Capsule().stroke(borderColor, lineWidth: 1)
         )
-        .opacity(disabled ? 0.5 : 1)
         .contentShape(Capsule())
         .onTapGesture {
             guard !disabled else { return }
             action?()
         }
+        // After the chip's capsule: a content shape bounds every tap inside
+        // what it shapes, and the remove's target reaches past the chip.
+        .overlay(alignment: .trailing) { removeButton }
+        // In front of the remove, so a tap on the words is never a remove.
+        .overlay(alignment: .leading) { wordsTarget }
+        .opacity(disabled ? 0.5 : 1)
         .modifier(ChipSemantics(text: text, selected: selected, disabled: disabled, action: action,
                                 role: onRemove == nil ? .chip : .container))
         // Heard as dimmed, not only drawn at half strength: the chip and its
@@ -106,6 +104,66 @@ public struct KozmosChip<Icon: View>: View {
         // chip's element, or the element is not the one marked.
         .disabled(disabled)
     }
+
+    /// Drawn 20, where the chip leaves room for it, its target 44 square, as
+    /// Input's and SearchBar's clears are: it took a tap only on the 20. The
+    /// target starts where the words stop, so it takes none of the chip's own
+    /// taps, runs through the chip's end padding and past its end, and is
+    /// centred on the chip, past its top and bottom. The chip is no larger.
+    @ViewBuilder
+    private var removeButton: some View {
+        if let onRemove {
+            Button {
+                guard !disabled else { return }
+                onRemove()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .frame(width: Self.removeMark, height: Self.removeMark)
+                    .padding(.leading, Self.removeLeadingReach)
+                    .frame(width: Self.removeTarget, height: Self.removeTarget, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            // Disabled, it is drawn at half with the chip, above, as React's
+            // is; the plain style dimmed it again, to a quarter. The pointer's
+            // hover is the drawn 20 circle, not the target.
+            .buttonStyle(KozmosPlainPressButtonStyle(hoverShape: ChipRemoveMarkShape(
+                leading: Self.removeLeadingReach, diameter: Self.removeMark,
+                rightToLeft: layoutDirection == .rightToLeft)))
+            .foregroundColor(foregroundColor)
+            .accessibilityLabel(removeLabel)
+            // The mark's end on the chip's end padding.
+            .padding(.trailing, horizontalPadding - (Self.removeTarget - Self.removeMark - Self.removeLeadingReach))
+        }
+    }
+
+    /// The chip's own target, over its words, from its leading edge to where
+    /// the words stop, when it has a remove, which is laid over the chip and
+    /// runs up to the words. In front of the remove, the words keep every tap
+    /// on them, whatever room iOS gives a touch round the remove's target;
+    /// with no action, a tap on them does nothing. Hidden from VoiceOver,
+    /// which reads the chip and its remove as before.
+    @ViewBuilder
+    private var wordsTarget: some View {
+        if onRemove != nil {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard !disabled else { return }
+                    action?()
+                }
+                .padding(.trailing, horizontalPadding + Self.removeMark + KozmosDimensions.primitivesLayoutSpacing50)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// The remove mark's drawn size.
+    static var removeMark: CGFloat { 20 }
+    /// The remove's target: Apple's 44, the minimum Kozmos's SwiftUI
+    /// controls take.
+    static var removeTarget: CGFloat { 44 }
+    /// How far the target reaches before the mark: the gap after the words.
+    static var removeLeadingReach: CGFloat { KozmosDimensions.primitivesLayoutSpacing50 }
 
     private var horizontalPadding: CGFloat {
         switch size {
@@ -200,6 +258,24 @@ public struct KozmosChip<Icon: View>: View {
         case .destructive:
             return KozmosColors.primitivesColorsEmotionalDanger200
         }
+    }
+}
+
+/// The remove mark's circle inside its larger target: `diameter` across,
+/// `leading` in from the target's leading edge, centred top to bottom. It is
+/// told the direction and is `.fixed`: iOS 17 mirrors a shape right to left
+/// by default and iOS 16 does not, so the flag is the one flip on both.
+private struct ChipRemoveMarkShape: Shape {
+    let leading: CGFloat
+    let diameter: CGFloat
+    let rightToLeft: Bool
+
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
+
+    func path(in rect: CGRect) -> Path {
+        let x = rightToLeft ? rect.maxX - leading - diameter : rect.minX + leading
+        return Path(ellipseIn: CGRect(x: x, y: rect.midY - diameter / 2, width: diameter, height: diameter))
     }
 }
 

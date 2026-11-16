@@ -1146,6 +1146,7 @@
                 <option value="dateRangePicker">DateRangePicker</option>
                 <option value="timePicker">TimePicker</option>
                 <option value="fileUpload">FileUpload</option>
+                <option value="imageCropper">ImageCropper</option>
                 <option value="colorPicker">ColorPicker</option>
                 <option value="searchBar">SearchBar</option>
                 <option value="search">Search</option>
@@ -2271,6 +2272,13 @@
           update: "update-file-upload",
           rebuild: "rebuild-file-upload",
           hint: "Build creates FileUpload with State, Status, and Content axes. DropZone is represented by Content=Dropzone because React exports it as a FileUpload alias. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        imageCropper: {
+          label: "ImageCropper",
+          build: "build-image-cropper",
+          update: "update-image-cropper",
+          rebuild: "rebuild-image-cropper",
+          hint: "Build creates ImageCropper (GAP-273) after Curated Icons: the frame in its ratio with an Image slot, and the zoom row, Zoom out, a Slider slot and Zoom in, with Square and Landscape Ratio variants and a Zoom Controls boolean. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         colorPicker: {
           label: "ColorPicker",

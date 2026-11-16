@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 79         | 79/79 | 79/79     | 74/79   | 74/79 | 74/79   | 75/79   | 74/79       |
+| Core                   | 80         | 80/80 | 80/80     | 75/80   | 75/80 | 75/80   | 76/80   | 75/80       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -67,6 +67,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Grid                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Icon                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | IconButton           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| ImageCropper         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Input                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Kbd                  | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Link                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -210,18 +211,18 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 ## Summary
 
-- Web components: 135/135
-- Web stories: 135/135
-- Web tests: 135/135
-- Web Code Connect files: 112/130
-- Web Code Connect scaffolds: 0/130
-- Web Code Connect linked: 112/130
-- iOS components: 117/135
-- iOS Code Connect files: 104/130
-- iOS Code Connect scaffolds: 0/130
-- iOS Code Connect linked: 104/130
-- Android components: 118/135
-- Android Code Connect files: 104/130
-- Android Code Connect scaffolds: 0/130
-- Android Code Connect linked: 104/130
-- Code Connect not applicable: 5/135
+- Web components: 136/136
+- Web stories: 136/136
+- Web tests: 136/136
+- Web Code Connect files: 113/131
+- Web Code Connect scaffolds: 0/131
+- Web Code Connect linked: 113/131
+- iOS components: 118/136
+- iOS Code Connect files: 105/131
+- iOS Code Connect scaffolds: 0/131
+- iOS Code Connect linked: 105/131
+- Android components: 119/136
+- Android Code Connect files: 105/131
+- Android Code Connect scaffolds: 0/131
+- Android Code Connect linked: 105/131
+- Code Connect not applicable: 5/136

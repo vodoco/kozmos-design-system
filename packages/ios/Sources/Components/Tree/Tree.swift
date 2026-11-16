@@ -52,6 +52,24 @@ public enum KozmosTreeMetaPlacement {
     case below
 }
 
+/// How a checkable tree's checks on a row and the rows under it go together
+/// (GAP-277).
+public enum KozmosTreeCheckRule {
+    /// A row and the rows above or below it are never checked together:
+    /// checking a client clears its sites, and checking a site its client.
+    case exclusive
+    /// Every row's check is its own.
+    case independent
+}
+
+/// Where a row's disclosure is drawn (GAP-277).
+public enum KozmosTreeDisclosurePosition {
+    /// Before the row's name, as every tree has it.
+    case start
+    /// At the row's end, after its name and meta.
+    case end
+}
+
 public struct Node: Identifiable, Hashable {
     /// The node's id, which a tree's selection holds. A product that keeps a
     /// selection across rebuilding its nodes gives each one its own, stable
@@ -148,6 +166,9 @@ public struct KozmosTree: View {
     let selectionMode: KozmosTreeSelectionMode
     let selection: Binding<Set<String>>?
     let metaPlacement: KozmosTreeMetaPlacement
+    let checkable: Bool
+    let checkRule: KozmosTreeCheckRule
+    let disclosurePosition: KozmosTreeDisclosurePosition
     let contextMenu: ((Node) -> KozmosMenuContent?)?
     let onContextMenuSelect: (Node, KozmosMenuItem) -> Void
 
@@ -184,6 +205,16 @@ public struct KozmosTree: View {
     ///     draws no selection and a multiple tree keeps its own.
     ///   - metaPlacement: A row's `meta` after its name, or under it
     ///     (GAP-107).
+    ///   - checkable: A checkbox on every row (GAP-277), its checks the ids
+    ///     in `selection` (unbound, the tree keeps its own): a tap, Space or
+    ///     Return checks or clears the row, and its chevron and the arrows
+    ///     open and close it. Shift ranges and Command-A do not apply, and
+    ///     closing a parent leaves its rows' checks.
+    ///   - checkRule: `.exclusive`, the default, clears a row's ancestors'
+    ///     and descendants' checks as it is checked; `.independent` leaves
+    ///     them.
+    ///   - disclosurePosition: The chevron before the name, or at the row's
+    ///     end (GAP-277).
     ///   - contextMenu: The menu a row opens on a long press, or a secondary
     ///     click on iPad and Mac, as `kozmosContextMenu` draws it; nil for a
     ///     row with none.
@@ -199,6 +230,9 @@ public struct KozmosTree: View {
         selectionMode: KozmosTreeSelectionMode = .single,
         selection: Binding<Set<String>>? = nil,
         metaPlacement: KozmosTreeMetaPlacement = .inline,
+        checkable: Bool = false,
+        checkRule: KozmosTreeCheckRule = .exclusive,
+        disclosurePosition: KozmosTreeDisclosurePosition = .start,
         contextMenu: ((Node) -> KozmosMenuContent?)? = nil,
         onContextMenuSelect: @escaping (Node, KozmosMenuItem) -> Void = { _, _ in }
     ) {
@@ -209,6 +243,9 @@ public struct KozmosTree: View {
         self.selectionMode = selectionMode
         self.selection = selection
         self.metaPlacement = metaPlacement
+        self.checkable = checkable
+        self.checkRule = checkRule
+        self.disclosurePosition = disclosurePosition
         self.contextMenu = contextMenu
         self.onContextMenuSelect = onContextMenuSelect
     }
@@ -222,10 +259,12 @@ public struct KozmosTree: View {
         selectionMode: KozmosTreeSelectionMode = .single,
         selection: Binding<Set<String>>? = nil,
         metaPlacement: KozmosTreeMetaPlacement = .inline,
+        checkable: Bool = false,
+        checkRule: KozmosTreeCheckRule = .exclusive,
         expanded: Set<[Int]>
     ) {
         self.init(nodes: nodes, density: density, divided: divided, bleed: bleed, selectionMode: selectionMode,
-                  selection: selection, metaPlacement: metaPlacement)
+                  selection: selection, metaPlacement: metaPlacement, checkable: checkable, checkRule: checkRule)
         self._expanded = State(initialValue: expanded)
     }
 
@@ -353,7 +392,11 @@ public struct KozmosTree: View {
             KozmosTreeDividedRow(
                 node: row.node, depth: row.depth, isParent: row.isParent, open: open, density: density, bleed: bleed,
                 divided: divided, selected: selectionShown && currentSelection.contains(row.node.id),
-                focused: treeFocused && focusedID == row.node.id, metaPlacement: metaPlacement
+                focused: treeFocused && focusedID == row.node.id, metaPlacement: metaPlacement,
+                checked: checkable ? currentSelection.contains(row.node.id) : nil,
+                disclosurePosition: disclosurePosition,
+                // A checkable row's tap checks it: its chevron opens it.
+                onDisclosure: checkable && row.isParent && !row.node.isDisabled ? { toggleOpen(row) } : nil
             ) {
                 activate(row, rows: rows, modifiers: KozmosTreeHeldKeys.current())
             }
@@ -366,7 +409,15 @@ public struct KozmosTree: View {
 
     // MARK: - Selection (GAP-151)
 
-    private var selectionShown: Bool { selection != nil || selectionMode == .multiple }
+    /// A checkable tree draws its selection as checks (GAP-277).
+    private var selectionShown: Bool { !checkable && (selection != nil || selectionMode == .multiple) }
+
+    /// Checks or clears `row` (GAP-277), by the tree's rule.
+    func toggleCheck(_ row: Row) {
+        guard checkable, row.isSelectable else { return }
+        focusedID = row.node.id
+        setSelection(KozmosTreeChecks.toggle(row.node.id, in: nodes, checked: currentSelection, rule: checkRule))
+    }
 
     private var currentSelection: Set<String> { selection?.wrappedValue ?? ownSelection }
 
@@ -380,6 +431,8 @@ public struct KozmosTree: View {
     /// what a closing parent hid taken out of it.
     func activate(_ row: Row, rows: [Row], modifiers: EventModifiers) {
         guard row.isSelectable else { return }
+        // A checkable row's tap checks or clears it; the arrows open it.
+        if checkable { return toggleCheck(row) }
         focusedID = row.node.id
         var next = currentSelection
         if row.isParent, modifiers.isDisjoint(with: [.shift, .command]) { next = toggle(row, selection: next) }
@@ -398,7 +451,8 @@ public struct KozmosTree: View {
     private func toggle(_ row: Row, selection: Set<String>) -> Set<String> {
         if expanded.contains(row.path) {
             expanded.remove(row.path)
-            guard selectionMode == .multiple else { return selection }
+            // A checkable tree keeps its checks through a collapse.
+            guard selectionMode == .multiple, !checkable else { return selection }
             return KozmosTreeSelection.hiding(row.node, from: selection)
         }
         expanded.insert(row.path)
@@ -429,6 +483,11 @@ public struct KozmosTree: View {
         // A Space in the middle of a word is typed, not a selection.
         if key == .space, KozmosTreeSelection.spaceTypes(typed: typed, since: Date().timeIntervalSince(typedAt)) {
             _ = typeAhead(" ", rows: rows, proxy: proxy)
+            return true
+        }
+        // A checkable row: Space and Return check or clear it (GAP-277).
+        if checkable, key == .space || key == .activate {
+            toggleCheck(focused)
             return true
         }
         switch key {
@@ -747,11 +806,19 @@ struct KozmosTreeDividedRow: View {
     let selected: Bool
     let focused: Bool
     let metaPlacement: KozmosTreeMetaPlacement
+    /// A checkable tree's row (GAP-277): its check; nil in a tree that is not.
+    let checked: Bool?
+    let disclosurePosition: KozmosTreeDisclosurePosition
+    /// Opens or closes a checkable parent from its chevron, and from
+    /// VoiceOver's Expand or Collapse action; nil where the row's tap does.
+    let onDisclosure: (() -> Void)?
     let action: () -> Void
 
     init(node: Node, depth: Int, isParent: Bool, open: Bool, density: KozmosTreeDensity, bleed: CGFloat,
          divided: Bool = true, selected: Bool = false, focused: Bool = false,
-         metaPlacement: KozmosTreeMetaPlacement = .inline, action: @escaping () -> Void) {
+         metaPlacement: KozmosTreeMetaPlacement = .inline, checked: Bool? = nil,
+         disclosurePosition: KozmosTreeDisclosurePosition = .start, onDisclosure: (() -> Void)? = nil,
+         action: @escaping () -> Void) {
         self.node = node
         self.depth = depth
         self.isParent = isParent
@@ -762,24 +829,21 @@ struct KozmosTreeDividedRow: View {
         self.selected = selected
         self.focused = focused
         self.metaPlacement = metaPlacement
+        self.checked = checked
+        self.disclosurePosition = disclosurePosition
+        self.onDisclosure = onDisclosure
         self.action = action
     }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                Group {
-                    if isParent {
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .rotationEffect(.degrees(open ? 90 : 0))
-                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
-                    }
-                }
-                .frame(width: 16)
+                if disclosurePosition == .start { disclosure }
+                if let checked { KozmosTreeCheckBox(checked: checked) }
                 icon
                 text
                 Spacer(minLength: 0)
+                if disclosurePosition == .end { disclosure }
             }
             .padding(.leading, CGFloat(depth) * kozmosTreeIndent)
             .padding(.vertical, density.verticalPadding)
@@ -805,8 +869,30 @@ struct KozmosTreeDividedRow: View {
         .background(alignment: .bottom) {
             if divided { KozmosColors.semanticsBorderSubtle.frame(height: 1) }
         }
-        .accessibilityValue(isParent ? (open ? "Expanded" : "Collapsed") : "")
+        .accessibilityValue(KozmosTreeChecks.spokenValue(checked: checked, isParent: isParent, open: open))
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .modifier(KozmosTreeToggleTrait(on: checked != nil))
+        .modifier(KozmosTreeDisclosureAction(open: open, action: onDisclosure))
+    }
+
+    /// The chevron, before the name or at the row's end; on a row with no
+    /// children the room one takes.
+    private var disclosure: some View {
+        Group {
+            if isParent {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(open ? 90 : 0))
+                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
+            } else if checked != nil {
+                // A checkable leaf keeps the chevron's room, so its box lines
+                // up with its parent's, as React's does; an empty Group would
+                // take none.
+                Color.clear.frame(height: 1)
+            }
+        }
+        .frame(width: 16)
+        .modifier(KozmosTreeDisclosureTap(action: onDisclosure))
     }
 
     private var icon: some View {
@@ -849,6 +935,120 @@ struct KozmosTreeDividedRow: View {
         } else {
             name
         }
+    }
+}
+
+/// A checkable tree's rules and words (GAP-277), apart from its drawing.
+enum KozmosTreeChecks {
+    /// `checked` with `id` checked or cleared. Checked under `.exclusive`,
+    /// the rows above it and below it are cleared, open or not, past any
+    /// section: a client and its sites are never checked together.
+    static func toggle(_ id: String, in nodes: [Node], checked: Set<String>, rule: KozmosTreeCheckRule) -> Set<String> {
+        var next = checked
+        if next.contains(id) {
+            next.remove(id)
+            return next
+        }
+        next.insert(id)
+        guard rule == .exclusive, let path = path(to: id, in: nodes) else { return next }
+        for ancestor in path.dropLast() where !ancestor.isSection { next.remove(ancestor.id) }
+        func clear(_ level: [Node]) {
+            for child in level {
+                next.remove(child.id)
+                clear(child.children ?? [])
+            }
+        }
+        clear(path.last?.children ?? [])
+        return next
+    }
+
+    /// The nodes from a root to `id`'s, or nil when it is not in `nodes`.
+    static func path(to id: String, in nodes: [Node]) -> [Node]? {
+        for node in nodes {
+            if node.id == id { return [node] }
+            if let below = path(to: id, in: node.children ?? []) { return [node] + below }
+        }
+        return nil
+    }
+
+    /// What VoiceOver reads as the row's value: its check, then whether a
+    /// parent is open, "Checked, Collapsed".
+    static func spokenValue(checked: Bool?, isParent: Bool, open: Bool) -> String {
+        [
+            checked.map { $0 ? "Checked" : "Unchecked" },
+            isParent ? (open ? "Expanded" : "Collapsed") : nil,
+        ]
+        .compactMap { $0 }
+        .joined(separator: ", ")
+    }
+}
+
+/// A checkable parent's chevron takes its own tap, over the row's.
+private struct KozmosTreeDisclosureTap: ViewModifier {
+    let action: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if let action {
+            content
+                .frame(minHeight: 24)
+                .contentShape(Rectangle())
+                .highPriorityGesture(TapGesture().onEnded { action() })
+        } else {
+            content
+        }
+    }
+}
+
+/// VoiceOver's Expand or Collapse on a checkable parent, whose activation
+/// checks it.
+private struct KozmosTreeDisclosureAction: ViewModifier {
+    let open: Bool
+    let action: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if let action {
+            content.accessibilityAction(named: Text(open ? "Collapse" : "Expand")) { action() }
+        } else {
+            content
+        }
+    }
+}
+
+/// A checkable row is a toggle to VoiceOver, where SwiftUI has the trait.
+private struct KozmosTreeToggleTrait: ViewModifier {
+    let on: Bool
+
+    func body(content: Content) -> some View {
+        if on, #available(iOS 17, macOS 14, macCatalyst 17, *) {
+            content.accessibilityAddTraits(.isToggle)
+        } else {
+            content
+        }
+    }
+}
+
+/// Checkbox's box, drawn for the eye (GAP-277): the row is the control, and
+/// its value says whether it is checked. Checked, the theme fill with the
+/// theme foreground's mark (decision 59), as `KozmosCheckbox` draws it.
+struct KozmosTreeCheckBox: View {
+    let checked: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
+                .stroke(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
+                        : KozmosColors.semanticsBorderInput, lineWidth: 1)
+                .background(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
+                .frame(width: 20, height: 20)
+                .cornerRadius(KozmosDimensions.semanticsRadiusMarker)
+            if checked {
+                Image(systemName: "checkmark")
+                    .font(KozmosTypography.caption)
+                    .bold()
+                    .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 

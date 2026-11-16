@@ -89,6 +89,7 @@ import {
   OTPInput as ReactOTPInput,
   Rating,
   FileUpload as ReactFileUpload,
+  ImageCropper,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -467,6 +468,11 @@ export const KozmosRating = createVueWrapper(Rating, {
 });
 export const KozmosFileUpload = createVueWrapper(ReactFileUpload, {
   modelValue: { prop: "value", callback: "onFilesChange", empty: [] },
+});
+// v-model is the frame, as fractions of the image (React's value and
+// onCrop); null frames the middle at 100%.
+export const KozmosImageCropper = createVueWrapper(ImageCropper, {
+  modelValue: { prop: "value", callback: "onCrop", empty: null },
 });
 export const KozmosDatePicker = createVueWrapper(DatePicker, {
   modelValue: textField,

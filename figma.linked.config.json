@@ -75,6 +75,8 @@
       "src/components/TimePicker/TimePicker.tsx",
       "src/components/FileUpload/FileUpload.figma.tsx",
       "src/components/FileUpload/FileUpload.tsx",
+      "src/components/ImageCropper/ImageCropper.figma.tsx",
+      "src/components/ImageCropper/ImageCropper.tsx",
       "src/components/ColorPicker/ColorPicker.figma.tsx",
       "src/components/ColorPicker/ColorPicker.tsx",
       "src/components/Textarea/Textarea.figma.tsx",
