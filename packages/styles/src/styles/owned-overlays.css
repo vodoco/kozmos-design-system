@@ -1,0 +1,98 @@
+/* The modal surfaces' overlays and panels (GAP-262's family): a Dialog's, a
+   Drawer's on each side and inline, and a BottomSheet's.
+
+   Owned rather than utilities alone: a host without @scope drops the utility
+   layer, and there each overlay had no place, no layer and no scrim, so it
+   covered nothing, and its panel fell into the page's flow with no surface.
+   What each promises is here: the overlay covers the window (inline, its
+   box) on layer 50 in the theme's scrim; the panel sits above it where it is
+   drawn, on the page's surface with the subtle edge, and its close where the
+   title is. Each rule is one class and restates the part's own utilities, so
+   under @scope, where a scoped rule wins a tie on proximity, the utilities
+   and a caller's own still decide everything, as before; only where no
+   @scope rule applies do these draw the part. Sides are physical where the
+   utilities' are. Imported after the Button's rules, which the closes' place
+   outweighs by order. */
+@kozmos-owned {
+  .kozmos-modal-overlay {
+    @apply fixed inset-0 z-50 bg-overlay-scrim;
+  }
+  /* Inline, over the nearest positioned box. */
+  .kozmos-modal-overlay-inline {
+    position: absolute;
+  }
+
+  /* Dialog: centred in the window, 512 wide at most and 16 short of each
+     edge, its sections 24 apart. */
+  .kozmos-dialog-content {
+    @apply fixed left-1/2 top-1/2 z-50 box-border grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-container border border-solid border-border bg-background p-6 shadow-overlay;
+  }
+  /* Its close centres on the title's first line (decision 82). */
+  .kozmos-dialog-close {
+    @apply absolute end-6 top-[calc(1.5rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)];
+  }
+
+  /* Drawer: at its edge of the window, its sections 16 apart. */
+  .kozmos-drawer-content {
+    @apply fixed z-50 box-border flex flex-col gap-4 overflow-auto border-0 border-solid border-border bg-background p-6 text-foreground shadow-overlay outline-none;
+  }
+  .kozmos-drawer-bottom {
+    @apply inset-x-0 bottom-0 max-h-[80vh] rounded-t-container border-t;
+  }
+  .kozmos-drawer-top {
+    @apply inset-x-0 top-0 max-h-[80vh] rounded-b-container border-b;
+  }
+  .kozmos-drawer-left {
+    @apply inset-y-0 left-0 h-full w-[min(100vw,24rem)] rounded-r-container border-r;
+  }
+  .kozmos-drawer-right {
+    @apply inset-y-0 right-0 h-full w-[min(100vw,24rem)] rounded-l-container border-l;
+  }
+  /* Inline, over the nearest positioned box: a top or bottom one at its edge
+     no taller than the box, a left or right one floating 16 in from its side
+     and the top, 420 wide at most (decisions 139 and 148). */
+  .kozmos-drawer-inline {
+    position: absolute;
+  }
+  .kozmos-drawer-inline-edge {
+    max-height: min(100%, 80vh);
+  }
+  .kozmos-drawer-inline-left {
+    @apply left-4 top-4 max-h-[calc(100%-2rem)] w-[min(26.25rem,calc(100%-2rem))] rounded-container border;
+  }
+  .kozmos-drawer-inline-right {
+    @apply right-4 top-4 max-h-[calc(100%-2rem)] w-[min(26.25rem,calc(100%-2rem))] rounded-container border;
+  }
+  /* Its close: the icon button's size, centred on the title (decision 82),
+     clear, and hovered and focused as its utilities draw it. */
+  .kozmos-drawer-close {
+    @apply absolute end-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] box-border inline-flex h-icon-control w-icon-control items-center justify-center rounded-control border-0 p-0 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none;
+  }
+  /* Clear where no @scope rule applies; weighs nothing, so a host's own
+     button rule decides as it did under @scope. */
+  :where(.kozmos-drawer-close, .kozmos-bottom-sheet-close) {
+    background-color: transparent;
+  }
+  .kozmos-drawer-close > :where(svg) {
+    @apply h-4 w-4;
+  }
+  /* A close's name: read by a screen reader, never drawn. */
+  .kozmos-modal-close-name {
+    @apply sr-only;
+  }
+
+  /* BottomSheet: the bottom drawer, 16 in at its sides, as tall as its
+     content up to the window short of its safe area, with a grip. */
+  .kozmos-bottom-sheet {
+    @apply mt-24 h-auto max-h-[min(100%,calc(100dvh-env(safe-area-inset-top)-1rem))] overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-0;
+  }
+  .kozmos-bottom-sheet-grip {
+    @apply mx-auto my-2 h-[5px] w-12 shrink-0 rounded-pill bg-muted-foreground/40;
+  }
+  .kozmos-bottom-sheet-close {
+    @apply absolute right-0 top-2 box-border inline-flex h-11 w-11 items-start justify-end rounded-control border-0 p-2 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none;
+  }
+  .kozmos-bottom-sheet-close > :where(svg) {
+    @apply h-4 w-4;
+  }
+}

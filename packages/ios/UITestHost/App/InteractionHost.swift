@@ -1,6 +1,8 @@
 import SwiftUI
 import UIKit.UIGestureRecognizerSubclass
 import Kozmos
+import GameController
+import ObjectiveC
 
 /// Offline fixtures exercise the public component API. No SDK, credentials or
 /// private accessibility switch is needed: XCTest launches this real app.
@@ -20,6 +22,8 @@ private struct InteractionFixture: View {
     @State private var galleryIndex = 1
     @State private var replaced = false
     @State private var controlAccessibilityReport = "not inspected"
+    /// "chip-remove-targets": each chip's laid-out height, by its words.
+    @State private var chipHeights: [String: CGFloat] = [:]
     @State private var fieldAccessibilityReport = "not inspected"
     @State private var manoeuvreExpanded = true
     @State private var groupedSelection: String?
@@ -51,6 +55,8 @@ private struct InteractionFixture: View {
         ProcessInfo.processInfo.arguments.dropFirst().first ?? ""] ?? ""
     @State private var otpLength = ProcessInfo.processInfo.arguments.dropFirst().first == "otp-length" ? 7 : 6
     @State private var otpSubmitted: [String] = []
+    /// The Select scenario's chosen option.
+    @State private var selectCategory = "gates"
     // Decision 132's field ends: Search's clear, NumberInput's unit, Slider's readout.
     @State private var searchQuery = "Gate 12"
     @State private var widthMetres: Double? = 15
@@ -144,6 +150,48 @@ private struct InteractionFixture: View {
                 controlAccessibilityReport = report
             }
             if found.count == names.count { return }
+        }
+    }
+
+    /// Where the open system menu draws the Select scenario's words (GAP-164,
+    /// decision 1): each option's label and count as
+    /// `<words> <minX>-<maxX> text <width> <alignment>`, its label's box in
+    /// window points, the width its words take and where in the box they
+    /// sit, after `open <n>`, the menu's opening, and the chosen option.
+    /// The menu is UIKit's, so this reads its labels, not Kozmos's rows.
+    /// Reported once a menu's words have held still for 300ms, each
+    /// once, so neither an opening animation nor UIKit's passing second copy
+    /// of a row is read; polled every 100ms while the fixture is up.
+    @MainActor private func reportMenuWords() async {
+        // Each count as KozmosSelectItem writes it, in this locale's format.
+        let words = ["Gates", 12.formatted(), "Cafes", 1234.formatted(), "Toilets"]
+        var opening = 0, open = false, last = "", still = 0
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            let labels = Self.labels(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+                .flatMap(\.windows)).filter { words.contains($0.text ?? "") }
+            guard !labels.isEmpty else { open = false; still = 0; continue }
+            if !open { open = true; opening += 1 }
+            guard labels.count == words.count, Set(labels.compactMap(\.text)).count == words.count else { still = 0; continue }
+            let frames = words.map { word -> String in
+                let label = labels.first { $0.text == word }!
+                let frame = label.convert(label.bounds, to: nil)
+                let text = label.textRect(forBounds: label.bounds, limitedToNumberOfLines: label.numberOfLines)
+                let alignment = [.natural: "natural", .left: "left", .right: "right", .center: "centre"][label.textAlignment] ?? "justified"
+                return String(format: "%@ %.1f-%.1f text %.1f %@", word, frame.minX, frame.maxX, text.width, alignment)
+            }.joined(separator: "|")
+            let report = "open \(opening); chosen \(selectCategory); \(frames)"
+            still = report == last ? still + 1 : 0
+            last = report
+            if still == 3 { controlAccessibilityReport = report }
+        }
+    }
+
+    /// Every label drawn in `views`, at any depth.
+    private static func labels(_ views: [UIView]) -> [UILabel] {
+        views.flatMap { view -> [UILabel] in
+            guard !view.isHidden, view.alpha > 0 else { return [] }
+            return (view as? UILabel).map { [$0] } ?? labels(view.subviews)
         }
     }
 
@@ -541,6 +589,20 @@ private struct InteractionFixture: View {
             KozmosChip(text: "Coffee", selected: true, onRemove: { events.append("remove Coffee") },
                        action: { events.append("Coffee") })
             KozmosChip(text: "Open now", onRemove: { events.append("remove Open now") })
+        case "chip-remove-targets":
+            // 24 apart, so no remove's 44 target reaches the next chip's.
+            VStack(spacing: 24) {
+                ForEach([("Lift", KozmosChipSize.sm), ("Coffee", .default), ("Gate", .lg)], id: \.0) { text, size in
+                    KozmosChip(text: text, size: size, onRemove: { events.append("remove \(text)") },
+                               action: { events.append(text) })
+                        .background(GeometryReader { geometry in
+                            Color.clear.onAppear { chipHeights[text] = geometry.size.height }
+                        })
+                }
+                Text(["Lift", "Coffee", "Gate"].map { chipHeights[$0].map { "\(Int($0))" } ?? "?" }
+                    .joined(separator: "|"))
+                    .accessibilityIdentifier("chip-heights")
+            }
         case "localized-remove":
             KozmosChip(text: "Kaffee", removeLabel: "Kaffee entfernen",
                        onRemove: { events.append("remove Kaffee") }, action: { events.append("Kaffee") })
@@ -770,6 +832,20 @@ private struct InteractionFixture: View {
             KozmosColorPicker(value: $colour, format: .hex, defaultOpen: true,
                 disabled: scenario == "color-format-disabled", readOnly: scenario == "color-format-readonly")
                 .frame(width: 320)
+        case "select-counts":
+            // Options with a count, one with a count past a thousand, and
+            // one without, in the system's own menu (GAP-164).
+            let choice = Binding(get: { selectCategory }, set: { selectCategory = $0; events.append($0) })
+            KozmosSelect {
+                Text("Category")
+            } content: {
+                KozmosSelectItem(value: "gates", label: "Gates", count: 12, selection: choice)
+                KozmosSelectItem(value: "cafes", label: "Cafes", count: 1234, selection: choice)
+                KozmosSelectItem(value: "toilets", label: "Toilets", selection: choice)
+            }
+            Text(controlAccessibilityReport).accessibilityIdentifier("control-accessibility-report")
+                // One poll per appearance, cancelled when the fixture goes.
+                .task { await reportMenuWords() }
         case "menu-external", "context-menu-external":
             // An item that leaves the app beside one that stays, in the
             // system's menu: SwiftUI's Menu, or a long press's context menu.
@@ -811,6 +887,7 @@ private struct SearchEscapeFixture: View {
     }
 
     private var logText: String { log.isEmpty ? "none" : log.joined(separator: "|") }
+    @ObservedObject private var keys = KeyEventLog.shared
 
     private var fields: some View {
         VStack(spacing: 12) {
@@ -820,6 +897,7 @@ private struct SearchEscapeFixture: View {
                          onClear: { note("clear empty") })
             Text(full.isEmpty ? "empty" : full).accessibilityIdentifier("search-query")
             Text(logText).accessibilityIdentifier("escape-events")
+            Text(keys.text).font(.caption2).accessibilityIdentifier("key-events")
         }
         .padding(16)
         .frame(width: 320)
@@ -833,6 +911,7 @@ private struct SearchEscapeFixture: View {
                 Text(logText).accessibilityIdentifier("presenter-events")
             }
             .sheet(isPresented: $presented, onDismiss: { note("dismissed") }) { fields }
+            .onAppear { KeyEventLog.shared.install() }
         case "search-escape-popover":
             VStack {
                 Button("Open") { presented = true }
@@ -840,10 +919,109 @@ private struct SearchEscapeFixture: View {
             }
             .popover(isPresented: $presented, attachmentAnchor: .rect(.bounds), arrowEdge: .top) { fields.compactPopover() }
             .onChange(of: presented) { if !$0 { note("dismissed") } }
+            .onAppear { KeyEventLog.shared.install() }
         default:
-            fields
+            fields.onAppear { KeyEventLog.shared.install() }
         }
     }
+}
+
+/// What the Escape scenarios hear, for a failure to name: every hardware key
+/// press and release the app is sent, with the responder that has the
+/// keyboard focus and whether a hardware keyboard is attached, and every move
+/// of the on-screen keyboard, each with the seconds since the log began.
+///
+/// `install()` also keeps the on-screen keyboard down in these scenarios, as
+/// it is for a visitor typing on a hardware keyboard: a field that begins
+/// editing gets an empty input view. While the on-screen keyboard is up, the
+/// hardware key that puts it away reaches the app without its modifiers, and
+/// on a loaded simulator it came back up after the End key that put it away
+/// (measured 15 Nov, 1 run in 20): Command-period then arrived as a bare ".",
+/// which no Escape handler hears. See `escape()` in the interaction tests.
+final class KeyEventLog: ObservableObject {
+    static let shared = KeyEventLog()
+    @Published private(set) var entries: [String] = []
+    private var start = Date()
+    private var installed = false
+
+    var text: String { entries.isEmpty ? "no keys" : entries.joined(separator: "; ") }
+
+    func note(_ entry: String) {
+        entries.append(String(format: "%.2f ", Date().timeIntervalSince(start)) + entry)
+    }
+
+    func install() {
+        guard !installed else { return }
+        installed = true
+        start = Date()
+        if let original = class_getInstanceMethod(UIApplication.self, #selector(UIApplication.sendEvent(_:))),
+           let logging = class_getInstanceMethod(UIApplication.self, #selector(UIApplication.kozmosLoggingSendEvent(_:))) {
+            method_exchangeImplementations(original, logging)
+        }
+        let center = NotificationCenter.default
+        // Synchronous, inside `becomeFirstResponder`: in place before UIKit
+        // picks the input view to show.
+        center.addObserver(forName: UITextField.textDidBeginEditingNotification, object: nil, queue: nil) { note in
+            guard let field = note.object as? UITextField, field.inputView == nil else { return }
+            field.inputView = UIView(frame: .zero)
+            field.reloadInputViews()
+        }
+        let moves: [(Notification.Name, String)] = [
+            (UIResponder.keyboardWillShowNotification, "kb willShow"),
+            (UIResponder.keyboardDidShowNotification, "kb didShow"),
+            (UIResponder.keyboardWillHideNotification, "kb willHide"),
+            (UIResponder.keyboardDidHideNotification, "kb didHide"),
+        ]
+        for (name, label) in moves {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
+                self?.note("\(label) h\(Int(frame.height))")
+            }
+        }
+        center.addObserver(forName: .GCKeyboardDidConnect, object: nil, queue: .main) { [weak self] _ in
+            self?.note("GCKeyboard connect")
+        }
+        center.addObserver(forName: .GCKeyboardDidDisconnect, object: nil, queue: .main) { [weak self] _ in
+            self?.note("GCKeyboard disconnect")
+        }
+    }
+
+    func press(_ press: UIPress) {
+        guard press.phase == .began || press.phase == .ended, let key = press.key else { return }
+        if press.phase == .ended { note("up \(key.keyCode.rawValue)"); return }
+        let flags = key.modifierFlags.intersection([.command, .shift, .control, .alternate])
+        var name = key.charactersIgnoringModifiers.isEmpty ? "code \(key.keyCode.rawValue)" : key.charactersIgnoringModifiers
+        if key.keyCode == .keyboardEnd { name = "End" }
+        if key.charactersIgnoringModifiers == UIKeyCommand.inputEscape { name = "Esc" }
+        let first = FirstResponder.current().map { String(describing: type(of: $0)) } ?? "none"
+        let hardware = GCKeyboard.coalesced == nil ? "" : " hw"
+        note("press \(flags.contains(.command) ? "cmd-" : "")\(name) to \(first)\(hardware)")
+    }
+}
+
+extension UIApplication {
+    /// Swapped with `sendEvent(_:)` by `KeyEventLog.install()`: this name then
+    /// runs UIKit's own.
+    @objc func kozmosLoggingSendEvent(_ event: UIEvent) {
+        if let presses = event as? UIPressesEvent {
+            presses.allPresses.forEach(KeyEventLog.shared.press)
+        }
+        kozmosLoggingSendEvent(event)
+    }
+}
+
+private enum FirstResponder {
+    private static weak var found: UIResponder?
+    static func current() -> UIResponder? {
+        found = nil
+        UIApplication.shared.sendAction(#selector(UIResponder.kozmosReportFirstResponder), to: nil, from: nil, for: nil)
+        return found
+    }
+    fileprivate static func report(_ responder: UIResponder) { found = responder }
+}
+
+extension UIResponder {
+    @objc fileprivate func kozmosReportFirstResponder() { FirstResponder.report(self) }
 }
 
 private extension View {

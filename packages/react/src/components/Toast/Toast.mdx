@@ -46,6 +46,13 @@ config's reduced motion reaches it there.
 - **The queue:** `limit` (3) show at once, oldest first, and the rest wait their turn. `toast()`
   returns an id: pass it back as `id` to replace that toast where it is, announced again ("Saving…"
   becomes "Saved"), or to `toast.dismiss(id)`. `toast.dismiss()` closes them all.
+- **The close button:** it shows while the toasts are hovered or it has focus, by default; on a touch
+  screen, where nothing hovers, it shows the whole time. Give the
+  Toaster `closeVisible="always"`, or one toast `closeVisible: "always"`, to show it the whole time,
+  so a visitor who never hovers still sees how to close it (GAP-268); a toast's own wins over the
+  Toaster's. On the parts it is `<ToastClose visible="always" />`. SwiftUI's and Compose's toasts
+  have no hover: their close shows the whole time, as `always` does; `showsCloseButton: false` on SwiftUI's
+  `KozmosToast`, or `showCloseButton = false` on Compose's, leaves it out.
 - **Closing:** its close button, a swipe toward the inline end, Escape, its action, or
   `toast.dismiss`; it slides out toward the inline end as it goes. `onDismiss` runs once, however it
   closes. Being replaced is not closing: a replaced toast's `onDismiss` runs when its replacement
@@ -68,9 +75,22 @@ config's reduced motion reaches it there.
   announcement, and `closeLabel` names each close button ("Dismiss notification"). An action's
   `altText` is what a screen reader hears in place of its button.
 
-SwiftUI and Compose have no `toast()` and no tones yet: SwiftUI's `KozmosToast` shows one toast from
-a binding, and Compose's `KozmosToast(hostState)` the snackbars `SnackbarHostState.showSnackbar`
-shows, one at a time. Their tabs under Implementation show both.
+**Compose** has the same call and queue (decision 145): `toast(title, description, tone, live,
+duration, action, id, toaster, onDismiss)` from anywhere, on any thread, returning the id, with
+`toast.dismiss(id)`, and one `KozmosToaster(id, duration, limit, closeLabel)` over the screen's
+content, which draws them at its bottom end, oldest first, `limit` at a time. It is a Kozmos host, not
+Material's snackbar host. The queue, the replacement by id, the tones (`KozmosToastTone`), the
+announcements (each toast its own live region, assertive for `Critical`), the time (paused while the
+toasts are pressed, hovered or focused; `Duration.INFINITE` keeps one), `onDismiss`, and which of two
+Toasters of one id draws, are the web's. It closes on its close button, its action, a swipe toward
+the inline end, and Escape while focus is in it. TalkBack's users get the longer time Android asks for
+them, as Material's snackbars do. The web's `label`, `toastLabel` and `hotkey` name the region and
+the F8 key, which Compose has none of; an action's `altText` is not needed there, where TalkBack
+reaches the action's button. `KozmosToast(tone = …)` draws one toast in place with a tone, and
+`KozmosToast(hostState)` still draws Material's snackbars, one at a time and with no tone.
+
+SwiftUI has no `toast()` and no tones yet: its `KozmosToast` shows one toast from a binding. Its tab
+under Implementation shows it.
 
 <PlatformSnippets
     react={`
@@ -120,7 +140,61 @@ import { KozmosButton } from "@kozmos-ds/vue"
   <KozmosButton>Save</KozmosButton>
 </template>
     `}
+    kotlin={`
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.toast.KozmosToastAction
+import com.kozmos.components.toast.KozmosToastTone
+import com.kozmos.components.toast.KozmosToaster
+import com.kozmos.components.toast.toast
+import kotlin.time.Duration
+
+// toast() shows one from anywhere, on any thread: a click, a request's
+// callback, a view model. The second call, given the first's id, replaces it
+// where it is and is announced again. Call this as the request starts, and
+// what it returns with whether the place was saved.
+fun startSavingPlace(retry: () -> Unit): (Boolean) -> Unit {
+    val id = toast("Saving", duration = Duration.INFINITE)
+    return { saved ->
+        if (saved) {
+            toast(
+                "Location saved",
+                id = id,
+                tone = KozmosToastTone.Success,
+                description = "Find it in your saved places."
+            )
+        } else {
+            toast(
+                "Could not save",
+                id = id,
+                tone = KozmosToastTone.Critical,
+                description = "Check your connection and try again.",
+                action = KozmosToastAction("Retry", onClick = retry)
+            )
+        }
+    }
+}
+
+// One KozmosToaster over the screen's content draws them, at its bottom end.
+@Composable
+fun SavePlaceScreen(onSave: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        KozmosButton(onClick = onSave) { Text("Save") }
+        KozmosToaster(closeLabel = "Dismiss notification")
+    }
+}
+`}
 />
+
+### The close, always visible
+
+<Canvas>
+  <Story of={ToastStories.CloseAlwaysVisible} />
+</Canvas>
 
 ## Implementation
 

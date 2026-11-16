@@ -68,6 +68,7 @@ const REGISTRY_NAMES = [
   "plane",
   "scissors-01",
   "ticket-01",
+  "crop-01",
 ];
 
 /**

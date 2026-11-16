@@ -38,7 +38,7 @@ function resolvePreflightTheme(css: string) {
  * Android's WebView is Chrome's engine at the same version. An entry this does
  * not understand stops the build rather than leaving a browser out.
  */
-function targetFrom(browserslist: string[]) {
+export function targetFrom(browserslist: string[]) {
   const engines: Record<string, string> = {
     chrome: "chrome",
     edge: "edge",

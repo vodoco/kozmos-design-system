@@ -3,18 +3,27 @@ import SwiftUI
 public struct KozmosCheckbox: View {
     @Binding var checked: Bool
     let label: String?
+    let description: String?
     let disabled: Bool
     let error: Bool
+    let checkedLabel: String
+    let uncheckedLabel: String
     @Environment(\.kozmosAnalytics) var trackEvent
     
     public init(
         checked: Binding<Bool>,
         label: String? = nil,
+        description: String? = nil,
         disabled: Bool = false,
-        error: Bool = false
+        error: Bool = false,
+        checkedLabel: String = "Checked",
+        uncheckedLabel: String = "Unchecked"
     ) {
+        self.checkedLabel = checkedLabel
+        self.uncheckedLabel = uncheckedLabel
         self._checked = checked
         self.label = label
+        self.description = description
         self.disabled = disabled
         self.error = error
     }
@@ -24,7 +33,9 @@ public struct KozmosCheckbox: View {
             trackEvent(KozmosAnalyticsEvent(eventName: "checkbox_toggled", component: "Checkbox", properties: ["checked": !checked]))
             checked.toggle()
         }) {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            // With a description the box sits on the label's first line, as
+            // React's `items-start` puts it; without one it is centred.
+            HStack(alignment: description == nil ? .center : .top, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 ZStack {
                     RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
                         .stroke(borderColor, lineWidth: 1)
@@ -33,18 +44,16 @@ public struct KozmosCheckbox: View {
                         .cornerRadius(KozmosDimensions.semanticsRadiusMarker)
                     
                     if checked {
+                        // Drawn, never read: the state is the checkbox's value.
                         Image(systemName: "checkmark")
                             .font(KozmosTypography.caption)
                             .bold()
                             .foregroundColor(markColor)
+                            .accessibilityHidden(true)
                     }
                 }
                 
-                if let label = label {
-                    Text(label)
-                        .font(KozmosTypography.subheadline)
-                        .foregroundColor(labelColor)
-                }
+                KozmosControlText(label: label, description: description, labelColor: labelColor, disabled: disabled)
             }
             // A 44pt target, all of it hittable, with a label or without
             // one: a plain button's frame adds nothing without a content
@@ -55,6 +64,11 @@ public struct KozmosCheckbox: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .kozmosControlDescription(label: label, description: description)
+        // Its state, read by VoiceOver in the caller's words: it was a plain
+        // button, heard as a name and nothing of checked. SwiftUI's checkbox
+        // takes a Bool, so it has no mixed state to say.
+        .kozmosToggleState(checked ? checkedLabel : uncheckedLabel)
         .disabled(disabled)
     }
 
@@ -77,6 +91,8 @@ public struct KozmosCheckbox: View {
 
     private var labelColor: Color {
         if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
-        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground100
+        // Full ink, foreground/0, as React's text-foreground label is: every
+        // control's label is the same colour on every platform (11 Nov).
+        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0
     }
 }

@@ -72,6 +72,31 @@ export const Info: Story = {
 };
 
 /**
+ * An icon and a description, no title: the words are centred on the icon,
+ * with as much space below them as above, on one line or several (GAP-269).
+ * They were lifted with a transform that left their box behind, 13 above
+ * and 19 below.
+ */
+export const WithoutTitle: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="flex max-w-[520px] flex-col gap-4">
+      <Alert variant="info">
+        <Terminal className="h-4 w-4" />
+        <AlertDescription>The merge is saved as a draft.</AlertDescription>
+      </Alert>
+      <Alert variant="warning">
+        <Terminal className="h-4 w-4" />
+        <AlertDescription>
+          The merged unit keeps the first unit’s name, its category and its
+          opening hours; the other units’ are kept in the merge history.
+        </AlertDescription>
+      </Alert>
+    </div>
+  ),
+};
+
+/**
  * How loudly it is announced, and what the title is.
  *
  * `live` defaults to `off`: an alert is usually part of the page, and until

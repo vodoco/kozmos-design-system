@@ -42,6 +42,10 @@ module.exports = {
     files: [
       "../react/src/**/*.{js,ts,jsx,tsx}",
       "!../react/src/**/*.test.{js,ts,jsx,tsx}",
+      // The Dashboard modules (decision 183) draw from dashboard.css alone,
+      // with owned rules (postcss/dashboard-sheet.cjs): a class only they
+      // wrote would put Pointr Cloud's code in every product's style.css.
+      "!../react/src/dashboard/**",
       "../vue/src/**/*.{vue,js,ts}",
       "!../vue/src/**/*.{spec,test,stories}.{js,ts}",
       // Generated data (the React bridge's `on…` props), never classes.

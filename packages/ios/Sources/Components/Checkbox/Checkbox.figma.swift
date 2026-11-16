@@ -27,10 +27,18 @@ struct KozmosCheckboxConnect: FigmaConnect {
     )
     var state: String = "default"
 
+    // GAP-162: the description, shown or not.
+    @FigmaBoolean("Show Description")
+    var showDescription: Bool = false
+
+    @FigmaString("Description Text")
+    var descriptionText: String = "Description"
+
     var body: some View {
         KozmosCheckbox(
             checked: .constant(self.checked),
             label: self.label,
+            description: self.showDescription ? self.descriptionText : nil,
             disabled: self.state == "disabled",
             error: self.state == "error"
         )

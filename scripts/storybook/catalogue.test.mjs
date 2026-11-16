@@ -26,7 +26,7 @@ test("every public CSF file is registered, with stable IDs and retained scenario
     const meta = readStories(source, entry.file);
     assert.equal(meta.title, entry.title, entry.file);
     assert.equal(meta.id, entry.id, `${entry.file}: stable URL ID`);
-    assert.match(meta.title, /^(Foundations|Core|SDK|Examples|Guides)\//);
+    assert.match(meta.title, /^(Foundations|Core|SDK|Dashboard|Examples|Guides)\//);
     const exports = [...source.matchAll(/^export const (\w+)/gm)].map(
       (match) => match[1],
     );

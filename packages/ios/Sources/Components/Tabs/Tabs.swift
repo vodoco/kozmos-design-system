@@ -33,27 +33,109 @@ enum KozmosTabsMetrics {
 /// `TabsList` (`bg-muted p-1 rounded-control`). Each trigger draws its own
 /// segment 4pt inside it, so the track pads only its ends here.
 ///
+/// A list that fits its space is drawn as it always was: its tabs share the
+/// track's width. One wider than its space (GAP-254, decision 182) scrolls
+/// sideways inside its own track, with no scroll indicator (decision 75):
+/// the track keeps the width of the space and is the scroll view, its 4pt
+/// ends inside the scrolled content, and each tab keeps its natural width,
+/// its title never cut short. The selected tab is scrolled into view, by the
+/// least distance, when the list is first shown and whenever the selection
+/// changes, animated unless Reduce Motion is on. Right to left it starts at
+/// the right and scrolls mirrored.
+///
 /// VoiceOver reads it as React's `tablist`: a container whose tabs stay
 /// elements of their own and, from iOS 17, a tab bar, so VoiceOver knows
 /// the tabs as one set and each tab's place in it.
 public struct KozmosTabsList<Content: View>: View {
     let content: Content
-    
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The selected tab's value, as its trigger reports it.
+    @State private var selected: String?
+    /// Whether the scrolling list has shown its selected tab once: the first
+    /// time is at once, every later one animated.
+    @State private var revealed = false
+
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
-    
-    public var body: some View {
+
+    private var track: some View {
+        RoundedRectangle(cornerRadius: KozmosTabsMetrics.trackRadius)
+            .fill(KozmosColors.primitivesColorsBackground100)
+    }
+
+    /// The tabs in a row as tall as its tallest tab, each filling it
+    /// (decision 3): once one tab has an icon, every tab takes the stacked
+    /// height, so the raised segment fills the track whichever tab is
+    /// chosen. With no icon anywhere the tallest is 44, as before. Only a tab
+    /// in a list fills its row; one standing alone keeps its own height, as
+    /// Compose's `LocalTabsFillTrack`.
+    private var row: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing0) {
             content
         }
+        .environment(\.kozmosTabsFillTrack, true)
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, KozmosTabsMetrics.inset)
-        .background(
-            RoundedRectangle(cornerRadius: KozmosTabsMetrics.trackRadius)
-                .fill(KozmosColors.primitivesColorsBackground100)
-        )
+    }
+
+    public var body: some View {
+        // The row whose ideal width fits is today's list; otherwise the
+        // scrolling one. Both children are always views, never EmptyView,
+        // which a ViewThatFits cannot hold.
+        ViewThatFits(in: .horizontal) {
+            row
+                .background(track)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    // In a scroll view a tab is proposed no width, so each
+                    // takes its natural one.
+                    row
+                        .onPreferenceChange(KozmosTabsSelectionKey.self) { selected = $0 }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .onAppear {
+                    // Once the row is laid out.
+                    DispatchQueue.main.async { reveal(selected, proxy) }
+                }
+                .onChange(of: selected) { value in reveal(value, proxy) }
+            }
+            .background(track)
+            // The scrolled tabs pass under the track's rounded ends.
+            .clipShape(RoundedRectangle(cornerRadius: KozmosTabsMetrics.trackRadius))
+        }
         .accessibilityElement(children: .contain)
         .modifier(KozmosTabBarTrait())
+    }
+
+    /// Scrolls the least distance that shows the tab, if any: a tab already
+    /// in view leaves the list where it is.
+    private func reveal(_ value: String?, _ proxy: ScrollViewProxy) {
+        guard let value else { return }
+        let animation = revealed && !reduceMotion ? KozmosMotion.standard : nil
+        revealed = true
+        withAnimation(animation) { proxy.scrollTo(value, anchor: nil) }
+    }
+}
+
+/// The selected tab's value, reported by its trigger to the list it is in.
+struct KozmosTabsSelectionKey: PreferenceKey {
+    static let defaultValue: String? = nil
+    static func reduce(value: inout String?, nextValue: () -> String?) {
+        value = value ?? nextValue()
+    }
+}
+
+private struct KozmosTabsFillTrackKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Whether a tab is in a `KozmosTabsList`, whose row it fills: false
+    /// outside one.
+    fileprivate var kozmosTabsFillTrack: Bool {
+        get { self[KozmosTabsFillTrackKey.self] }
+        set { self[KozmosTabsFillTrackKey.self] = newValue }
     }
 }
 
@@ -79,34 +161,80 @@ private struct KozmosTabBarTrait: ViewModifier {
 ///
 /// The whole 44pt height of the track is the tab's target, the segment's 4pt
 /// inset included.
+///
+/// With an `icon` (GAP-152), the icon sits 20pt square, 4pt over the title,
+/// both centred, in the title's colour, and the track grows to hold the
+/// taller segment. Every tab in that list takes the same height (decision
+/// 3), so a tab with only words centres its title and its segment still
+/// fills the track. The tab is still named by its title alone: the icon is
+/// hidden from VoiceOver.
 public struct KozmosTabsTrigger: View {
     let value: String
     let title: String
     @Binding var selection: String
+    private let icon: AnyView?
     @Environment(\.kozmosAnalytics) var trackEvent
+    @Environment(\.kozmosTabsFillTrack) private var fillsTrack
     
     public init(value: String, title: String, selection: Binding<String>) {
         self.value = value
         self.title = title
         self._selection = selection
+        self.icon = nil
+    }
+
+    public init<Icon: View>(
+        value: String,
+        title: String,
+        selection: Binding<String>,
+        @ViewBuilder icon: () -> Icon
+    ) {
+        self.value = value
+        self.title = title
+        self._selection = selection
+        self.icon = AnyView(icon())
     }
     
     private var isSelected: Bool { selection == value }
+
+    private var ink: Color {
+        isSelected ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400
+    }
 
     public var body: some View {
         Button(action: {
             trackEvent(KozmosAnalyticsEvent(eventName: "tab_switched", component: "Tabs", properties: ["value": value]))
             selection = value
         }) {
-            Text(title)
-                .font(KozmosTypography.subheadline)
-                .fontWeight(.medium)
-                // One line, as React's `whitespace-nowrap`.
-                .lineLimit(1)
-                .foregroundColor(isSelected ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400)
+            VStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                if let icon {
+                    icon
+                        .frame(width: KozmosIconSize.md.pointSize, height: KozmosIconSize.md.pointSize)
+                        // The title names the tab; an icon's own name would
+                        // be read before it.
+                        .accessibilityHidden(true)
+                }
+                Text(title)
+                    .font(KozmosTypography.subheadline)
+                    .fontWeight(.medium)
+                    // One line, as React's `whitespace-nowrap`.
+                    .lineLimit(1)
+            }
+                .foregroundColor(ink)
+                // A KozmosIcon at `.default` takes the title's colour, as
+                // React's icon is currentColor.
+                .environment(\.kozmosIconHostInk, ink)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                 .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing75)
-                .frame(maxWidth: .infinity, minHeight: KozmosTabsMetrics.segmentMinHeight)
+                // In a list, `maxHeight` fills the list's row, whose height
+                // is its tallest tab's: a tab with only words centres its
+                // title in the height an icon tab beside it needs. A tab
+                // standing alone keeps its own height in any frame.
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: KozmosTabsMetrics.segmentMinHeight,
+                    maxHeight: fillsTrack ? .infinity : nil
+                )
                 .background {
                     if isSelected {
                         RoundedRectangle(cornerRadius: KozmosTabsMetrics.segmentRadius)
@@ -120,6 +248,10 @@ public struct KozmosTabsTrigger: View {
         // The plain style draws a disabled tab at half, as React's
         // `disabled:opacity-50`; a second opacity here would dim it twice.
         .buttonStyle(.plain)
+        // A list too wide for its space scrolls to the selected tab by its
+        // value (GAP-254).
+        .id(value)
+        .preference(key: KozmosTabsSelectionKey.self, value: isSelected ? value : nil)
         // React's `aria-selected`: VoiceOver says "Selected" on this tab
         // alone. It stays a button, so a double tap still chooses it.
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])

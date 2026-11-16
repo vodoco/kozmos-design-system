@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "493e2e6a7314";
+const PLUGIN_BUILD = "c9fde435ab08";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -86,6 +86,38 @@ function containerInsetToken(inset) {
     : "Container/padding/x/window";
 }
 const CONTAINER_CENTERED = ["True", "False"];
+// GAP-116 (decision 132): React's `block`, the clear space above and below the
+// content: none, 16, 24 or 32, the layout spacing steps 200, 300 and 400. It
+// holds whatever the window does. Figma draws one step on both edges; React's
+// `{ start, end }` sets them apart. None comes first: a variant drawn before
+// the axis is None, so Update renames it rather than replacing it.
+const CONTAINER_BLOCKS = ["None", "Small", "Medium", "Large"];
+function containerBlockPadding(block) {
+  if (block === "Small") return 16;
+  if (block === "Medium") return 24;
+  if (block === "Large") return 32;
+  return 0;
+}
+function containerBlockToken(block) {
+  if (block === "Small") return "Container/padding/y/small";
+  if (block === "Medium") return "Container/padding/y/medium";
+  if (block === "Large") return "Container/padding/y/large";
+  return null;
+}
+// The set's second axis is Inset and Block together, one row per pair: the
+// single-axis painter takes two axes, and this keeps the node ids of the
+// Centered x Inset variants the set had before Block.
+const CONTAINER_INSET_BLOCKS = [];
+for (const inset of CONTAINER_INSETS)
+  for (const block of CONTAINER_BLOCKS)
+    CONTAINER_INSET_BLOCKS.push(`${inset}/${block}`);
+function splitContainerInsetBlock(second) {
+  const [inset, block] = String(second || "").split("/");
+  return {
+    inset: CONTAINER_INSETS.indexOf(inset) === -1 ? "Window" : inset,
+    block: CONTAINER_BLOCKS.indexOf(block) === -1 ? "None" : block,
+  };
+}
 const SCROLL_AREA_ORIENTATIONS = ["Vertical", "Horizontal", "Both"];
 const SCROLL_AREA_SCROLLBARS = ["Hidden", "Visible"];
 const TREE_CONTENT = ["Basic", "Count", "Actions"];
@@ -187,6 +219,36 @@ const TREE_META = {
   text: "Changes awaiting publish",
   token: "Colors/foreground/400",
   fallback: "#5D626F",
+};
+// Checkable rows and the disclosure at the end (GAP-277), as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`, on Tree
+// and its rows. Booleans, as Divided and Meta Below, for the same reason: an
+// axis would double the three row sets. Checkable shows Checkbox's box
+// before the leading icon, and Checked the box's checked fill and mark
+// inside it, both hidden until shown. Disclosure Start (on) shows the
+// disclosure before the label, as every row has it, and Disclosure End (off)
+// one at the row's end: a designer turns the first off and the second on,
+// since a boolean can show a layer but not hide another. On a row with no
+// children each is the empty 16 a disclosure would take.
+const TREE_CHECKABLE_PROPERTY_NAME = "Checkable";
+const TREE_CHECKED_PROPERTY_NAME = "Checked";
+const TREE_DISCLOSURE_START_PROPERTY_NAME = "Disclosure Start";
+const TREE_DISCLOSURE_END_PROPERTY_NAME = "Disclosure End";
+const TREE_CHECKBOX = {
+  name: "Checkbox",
+  kind: "tree-checkbox",
+  stroke: "Border/Input",
+  strokeFallback: "#747B8B",
+};
+const TREE_CHECKBOX_CHECKED = {
+  name: "Checkbox Checked",
+  kind: "tree-checkbox-checked",
+  markName: "Checkbox Mark",
+};
+const TREE_DISCLOSURE_END = {
+  name: "Disclosure End",
+  iconKind: "tree-disclosure-end-icon",
+  spacerKind: "tree-disclosure-end-spacer",
 };
 // The column the name and its meta share. Its vertical padding is the row's
 // py-1.5 (py-1 compact), so a row with its meta below is 48 (44 compact), as
@@ -297,6 +359,16 @@ const CHECKBOX_CHECKED = ["Unchecked", "Checked"];
 const CHECKBOX_STATES = ["Default", "Disabled", "Error"];
 const RADIO_CHECKED = ["Unchecked", "Checked"];
 const RADIO_STATES = ["Default", "Disabled", "Error"];
+// GAP-158: how an option is drawn, React's RadioGroupItem `variant`. Default
+// first, so a variant built before the axis existed parses as Default and
+// Update renames it in place, keeping the node id Code Connect pins.
+const RADIO_VARIANTS = ["Default", "Card", "Tile"];
+// React's card is a column 240 wide here (it fills its grid cell in code), the
+// tile 112: three of them and two 8 gaps make the transition editor's row.
+const RADIO_CARD_WIDTH = 240;
+const RADIO_TILE_WIDTH = 112;
+// min-h-24: a tile is at least 96 tall.
+const RADIO_TILE_MIN_HEIGHT = 96;
 const SWITCH_CHECKED = ["Unchecked", "Checked"];
 const SWITCH_STATES = ["Default", "Disabled", "Error"];
 const INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
@@ -403,7 +475,11 @@ const TIME_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const TIME_PICKER_CONTENT = ["Closed", "Open"];
 const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
 const FILE_UPLOAD_STATUSES = ["Default", "Error", "Warning", "Success"];
-const FILE_UPLOAD_CONTENT = ["Dropzone", "Files"];
+// Preview: React's `preview="image"` holding its image, the thumbnail with
+// Change and Remove where the drop area was (GAP-270).
+const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"];
+// One status's columns, a content each, 440 apart.
+const FILE_UPLOAD_STATUS_STRIDE = FILE_UPLOAD_CONTENT.length * 440;
 const COLOR_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const COLOR_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const COLOR_PICKER_CONTENT = ["Closed", "Open"];
@@ -414,6 +490,14 @@ const SEARCH_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const SEARCH_STATUSES = ["Default", "Error"];
 const SELECT_STATES = ["Default", "Focus", "Disabled", "Mixed"];
 const SELECT_STATUSES = ["Default", "Error"];
+// GAP-164 (decision 132): Open draws the trigger with its list under it, so a
+// row's count is visible in Figma. A variant drawn before the axis is Closed.
+const SELECT_CONTENT = ["Closed", "Open"];
+// An open list is neither disabled nor the trigger's focus-ring state, so
+// Open is drawn at State=Default only (#525 review): 6 Closed + 2 Open.
+function selectVariantIsGenerated(state, _status, content) {
+  return content !== "Open" || state === "Default";
+}
 const SLIDER_STATES = ["Default", "Focus", "Disabled"];
 const SLIDER_STATUSES = ["Default", "Error"];
 const SLIDER_TYPES = ["Single", "Range"];
@@ -427,8 +511,26 @@ const RATING_STATES = ["Default", "Readonly"];
 // a Current past its Count.
 const RATING_SCALES = ["Stars", "Thumbs"];
 const RATING_THUMB_VALUES = ["0", "1", "2"];
-function ratingValuesForScale(scale) {
-  return scale === "Thumbs" ? RATING_THUMB_VALUES : RATING_VALUES;
+// A read-only star rating shows a score to the nearest half (decision 181),
+// so Scale=Stars, State=Readonly also takes the halves; editing stays whole
+// stars and thumbs are a choice, so no other row draws one.
+const RATING_HALF_VALUES = ["0.5", "1.5", "2.5", "3.5", "4.5"];
+const RATING_READONLY_STAR_VALUES = [
+  "0",
+  "0.5",
+  "1",
+  "1.5",
+  "2",
+  "2.5",
+  "3",
+  "3.5",
+  "4",
+  "4.5",
+  "5",
+];
+function ratingValuesForScale(scale, state) {
+  if (scale === "Thumbs") return RATING_THUMB_VALUES;
+  return state === "Readonly" ? RATING_READONLY_STAR_VALUES : RATING_VALUES;
 }
 // How the steps are drawn (GAP-191): Numbered, a numbered circle over each
 // label, or Dots, a tour's progress, one dot per step with no label shown.
@@ -573,6 +675,9 @@ const EMPTY_STATE_CONTENT = ["Basic", "Icon", "Action"];
 // Found"). A layer in every variant, shown by the List boolean, its three
 // items' words List Item 1 Text to List Item 3 Text.
 const EMPTY_STATE_LIST_PROPERTY = "List";
+// React's marker column (padding-inline-start 1.25rem) and its disc.
+const EMPTY_STATE_LIST_MARKER_COLUMN = 20;
+const EMPTY_STATE_LIST_MARKER_SIZE = 5;
 const EMPTY_STATE_LIST_ITEMS = [
   "Check the building and level",
   "Clear the type filters",
@@ -943,6 +1048,159 @@ const DYNAMIC_ISLAND_GEOMETRY = {
   Minimal: { width: 56, height: 56, radius: 28 },
 };
 const FEEDBACK_CARD_STATES = ["Default", "Submitting", "Success"];
+// Dashboard lane (decision 183): Pointr Cloud's web modules, shipped from
+// @kozmos-ds/react/dashboard, React only. BrandLoader (CLOUD-UI-008,
+// decisions 133 and 176) is the first. Its Overlay axis is React's `overlay`
+// prop, the one prop that changes the drawing; False, the loader alone, is
+// first, so it is the set's default.
+const BRAND_LOADER_OVERLAY = ["False", "True"];
+// React's .kozmos-brand-loader: a 120 box (7.5rem); the first ring at rest is
+// 108 (6.75rem) and 6 thick (border-width lg + md), the second 4 (lg) and
+// starts its ripple at 40 (Layout/spacing/500); the pin is 32 (2rem). The
+// overlay is drawn on Backdrop's example scrim (BACKDROP_CUTOUT's 320×180).
+const BRAND_LOADER_GEOMETRY = {
+  size: 120,
+  ring: 108,
+  ringStroke: 6,
+  secondRingStart: 40,
+  secondRingStroke: 4,
+  pin: 32,
+};
+// MapEditToolbar (CLOUD-UI-005, decisions 139 and 151): Pointr Cloud's map
+// edit toolbar. Mode is one of Cloud's seven toolbars (Cloud 10.16, read on 11
+// Nov), drawn with Cloud's items; Overflow True draws it on a 320 map, the
+// items that do not fit behind More, as React's overflow does. Create, the
+// first, with Overflow False, is the set's default.
+const MAP_EDIT_TOOLBAR_MODES = [
+  "Create",
+  "Draw Polygon",
+  "Draw Circle",
+  "Draw Point",
+  "Geometry Set",
+  "JSON",
+  "Edit Existing",
+];
+const MAP_EDIT_TOOLBAR_OVERFLOW = ["False", "True"];
+// React's .kozmos-map-edit-toolbar: the card 60 tall (6 + 48 + 6), padding 8
+// at the sides, corner 16, 8 between the field and the items; items 48 tall
+// and at least 56 wide (each hugs its label), 4 apart, padded 4, corner 8 (16 less the card's padding), a 24 icon over an
+// 11/14 label 2 below it; dividers 1 × 32 with 4 of margin; the JSON field an
+// Input, 200 wide.
+const MAP_EDIT_TOOLBAR_GEOMETRY = {
+  height: 60,
+  paddingX: 8,
+  paddingY: 6,
+  cardGap: 8,
+  itemGap: 4,
+  itemWidth: 56,
+  itemHeight: 48,
+  itemPaddingX: 4,
+  itemRadius: 8,
+  icon: 24,
+  labelGap: 2,
+  labelSize: 11,
+  labelLineHeight: 14,
+  dividerHeight: 32,
+  dividerMargin: 4,
+  fieldWidth: 200,
+  fieldHeight: 44,
+  narrowMap: 320,
+};
+const MAP_EDIT_TOOLBAR_ICON = {
+  polygon: "pentagon",
+  point: "marker-pin-01",
+  circle: "circle",
+  json: "code-02",
+  undo: "flip-backward",
+  redo: "flip-forward",
+  clear: "x-square",
+  reset: "refresh-ccw-01",
+  draw: "pencil-01",
+  adjust: "transform",
+  cutOut: "scissors-cut-01",
+  split: "divider",
+  straighten: "ruler",
+};
+function mapEditToolbarItem(kind, label, icon, state) {
+  return { kind, label, icon: MAP_EDIT_TOOLBAR_ICON[icon], state };
+}
+const MAP_EDIT_TOOLBAR_DIVIDER = { kind: "divider" };
+const MAP_EDIT_TOOLBAR_ITEMS = (() => {
+  const t = (label, icon, state) =>
+    mapEditToolbarItem("tool", label, icon, state || "Off");
+  const a = (label, icon, state) =>
+    mapEditToolbarItem("action", label, icon, state || "Off");
+  const d = MAP_EDIT_TOOLBAR_DIVIDER;
+  const history = (undo, redo) => [
+    a("Undo", "undo", undo),
+    a("Redo", "redo", redo),
+    a("Clear", "clear"),
+  ];
+  const drawing = [
+    t("Draw", "draw", "On"),
+    t("Split", "split", "Disabled"),
+    a("Straighten", "straighten", "Disabled"),
+    d,
+  ].concat(history("Disabled", "Disabled"));
+  const geometry = (redo) =>
+    [
+      t("Adjust", "adjust", "On"),
+      d,
+      t("Cut-out", "cutOut"),
+      t("Split", "split"),
+      a("Straighten", "straighten"),
+      d,
+    ].concat(history("Off", redo));
+  return {
+    Create: [
+      t("Polygon", "polygon"),
+      t("Point", "point"),
+      t("Circle", "circle"),
+      d,
+      t("JSON", "json"),
+      d,
+    ].concat(history("Disabled", "Disabled")),
+    "Draw Polygon": drawing,
+    "Draw Circle": drawing,
+    "Draw Point": [t("Draw", "draw", "On"), d].concat(
+      history("Disabled", "Disabled"),
+    ),
+    "Geometry Set": geometry("Disabled"),
+    JSON: history("Off", "Disabled").concat([a("Reset", "reset")]),
+    "Edit Existing": geometry("Off").concat([a("Reset", "reset")]),
+  };
+})();
+// PropertyPicker (CLOUD-UI-003, decisions 133 and 183): Pointr Cloud's
+// "+ Add additional field". State is what the popup shows: Closed, the
+// subtle Button alone, first, so it is the set's default; Open, every
+// property; Suggested, the Suggested and Others tabs over Booth's five;
+// Empty, a search that finds nothing.
+const PROPERTY_PICKER_STATES = ["Closed", "Open", "Suggested", "Empty"];
+// Cloud's 368 form column; the density's control and field height, 44;
+// PopoverContent's sideOffset, 4; the popup 12 in, 8 between its parts.
+const PROPERTY_PICKER_GEOMETRY = {
+  width: 368,
+  control: 44,
+  offset: 4,
+  padding: 12,
+  gap: 8,
+};
+// Example rows: a property's name, type and description, as React draws
+// them (Cloud's types; the names Cloud showed).
+const PROPERTY_PICKER_ROWS = [
+  ["Access Programs", "Array", "Named access program accepted"],
+  ["Booking Url", "Hyperlink"],
+  ["Capacity", "Integer"],
+  ["Images", "Image"],
+  ["Opening Hours", "Object"],
+];
+const PROPERTY_PICKER_SUGGESTED_ROWS = [
+  ["Access Restrictions", "Enum"],
+  ["Description", "Text"],
+  ["Has Assistance", "Boolean"],
+  ["Has Wifi", "Boolean"],
+  ["Occupancy Status", "Enum"],
+];
 const MAP_VIEW_CONTENT = ["Empty", "Overlay"];
 const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
@@ -961,6 +1219,26 @@ const MENU_CONTENT = ["Basic", "Checkbox", "Radio", "Submenu"];
 // `<Kbd keys={["Ctrl", "C"]} />`, its caps joined by a "+". One key comes
 // first, so the set's default is the plain cap.
 const KBD_KEYS = ["Single", "Combination"];
+// GAP-273: React's ImageCropper `aspectRatio`, the frame's shape: Square is
+// 1, MAP-32's logo and the default, Landscape 16:9, a cover. Square comes
+// first, so the set's default is React's.
+const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
+// GAP-106: React's PersonaMark draws one persona's diamond, and
+// PersonaMarkGroup the diamonds of the personas a row is visible to. One
+// mark comes first, so the set's default is the plain diamond.
+const PERSONA_MARK_FORMS = ["Single", "Group"];
+// GAP-036 (decision 135): React's PageHeader `tone`, the tinted band or none,
+// and `size`, the title at Heading 3's 24 (md) or Heading 2's 30 (lg). The
+// band comes first, as React's default.
+const PAGE_HEADER_TONES = ["Subtle", "Default"];
+const PAGE_HEADER_SIZES = ["Medium", "Large"];
+// GAP-195, decision 135: ListItem's slots, the checklist row. Selected is
+// the row's tint, React's `selected`; the plain row comes first.
+const LIST_ITEM_SELECTED = ["False", "True"];
+// GAP-040, decision 135: SettingsRow. State is where the value comes from,
+// None (no system value), Inherited or Overridden; Disabled is the row's.
+const SETTINGS_ROW_STATES = ["None", "Inherited", "Overridden"];
+const SETTINGS_ROW_DISABLED = ["False", "True"];
 const TOAST_CONTENT = ["Basic", "Action"];
 // toast()'s tones (GAP-167): Neutral draws no icon; each other tone its icon,
 // in the tone's text colour, on the same surface. A variant drawn before the
@@ -969,6 +1247,9 @@ const TOAST_TONES = ["Neutral", "Success", "Info", "Warning", "Critical"];
 const TABS_COUNTS = ["Two", "Three", "Four"];
 const TABS_ACTIVE = ["One", "Two", "Three", "Four"];
 const TABS_STATES = ["Default", "Focus", "Disabled"];
+// GAP-152 (decision 132): a trigger's words alone, or a 20 icon 4 above them.
+// A variant drawn before the axis is Label.
+const TABS_CONTENT = ["Label", "Icon Over Label"];
 const TOOLTIP_SIDES = ["Top", "Right", "Bottom", "Left"];
 const BACKDROP_VISIBILITY = ["Visible", "Hidden"];
 // Whether the scrim lights a target (GAP-189): Cut-out leaves an example
@@ -1337,6 +1618,10 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Link: 260,
   Separator: 260,
   Kbd: 260,
+  PersonaMark: 260,
+  PageHeader: 560,
+  ListItem: 260,
+  SettingsRow: 520,
   Button: 900,
   IconButton: 820,
   ToggleButton: 620,
@@ -1363,6 +1648,14 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DirectionStep: 260,
   DynamicIsland: 320,
   FeedbackCard: 360,
+  BrandLoader: 260,
+  ImageField: 420,
+  MapEditToolbar: 320,
+  PropertyPicker: 520,
+  PropertyField: 220,
+  OpeningHoursEditor: 760,
+  RatingEditor: 420,
+  KeyValueList: 360,
   FloorSelector: 420,
   MapControlButton: 260,
   MapControlsGroup: 320,
@@ -1421,6 +1714,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   DateRangePicker: 2400,
   TimePicker: 1380,
   FileUpload: 1420,
+  ImageCropper: 560,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1454,12 +1748,22 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
   { title: "Selection", components: ["Chip", "SegmentedControl"] },
   {
     title: "Layout",
-    components: ["Box", "Card", "Container", "Grid", "ScrollArea", "Stack"],
+    components: [
+      "Box",
+      "Card",
+      "Container",
+      "Grid",
+      "PageHeader",
+      "ScrollArea",
+      "Stack",
+    ],
   },
   {
     title: "Data display",
     components: [
       "List",
+      "ListItem",
+      "SettingsRow",
       "MetaStrip",
       "Table",
       "TreeParentItem",
@@ -1468,6 +1772,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "TreeSection",
       "Tree",
       "Timeline",
+      "PersonaMark",
     ],
   },
   {
@@ -1525,6 +1830,22 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     components: ["DynamicIsland", "FeedbackCard"],
   },
   {
+    // Dashboard modules (decision 183): Pointr Cloud's web modules, shipped
+    // from @kozmos-ds/react/dashboard, React only. Kept out of Core, which
+    // stays domain-neutral, and out of Product / SDK, which is the map's.
+    title: "Dashboard",
+    components: [
+      "BrandLoader",
+      "PropertyField",
+      "OpeningHoursEditor",
+      "RatingEditor",
+      "KeyValueList",
+      "PropertyPicker",
+      "MapEditToolbar",
+      "ImageField",
+    ],
+  },
+  {
     title: "Overlay",
     components: [
       "Backdrop",
@@ -1554,6 +1875,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "DateRangePicker",
       "TimePicker",
       "FileUpload",
+      "ImageCropper",
       "ColorPicker",
       "SearchBar",
       "Search",
@@ -1699,7 +2021,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Select",
-          variantName: "State=Default, Status=Default",
+          variantName: "State=Default, Status=Default, Content=Closed",
           text: { "Placeholder Text": "Destination" },
         },
         {
@@ -1731,7 +2053,7 @@ const SURFACE_QA_COMPONENT_GROUPS = [
         },
         {
           componentSetName: "Radio",
-          variantName: "Checked=Checked, State=Default",
+          variantName: "Checked=Checked, State=Default, Variant=Default",
           text: { "Label Text": "Fastest" },
         },
         {
@@ -2267,6 +2589,198 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    category: "Dashboard",
+    summary:
+      "BrandLoader is Pointr Cloud's brand loader (CLOUD-UI-008): the pin, with two rings rippling out from it in the theme's prominent colour, while the product loads. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use while Pointr Cloud, or a module of it, loads: once, for the whole wait.",
+      "Use Overlay True to cover the page while it loads; Overlay False draws the loader in place, in a box of its own.",
+      "Use Spinner for a wait in a small place, and Progress when the wait can be measured.",
+    ],
+    api: [
+      "Overlay maps to BrandLoader.overlay: True centres the loader on Backdrop's scrim, Overlay/Scrim, over the window.",
+      'label is what a screen reader hears (default "Loading"); it is never drawn, so it has no Figma property: write it in code, in the product\'s words ("Loading Pointr Cloud").',
+      "The rings and the pin are the theme fill, theme 500 (decisions 176 and 59), in both themes.",
+      "Figma draws the still state, as reduced motion draws it: the first ring at rest round the pin, 108 and 6 thick. The second ring, 4 thick, is a hidden layer at its ripple's start, 40; in code the two ripple from 40 to 108 and fade, every 3 s.",
+    ],
+    properties: ["Overlay: False, True"],
+    accessibility: [
+      'In code the loader is a status region (role="status", aria-live polite): its label arrives after it mounts, so a screen reader announces it once, and nothing that moves is in it.',
+      "Under reduced motion, the system's or DesignConfigProvider's, the rings and the pin stand still: the drawing in Figma.",
+      "Overlay makes the rest of the page inert and busy until the loader goes, takes every pointer event on the scrim and shows the wait cursor; focus is not moved to it, and goes back where it was.",
+      "The rings and the pin are decoration, hidden from assistive technology.",
+    ],
+  },
+  {
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    category: "Dashboard",
+    summary:
+      "ImageField is Pointr Cloud's image field (CLOUD-UI-004): up to max images, added by upload or by URL, each a thumbnail with its alt text, a full-screen preview, a cropper to the field's aspect ratio, and Remove. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for a property whose value is images: a place's Images (max 7) or its Logo (max 1).",
+      "Use State Full when the field holds max images, and Disabled when the form is read-only.",
+      "Use FileUpload alone for a file that is not an image, or that needs no preview or frame.",
+    ],
+    api: [
+      "Label maps to ImageField.label; State Disabled to disabled. Full is images.length === max.",
+      "max, accept (JPG and PNG by default), maxSize (bytes) and aspectRatio (16 / 9) are set in code; the hint under the drop zone is written from them.",
+      "onChange hands the product every change: a picked File, a URL, an alt text, a frame. Kozmos uploads nothing; the product uploads and crops.",
+      "A frame (crop) is a rectangle of the image in fractions of its width and height, never pixels.",
+    ],
+    properties: ["State: Default, Full, Disabled", "Label: text"],
+    accessibility: [
+      "The field is a group named by its label; its count is a polite live region.",
+      "The picker offers only the allowed types, and every pick or drop is checked again, with an error naming the file.",
+      "Remove, Preview and Frame are named for their image; focus moves to the next Remove when one goes.",
+      "Preview and the cropper are dialogs: Escape closes them and focus returns to the button that opened them.",
+      "The cropper is one tab stop: the arrow keys move the frame, plus and minus zoom, a pointer drags, and each change is said.",
+      "Every image has an editable alt text.",
+    ],
+  },
+  {
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    category: "Dashboard",
+    summary:
+      "MapEditToolbar is Pointr Cloud's map edit toolbar (CLOUD-UI-005): one part for its seven geometry toolbars, a card on the map of tools, actions and dividers, with one tool chosen at a time. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use it on the map while a geometry is drawn or edited, with the items the mode needs: the product decides which show.",
+      "Use a tool for a mode the map stays in (Draw, Adjust, Split) and an action for a step done once (Undo, Straighten, Clear).",
+      "Leave room above the card for the guidance strip (CLOUD-UI-006), which it does not draw.",
+    ],
+    api: [
+      "Mode is one of Cloud's seven toolbars, drawn with Cloud's items; in code the items are MapEditToolbar.items, the product's: tools, actions and dividers.",
+      "A chosen tool (the theme fill) is MapEditToolbar.value; a disabled item, at half strength, is an item's disabled.",
+      "Overflow True draws a 320 map, the items that do not fit behind More, from the end; in code the toolbar follows its width, and it is no prop.",
+      "JSON's GeoJSON field is MapEditToolbar.field, a labelled Input.",
+    ],
+    properties: [
+      "Mode: Create, Draw Polygon, Draw Circle, Draw Point, Geometry Set, JSON, Edit Existing",
+      "Overflow: False, True",
+    ],
+    accessibility: [
+      'In code it is one tab stop, role="toolbar", named by label: the arrow keys move between the items in the writing direction, and Home and End go to the ends.',
+      "Every item is named by its label; a tool says whether it is pressed (aria-pressed), and a disabled item is skipped.",
+      "A tooltip describes an item where it adds to the label, on hover and keyboard focus.",
+      "Nothing runs off a narrow map: what does not fit is in the More menu, a tool there a checkbox item.",
+    ],
+  },
+  {
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    category: "Dashboard",
+    summary:
+      'PropertyPicker is Pointr Cloud\'s "+ Add additional field" (CLOUD-UI-003): a subtle Button the width of its form that opens a search over the properties a product can add, each with its type, under Suggested and Others tabs while anything is suggested, and a Custom field action. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).',
+    usage: [
+      "Use under a form's fields to add one more property; pass only the properties not on the form yet.",
+      "Mark a property suggested for what is being edited (a Booth's five): the Suggested tab lists them, and Others never repeats them.",
+      "Use Combobox to choose a value for a field; this picker adds a field.",
+    ],
+    api: [
+      "State is what the popup shows: Closed, Open (every property), Suggested (with the tabs) and Empty (a search that finds nothing). In code it is open or not (open, defaultOpen); the rest follows from the data.",
+      "Label maps to PropertyPicker.label (default \"Add additional field\"), the button's words and the popup's name.",
+      "properties is { id, name, type, description?, suggested? }[], in the page's language; onSelect gets the property chosen, and onCustomField draws the Custom field action.",
+      "A row is the name over its type and description: Listbox's option description.",
+    ],
+    properties: ["State: Closed, Open, Suggested, Empty", "Label: text"],
+    accessibility: [
+      "The popup is a dialog named by the button's words; its search is labelled and has the focus as it opens.",
+      "ArrowDown moves from the search into the list, ArrowUp from its first row back; Enter or Space adds; typing in the list types in the search.",
+      "Escape empties the search, then closes the popup, one layer at a time, and the focus goes back to the button; so does a choice.",
+      "A search that finds nothing is said, from a status region; each row's type and description are part of the option, never behind a pointer.",
+    ],
+  },
+  {
+    componentName: "PropertyField",
+    componentSetName: "PropertyField",
+    category: "Dashboard",
+    summary:
+      "PropertyField is the frame every property of a Pointr Cloud item sits in (CLOUD-UI-004): a bordered group captioned with the property's name, an info button and a red trash that removes it. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use round each property an item carries in Pointr Cloud's add and edit panel, its editor in Content Slot.",
+      "Use Removable True when the property can be taken off the item; False for one it always has.",
+    ],
+    api: [
+      "Name maps to PropertyField.name, the caption and the group's accessible name.",
+      "Removable maps to PropertyField.onRemove: True draws the red trash, named Remove <name> (removeLabel).",
+      "The info button opens PropertyField.info, named About <name> (infoLabel); in code it is drawn only when info is given.",
+    ],
+    properties: ["Removable: True, False", "Name: text"],
+    accessibility: [
+      "In code the frame is a group named by its caption.",
+      "The info button is a toggletip: a click, Enter or Space opens it, so touch reaches it too.",
+      "Both buttons are named; Cloud's had no name.",
+    ],
+  },
+  {
+    componentName: "OpeningHoursEditor",
+    componentSetName: "OpeningHoursEditor",
+    category: "Dashboard",
+    summary:
+      "OpeningHoursEditor is Pointr Cloud's Opening Hours property editor (CLOUD-UI-004): the seven days, each Hours, Closed or Always open, with opening and closing times. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for an Opening Hours property, inside a PropertyField.",
+      "Use State Overnight to show a close before the open: the next day's, marked +1 day (decision 179).",
+      "Use State Mixed for a multi-selection whose days differ (GAP-153).",
+    ],
+    api: [
+      "Default is DEFAULT_OPENING_HOURS: Monday to Friday 08:00 to 22:00, the weekend closed.",
+      "Each day is a SegmentedControl (Hours, Closed, Always open) and, for Hours, two TimePickers stepping five minutes and carrying into the hour.",
+      "Mixed maps to mixedDays: those days choose nothing and say Multiple values.",
+    ],
+    properties: ["State: Default, Overnight, Mixed"],
+    accessibility: [
+      "Every control is a tab stop (Cloud's editor had none).",
+      "A day's choice is named by the day; its times are named <day> opening time and <day> closing time; +1 day describes the closing time.",
+    ],
+  },
+  {
+    componentName: "RatingEditor",
+    componentSetName: "RatingEditor",
+    category: "Dashboard",
+    summary:
+      "RatingEditor is Pointr Cloud's Rating property editor (CLOUD-UI-004, decision 180): the rating, its max and the number of ratings, checked against each other, and a preview of five stars with the exact numbers in words. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for a Rating property, inside a PropertyField.",
+      "Use State Error for a rating above its max (an error on both fields) and a count below 0.",
+      "Use State Mixed for a multi-selection whose ratings differ (GAP-153).",
+    ],
+    api: [
+      "Three NumberInputs: rating (one decimal, 0 or more), max (1 or more) and count (a whole number, 0 or more).",
+      "The preview is always five stars, the rating's share of its max rounded to the nearest half (decision 181), and its words carry the exact value: 4.3 of 5 · 120 ratings.",
+      "Stars is Rating's own Readonly instance at Value=4.5 where Figma's Rating has half values, 4 where it has whole values only.",
+    ],
+    properties: ["State: Default, Error, Mixed"],
+    accessibility: [
+      "In code each error is the field's own: aria-invalid, and described by its message.",
+      "The stars are hidden from assistive technology; the words are read.",
+    ],
+  },
+  {
+    componentName: "KeyValueList",
+    componentSetName: "KeyValueList",
+    category: "Dashboard",
+    summary:
+      "KeyValueList is Pointr Cloud's key–value list (CLOUD-UI-004, decision 178): repeatable rows of a name, a type (Text, JSON, Number, Boolean) and a value drawn for its type, with delete and Add field. A Dashboard module, React only, from @kozmos-ds/react/dashboard (decision 183).",
+    usage: [
+      "Use for custom fields and Extra Data, inside a PropertyField.",
+      "Use State Empty for a list with no rows yet, the add button alone.",
+      "Use State Mixed for a row whose value differs across a multi-selection (GAP-153).",
+    ],
+    api: [
+      "A row is a name (Input), a type (Select), a value (Input for Text and JSON, NumberInput for Number, Switch for Boolean) and a red trash.",
+      "Add field ends the list; changing a type carries the value over as far as it can.",
+    ],
+    properties: ["State: Default, Empty, Mixed"],
+    accessibility: [
+      "Every control is named for its row: Field 2 name, Field 2 type, Field 2 value, Remove Field 2.",
+      "Adding puts focus in the new row's name; deleting puts it in the next row's name, or on Add field.",
+    ],
+  },
+  {
     componentName: "DirectionStep",
     componentSetName: "DirectionStep",
     category: "Product / SDK",
@@ -2581,6 +3095,29 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    category: "Data display",
+    summary:
+      "PersonaMark draws a persona's colour as a small diamond beside its name; a group draws the personas a row is visible to (GAP-106).",
+    usage: [
+      "Use beside a persona's name: in a persona visibility list's checkbox labels, a persona menu or a tree row.",
+      "The colour is the persona's, product data: override the diamond's fill with it; no token holds it.",
+      "Use Group for the personas a row is visible to, in the order the product gives them.",
+    ],
+    api: [
+      "Form maps to the part: Single is <PersonaMark color={persona.color} />, Group is <PersonaMarkGroup personas={personas} />.",
+      "name, on a mark that stands alone, names it; label, on a group, is read before the personas' names.",
+    ],
+    properties: ["Form: Single, Group"],
+    accessibility: [
+      "In code a mark beside its name is hidden from assistive technology, so the name is read once.",
+      "A mark standing alone is an image named by the persona; a group is one image, read as its label and every name.",
+      "In forced colours the diamond is drawn in the text colour: the shape stays, and the persona is said by its name.",
+      "PersonaMark is non-interactive.",
+    ],
+  },
+  {
     componentName: "Skeleton",
     componentSetName: "Skeleton",
     category: "Feedback",
@@ -2716,17 +3253,55 @@ const COMPONENT_DOCS = [
       "Use Centered True for regular page sections and bounded reading layouts.",
       "Use Centered False when the layout should fill the available width.",
       "Keep Container focused on outer page structure; use Box or Card for local surfaces.",
+      "Use Block for a page region's own top and bottom space (GAP-116), rather than a Box around it.",
     ],
     api: [
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset: Window steps with the viewport, Panel holds 16.",
+      "Block maps to Container.block: None, Small 16, Medium 24, Large 32 above and below.",
       "Content Slot maps to Container children in Code Connect.",
       "Responsive breakpoints and max-width behavior remain runtime CSS concerns.",
     ],
-    properties: ["Centered: True, False", "Content Slot"],
+    properties: [
+      "Centered: True, False",
+      "Inset: Window, Panel",
+      "Block: None, Small, Medium, Large",
+      "Content Slot",
+    ],
     accessibility: [
       "Container is non-interactive unless composed around interactive children.",
       "Gutters and max-width should support readable line length without hiding content.",
       "Child controls must preserve their own semantic labels and focus states.",
+    ],
+  },
+  {
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    category: "Layout",
+    summary:
+      "PageHeader is the top of a page: a breadcrumb, the title with an info button, a description and the page's actions, on a tinted band (GAP-036, decision 135).",
+    usage: [
+      "Use one PageHeader at the top of every page: Home's band and a settings page's header are the same part.",
+      "Use Size Large for a landing page's title, Medium within a section.",
+      "Use Tone Default where the header sits on the page's own background.",
+    ],
+    api: [
+      "Tone maps to PageHeader.tone: Subtle is the theme 0 band, Default none.",
+      "Size maps to PageHeader.size: Medium is Heading 3 (24/32), Large Heading 2 (30/36).",
+      "Title Text maps to title; Description Text to description.",
+      "Breadcrumb, Info and Actions show the breadcrumb, info and actions React is given.",
+      "Its content takes Container's window inset and block inset, 32 above and 24 below (GAP-116).",
+    ],
+    properties: [
+      "Tone: Subtle, Default",
+      "Size: Medium, Large",
+      "Title Text, Description Text",
+      "Breadcrumb, Info, Description, Actions",
+    ],
+    accessibility: [
+      "In code the title is the page's one h1 at either size.",
+      "The info button names itself and is not part of the heading.",
+      "The actions follow the title and description in reading order.",
     ],
   },
   {
@@ -3322,6 +3897,60 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    category: "Data Display",
+    summary:
+      "ListItem's slots draw a row with a mark at the start, a title with an addon, a description, a meta line and one control at the end (GAP-195, decision 135): the Get started checklist row and the persona visibility row.",
+    usage: [
+      "Use inside a List for a checklist of tours, a list of personas to show, or any row with one control.",
+      "Leading holds a status mark, an icon or a persona's mark; Trailing holds one action, a Checkbox or a Switch.",
+      "Use Selected for a ticked row: it tints the row; the control still says it is checked.",
+    ],
+    api: [
+      "Title Text maps to title, Addon Text to titleAddon, Description Text to description, Meta Text to meta, Action Text to trailing's Button.",
+      "Leading maps to leading, a ListItemStatus; Show Leading, Show Title Addon, Show Description, Show Meta and Show Trailing show each slot.",
+      "Selected maps to selected.",
+    ],
+    properties: [
+      "Selected: False, True",
+      "Title Text, Addon Text, Description Text, Meta Text, Action Text",
+      "Show Leading, Show Title Addon, Show Description, Show Meta, Show Trailing",
+    ],
+    accessibility: [
+      "The status mark is read before the title, in words: Done, In progress, Not started.",
+      "The row is not pressable; its one control is.",
+      "The tint is drawn only: a ticked row's checkbox says it is checked.",
+    ],
+  },
+  {
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    category: "Data Display",
+    summary:
+      "SettingsRow is one setting in a List: a label, a description, its control at the end, where its value comes from (inherited or overridden, with Reset to default), and why it is disabled (GAP-040, decision 135).",
+    usage: [
+      "Use one row per setting on a settings page, in a List, which draws the dividers.",
+      "Use Inherited for a system value the site has not changed and Overridden for the site's own; Overridden offers Reset to default.",
+      "Use Disabled with Reason Text to say why a setting cannot change.",
+    ],
+    api: [
+      "Label Text maps to label, Description Text to description, Reason Text to disabledReason.",
+      "State maps to state (None is unset); Disabled maps to disabled.",
+      "The switch stands for the control prop: any Kozmos control goes there.",
+    ],
+    properties: [
+      "State: None, Inherited, Overridden",
+      "Disabled: False, True",
+      "Label Text, Description Text, Reason Text, Show Description",
+    ],
+    accessibility: [
+      "The label names the control; the description, the state and the reason are read with it.",
+      "Reset to default is a button; pressed, focus goes to the control.",
+      "A disabled row disables its control and offers no reset.",
+    ],
+  },
+  {
     componentName: "Table",
     componentSetName: "Table",
     category: "Data Display",
@@ -3393,6 +4022,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3429,6 +4059,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -3466,6 +4097,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
+      "Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -3557,13 +4189,17 @@ const COMPONENT_DOCS = [
       "Count maps to the number of TabsTrigger examples.",
       "Active maps to Tabs.defaultValue in Code Connect.",
       "State maps to disabled and focus examples for the generated triggers.",
+      "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them, a 56 trigger in a 64 list (GAP-152).",
       "Tab 1 Text through Tab 4 Text map to TabsTrigger children.",
+      "Tab 1 Icon through Tab 4 Icon map to each TabsTrigger.icon in Icon Over Label.",
     ],
     properties: [
       "Count: Two, Three, Four",
       "Active: One, Two, Three, Four",
       "State: Default, Focus, Disabled",
+      "Content: Label, Icon Over Label",
       "Tab 1 Text, Tab 2 Text, Tab 3 Text, Tab 4 Text, Focus Visible",
+      "Tab 1 Icon, Tab 2 Icon, Tab 3 Icon, Tab 4 Icon",
     ],
     accessibility: [
       "The tab list keeps a 44px outer interaction frame.",
@@ -3879,11 +4515,13 @@ const COMPONENT_DOCS = [
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when the Action content variant is used.",
+      'Close Always Visible maps to ToastClose visible="always"; off is the default, shown on hover or focus.',
     ],
     properties: [
       "Content: Basic, Action",
       "Tone: Neutral, Success, Info, Warning, Critical",
       "Title Text, Description Text, Action Text",
+      "Close Always Visible (boolean, on)",
     ],
     accessibility: [
       "Toast is non-modal status feedback and should use runtime live-region semantics.",
@@ -3906,12 +4544,13 @@ const COMPONENT_DOCS = [
       "Checked maps to Checkbox.checked.",
       "State maps to disabled and error props in Code Connect.",
       "Label Text maps to Checkbox.label.",
+      "Description Text and Show Description map to Checkbox.description (GAP-162).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "Checked: Unchecked, Checked",
       "State: Default, Disabled, Error",
-      "Label Text, Focus Visible",
+      "Label Text, Description Text, Show Description, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -3933,13 +4572,17 @@ const COMPONENT_DOCS = [
     api: [
       "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
       "State maps to disabled and error props in Code Connect.",
-      "Label Text maps to RadioGroupItem.label.",
+      "Variant maps to RadioGroupItem.variant: Default, Card and Tile (GAP-158).",
+      "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
+      "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
+      "Show Media shows a card's image or a tile's icon (RadioGroupItem.media).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "Checked: Unchecked, Checked",
       "State: Default, Disabled, Error",
-      "Label Text, Focus Visible",
+      "Variant: Default, Card, Tile",
+      "Label Text, Description Text, Show Description, Show Media, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -3961,12 +4604,14 @@ const COMPONENT_DOCS = [
       "Checked maps to Switch.checked.",
       "State maps to disabled and error props in Code Connect.",
       "Label Text maps to Switch.label.",
+      "Description Text and Show Description map to Switch.description (GAP-162).",
+      "Show State Label maps to Switch.showStateLabel (On or Off beside the track).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "Checked: Unchecked, Checked",
       "State: Default, Disabled, Error",
-      "Label Text, Focus Visible",
+      "Label Text, Description Text, Show Description, Show State Label, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -4305,6 +4950,30 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    category: "Forms",
+    summary:
+      "ImageCropper frames an image to an aspect ratio: the frame is the box, the image moves and scales under it, and the result is the frame as fractions of the image (GAP-273).",
+    usage: [
+      "Use to choose the part of an image a product keeps: a client's square logo (MAP-32), a cover at 16:9.",
+      "Put it in a Dialog with Apply and Cancel when the crop is a step; the cropper itself has no buttons but its zoom row.",
+      "Leave the zoom row out (Zoom Controls off) only where the product zooms another way; the keyboard still zooms.",
+    ],
+    api: [
+      "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9.",
+      "Zoom Controls maps to showZoomControls: Zoom out, the zoom Slider (100% to maxZoom) and Zoom in.",
+      "onCrop hands back { x, y, width, height }, each a fraction of the image's width or height, once the image loads and after every change; the product crops.",
+    ],
+    properties: ["Ratio: Square, Landscape", "Zoom Controls"],
+    accessibility: [
+      "The frame is one tab stop named by label, described by its instructions: the arrow keys move it by a tenth of itself, plus and minus zoom.",
+      "Each change is said in a polite live region: where the frame is and its zoom, in whole percentages.",
+      "A zoom button at its limit is unavailable, not disabled, so it keeps focus.",
+      "The arrows are physical in right to left too: an image does not mirror.",
+    ],
+  },
+  {
     componentName: "FileUpload",
     componentSetName: "FileUpload",
     category: "Forms",
@@ -4464,14 +5133,20 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option 1 Text through Option 3 Text map to SelectItem children.",
+      "Option 1 Count through Option 3 Count map to SelectItem.count, drawn as the neutral Counter; Show Counts shows them. Every row keeps the check's 16 at its end, so the counts form one column.",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Mixed",
       "Status: Default, Error",
+      "Content: Closed, Open",
       "Placeholder Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
+      "Option 1 Text, Option 2 Text, Option 3 Text",
+      "Option 1 Count, Option 2 Count, Option 3 Count, Show Counts",
     ],
     accessibility: [
       "Trigger height meets the 44px minimum target.",
@@ -5047,6 +5722,13 @@ const KOSMOS_ICON_DEFINITIONS = [
     description: "Show or preview.",
   },
   {
+    name: "crop-01",
+    figmaName: "crop-01",
+    category: "Editor",
+    componentKey: "fddad04e9391ca336ab6424463793db41ee7aaed",
+    description: "Frame an image to its aspect ratio (ImageField's cropper).",
+  },
+  {
     name: "feather",
     figmaName: "feather",
     category: "Editor",
@@ -5250,6 +5932,84 @@ const IMPORTER_UI_ICON_DEFINITIONS = [
     category: "Shapes",
     componentKey: "ff0eb2f124d6feedc853de839891884656c55adc",
     description: "Featured: Input's toggle action (GAP-154).",
+  },
+  {
+    name: "pentagon",
+    figmaName: "pentagon",
+    category: "Shapes",
+    componentKey: "8d9d6b316f3319c48c1c4823d225774e5fa6ad5b",
+    description: "Polygon: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "circle",
+    figmaName: "circle",
+    category: "Shapes",
+    componentKey: "ee738140892ec31187911104b2d52a84141e246d",
+    description: "Circle: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "code-02",
+    figmaName: "code-02",
+    category: "Development",
+    componentKey: "925bb167a3dade2a9c79fad8d3d30b0d964af92b",
+    description: "JSON: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "flip-forward",
+    figmaName: "flip-forward",
+    category: "Arrows",
+    componentKey: "a0368b09e64c0bd7aeeb628f6451193a1bc367bf",
+    description: "Redo: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "x-square",
+    figmaName: "x-square",
+    category: "General",
+    componentKey: "d0ab609a2235194914372fe989cd85c16d4a945f",
+    description: "Clear: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "refresh-ccw-01",
+    figmaName: "refresh-ccw-01",
+    category: "Arrows",
+    componentKey: "5bdbdf443e193e64782588e5f526bc2f15e6c074",
+    description: "Reset: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "transform",
+    figmaName: "transform",
+    category: "Editor",
+    componentKey: "112f170a30bfc3d5345b22f13697e27463ba3f60",
+    description: "Adjust: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "scissors-cut-01",
+    figmaName: "scissors-cut-01",
+    category: "Editor",
+    componentKey: "d5a4ac7378b48f55b57ae97615c356b7b6bc15b6",
+    description: "Cut-out: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "divider",
+    figmaName: "divider",
+    category: "Layout",
+    componentKey: "0c1791163fa3ae7c628b6f520a6eac68d6a2fe8c",
+    description: "Split: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "ruler",
+    figmaName: "ruler",
+    category: "Education",
+    componentKey: "42be600b2ea2060be05f8e10d7ec29b472f9ca3a",
+    description: "Straighten: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "dots-horizontal",
+    figmaName: "dots-horizontal",
+    category: "General",
+    componentKey: "4c3adc5d6e726fe219837c9bee42d022433d8074",
+    description:
+      "More, the overflow menu: MapEditToolbar's item (CLOUD-UI-005).",
   },
 ];
 /** Every Pointr icon the importer imports: the registry's, then the UI's. */
@@ -6863,6 +7623,32 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/label/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // Icon Over Label (GAP-152): a 20 icon 4 above the words, 6 above and
+  // below, so a trigger is 56 and the list, inside 4 all round, 64. Their own
+  // heights, so the Label variants keep 32 and 40.
+  {
+    name: "Tabs/list/height/stacked",
+    value: 64,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  { name: "Tabs/trigger/height/stacked", value: 56, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Tabs/trigger/padding/y",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Tabs/trigger/icon/size",
+    value: 20,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Tabs/trigger/icon/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   { name: "Checkbox/width/default", value: 176, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Checkbox/height/default",
@@ -7818,6 +8604,66 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   { name: "Kbd/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "Kbd/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
+  // GAP-106: React's PersonaMark, a 12 diamond, and a group's marks
+  // layout spacing 25 (2) apart.
+  { name: "PersonaMark/size", value: 12, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "PersonaMark/gap",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  // GAP-036: PageHeader. Its padding is Container's (Container/padding/x/window
+  // and Container/padding/y/large and medium, GAP-116); these are its own.
+  { name: "PageHeader/width/default", value: 960, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "PageHeader/breadcrumb/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/gap",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/title/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "PageHeader/text/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  // GAP-195: ListItem's slots, 12 between the mark, the body and the
+  // control (gap-3), the body's lines 2 apart, the title's addon 8 after it
+  // (gap-2), the status mark 20 (h-5 w-5).
+  {
+    name: "ListItem/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ListItem/body/gap",
+    value: 2,
+    alias: "Layout/spacing/25",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ListItem/heading/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  { name: "ListItem/status/size", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  // GAP-040: a settings row is drawn 560 wide, a settings page's column.
+  { name: "SettingsRow/width/default", value: 560, scopes: ["WIDTH_HEIGHT"] },
   { name: "Toast/width/default", value: 420, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Toast/padding",
@@ -8081,6 +8927,62 @@ const COMPONENT_FLOAT_TOKENS = [
     value: 20,
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
+  },
+  // Content=Open (GAP-164): the list SelectContent draws 4 under the trigger
+  // (translate-y-1), its rows Combobox's (owned-selection.css), so each
+  // carries Combobox's value and alias.
+  {
+    name: "Select/listbox/offset",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/padding",
+    value: POPOVER_ROW_INSET,
+    alias: spacingAliasFor(POPOVER_ROW_INSET),
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/gap",
+    value: 2,
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/listbox/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "Select/listbox/stroke/width",
+    value: 1,
+    alias: "Border Width/sm",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "Select/option/height",
+    value: 44,
+    alias: "Button/height/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "Select/option/padding/x",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/option/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Select/option/radius",
+    value: 4,
+    alias: "Radius/sm",
+    scopes: ["CORNER_RADIUS"],
   },
   {
     name: "Combobox/width/default",
@@ -8835,6 +9737,32 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "DatePicker/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-273: React's ImageCropper, a frame and its zoom row, gap-150 (12)
+  // apart, the zoom row's parts gap-100 (8) apart, the frame on the control
+  // radius. 320 wide as drawn; it fills its column in code.
+  {
+    name: "ImageCropper/width/default",
+    value: 320,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ImageCropper/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/zoom/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ImageCropper/radius",
+    value: KOZMOS_RADIUS.control,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
   {
     name: "FileUpload/width/default",
     value: 384,
@@ -9237,6 +10165,71 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Switch/track/stroke/width",
     scopes: ["STROKE_FLOAT"],
   },
+  // BrandLoader (CLOUD-UI-008): React's 120 box, the first ring at rest, 108,
+  // 6 thick (border-width lg + md, a sum no one variable holds), the second 4
+  // (border-width lg), and the 32 pin.
+  { name: "BrandLoader/size", value: 120, scopes: ["WIDTH_HEIGHT"] },
+  { name: "BrandLoader/ring/size", value: 108, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "BrandLoader/ring/stroke/width",
+    value: 6,
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "BrandLoader/ring/second/stroke/width",
+    value: 4,
+    alias: "Border Width/lg",
+    scopes: ["STROKE_FLOAT"],
+  },
+  { name: "BrandLoader/pin/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
+  // MapEditToolbar (CLOUD-UI-005, decisions 139 and 151): React's card, 60
+  // tall, padded 6 and 8, the Control corner; items 48 tall and at least 56
+  // wide (item/width is their minimum), 4 apart, corner 8; a 24 icon;
+  // dividers 32 tall with 4 of margin.
+  { name: "MapEditToolbar/height", value: 60, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "MapEditToolbar/padding/y",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "MapEditToolbar/radius",
+    value: 16,
+    alias: "Radius/Control",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "MapEditToolbar/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  { name: "MapEditToolbar/item/width", value: 56, scopes: ["WIDTH_HEIGHT"] },
+  { name: "MapEditToolbar/item/height", value: 48, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/item/radius",
+    value: 8,
+    scopes: ["CORNER_RADIUS"],
+  },
+  { name: "MapEditToolbar/icon/size", value: 24, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "MapEditToolbar/divider/height",
+    value: 32,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "MapEditToolbar/divider/margin",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   { name: "Avatar/size/default", value: 40, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Avatar/radius",
@@ -9632,6 +10625,25 @@ const COMPONENT_FLOAT_TOKENS = [
     name: "Container/padding/x/panel",
     value: 16,
     alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  // GAP-116: the block inset's steps, React's pt-4/pt-6/pt-8 and pb-*.
+  {
+    name: "Container/padding/y/small",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/y/medium",
+    value: 24,
+    alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Container/padding/y/large",
+    value: 32,
+    alias: "Layout/spacing/400",
     scopes: ["GAP"],
   },
   {
@@ -11247,7 +12259,8 @@ const SETS_THAT_OVERRIDE_INSIDE = {
   Counter: ["CategoryTile"],
   // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
   // each tinted again after the swap.
-  IconButton: ["TourStep", "Card"],
+  // PageHeader's Info: info-circle (GAP-036).
+  IconButton: ["TourStep", "Card", "PageHeader"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -11333,6 +12346,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Label", updateLabelComponent],
   ["Separator", updateSeparatorComponent],
   ["Kbd", updateKbdComponent],
+  ["PersonaMark", updatePersonaMarkComponent],
   ["MetaStrip", updateMetaStripComponent],
   ["Skeleton", updateSkeletonComponent],
   ["Box", updateBoxComponent],
@@ -11352,7 +12366,10 @@ const CORE_UPDATE_SEQUENCE = [
   ["Chip", updateChipComponent],
   ["SegmentedControl", updateSegmentedControlComponent],
   ["Card", updateCardComponent],
+  ["PageHeader", updatePageHeaderComponent],
   ["List", updateListComponent],
+  ["ListItem", updateListItemComponent],
+  ["SettingsRow", updateSettingsRowComponent],
   ["Table", updateTableComponent],
   ["Tabs", updateTabsComponent],
   ["Tooltip", updateTooltipComponent],
@@ -11376,6 +12393,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["DateRangePicker", updateDateRangePickerComponent],
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
+  ["ImageCropper", updateImageCropperComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -11408,7 +12426,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Timeline", updateTimelineComponent],
 ];
 
-// Every Product / SDK and platform set, in picker order, except that a set
+// Every Product / SDK, platform and Dashboard set, in picker order, except that a set
 // runs after any set it sets overrides inside (SETS_THAT_OVERRIDE_INSIDE):
 // CategoryTile before BrowseCategoriesPanel. These share the productSdkSlot /
 // productSdkControlButton / productSdkText helpers, so a change to any of them
@@ -11444,6 +12462,18 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["RouteProgressRail", updateRouteProgressRailComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
+  // Dashboard modules (decision 183) ride this run: they share no painter
+  // with Core, and a lane of one needs no button of its own.
+  ["BrandLoader", updateBrandLoaderComponent],
+  ["ImageField", updateImageFieldComponent],
+  ["MapEditToolbar", updateMapEditToolbarComponent],
+  ["PropertyPicker", updatePropertyPickerComponent],
+  // The property editors (CLOUD-UI-004). RatingEditor holds Rating's own
+  // read-only instance, which Core's run draws first.
+  ["PropertyField", updatePropertyFieldComponent],
+  ["OpeningHoursEditor", updateOpeningHoursEditorComponent],
+  ["RatingEditor", updateRatingEditorComponent],
+  ["KeyValueList", updateKeyValueListComponent],
 ];
 
 /**
@@ -11628,6 +12658,21 @@ function additionalComponentActionHandlers() {
     "build-kbd": buildKbdComponent,
     "update-kbd": updateKbdComponent,
     "rebuild-kbd": rebuildKbdComponent,
+    "build-persona-mark": buildPersonaMarkComponent,
+    "update-persona-mark": updatePersonaMarkComponent,
+    "rebuild-persona-mark": rebuildPersonaMarkComponent,
+    "build-page-header": buildPageHeaderComponent,
+    "update-page-header": updatePageHeaderComponent,
+    "rebuild-page-header": rebuildPageHeaderComponent,
+    "build-image-cropper": buildImageCropperComponent,
+    "update-image-cropper": updateImageCropperComponent,
+    "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-list-item": buildListItemComponent,
+    "update-list-item": updateListItemComponent,
+    "rebuild-list-item": rebuildListItemComponent,
+    "build-settings-row": buildSettingsRowComponent,
+    "update-settings-row": updateSettingsRowComponent,
+    "rebuild-settings-row": rebuildSettingsRowComponent,
     "build-context-menu": buildContextMenuComponent,
     "update-context-menu": updateContextMenuComponent,
     "rebuild-context-menu": rebuildContextMenuComponent,
@@ -11728,6 +12773,30 @@ function additionalComponentActionHandlers() {
     "build-feedback-card": buildFeedbackCardComponent,
     "update-feedback-card": updateFeedbackCardComponent,
     "rebuild-feedback-card": rebuildFeedbackCardComponent,
+    "build-brand-loader": buildBrandLoaderComponent,
+    "update-brand-loader": updateBrandLoaderComponent,
+    "rebuild-brand-loader": rebuildBrandLoaderComponent,
+    "build-image-field": buildImageFieldComponent,
+    "update-image-field": updateImageFieldComponent,
+    "rebuild-image-field": rebuildImageFieldComponent,
+    "build-map-edit-toolbar": buildMapEditToolbarComponent,
+    "update-map-edit-toolbar": updateMapEditToolbarComponent,
+    "rebuild-map-edit-toolbar": rebuildMapEditToolbarComponent,
+    "build-property-picker": buildPropertyPickerComponent,
+    "update-property-picker": updatePropertyPickerComponent,
+    "rebuild-property-picker": rebuildPropertyPickerComponent,
+    "build-property-field": buildPropertyFieldComponent,
+    "update-property-field": updatePropertyFieldComponent,
+    "rebuild-property-field": rebuildPropertyFieldComponent,
+    "build-opening-hours-editor": buildOpeningHoursEditorComponent,
+    "update-opening-hours-editor": updateOpeningHoursEditorComponent,
+    "rebuild-opening-hours-editor": rebuildOpeningHoursEditorComponent,
+    "build-rating-editor": buildRatingEditorComponent,
+    "update-rating-editor": updateRatingEditorComponent,
+    "rebuild-rating-editor": rebuildRatingEditorComponent,
+    "build-key-value-list": buildKeyValueListComponent,
+    "update-key-value-list": updateKeyValueListComponent,
+    "rebuild-key-value-list": rebuildKeyValueListComponent,
     "update-all-product-sdk": updateAllProductSdkComponents,
     "update-all-core": updateAllCoreComponents,
     "build-adaptive-map-shell": buildAdaptiveMapShellComponent,
@@ -12554,10 +13623,11 @@ async function buildSettingsExampleTemplate({
   panel.appendChild(
     await createExampleInstance({
       componentSetName: "Select",
-      variantProperties: {
-        State: "Default",
-        Status: "Default",
-      },
+      // The closed trigger; a file whose Select predates Content has only it.
+      variantProperties: [
+        { State: "Default", Status: "Default", Content: "Closed" },
+        { State: "Default", Status: "Default" },
+      ],
       name: "Default Building Select",
       textProperties: {
         "Placeholder Text": "Default building",
@@ -12581,7 +13651,8 @@ async function buildSettingsExampleTemplate({
         "Label Text": "Enable indoor positioning",
       },
       width: 260,
-      height: 44,
+      // At least 44 (React's min-h-11), taller with a description.
+      hugHeight: true,
       fonts,
       variableByName,
       stats,
@@ -13487,8 +14558,8 @@ async function buildKioskHandoffExampleTemplate({
       name: "Accessible Route Switch",
       textProperties: { "Label Text": "Step-free route" },
       width: 220,
-      // React's min-h-11 row.
-      height: 44,
+      // React's min-h-11 row at least, taller with a description.
+      hugHeight: true,
       fonts,
       variableByName,
       stats,
@@ -13925,6 +14996,25 @@ function applyExampleChildSizing(node, sizingMode) {
     setFixedChildSizing(node);
   } else if (sizingMode === "hug") {
     setHugChildSizing(node);
+  } else if (sizingMode === "fixed-width-hug") {
+    setFixedWidthHugChildSizing(node);
+  }
+}
+
+// A control as wide as asked and as tall as it draws: a Switch or Checkbox
+// whose Show Description grows it past 44 (GAP-162) is never clipped.
+function setFixedWidthHugChildSizing(node) {
+  setLayoutSizingHorizontal(node, "FIXED");
+  setLayoutSizingVertical(node, "HUG");
+  try {
+    node.layoutAlign = "INHERIT";
+  } catch (_error) {
+    // layoutAlign is unavailable on older plugin runtimes.
+  }
+  try {
+    node.layoutGrow = 0;
+  } catch (_error) {
+    // layoutGrow is unavailable on older plugin runtimes.
   }
 }
 
@@ -13941,6 +15031,9 @@ async function createExampleInstance({
   // that holds its own height (Navbar, a Button, a bar) hugs to its content.
   fixedHeight,
   growHorizontal,
+  // With width: that wide, and as tall as the part draws (a control whose
+  // description shows grows; GAP-162).
+  hugHeight,
   fonts,
   variableByName,
   stats,
@@ -14005,6 +15098,12 @@ async function createExampleInstance({
   }
 
   if (width && height) resizeNodeWithoutConstraints(instance, width, height);
+  if (hugHeight && width) {
+    resizeNodeWithoutConstraints(instance, width, instance.height || 44);
+    setExampleChildSizing(instance, "fixed-width-hug");
+    stats.instancesCreated += 1;
+    return instance;
+  }
   if (growHorizontal) {
     if (height) {
       setExampleChildSizing(instance, "horizontal-fill-fixed");
@@ -18139,10 +19238,12 @@ function shouldAuditLayoutBindings(name) {
       "Link",
       "Separator",
       "Kbd",
+      "PersonaMark",
       "Skeleton",
       "Box",
       "Stack",
       "Container",
+      "PageHeader",
       "Breadcrumb",
       "Pagination",
       "Accordion",
@@ -18157,6 +19258,8 @@ function shouldAuditLayoutBindings(name) {
       "SegmentedControl",
       "Card",
       "List",
+      "ListItem",
+      "SettingsRow",
       "TreeParentItem",
       "TreeChildItem",
       "TreeItem",
@@ -18465,6 +19568,47 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "BrandLoader") {
+    return {
+      Overlay: BRAND_LOADER_OVERLAY,
+    };
+  }
+
+  if (canonicalName === "ImageField") {
+    return {
+      State: IMAGE_FIELD_STATES,
+    };
+  }
+
+  if (canonicalName === "PropertyPicker") {
+    return {
+      State: PROPERTY_PICKER_STATES,
+    };
+  }
+
+  if (canonicalName === "PropertyField") {
+    return { Removable: PROPERTY_FIELD_REMOVABLE };
+  }
+
+  if (canonicalName === "OpeningHoursEditor") {
+    return { State: OPENING_HOURS_EDITOR_STATES };
+  }
+
+  if (canonicalName === "RatingEditor") {
+    return { State: RATING_EDITOR_STATES };
+  }
+
+  if (canonicalName === "KeyValueList") {
+    return { State: KEY_VALUE_LIST_STATES };
+  }
+
+  if (canonicalName === "MapEditToolbar") {
+    return {
+      Mode: MAP_EDIT_TOOLBAR_MODES,
+      Overflow: MAP_EDIT_TOOLBAR_OVERFLOW,
+    };
+  }
+
   if (canonicalName === "DirectionStep") {
     return {
       Type: DIRECTION_STEP_TYPES,
@@ -18565,6 +19709,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Centered: CONTAINER_CENTERED,
       Inset: CONTAINER_INSETS,
+      Block: CONTAINER_BLOCKS,
     };
   }
 
@@ -18749,6 +19894,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Count: TABS_COUNTS,
       Active: TABS_ACTIVE,
       State: TABS_STATES,
+      Content: TABS_CONTENT,
     };
   }
 
@@ -18845,6 +19991,32 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "ListItem") {
+    return {
+      Selected: LIST_ITEM_SELECTED,
+    };
+  }
+
+  if (canonicalName === "SettingsRow") {
+    return {
+      State: SETTINGS_ROW_STATES,
+      Disabled: SETTINGS_ROW_DISABLED,
+    };
+  }
+
+  if (canonicalName === "PageHeader") {
+    return {
+      Tone: PAGE_HEADER_TONES,
+      Size: PAGE_HEADER_SIZES,
+    };
+  }
+
+  if (canonicalName === "PersonaMark") {
+    return {
+      Form: PERSONA_MARK_FORMS,
+    };
+  }
+
   if (canonicalName === "Toast") {
     return {
       Content: TOAST_CONTENT,
@@ -18863,6 +20035,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Checked: RADIO_CHECKED,
       State: RADIO_STATES,
+      Variant: RADIO_VARIANTS,
     };
   }
 
@@ -18960,6 +20133,12 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "ImageCropper") {
+    return {
+      Ratio: IMAGE_CROPPER_RATIOS,
+    };
+  }
+
   if (canonicalName === "FileUpload") {
     return {
       State: FILE_UPLOAD_STATES,
@@ -19002,6 +20181,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       State: SELECT_STATES,
       Status: SELECT_STATUSES,
+      Content: SELECT_CONTENT,
     };
   }
 
@@ -19016,7 +20196,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Rating") {
     return {
       Scale: RATING_SCALES,
-      Value: RATING_VALUES,
+      Value: RATING_READONLY_STAR_VALUES,
       State: RATING_STATES,
     };
   }
@@ -24899,6 +26079,15 @@ function addComponentTextStyleSpecs(specs, fonts) {
   );
   addTextStyleSpec(
     specs,
+    "mapEditToolbarLabel",
+    "MapEditToolbar / Label",
+    fonts.medium,
+    11,
+    14,
+    "Typography contract for a map edit toolbar item's label: 11/14 medium, under its 24 icon (CLOUD-UI-005, decision 151).",
+  );
+  addTextStyleSpec(
+    specs,
     "navigationItem",
     "NavigationItem / Label",
     fonts.medium,
@@ -25602,6 +26791,9 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     if (/Count Text$/.test(textName)) return "counterSmall";
     return "treeSection";
   }
+  if (setName === "MapEditToolbar") {
+    return textName === "Field Text" ? "fieldText" : "mapEditToolbarLabel";
+  }
   if (setName === "Table") {
     if (/^Header \d+ Text$/.test(textName)) return "tableHeader";
     return "tableCell";
@@ -25620,6 +26812,16 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return "popoverDescription";
   }
   if (setName === "Kbd") return textStyleKeyForText("XS", "Medium");
+  if (setName === "PageHeader") {
+    if (textName === "Description Text")
+      return textStyleKeyForText("Small", "Normal");
+    const props = component && parsePageHeaderVariantName(component.name);
+    return textStyleKeyForHeading(
+      pageHeaderTitleMetrics(props ? props.second : "Medium").level,
+    );
+  }
+  if (setName === "ListItem" || setName === "SettingsRow")
+    return listItemTextStyleKey(textName);
   if (setName === "Menu" || setName === "ContextMenu") {
     if (textName === "Shortcut Text") return "menuShortcut";
     if (textName === "Label Text") return "menuItemStrong";
@@ -25630,6 +26832,18 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
     return "toastTitle";
   }
   if (setName === "Checkbox" || setName === "Radio" || setName === "Switch") {
+    // GAP-162: a description and Switch's state words are regular, 14/20;
+    // a tile's description is 12/16 (GAP-158). The label stays medium.
+    if (textName === "Description Text") {
+      const radioProps =
+        setName === "Radio" && component
+          ? parseRadioVariantName(component.name)
+          : null;
+      return radioProps && radioProps.variant === "Tile"
+        ? "fieldMeta"
+        : "fieldText";
+    }
+    if (textName === "State Label") return "fieldText";
     return "controlLabel";
   }
   if (
@@ -25658,7 +26872,8 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
       /Label Text$/.test(textName) ||
       /Month Text$/.test(textName) ||
       textName === "Required Mark" ||
-      textName === "Browse Text"
+      textName === "Browse Text" ||
+      (setName === "FileUpload" && textName === "Change Text")
     ) {
       return "fieldLabel";
     }
@@ -28059,12 +29274,13 @@ function bindTabsGeometryVariables(
   triggers,
   variableByName,
   stats,
+  stacked,
 ) {
   const widthToken = `Tabs/width/${String(count).toLowerCase()}`;
   bindSizeVariables(
     component,
     widthToken,
-    "Tabs/list/height",
+    stacked ? "Tabs/list/height/stacked" : "Tabs/list/height",
     variableByName,
     stats,
   );
@@ -28115,10 +29331,33 @@ function bindTabsGeometryVariables(
     bindFloatVariable(
       trigger,
       "height",
-      "Tabs/trigger/height",
+      stacked ? "Tabs/trigger/height/stacked" : "Tabs/trigger/height",
       variableByName,
       stats,
     );
+    if (stacked) {
+      bindFloatVariable(
+        trigger,
+        "paddingTop",
+        "Tabs/trigger/padding/y",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        trigger,
+        "paddingBottom",
+        "Tabs/trigger/padding/y",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        trigger,
+        "itemSpacing",
+        "Tabs/trigger/icon/gap",
+        variableByName,
+        stats,
+      );
+    }
     bindFloatVariable(
       trigger,
       "paddingLeft",
@@ -29579,7 +30818,90 @@ function bindSelectGeometryVariables(
   icon,
   variableByName,
   stats,
+  listbox,
 ) {
+  if (listbox) {
+    bindFloatVariable(
+      component,
+      "itemSpacing",
+      "Select/listbox/offset",
+      variableByName,
+      stats,
+    );
+    for (const field of [
+      "paddingLeft",
+      "paddingRight",
+      "paddingTop",
+      "paddingBottom",
+    ]) {
+      bindFloatVariable(
+        listbox,
+        field,
+        "Select/listbox/padding",
+        variableByName,
+        stats,
+      );
+    }
+    bindFloatVariable(
+      listbox,
+      "itemSpacing",
+      "Select/listbox/gap",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      listbox,
+      "cornerRadius",
+      "Select/listbox/radius",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      listbox,
+      "strokeWeight",
+      "Select/listbox/stroke/width",
+      variableByName,
+      stats,
+    );
+    for (const option of listbox.children) {
+      bindFloatVariable(
+        option,
+        "height",
+        "Select/option/height",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "paddingLeft",
+        "Select/option/padding/x",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "paddingRight",
+        "Select/option/padding/x",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "itemSpacing",
+        "Select/option/gap",
+        variableByName,
+        stats,
+      );
+      bindFloatVariable(
+        option,
+        "cornerRadius",
+        "Select/option/radius",
+        variableByName,
+        stats,
+      );
+    }
+  }
+
   bindFloatVariable(
     component,
     "width",
@@ -33227,7 +34549,7 @@ async function buildContainerComponent() {
     axisName: "Centered",
     values: CONTAINER_CENTERED,
     axis2Name: "Inset",
-    axis2Values: CONTAINER_INSETS,
+    axis2Values: CONTAINER_INSET_BLOCKS,
     yStep: 180,
     x: 80,
     y: 11380,
@@ -33237,6 +34559,7 @@ async function buildContainerComponent() {
     description: [
       "Kozmos Container component set generated from React Container API.",
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset; Block to Container.block (GAP-116).",
       "Content Slot maps to children in Code Connect.",
       "Responsive padding and max-width behavior remain runtime CSS concerns.",
     ],
@@ -33250,7 +34573,7 @@ async function updateContainerComponent() {
     axisName: "Centered",
     values: CONTAINER_CENTERED,
     axis2Name: "Inset",
-    axis2Values: CONTAINER_INSETS,
+    axis2Values: CONTAINER_INSET_BLOCKS,
     yStep: 180,
     xStep: 560,
     createVariant: createContainerVariant,
@@ -33260,6 +34583,7 @@ async function updateContainerComponent() {
     description: [
       "Kozmos Container component set generated from React Container API.",
       "Centered maps to Container.centered.",
+      "Inset maps to Container.inset; Block to Container.block (GAP-116).",
       "Content Slot maps to children in Code Connect.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -34472,6 +35796,7 @@ async function buildTabsComponent() {
       count: combination.count,
       active: combination.active,
       state: combination.state,
+      content: combination.content,
       variableByName,
       fonts,
       stats,
@@ -34492,7 +35817,9 @@ async function buildTabsComponent() {
     "Count maps to the number of TabsTrigger examples.",
     "Active maps to Tabs.defaultValue.",
     "State maps to disabled and focus examples.",
+    "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them (GAP-152).",
     "Tab text properties map to TabsTrigger children.",
+    "Tab 1 Icon through Tab 4 Icon swap each trigger's icon in Icon Over Label.",
   ]);
   clearComponentSetContainerFill(componentSet);
   layoutTabsVariants(componentSet);
@@ -34506,7 +35833,7 @@ async function buildTabsComponent() {
     expectedVariantAxesForComponentSetName(componentSet.name),
     stats,
   );
-  configureTabsProperties(componentSet, stats);
+  await configureTabsProperties(componentSet, stats, variableByName);
   return stats;
 }
 
@@ -34516,7 +35843,7 @@ async function updateTabsComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
-    variantsMissing: 0,
+    variantsCreated: 0,
     warnings: [],
   };
 
@@ -34545,7 +35872,9 @@ async function updateTabsComponent() {
     "Count maps to the number of TabsTrigger examples.",
     "Active maps to Tabs.defaultValue.",
     "State maps to disabled and focus examples.",
+    "Content maps to TabsTrigger.icon: Label draws the words alone; Icon Over Label stacks a 20 icon 4 above them (GAP-152).",
     "Tab text properties map to TabsTrigger children.",
+    "Tab 1 Icon through Tab 4 Icon swap each trigger's icon in Icon Over Label.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -34559,11 +35888,14 @@ async function updateTabsComponent() {
       continue;
     }
 
-    seenKeys[`${props.count}/${props.active}/${props.state}`] = true;
+    // A variant drawn before the Content axis parses as Label and is renamed
+    // in place, so the node ids Code Connect and instances pin survive.
+    seenKeys[tabsVariantKey(props)] = true;
     await updateTabsVariant(child, {
       count: props.count,
       active: props.active,
       state: props.state,
+      content: props.content,
       variableByName,
       fonts,
       stats,
@@ -34572,11 +35904,21 @@ async function updateTabsComponent() {
   }
 
   for (const combination of tabsVariantCombinations()) {
-    const key = `${combination.count}/${combination.active}/${combination.state}`;
-    if (!seenKeys[key]) {
-      stats.variantsMissing += 1;
-      stats.warnings.push(`Missing Tabs variant ${key}.`);
-    }
+    const key = tabsVariantKey(combination);
+    if (seenKeys[key]) continue;
+
+    const component = await createTabsVariant({
+      count: combination.count,
+      active: combination.active,
+      state: combination.state,
+      content: combination.content,
+      variableByName,
+      fonts,
+      stats,
+    });
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
 
   layoutTabsVariants(existing);
@@ -34588,7 +35930,7 @@ async function updateTabsComponent() {
     expectedVariantAxesForComponentSetName(existing.name),
     stats,
   );
-  configureTabsProperties(existing, stats);
+  await configureTabsProperties(existing, stats, variableByName);
   return stats;
 }
 
@@ -34910,6 +36252,46 @@ async function updateKbdComponent() {
   });
 }
 
+// GAP-106: PersonaMark, a persona's colour as a diamond. Form is one mark or
+// a group's row of them.
+const PERSONA_MARK_DESCRIPTION = [
+  "Kozmos PersonaMark component set generated from React PersonaMark API.",
+  "Form maps to one persona's mark (PersonaMark) or a group's (PersonaMarkGroup).",
+  "The diamond's fill is the persona's colour, product data: override it.",
+];
+
+async function buildPersonaMarkComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    axisName: "Form",
+    values: PERSONA_MARK_FORMS,
+    x: 80,
+    y: 7260,
+    xStep: 120,
+    createVariant: createPersonaMarkVariant,
+    configureProperties: configurePersonaMarkProperties,
+    description: PERSONA_MARK_DESCRIPTION,
+  });
+}
+
+async function updatePersonaMarkComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    axisName: "Form",
+    values: PERSONA_MARK_FORMS,
+    xStep: 120,
+    createVariant: createPersonaMarkVariant,
+    updateVariant: updatePersonaMarkVariant,
+    parseVariantName: parsePersonaMarkVariantName,
+    configureProperties: configurePersonaMarkProperties,
+    description: PERSONA_MARK_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
 async function buildCheckboxComponent() {
   const stats = {
     created: false,
@@ -34970,6 +36352,7 @@ async function buildCheckboxComponent() {
     "Checked maps to Checkbox.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Checkbox.label.",
+    "Description Text and Show Description map to Checkbox.description (GAP-162).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -34985,6 +36368,7 @@ async function buildCheckboxComponent() {
   );
   configureLabelTextProperty(componentSet, "Checkbox", stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureControlDescriptionProperties(componentSet, stats);
   return stats;
 }
 
@@ -35023,6 +36407,7 @@ async function updateCheckboxComponent() {
     "Checked maps to Checkbox.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Checkbox.label.",
+    "Description Text and Show Description map to Checkbox.description (GAP-162).",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -35069,6 +36454,7 @@ async function updateCheckboxComponent() {
   );
   configureLabelTextProperty(existing, "Checkbox", stats);
   configureFocusVisibleProperty(existing, stats);
+  configureControlDescriptionProperties(existing, stats);
   return stats;
 }
 
@@ -35102,26 +36488,17 @@ async function buildRadioComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  let index = 0;
-  for (const checked of RADIO_CHECKED) {
-    for (const state of RADIO_STATES) {
-      const component = await createRadioVariant({
-        checked,
-        state,
-        variableByName,
-        fonts,
-        stats,
-      });
-      component.x = (index % 3) * 220;
-      component.y = Math.floor(index / 3) * 88;
-      page.appendChild(component);
-      components.push(component);
-      index += 1;
-    }
+  for (const props of radioVariantCombinations()) {
+    const component = await createRadioVariant(
+      Object.assign({ variableByName, fonts, stats }, props),
+    );
+    page.appendChild(component);
+    components.push(component);
   }
 
   const componentSet = figma.combineAsVariants(components, page);
   componentSet.name = "Radio";
+  layoutRadioVariants(componentSet);
   componentSet.x = 80;
   componentSet.y = 1900;
   componentSet.setSharedPluginData(RUN_NAMESPACE, "kind", "component-set");
@@ -35129,9 +36506,12 @@ async function buildRadioComponent() {
   componentSet.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
   applyComponentSetDescription(componentSet, "Radio", false, [
     "Kozmos Radio component set generated from React RadioGroupItem API.",
+    "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
     "State maps to disabled/error props in Code Connect.",
-    "Label Text maps to RadioGroupItem.label.",
+    "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
+    "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
+    "Show Media shows a card's image or a tile's icon, RadioGroupItem.media.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -35147,6 +36527,7 @@ async function buildRadioComponent() {
   );
   configureLabelTextProperty(componentSet, "Radio", stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureControlDescriptionProperties(componentSet, stats);
   return stats;
 }
 
@@ -35164,6 +36545,7 @@ async function updateRadioComponent() {
   await figma.setCurrentPageAsync(page);
   await page.loadAsync();
 
+  stats.variantsCreated = 0;
   removeStaleGeneratedComponentArtifacts(page, "Radio", stats);
 
   const existing = findComponentSetOnPage(page, "Radio");
@@ -35182,9 +36564,12 @@ async function updateRadioComponent() {
   existing.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
   applyComponentSetDescription(existing, "Radio", true, [
     "Kozmos Radio component set generated from React RadioGroupItem API.",
+    "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
     "State maps to disabled/error props in Code Connect.",
-    "Label Text maps to RadioGroupItem.label.",
+    "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
+    "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
+    "Show Media shows a card's image or a tile's icon, RadioGroupItem.media.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -35200,26 +36585,26 @@ async function updateRadioComponent() {
       continue;
     }
 
-    seenKeys[`${props.checked}/${props.state}`] = true;
-    await updateRadioVariant(child, {
-      checked: props.checked,
-      state: props.state,
-      variableByName,
-      fonts,
-      stats,
-    });
+    seenKeys[radioVariantKey(props)] = true;
+    await updateRadioVariant(
+      child,
+      Object.assign({ variableByName, fonts, stats }, props),
+    );
     stats.variantsUpdated += 1;
   }
 
-  for (const checked of RADIO_CHECKED) {
-    for (const state of RADIO_STATES) {
-      const key = `${checked}/${state}`;
-      if (!seenKeys[key]) {
-        stats.variantsMissing += 1;
-        stats.warnings.push(`Missing Radio variant ${key}.`);
-      }
-    }
+  // The cards and tiles (GAP-158) a set from before the Variant axis lacks.
+  for (const props of radioVariantCombinations()) {
+    const key = radioVariantKey(props);
+    if (seenKeys[key]) continue;
+    const component = await createRadioVariant(
+      Object.assign({ variableByName, fonts, stats }, props),
+    );
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
+  layoutRadioVariants(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -35231,6 +36616,7 @@ async function updateRadioComponent() {
   );
   configureLabelTextProperty(existing, "Radio", stats);
   configureFocusVisibleProperty(existing, stats);
+  configureControlDescriptionProperties(existing, stats);
   return stats;
 }
 
@@ -35294,6 +36680,8 @@ async function buildSwitchComponent() {
     "Checked maps to Switch.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
+    "Description Text and Show Description map to Switch.description (GAP-162).",
+    "Show State Label maps to Switch.showStateLabel: On or Off beside the track.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -35309,6 +36697,7 @@ async function buildSwitchComponent() {
   );
   configureLabelTextProperty(componentSet, "Switch", stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureControlDescriptionProperties(componentSet, stats);
   return stats;
 }
 
@@ -35347,6 +36736,8 @@ async function updateSwitchComponent() {
     "Checked maps to Switch.checked.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
+    "Description Text and Show Description map to Switch.description (GAP-162).",
+    "Show State Label maps to Switch.showStateLabel: On or Off beside the track.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -35393,6 +36784,7 @@ async function updateSwitchComponent() {
   );
   configureLabelTextProperty(existing, "Switch", stats);
   configureFocusVisibleProperty(existing, stats);
+  configureControlDescriptionProperties(existing, stats);
   return stats;
 }
 
@@ -37915,7 +39307,8 @@ async function buildFileUploadComponent() {
           fonts,
           stats,
         });
-        component.x = statusIndex * 880 + contentIndex * 440;
+        component.x =
+          statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
         component.y = stateIndex * 390;
         page.appendChild(component);
         components.push(component);
@@ -37934,7 +39327,7 @@ async function buildFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -37989,7 +39382,7 @@ async function updateFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    "Content maps to drop-zone and selected-file list anatomy examples.",
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -38388,18 +39781,23 @@ async function buildSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
+    types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     x: 80,
     y: 3280,
     xStep: 360,
     yStep: 96,
+    layoutVariants: layoutSelectVariants,
     createVariant: createSelectVariant,
     configureProperties: configureSelectProperties,
     description: [
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
     ],
   });
@@ -38411,8 +39809,11 @@ async function updateSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
+    types: SELECT_CONTENT,
+    includeVariant: selectVariantIsGenerated,
     xStep: 360,
     yStep: 96,
+    layoutVariants: layoutSelectVariants,
     createVariant: createSelectVariant,
     updateVariant: updateSelectVariant,
     parseVariantName: parseSelectVariantName,
@@ -38422,8 +39823,10 @@ async function updateSelectComponent() {
       "Kozmos SelectTrigger component set generated from React Select API.",
       "State maps to focus and disabled props in Code Connect.",
       "Status maps to SelectTrigger.error in Code Connect.",
+      "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
       "Placeholder Text maps to SelectValue.placeholder.",
+      "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
@@ -38530,6 +39933,11 @@ async function buildStateStatusComponent(config) {
       const status = config.statuses[statusIndex];
       for (let typeIndex = 0; typeIndex < types.length; typeIndex += 1) {
         const type = types[typeIndex];
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
         const component = await config.createVariant({
           state,
           status,
@@ -38564,6 +39972,7 @@ async function buildStateStatusComponent(config) {
     config.description,
   );
   clearComponentSetContainerFill(componentSet);
+  if (config.layoutVariants) config.layoutVariants(componentSet);
 
   stats.created = true;
   stats.componentSetId = componentSet.id;
@@ -38643,6 +40052,18 @@ async function updateStateStatusComponent(config) {
 
     const type = props.type || null;
     seenKeys[stateStatusComponentKey(props.state, props.status, type)] = true;
+    if (
+      config.includeVariant &&
+      !config.includeVariant(props.state, props.status, type)
+    ) {
+      // A combination the set no longer generates, drawn by an earlier run.
+      // Kept and redrawn, never removed: instances and Code Connect may pin
+      // it. Delete it by hand once nothing uses it.
+      stats.variantsNotGenerated = (stats.variantsNotGenerated || 0) + 1;
+      stats.warnings.push(
+        `${config.componentName} variant "${child.name}" is no longer generated; kept and updated. Delete it by hand once no instance uses it.`,
+      );
+    }
     await config.updateVariant(child, {
       state: props.state,
       status: props.status,
@@ -38659,6 +40080,11 @@ async function updateStateStatusComponent(config) {
       for (const type of types) {
         const key = stateStatusComponentKey(state, status, type);
         if (seenKeys[key]) continue;
+        if (
+          config.includeVariant &&
+          !config.includeVariant(state, status, type)
+        )
+          continue;
 
         const component = await config.createVariant({
           state,
@@ -38675,7 +40101,11 @@ async function updateStateStatusComponent(config) {
     }
   }
 
-  layoutStateStatusVariants(existing, config);
+  if (config.layoutVariants) {
+    config.layoutVariants(existing);
+  } else {
+    layoutStateStatusVariants(existing, config);
+  }
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -40826,6 +42256,8 @@ function treeIconNodesForBinding(root) {
       (node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
         "tree-disclosure-icon" ||
         node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
+          TREE_DISCLOSURE_END.iconKind ||
+        node.getSharedPluginData(RUN_NAMESPACE, "kind") ===
           "icon-slot-instance")
     ) {
       icons.push(node);
@@ -41027,6 +42459,12 @@ async function syncTreeRowNode(
   setFixedChildSizing(chevron);
   iconNodes.push(chevron);
 
+  // GAP-277: Checkbox's box before the leading icon, hidden until Checkable.
+  const checkbox = await createTreeCheckbox(row, variableByName, stats);
+  rowNode.appendChild(checkbox);
+  setFixedChildSizing(checkbox);
+  checkbox.visible = false;
+
   const typeIcon = await createFixedIconInstance(
     row.iconName || (row.expandable ? "map-01" : "marker-pin-01"),
     row.selected ? "Colors/theme/600" : "Colors/foreground/400",
@@ -41131,6 +42569,17 @@ async function syncTreeRowNode(
     setHugChildSizing(actions.node);
     for (const icon of actions.iconNodes) iconNodes.push(icon);
   }
+
+  // GAP-277: the disclosure at the row's end, after its actions, hidden
+  // until Disclosure End.
+  const endDisclosure = await createTreeEndDisclosure(
+    row,
+    variableByName,
+    stats,
+  );
+  rowNode.appendChild(endDisclosure);
+  setFixedChildSizing(endDisclosure);
+  endDisclosure.visible = false;
 
   setLayoutSizingVertical(rowNode, "HUG");
 
@@ -41538,6 +42987,97 @@ async function createTreeChevron(row, variableByName, stats) {
     : "Disclosure Icon";
   chevron.setSharedPluginData(RUN_NAMESPACE, "kind", "tree-disclosure-icon");
   return chevron;
+}
+
+/**
+ * Checkbox's box (GAP-277), as React's checkable row draws it: 20 square,
+ * radius marker, a 1px Border/Input edge; inside it Checkbox Checked, the
+ * theme fill with its own edge and the check mark in the theme foreground
+ * (decision 59), hidden until Checked shows it.
+ */
+async function createTreeCheckbox(row, variableByName, stats) {
+  const box = figma.createFrame();
+  box.name = TREE_CHECKBOX.name;
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(20, 20);
+  box.cornerRadius = KOZMOS_RADIUS.marker;
+  box.clipsContent = false;
+  box.fills = [];
+  box.strokes = [
+    paintFromVariable(
+      TREE_CHECKBOX.stroke,
+      TREE_CHECKBOX.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  box.strokeWeight = 1;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_CHECKBOX.kind);
+
+  const checked = figma.createFrame();
+  checked.name = TREE_CHECKBOX_CHECKED.name;
+  checked.layoutMode = "NONE";
+  checked.resizeWithoutConstraints(20, 20);
+  checked.x = 0;
+  checked.y = 0;
+  checked.cornerRadius = KOZMOS_RADIUS.marker;
+  checked.clipsContent = false;
+  checked.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  checked.strokeWeight = 1;
+  checked.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    TREE_CHECKBOX_CHECKED.kind,
+  );
+
+  const mark = await createFixedIconInstance(
+    "check",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    16,
+    "Tree/icon/size",
+  );
+  mark.name = TREE_CHECKBOX_CHECKED.markName;
+  checked.appendChild(mark);
+  mark.x = 2;
+  mark.y = 2;
+  box.appendChild(checked);
+  checked.visible = false;
+  return box;
+}
+
+/**
+ * The disclosure at the row's end (GAP-277): the row's chevron, or on a row
+ * with no children the empty 16 one would take.
+ */
+async function createTreeEndDisclosure(row, variableByName, stats) {
+  const node = await createTreeChevron(row, variableByName, stats);
+  node.name = TREE_DISCLOSURE_END.name;
+  node.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    row.expandable
+      ? TREE_DISCLOSURE_END.iconKind
+      : TREE_DISCLOSURE_END.spacerKind,
+  );
+  return node;
 }
 
 // --- TreeSection ---------------------------------------------------------------
@@ -44592,7 +46132,68 @@ async function configureTreeItemProperties(
   configureTreeActionVisibilityProperties(componentSet, stats);
   configureTreeDividedProperty(componentSet, stats);
   configureTreeMetaProperties(componentSet, stats);
+  configureTreeCheckableProperties(componentSet, stats);
   await configureTreeItemIconSlots(componentSet, variableByName, stats);
+}
+
+/**
+ * Checkable and Checked, booleans off by default, showing each row's
+ * Checkbox and its checked fill; Disclosure Start, on, and Disclosure End,
+ * off, showing the disclosure before the label and at the row's end
+ * (GAP-277). With all four at their defaults an instance draws as it did
+ * before any existed.
+ */
+function configureTreeCheckableProperties(componentSet, stats) {
+  const bindings = [
+    [
+      TREE_CHECKABLE_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX.kind,
+    ],
+    [
+      TREE_CHECKED_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX_CHECKED.kind,
+    ],
+    // The start disclosure is a row's own child, as drawn before GAP-277.
+    [
+      TREE_DISCLOSURE_START_PROPERTY_NAME,
+      true,
+      (node) =>
+        node.parent &&
+        node.parent.type === "COMPONENT" &&
+        (generatedKind(node) === "tree-disclosure-icon" ||
+          generatedKind(node) === "tree-icon-spacer"),
+    ],
+    [
+      TREE_DISCLOSURE_END_PROPERTY_NAME,
+      false,
+      (node) =>
+        generatedKind(node) === TREE_DISCLOSURE_END.iconKind ||
+        generatedKind(node) === TREE_DISCLOSURE_END.spacerKind,
+    ],
+  ];
+  stats.treeCheckableBindings = {};
+  for (const [name, defaultValue, matches] of bindings) {
+    const propertyName = ensureBooleanProperty(
+      componentSet,
+      name,
+      defaultValue,
+      stats,
+    );
+    if (!propertyName) continue;
+    let boundCount = 0;
+    (function walk(node) {
+      if (matches(node)) {
+        bindVisibilityProperty(node, propertyName, stats);
+        boundCount += 1;
+      }
+      if (node.children) {
+        for (const child of node.children) walk(child);
+      }
+    })(componentSet);
+    stats.treeCheckableBindings[name] = boundCount;
+  }
 }
 
 /**
@@ -45557,6 +47158,46 @@ function configureSelectProperties(componentSet, stats) {
   configurePlaceholderTextProperty(componentSet, "Select an option", stats);
   configureResetMixedProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  // Content=Open's rows (GAP-164).
+  for (let index = 0; index < SELECT_OPTION_DEFAULTS.length; index += 1) {
+    const text = `Option ${index + 1} Text`;
+    const count = `Option ${index + 1} Count`;
+    configureNamedTextProperty(
+      componentSet,
+      text,
+      text,
+      SELECT_OPTION_DEFAULTS[index].text,
+      stats,
+    );
+    configureNamedTextProperty(
+      componentSet,
+      count,
+      count,
+      SELECT_OPTION_DEFAULTS[index].count,
+      stats,
+    );
+  }
+  const showCounts = ensureBooleanProperty(
+    componentSet,
+    "Show Counts",
+    true,
+    stats,
+  );
+  if (!showCounts) return;
+  let boundCount = 0;
+  (function walk(node) {
+    if (
+      node.type === "FRAME" &&
+      sharedPluginDataValue(node, RUN_NAMESPACE, "kind") === "option-count"
+    ) {
+      bindVisibilityProperty(node, showCounts, stats);
+      boundCount += 1;
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  })(componentSet);
+  stats.selectCountVisibilityBindings = boundCount;
 }
 
 function configureFormFieldProperties(componentSet, stats) {
@@ -45989,6 +47630,14 @@ function configureFileUploadProperties(componentSet, stats) {
     "2.4 MB",
     stats,
   );
+  // GAP-270: Content=Preview's Change button, React's `changeLabel`.
+  configureNamedTextProperty(
+    componentSet,
+    "Change Text",
+    "Change Text",
+    "Change",
+    stats,
+  );
   configureHelperTextProperty(componentSet, "Upload a PDF or image.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
@@ -46148,7 +47797,7 @@ async function buildRatingComponent() {
       // Thumbs has no third, fourth or fifth value: the set skips them rather
       // than drawing variants that mean nothing, as Stepper skips a Current
       // past its Count.
-      for (const value of ratingValuesForScale(scale)) {
+      for (const value of ratingValuesForScale(scale, state)) {
         const component = await createRatingVariant({
           scale,
           value,
@@ -46174,7 +47823,7 @@ async function buildRatingComponent() {
     "Kozmos Rating component set generated from React Rating API.",
     "Scale maps to Rating.variant: Stars is the ordinal scale, Thumbs is a choice of two.",
     "Value maps to Rating.value in Code Connect. 0 is unanswered; on Thumbs 1 is down and 2 is up.",
-    "State maps to Rating.readOnly.",
+    "State maps to Rating.readOnly. A read-only star rating also takes the halves, 0.5 to 4.5: a score to the nearest half.",
     "Max is fixed to five on the Stars scale.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -46226,7 +47875,7 @@ async function updateRatingComponent() {
   applyComponentSetDescription(existing, "Rating", true, [
     "Kozmos Rating component set generated from React Rating API.",
     "Value maps to Rating.value in Code Connect.",
-    "State maps to Rating.readOnly.",
+    "State maps to Rating.readOnly. A read-only star rating also takes the halves, 0.5 to 4.5: a score to the nearest half.",
     "Max is fixed to five for the Core component.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -46262,7 +47911,7 @@ async function updateRatingComponent() {
 
   for (const scale of RATING_SCALES) {
     for (const state of RATING_STATES) {
-      for (const value of ratingValuesForScale(scale)) {
+      for (const value of ratingValuesForScale(scale, state)) {
         const key = `${scale}/${value}/${state}`;
         if (seenKeys[key]) continue;
 
@@ -46740,6 +48389,7 @@ async function buildToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
     ],
   });
 }
@@ -46765,6 +48415,7 @@ async function updateToastComponent() {
       "Title Text maps to ToastTitle children.",
       "Description Text maps to ToastDescription children.",
       "Action Text maps to ToastAction children when present.",
+      'Close Always Visible maps to ToastClose visible="always"; off, the close shows on hover or focus (GAP-268).',
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -55098,6 +56749,2342 @@ async function rebuildFeedbackCardComponent() {
   });
 }
 
+// --- BrandLoader (Dashboard) -----------------------------------------------
+
+// Pointr Cloud's brand loader (CLOUD-UI-008, decisions 133, 176 and 183), as
+// React's BrandLoader and packages/styles/src/dashboard/brand-loader.css draw
+// it. A Figma frame cannot ripple, so the set draws the still state, the one
+// reduced motion draws: the first ring at rest round the pin, 108 and 6 thick,
+// and no second ring. A mid-ripple frame would be a moment the code never
+// holds, and a designer would read its size and fade as the design. The
+// second ring is kept as a hidden layer at its ripple's start, 40 and 4
+// thick, so the set carries both rings' strokes and a designer who shows it
+// sees where the ripple begins. The rings and the pin are the theme fill,
+// theme 500 (decision 176, with decision 59): React's
+// --primitives-colors-theme-500, here through THEME_FILL, the component
+// variable that aliases it and is scoped to strokes as the primitive is not.
+// The label is never drawn (it is screen-reader text), so the set has no
+// text property; its notes say so.
+
+async function createBrandLoaderVariant(args) {
+  const component = figma.createComponent();
+  await updateBrandLoaderVariant(component, args);
+  return component;
+}
+
+function parseBrandLoaderVariantName(name) {
+  return parseSingleAxisVariantName(name, "Overlay", BRAND_LOADER_OVERLAY);
+}
+
+async function updateBrandLoaderVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  const overlay = value === "True";
+  const geometry = BRAND_LOADER_GEOMETRY;
+  component.name = `Overlay=${value}`;
+  component.layoutMode = "NONE";
+  component.clipsContent = overlay;
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.effects = [];
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "BrandLoader");
+  // Redrawn whole on every Update: nothing in it holds an override a designer
+  // keeps, and it has no component property.
+  removeDirectChildren(component);
+
+  let loader = component;
+  if (overlay) {
+    // Backdrop's scrim, the example Backdrop's set draws (320×180, 12), with
+    // the loader in its middle, as React's grid centres it in the window.
+    component.resizeWithoutConstraints(
+      BACKDROP_CUTOUT.width,
+      BACKDROP_CUTOUT.height,
+    );
+    component.cornerRadius = 12;
+    component.fills = [
+      paintFromVariable("Overlay/Scrim", "#00000080", variableByName, stats),
+    ];
+    loader = figma.createFrame();
+    loader.name = "Loader";
+    loader.layoutMode = "NONE";
+    loader.clipsContent = false;
+    loader.strokes = [];
+    loader.setSharedPluginData(RUN_NAMESPACE, "kind", "brand-loader");
+    component.appendChild(loader);
+  } else {
+    component.cornerRadius = KOZMOS_RADIUS.none;
+  }
+  loader.resizeWithoutConstraints(geometry.size, geometry.size);
+  loader.fills = [];
+  bindSizeVariables(
+    loader,
+    "BrandLoader/size",
+    "BrandLoader/size",
+    variableByName,
+    stats,
+  );
+  if (overlay) {
+    loader.x = Math.round((BACKDROP_CUTOUT.width - geometry.size) / 2);
+    loader.y = Math.round((BACKDROP_CUTOUT.height - geometry.size) / 2);
+  }
+
+  const ring = createBrandLoaderRing({
+    name: "Ring",
+    diameter: geometry.ring,
+    stroke: geometry.ringStroke,
+    strokeToken: "BrandLoader/ring/stroke/width",
+    sizeToken: "BrandLoader/ring/size",
+    box: geometry.size,
+    variableByName,
+    stats,
+  });
+  loader.appendChild(ring);
+
+  const second = createBrandLoaderRing({
+    name: "Second Ring",
+    diameter: geometry.secondRingStart,
+    stroke: geometry.secondRingStroke,
+    strokeToken: "BrandLoader/ring/second/stroke/width",
+    sizeToken: null,
+    box: geometry.size,
+    variableByName,
+    stats,
+  });
+  loader.appendChild(second);
+  second.visible = false;
+
+  const pin = await createFixedIconInstance(
+    "marker-pin-01",
+    THEME_FILL.name,
+    THEME_FILL.fallback,
+    variableByName,
+    stats,
+    geometry.pin,
+    "BrandLoader/pin/size",
+  );
+  pin.name = "Pin";
+  scaleIconStrokes(pin, geometry.pin);
+  loader.appendChild(pin);
+  pin.x = (geometry.size - geometry.pin) / 2;
+  pin.y = (geometry.size - geometry.pin) / 2;
+}
+
+/**
+ * A ring, centred in the loader's box: a border drawn inside its box, as
+ * CSS's border-box does, in the theme fill.
+ */
+function createBrandLoaderRing({
+  name,
+  diameter,
+  stroke,
+  strokeToken,
+  sizeToken,
+  box,
+  variableByName,
+  stats,
+}) {
+  const ring = figma.createEllipse();
+  ring.name = name;
+  ring.resizeWithoutConstraints(diameter, diameter);
+  ring.fills = [];
+  ring.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  ring.strokeWeight = stroke;
+  ring.strokeAlign = "INSIDE";
+  ring.setSharedPluginData(RUN_NAMESPACE, "kind", "brand-loader-ring");
+  if (sizeToken) {
+    bindSizeVariables(ring, sizeToken, sizeToken, variableByName, stats);
+  }
+  bindFloatVariable(ring, "strokeWeight", strokeToken, variableByName, stats);
+  ring.x = (box - diameter) / 2;
+  ring.y = (box - diameter) / 2;
+  return ring;
+}
+
+function configureBrandLoaderProperties(_componentSet, _stats) {}
+
+const BRAND_LOADER_DESCRIPTION = [
+  "Kozmos BrandLoader generated from the React BrandLoader API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Overlay maps to BrandLoader.overlay: True centres the loader on Backdrop's scrim.",
+  "Drawn still, as reduced motion draws it: the first ring at rest, 108 and 6 thick; the second ring, 4 thick, is hidden at its ripple's start.",
+  "Rings and pin are the theme fill, theme 500 (decisions 176 and 59).",
+  "label is screen-reader text, never drawn, so it has no property: role=status, announced once.",
+];
+
+async function buildBrandLoaderComponent() {
+  return buildSingleAxisComponent({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    axisName: "Overlay",
+    values: BRAND_LOADER_OVERLAY,
+    x: 80,
+    y: 19240,
+    xStep: 400,
+    createVariant: createBrandLoaderVariant,
+    configureProperties: configureBrandLoaderProperties,
+    autoReorganize: true,
+    description: BRAND_LOADER_DESCRIPTION,
+  });
+}
+
+async function updateBrandLoaderComponent() {
+  return updateSingleAxisComponent({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    axisName: "Overlay",
+    values: BRAND_LOADER_OVERLAY,
+    xStep: 400,
+    createVariant: createBrandLoaderVariant,
+    updateVariant: updateBrandLoaderVariant,
+    parseVariantName: parseBrandLoaderVariantName,
+    configureProperties: configureBrandLoaderProperties,
+    autoReorganize: true,
+    description: BRAND_LOADER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildBrandLoaderComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "BrandLoader",
+    componentSetName: "BrandLoader",
+    build: buildBrandLoaderComponent,
+  });
+}
+
+// --- ImageField (Dashboard) ------------------------------------------------
+
+// Pointr Cloud's image field (CLOUD-UI-004's image part, decisions 133 and
+// 183), as React's ImageField and packages/styles/src/dashboard/image-field.css
+// draw it: a bordered group (Border/Subtle, the container radius, 16 in), the
+// label in Field / Label and the "n of max" count in Field / Meta on one line;
+// one image, a 120 thumbnail at 16:9 (68) beside its alt-text field and its
+// Preview (eye), Frame (crop-01) and Remove (trash-01) icon buttons; the drop
+// zone (FileUpload, 112 as Cloud's) with its hint line; and the URL row, an
+// Input and an outline Add. The Core parts are slots, as FeedbackCard draws
+// its Rating and Textarea: they are Core's sets, not this one's. State is
+// what changes the drawing: Default; Full, the count at max and the drop zone
+// and the URL row off; Disabled, the whole field at 50%. The cropper and the
+// preview are dialogs React opens; the set does not draw them.
+const IMAGE_FIELD_STATES = ["Default", "Full", "Disabled"];
+const IMAGE_FIELD_GEOMETRY = {
+  width: 368,
+  padding: 16,
+  spacing: 12,
+  thumbnail: 120,
+  // 120 at 16:9, rounded to the pixel.
+  thumbnailHeight: 68,
+  dropZone: 112,
+  field: 44,
+};
+
+async function createImageFieldVariant(args) {
+  const component = figma.createComponent();
+  await updateImageFieldVariant(component, args);
+  return component;
+}
+
+function parseImageFieldVariantName(name) {
+  return productSdkVariantValues(name, "State", IMAGE_FIELD_STATES);
+}
+
+async function updateImageFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const full = value === "Full";
+  const disabled = value === "Disabled";
+  const geometry = IMAGE_FIELD_GEOMETRY;
+  const inner = geometry.width - 2 * geometry.padding;
+  productSdkVariantRoot(component, "ImageField", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.spacing,
+    padding: geometry.padding,
+    width: geometry.width,
+    height: 320,
+  });
+  productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
+  // A disabled field is drawn at a plain 50%, as a disabled Button is.
+  component.opacity = disabled ? 0.5 : 1;
+
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "SPACE_BETWEEN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: inner,
+    height: 20,
+  });
+  appendWithSizing(component, header, "FILL", "HUG");
+  const label = await productSdkText({
+    name: "Label Text",
+    characters: "Images",
+    styleKey: "fieldLabel",
+    fonts,
+    bold: true,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/0",
+    colorFallback: "#000000",
+    variableByName,
+    stats,
+    width: 200,
+  });
+  appendWithSizing(header, label, "FILL", null);
+  const count = await productSdkText({
+    name: "Count Text",
+    characters: full ? "7 of 7 images" : "1 of 7 images",
+    styleKey: "fieldMeta",
+    fonts,
+    bold: false,
+    fontSize: 12,
+    lineHeight: 16,
+    colorToken: "Colors/foreground/400",
+    colorFallback: "#5D626F",
+    variableByName,
+    stats,
+    width: 120,
+  });
+  count.textAutoResize = "WIDTH_AND_HEIGHT";
+  header.appendChild(count);
+
+  const item = productSdkFrame("Image", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 12,
+    width: inner,
+    height: geometry.thumbnailHeight,
+  });
+  appendWithSizing(component, item, "FILL", "HUG");
+  const thumbnail = await productSdkSlot({
+    name: "Thumbnail Slot",
+    label: "Image",
+    width: geometry.thumbnail,
+    height: geometry.thumbnailHeight,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control + 4,
+    inset: 4,
+  });
+  item.appendChild(thumbnail);
+  const details = productSdkFrame("Details", {
+    spacing: 8,
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    width: inner - geometry.thumbnail - 12,
+    height: geometry.field,
+  });
+  appendWithSizing(item, details, "FILL", "HUG");
+  const alt = await productSdkSlot({
+    name: "Alt Text Slot",
+    label: "Input slot",
+    width: inner - geometry.thumbnail - 12,
+    height: geometry.field,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(details, alt, "FILL", "FIXED");
+  const actions = productSdkFrame("Actions", {
+    direction: "horizontal",
+    spacing: 4,
+  });
+  details.appendChild(actions);
+  // Each glyph is the fallback only, drawn when Curated Icons has not run:
+  // eye, crop-01 (the Pointr library's) and trash-01 are curated.
+  for (const [name, iconName, glyph] of [
+    ["Preview Button", "eye", "◉"],
+    ["Frame Button", "crop-01", "⌗"],
+    ["Remove Button", "trash-01", "×"],
+  ]) {
+    const button = await productSdkControlButton({
+      name,
+      glyph,
+      iconName,
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    });
+    // React's ghost IconButton: no fill and no edge until hovered.
+    button.fills = [];
+    button.strokes = [];
+    button.strokeWeight = 0;
+    actions.appendChild(button);
+  }
+
+  const upload = await productSdkSlot({
+    name: "Upload Slot",
+    label: "FileUpload slot · JPG, PNG · Max 2 MB · 16:9",
+    width: inner,
+    height: geometry.dropZone,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  upload.opacity = full ? 0.5 : 1;
+  appendWithSizing(component, upload, "FILL", "FIXED");
+
+  const url = productSdkFrame("URL Row", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "MAX",
+    spacing: 8,
+    width: inner,
+    height: geometry.field,
+  });
+  url.opacity = full ? 0.5 : 1;
+  appendWithSizing(component, url, "FILL", "HUG");
+  const urlField = await productSdkSlot({
+    name: "URL Slot",
+    label: "Input slot · Image URL",
+    width: inner - 80,
+    height: geometry.field,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(url, urlField, "FILL", "FIXED");
+  // The curated plus, as every Button draws it; "+" only in a file without
+  // the curated icons.
+  const add = await productSdkControlButton({
+    name: "Add Button",
+    glyph: "+",
+    iconName: "plus",
+    label: "Add",
+    filled: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  url.appendChild(add);
+}
+
+function configureImageFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label",
+    "Images",
+    stats,
+  );
+}
+
+const IMAGE_FIELD_DESCRIPTION = [
+  "Kozmos ImageField generated from the React ImageField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), CLOUD-UI-004's image part.",
+  "Label maps to label. State: Default; Full, the count at max with the drop zone and URL row off; Disabled maps to disabled, drawn at 50%.",
+  "Each image: a thumbnail at aspectRatio, its alt text (an Input), Preview, Frame (the cropper) and Remove. The slots are Core's FileUpload, Input and Button.",
+  "The cropper and the full-screen preview are Dialogs React opens; max, accept, maxSize and aspectRatio are set in code.",
+];
+
+async function buildImageFieldComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    axisName: "State",
+    values: IMAGE_FIELD_STATES,
+    x: 80,
+    y: 19700,
+    xStep: 420,
+    createVariant: createImageFieldVariant,
+    configureProperties: configureImageFieldProperties,
+    autoReorganize: true,
+    description: IMAGE_FIELD_DESCRIPTION,
+  });
+}
+
+async function updateImageFieldComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    axisName: "State",
+    values: IMAGE_FIELD_STATES,
+    xStep: 420,
+    createVariant: createImageFieldVariant,
+    updateVariant: updateImageFieldVariant,
+    parseVariantName: parseImageFieldVariantName,
+    configureProperties: configureImageFieldProperties,
+    autoReorganize: true,
+    description: IMAGE_FIELD_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildImageFieldComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ImageField",
+    componentSetName: "ImageField",
+    build: buildImageFieldComponent,
+  });
+}
+
+// --- MapEditToolbar (Dashboard) --------------------------------------------
+
+// Pointr Cloud's map edit toolbar (CLOUD-UI-005, decisions 133, 139, 151 and
+// 183), as React's MapEditToolbar and
+// packages/styles/src/dashboard/map-edit-toolbar.css draw it: a card of
+// Surface/0 with no edge (a map control's, decision 40), 60 tall, padding 6
+// and 8, the Control corner (16) and map chrome's floating elevation; items
+// 48 tall and at least 56 wide, hugging their labels (React's min-inline-size),
+// a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
+// 4 between items; a chosen tool is a pressed ToggleButton, the theme fill
+// under its ink; every other item is Cloud's grey ink (foreground 400), and a
+// disabled one is drawn at half strength, as every Kozmos button is. Dividers
+// are Border/Subtle, 1 × 32, 8 from the items each side (4 of margin and the
+// gap). Mode is one of Cloud's seven toolbars, with Cloud's items; Overflow
+// True draws it on a 320 map, the items that do not fit gone into More, as
+// React's overflow does. Each variant is redrawn whole on Update: the items
+// are data, not overrides a designer keeps.
+
+async function createMapEditToolbarVariant(args) {
+  const component = figma.createComponent();
+  await updateMapEditToolbarVariant(component, args);
+  return component;
+}
+
+function parseMapEditToolbarVariantName(name) {
+  const values = parseVariantValueMap(name);
+  if (MAP_EDIT_TOOLBAR_MODES.indexOf(values.Mode) === -1) return null;
+  const overflow = values.Overflow === undefined ? "False" : values.Overflow;
+  if (MAP_EDIT_TOOLBAR_OVERFLOW.indexOf(overflow) === -1) return null;
+  return { value: values.Mode, second: overflow };
+}
+
+/**
+ * How many of a mode's items a card `width` wide shows: React's
+ * fitMapEditToolbarItems over the widths the items were drawn at (an item
+ * hugs its label, 56 at least), with a divider left at the end dropped.
+ */
+function mapEditToolbarVisibleCount(items, widths, width, withField, more) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  let available = width - 2 * g.paddingX;
+  if (withField) available -= g.fieldWidth + g.cardGap;
+  const total = (count) =>
+    widths.slice(0, count).reduce((sum, w) => sum + w, 0) +
+    Math.max(0, count - 1) * g.itemGap;
+  let count = items.length;
+  if (total(count) > available) {
+    count -= 1;
+    while (count > 0 && total(count) + g.itemGap + more > available) count -= 1;
+  }
+  while (count > 0 && items[count - 1].kind === "divider") count -= 1;
+  return count;
+}
+
+async function updateMapEditToolbarVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const overflow = second === "True";
+  const json = value === "JSON";
+  const all = MAP_EDIT_TOOLBAR_ITEMS[value];
+
+  productSdkVariantRoot(
+    component,
+    "MapEditToolbar",
+    `Mode=${value}, Overflow=${overflow ? "True" : "False"}`,
+    {
+      direction: "horizontal",
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "MIN",
+      counterAlign: "CENTER",
+      spacing: g.cardGap,
+      paddingLeft: g.paddingX,
+      paddingRight: g.paddingX,
+      paddingTop: g.paddingY,
+      paddingBottom: g.paddingY,
+      width: g.paddingX * 2 + g.itemWidth,
+      height: g.height,
+    },
+  );
+  component.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.effects = [elevationEffect("floating")];
+  bindFloatVariable(
+    component,
+    "height",
+    "MapEditToolbar/height",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      component,
+      side,
+      "MapEditToolbar/padding/x",
+      variableByName,
+      stats,
+    );
+  for (const side of ["paddingTop", "paddingBottom"])
+    bindFloatVariable(
+      component,
+      side,
+      "MapEditToolbar/padding/y",
+      variableByName,
+      stats,
+    );
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "MapEditToolbar/radius",
+    variableByName,
+    stats,
+  );
+
+  if (json) {
+    component.appendChild(
+      await createMapEditToolbarField({ fonts, variableByName, stats }),
+    );
+  }
+
+  const row = figma.createFrame();
+  row.name = "Items";
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "AUTO";
+  row.counterAxisSizingMode = "AUTO";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = g.itemGap;
+  row.fills = [];
+  row.strokes = [];
+  row.clipsContent = false;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-items");
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "MapEditToolbar/gap",
+    variableByName,
+    stats,
+  );
+  component.appendChild(row);
+
+  // Every item drawn first, as React measures them all, then the ones that
+  // do not fit a 320 map taken off from the end and More put after the rest.
+  const nodes = [];
+  for (const item of all) {
+    const node =
+      item.kind === "divider"
+        ? createMapEditToolbarDivider(variableByName, stats)
+        : await createMapEditToolbarItem(item, {
+            fonts,
+            variableByName,
+            stats,
+          });
+    row.appendChild(node);
+    nodes.push(node);
+  }
+  if (!overflow) return;
+  const more = await createMapEditToolbarItem(
+    { kind: "action", label: "More", icon: "dots-horizontal" },
+    { fonts, variableByName, stats },
+  );
+  row.appendChild(more);
+  const moreWidth = more.width;
+  more.remove();
+  const shown = mapEditToolbarVisibleCount(
+    all,
+    nodes.map((node) => node.width),
+    g.narrowMap,
+    json,
+    moreWidth,
+  );
+  if (shown === all.length) return;
+  for (const node of nodes.slice(shown)) node.remove();
+  row.appendChild(
+    await createMapEditToolbarItem(
+      { kind: "action", label: "More", icon: "dots-horizontal" },
+      { fonts, variableByName, stats },
+    ),
+  );
+}
+
+/** One item: the icon over its label, in the item's state. */
+async function createMapEditToolbarItem(
+  item,
+  { fonts, variableByName, stats },
+) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const on = item.state === "On";
+  const ink = on
+    ? THEME_FILL_FOREGROUND
+    : { name: "Colors/foreground/400", fallback: "#5D626F" };
+  // React's item is min-inline-size 56, inline-size auto: it hugs its
+  // label, 4 each side, and stops at 56, so "Straighten" is wider than 56.
+  const frame = figma.createFrame();
+  frame.name = item.label;
+  frame.layoutMode = "VERTICAL";
+  frame.primaryAxisSizingMode = "FIXED";
+  frame.counterAxisSizingMode = "AUTO";
+  frame.primaryAxisAlignItems = "CENTER";
+  frame.counterAxisAlignItems = "CENTER";
+  frame.itemSpacing = g.labelGap;
+  frame.paddingLeft = g.itemPaddingX;
+  frame.paddingRight = g.itemPaddingX;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.resizeWithoutConstraints(g.itemWidth, g.itemHeight);
+  setNodePropertyIfSupported(frame, "minWidth", g.itemWidth);
+  frame.cornerRadius = g.itemRadius;
+  frame.clipsContent = false;
+  frame.strokes = [];
+  frame.fills = on
+    ? [
+        paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  frame.opacity = item.state === "Disabled" ? 0.5 : 1;
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
+  frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
+  frame.setSharedPluginData(RUN_NAMESPACE, "itemState", item.state || "Off");
+  bindFloatVariable(
+    frame,
+    "minWidth",
+    "MapEditToolbar/item/width",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    frame,
+    "height",
+    "MapEditToolbar/item/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    frame,
+    "cornerRadius",
+    "MapEditToolbar/item/radius",
+    variableByName,
+    stats,
+  );
+
+  const source = await findImporterIconSource(
+    item.icon,
+    "MapEditToolbar",
+    stats,
+  );
+  if (source) {
+    const icon = createIconSlotInstance(
+      source,
+      ink.name,
+      ink.fallback,
+      variableByName,
+      stats,
+      g.icon,
+      "MapEditToolbar/icon/size",
+    );
+    frame.appendChild(icon);
+  }
+
+  const label = await productSdkText({
+    name: "Label Text",
+    characters: item.label,
+    styleKey: "mapEditToolbarLabel",
+    fonts,
+    bold: true,
+    fontSize: g.labelSize,
+    lineHeight: g.labelLineHeight,
+    colorToken: ink.name,
+    colorFallback: ink.fallback,
+    variableByName,
+    stats,
+    width: g.itemWidth - 2 * g.itemPaddingX,
+  });
+  // The label is drawn whole, as React's nowrap label is; the item hugs it.
+  label.textTruncation = "DISABLED";
+  label.textAutoResize = "WIDTH_AND_HEIGHT";
+  label.textAlignHorizontal = "CENTER";
+  frame.appendChild(label);
+  return frame;
+}
+
+function createMapEditToolbarDivider(variableByName, stats) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  // The 4 of margin each side of React's divider, as a frame round the
+  // rule, so the gap and the margin make the 8 the code draws.
+  const box = figma.createFrame();
+  box.name = "Divider";
+  box.layoutMode = "HORIZONTAL";
+  box.primaryAxisSizingMode = "AUTO";
+  box.counterAxisSizingMode = "AUTO";
+  box.paddingLeft = g.dividerMargin;
+  box.paddingRight = g.dividerMargin;
+  box.paddingTop = 0;
+  box.paddingBottom = 0;
+  box.fills = [];
+  box.strokes = [];
+  box.clipsContent = false;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-divider");
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      box,
+      side,
+      "MapEditToolbar/divider/margin",
+      variableByName,
+      stats,
+    );
+  const rule = figma.createRectangle();
+  rule.name = "Rule";
+  rule.resizeWithoutConstraints(1, g.dividerHeight);
+  rule.fills = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  bindSizeVariables(
+    rule,
+    "Separator/thickness",
+    "MapEditToolbar/divider/height",
+    variableByName,
+    stats,
+  );
+  box.appendChild(rule);
+  return box;
+}
+
+/** JSON mode's GeoJSON field: an outlined Input, its placeholder. */
+async function createMapEditToolbarField({ fonts, variableByName, stats }) {
+  const g = MAP_EDIT_TOOLBAR_GEOMETRY;
+  const field = figma.createFrame();
+  field.name = "GeoJSON Field";
+  field.layoutMode = "HORIZONTAL";
+  field.primaryAxisSizingMode = "FIXED";
+  field.counterAxisSizingMode = "FIXED";
+  field.counterAxisAlignItems = "CENTER";
+  field.paddingLeft = 12;
+  field.paddingRight = 12;
+  field.resizeWithoutConstraints(g.fieldWidth, g.fieldHeight);
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  field.strokes = [
+    paintFromVariable("Border/Input", "#C7CAD1", variableByName, stats),
+  ];
+  field.strokeWeight = 1;
+  field.clipsContent = true;
+  field.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-field");
+  // An Input placed in the card: it keeps its control radius, as a button in
+  // a card does (docs/nested-radius.md), and the nesting check reads it so.
+  markControlSurface(field);
+  bindFloatVariable(
+    field,
+    "height",
+    "Input/field/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    field,
+    "cornerRadius",
+    "Input/field/radius",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      field,
+      side,
+      "Input/field/padding/x",
+      variableByName,
+      stats,
+    );
+  const placeholder = await productSdkText({
+    name: "Field Text",
+    characters: "Paste GeoJSON",
+    styleKey: "fieldText",
+    fonts,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: "Colors/foreground/400",
+    colorFallback: "#5D626F",
+    variableByName,
+    stats,
+    width: g.fieldWidth - 24,
+  });
+  field.appendChild(placeholder);
+  return field;
+}
+
+function configureMapEditToolbarProperties(_componentSet, _stats) {}
+
+const MAP_EDIT_TOOLBAR_DESCRIPTION = [
+  "Kozmos MapEditToolbar generated from the React MapEditToolbar API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Mode is one of Pointr Cloud's seven toolbars (CLOUD-UI-005), with Cloud's items; in code the items are MapEditToolbar.items, the product's.",
+  "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is at half strength. In code the chosen tool is MapEditToolbar.value.",
+  "Overflow True draws a 320 map: what does not fit goes into More, from the end. In code it follows the width; it is no prop.",
+  "The card is 60 tall, padding 6 and 8, corner 16; items 48 tall and at least 56 wide, hugging their labels, a 24 icon over an 11/14 label (decisions 139 and 151).",
+];
+
+async function buildMapEditToolbarComponent() {
+  return buildSingleAxisComponent({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    axisName: "Mode",
+    values: MAP_EDIT_TOOLBAR_MODES,
+    axis2Name: "Overflow",
+    axis2Values: MAP_EDIT_TOOLBAR_OVERFLOW,
+    x: 80,
+    y: 19640,
+    xStep: 760,
+    yStep: 120,
+    createVariant: createMapEditToolbarVariant,
+    configureProperties: configureMapEditToolbarProperties,
+    autoReorganize: true,
+    description: MAP_EDIT_TOOLBAR_DESCRIPTION,
+  });
+}
+
+async function updateMapEditToolbarComponent() {
+  return updateSingleAxisComponent({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    axisName: "Mode",
+    values: MAP_EDIT_TOOLBAR_MODES,
+    axis2Name: "Overflow",
+    axis2Values: MAP_EDIT_TOOLBAR_OVERFLOW,
+    xStep: 760,
+    yStep: 120,
+    createVariant: createMapEditToolbarVariant,
+    updateVariant: updateMapEditToolbarVariant,
+    parseVariantName: parseMapEditToolbarVariantName,
+    configureProperties: configureMapEditToolbarProperties,
+    autoReorganize: true,
+    description: MAP_EDIT_TOOLBAR_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildMapEditToolbarComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapEditToolbar",
+    componentSetName: "MapEditToolbar",
+    build: buildMapEditToolbarComponent,
+  });
+}
+
+// --- PropertyPicker (Dashboard) --------------------------------------------
+
+// Pointr Cloud's "+ Add additional field" (CLOUD-UI-003, decisions 133 and
+// 183), as React's PropertyPicker and
+// packages/styles/src/dashboard/property-picker.css draw it: a subtle Button
+// the width of the form, Cloud's 368 column (GAP-200, decision 135), and
+// under it, 4 below as PopoverContent's sideOffset puts it, the popup, as
+// wide as the button: Popover's surface, 12 in, 8 between its parts. In it
+// the labelled search, the Suggested and Others tabs while anything is
+// suggested, the list (a Listbox's rows: the name, 14/20, over its type and
+// description, 12/16, in the muted foreground), and the Custom field action
+// after it, a ghost Button. Empty draws the search finding nothing: the
+// empty state's title where the list was. React's words are props; Label,
+// the button's, is the one text property, as Code Connect maps it.
+
+async function createPropertyPickerVariant(args) {
+  const component = figma.createComponent();
+  await updatePropertyPickerVariant(component, args);
+  return component;
+}
+
+function parsePropertyPickerVariantName(name) {
+  return productSdkVariantValues(name, "State", PROPERTY_PICKER_STATES);
+}
+
+async function propertyPickerText(
+  name,
+  characters,
+  styleKey,
+  colorToken,
+  colorFallback,
+  width,
+  { fonts, variableByName, stats },
+) {
+  return productSdkText({
+    name,
+    characters,
+    styleKey,
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken,
+    colorFallback,
+    variableByName,
+    stats,
+    width,
+  });
+}
+
+async function propertyPickerButton({
+  name,
+  label,
+  subtle,
+  width,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const geometry = PROPERTY_PICKER_GEOMETRY;
+  const button = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: subtle ? "CENTER" : "MIN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width,
+    height: geometry.control,
+  });
+  markControlSurface(button);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  const foreground = subtle
+    ? {
+        name: "Subtle Buttons/themed/button/foreground/content/idle",
+        fallback: "#1051E8",
+      }
+    : { name: "Colors/foreground/0", fallback: "#000000" };
+  button.fills = subtle
+    ? [
+        paintFromVariable(
+          "Subtle Buttons/themed/button/background/idle",
+          "#F1F5FE",
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  const icon = await productSdkIconInstance({
+    iconName: "plus",
+    token: foreground,
+    size: 16,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: name,
+  });
+  if (icon) {
+    icon.name = name + " Icon";
+    button.appendChild(icon);
+  }
+  const text = await productSdkText({
+    name: subtle ? "Label" : name + " Label",
+    characters: label,
+    styleKey: "buttonLabel",
+    fonts,
+    bold: true,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: foreground.name,
+    colorFallback: foreground.fallback,
+    variableByName,
+    stats,
+    width: 200,
+  });
+  text.textAutoResize = "WIDTH_AND_HEIGHT";
+  button.appendChild(text);
+  return button;
+}
+
+async function propertyPickerSearch(inner, context) {
+  const { variableByName, stats } = context;
+  const group = productSdkFrame("Search", { spacing: 8 });
+  const label = await propertyPickerText(
+    "Search Label",
+    "Search properties",
+    "fieldLabel",
+    "Colors/foreground/0",
+    "#000000",
+    inner,
+    context,
+  );
+  appendWithSizing(group, label, "FILL", null);
+  const field = productSdkFrame("Search Field", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: inner,
+    height: PROPERTY_PICKER_GEOMETRY.control,
+  });
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  field.strokes = [
+    paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
+  ];
+  field.strokeWeight = 1;
+  field.strokeAlign = "INSIDE";
+  const icon = await productSdkIconInstance({
+    iconName: "search-md",
+    token: { name: "Colors/foreground/400", fallback: "#5D626F" },
+    size: 16,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: "PropertyPicker",
+  });
+  if (icon) {
+    icon.name = "Search Icon";
+    field.appendChild(icon);
+  }
+  const placeholder = await propertyPickerText(
+    "Search Placeholder",
+    context.state === "Empty" ? "zzzz" : "Search",
+    "fieldText",
+    context.state === "Empty" ? "Colors/foreground/0" : "Colors/foreground/400",
+    context.state === "Empty" ? "#000000" : "#5D626F",
+    inner - 52,
+    context,
+  );
+  appendWithSizing(field, placeholder, "FILL", null);
+  appendWithSizing(group, field, "FILL", "FIXED");
+  return group;
+}
+
+async function propertyPickerTabs(inner, context) {
+  const { variableByName, stats } = context;
+  // Tabs' track: the muted fill, 4 in, the active tab raised on the surface.
+  const list = productSdkFrame("Tabs", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 0,
+    padding: 4,
+    width: inner,
+    height: 40,
+  });
+  list.cornerRadius = KOZMOS_RADIUS.control;
+  list.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E4E6EA",
+      variableByName,
+      stats,
+    ),
+  ];
+  for (const [name, active] of [
+    ["Suggested", true],
+    ["Others", false],
+  ]) {
+    const tab = productSdkFrame(name + " Tab", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      width: (inner - 8) / 2,
+      height: 32,
+    });
+    tab.cornerRadius = KOZMOS_RADIUS.control - 4;
+    tab.fills = active
+      ? [paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats)]
+      : [];
+    if (active) tab.effects = [elevationEffect("raised")];
+    const text = await propertyPickerText(
+      name + " Tab Label",
+      name,
+      "tabsTrigger",
+      active ? "Colors/foreground/0" : "Colors/foreground/400",
+      active ? "#000000" : "#5D626F",
+      120,
+      context,
+    );
+    text.textAutoResize = "WIDTH_AND_HEIGHT";
+    tab.appendChild(text);
+    appendWithSizing(list, tab, "FILL", "FIXED");
+  }
+  return list;
+}
+
+async function propertyPickerRow([name, type, description], inner, context) {
+  const row = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 0,
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingTop: 4,
+    paddingBottom: 4,
+    width: inner,
+  });
+  row.cornerRadius = KOZMOS_RADIUS.marker;
+  // Two lines, 20 and 16, and 4 above and below: Listbox's 44.
+  const label = await propertyPickerText(
+    name + " Name",
+    name,
+    "listItem",
+    "Colors/foreground/0",
+    "#000000",
+    inner - 24,
+    context,
+  );
+  appendWithSizing(row, label, "FILL", null);
+  const meta = await propertyPickerText(
+    name + " Type",
+    description ? `${type} · ${description}` : type,
+    "fieldMeta",
+    "Colors/foreground/400",
+    "#5D626F",
+    inner - 24,
+    context,
+  );
+  appendWithSizing(row, meta, "FILL", null);
+  return row;
+}
+
+async function updatePropertyPickerVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = PROPERTY_PICKER_GEOMETRY;
+  const open = value !== "Closed";
+  const context = { fonts, variableByName, stats, state: value };
+  productSdkVariantRoot(component, "PropertyPicker", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.offset,
+    width: geometry.width,
+    height: geometry.control,
+  });
+  component.fills = [];
+  component.strokes = [];
+  component.effects = [];
+
+  const trigger = await propertyPickerButton({
+    name: "Trigger",
+    label: "Add additional field",
+    subtle: true,
+    width: geometry.width,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(component, trigger, "FILL", "FIXED");
+  if (!open) return;
+
+  const inner = geometry.width - geometry.padding * 2;
+  const popup = productSdkFrame("Popup", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.gap,
+    padding: geometry.padding,
+    width: geometry.width,
+    height: 200,
+  });
+  // Popover's surface: Surface/0, the subtle edge, the control corner and
+  // the overlay elevation (updatePopoverVariant's).
+  popup.cornerRadius = KOZMOS_RADIUS.control;
+  popup.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  popup.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  popup.strokeWeight = 1;
+  popup.effects = [elevationEffect("overlay")];
+  appendWithSizing(component, popup, "FILL", "HUG");
+
+  appendWithSizing(
+    popup,
+    await propertyPickerSearch(inner, context),
+    "FILL",
+    "HUG",
+  );
+  if (value === "Suggested") {
+    appendWithSizing(
+      popup,
+      await propertyPickerTabs(inner, context),
+      "FILL",
+      "FIXED",
+    );
+  }
+
+  if (value === "Empty") {
+    const empty = productSdkFrame("Empty State", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      paddingTop: 16,
+      paddingBottom: 16,
+      width: inner,
+    });
+    const title = await propertyPickerText(
+      "Empty Title",
+      "No properties match",
+      "emptyStateTitle",
+      "Colors/foreground/0",
+      "#000000",
+      inner,
+      context,
+    );
+    title.textAlignHorizontal = "CENTER";
+    appendWithSizing(empty, title, "FILL", null);
+    appendWithSizing(popup, empty, "FILL", "HUG");
+  } else {
+    const list = productSdkFrame("List", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      width: inner,
+    });
+    const rows =
+      value === "Suggested"
+        ? PROPERTY_PICKER_SUGGESTED_ROWS
+        : PROPERTY_PICKER_ROWS;
+    for (const entry of rows) {
+      appendWithSizing(
+        list,
+        await propertyPickerRow(entry, inner, context),
+        "FILL",
+        "HUG",
+      );
+    }
+    appendWithSizing(popup, list, "FILL", "HUG");
+  }
+
+  const custom = await propertyPickerButton({
+    name: "Custom Field",
+    label: "Custom field",
+    subtle: false,
+    width: inner,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(popup, custom, "FILL", "FIXED");
+}
+
+function configurePropertyPickerProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label",
+    "Label",
+    "Add additional field",
+    stats,
+  );
+}
+
+const PROPERTY_PICKER_DESCRIPTION = [
+  'Kozmos PropertyPicker generated from the React PropertyPicker API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), Pointr Cloud\'s "+ Add additional field" (CLOUD-UI-003).',
+  "State: Closed is the subtle Button alone; Open the popup with every property; Suggested with the Suggested and Others tabs; Empty a search that finds nothing.",
+  "Label maps to PropertyPicker.label. The properties are data (properties, onSelect, onCustomField), so the rows are an example.",
+  "Built of Core parts: Button subtle (GAP-200), Popover, Search, Tabs, Listbox, EmptyState, and a ghost Button for Custom field.",
+];
+
+async function buildPropertyPickerComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    axisName: "State",
+    values: PROPERTY_PICKER_STATES,
+    x: 80,
+    y: 19700,
+    xStep: 440,
+    createVariant: createPropertyPickerVariant,
+    configureProperties: configurePropertyPickerProperties,
+    autoReorganize: true,
+    description: PROPERTY_PICKER_DESCRIPTION,
+  });
+}
+
+async function updatePropertyPickerComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    axisName: "State",
+    values: PROPERTY_PICKER_STATES,
+    xStep: 440,
+    createVariant: createPropertyPickerVariant,
+    updateVariant: updatePropertyPickerVariant,
+    parseVariantName: parsePropertyPickerVariantName,
+    configureProperties: configurePropertyPickerProperties,
+    autoReorganize: true,
+    description: PROPERTY_PICKER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildPropertyPickerComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PropertyPicker",
+    componentSetName: "PropertyPicker",
+    build: buildPropertyPickerComponent,
+  });
+}
+
+// --- Property editors (Dashboard) ------------------------------------------
+
+// Pointr Cloud's property editors (CLOUD-UI-004, decisions 177–181 and 183),
+// as React's PropertyField, OpeningHoursEditor, RatingEditor and KeyValueList
+// draw them with packages/styles/src/dashboard/*.css. They are compositions
+// of Core fields, so a set draws each field as Core's field looks (44 tall,
+// the control radius, the input edge, its words in Field / Text) rather than
+// nesting the Core sets, whose texts an Update would reset (their layer ids
+// change on every Update); the stars of RatingEditor's preview are Rating's
+// own Readonly instance, which carries no override. Every word is a field's
+// example, not a property, except PropertyField's caption, its Name.
+
+const DASHBOARD_EDITOR_WIDTH = 340;
+const DASHBOARD_FIELD_HEIGHT = 44;
+const DASHBOARD_DANGER = {
+  name: "Colors/emotional/danger/600",
+  fallback: "#D41C42",
+};
+const DASHBOARD_MUTED = { name: "Colors/foreground/400", fallback: "#5D626F" };
+
+async function dashboardText(
+  name,
+  characters,
+  styleKey,
+  tone,
+  width,
+  { fonts, variableByName, stats },
+) {
+  const colour = tone || { name: "Colors/foreground/0", fallback: "#000000" };
+  return productSdkText({
+    name,
+    characters,
+    styleKey,
+    fonts,
+    bold: styleKey === "fieldLabel" || styleKey === "controlLabel",
+    fontSize: styleKey === "fieldMeta" ? 12 : 14,
+    lineHeight: styleKey === "fieldMeta" ? 16 : 20,
+    colorToken: colour.name,
+    colorFallback: colour.fallback,
+    variableByName,
+    stats,
+    width,
+  });
+}
+
+async function dashboardIcon(iconName, tone, size, context) {
+  const icon = await createFixedIconInstance(
+    iconName,
+    tone.name,
+    tone.fallback,
+    context.variableByName,
+    context.stats,
+    size,
+  );
+  scaleIconStrokes(icon, size);
+  return icon;
+}
+
+/**
+ * A Core field as it draws: 44 tall, the control radius, the input edge (the
+ * danger edge in error), its value in Field / Text, or its placeholder muted,
+ * and a trailing icon when the field has one (a time's clock).
+ */
+async function dashboardFieldBox(
+  { name, value, placeholder, error, icon, width },
+  context,
+) {
+  const box = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width,
+    height: DASHBOARD_FIELD_HEIGHT,
+  });
+  box.cornerRadius = KOZMOS_RADIUS.control;
+  box.fills = [
+    paintFromVariable(
+      "Surface/0",
+      "#FFFFFF",
+      context.variableByName,
+      context.stats,
+    ),
+  ];
+  box.strokes = [
+    error
+      ? paintFromVariable(
+          DASHBOARD_DANGER.name,
+          DASHBOARD_DANGER.fallback,
+          context.variableByName,
+          context.stats,
+        )
+      : paintFromVariable(
+          "Border/Input",
+          "#747B8B",
+          context.variableByName,
+          context.stats,
+        ),
+  ];
+  box.strokeWeight = 1;
+  box.strokeAlign = "INSIDE";
+  const text = await dashboardText(
+    "Value Text",
+    placeholder || value,
+    "fieldText",
+    placeholder ? DASHBOARD_MUTED : null,
+    width - 24 - (icon ? 24 : 0),
+    context,
+  );
+  appendWithSizing(box, text, "FILL", null);
+  if (icon) {
+    const glyph = await dashboardIcon(icon, DASHBOARD_MUTED, 16, context);
+    appendWithSizing(box, glyph, "FIXED", "FIXED");
+  }
+  return box;
+}
+
+/** A labelled field: its label, the field, and its error under it. */
+async function dashboardLabelledField(
+  { name, label, value, placeholder, error, width },
+  context,
+) {
+  const field = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 6,
+    width,
+    height: 70,
+  });
+  appendWithSizing(
+    field,
+    await dashboardText(
+      "Label Text",
+      label,
+      "fieldLabel",
+      null,
+      width,
+      context,
+    ),
+    "FILL",
+    null,
+  );
+  appendWithSizing(
+    field,
+    await dashboardFieldBox(
+      { name: "Field", value, placeholder, error: !!error, width },
+      context,
+    ),
+    "FILL",
+    "FIXED",
+  );
+  if (error) {
+    appendWithSizing(
+      field,
+      await dashboardText(
+        "Error Text",
+        error,
+        "fieldMeta",
+        DASHBOARD_DANGER,
+        width,
+        context,
+      ),
+      "FILL",
+      null,
+    );
+  }
+  return field;
+}
+
+/** A 44 icon button: the info button, or the red trash (`danger`). */
+async function dashboardIconButton(name, iconName, tone, size, context) {
+  const button = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: size,
+    height: size,
+  });
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  markControlSurface(button);
+  appendWithSizing(
+    button,
+    await dashboardIcon(iconName, tone, size >= 44 ? 20 : 16, context),
+    "FIXED",
+    "FIXED",
+  );
+  return button;
+}
+
+/** Sets a variant root's name and kind, as every generated set's are. */
+function dashboardVariantRoot(component, componentName, axis, value, options) {
+  productSdkVariantRoot(
+    component,
+    componentName,
+    `${axis}=${value}`,
+    Object.assign(
+      {
+        primarySizing: "AUTO",
+        counterSizing: "FIXED",
+        width: DASHBOARD_EDITOR_WIDTH,
+        height: 200,
+      },
+      options,
+    ),
+  );
+  component.fills = [];
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+}
+
+// PropertyField: the frame. Removable is React's onRemove, given or not.
+const PROPERTY_FIELD_REMOVABLE = ["True", "False"];
+
+async function createPropertyFieldVariant(args) {
+  const component = figma.createComponent();
+  await updatePropertyFieldVariant(component, args);
+  return component;
+}
+
+function parsePropertyFieldVariantName(name) {
+  return parseSingleAxisVariantName(
+    name,
+    "Removable",
+    PROPERTY_FIELD_REMOVABLE,
+  );
+}
+
+async function updatePropertyFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  const removable = value === "True";
+  dashboardVariantRoot(component, "PropertyField", "Removable", value, {
+    direction: "horizontal",
+    counterAlign: "CENTER",
+    spacing: 4,
+    width: 368,
+  });
+  const boxWidth = removable ? 368 - 4 - 44 : 368;
+  const box = productSdkFrame("Box", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 8,
+    padding: 12,
+    width: boxWidth,
+    height: 100,
+  });
+  box.cornerRadius = KOZMOS_RADIUS.control;
+  box.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  box.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  box.strokeWeight = 1;
+  box.strokeAlign = "INSIDE";
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: boxWidth - 24,
+    height: 24,
+  });
+  appendWithSizing(
+    header,
+    await dashboardText(
+      "Name Text",
+      "Capacity",
+      "fieldMeta",
+      DASHBOARD_MUTED,
+      boxWidth - 24 - 32,
+      context,
+    ),
+    "FILL",
+    null,
+  );
+  appendWithSizing(
+    header,
+    await dashboardIconButton(
+      "Info Button",
+      "info-circle",
+      DASHBOARD_MUTED,
+      24,
+      context,
+    ),
+    "FIXED",
+    "FIXED",
+  );
+  appendWithSizing(box, header, "FILL", "FIXED");
+  const content = await productSdkSlot({
+    name: "Content Slot",
+    label: "Editor",
+    width: boxWidth - 24,
+    height: DASHBOARD_FIELD_HEIGHT,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+  });
+  appendWithSizing(box, content, "FILL", "FIXED");
+  appendWithSizing(component, box, "FILL", "HUG");
+  if (removable) {
+    appendWithSizing(
+      component,
+      await dashboardIconButton(
+        "Remove Button",
+        "trash-01",
+        DASHBOARD_DANGER,
+        44,
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+  }
+}
+
+function configurePropertyFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Name Text",
+    "Name",
+    "Capacity",
+    stats,
+  );
+}
+
+const PROPERTY_FIELD_DESCRIPTION = [
+  "Kozmos PropertyField generated from the React PropertyField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Name maps to PropertyField.name, the group's caption and accessible name. Removable maps to onRemove, the red trash named Remove <name>.",
+  "The info button, About <name>, opens PropertyField.info. Content Slot holds the property's editor.",
+];
+
+// OpeningHoursEditor: the week, as a new field has it, with overnight hours
+// (decision 179), and with a multi-selection's mixed weekend (GAP-153).
+const OPENING_HOURS_EDITOR_STATES = ["Default", "Overnight", "Mixed"];
+const OPENING_HOURS_EDITOR_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+async function createOpeningHoursEditorVariant(args) {
+  const component = figma.createComponent();
+  await updateOpeningHoursEditorVariant(component, args);
+  return component;
+}
+
+function parseOpeningHoursEditorVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", OPENING_HOURS_EDITOR_STATES);
+}
+
+/** A SegmentedControl, small: Hours, Closed, Always open, one chosen or none. */
+async function dashboardChoice(chosen, context) {
+  const choice = productSdkFrame("Choice", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 2,
+    padding: 4,
+    width: 220,
+    height: 36,
+  });
+  choice.cornerRadius = KOZMOS_RADIUS.control;
+  choice.fills = [
+    paintFromVariable(
+      "Surface/200",
+      "#ECEEF2",
+      context.variableByName,
+      context.stats,
+    ),
+  ];
+  for (const label of ["Hours", "Closed", "Always open"]) {
+    const segment = productSdkFrame(`${label} Segment`, {
+      direction: "horizontal",
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      paddingLeft: 8,
+      paddingRight: 8,
+      width: 60,
+      height: 28,
+    });
+    segment.cornerRadius = KOZMOS_RADIUS.control - 4;
+    if (label === chosen)
+      segment.fills = [
+        paintFromVariable(
+          "Surface/0",
+          "#FFFFFF",
+          context.variableByName,
+          context.stats,
+        ),
+      ];
+    const text = await dashboardText(
+      "Label Text",
+      label,
+      "fieldMeta",
+      label === chosen ? null : DASHBOARD_MUTED,
+      label === "Always open" ? 72 : 44,
+      context,
+    );
+    text.textAutoResize = "WIDTH_AND_HEIGHT";
+    appendWithSizing(segment, text, null, null);
+    appendWithSizing(choice, segment, null, "FIXED");
+  }
+  return choice;
+}
+
+async function updateOpeningHoursEditorVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "OpeningHoursEditor", "State", value, {
+    spacing: 12,
+    height: 600,
+  });
+  for (const [index, name] of OPENING_HOURS_EDITOR_DAYS.entries()) {
+    const weekend = index >= 5;
+    const overnight = value === "Overnight" && name === "Friday";
+    const mixed = value === "Mixed" && weekend;
+    const day = productSdkFrame(`${name} Row`, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 36,
+    });
+    const line = productSdkFrame("Day", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 36,
+    });
+    appendWithSizing(
+      line,
+      await dashboardText("Day Text", name, "fieldLabel", null, 96, context),
+      "FILL",
+      null,
+    );
+    appendWithSizing(
+      line,
+      await dashboardChoice(
+        mixed ? null : weekend ? "Closed" : "Hours",
+        context,
+      ),
+      null,
+      "FIXED",
+    );
+    appendWithSizing(day, line, "FILL", "HUG");
+    if (mixed) {
+      appendWithSizing(
+        day,
+        await dashboardText(
+          "Mixed Text",
+          "Multiple values",
+          "fieldText",
+          DASHBOARD_MUTED,
+          DASHBOARD_EDITOR_WIDTH,
+          context,
+        ),
+        "FILL",
+        null,
+      );
+    } else if (!weekend) {
+      const times = productSdkFrame("Times", {
+        direction: "horizontal",
+        primarySizing: "FIXED",
+        counterSizing: "AUTO",
+        counterAlign: "CENTER",
+        spacing: 8,
+        width: DASHBOARD_EDITOR_WIDTH,
+        height: DASHBOARD_FIELD_HEIGHT,
+      });
+      const fieldWidth = overnight ? 128 : 166;
+      appendWithSizing(
+        times,
+        await dashboardFieldBox(
+          {
+            name: "Opening Time",
+            value: overnight ? "18:00" : "08:00",
+            icon: "clock",
+            width: fieldWidth,
+          },
+          context,
+        ),
+        "FILL",
+        "FIXED",
+      );
+      appendWithSizing(
+        times,
+        await dashboardFieldBox(
+          {
+            name: "Closing Time",
+            value: overnight ? "02:00" : "22:00",
+            icon: "clock",
+            width: fieldWidth,
+          },
+          context,
+        ),
+        "FILL",
+        "FIXED",
+      );
+      if (overnight) {
+        const next = await dashboardText(
+          "Next Day Text",
+          "+1 day",
+          "fieldMeta",
+          DASHBOARD_MUTED,
+          48,
+          context,
+        );
+        next.textAutoResize = "WIDTH_AND_HEIGHT";
+        appendWithSizing(times, next, null, null);
+      }
+      appendWithSizing(day, times, "FILL", "HUG");
+    }
+    appendWithSizing(component, day, "FILL", "HUG");
+  }
+}
+
+function configureOpeningHoursEditorProperties(_componentSet, _stats) {}
+
+const OPENING_HOURS_EDITOR_DESCRIPTION = [
+  "Kozmos OpeningHoursEditor generated from the React OpeningHoursEditor API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Each day is a SegmentedControl (Hours, Closed, Always open) and, for Hours, two TimePickers. Default is DEFAULT_OPENING_HOURS: Monday to Friday 08:00–22:00, the weekend closed.",
+  "Overnight: a close before the open shows +1 day (decision 179). Mixed: mixedDays choose nothing and say Multiple values (GAP-153).",
+];
+
+// RatingEditor: three NumberInputs and the preview (decisions 180, 181).
+const RATING_EDITOR_STATES = ["Default", "Error", "Mixed"];
+
+async function createRatingEditorVariant(args) {
+  const component = figma.createComponent();
+  await updateRatingEditorVariant(component, args);
+  return component;
+}
+
+function parseRatingEditorVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", RATING_EDITOR_STATES);
+}
+
+async function updateRatingEditorVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "RatingEditor", "State", value, {
+    spacing: 12,
+    height: 300,
+  });
+  const error = value === "Error";
+  const mixed = value === "Mixed";
+  const fields = [
+    {
+      name: "Rating Field",
+      label: "Rating",
+      value: error ? "7" : "4.3",
+      placeholder: mixed ? "Multiple values" : null,
+      error: error ? "Rating can't be more than the max rating, 5." : null,
+    },
+    {
+      name: "Max Field",
+      label: "Max rating",
+      value: "5",
+      error: error ? "Max rating can't be less than the rating, 7." : null,
+    },
+    {
+      name: "Count Field",
+      label: "Number of ratings",
+      value: error ? "-3" : "120",
+      placeholder: mixed ? "Multiple values" : null,
+      error: error
+        ? "Number of ratings must be a whole number, 0 or more."
+        : null,
+    },
+  ];
+  for (const field of fields) {
+    appendWithSizing(
+      component,
+      await dashboardLabelledField(
+        Object.assign({ width: DASHBOARD_EDITOR_WIDTH }, field),
+        context,
+      ),
+      "FILL",
+      "HUG",
+    );
+  }
+  if (value !== "Default") return;
+  // React's preview wraps (rating-editor.css): the stars and the words, 8
+  // apart either way, the words their own width, so in the 340 editor they
+  // go under the stars whole rather than cut short beside them.
+  const preview = productSdkFrame("Preview", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: DASHBOARD_EDITOR_WIDTH,
+    height: 24,
+  });
+  setNodePropertyIfSupported(preview, "layoutWrap", "WRAP");
+  setNodePropertyIfSupported(preview, "counterAxisSpacing", 8);
+  // Rating's own read-only stars: React draws 4.3 of 5 as 4½ (decision 181).
+  // A Rating set with half values has Value=4.5; one with whole values only
+  // (before #538's Update) the nearest below it, 4.
+  const nested = await createNestedComponentInstance({
+    componentSetName: "Rating",
+    name: "Stars",
+    role: "rating-editor-preview",
+    variantProperties: [
+      { Value: "4.5", State: "Readonly" },
+      { Value: "4", State: "Readonly" },
+      { Value: "4" },
+    ],
+    stats,
+  });
+  appendWithSizing(
+    preview,
+    nested
+      ? nested.instance
+      : createMissingNestedComponentNode(
+          "Stars",
+          "Rating is missing: run Core first.",
+          stats,
+        ),
+    null,
+    null,
+  );
+  const words = await dashboardText(
+    "Summary Text",
+    "4.3 of 5 · 120 ratings",
+    "fieldText",
+    DASHBOARD_MUTED,
+    160,
+    context,
+  );
+  words.textTruncation = "DISABLED";
+  words.textAutoResize = "WIDTH_AND_HEIGHT";
+  preview.appendChild(words);
+  appendWithSizing(component, preview, "FILL", "HUG");
+}
+
+function configureRatingEditorProperties(_componentSet, _stats) {}
+
+const RATING_EDITOR_DESCRIPTION = [
+  "Kozmos RatingEditor generated from the React RatingEditor API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "Three NumberInputs: rating (one decimal), max (1 or more), number of ratings (a whole number, 0 or more). A rating above its max is an error on both (decision 180).",
+  "The preview is always five stars, the rating's share of its max to the nearest half (decision 181), with the exact numbers in words. Mixed: Multiple values (GAP-153).",
+];
+
+// KeyValueList: rows of name, type, value and delete, and Add field
+// (decision 178).
+const KEY_VALUE_LIST_STATES = ["Default", "Empty", "Mixed"];
+
+async function createKeyValueListVariant(args) {
+  const component = figma.createComponent();
+  await updateKeyValueListVariant(component, args);
+  return component;
+}
+
+function parseKeyValueListVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", KEY_VALUE_LIST_STATES);
+}
+
+async function updateKeyValueListVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const context = { variableByName, fonts, stats };
+  dashboardVariantRoot(component, "KeyValueList", "State", value, {
+    spacing: 8,
+    height: 200,
+  });
+  const rows =
+    value === "Empty"
+      ? []
+      : value === "Mixed"
+        ? [["vendor", "Text", null]]
+        : [
+            ["vendor", "Text", "Acme"],
+            ["floors", "Number", "3"],
+          ];
+  const half = (DASHBOARD_EDITOR_WIDTH - 44 - 16) / 2;
+  for (const [index, [name, type, entry]] of rows.entries()) {
+    const row = productSdkFrame(`Row ${index + 1}`, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: 96,
+    });
+    const line = productSdkFrame("Name and Type", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: 8,
+      width: DASHBOARD_EDITOR_WIDTH,
+      height: DASHBOARD_FIELD_HEIGHT,
+    });
+    appendWithSizing(
+      line,
+      await dashboardFieldBox(
+        { name: "Name Field", value: name, width: half },
+        context,
+      ),
+      "FILL",
+      "FIXED",
+    );
+    appendWithSizing(
+      line,
+      await dashboardFieldBox(
+        { name: "Type Field", value: type, icon: "chevron-down", width: half },
+        context,
+      ),
+      "FILL",
+      "FIXED",
+    );
+    appendWithSizing(
+      line,
+      await dashboardIconButton(
+        "Remove Button",
+        "trash-01",
+        DASHBOARD_DANGER,
+        44,
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+    appendWithSizing(row, line, "FILL", "HUG");
+    appendWithSizing(
+      row,
+      await dashboardFieldBox(
+        {
+          name: "Value Field",
+          value: entry || "",
+          placeholder: entry ? null : "Multiple values",
+          width: half * 2 + 8,
+        },
+        context,
+      ),
+      "FIXED",
+      "FIXED",
+    );
+    appendWithSizing(component, row, "FILL", "HUG");
+  }
+  const add = productSdkFrame("Add Button", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    width: 120,
+    height: 36,
+  });
+  add.cornerRadius = KOZMOS_RADIUS.control;
+  markControlSurface(add);
+  // The ghost Button's words and mark: the theme's text colour.
+  const theme = { name: "Colors/theme/600", fallback: "#1051E8" };
+  appendWithSizing(
+    add,
+    await dashboardIcon("plus", theme, 16, context),
+    "FIXED",
+    "FIXED",
+  );
+  const label = await dashboardText(
+    "Label Text",
+    "Add field",
+    "controlLabel",
+    theme,
+    72,
+    context,
+  );
+  label.textAutoResize = "WIDTH_AND_HEIGHT";
+  appendWithSizing(add, label, null, null);
+  appendWithSizing(component, add, null, "FIXED");
+}
+
+function configureKeyValueListProperties(_componentSet, _stats) {}
+
+const KEY_VALUE_LIST_DESCRIPTION = [
+  "Kozmos KeyValueList generated from the React KeyValueList API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
+  "A row is a name (Input), a type (Select: Text, JSON, Number, Boolean), a value drawn for its type (Input, NumberInput, Switch) and a red trash; Add field ends the list (decision 178).",
+  "Every control is named for its row (Field 2 name). Mixed: a row's value says Multiple values (GAP-153).",
+];
+
+/** Build, Update and Rebuild for each editor set: one axis each. */
+const DASHBOARD_EDITOR_SETS = {
+  PropertyField: {
+    axisName: "Removable",
+    values: PROPERTY_FIELD_REMOVABLE,
+    y: 19640,
+    xStep: 420,
+    create: createPropertyFieldVariant,
+    update: updatePropertyFieldVariant,
+    parse: parsePropertyFieldVariantName,
+    configure: configurePropertyFieldProperties,
+    description: PROPERTY_FIELD_DESCRIPTION,
+  },
+  OpeningHoursEditor: {
+    axisName: "State",
+    values: OPENING_HOURS_EDITOR_STATES,
+    y: 20000,
+    xStep: 400,
+    create: createOpeningHoursEditorVariant,
+    update: updateOpeningHoursEditorVariant,
+    parse: parseOpeningHoursEditorVariantName,
+    configure: configureOpeningHoursEditorProperties,
+    description: OPENING_HOURS_EDITOR_DESCRIPTION,
+  },
+  RatingEditor: {
+    axisName: "State",
+    values: RATING_EDITOR_STATES,
+    y: 20800,
+    xStep: 400,
+    create: createRatingEditorVariant,
+    update: updateRatingEditorVariant,
+    parse: parseRatingEditorVariantName,
+    configure: configureRatingEditorProperties,
+    description: RATING_EDITOR_DESCRIPTION,
+  },
+  KeyValueList: {
+    axisName: "State",
+    values: KEY_VALUE_LIST_STATES,
+    y: 21300,
+    xStep: 400,
+    create: createKeyValueListVariant,
+    update: updateKeyValueListVariant,
+    parse: parseKeyValueListVariantName,
+    configure: configureKeyValueListProperties,
+    description: KEY_VALUE_LIST_DESCRIPTION,
+  },
+};
+
+async function buildDashboardEditorComponent(componentName) {
+  const set = DASHBOARD_EDITOR_SETS[componentName];
+  return buildSingleAxisComponent({
+    componentName,
+    componentSetName: componentName,
+    axisName: set.axisName,
+    values: set.values,
+    x: 80,
+    y: set.y,
+    xStep: set.xStep,
+    createVariant: set.create,
+    configureProperties: set.configure,
+    autoReorganize: true,
+    description: set.description,
+  });
+}
+
+async function updateDashboardEditorComponent(componentName) {
+  const set = DASHBOARD_EDITOR_SETS[componentName];
+  return updateSingleAxisComponent({
+    componentName,
+    componentSetName: componentName,
+    axisName: set.axisName,
+    values: set.values,
+    xStep: set.xStep,
+    createVariant: set.create,
+    updateVariant: set.update,
+    parseVariantName: set.parse,
+    configureProperties: set.configure,
+    autoReorganize: true,
+    description: set.description.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildDashboardEditorComponent(componentName) {
+  return rebuildGeneratedComponentSet({
+    componentName,
+    componentSetName: componentName,
+    build: () => buildDashboardEditorComponent(componentName),
+  });
+}
+
+async function buildPropertyFieldComponent() {
+  return buildDashboardEditorComponent("PropertyField");
+}
+async function updatePropertyFieldComponent() {
+  return updateDashboardEditorComponent("PropertyField");
+}
+async function rebuildPropertyFieldComponent() {
+  return rebuildDashboardEditorComponent("PropertyField");
+}
+async function buildOpeningHoursEditorComponent() {
+  return buildDashboardEditorComponent("OpeningHoursEditor");
+}
+async function updateOpeningHoursEditorComponent() {
+  return updateDashboardEditorComponent("OpeningHoursEditor");
+}
+async function rebuildOpeningHoursEditorComponent() {
+  return rebuildDashboardEditorComponent("OpeningHoursEditor");
+}
+async function buildRatingEditorComponent() {
+  return buildDashboardEditorComponent("RatingEditor");
+}
+async function updateRatingEditorComponent() {
+  return updateDashboardEditorComponent("RatingEditor");
+}
+async function rebuildRatingEditorComponent() {
+  return rebuildDashboardEditorComponent("RatingEditor");
+}
+async function buildKeyValueListComponent() {
+  return buildDashboardEditorComponent("KeyValueList");
+}
+async function updateKeyValueListComponent() {
+  return updateDashboardEditorComponent("KeyValueList");
+}
+async function rebuildKeyValueListComponent() {
+  return rebuildDashboardEditorComponent("KeyValueList");
+}
+
 /**
  * Every combination a generated set draws.
  *
@@ -55503,9 +59490,17 @@ function layoutTabsVariants(componentSet) {
     const countIndex = TABS_COUNTS.indexOf(props.count);
     const activeIndex = TABS_ACTIVE_TO_INDEX[props.active];
     const stateIndex = TABS_STATES.indexOf(props.state);
+    const row = countIndex * TABS_STATES.length + stateIndex;
     child.x = activeIndex * 700;
-    child.y = (countIndex * TABS_STATES.length + stateIndex) * 76;
+    // Label where it always stood, 76 a row; Icon Over Label's 64-tall lists
+    // under them, 100 a row.
+    child.y =
+      props.content === "Icon Over Label"
+        ? TABS_COUNTS.length * TABS_STATES.length * 76 + 40 + row * 100
+        : row * 76;
   }
+
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 function layoutToggleButtonVariants(componentSet) {
@@ -56075,7 +60070,7 @@ function configureTableProperties(componentSet, stats) {
   }
 }
 
-function configureTabsProperties(componentSet, stats) {
+async function configureTabsProperties(componentSet, stats, variableByName) {
   const defaults = ["Overview", "Details", "Usage", "History"];
   for (let index = 0; index < defaults.length; index += 1) {
     const label = `Tab ${index + 1} Text`;
@@ -56089,6 +60084,38 @@ function configureTabsProperties(componentSet, stats) {
   }
 
   configureFocusVisibleProperty(componentSet, stats);
+  await configureTabsIconSlots(componentSet, stats, variableByName);
+}
+
+// Icon Over Label's icons (GAP-152): Tab N Icon swaps the Tab N Icon layer
+// of every stacked variant, offering the curated icons, as Tree's slots do.
+async function configureTabsIconSlots(componentSet, stats, variableByName) {
+  if (!componentSet || !componentSet.children) return;
+
+  const iconSourceComponents = await findKozmosIconSourceComponents();
+  const preferredValues = iconPreferredValues(iconSourceComponents);
+  const fallback = await resolveDefaultIconSourceComponent(
+    variableByName,
+    stats,
+  );
+  for (let index = 0; index < TABS_DEFAULT_ICONS.length; index += 1) {
+    const name = `Tab ${index + 1} Icon`;
+    const defaultComponent =
+      (await findKozmosIconSourceComponent(TABS_DEFAULT_ICONS[index])) ||
+      fallback;
+    if (!defaultComponent) continue;
+
+    const propertyName = ensureInstanceSwapProperty(
+      componentSet,
+      name,
+      defaultComponent.id,
+      stats,
+      preferredValues,
+    );
+    if (!propertyName) continue;
+
+    bindTreeItemIconSlotInstances(componentSet, name, propertyName, stats);
+  }
 }
 
 function configureTooltipProperties(componentSet, stats) {
@@ -56239,6 +60266,10 @@ function configureKbdProperties(componentSet, stats) {
   );
 }
 
+// PersonaMark has no component property: the persona's name is never drawn,
+// and its colour is the diamond's fill, which a designer overrides.
+function configurePersonaMarkProperties() {}
+
 function configureToastProperties(componentSet, stats) {
   configureNamedTextProperty(
     componentSet,
@@ -56259,6 +60290,17 @@ function configureToastProperties(componentSet, stats) {
     "Action Text",
     "Action Text",
     "Undo",
+    stats,
+  );
+  // GAP-268: ToastClose's `visible`. On, the default, the close is drawn as
+  // it always was, shown at rest: React's visible="always". Off draws the
+  // toast at rest with the default "hover" close, which shows only while the
+  // toast is hovered or the button has focus.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Toast Close",
+    "Close Always Visible",
+    true,
     stats,
   );
 }
@@ -56348,6 +60390,14 @@ async function rebuildKbdComponent() {
     componentName: "Kbd",
     componentSetName: "Kbd",
     build: buildKbdComponent,
+  });
+}
+
+async function rebuildPersonaMarkComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PersonaMark",
+    componentSetName: "PersonaMark",
+    build: buildPersonaMarkComponent,
   });
 }
 
@@ -59039,13 +63089,16 @@ function parseContainerVariantName(name) {
   if (CONTAINER_CENTERED.indexOf(values.Centered) === -1) return null;
 
   // A variant drawn before the Inset axis carries none and is the page's,
-  // so Update renames it rather than replacing it.
-  const second = values.Inset || "Window";
-  if (CONTAINER_INSETS.indexOf(second) === -1) return null;
+  // and one drawn before the Block axis carries none and pads no top or
+  // bottom, so Update renames either rather than replacing it.
+  const inset = values.Inset || "Window";
+  if (CONTAINER_INSETS.indexOf(inset) === -1) return null;
+  const block = values.Block || "None";
+  if (CONTAINER_BLOCKS.indexOf(block) === -1) return null;
 
   return {
     value: values.Centered,
-    second,
+    second: `${inset}/${block}`,
     centered: values.Centered,
   };
 }
@@ -59055,8 +63108,11 @@ async function updateContainerVariant(
   { value, second, variableByName, stats },
 ) {
   const centered = value === "True";
-  const inset = CONTAINER_INSETS.indexOf(second) === -1 ? "Window" : second;
-  component.name = `Centered=${value}, Inset=${inset}`;
+  // `second` is "Inset/Block"; a bare inset, as an older caller passes it,
+  // is that inset with no block.
+  const { inset, block } = splitContainerInsetBlock(second);
+  const blockPadding = containerBlockPadding(block);
+  component.name = `Centered=${value}, Inset=${inset}, Block=${block}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -59065,9 +63121,14 @@ async function updateContainerVariant(
   component.itemSpacing = 0;
   component.paddingLeft = containerInsetPadding(inset);
   component.paddingRight = containerInsetPadding(inset);
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(480, 120);
+  component.paddingTop = blockPadding;
+  component.paddingBottom = blockPadding;
+  // With no block the example is 120 tall, as it was; with one it is the
+  // content and the space above and below it, so the step shows.
+  component.resizeWithoutConstraints(
+    480,
+    blockPadding === 0 ? 120 : 64 + 2 * blockPadding,
+  );
   component.fills = [];
   component.strokes = [];
   component.strokeWeight = 0;
@@ -59075,13 +63136,34 @@ async function updateContainerVariant(
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Container");
 
-  bindSizeVariables(
-    component,
-    "Container/width/default",
-    "Container/min-height/default",
-    variableByName,
-    stats,
-  );
+  if (blockPadding === 0) {
+    bindSizeVariables(
+      component,
+      "Container/width/default",
+      "Container/min-height/default",
+      variableByName,
+      stats,
+    );
+    clearBoundVariable(component, "paddingTop", stats);
+    clearBoundVariable(component, "paddingBottom", stats);
+  } else {
+    bindFloatVariable(
+      component,
+      "width",
+      "Container/width/default",
+      variableByName,
+      stats,
+    );
+    clearBoundVariable(component, "height", stats);
+    for (const field of ["paddingTop", "paddingBottom"])
+      bindFloatVariable(
+        component,
+        field,
+        containerBlockToken(block),
+        variableByName,
+        stats,
+      );
+  }
   bindFloatVariable(
     component,
     "paddingLeft",
@@ -61137,6 +65219,7 @@ async function createTabsVariant({
   count,
   active,
   state,
+  content,
   variableByName,
   fonts,
   stats,
@@ -61146,6 +65229,7 @@ async function createTabsVariant({
     count,
     active,
     state,
+    content,
     variableByName,
     fonts,
     stats,
@@ -61165,10 +65249,14 @@ function parseTabsVariantName(name) {
     values[key] = value;
   }
 
+  // A variant drawn before the Content axis is Label, so Update renames it in
+  // place and its node id survives.
+  const content = values.Content || "Label";
   if (
     TABS_COUNTS.indexOf(values.Count) === -1 ||
     TABS_ACTIVE.indexOf(values.Active) === -1 ||
     TABS_STATES.indexOf(values.State) === -1 ||
+    TABS_CONTENT.indexOf(content) === -1 ||
     !tabsActiveIsValidForCount(values.Active, values.Count)
   ) {
     return null;
@@ -61178,17 +65266,20 @@ function parseTabsVariantName(name) {
     count: values.Count,
     active: values.Active,
     state: values.State,
+    content,
   };
 }
 
 async function updateTabsVariant(
   component,
-  { count, active, state, variableByName, fonts, stats },
+  { count, active, state, content, variableByName, fonts, stats },
 ) {
   const tabCount = TABS_COUNT_TO_NUMBER[count];
   const width = tabsWidthForCount(count);
+  const tabsContent = content || "Label";
+  const stacked = tabsContent === "Icon Over Label";
 
-  component.name = `Count=${count}, Active=${active}, State=${state}`;
+  component.name = `Count=${count}, Active=${active}, State=${state}, Content=${tabsContent}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "FIXED";
   component.counterAxisSizingMode = "FIXED";
@@ -61199,8 +65290,9 @@ async function updateTabsVariant(
   component.paddingRight = 4;
   component.paddingTop = 4;
   component.paddingBottom = 4;
-  // React's h-10: a 32 trigger inside 4 all round.
-  component.resizeWithoutConstraints(width, 40);
+  // React's h-10: a 32 trigger inside 4 all round; stacked, a 56 trigger
+  // (6, the 20 icon, 4, the 20 line, 6) inside the same 4 is 64.
+  component.resizeWithoutConstraints(width, stacked ? 64 : 40);
   component.cornerRadius = KOZMOS_RADIUS.container;
   component.clipsContent = false;
   component.fills = [
@@ -61220,6 +65312,7 @@ async function updateTabsVariant(
     count,
     active,
     state,
+    content: tabsContent,
     tabCount,
     width,
     variableByName,
@@ -62929,6 +67022,1662 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
   );
 }
 
+// --- ImageCropper ----------------------------------------------------------------
+
+// GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
+// column 320 wide (ImageCropper/width/default), the frame and the zoom row 12
+// apart (ImageCropper/gap). The frame is the box, in the Ratio's shape (320
+// square, or 320 by 180 at 16:9), on the control radius (ImageCropper/radius)
+// in Colors/background/100 with a 1 inner edge in Border/Input; the image is
+// the product's, so an Image slot stands in for it. The zoom row is Zoom out,
+// the zoom Slider and Zoom in, 8 apart (ImageCropper/zoom/gap): two 44
+// outline icon buttons and a Slider slot, Core's own set, as ImageField draws
+// its Core parts. `Zoom Controls` shows the row. React's zoom-in and zoom-out
+// magnifiers are not curated icons yet, so the buttons draw the curated plus
+// and minus, as MapControlsGroup's zoom does.
+const IMAGE_CROPPER_GEOMETRY = {
+  width: 320,
+  landscapeHeight: 180,
+  gap: 12,
+  zoomGap: 8,
+  control: 44,
+  imageInset: 16,
+};
+const IMAGE_CROPPER_ZOOM_ROW_NAME = "Zoom Row";
+
+async function createImageCropperVariant(args) {
+  const component = figma.createComponent();
+  await updateImageCropperVariant(component, args);
+  return component;
+}
+
+function parseImageCropperVariantName(name) {
+  return productSdkVariantValues(name, "Ratio", IMAGE_CROPPER_RATIOS);
+}
+
+async function updateImageCropperVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = IMAGE_CROPPER_GEOMETRY;
+  const frameHeight =
+    value === "Landscape" ? geometry.landscapeHeight : geometry.width;
+  productSdkVariantRoot(component, "ImageCropper", "Ratio=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: geometry.gap,
+    width: geometry.width,
+    height: frameHeight + geometry.gap + geometry.control,
+  });
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ImageCropper/gap",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "width",
+    "ImageCropper/width/default",
+    variableByName,
+    stats,
+  );
+
+  const frame = productSdkFrame("Frame", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: geometry.width,
+    height: frameHeight,
+  });
+  frame.cornerRadius = KOZMOS_RADIUS.control;
+  frame.clipsContent = true;
+  frame.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  frame.strokeWeight = 1;
+  frame.strokeAlign = "INSIDE";
+  frame.strokes = [
+    paintFromVariable("Border/Input", "#747B8B", variableByName, stats),
+  ];
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", "image-cropper-frame");
+  bindFloatVariable(
+    frame,
+    "cornerRadius",
+    "ImageCropper/radius",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, frame, "FILL", "FIXED");
+  const image = await productSdkSlot({
+    name: "Image Slot",
+    label: "Image",
+    width: geometry.width - 2 * geometry.imageInset,
+    height: frameHeight - 2 * geometry.imageInset,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: geometry.imageInset,
+  });
+  frame.appendChild(image);
+
+  const row = productSdkFrame(IMAGE_CROPPER_ZOOM_ROW_NAME, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: geometry.zoomGap,
+    width: geometry.width,
+    height: geometry.control,
+  });
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "ImageCropper/zoom/gap",
+    variableByName,
+    stats,
+  );
+  appendWithSizing(component, row, "FILL", "HUG");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom Out Button",
+      glyph: "−",
+      iconName: "minus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+  const slider = await productSdkSlot({
+    name: "Zoom Slider Slot",
+    label: "Slider · Zoom",
+    width: geometry.width - 2 * geometry.control - 2 * geometry.zoomGap,
+    height: geometry.control,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+  });
+  appendWithSizing(row, slider, "FILL", "FIXED");
+  row.appendChild(
+    await productSdkControlButton({
+      name: "Zoom In Button",
+      glyph: "+",
+      iconName: "plus",
+      filled: false,
+      fonts,
+      variableByName,
+      stats,
+    }),
+  );
+}
+
+function configureImageCropperProperties(componentSet, stats) {
+  configureNamedBooleanProperty(
+    componentSet,
+    IMAGE_CROPPER_ZOOM_ROW_NAME,
+    "Zoom Controls",
+    true,
+    stats,
+  );
+}
+
+const IMAGE_CROPPER_DESCRIPTION = [
+  "Kozmos ImageCropper component set generated from React ImageCropper API (GAP-273).",
+  "Ratio maps to aspectRatio: Square is 1, Landscape 16 / 9. Zoom Controls maps to showZoomControls.",
+  "The image is the product's: the Image slot stands in for it. onCrop hands back the frame as fractions of the image.",
+];
+
+async function buildImageCropperComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    x: 80,
+    y: 20400,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION,
+  });
+}
+
+async function updateImageCropperComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    axisName: "Ratio",
+    values: IMAGE_CROPPER_RATIOS,
+    xStep: 400,
+    createVariant: createImageCropperVariant,
+    updateVariant: updateImageCropperVariant,
+    parseVariantName: parseImageCropperVariantName,
+    configureProperties: configureImageCropperProperties,
+    autoReorganize: true,
+    description: IMAGE_CROPPER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildImageCropperComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ImageCropper",
+    componentSetName: "ImageCropper",
+    build: buildImageCropperComponent,
+  });
+}
+
+// --- PageHeader ---------------------------------------------------------------
+
+// GAP-036 (decision 135): React's PageHeader, a band across the page. Its
+// content is a Container's: the window's widest side step, 24
+// (Container/padding/x/window), and GAP-116's block inset, 32 above
+// (Container/padding/y/large) and 24 below (Container/padding/y/medium). The
+// Subtle tone is the band in theme 0, CardHeader's subtle strip's tint; the
+// Default tone paints none. Top to bottom: the Breadcrumb, a live Breadcrumb
+// instance 8 above the title; then a row of the text column and the Actions,
+// 16 apart. The column is the title's line, the Title Text (Heading 3, 24/32,
+// at Medium; Heading 2, 30/36, at Large) with the Info button 8 after it, and
+// the Description Text 4 under it, 14/20 in foreground/400. Info is a live
+// IconButton (Ghost, Small) with info-circle, and Actions a live Button; each
+// sits in a frame as tall as the title's line and is centred on it, so a
+// taller button spills past the line evenly and the header grows no taller.
+// The Breadcrumb, Info, Description and Actions booleans show each, as
+// React draws each only when it is given.
+const PAGE_HEADER_ACTIONS_NAME = "Actions";
+const PAGE_HEADER_INFO_NAME = "Info";
+const PAGE_HEADER_BREADCRUMB_NAME = "Breadcrumb";
+
+function pageHeaderTitleMetrics(size) {
+  return size === "Large"
+    ? { level: "H2", fontSize: 30, lineHeight: 36, token: "3xl" }
+    : { level: "H3", fontSize: 24, lineHeight: 32, token: "2xl" };
+}
+
+async function createPageHeaderVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updatePageHeaderVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parsePageHeaderVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (PAGE_HEADER_TONES.indexOf(values.Tone) === -1) return null;
+  const size = values.Size || "Medium";
+  if (PAGE_HEADER_SIZES.indexOf(size) === -1) return null;
+  return { value: values.Tone, second: size };
+}
+
+function pageHeaderFrame(name, kind, layoutMode) {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = layoutMode;
+  frame.primaryAxisSizingMode = "AUTO";
+  frame.counterAxisSizingMode = "AUTO";
+  frame.primaryAxisAlignItems = "MIN";
+  frame.counterAxisAlignItems = "MIN";
+  frame.itemSpacing = 0;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  frame.setSharedPluginData(RUN_NAMESPACE, "kind", kind);
+  return frame;
+}
+
+async function updatePageHeaderVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const tone = PAGE_HEADER_TONES.indexOf(value) === -1 ? "Subtle" : value;
+  const size = PAGE_HEADER_SIZES.indexOf(second) === -1 ? "Medium" : second;
+  const metrics = pageHeaderTitleMetrics(size);
+  component.name = `Tone=${tone}, Size=${size}`;
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 8;
+  component.paddingLeft = 24;
+  component.paddingRight = 24;
+  component.paddingTop = 32;
+  component.paddingBottom = 24;
+  component.resizeWithoutConstraints(960, 160);
+  component.fills =
+    tone === "Subtle"
+      ? [paintFromVariable("Colors/theme/0", "#F1F5FE", variableByName, stats)]
+      : [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "PageHeader");
+  bindFloatVariable(
+    component,
+    "width",
+    "PageHeader/width/default",
+    variableByName,
+    stats,
+  );
+  for (const field of ["paddingLeft", "paddingRight"])
+    bindFloatVariable(
+      component,
+      field,
+      "Container/padding/x/window",
+      variableByName,
+      stats,
+    );
+  bindFloatVariable(
+    component,
+    "paddingTop",
+    "Container/padding/y/large",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingBottom",
+    "Container/padding/y/medium",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "PageHeader/breadcrumb/gap",
+    variableByName,
+    stats,
+  );
+
+  // Redrawn whole on every Update: the layers hold nothing a designer
+  // overrides but the texts and the booleans, which the properties carry.
+  removeDirectChildren(component);
+
+  const breadcrumb = await createPageHeaderInstance({
+    componentSetName: "Breadcrumb",
+    variantProperties: { Content: "Basic" },
+    name: PAGE_HEADER_BREADCRUMB_NAME,
+    role: "page-header-breadcrumb",
+    stats,
+  });
+  component.appendChild(breadcrumb);
+
+  const row = pageHeaderFrame("Header Row", "page-header-row", "HORIZONTAL");
+  row.itemSpacing = 16;
+  bindFloatVariable(
+    row,
+    "itemSpacing",
+    "PageHeader/gap",
+    variableByName,
+    stats,
+  );
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
+
+  const text = pageHeaderFrame("Header Text", "page-header-text", "VERTICAL");
+  text.itemSpacing = 4;
+  bindFloatVariable(
+    text,
+    "itemSpacing",
+    "PageHeader/text/gap",
+    variableByName,
+    stats,
+  );
+  row.appendChild(text);
+  setLayoutSizingHorizontal(text, "FILL");
+
+  const line = pageHeaderFrame("Title Row", "page-header-title", "HORIZONTAL");
+  line.itemSpacing = 8;
+  bindFloatVariable(
+    line,
+    "itemSpacing",
+    "PageHeader/title/gap",
+    variableByName,
+    stats,
+  );
+  text.appendChild(line);
+
+  const title = figma.createText();
+  title.name = "Title Text";
+  title.fontName = fonts.bold || fonts.medium;
+  title.fontSize = metrics.fontSize;
+  title.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
+  title.textAutoResize = "WIDTH_AND_HEIGHT";
+  await applyTextStyleToNodeAsync(
+    title,
+    textStyleKeyForHeading(metrics.level),
+    stats,
+  );
+  bindFloatVariable(
+    title,
+    "fontSize",
+    `Text/font-size/${metrics.token}`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    title,
+    "lineHeight",
+    `Text/line-height/${metrics.token}`,
+    variableByName,
+    stats,
+  );
+  title.characters = "Settings";
+  title.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  line.appendChild(title);
+  setHugChildSizing(title);
+
+  const info = pageHeaderLine(PAGE_HEADER_INFO_NAME, metrics.lineHeight);
+  line.appendChild(info);
+  const infoButton = await createPageHeaderInfoButton({
+    variableByName,
+    stats,
+  });
+  if (infoButton) info.appendChild(infoButton);
+  // Off by default, as React draws no info button until it is given one.
+  info.visible = false;
+
+  const description = figma.createText();
+  description.name = "Description Text";
+  description.fontName = fonts.regular;
+  description.fontSize = 14;
+  description.lineHeight = { unit: "PIXELS", value: 20 };
+  await applyTextStyleToNodeAsync(
+    description,
+    textStyleKeyForText("Small", "Normal"),
+    stats,
+  );
+  bindFloatVariable(
+    description,
+    "fontSize",
+    "Text/font-size/sm",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    description,
+    "lineHeight",
+    "Text/line-height/sm",
+    variableByName,
+    stats,
+  );
+  description.characters =
+    "Manage the site's map, its levels and who can edit them.";
+  description.fills = [
+    paintFromVariable(
+      "Colors/foreground/400",
+      "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+  text.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+
+  const actions = pageHeaderLine(PAGE_HEADER_ACTIONS_NAME, metrics.lineHeight);
+  actions.itemSpacing = 8;
+  bindFloatVariable(
+    actions,
+    "itemSpacing",
+    "PageHeader/title/gap",
+    variableByName,
+    stats,
+  );
+  row.appendChild(actions);
+  const created = await createNestedComponentInstance({
+    componentSetName: "Button",
+    variantProperties: {
+      Variant: "Default",
+      Size: "Default",
+      State: "Default",
+    },
+    name: "Primary Action",
+    role: "page-header-action",
+    stats,
+  });
+  if (created) {
+    setInstanceTextProperty(
+      created.instance,
+      created.componentSet,
+      "Label Text",
+      "Save changes",
+      stats,
+    );
+    actions.appendChild(created.instance);
+    // As wide as its words, as React's: Button's Default variant is fixed at
+    // 112, and "Save changes" ran 14 past its padding.
+    setLayoutSizingHorizontal(created.instance, "HUG");
+  } else {
+    actions.appendChild(
+      createMissingNestedComponentNode(
+        "Primary Action",
+        "Build Button before updating PageHeader.",
+        stats,
+      ),
+    );
+  }
+}
+
+/**
+ * A frame as tall as the title's line that hugs what it holds and centres
+ * it, so a taller button spills past the line evenly.
+ */
+function pageHeaderLine(name, lineHeight) {
+  const frame = pageHeaderFrame(name, "page-header-line", "HORIZONTAL");
+  frame.counterAxisSizingMode = "FIXED";
+  frame.counterAxisAlignItems = "CENTER";
+  frame.resizeWithoutConstraints(44, lineHeight);
+  return frame;
+}
+
+async function createPageHeaderInstance({
+  componentSetName,
+  variantProperties,
+  name,
+  role,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name,
+    role,
+    stats,
+  });
+  if (!created)
+    return createMissingNestedComponentNode(
+      name,
+      `Build ${componentSetName} before updating PageHeader.`,
+      stats,
+    );
+  return created.instance;
+}
+
+/**
+ * The info button: IconButton's Ghost at Small with info-circle. With no
+ * info-circle on the Icons page the frame is left empty and the run says so:
+ * the IconButton's own default icon would be the wrong glyph.
+ */
+async function createPageHeaderInfoButton({ variableByName, stats }) {
+  const glyph = await findImporterIconSource(
+    "info-circle",
+    "PageHeader",
+    stats,
+  );
+  if (!glyph) return null;
+  const created = await createNestedComponentInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: "Ghost", Size: "Small", State: "Default" },
+    name: "Info Button",
+    role: "page-header-info",
+    stats,
+  });
+  if (!created)
+    return createMissingNestedComponentNode(
+      "Info Button",
+      "Build IconButton before updating PageHeader.",
+      stats,
+    );
+  setInstanceSwapProperty(
+    created.instance,
+    created.componentSet,
+    BUTTON_ICON_PROPERTY,
+    glyph.id,
+    stats,
+  );
+  retintPageHeaderInfoIcon(created.instance, variableByName, stats);
+  return created.instance;
+}
+
+/**
+ * Swapping the IconButton's Icon replaces the layer its tint was laid on, so
+ * info-circle would draw in its source's black in both themes: the tint the
+ * ghost button gives its icon is laid again on the swapped-in layers.
+ */
+function retintPageHeaderInfoIcon(instance, variableByName, stats) {
+  const config = buttonConfig("Ghost", "Default");
+  const icon = instance.findOne(
+    (node) =>
+      node.type === "INSTANCE" &&
+      (node.name === "Icon" ||
+        Boolean(
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent,
+        )),
+  );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "page-header-info-icon",
+      "PageHeader: the Info Button has no Icon layer to tint.",
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+}
+
+function configurePageHeaderProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    "Settings",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Manage the site's map, its levels and who can edit them.",
+    stats,
+  );
+  // As the native Code Connect reads them: a breadcrumb, a description and
+  // an action by default, no info button.
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_BREADCRUMB_NAME,
+    "Breadcrumb",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_INFO_NAME,
+    "Info",
+    false,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Description",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_ACTIONS_NAME,
+    "Actions",
+    true,
+    stats,
+  );
+}
+
+const PAGE_HEADER_DESCRIPTION = [
+  "Kozmos PageHeader component set generated from React PageHeader API (GAP-036).",
+  "Tone maps to PageHeader.tone; Size to PageHeader.size (Medium md, Large lg).",
+  "Title Text maps to title; Description Text to description.",
+  "Breadcrumb, Info, Description and Actions show what React draws when it is given each.",
+];
+
+async function buildPageHeaderComponent() {
+  return buildSingleAxisComponent({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    axisName: "Tone",
+    values: PAGE_HEADER_TONES,
+    axis2Name: "Size",
+    axis2Values: PAGE_HEADER_SIZES,
+    x: 80,
+    y: 12600,
+    xStep: 1000,
+    yStep: 240,
+    createVariant: createPageHeaderVariant,
+    configureProperties: configurePageHeaderProperties,
+    description: PAGE_HEADER_DESCRIPTION,
+  });
+}
+
+async function updatePageHeaderComponent() {
+  return updateSingleAxisComponent({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    axisName: "Tone",
+    values: PAGE_HEADER_TONES,
+    axis2Name: "Size",
+    axis2Values: PAGE_HEADER_SIZES,
+    xStep: 1000,
+    yStep: 240,
+    createVariant: createPageHeaderVariant,
+    updateVariant: updatePageHeaderVariant,
+    parseVariantName: parsePageHeaderVariantName,
+    configureProperties: configurePageHeaderProperties,
+    description: PAGE_HEADER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildPageHeaderComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "PageHeader",
+    componentSetName: "PageHeader",
+    build: buildPageHeaderComponent,
+  });
+}
+
+// --- PersonaMark ------------------------------------------------------------
+
+// GAP-106: React's PersonaMark, a persona's colour as a diamond: 12 by 12
+// (PersonaMark/size), a square turned an eighth with its points on the box's
+// edges, drawn as a path so it lays out at its own size. Its fill is the
+// persona's colour, product data that no variable holds: an example persona's
+// here, which a designer overrides. A group is its marks 2 apart
+// (PersonaMark/gap, layout spacing 25) in a row that hugs them. Each variant is
+// redrawn whole on every Update: it holds no instance and no text.
+const PERSONA_MARK_PATH = "M 6 0 L 12 6 L 6 12 L 0 6 Z";
+// Example personas' colours, as Pointr Cloud's Customer, Visitor and Staff.
+const PERSONA_MARK_EXAMPLES = ["#FF9800", "#2196F3", "#4CAF50"];
+
+async function createPersonaMarkVariant({ value, variableByName, stats }) {
+  const component = figma.createComponent();
+  await updatePersonaMarkVariant(component, { value, variableByName, stats });
+  return component;
+}
+
+function parsePersonaMarkVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (PERSONA_MARK_FORMS.indexOf(values.Form) === -1) return null;
+  return { value: values.Form };
+}
+
+async function updatePersonaMarkVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  component.name = `Form=${value}`;
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "CENTER";
+  component.itemSpacing = 2;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.fills = [];
+  component.strokes = [];
+  component.clipsContent = false;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "PersonaMark");
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "PersonaMark/gap",
+    variableByName,
+    stats,
+  );
+
+  removeDirectChildren(component);
+  const colours =
+    value === "Group"
+      ? PERSONA_MARK_EXAMPLES
+      : PERSONA_MARK_EXAMPLES.slice(0, 1);
+  colours.forEach((colour, index) => {
+    const mark = figma.createVector();
+    mark.name = value === "Group" ? `Mark ${index + 1}` : "Mark";
+    mark.vectorPaths = [{ windingRule: "NONZERO", data: PERSONA_MARK_PATH }];
+    mark.resizeWithoutConstraints(12, 12);
+    mark.fills = [paintFromHex(colour)];
+    mark.strokes = [];
+    mark.setSharedPluginData(RUN_NAMESPACE, "kind", "persona-mark");
+    component.appendChild(mark);
+    bindFloatVariable(mark, "width", "PersonaMark/size", variableByName, stats);
+    bindFloatVariable(
+      mark,
+      "height",
+      "PersonaMark/size",
+      variableByName,
+      stats,
+    );
+  });
+}
+
+// --- ListItem and SettingsRow -------------------------------------------------
+
+// GAP-195, decision 135: React's ListItem filled in, the Get started
+// checklist row. A row 360 wide (List/width/default) padded 16 across
+// (List/item/padding/x) and 12 down (List/item/padding/y/default), its three
+// columns 12 apart (ListItem/gap): a status mark at the start, 20 across
+// (ListItem/status/size), on the title's 20 line; the body, which takes the
+// rest, its lines 2 apart (ListItem/body/gap): the title 14/20 medium in the
+// foreground with a role tag 8 after it (ListItem/heading/gap), the
+// description 14/20 in the muted foreground and the meta 12/16 in it too;
+// one action at the end, centred on the row. Selected tints the row theme 0,
+// as React's `selected` does. Each slot is shown by its boolean; the texts
+// are properties.
+const LIST_ITEM_BODY_NAME = "Body";
+const LIST_ITEM_HEADING_NAME = "Heading";
+
+async function createListItemVariant({ value, variableByName, fonts, stats }) {
+  const component = figma.createComponent();
+  await updateListItemVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseListItemVariantName(name) {
+  const values = parseVariantNameParts(name);
+  if (LIST_ITEM_SELECTED.indexOf(values.Selected) === -1) return null;
+  return { value: values.Selected };
+}
+
+function parseVariantNameParts(name) {
+  const values = {};
+  for (const part of String(name).split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  return values;
+}
+
+/** The row's own frame: React's padded ListItem, one per variant. */
+function applyListItemRowFrame(component, selected, variableByName, stats) {
+  component.layoutMode = "HORIZONTAL";
+  component.primaryAxisSizingMode = "FIXED";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.paddingLeft = 16;
+  component.paddingRight = 16;
+  component.paddingTop = 12;
+  component.paddingBottom = 12;
+  component.itemSpacing = 12;
+  component.resizeWithoutConstraints(360, 48);
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = selected
+    ? [paintFromVariable("Colors/theme/0", "#EDF2FE", variableByName, stats)]
+    : [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "width",
+    "List/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingLeft",
+    "List/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingRight",
+    "List/item/padding/x",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingTop",
+    "List/item/padding/y/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "paddingBottom",
+    "List/item/padding/y/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ListItem/gap",
+    variableByName,
+    stats,
+  );
+}
+
+async function createListItemText({
+  name,
+  characters,
+  role,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const text = figma.createText();
+  text.name = name;
+  const meta = role === "meta";
+  text.fontName = role === "title" ? fonts.medium : fonts.regular;
+  text.fontSize = meta ? 12 : 14;
+  text.lineHeight = { unit: "PIXELS", value: meta ? 16 : 20 };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, listItemTextStyleKey(name), stats);
+  text.fills = [
+    role === "title"
+      ? paintFromVariable(
+          "Colors/foreground/0",
+          "#0B0D12",
+          variableByName,
+          stats,
+        )
+      : paintFromVariable(
+          "Colors/foreground/400",
+          "#5D626F",
+          variableByName,
+          stats,
+        ),
+  ];
+  if (!meta) {
+    bindFloatVariable(
+      text,
+      "fontSize",
+      "List/item/font-size",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      text,
+      "lineHeight",
+      "List/item/line-height",
+      variableByName,
+      stats,
+    );
+  }
+  return text;
+}
+
+/** The text style the audit expects on a ListItem's or SettingsRow's text. */
+function listItemTextStyleKey(textName) {
+  if (textName === "Title Text" || textName === "Label Text")
+    return textStyleKeyForText("Small", "Medium");
+  if (textName === "Addon Text" || textName === "State Text")
+    return textStyleKeyForText("XS", "Semibold");
+  if (textName === "Meta Text" || textName === "Reason Text")
+    return textStyleKeyForText("XS", "Normal");
+  if (textName === "Action Text" || textName === "Reset Text")
+    return textStyleKeyForText("Small", "Medium");
+  return textStyleKeyForText("Small", "Normal");
+}
+
+/** A vertical column that takes the rest of the row: the row's body. */
+function createListItemBody(variableByName, stats) {
+  const body = figma.createFrame();
+  body.name = LIST_ITEM_BODY_NAME;
+  body.layoutMode = "VERTICAL";
+  body.primaryAxisSizingMode = "AUTO";
+  body.counterAxisSizingMode = "FIXED";
+  body.primaryAxisAlignItems = "MIN";
+  body.counterAxisAlignItems = "MIN";
+  body.itemSpacing = 2;
+  body.paddingLeft = 0;
+  body.paddingRight = 0;
+  body.paddingTop = 0;
+  body.paddingBottom = 0;
+  body.fills = [];
+  body.strokes = [];
+  body.clipsContent = false;
+  bindFloatVariable(
+    body,
+    "itemSpacing",
+    "ListItem/body/gap",
+    variableByName,
+    stats,
+  );
+  return body;
+}
+
+/** The title's line: the title, and what sits beside it. */
+function createListItemHeading(variableByName, stats) {
+  const heading = figma.createFrame();
+  heading.name = LIST_ITEM_HEADING_NAME;
+  heading.layoutMode = "HORIZONTAL";
+  heading.primaryAxisSizingMode = "AUTO";
+  heading.counterAxisSizingMode = "AUTO";
+  heading.primaryAxisAlignItems = "MIN";
+  heading.counterAxisAlignItems = "CENTER";
+  heading.itemSpacing = 8;
+  heading.paddingLeft = 0;
+  heading.paddingRight = 0;
+  heading.paddingTop = 0;
+  heading.paddingBottom = 0;
+  heading.fills = [];
+  heading.strokes = [];
+  heading.clipsContent = false;
+  bindFloatVariable(
+    heading,
+    "itemSpacing",
+    "ListItem/heading/gap",
+    variableByName,
+    stats,
+  );
+  return heading;
+}
+
+/**
+ * A tag beside the title: Tag's pill, 12 semibold on the muted fill
+ * (secondary) or on nothing with an edge (outline), 10 across and 2 down.
+ */
+async function createListItemTag({
+  name,
+  textName,
+  characters,
+  outline,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const tag = figma.createFrame();
+  tag.name = name;
+  tag.layoutMode = "HORIZONTAL";
+  tag.primaryAxisSizingMode = "AUTO";
+  tag.counterAxisSizingMode = "AUTO";
+  tag.primaryAxisAlignItems = "CENTER";
+  tag.counterAxisAlignItems = "CENTER";
+  tag.paddingLeft = 10;
+  tag.paddingRight = 10;
+  tag.paddingTop = 2;
+  tag.paddingBottom = 2;
+  tag.cornerRadius = KOZMOS_RADIUS.pill;
+  tag.clipsContent = false;
+  tag.fills = outline
+    ? []
+    : [
+        paintFromVariable(
+          "Colors/background/100",
+          "#E3E4E8",
+          variableByName,
+          stats,
+        ),
+      ];
+  setNodePropertyIfSupported(tag, "strokesIncludedInLayout", true);
+  tag.strokeWeight = 1;
+  tag.strokeAlign = "INSIDE";
+  tag.strokes = outline
+    ? [paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats)]
+    : [];
+  const text = figma.createText();
+  text.name = textName;
+  text.fontName = textFontForWeight("Semibold", fonts);
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, listItemTextStyleKey(textName), stats);
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
+  ];
+  tag.appendChild(text);
+  setHugChildSizing(text);
+  return tag;
+}
+
+/** The checklist's status mark, Done: the theme fill with a 12 check. */
+async function createListItemStatusMark(variableByName, stats) {
+  const mark = figma.createFrame();
+  mark.name = "Leading";
+  mark.layoutMode = "HORIZONTAL";
+  mark.primaryAxisSizingMode = "FIXED";
+  mark.counterAxisSizingMode = "FIXED";
+  mark.primaryAxisAlignItems = "CENTER";
+  mark.counterAxisAlignItems = "CENTER";
+  mark.resizeWithoutConstraints(20, 20);
+  mark.cornerRadius = KOZMOS_RADIUS.pill;
+  mark.clipsContent = false;
+  mark.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  mark.strokes = [];
+  bindFloatVariable(
+    mark,
+    "width",
+    "ListItem/status/size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    mark,
+    "height",
+    "ListItem/status/size",
+    variableByName,
+    stats,
+  );
+  mark.setSharedPluginData(RUN_NAMESPACE, "kind", "list-item-status");
+  const check = await createFixedIconInstance(
+    "check",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    12,
+    null,
+  );
+  check.name = "Status Icon";
+  mark.appendChild(check);
+  return mark;
+}
+
+/** One small outline button: the row's action, Button's sm outline. */
+async function createListItemAction(fonts, variableByName, stats) {
+  const action = figma.createFrame();
+  action.name = "Trailing";
+  action.layoutMode = "HORIZONTAL";
+  action.primaryAxisSizingMode = "AUTO";
+  action.counterAxisSizingMode = "FIXED";
+  action.primaryAxisAlignItems = "CENTER";
+  action.counterAxisAlignItems = "CENTER";
+  action.paddingLeft = 12;
+  action.paddingRight = 12;
+  action.paddingTop = 0;
+  action.paddingBottom = 0;
+  action.resizeWithoutConstraints(72, 32);
+  action.cornerRadius = KOZMOS_RADIUS.control;
+  action.clipsContent = false;
+  action.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  setNodePropertyIfSupported(action, "strokesIncludedInLayout", true);
+  action.strokeWeight = 1;
+  action.strokeAlign = "INSIDE";
+  action.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  const text = figma.createText();
+  text.name = "Action Text";
+  text.fontName = fonts.medium;
+  text.fontSize = 14;
+  text.lineHeight = { unit: "PIXELS", value: 20 };
+  text.characters = "Replay";
+  await applyTextStyleToNodeAsync(
+    text,
+    listItemTextStyleKey("Action Text"),
+    stats,
+  );
+  text.fills = [
+    paintFromVariable("Colors/foreground/0", "#0B0D12", variableByName, stats),
+  ];
+  action.appendChild(text);
+  setHugChildSizing(text);
+  return action;
+}
+
+async function updateListItemVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  component.name = `Selected=${value}`;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "ListItem");
+  applyListItemRowFrame(component, value === "True", variableByName, stats);
+
+  // Redrawn whole on every Update: the row holds no designer's override but
+  // its texts and its booleans, which the properties carry.
+  removeDirectChildren(component);
+  const leading = await createListItemStatusMark(variableByName, stats);
+  component.appendChild(leading);
+  setFixedChildSizing(leading);
+  setNodePropertyIfSupported(leading, "layoutAlign", "INHERIT");
+
+  const body = createListItemBody(variableByName, stats);
+  component.appendChild(body);
+  const heading = createListItemHeading(variableByName, stats);
+  body.appendChild(heading);
+  const title = await createListItemText({
+    name: "Title Text",
+    characters: "Explore the map",
+    role: "title",
+    fonts,
+    variableByName,
+    stats,
+  });
+  heading.appendChild(title);
+  setHugChildSizing(title);
+  const addon = await createListItemTag({
+    name: "Title Addon",
+    textName: "Addon Text",
+    characters: "Viewer",
+    outline: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  heading.appendChild(addon);
+  setHugChildSizing(addon);
+  setHugChildSizing(heading);
+  setNodePropertyIfSupported(heading, "layoutAlign", "INHERIT");
+  const description = await createListItemText({
+    name: "Description Text",
+    characters: "Pan, zoom and change levels.",
+    role: "description",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+  const meta = await createListItemText({
+    name: "Meta Text",
+    characters: "2 min",
+    role: "meta",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(meta);
+  setLayoutSizingHorizontal(meta, "FILL");
+  setTextAutoResize(meta, "HEIGHT");
+  setLayoutSizingHorizontal(body, "FILL");
+  setLayoutSizingVertical(body, "HUG");
+
+  const trailing = await createListItemAction(fonts, variableByName, stats);
+  component.appendChild(trailing);
+  // Button's sm: 32 tall, as wide as its words and 12 either side.
+  setLayoutSizingHorizontal(trailing, "HUG");
+  setLayoutSizingVertical(trailing, "FIXED");
+  setNodePropertyIfSupported(trailing, "layoutAlign", "CENTER");
+}
+
+const LIST_ITEM_BOOLEANS = [
+  ["Leading", "Show Leading"],
+  ["Title Addon", "Show Title Addon"],
+  ["Description Text", "Show Description"],
+  ["Meta Text", "Show Meta"],
+  ["Trailing", "Show Trailing"],
+];
+
+function configureListItemProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    "Explore the map",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Addon Text",
+    "Addon Text",
+    "Viewer",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Pan, zoom and change levels.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Meta Text",
+    "Meta Text",
+    "2 min",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Action Text",
+    "Action Text",
+    "Replay",
+    stats,
+  );
+  for (const pair of LIST_ITEM_BOOLEANS) {
+    configureNamedBooleanProperty(componentSet, pair[0], pair[1], true, stats);
+  }
+}
+
+// GAP-195: ListItem. Selected is the row's tint.
+async function buildListItemComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    axisName: "Selected",
+    values: LIST_ITEM_SELECTED,
+    x: 80,
+    y: 7400,
+    xStep: 420,
+    createVariant: createListItemVariant,
+    configureProperties: configureListItemProperties,
+    description: listItemSetDescription(false),
+  });
+}
+
+async function updateListItemComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    axisName: "Selected",
+    values: LIST_ITEM_SELECTED,
+    xStep: 420,
+    createVariant: createListItemVariant,
+    updateVariant: updateListItemVariant,
+    parseVariantName: parseListItemVariantName,
+    configureProperties: configureListItemProperties,
+    description: listItemSetDescription(true),
+  });
+}
+
+function listItemSetDescription(updated) {
+  const lines = [
+    "Kozmos ListItem component set generated from React ListItem's slots (GAP-195, decision 135).",
+    "Leading maps to leading (a ListItemStatus), Title Text to title, Addon Text to titleAddon (a Tag), Description Text to description, Meta Text to meta and Action Text to trailing (one Button).",
+    "Selected maps to selected: the row tinted theme 0.",
+  ];
+  if (updated)
+    lines.push("Updated in place to preserve the Code Connect node ID.");
+  return lines;
+}
+
+async function rebuildListItemComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ListItem",
+    componentSetName: "ListItem",
+    build: buildListItemComponent,
+  });
+}
+
+// GAP-040, decision 135: SettingsRow, ListItem's row with a setting in it.
+// The label 14/20 medium and the state's tag beside it (Inherited, an
+// outline tag; Overridden, the secondary fill), the description under it,
+// and the control at the end: Switch's track 44 by 24, on in the theme fill.
+// Overridden draws Reset to default under the description, in the theme's
+// 600 at 14 medium; Disabled draws the reason there instead, the label in the
+// muted foreground and the switch at half, as React draws a disabled row.
+const SETTINGS_ROW_CONTROL_NAME = "Control";
+
+async function createSettingsRowVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateSettingsRowVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseSettingsRowVariantName(name) {
+  const values = parseVariantNameParts(name);
+  if (SETTINGS_ROW_STATES.indexOf(values.State) === -1) return null;
+  const disabled = values.Disabled === undefined ? "False" : values.Disabled;
+  if (SETTINGS_ROW_DISABLED.indexOf(disabled) === -1) return null;
+  return { value: values.State, second: disabled };
+}
+
+/** Switch's track and thumb, on: React's h-6 w-11, the thumb 20. */
+function createSettingsRowSwitch(disabled, variableByName, stats) {
+  const track = figma.createFrame();
+  track.name = SETTINGS_ROW_CONTROL_NAME;
+  track.layoutMode = "HORIZONTAL";
+  track.primaryAxisSizingMode = "FIXED";
+  track.counterAxisSizingMode = "FIXED";
+  track.primaryAxisAlignItems = "MAX";
+  track.counterAxisAlignItems = "CENTER";
+  track.paddingLeft = 2;
+  track.paddingRight = 2;
+  track.paddingTop = 2;
+  track.paddingBottom = 2;
+  track.resizeWithoutConstraints(44, 24);
+  track.cornerRadius = KOZMOS_RADIUS.pill;
+  track.clipsContent = false;
+  track.opacity = disabled ? 0.5 : 1;
+  track.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  track.strokes = [];
+  bindFloatVariable(
+    track,
+    "width",
+    "Switch/track/width",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    track,
+    "height",
+    "Switch/track/height",
+    variableByName,
+    stats,
+  );
+  const thumb = figma.createEllipse();
+  thumb.name = "Thumb";
+  thumb.resize(20, 20);
+  thumb.fills = [
+    paintFromVariable(
+      THEME_FILL_FOREGROUND.name,
+      THEME_FILL_FOREGROUND.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  track.appendChild(thumb);
+  return track;
+}
+
+async function updateSettingsRowVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const disabled = second === "True";
+  component.name = `State=${state}, Disabled=${disabled ? "True" : "False"}`;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", "SettingsRow");
+  applyListItemRowFrame(component, false, variableByName, stats);
+  component.resizeWithoutConstraints(560, 48);
+  bindFloatVariable(
+    component,
+    "width",
+    "SettingsRow/width/default",
+    variableByName,
+    stats,
+  );
+
+  removeDirectChildren(component);
+  const body = createListItemBody(variableByName, stats);
+  component.appendChild(body);
+  const heading = createListItemHeading(variableByName, stats);
+  body.appendChild(heading);
+  const label = await createListItemText({
+    name: "Label Text",
+    characters: "Show the banner",
+    role: "title",
+    fonts,
+    variableByName,
+    stats,
+  });
+  if (disabled) {
+    label.fills = [
+      paintFromVariable(
+        "Colors/foreground/400",
+        "#5D626F",
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+  heading.appendChild(label);
+  setHugChildSizing(label);
+  if (state !== "None") {
+    const tag = await createListItemTag({
+      name: "State",
+      textName: "State Text",
+      characters: state,
+      outline: state === "Inherited",
+      fonts,
+      variableByName,
+      stats,
+    });
+    heading.appendChild(tag);
+    setHugChildSizing(tag);
+  }
+  setHugChildSizing(heading);
+  setNodePropertyIfSupported(heading, "layoutAlign", "INHERIT");
+  const description = await createListItemText({
+    name: "Description Text",
+    characters: "A message above the map.",
+    role: "description",
+    fonts,
+    variableByName,
+    stats,
+  });
+  body.appendChild(description);
+  setLayoutSizingHorizontal(description, "FILL");
+  setTextAutoResize(description, "HEIGHT");
+  if (disabled) {
+    const reason = await createListItemText({
+      name: "Reason Text",
+      characters: "Turn on Positioning first.",
+      role: "meta",
+      fonts,
+      variableByName,
+      stats,
+    });
+    body.appendChild(reason);
+    setLayoutSizingHorizontal(reason, "FILL");
+    setTextAutoResize(reason, "HEIGHT");
+  } else if (state === "Overridden") {
+    const reset = figma.createText();
+    reset.name = "Reset Text";
+    reset.fontName = fonts.medium;
+    reset.fontSize = 14;
+    reset.lineHeight = { unit: "PIXELS", value: 20 };
+    reset.characters = "Reset to default";
+    await applyTextStyleToNodeAsync(
+      reset,
+      listItemTextStyleKey("Reset Text"),
+      stats,
+    );
+    reset.fills = [
+      paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+    ];
+    body.appendChild(reset);
+    setHugChildSizing(reset);
+    setNodePropertyIfSupported(reset, "layoutAlign", "INHERIT");
+  }
+  setLayoutSizingHorizontal(body, "FILL");
+  setLayoutSizingVertical(body, "HUG");
+
+  const control = createSettingsRowSwitch(disabled, variableByName, stats);
+  component.appendChild(control);
+  setFixedChildSizing(control);
+}
+
+function configureSettingsRowProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Label Text",
+    "Label Text",
+    "Show the banner",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "A message above the map.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Reason Text",
+    "Reason Text",
+    "Turn on Positioning first.",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Show Description",
+    true,
+    stats,
+  );
+}
+
+// GAP-040: SettingsRow. State is the value's source; Disabled the row's.
+async function buildSettingsRowComponent() {
+  return buildSingleAxisComponent({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    axisName: "State",
+    values: SETTINGS_ROW_STATES,
+    axis2Values: SETTINGS_ROW_DISABLED,
+    x: 80,
+    y: 7640,
+    xStep: 620,
+    yStep: 140,
+    createVariant: createSettingsRowVariant,
+    configureProperties: configureSettingsRowProperties,
+    description: settingsRowSetDescription(false),
+  });
+}
+
+async function updateSettingsRowComponent() {
+  return updateSingleAxisComponent({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    axisName: "State",
+    values: SETTINGS_ROW_STATES,
+    axis2Values: SETTINGS_ROW_DISABLED,
+    xStep: 620,
+    yStep: 140,
+    createVariant: createSettingsRowVariant,
+    updateVariant: updateSettingsRowVariant,
+    parseVariantName: parseSettingsRowVariantName,
+    configureProperties: configureSettingsRowProperties,
+    description: settingsRowSetDescription(true),
+  });
+}
+
+function settingsRowSetDescription(updated) {
+  const lines = [
+    "Kozmos SettingsRow component set generated from React SettingsRow (GAP-040, decision 135), a ListItem with a setting in it.",
+    "State maps to state: None is unset, Inherited and Overridden draw their tag; Overridden offers Reset to default (onReset).",
+    "Disabled maps to disabled; Reason Text to disabledReason. Label Text maps to label, Description Text to description.",
+    "The switch stands for the control slot: any Kozmos control goes there.",
+  ];
+  if (updated)
+    lines.push("Updated in place to preserve the Code Connect node ID.");
+  return lines;
+}
+
+async function rebuildSettingsRowComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "SettingsRow",
+    componentSetName: "SettingsRow",
+    build: buildSettingsRowComponent,
+  });
+}
+
 async function createCheckboxVariant({
   checked,
   state,
@@ -62979,21 +68728,7 @@ async function updateCheckboxVariant(
   const config = checkboxConfig(checked, state);
 
   component.name = `Checked=${checked}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "FIXED";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "MIN";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 8;
-  component.paddingLeft = 0;
-  component.paddingRight = 0;
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(176, 44);
-  component.cornerRadius = KOZMOS_RADIUS.none;
-  component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  setControlRowFrame(component, "Checkbox");
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Checkbox");
 
@@ -63009,6 +68744,7 @@ async function updateCheckboxVariant(
 }
 
 async function createRadioVariant({
+  variant = "Default",
   checked,
   state,
   variableByName,
@@ -63017,6 +68753,7 @@ async function createRadioVariant({
 }) {
   const component = figma.createComponent();
   await updateRadioVariant(component, {
+    variant,
     checked,
     state,
     variableByName,
@@ -63024,6 +68761,55 @@ async function createRadioVariant({
     stats,
   });
   return component;
+}
+
+function radioVariantCombinations() {
+  const combinations = [];
+  for (const variant of RADIO_VARIANTS) {
+    for (const checked of RADIO_CHECKED) {
+      for (const state of RADIO_STATES) {
+        combinations.push({ variant, checked, state });
+      }
+    }
+  }
+  return combinations;
+}
+
+function radioVariantKey(props) {
+  return `${props.variant}/${props.checked}/${props.state}`;
+}
+
+// The Default variants in a row of six, then the cards, then the tiles, each
+// row as tall as its tallest variant and 40 apart: the set's top-left, its
+// default, stays Checked=Unchecked, State=Default, Variant=Default.
+function layoutRadioVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+  let y = 0;
+  for (const variant of RADIO_VARIANTS) {
+    let x = 0;
+    let rowHeight = 0;
+    for (const checked of RADIO_CHECKED) {
+      for (const state of RADIO_STATES) {
+        const child = componentSet.children.find((node) => {
+          if (node.type !== "COMPONENT") return false;
+          const props = parseRadioVariantName(node.name);
+          return (
+            props &&
+            props.variant === variant &&
+            props.checked === checked &&
+            props.state === state
+          );
+        });
+        if (!child) continue;
+        child.x = x;
+        child.y = y;
+        x += child.width + 40;
+        rowHeight = Math.max(rowHeight, child.height);
+      }
+    }
+    if (rowHeight > 0) y += rowHeight + 40;
+  }
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 function parseRadioVariantName(name) {
@@ -63038,14 +68824,18 @@ function parseRadioVariantName(name) {
     values[key] = value;
   }
 
+  // A variant from before the Variant axis (GAP-158) is a Default one.
+  const variant = values.Variant || "Default";
   if (
     RADIO_CHECKED.indexOf(values.Checked) === -1 ||
-    RADIO_STATES.indexOf(values.State) === -1
+    RADIO_STATES.indexOf(values.State) === -1 ||
+    RADIO_VARIANTS.indexOf(variant) === -1
   ) {
     return null;
   }
 
   return {
+    variant,
     checked: values.Checked,
     state: values.State,
   };
@@ -63053,28 +68843,29 @@ function parseRadioVariantName(name) {
 
 async function updateRadioVariant(
   component,
-  { checked, state, variableByName, fonts, stats },
+  { variant = "Default", checked, state, variableByName, fonts, stats },
 ) {
   const config = radioConfig(checked, state);
 
-  component.name = `Checked=${checked}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "FIXED";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "MIN";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 8;
-  component.paddingLeft = 0;
-  component.paddingRight = 0;
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(176, 44);
-  component.cornerRadius = KOZMOS_RADIUS.none;
-  component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  component.name = `Checked=${checked}, State=${state}, Variant=${variant}`;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
+
+  if (variant === "Card" || variant === "Tile") {
+    await syncRadioBoxVariantChildren({
+      component,
+      variant,
+      checked,
+      state,
+      config,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
+
+  setControlRowFrame(component, "Radio");
 
   await syncRadioVariantChildren({
     component,
@@ -63137,21 +68928,7 @@ async function updateSwitchVariant(
   const config = switchConfig(checked, state);
 
   component.name = `Checked=${checked}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "FIXED";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "MIN";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 8;
-  component.paddingLeft = 0;
-  component.paddingRight = 0;
-  component.paddingTop = 0;
-  component.paddingBottom = 0;
-  component.resizeWithoutConstraints(176, 44);
-  component.cornerRadius = KOZMOS_RADIUS.none;
-  component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  setControlRowFrame(component, "Switch");
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Switch");
 
@@ -64377,6 +70154,7 @@ async function updateFileUploadVariant(
 ) {
   const config = inputConfig(state, status);
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
 
   component.name = `State=${state}, Status=${status}, Content=${content}`;
   component.layoutMode = "VERTICAL";
@@ -64389,7 +70167,10 @@ async function updateFileUploadVariant(
   component.paddingRight = 0;
   component.paddingTop = 0;
   component.paddingBottom = 0;
-  component.resizeWithoutConstraints(384, hasFiles ? 302 : 218);
+  component.resizeWithoutConstraints(
+    384,
+    hasFiles ? 302 : isPreview ? 130 : 218,
+  );
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
   component.fills = [];
@@ -64421,7 +70202,7 @@ function layoutFileUploadVariants(componentSet) {
     const stateIndex = FILE_UPLOAD_STATES.indexOf(props.state);
     const statusIndex = FILE_UPLOAD_STATUSES.indexOf(props.status);
     const contentIndex = FILE_UPLOAD_CONTENT.indexOf(props.content);
-    child.x = statusIndex * 880 + contentIndex * 440;
+    child.x = statusIndex * FILE_UPLOAD_STATUS_STRIDE + contentIndex * 440;
     child.y = stateIndex * 390;
   }
 }
@@ -64662,6 +70443,7 @@ async function updateSearchVariant(
 async function createSelectVariant({
   state,
   status,
+  type,
   variableByName,
   fonts,
   stats,
@@ -64670,6 +70452,7 @@ async function createSelectVariant({
   await updateSelectVariant(component, {
     state,
     status,
+    type,
     variableByName,
     fonts,
     stats,
@@ -64677,25 +70460,40 @@ async function createSelectVariant({
   return component;
 }
 
+// The state-status builders carry a third axis as `type`; Select's is
+// Content. A variant drawn before the axis is Closed, so Update renames it in
+// place and its node id survives.
 function parseSelectVariantName(name) {
-  return parseStateStatusVariantName(name, SELECT_STATES, SELECT_STATUSES);
+  const props = parseStateStatusVariantName(
+    name,
+    SELECT_STATES,
+    SELECT_STATUSES,
+  );
+  if (!props) return null;
+  const match = /(?:^|,)\s*Content=([^,]+)/.exec(name);
+  const content = match ? match[1].trim() : "Closed";
+  if (SELECT_CONTENT.indexOf(content) === -1) return null;
+  return { state: props.state, status: props.status, type: content };
 }
 
 async function updateSelectVariant(
   component,
-  { state, status, variableByName, fonts, stats },
+  { state, status, type, variableByName, fonts, stats },
 ) {
   const config = inputConfig(state, status);
+  const content = type || "Closed";
+  const isOpen = content === "Open";
 
-  component.name = `State=${state}, Status=${status}`;
+  component.name = `State=${state}, Status=${status}, Content=${content}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "MIN";
   // React's FieldWrapper gap, between the trigger and Reset Mixed when it
-  // shows (GAP-153); nothing else shares the column.
-  component.itemSpacing = 6;
+  // shows (GAP-153); Open: SelectContent's translate-y-1, 4 under the
+  // trigger (GAP-164), with Reset Mixed (hidden by default) between them.
+  component.itemSpacing = isOpen ? 4 : 6;
   component.paddingLeft = 0;
   component.paddingRight = 0;
   component.paddingTop = 0;
@@ -64712,11 +70510,37 @@ async function updateSelectVariant(
     component,
     state,
     status,
+    content,
     config,
     variableByName,
     fonts,
     stats,
   });
+}
+
+// Closed where the set always drew them, 360 by 96; Open, each a trigger and
+// its list, to their right, 240 a row.
+function layoutSelectVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+
+  for (const child of componentSet.children) {
+    if (child.type !== "COMPONENT") continue;
+
+    const props = parseSelectVariantName(child.name);
+    if (!props) continue;
+
+    const stateIndex = SELECT_STATES.indexOf(props.state);
+    const statusIndex = SELECT_STATUSES.indexOf(props.status);
+    if (props.type === "Open") {
+      child.x = (SELECT_STATUSES.length + statusIndex) * 360;
+      child.y = stateIndex * 240;
+    } else {
+      child.x = statusIndex * 360;
+      child.y = stateIndex * 96;
+    }
+  }
+
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createSliderVariant({
@@ -64845,7 +70669,7 @@ function parseRatingVariantName(name) {
 
   if (
     RATING_SCALES.indexOf(scale) === -1 ||
-    ratingValuesForScale(scale).indexOf(value) === -1 ||
+    ratingValuesForScale(scale, state).indexOf(value) === -1 ||
     RATING_STATES.indexOf(state) === -1
   ) {
     return null;
@@ -64901,7 +70725,7 @@ function layoutRatingVariants(componentSet) {
     const props = parseRatingVariantName(child.name);
     if (!props) continue;
 
-    const valueIndex = RATING_VALUES.indexOf(props.value);
+    const valueIndex = RATING_READONLY_STAR_VALUES.indexOf(props.value);
     const stateIndex = RATING_STATES.indexOf(props.state);
     const scaleIndex = RATING_SCALES.indexOf(props.scale);
     child.x = valueIndex * 260;
@@ -65158,6 +70982,8 @@ async function syncRatingVariantChildren({
     const star = await createRatingStar({
       index,
       filled: index <= valueNumber,
+      // Only a read-only score's halves reach here (decision 181).
+      half: index - 0.5 === valueNumber,
       readonly,
       variableByName,
       fonts,
@@ -65238,9 +71064,36 @@ async function createRatingThumb({
   return cell;
 }
 
+/**
+ * One five-point star glyph: filled in Data/Yellow and outlined in it, or
+ * empty and outlined in foreground/500.
+ */
+function createRatingStarGlyph(filled, variableByName, stats) {
+  const glyph = figma.createStar();
+  glyph.name = filled ? "Star / filled" : "Star / empty";
+  glyph.pointCount = 5;
+  glyph.innerRadius = 0.45;
+  glyph.resizeWithoutConstraints(22, 22);
+  glyph.fills = filled
+    ? [paintFromVariable("Data/Yellow", "#A66A00", variableByName, stats)]
+    : [];
+  glyph.strokes = [
+    paintFromVariable(
+      filled ? "Data/Yellow" : "Colors/foreground/500",
+      filled ? "#A66A00" : "#747B8B",
+      variableByName,
+      stats,
+    ),
+  ];
+  glyph.strokeWeight = 1.5;
+  glyph.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-glyph");
+  return glyph;
+}
+
 async function createRatingStar({
   index,
   filled,
+  half = false,
   readonly,
   variableByName,
   fonts,
@@ -65262,26 +71115,41 @@ async function createRatingStar({
   cell.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-hit-area");
   setFixedChildSizing(cell);
 
+  if (typeof figma.createStar === "function" && half) {
+    // A score's half (decision 181): the empty star, and the filled one over
+    // it clipped to its start half, the left — Figma draws left to right.
+    // Same glyphs, size and colours as a full and an empty star.
+    const star = figma.createFrame();
+    star.name = "Star / half";
+    star.resizeWithoutConstraints(22, 22);
+    star.clipsContent = false;
+    star.fills = [];
+    star.strokes = [];
+    star.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-half");
+    const empty = createRatingStarGlyph(false, variableByName, stats);
+    star.appendChild(empty);
+    empty.x = 0;
+    empty.y = 0;
+    const clip = figma.createFrame();
+    clip.name = "Half Clip";
+    clip.resizeWithoutConstraints(11, 22);
+    clip.clipsContent = true;
+    clip.fills = [];
+    clip.strokes = [];
+    star.appendChild(clip);
+    clip.x = 0;
+    clip.y = 0;
+    const full = createRatingStarGlyph(true, variableByName, stats);
+    clip.appendChild(full);
+    full.x = 0;
+    full.y = 0;
+    cell.appendChild(star);
+    setFixedChildSizing(star);
+    return cell;
+  }
+
   if (typeof figma.createStar === "function") {
-    const glyph = figma.createStar();
-    glyph.name = filled ? "Star / filled" : "Star / empty";
-    glyph.pointCount = 5;
-    glyph.innerRadius = 0.45;
-    glyph.resizeWithoutConstraints(22, 22);
-    glyph.fills = filled
-      ? [paintFromVariable("Data/Yellow", "#A66A00", variableByName, stats)]
-      : [];
-    glyph.strokes = [
-      paintFromVariable(
-        filled ? "Data/Yellow" : "Colors/foreground/500",
-        filled ? "#A66A00" : "#747B8B",
-        variableByName,
-        stats,
-      ),
-    ];
-    glyph.strokeWeight = 1.5;
-    glyph.setSharedPluginData(RUN_NAMESPACE, "kind", "rating-star-glyph");
-    cell.appendChild(glyph);
+    cell.appendChild(createRatingStarGlyph(filled, variableByName, stats));
     return cell;
   }
 
@@ -68033,6 +73901,7 @@ async function syncTabsVariantChildren({
   count,
   active,
   state,
+  content,
   tabCount,
   width,
   variableByName,
@@ -68041,6 +73910,11 @@ async function syncTabsVariantChildren({
 }) {
   const triggerWidth = (width - 8) / tabCount;
   const triggers = [];
+  const icons = [];
+  // Icon Over Label (GAP-152): the icon 4 above the words, both centred, 6
+  // above and below, so the trigger is 56. Label draws as it always has.
+  const stacked = content === "Icon Over Label";
+  const triggerHeight = stacked ? 56 : 32;
 
   const existingChildren = [];
   for (const child of component.children) existingChildren.push(child);
@@ -68068,17 +73942,17 @@ async function syncTabsVariantChildren({
       trigger.name = triggerName;
     }
 
-    trigger.layoutMode = "HORIZONTAL";
+    trigger.layoutMode = stacked ? "VERTICAL" : "HORIZONTAL";
     trigger.primaryAxisSizingMode = "FIXED";
     trigger.counterAxisSizingMode = "FIXED";
     trigger.primaryAxisAlignItems = "CENTER";
     trigger.counterAxisAlignItems = "CENTER";
-    trigger.itemSpacing = 0;
+    trigger.itemSpacing = stacked ? 4 : 0;
     trigger.paddingLeft = 12;
     trigger.paddingRight = 12;
-    trigger.paddingTop = 0;
-    trigger.paddingBottom = 0;
-    trigger.resizeWithoutConstraints(triggerWidth, 32);
+    trigger.paddingTop = stacked ? 6 : 0;
+    trigger.paddingBottom = stacked ? 6 : 0;
+    trigger.resizeWithoutConstraints(triggerWidth, triggerHeight);
     trigger.cornerRadius = 12;
     trigger.clipsContent = false;
     trigger.fills = config.background
@@ -68103,6 +73977,56 @@ async function syncTabsVariantChildren({
       trigger.layoutGrow = 1;
     } catch (_error) {
       // layoutGrow is unavailable on older plugin runtimes.
+    }
+
+    const iconName = `Tab ${index + 1} Icon`;
+    let icon = directChildNamed(trigger, iconName);
+    if (icon && (!stacked || icon.type !== "INSTANCE")) {
+      icon.remove();
+      icon = null;
+    }
+    if (stacked) {
+      if (icon) {
+        // Kept, so a swap made on the main component survives an Update;
+        // only its paint and size are the painter's.
+        icon.resize(20, 20);
+        bindSizeVariables(
+          icon,
+          "Tabs/trigger/icon/size",
+          "Tabs/trigger/icon/size",
+          variableByName,
+          stats,
+        );
+        storeIconSlotAuditMetadata(
+          icon,
+          config.foreground,
+          config.foregroundFallback,
+          stats,
+        );
+        applyIconColorOverrides(
+          icon,
+          config.foreground,
+          config.foregroundFallback,
+          variableByName,
+          stats,
+        );
+      } else {
+        icon = await createFixedIconInstance(
+          TABS_DEFAULT_ICONS[index],
+          config.foreground,
+          config.foregroundFallback,
+          variableByName,
+          stats,
+          20,
+          "Tabs/trigger/icon/size",
+        );
+        icon.name = iconName;
+      }
+      icon.setSharedPluginData(RUN_NAMESPACE, "kind", "tabs-trigger-icon");
+      // First in the trigger, above the words.
+      trigger.insertChild(0, icon);
+      setFixedChildSizing(icon);
+      icons.push(icon);
     }
 
     let text = directChildNamed(trigger, textName);
@@ -68132,7 +74056,7 @@ async function syncTabsVariantChildren({
     syncFocusRing(trigger, {
       enabled: state === "Focus" && isActive,
       width: triggerWidth,
-      height: 32,
+      height: triggerHeight,
       radius: 12,
       variableName: "Colors/theme/600",
       fallback: "#1051E8",
@@ -68145,7 +74069,14 @@ async function syncTabsVariantChildren({
     triggers.push(trigger);
   }
 
-  bindTabsGeometryVariables(component, count, triggers, variableByName, stats);
+  bindTabsGeometryVariables(
+    component,
+    count,
+    triggers,
+    variableByName,
+    stats,
+    stacked,
+  );
 }
 
 async function syncTooltipVariantChildren({
@@ -71606,7 +77537,7 @@ async function syncCheckboxVariantChildren({
   fonts,
   stats,
 }) {
-  let control = directChildNamed(component, "Checkbox Control");
+  let control = findControlRowPart(component, "Checkbox Control");
   if (control && control.type !== "FRAME") {
     control.remove();
     control = null;
@@ -71662,7 +77593,7 @@ async function syncCheckboxVariantChildren({
     stats,
   });
 
-  let label = directChildNamed(component, "Label Text");
+  let label = findControlRowPart(component, "Label Text");
   if (label && label.type !== "TEXT") {
     label.remove();
     label = null;
@@ -71685,8 +77616,17 @@ async function syncCheckboxVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
-  component.appendChild(control);
-  component.appendChild(label);
+  await syncControlTextRows({
+    component,
+    kind: "Checkbox",
+    control: control,
+    label,
+    checked,
+    state,
+    variableByName,
+    fonts,
+    stats,
+  });
 }
 
 async function syncCheckboxMark(control, config, variableByName, stats) {
@@ -71791,7 +77731,7 @@ async function syncRadioVariantChildren({
   fonts,
   stats,
 }) {
-  let control = directChildNamed(component, "Radio Control");
+  let control = findControlRowPart(component, "Radio Control");
   if (control && control.type !== "FRAME") {
     control.remove();
     control = null;
@@ -71855,7 +77795,7 @@ async function syncRadioVariantChildren({
 
   bindRadioGeometryVariables(component, control, dot, variableByName, stats);
 
-  let label = directChildNamed(component, "Label Text");
+  let label = findControlRowPart(component, "Label Text");
   if (label && label.type !== "TEXT") {
     label.remove();
     label = null;
@@ -71878,8 +77818,17 @@ async function syncRadioVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
-  component.appendChild(control);
-  component.appendChild(label);
+  await syncControlTextRows({
+    component,
+    kind: "Radio",
+    control: control,
+    label,
+    checked,
+    state,
+    variableByName,
+    fonts,
+    stats,
+  });
 }
 
 async function syncSwitchVariantChildren({
@@ -71891,7 +77840,7 @@ async function syncSwitchVariantChildren({
   fonts,
   stats,
 }) {
-  let track = directChildNamed(component, "Switch Track");
+  let track = findControlRowPart(component, "Switch Track");
   if (track && track.type !== "FRAME") {
     track.remove();
     track = null;
@@ -71964,7 +77913,7 @@ async function syncSwitchVariantChildren({
 
   bindSwitchGeometryVariables(component, track, thumb, variableByName, stats);
 
-  let label = directChildNamed(component, "Label Text");
+  let label = findControlRowPart(component, "Label Text");
   if (label && label.type !== "TEXT") {
     label.remove();
     label = null;
@@ -71987,8 +77936,579 @@ async function syncSwitchVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
-  component.appendChild(track);
-  component.appendChild(label);
+  await syncControlTextRows({
+    component,
+    kind: "Switch",
+    control: track,
+    label,
+    checked,
+    state,
+    variableByName,
+    fonts,
+    stats,
+  });
+}
+
+// GAP-162: Checkbox, Switch and a Default radio draw a label row and, under
+// it, a description; Switch can say its state in words beside its track. The
+// component is a column: the Label Row (the control, Switch's State Label and
+// the label) and the Description Row, indented to start under the label. The
+// column is at least 44 tall (the X/height/default token, now its minimum)
+// and centred in it, so without a description the row draws as it did, and
+// with one the control stays beside the label's line, as React's items-start
+// row draws it. Switch's column has no gap: the track is 24 and the label 20,
+// so the description starts 24 down, as React's does.
+function setControlRowFrame(component, kind) {
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = "CENTER";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = kind === "Switch" ? 0 : 2;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.resizeWithoutConstraints(176, 44);
+  component.minHeight = 44;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.clipsContent = false;
+  component.fills = [];
+  component.strokes = [];
+  component.opacity = 1;
+}
+
+// A part of a control's row: in its Label Row now, or, in a variant drawn
+// before GAP-162, a direct child of the component. Found either way, it is
+// moved into the row rather than drawn again, so its node id survives.
+function findControlRowPart(component, name) {
+  const direct = directChildNamed(component, name);
+  if (direct) return direct;
+  const row = directChildNamed(component, "Label Row");
+  return row ? directChildNamed(row, name) : null;
+}
+
+function ensureControlRowFrame(parent, name) {
+  let frame = directChildNamed(parent, name);
+  if (frame && frame.type !== "FRAME") {
+    frame.remove();
+    frame = null;
+  }
+  if (!frame) {
+    frame = figma.createFrame();
+    frame.name = name;
+  }
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  frame.cornerRadius = KOZMOS_RADIUS.none;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  return frame;
+}
+
+function ensureControlRowText(parent, name) {
+  let text = directChildNamed(parent, name);
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) {
+    text = figma.createText();
+    text.name = name;
+  }
+  return text;
+}
+
+// The muted words a control carries beside its label: React's text-sm
+// leading-5 text-muted-foreground, 14/20 regular, foreground/400.
+async function applyControlMutedTypography(
+  text,
+  fonts,
+  state,
+  variableByName,
+  stats,
+) {
+  text.fontName = fonts.regular;
+  text.fontSize = 14;
+  text.lineHeight = { unit: "PIXELS", value: 20 };
+  await applyTextStyleToNodeAsync(text, "fieldText", stats);
+  text.fills = [
+    paintFromVariable(
+      state === "Disabled" ? "Colors/foreground/500" : "Colors/foreground/400",
+      state === "Disabled" ? "#747B8B" : "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+}
+
+async function syncControlTextRows({
+  component,
+  kind,
+  control,
+  label,
+  checked,
+  state,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const row = ensureControlRowFrame(component, "Label Row");
+  row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "AUTO";
+  row.counterAxisSizingMode = "AUTO";
+  row.primaryAxisAlignItems = "MIN";
+  row.counterAxisAlignItems = "CENTER";
+  row.itemSpacing = 8;
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "control-label-row");
+  row.appendChild(control);
+
+  if (kind === "Switch") {
+    const words = ensureControlRowText(row, "State Label");
+    await applyControlMutedTypography(
+      words,
+      fonts,
+      state,
+      variableByName,
+      stats,
+    );
+    words.textAutoResize = "WIDTH_AND_HEIGHT";
+    words.characters = checked === "Checked" ? "On" : "Off";
+    words.textAlignVertical = "CENTER";
+    words.visible = false;
+    words.setSharedPluginData(RUN_NAMESPACE, "kind", "switch-state-label");
+    row.appendChild(words);
+  }
+  row.appendChild(label);
+  component.appendChild(row);
+
+  // The description starts under the label: the control's width and the
+  // row's gap in from the edge.
+  const indent = (kind === "Switch" ? 44 : 20) + 8;
+  const descriptionRow = ensureControlRowFrame(component, "Description Row");
+  descriptionRow.layoutMode = "HORIZONTAL";
+  descriptionRow.primaryAxisSizingMode = "FIXED";
+  descriptionRow.counterAxisSizingMode = "AUTO";
+  descriptionRow.primaryAxisAlignItems = "MIN";
+  descriptionRow.counterAxisAlignItems = "MIN";
+  descriptionRow.itemSpacing = 0;
+  descriptionRow.paddingLeft = indent;
+  descriptionRow.layoutAlign = "STRETCH";
+  descriptionRow.visible = false;
+  descriptionRow.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    "control-description-row",
+  );
+  const description = ensureControlRowText(descriptionRow, "Description Text");
+  await applyControlMutedTypography(
+    description,
+    fonts,
+    state,
+    variableByName,
+    stats,
+  );
+  description.characters = "Description";
+  description.layoutGrow = 1;
+  description.textAutoResize = "HEIGHT";
+  descriptionRow.appendChild(description);
+  component.appendChild(descriptionRow);
+
+  // X/height/default is the column's minimum now, not its height, and the
+  // label row carries X/gap: the column's own gap is the 2 (or 0) above.
+  clearBoundVariable(component, "height", stats);
+  clearBoundVariable(component, "itemSpacing", stats);
+  component.itemSpacing = kind === "Switch" ? 0 : 2;
+  bindFloatVariable(
+    component,
+    "minHeight",
+    `${kind}/height/default`,
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(row, "itemSpacing", `${kind}/gap`, variableByName, stats);
+}
+
+// Description Text and Show Description on Checkbox, Radio and Switch
+// (GAP-162); Show State Label on Switch; Show Media on Radio's cards and
+// tiles (GAP-158). Each boolean is off by default but Show Media, so a placed
+// control draws as it did.
+function configureControlDescriptionProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    "Description",
+    stats,
+  );
+  const name = canonicalComponentSetName(componentSet.name);
+  // A Default variant's description is a row, indented under the label; a
+  // card's and a tile's is the text itself.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Row",
+    "Show Description",
+    false,
+    stats,
+  );
+  if (name === "Radio") {
+    // A card's or a tile's description is the text itself, in no row; the
+    // Default variants' text binds too, inside its row, to the same effect.
+    configureNamedBooleanProperty(
+      componentSet,
+      "Description Text",
+      "Show Description",
+      false,
+      stats,
+    );
+    configureNamedBooleanProperty(
+      componentSet,
+      "Media",
+      "Show Media",
+      true,
+      stats,
+    );
+  }
+  if (name === "Switch") {
+    configureNamedBooleanProperty(
+      componentSet,
+      "State Label",
+      "Show State Label",
+      false,
+      stats,
+    );
+  }
+}
+
+// GAP-158: a radio drawn as a box. Card: a column 240 wide, 12 in, 12 apart:
+// the Media (an image's place, 80 tall, on muted) over the Body (the ring and
+// a column of the title and the description). Tile: a column 112 wide, at
+// least 96 tall, everything centred: the Media (an icon), the title and the
+// description, 12/16; chosen, a check badge 8 in from its top-end corner.
+// The edge is Border/Subtle, theme 600 and 2 wide when chosen (React's 1px
+// border and the 1px outline inside it), danger 600 on error; disabled, the
+// whole box is at half, as React's disabled:opacity-50 draws it.
+function radioBoxConfig(variant, checked, state) {
+  const isChecked = checked === "Checked";
+  const isError = state === "Error";
+  return {
+    edge: isError
+      ? "Colors/emotional/danger/600"
+      : isChecked
+        ? "Colors/theme/600"
+        : "Border/Subtle",
+    edgeFallback: isError ? "#D41C42" : isChecked ? "#1051E8" : "#C7CAD1",
+    edgeWidth: isChecked ? 2 : 1,
+    badge: isError ? "Colors/emotional/danger/600" : THEME_FILL.name,
+    badgeFallback: isError ? "#D41C42" : THEME_FILL.fallback,
+    opacity: state === "Disabled" ? 0.5 : 1,
+  };
+}
+
+async function syncRadioBoxVariantChildren({
+  component,
+  variant,
+  checked,
+  state,
+  config,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const tile = variant === "Tile";
+  const box = radioBoxConfig(variant, checked, state);
+
+  component.layoutMode = "VERTICAL";
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "FIXED";
+  component.primaryAxisAlignItems = tile ? "CENTER" : "MIN";
+  component.counterAxisAlignItems = tile ? "CENTER" : "MIN";
+  component.itemSpacing = tile ? 4 : 12;
+  component.paddingLeft = 12;
+  component.paddingRight = 12;
+  component.paddingTop = 12;
+  component.paddingBottom = 12;
+  component.resizeWithoutConstraints(
+    tile ? RADIO_TILE_WIDTH : RADIO_CARD_WIDTH,
+    tile ? RADIO_TILE_MIN_HEIGHT : 160,
+  );
+  component.minHeight = tile ? RADIO_TILE_MIN_HEIGHT : null;
+  component.cornerRadius = KOZMOS_RADIUS.container;
+  component.clipsContent = true;
+  component.opacity = box.opacity;
+  component.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [
+    paintFromVariable(box.edge, box.edgeFallback, variableByName, stats),
+  ];
+  component.strokeWeight = box.edgeWidth;
+  component.strokeAlign = "INSIDE";
+  // The edge takes no room: 1 or 2 wide, the content stays 12 in, as React's
+  // inset second pixel moves nothing. Laid out, it pushed the Media 13 or 14
+  // in, and the nested-radius check found it off by 9 or 10.
+  setNodePropertyIfSupported(component, "strokesIncludedInLayout", false);
+
+  // Media: a card's image place, a tile's icon. Map 01 stands in for either.
+  const media = ensureControlRowFrame(component, "Media");
+  media.layoutMode = "HORIZONTAL";
+  media.primaryAxisAlignItems = "CENTER";
+  media.counterAxisAlignItems = "CENTER";
+  media.itemSpacing = 0;
+  if (tile) {
+    media.primaryAxisSizingMode = "AUTO";
+    media.counterAxisSizingMode = "AUTO";
+    media.layoutAlign = "INHERIT";
+  } else {
+    media.primaryAxisSizingMode = "FIXED";
+    media.counterAxisSizingMode = "FIXED";
+    media.resizeWithoutConstraints(RADIO_CARD_WIDTH - 24, 80);
+    media.layoutAlign = "STRETCH";
+    // Concentric with the card: its radius less the 12 inset, 20 - 12 = 8
+    // (docs/nested-radius.md), as React's, SwiftUI's and Compose's are.
+    media.cornerRadius = KOZMOS_RADIUS.container - 12;
+    media.clipsContent = true;
+    media.fills = [
+      paintFromVariable(
+        "Colors/background/100",
+        "#F2F3F5",
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+  media.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-media");
+  let glyph = directChildNamed(media, "Media Icon");
+  if (!glyph) {
+    const icon = await findKozmosIconSourceComponent("map-01");
+    if (icon) {
+      glyph = icon.createInstance();
+      glyph.name = "Media Icon";
+    }
+  }
+  if (glyph) {
+    const size = tile ? 24 : 32;
+    glyph.resize(size, size);
+    if (glyph.type === "INSTANCE") {
+      applyIconColorOverrides(
+        glyph,
+        tile ? "Colors/foreground/0" : "Colors/foreground/400",
+        tile ? "#000000" : "#5D626F",
+        variableByName,
+        stats,
+      );
+    }
+    media.appendChild(glyph);
+  }
+  component.appendChild(media);
+
+  // The title and the description: in the Body beside the ring on a card, in
+  // the box's own column on a tile.
+  let holder = component;
+  const staleBody = directChildNamed(component, "Body");
+  if (tile) {
+    if (staleBody) staleBody.remove();
+  } else {
+    const body = ensureControlRowFrame(component, "Body");
+    body.layoutMode = "HORIZONTAL";
+    body.primaryAxisSizingMode = "FIXED";
+    body.counterAxisSizingMode = "AUTO";
+    body.primaryAxisAlignItems = "MIN";
+    body.counterAxisAlignItems = "MIN";
+    body.itemSpacing = 8;
+    body.layoutAlign = "STRETCH";
+    body.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-card-body");
+    const ring = await syncRadioRing(body, {
+      checked,
+      state,
+      config,
+      variableByName,
+      stats,
+    });
+    body.appendChild(ring);
+    const column = ensureControlRowFrame(body, "Text");
+    column.layoutMode = "VERTICAL";
+    column.primaryAxisSizingMode = "AUTO";
+    column.counterAxisSizingMode = "FIXED";
+    column.itemSpacing = 2;
+    column.layoutGrow = 1;
+    body.appendChild(column);
+    component.appendChild(body);
+    holder = column;
+  }
+
+  const title = ensureControlRowText(holder, "Label Text");
+  await applyRadioLabelTypography(title, fonts, variableByName, stats);
+  title.characters = "Radio";
+  title.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  title.textAlignHorizontal = tile ? "CENTER" : "LEFT";
+  if (tile) {
+    title.textAutoResize = "WIDTH_AND_HEIGHT";
+    title.layoutAlign = "INHERIT";
+  } else {
+    title.layoutAlign = "STRETCH";
+    title.textAutoResize = "HEIGHT";
+  }
+  holder.appendChild(title);
+
+  const description = ensureControlRowText(holder, "Description Text");
+  if (tile) {
+    description.fontName = fonts.regular;
+    description.fontSize = 12;
+    description.lineHeight = { unit: "PIXELS", value: 16 };
+    await applyTextStyleToNodeAsync(description, "fieldMeta", stats);
+    description.fills = [
+      paintFromVariable(
+        "Colors/foreground/400",
+        "#5D626F",
+        variableByName,
+        stats,
+      ),
+    ];
+    description.textAutoResize = "WIDTH_AND_HEIGHT";
+    description.textAlignHorizontal = "CENTER";
+    description.layoutAlign = "INHERIT";
+  } else {
+    await applyControlMutedTypography(
+      description,
+      fonts,
+      "Default",
+      variableByName,
+      stats,
+    );
+    description.layoutAlign = "STRETCH";
+    description.textAutoResize = "HEIGHT";
+    description.textAlignHorizontal = "LEFT";
+  }
+  description.characters = "Description";
+  // Show Description binds this text itself: a box has no Description Row.
+  description.visible = false;
+  description.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    "radio-box-description",
+  );
+  holder.appendChild(description);
+
+  // The tile's check: drawn only when chosen, out of the column's flow.
+  let badge = directChildNamed(component, "Check Badge");
+  if (!tile || checked !== "Checked") {
+    if (badge) badge.remove();
+  } else {
+    if (badge && badge.type !== "FRAME") {
+      badge.remove();
+      badge = null;
+    }
+    if (!badge) {
+      badge = figma.createFrame();
+      badge.name = "Check Badge";
+    }
+    badge.layoutMode = "NONE";
+    badge.resizeWithoutConstraints(20, 20);
+    badge.cornerRadius = KOZMOS_RADIUS.pill;
+    badge.clipsContent = false;
+    badge.fills = [
+      paintFromVariable(box.badge, box.badgeFallback, variableByName, stats),
+    ];
+    badge.strokes = [];
+    badge.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-tile-check");
+    let mark = directChildNamed(badge, "Checkbox Mark");
+    if (!mark) {
+      const iconComponent = await findKozmosIconSourceComponent("check");
+      mark = iconComponent
+        ? iconComponent.createInstance()
+        : createFallbackCheckboxMark(
+            {
+              mark: THEME_FILL_FOREGROUND.name,
+              markFallback: THEME_FILL_FOREGROUND.fallback,
+            },
+            variableByName,
+            stats,
+          );
+      mark.name = "Checkbox Mark";
+    }
+    mark.resize(14, 14);
+    mark.x = 3;
+    mark.y = 3;
+    if (mark.type === "INSTANCE") {
+      applyIconColorOverrides(
+        mark,
+        THEME_FILL_FOREGROUND.name,
+        THEME_FILL_FOREGROUND.fallback,
+        variableByName,
+        stats,
+      );
+    }
+    badge.appendChild(mark);
+    component.appendChild(badge);
+    badge.layoutPositioning = "ABSOLUTE";
+    badge.x = RADIO_TILE_WIDTH - 8 - 20;
+    badge.y = 8;
+    try {
+      badge.constraints = { horizontal: "MAX", vertical: "MIN" };
+    } catch (_error) {
+      // Older runtimes can refuse constraints on a child of auto layout.
+    }
+  }
+}
+
+// The radio's ring and, chosen, its dot: the Default variant's Radio Control,
+// drawn in a card's Body.
+async function syncRadioRing(
+  parent,
+  { checked, state, config, variableByName, stats },
+) {
+  let control = directChildNamed(parent, "Radio Control");
+  if (control && control.type !== "FRAME") {
+    control.remove();
+    control = null;
+  }
+  if (!control) {
+    control = figma.createFrame();
+    control.name = "Radio Control";
+  }
+  control.layoutMode = "NONE";
+  control.resizeWithoutConstraints(20, 20);
+  control.cornerRadius = KOZMOS_RADIUS.pill;
+  control.clipsContent = false;
+  control.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-control");
+  control.fills = [];
+  control.strokes = [
+    paintFromVariable(
+      state === "Disabled" ? "Border/Input" : config.controlStroke,
+      state === "Disabled" ? "#747B8B" : config.controlStrokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  control.strokeWeight = 1;
+  removeGeneratedButtonChild(control, "Radio Dot", checked !== "Checked");
+  if (checked === "Checked") {
+    let dot = directChildNamed(control, "Radio Dot");
+    if (dot && dot.type !== "ELLIPSE") {
+      dot.remove();
+      dot = null;
+    }
+    if (!dot) {
+      dot = figma.createEllipse();
+      dot.name = "Radio Dot";
+    }
+    dot.resize(10, 10);
+    dot.x = 5;
+    dot.y = 5;
+    dot.fills = [
+      paintFromVariable(config.dot, config.dotFallback, variableByName, stats),
+    ];
+    dot.strokes = [];
+    dot.setSharedPluginData(RUN_NAMESPACE, "kind", "radio-dot");
+    control.appendChild(dot);
+  }
+  return control;
 }
 
 async function syncInputVariantChildren({
@@ -73902,9 +80422,13 @@ async function createOptionGroupLabel({
   return row;
 }
 
+// Select's rows pass their own tokenPrefix and a count (GAP-164); without
+// them the row is Combobox's, as MultiSelect and Listbox have always drawn it.
 async function createComboboxOption({
   index,
   text,
+  count,
+  tokenPrefix,
   selected,
   active,
   focused,
@@ -73913,8 +80437,9 @@ async function createComboboxOption({
   fonts,
   stats,
 }) {
+  const prefix = tokenPrefix || "Combobox";
   const option = figma.createFrame();
-  option.name = `Combobox Option ${index + 1}`;
+  option.name = `${prefix} Option ${index + 1}`;
   option.layoutMode = "HORIZONTAL";
   option.primaryAxisSizingMode = "FIXED";
   option.counterAxisSizingMode = "FIXED";
@@ -73960,13 +80485,7 @@ async function createComboboxOption({
 
   const label = figma.createText();
   label.name = `Option ${index + 1} Text`;
-  await applyFieldTextTypography(
-    label,
-    fonts,
-    "Combobox",
-    variableByName,
-    stats,
-  );
+  await applyFieldTextTypography(label, fonts, prefix, variableByName, stats);
   label.characters = text;
   setHorizontalFillTextSizing(label);
   setTextAutoResize(label, "TRUNCATE");
@@ -73981,6 +80500,27 @@ async function createComboboxOption({
   label.textAlignVertical = "CENTER";
   option.appendChild(label);
 
+  // SelectItem's count, between the words and the check.
+  if (typeof count === "string") {
+    // The words take the row's slack, so the count sits against the check's
+    // 16 rather than floating between SPACE_BETWEEN's ends. FILL set before
+    // the append has no auto-layout parent and may not hold; set it again.
+    // SPACE_BETWEEN with a filling child lays no gap, so the row packs from
+    // the start and its 8 (Select/option/gap) parts words, count and check.
+    setLayoutSizingHorizontal(label, "FILL");
+    option.primaryAxisAlignItems = "MIN";
+    option.appendChild(
+      await createOptionCount({
+        index,
+        text: count,
+        disabled,
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+  }
+
   if (selected) {
     const icon = await createFixedIconInstance(
       "check",
@@ -73989,9 +80529,29 @@ async function createComboboxOption({
       variableByName,
       stats,
       16,
-      "Combobox/icon/size",
+      `${prefix}/icon/size`,
     );
     option.appendChild(icon);
+  } else if (typeof count === "string") {
+    // Decision 1 (#525 review): with counts, every row keeps the check's 16 at
+    // its end, so the counts form one column whichever row is chosen. Rows
+    // with no count (Combobox, MultiSelect, Listbox) draw as they always have.
+    const slot = figma.createFrame();
+    slot.name = "Check Slot";
+    slot.fills = [];
+    slot.strokes = [];
+    slot.clipsContent = false;
+    slot.resizeWithoutConstraints(16, 16);
+    slot.setSharedPluginData(RUN_NAMESPACE, "kind", "option-check-slot");
+    bindSizeVariables(
+      slot,
+      `${prefix}/icon/size`,
+      `${prefix}/icon/size`,
+      variableByName,
+      stats,
+    );
+    option.appendChild(slot);
+    setFixedChildSizing(slot);
   }
 
   return option;
@@ -76372,6 +82932,7 @@ async function syncFileUploadVariantChildren({
     "Description Text",
     "File Name Text",
     "File Meta Text",
+    "Change Text",
     "Helper Text",
   ]);
   const existingChildren = Array.from(component.children || []);
@@ -76382,6 +82943,7 @@ async function syncFileUploadVariantChildren({
   const disabled = state === "Disabled";
   const isDragging = state === "Dragging";
   const hasFiles = content === "Files";
+  const isPreview = content === "Preview";
   const dropzoneStroke = isDragging ? "Colors/theme/600" : config.fieldStroke;
   const dropzoneStrokeFallback = isDragging
     ? "#1051E8"
@@ -76410,6 +82972,21 @@ async function syncFileUploadVariantChildren({
     ),
   ];
   label.textAlignVertical = "CENTER";
+
+  if (isPreview) {
+    await syncFileUploadPreviewChildren({
+      component,
+      label,
+      state,
+      status,
+      config,
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
 
   const dropzone = figma.createFrame();
   dropzone.name = "FileUpload Dropzone";
@@ -76650,6 +83227,229 @@ async function syncFileUploadVariantChildren({
     component.appendChild(fileList);
     setLayoutSizingHorizontal(fileList, "FILL");
   }
+  component.appendChild(helper);
+  normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Content=Preview, React's `preview="image"` holding its image (GAP-270): in
+ * place of the drop area, a file row with the image as an avatar-sized
+ * thumbnail (Avatar's 40, round), the file's name and size, an outline
+ * Change button and the remove icon. The row's border takes the status's
+ * colour, as React's does; React's preview takes no drop, so Dragging
+ * draws as Default, and Focus rings the Change button, where focus lands
+ * once an image is chosen.
+ */
+async function syncFileUploadPreviewChildren({
+  component,
+  label,
+  state,
+  status,
+  config,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const preview = await createFileUploadFileRow({
+    index: 0,
+    fileName: preservedText["File Name Text"] || "acme-logo.png",
+    fileMeta: preservedText["File Meta Text"] || "24 KB",
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  const row = preview.row;
+  row.name = "FileUpload Preview";
+  row.setSharedPluginData(RUN_NAMESPACE, "kind", "file-upload-preview");
+  if (status !== "Default") {
+    row.strokes = [
+      paintFromVariable(
+        config.fieldStroke,
+        config.fieldStrokeFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
+
+  // The thumbnail stands where the file icon stood.
+  preview.fileIcon.remove();
+  const thumbnail = figma.createFrame();
+  thumbnail.name = "Preview Image";
+  thumbnail.layoutMode = "NONE";
+  thumbnail.resizeWithoutConstraints(40, 40);
+  thumbnail.cornerRadius = KOZMOS_RADIUS.pill;
+  thumbnail.clipsContent = true;
+  thumbnail.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  thumbnail.strokes = [];
+  thumbnail.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-image");
+  const picture = await createFixedIconInstance(
+    "building-01",
+    disabled ? "Colors/foreground/500" : "Colors/foreground/400",
+    disabled ? "#747B8B" : "#5D626F",
+    variableByName,
+    stats,
+    20,
+    null,
+  );
+  picture.x = 10;
+  picture.y = 10;
+  thumbnail.appendChild(picture);
+  bindAvatarGeometryVariables(thumbnail, variableByName, stats);
+  row.insertChild(0, thumbnail);
+
+  const change = figma.createFrame();
+  change.name = "Change Button";
+  change.layoutMode = "HORIZONTAL";
+  change.primaryAxisSizingMode = "AUTO";
+  change.counterAxisSizingMode = "FIXED";
+  change.primaryAxisAlignItems = "CENTER";
+  change.counterAxisAlignItems = "CENTER";
+  change.itemSpacing = 0;
+  change.paddingLeft = 12;
+  change.paddingRight = 12;
+  change.paddingTop = 0;
+  change.paddingBottom = 0;
+  change.resizeWithoutConstraints(84, 44);
+  change.cornerRadius = KOZMOS_RADIUS.control;
+  change.clipsContent = false;
+  change.setSharedPluginData(RUN_NAMESPACE, "role", "file-preview-change");
+  const outline = buttonConfig("Outline", disabled ? "Disabled" : "Default");
+  change.fills = [
+    paintFromVariable(
+      outline.background,
+      outline.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokes = [
+    paintFromVariable(
+      outline.stroke,
+      outline.strokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  change.strokeWeight = 1;
+  bindFloatVariable(
+    change,
+    "height",
+    "Button/height/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingLeft",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "paddingRight",
+    "Button/padding/x/small",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "cornerRadius",
+    "Button/radius",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    change,
+    "strokeWeight",
+    "Button/stroke/width",
+    variableByName,
+    stats,
+  );
+
+  const changeText = figma.createText();
+  changeText.name = "Change Text";
+  // React draws Button's medium 14/20 label; the field label style is the
+  // same face and size, attached as Browse Text's is.
+  await applyFieldLabelTypography(
+    changeText,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  changeText.characters = preservedText["Change Text"] || "Change";
+  changeText.fills = [
+    paintFromVariable(
+      outline.foreground,
+      outline.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  changeText.textAlignVertical = "CENTER";
+  change.appendChild(changeText);
+  syncFocusRing(change, {
+    enabled: state === "Focus",
+    width: 84,
+    height: 44,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+  row.insertChild(row.children.indexOf(preview.removeIcon), change);
+
+  const helper = figma.createText();
+  helper.name = "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  helper.characters =
+    preservedText["Helper Text"] || helperTextForInputStatus(status);
+  helper.visible = status !== "Default";
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  helper.resizeWithoutConstraints(384, 20);
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  helper.textAlignVertical = "CENTER";
+
+  bindFileUploadGeometryVariables(
+    component,
+    null,
+    null,
+    [row],
+    [preview.removeIcon],
+    variableByName,
+    stats,
+  );
+
+  component.appendChild(label);
+  component.appendChild(row);
+  setLayoutSizingHorizontal(row, "FILL");
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
 }
@@ -77465,10 +84265,15 @@ async function createColorPickerPaletteSelect({
 }) {
   const created = await createNestedComponentInstance({
     componentSetName: "Select",
-    variantProperties: {
-      State: disabled ? "Disabled" : "Default",
-      Status: "Default",
-    },
+    // The closed trigger; a file whose Select predates Content has only it.
+    variantProperties: [
+      {
+        State: disabled ? "Disabled" : "Default",
+        Status: "Default",
+        Content: "Closed",
+      },
+      { State: disabled ? "Disabled" : "Default", Status: "Default" },
+    ],
     name: "ColorPicker Palette Select",
     role: "palette-select",
     stats,
@@ -78293,11 +85098,23 @@ async function syncSelectVariantChildren({
   component,
   state,
   status,
+  content,
   config,
   variableByName,
   fonts,
   stats,
 }) {
+  const preservedText = collectDescendantTextCharactersByName(component, [
+    "Option 1 Text",
+    "Option 2 Text",
+    "Option 3 Text",
+    "Option 1 Count",
+    "Option 2 Count",
+    "Option 3 Count",
+  ]);
+  const staleListbox = directChildNamed(component, "Select Listbox");
+  if (staleListbox) staleListbox.remove();
+
   let trigger = directChildNamed(component, "Select Trigger");
   if (trigger && trigger.type !== "FRAME") {
     trigger.remove();
@@ -78339,6 +85156,9 @@ async function syncSelectVariantChildren({
     ),
   ];
   trigger.strokeWeight = 1;
+  // Out, as Input's field: the variants #521 (Mixed) and GAP-164 (Open)
+  // added came out laid in beside the six drawn before (figma:verify, 15 Nov).
+  keepStrokeOutOfLayout(trigger);
   trigger.clipsContent = false;
 
   let placeholder = directChildNamed(trigger, "Placeholder Text");
@@ -78406,7 +85226,25 @@ async function syncSelectVariantChildren({
     stats,
   });
 
-  bindSelectGeometryVariables(component, trigger, icon, variableByName, stats);
+  const listbox =
+    content === "Open"
+      ? await createSelectListbox({
+          state,
+          preservedText,
+          variableByName,
+          fonts,
+          stats,
+        })
+      : null;
+
+  bindSelectGeometryVariables(
+    component,
+    trigger,
+    icon,
+    variableByName,
+    stats,
+    listbox,
+  );
 
   component.appendChild(trigger);
   setLayoutSizingHorizontal(trigger, "FILL");
@@ -78416,7 +85254,139 @@ async function syncSelectVariantChildren({
     variableByName,
     stats,
   });
+  if (listbox) {
+    component.appendChild(listbox);
+    setLayoutSizingHorizontal(listbox, "FILL");
+  }
   normalizeInputFamilyChildSizing(component);
+}
+
+// GAP-164: Select's open list, so a row's count is visible in Figma. It is
+// SelectContent as React draws it: Combobox's list (Surface/0, Border/Subtle,
+// the control radius, the overlay elevation, the row inset all round, 2
+// between rows) and its rows, the first chosen with its check, the second
+// under the pointer, each SelectItem's `[words] [count] [check]` with the
+// count the neutral Counter. Show Counts hides the counts.
+const SELECT_OPTION_DEFAULTS = [
+  { text: "Everything", count: "128" },
+  { text: "POI", count: "96" },
+  { text: "Interior asset", count: "32" },
+];
+
+async function createSelectListbox({
+  state,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const listbox = figma.createFrame();
+  listbox.name = "Select Listbox";
+  listbox.layoutMode = "VERTICAL";
+  listbox.primaryAxisSizingMode = "AUTO";
+  listbox.counterAxisSizingMode = "FIXED";
+  listbox.primaryAxisAlignItems = "MIN";
+  listbox.counterAxisAlignItems = "MIN";
+  listbox.itemSpacing = 2;
+  listbox.paddingLeft = POPOVER_ROW_INSET;
+  listbox.paddingRight = POPOVER_ROW_INSET;
+  listbox.paddingTop = POPOVER_ROW_INSET;
+  listbox.paddingBottom = POPOVER_ROW_INSET;
+  listbox.resizeWithoutConstraints(320, 160);
+  listbox.cornerRadius = KOZMOS_RADIUS.control;
+  listbox.clipsContent = false;
+  listbox.setSharedPluginData(RUN_NAMESPACE, "kind", "select-listbox");
+  listbox.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  listbox.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  listbox.strokeWeight = 1;
+  listbox.effects = [elevationEffect("overlay")];
+
+  for (let index = 0; index < SELECT_OPTION_DEFAULTS.length; index += 1) {
+    const fallback = SELECT_OPTION_DEFAULTS[index];
+    const option = await createComboboxOption({
+      index,
+      text: preservedText[`Option ${index + 1} Text`] || fallback.text,
+      count: preservedText[`Option ${index + 1} Count`] || fallback.count,
+      tokenPrefix: "Select",
+      selected: index === 0,
+      active: index === 1,
+      focused: state === "Focus",
+      disabled,
+      variableByName,
+      fonts,
+      stats,
+    });
+    listbox.appendChild(option);
+  }
+
+  return listbox;
+}
+
+// React's Counter at its default size in the neutral tone, as the Counter set
+// paints it (counterConfig, counterMetrics): a 20 pill at least 20 wide, 6 at
+// the sides, 12/16 digits. A drawn pill rather than a Counter instance, since
+// a set's TEXT property cannot drive a text inside a nested instance, and
+// Option N Count must.
+async function createOptionCount({
+  index,
+  text,
+  disabled,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const config = counterConfig("Neutral");
+  const metrics = counterMetrics("Default");
+  const pill = figma.createFrame();
+  pill.name = `Option ${index + 1} Counter`;
+  pill.layoutMode = "HORIZONTAL";
+  pill.primaryAxisSizingMode = "AUTO";
+  pill.counterAxisSizingMode = "FIXED";
+  pill.primaryAxisAlignItems = "CENTER";
+  pill.counterAxisAlignItems = "CENTER";
+  pill.itemSpacing = 0;
+  pill.paddingLeft = metrics.paddingX;
+  pill.paddingRight = metrics.paddingX;
+  pill.paddingTop = 0;
+  pill.paddingBottom = 0;
+  pill.resizeWithoutConstraints(metrics.minWidth, metrics.height);
+  setNodePropertyIfSupported(pill, "minWidth", metrics.minWidth);
+  pill.cornerRadius = KOZMOS_RADIUS.pill;
+  pill.clipsContent = false;
+  pill.fills = [
+    paintFromVariable(
+      config.background,
+      config.backgroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  pill.strokes = [];
+  pill.setSharedPluginData(RUN_NAMESPACE, "kind", "option-count");
+  bindCounterGeometryVariables(pill, metrics, variableByName, stats);
+
+  const digits = figma.createText();
+  digits.name = `Option ${index + 1} Count`;
+  await applyCounterTypography(digits, "Default", fonts, variableByName, stats);
+  digits.characters = text;
+  digits.fills = [
+    paintFromVariable(
+      disabled ? "Colors/foreground/500" : config.foreground,
+      disabled ? "#747B8B" : config.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  digits.textAlignHorizontal = "CENTER";
+  digits.textAlignVertical = "CENTER";
+  pill.appendChild(digits);
+  setHugChildSizing(digits);
+  return pill;
 }
 
 async function syncSliderVariantChildren({
@@ -79275,6 +86245,12 @@ async function syncEmptyStateVariantChildren({
  * 280 column from the start, each item a bullet and its words in
  * foreground/400 at the description's size, 4 between items. Hidden: the
  * List boolean shows it.
+ *
+ * React's bullet is a list marker (list-style: disc, padding-inline-start
+ * 1.25rem), not a character in the item, so it is drawn as one: a 5 disc in
+ * a 20 column, where Chromium puts the marker (4 in, 8 down a 20 line), and
+ * the words start 20 in as React's do. A typed "•" read to figma:verify as an
+ * icon typed as a character, and started the words 13 in.
  */
 async function appendEmptyStateList(
   component,
@@ -79305,7 +86281,7 @@ async function appendEmptyStateList(
     row.counterAxisSizingMode = "AUTO";
     row.primaryAxisAlignItems = "MIN";
     row.counterAxisAlignItems = "MIN";
-    row.itemSpacing = 8;
+    row.itemSpacing = 0;
     row.paddingLeft = 0;
     row.paddingRight = 0;
     row.paddingTop = 0;
@@ -79314,16 +86290,23 @@ async function appendEmptyStateList(
     row.strokes = [];
     row.clipsContent = false;
 
-    const bullet = figma.createText();
+    const bullet = figma.createFrame();
     bullet.name = "Bullet";
-    await applyEmptyStateDescriptionTypography(
-      bullet,
-      fonts,
-      variableByName,
-      stats,
+    bullet.layoutMode = "NONE";
+    bullet.resizeWithoutConstraints(
+      EMPTY_STATE_LIST_MARKER_COLUMN,
+      EMPTY_STATE_LIST_MARKER_COLUMN,
     );
-    bullet.characters = "\u2022";
-    setTextAutoResize(bullet, "WIDTH_AND_HEIGHT");
+    bullet.fills = [];
+    bullet.strokes = [];
+    bullet.clipsContent = false;
+    const dot = figma.createEllipse();
+    dot.name = "Bullet Dot";
+    dot.resize(EMPTY_STATE_LIST_MARKER_SIZE, EMPTY_STATE_LIST_MARKER_SIZE);
+    dot.strokes = [];
+    bullet.appendChild(dot);
+    dot.x = 4;
+    dot.y = 8;
 
     const words = figma.createText();
     words.name = `List Item ${index + 1} Text`;
@@ -79336,8 +86319,8 @@ async function appendEmptyStateList(
     words.characters = EMPTY_STATE_LIST_ITEMS[index];
     words.textAlignHorizontal = "LEFT";
 
-    for (const text of [bullet, words]) {
-      text.fills = [
+    for (const node of [dot, words]) {
+      node.fills = [
         paintFromVariable(
           "Colors/foreground/400",
           "#5E6575",
@@ -80058,6 +87041,7 @@ const INPUT_FAMILY_VERTICAL_FIXED_FILL_NODE_NAMES = new Set([
 
 const INPUT_FAMILY_VERTICAL_HUG_FILL_NODE_NAMES = new Set([
   "Combobox Listbox",
+  "Select Listbox",
   "MultiSelect Listbox",
   "TimePicker Listbox",
   "DatePicker Calendar",
@@ -83077,17 +90061,28 @@ function tabsActiveIsValidForCount(active, count) {
 function tabsVariantCombinations() {
   const combinations = [];
 
-  for (const count of TABS_COUNTS) {
-    for (const active of TABS_ACTIVE) {
-      if (!tabsActiveIsValidForCount(active, count)) continue;
-      for (const state of TABS_STATES) {
-        combinations.push({ count, active, state });
+  // Label first, so a Build lays down today's 27 before the stacked ones.
+  for (const content of TABS_CONTENT) {
+    for (const count of TABS_COUNTS) {
+      for (const active of TABS_ACTIVE) {
+        if (!tabsActiveIsValidForCount(active, count)) continue;
+        for (const state of TABS_STATES) {
+          combinations.push({ count, active, state, content });
+        }
       }
     }
   }
 
   return combinations;
 }
+
+function tabsVariantKey(props) {
+  return `${props.content || "Label"}/${props.count}/${props.active}/${props.state}`;
+}
+
+// A trigger's icon in Icon Over Label, one per tab, as configureTabsProperties
+// offers it through Tab N Icon.
+const TABS_DEFAULT_ICONS = ["home-line", "info-circle", "activity", "clock"];
 
 /**
  * A tab's paint. The active tab is React's raised segment (decision 65,

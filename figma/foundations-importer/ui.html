@@ -1086,12 +1086,16 @@
                 <option value="card">Card</option>
                 <option value="container">Container</option>
                 <option value="grid">Grid</option>
+                <option value="pageHeader">PageHeader</option>
                 <option value="scrollArea">ScrollArea</option>
                 <option value="stack">Stack</option>
               </optgroup>
               <optgroup label="Data display">
                 <option value="list">List</option>
+                <option value="listItem">ListItem</option>
+                <option value="settingsRow">SettingsRow</option>
                 <option value="metaStrip">MetaStrip</option>
+                <option value="personaMark">PersonaMark</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
                 <option value="tree">Tree</option>
@@ -1142,6 +1146,7 @@
                 <option value="dateRangePicker">DateRangePicker</option>
                 <option value="timePicker">TimePicker</option>
                 <option value="fileUpload">FileUpload</option>
+                <option value="imageCropper">ImageCropper</option>
                 <option value="colorPicker">ColorPicker</option>
                 <option value="searchBar">SearchBar</option>
                 <option value="search">Search</option>
@@ -1196,6 +1201,16 @@
               <optgroup label="Platform / Form-Factor">
                 <option value="dynamicIsland">DynamicIsland</option>
                 <option value="feedbackCard">FeedbackCard</option>
+              </optgroup>
+              <optgroup label="Dashboard">
+                <option value="brandLoader">BrandLoader</option>
+                <option value="propertyField">PropertyField</option>
+                <option value="openingHoursEditor">OpeningHoursEditor</option>
+                <option value="ratingEditor">RatingEditor</option>
+                <option value="keyValueList">KeyValueList</option>
+                <option value="propertyPicker">PropertyPicker</option>
+                <option value="mapEditToolbar">MapEditToolbar</option>
+                <option value="imageField">ImageField</option>
               </optgroup>
               <optgroup label="Utilities">
                 <option value="icons">Curated Icons</option>
@@ -1649,6 +1664,62 @@
           rebuild: "rebuild-feedback-card",
           hint: "Build creates FeedbackCard with Default, Submitting, and Success states; Success replaces the form rather than disabling it. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
+        brandLoader: {
+          label: "BrandLoader",
+          build: "build-brand-loader",
+          update: "update-brand-loader",
+          rebuild: "rebuild-brand-loader",
+          hint: "Build creates BrandLoader (CLOUD-UI-008), Pointr Cloud's brand loader, a Dashboard module: the pin in a ring in the theme fill, drawn still as reduced motion draws it, with Overlay False (the loader alone) and True (on Backdrop's scrim) variants. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        propertyField: {
+          label: "PropertyField",
+          build: "build-property-field",
+          update: "update-property-field",
+          rebuild: "rebuild-property-field",
+          hint: "Build creates PropertyField (CLOUD-UI-004), the frame every property of a Pointr Cloud item sits in, a Dashboard module: Removable True (the red trash) and False, with a Name text property and a Content Slot. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        openingHoursEditor: {
+          label: "OpeningHoursEditor",
+          build: "build-opening-hours-editor",
+          update: "update-opening-hours-editor",
+          rebuild: "rebuild-opening-hours-editor",
+          hint: "Build creates OpeningHoursEditor (CLOUD-UI-004), a Dashboard module: State Default (Monday to Friday 08:00–22:00, the weekend closed), Overnight (+1 day) and Mixed. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        ratingEditor: {
+          label: "RatingEditor",
+          build: "build-rating-editor",
+          update: "update-rating-editor",
+          rebuild: "rebuild-rating-editor",
+          hint: "Build creates RatingEditor (CLOUD-UI-004), a Dashboard module: State Default (with the five-star preview, Rating's own Readonly instance), Error and Mixed. Run Core's Rating first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        keyValueList: {
+          label: "KeyValueList",
+          build: "build-key-value-list",
+          update: "update-key-value-list",
+          rebuild: "rebuild-key-value-list",
+          hint: "Build creates KeyValueList (CLOUD-UI-004), a Dashboard module: State Default (two rows), Empty and Mixed, each row a name, a type, a value and a red trash, with Add field. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        propertyPicker: {
+          label: "PropertyPicker",
+          build: "build-property-picker",
+          update: "update-property-picker",
+          rebuild: "rebuild-property-picker",
+          hint: "Build creates PropertyPicker (CLOUD-UI-003), Pointr Cloud's \"+ Add additional field\", a Dashboard module: the subtle Button and its popup (search, tabs, property rows, Custom field), with State Closed, Open, Suggested and Empty variants and a Label text property. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        mapEditToolbar: {
+          label: "MapEditToolbar",
+          build: "build-map-edit-toolbar",
+          update: "update-map-edit-toolbar",
+          rebuild: "rebuild-map-edit-toolbar",
+          hint: "Build creates MapEditToolbar (CLOUD-UI-005), Pointr Cloud's map edit toolbar, a Dashboard module: Mode is each of Cloud's seven toolbars with its items, and Overflow True draws it on a 320 map with More. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        imageField: {
+          label: "ImageField",
+          build: "build-image-field",
+          update: "update-image-field",
+          rebuild: "rebuild-image-field",
+          hint: "Build creates ImageField (CLOUD-UI-004), Pointr Cloud's image field, a Dashboard module: the label and count, one image with its alt text and Preview, Frame and Remove, the drop zone and the URL row, with Default, Full and Disabled states and a Label text property. Run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
         aiSearchButton: {
           label: "AISearchButton",
           build: "build-ai-search-button",
@@ -1761,6 +1832,13 @@
           rebuild: "rebuild-separator",
           hint: "Build creates Separator with Horizontal and Vertical orientation variants. Update preserves its future Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
+        personaMark: {
+          label: "PersonaMark",
+          build: "build-persona-mark",
+          update: "update-persona-mark",
+          rebuild: "rebuild-persona-mark",
+          hint: "Build creates PersonaMark (GAP-106), a persona's colour as a 12 diamond, with Single and Group Form variants: one mark, or three marks 2 apart. The diamond's fill is the persona's colour, product data: override it. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
         kbd: {
           label: "Kbd",
           build: "build-kbd",
@@ -1808,7 +1886,14 @@
           build: "build-container",
           update: "update-container",
           rebuild: "rebuild-container",
-          hint: "Build creates Container with centered and fluid examples plus an editable Content Slot. Update preserves its future Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+          hint: "Build creates Container with centered and fluid examples, Window and Panel insets, the None, Small, Medium and Large block insets (GAP-116), plus an editable Content Slot. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        pageHeader: {
+          label: "PageHeader",
+          build: "build-page-header",
+          update: "update-page-header",
+          rebuild: "rebuild-page-header",
+          hint: "Build creates PageHeader (GAP-036) after Breadcrumb, Button, IconButton and Curated Icons: a band with Subtle and Default Tone and Medium and Large Size variants, a live Breadcrumb, an Info IconButton, a Description and a live Button action, each shown by its boolean, and editable Title Text and Description Text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         breadcrumb: {
           label: "Breadcrumb",
@@ -1921,6 +2006,20 @@
           update: "update-list",
           rebuild: "rebuild-list",
           hint: "Build creates List with Default and Compact density variants plus editable item text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        listItem: {
+          label: "ListItem",
+          build: "build-list-item",
+          update: "update-list-item",
+          rebuild: "rebuild-list-item",
+          hint: "Build creates ListItem (GAP-195), React ListItem's slots: a status mark, a title with a tag, a description, a meta line and one action, with Selected False and True (the tint). Each slot has a Show boolean; the texts are editable. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        settingsRow: {
+          label: "SettingsRow",
+          build: "build-settings-row",
+          update: "update-settings-row",
+          rebuild: "rebuild-settings-row",
+          hint: "Build creates SettingsRow (GAP-040): a label, its state tag, a description and a switch, with State None, Inherited and Overridden (which offers Reset to default) by Disabled False and True (which says why). Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         table: {
           label: "Table",
@@ -2173,6 +2272,13 @@
           update: "update-file-upload",
           rebuild: "rebuild-file-upload",
           hint: "Build creates FileUpload with State, Status, and Content axes. DropZone is represented by Content=Dropzone because React exports it as a FileUpload alias. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        imageCropper: {
+          label: "ImageCropper",
+          build: "build-image-cropper",
+          update: "update-image-cropper",
+          rebuild: "rebuild-image-cropper",
+          hint: "Build creates ImageCropper (GAP-273) after Curated Icons: the frame in its ratio with an Image slot, and the zoom row, Zoom out, a Slider slot and Zoom in, with Square and Landscape Ratio variants and a Zoom Controls boolean. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         colorPicker: {
           label: "ColorPicker",

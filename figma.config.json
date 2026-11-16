@@ -2,7 +2,8 @@
   "codeConnect": {
     "parser": "react",
     "importPaths": {
-      "src/components/*": "@kozmos-ds/react"
+      "src/components/*": "@kozmos-ds/react",
+      "src/dashboard/*": "@kozmos-ds/react/dashboard"
     },
     "include": [
       "packages/react/src/**/*.figma.tsx",

@@ -2,7 +2,8 @@
   "codeConnect": {
     "parser": "react",
     "importPaths": {
-      "src/components/*": "@kozmos-ds/react"
+      "src/components/*": "@kozmos-ds/react",
+      "src/dashboard/*": "@kozmos-ds/react/dashboard"
     },
     "include": [
       "src/components/Button/Button.figma.tsx",
@@ -32,6 +33,9 @@
       "src/components/Card/Card.tsx",
       "src/components/List/List.figma.tsx",
       "src/components/List/List.tsx",
+      "src/components/List/ListItem.figma.tsx",
+      "src/components/SettingsRow/SettingsRow.figma.tsx",
+      "src/components/SettingsRow/SettingsRow.tsx",
       "src/components/MetaStrip/MetaStrip.figma.tsx",
       "src/components/MetaStrip/MetaStrip.tsx",
       "src/components/Listbox/Listbox.figma.tsx",
@@ -71,6 +75,8 @@
       "src/components/TimePicker/TimePicker.tsx",
       "src/components/FileUpload/FileUpload.figma.tsx",
       "src/components/FileUpload/FileUpload.tsx",
+      "src/components/ImageCropper/ImageCropper.figma.tsx",
+      "src/components/ImageCropper/ImageCropper.tsx",
       "src/components/ColorPicker/ColorPicker.figma.tsx",
       "src/components/ColorPicker/ColorPicker.tsx",
       "src/components/Textarea/Textarea.figma.tsx",
@@ -105,6 +111,8 @@
       "src/components/Separator/Separator.tsx",
       "src/components/Kbd/Kbd.figma.tsx",
       "src/components/Kbd/Kbd.tsx",
+      "src/components/PersonaMark/PersonaMark.figma.tsx",
+      "src/components/PersonaMark/PersonaMark.tsx",
       "src/components/Skeleton/Skeleton.figma.tsx",
       "src/components/Skeleton/Skeleton.tsx",
       "src/components/Box/Box.figma.tsx",
@@ -117,6 +125,8 @@
       "src/components/ScrollArea/ScrollArea.tsx",
       "src/components/Container/Container.figma.tsx",
       "src/components/Container/Container.tsx",
+      "src/components/PageHeader/PageHeader.figma.tsx",
+      "src/components/PageHeader/PageHeader.tsx",
       "src/components/BottomNavigation/BottomNavigation.figma.tsx",
       "src/components/BottomNavigation/BottomNavigation.tsx",
       "src/components/NavigationItem/NavigationItem.figma.tsx",
@@ -208,7 +218,23 @@
       "src/components/DynamicIsland/DynamicIsland.figma.tsx",
       "src/components/DynamicIsland/DynamicIsland.tsx",
       "src/components/FeedbackCard/FeedbackCard.figma.tsx",
-      "src/components/FeedbackCard/FeedbackCard.tsx"
+      "src/components/FeedbackCard/FeedbackCard.tsx",
+      "src/dashboard/BrandLoader/BrandLoader.figma.tsx",
+      "src/dashboard/BrandLoader/BrandLoader.tsx",
+      "src/dashboard/PropertyField/PropertyField.figma.tsx",
+      "src/dashboard/PropertyField/PropertyField.tsx",
+      "src/dashboard/OpeningHoursEditor/OpeningHoursEditor.figma.tsx",
+      "src/dashboard/OpeningHoursEditor/OpeningHoursEditor.tsx",
+      "src/dashboard/RatingEditor/RatingEditor.figma.tsx",
+      "src/dashboard/RatingEditor/RatingEditor.tsx",
+      "src/dashboard/KeyValueList/KeyValueList.figma.tsx",
+      "src/dashboard/KeyValueList/KeyValueList.tsx",
+      "src/dashboard/PropertyPicker/PropertyPicker.figma.tsx",
+      "src/dashboard/PropertyPicker/PropertyPicker.tsx",
+      "src/dashboard/MapEditToolbar/MapEditToolbar.figma.tsx",
+      "src/dashboard/MapEditToolbar/MapEditToolbar.tsx",
+      "src/dashboard/ImageField/ImageField.figma.tsx",
+      "src/dashboard/ImageField/ImageField.tsx"
     ]
   }
 }

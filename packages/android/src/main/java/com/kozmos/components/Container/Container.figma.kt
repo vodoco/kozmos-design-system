@@ -19,13 +19,35 @@ class KozmosContainerConnect {
         "False" to "false"
     )
 
+    @FigmaProperty(FigmaType.Enum, "Inset")
+    val inset: KozmosContainerInset = Figma.mapping(
+        "Window" to KozmosContainerInset.Window,
+        "Panel" to KozmosContainerInset.Panel
+    )
+
+    // GAP-116: the space above and below the content, both edges one step.
+    @FigmaProperty(FigmaType.Enum, "Block")
+    val block: String = Figma.mapping(
+        "None" to "none",
+        "Small" to "sm",
+        "Medium" to "md",
+        "Large" to "lg"
+    )
+
     @Composable
     fun ComponentExample() {
         KozmosContainer(
+            inset = inset,
             modifier = if (centered == "true") {
                 Modifier.widthIn(max = 720.dp)
             } else {
                 Modifier.fillMaxWidth()
+            },
+            block = when (block) {
+                "sm" -> KozmosContainerBlock.Sm
+                "md" -> KozmosContainerBlock.Md
+                "lg" -> KozmosContainerBlock.Lg
+                else -> KozmosContainerBlock.None
             }
         ) {
             Text("Container content")

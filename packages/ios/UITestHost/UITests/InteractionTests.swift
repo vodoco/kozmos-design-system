@@ -792,6 +792,49 @@ final class InteractionTests: XCTestCase {
         received("Coffee|remove Coffee|remove Open now")
     }
 
+    /// A chip's remove is drawn 20 but takes a tap 44 square, Apple's minimum
+    /// and Kozmos's SwiftUI one, at every size, with the chip no taller for
+    /// it, and a tap on the chip's words is never a remove, up to their last
+    /// point. It took a tap only on the 20.
+    func testAChipsRemoveTakesATap44SquareWhileTheChipKeepsItsHeight() {
+        launch("chip-remove-targets")
+        XCTAssertEqual(app.staticTexts["chip-heights"].label, "28|32|36", "a remove target made a chip taller")
+        func last() -> String {
+            String(app.staticTexts["received-events"].label.split(separator: "|").last ?? "none")
+        }
+        for text in ["Lift", "Coffee", "Gate"] {
+            let remove = app.buttons["Remove \(text)"]
+            XCTAssertTrue(remove.waitForExistence(timeout: 3), text)
+            let frame = remove.frame
+            XCTAssertGreaterThanOrEqual(frame.width, 44, "\(text): \(frame)")
+            XCTAssertGreaterThanOrEqual(frame.height, 44, "\(text): \(frame)")
+            // The trailing corners, the mark, and above and below it: the
+            // mark is 20 wide, 4 in from the target's leading edge.
+            for (x, y) in [(42.0, 2.0), (42.0, 42.0), (14.0, 22.0), (14.0, 2.0), (14.0, 42.0), (8.0, 22.0)] {
+                remove.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: y)).tap()
+                XCTAssertEqual(last(), "remove \(text)", "\(text): a tap at \(x),\(y) in the remove's \(frame)")
+            }
+            // Across the words to their last point, every tap is the chip's.
+            // The words stop where the remove's target starts, 4 before the
+            // mark; the chip's element reads as the whole chip on iOS, so its
+            // frame does not say where they stop.
+            let words = app.buttons[text]
+            for back in [1.0, 2.0, 4.0, 8.0] {
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.minX - back, dy: frame.midY)).tap()
+                XCTAssertEqual(last(), text, "\(text): a tap \(back) before the remove's \(frame), on the words")
+            }
+            // Where the target's leading edge yields to the words, for the
+            // record: printed, not asserted.
+            var edge: [String] = []
+            for x in stride(from: 1.0, through: 7.0, by: 2.0) {
+                remove.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: 22)).tap()
+                edge.append("\(Int(x))=\(last())")
+            }
+            print("chip-remove-edge \(text) remove=\(frame) words=\(words.frame) \(edge.joined(separator: " "))")
+        }
+    }
+
     func testTheDocsExampleSaysWhichCategoryIsSelected() {
         launch("chip-docs")
         XCTAssertTrue(app.buttons["All"].isSelected)
@@ -1145,15 +1188,25 @@ final class InteractionTests: XCTestCase {
             launch(scenario)
             let rtl = scenario == "selection-controls-large-rtl"
             for name in ["Ramp", "Stairs", "Step-free", "Bare checkbox", "Announce turns", "Bare switch"] {
-                assertTouchTarget(app.buttons[name])
+                assertTouchTarget(selectionControl(name))
             }
             for name in ["Stairs", "Bare checkbox"] {
-                app.buttons[name].coordinate(withNormalizedOffset: CGVector(dx: rtl ? 1 : 0, dy: 0.5))
+                selectionControl(name).coordinate(withNormalizedOffset: CGVector(dx: rtl ? 1 : 0, dy: 0.5))
                     .withOffset(CGVector(dx: rtl ? -36 : 36, dy: 0)).tap()
             }
             received("radio stairs|bare checkbox true")
             app.terminate()
         }
+    }
+
+    /// A radio, checkbox or switch by its name, whatever type XCUITest gives
+    /// it: a radio is a button, but from iOS 17 a checkbox or switch carries
+    /// the toggle trait (#523), so VoiceOver says it can be switched, and
+    /// XCUITest no longer lists it among the buttons.
+    private func selectionControl(_ name: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@ AND elementType != %d", name, XCUIElement.ElementType.staticText.rawValue))
+            .firstMatch
     }
 
     /// The trigger takes a tap across its row, between its title and its
@@ -1433,7 +1486,7 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["escape-events"].label, "none")
         app.textFields["Full search"].tap()
         escape()
-        XCTAssertEqual(app.staticTexts["search-query"].label, "empty")
+        XCTAssertEqual(app.staticTexts["search-query"].label, "empty", "after Escape; the app heard: \(heardKeys())")
         XCTAssertEqual(app.staticTexts["escape-events"].label, "clear full")
         XCTAssertEqual(app.textFields["Full search"].value(forKey: "hasKeyboardFocus") as? Bool, true,
                        "the field lost the focus")
@@ -1443,11 +1496,18 @@ final class InteractionTests: XCTestCase {
     /// `XCUIKeyboardKey.escape` never reaches the app on the iOS simulator
     /// (measured on 26.5: no press arrives, where every letter does); its
     /// Command-period does, as `UIKeyCommand.inputEscape`, the input the
-    /// hardware Escape key sends and the one `onKeyPress(.escape)` hears. The
-    /// first hardware key after the on-screen keyboard came up only puts it
-    /// away, and no key command hears it (measured in a sheet, where even a
-    /// visible `.cancelAction` button did not fire): a press of the End key,
-    /// which edits nothing, goes first, as a visitor's typing would.
+    /// hardware Escape key sends and the one `onKeyPress(.escape)` hears.
+    ///
+    /// The End key goes first and edits nothing. The first hardware key after
+    /// the field takes the focus switches the system into hardware-keyboard
+    /// mode and loses its modifiers on the way: Command-period sent alone
+    /// reaches the field as a bare "." (measured 15 Nov on a starved
+    /// simulator, 20 runs of 20; with End first, 20 of 20 heard Escape). The
+    /// fixture keeps the on-screen keyboard down (`KeyEventLog`), as a
+    /// hardware keyboard does: while it was up, it could come back between
+    /// End and Command-period, and Command-period was spent on the switch
+    /// again (`press . to UITextField`, then `kb willShow`), which is how
+    /// these tests failed on CI, 13–15 Nov.
     private func escape() {
         app.typeKey(XCUIKeyboardKey.end, modifierFlags: [])
         app.typeKey(".", modifierFlags: [.command])
@@ -1464,17 +1524,33 @@ final class InteractionTests: XCTestCase {
         escapeInPresentation("search-escape-popover")
     }
 
+    /// What the app heard: each key press, the responder it went to, and the
+    /// on-screen keyboard's moves (the fixture's `key-events`).
+    private func heardKeys() -> String {
+        let keys = app.staticTexts["key-events"]
+        return keys.exists ? keys.label : "no key log on screen"
+    }
+
     private func escapeInPresentation(_ scenario: String, file: StaticString = #filePath, line: UInt = #line) {
         launch(scenario)
         app.buttons["Open"].tap()
         let field = app.textFields["Full search"]
         XCTAssertTrue(field.waitForExistence(timeout: 3), "nothing presented", file: file, line: line)
         field.tap()
+        // The Escape is the field's only while the field has the focus. On a
+        // CI simulator a tap is sometimes lost (8 Nov ruling: re-run, no
+        // retry): say so, rather than "none" after Escape, which read as
+        // Escape not clearing (13–15 Nov, three times).
+        let focused = expectation(for: NSPredicate(format: "hasKeyboardFocus == true"), evaluatedWith: field)
+        guard XCTWaiter().wait(for: [focused], timeout: 2) == .completed else {
+            XCTFail("the tap on the field never focused it: a lost tap, not Escape", file: file, line: line)
+            return
+        }
         escape()
         let events = app.staticTexts["escape-events"]
         let shown = events.waitForExistence(timeout: 1)
         let report = shown ? events.label : "gone; presenter: " + app.staticTexts["presenter-events"].label
-        XCTAssertEqual(report, "clear full", "after Escape", file: file, line: line)
+        XCTAssertEqual(report, "clear full", "after Escape; the app heard: \(heardKeys())", file: file, line: line)
         XCTAssertEqual(app.staticTexts["search-query"].label, "empty", file: file, line: line)
         XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true,
                        "the field lost the focus", file: file, line: line)
@@ -1791,5 +1867,59 @@ final class InteractionTests: XCTestCase {
         if !paste.waitForExistence(timeout: 3) { print("OTP paste: no Paste in\n\(app.debugDescription)") }
         XCTAssertTrue(paste.exists, "no Paste in the field's edit menu")
         paste.tap()
+    }
+
+    /// A Select option with a count, in the system's own menu (GAP-164):
+    /// the menu draws the count as the item's subtitle and, alone, would
+    /// name the item by its title. Kozmos names it with its count, in the
+    /// reader's own number format, "Cafes, 1,234" in English; an option without one
+    /// keeps its label, "Toilets". The count is the item's subtitle whether
+    /// it is chosen or not, so choosing another option moves no count
+    /// (decision 1): the fixture reports where the open menu draws each word.
+    func testASelectOptionsCountIsReadWithItsLabelInTheSystemMenu() {
+        launch("select-counts")
+        // Each count as KozmosSelectItem writes it, `formatted()` in the
+        // simulator's own locale, grouped or not: the test asks only that the
+        // menu reads what the Select wrote.
+        let dozen = 12.formatted(), thousands = 1234.formatted()
+        let words = ["Gates", dozen, "Cafes", thousands, "Toilets"]
+        let report = app.staticTexts["control-accessibility-report"]
+        /// The open menu's words, once the fixture has read its `opening`.
+        func openMenu(_ opening: Int, chosen: String) -> [String: String] {
+            app.buttons["Category"].tap()
+            let gates = app.buttons["Gates, \(dozen)"]
+            XCTAssertTrue(gates.waitForExistence(timeout: 5), "the menu opened, or Gates is not named with its count:\n\(app.debugDescription)")
+            XCTAssertTrue(app.buttons["Cafes, \(thousands)"].exists, "Cafes is not named with its formatted count")
+            XCTAssertTrue(app.buttons["Toilets"].exists, "an option with no count is not named by its label")
+            XCTAssertFalse(app.buttons["Gates"].exists, "Gates is named by its title alone")
+            let prefix = "open \(opening); chosen \(chosen); "
+            let read = NSPredicate(format: "label BEGINSWITH %@", prefix)
+            _ = XCTWaiter().wait(for: [expectation(for: read, evaluatedWith: report)], timeout: 5)
+            XCTAssertTrue(report.label.hasPrefix(prefix), "the menu's words: \(report.label)")
+            var drawn: [String: String] = [:]
+            // Keyed by the fixture's own words, so a count whose format
+            // holds a space still reads as one word.
+            for entry in report.label.dropFirst(prefix.count).components(separatedBy: "|") {
+                guard let word = words.first(where: { entry.hasPrefix($0 + " ") }) else { continue }
+                drawn[word] = String(entry.dropFirst(word.count + 1))
+            }
+            return drawn
+        }
+        let first = openMenu(1, chosen: "gates")
+        XCTAssertTrue(app.buttons["Gates, \(dozen)"].isSelected, "the chosen option is selected")
+        app.buttons["Cafes, \(thousands)"].tap()
+        received("cafes")
+        let second = openMenu(2, chosen: "cafes")
+        XCTAssertTrue(app.buttons["Cafes, \(thousands)"].isSelected, "the chosen option is selected")
+        for (count, label) in [(dozen, "Gates"), (thousands, "Cafes")] {
+            // The same box, the same width of words, the same alignment: the
+            // count's ends do not move when the choice does.
+            XCTAssertEqual(first[count], second[count], "\(count) moved when the choice moved from Gates to Cafes")
+            // A subtitle starts where its title starts, drawn from the leading edge.
+            let start = { (entry: String?) in entry?.components(separatedBy: "-").first }
+            XCTAssertEqual(start(second[count]), start(second[label]), "\(count) does not start where \(label) does")
+            XCTAssertTrue(["natural", "left"].contains(second[count]?.components(separatedBy: " ").last ?? ""),
+                          "\(count) is not drawn from its leading edge: \(second[count] ?? "missing")")
+        }
     }
 }

@@ -11,6 +11,13 @@ import {
 import { Label } from "../Label/Label";
 import { Input } from "../Input/Input";
 import { Button } from "../Button/Button";
+import {
+  Building01,
+  Cube01,
+  LayersThree01,
+  MarkerPin01,
+  Package,
+} from "@kozmos-ds/icons";
 
 const meta = {
   id: "components-tabs",
@@ -77,5 +84,77 @@ export const Default: Story = {
         </Card>
       </TabsContent>
     </Tabs>
+  ),
+};
+
+// GAP-152: the type picker's family tabs, each an icon over its words. The
+// active tab stays the raised segment (decision 65); the track grows to hold
+// the stack.
+const typeFamilies = [
+  { value: "everything", label: "Everything", Icon: LayersThree01 },
+  { value: "poi", label: "POI", Icon: MarkerPin01 },
+  { value: "interior", label: "Interior asset", Icon: Package },
+  { value: "structural", label: "Structural", Icon: Building01 },
+  { value: "virtual", label: "Virtual", Icon: Cube01 },
+];
+
+// Each tab controls a panel, so every aria-controls names an element. Five
+// stacked tabs are wider than a phone: the list scrolls sideways inside its
+// own track rather than widen the page (GAP-254, decision 182).
+function TypeFamilyTabs({
+  dir,
+  defaultValue = "poi",
+}: {
+  dir?: "ltr" | "rtl";
+  defaultValue?: string;
+}) {
+  return (
+    <div dir={dir}>
+      <Tabs defaultValue={defaultValue} dir={dir}>
+        <TabsList aria-label="Type family">
+          {typeFamilies.map(({ value, label, Icon }) => (
+            <TabsTrigger key={value} value={value} icon={<Icon />}>
+              {label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {typeFamilies.map(({ value, label }) => (
+          <TabsContent key={value} value={value}>
+            Types in {label}
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+export const IconOverLabel: Story = {
+  name: "Icon over label",
+  render: () => <TypeFamilyTabs />,
+};
+
+export const IconOverLabelRightToLeft: Story = {
+  name: "Icon over label, right to left",
+  render: () => <TypeFamilyTabs dir="rtl" />,
+};
+
+// GAP-254, decision 182: the five families in a 320 column. The track keeps
+// the column's width and scrolls, with no scroll bar; Structural, chosen, is
+// in view without scrolling; right to left it starts at the right.
+export const ManyTabsNarrow: Story = {
+  name: "Many tabs, narrow",
+  render: () => (
+    <div className="w-80">
+      <TypeFamilyTabs defaultValue="structural" />
+    </div>
+  ),
+};
+
+export const ManyTabsNarrowRightToLeft: Story = {
+  name: "Many tabs, narrow, right to left",
+  render: () => (
+    <div className="w-80">
+      <TypeFamilyTabs dir="rtl" defaultValue="structural" />
+    </div>
   ),
 };

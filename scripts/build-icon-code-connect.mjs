@@ -90,6 +90,7 @@ const AWAITING_THE_ICONS_PAGE = new Set([
   "beaker-01",
   "clapperboard",
   "credit-card-01",
+  "crop-01",
   "droplets-01",
   "graduation-hat-01",
   "luggage-01",

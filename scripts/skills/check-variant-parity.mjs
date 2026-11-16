@@ -108,6 +108,14 @@ const INTENTIONAL = {
     figma:
       "Modelled as the row sets' Meta Below boolean with its Meta Text (GAP-107): the meta's second line under the label, hidden while off. A variant axis would double TreeItem's 216 variants for a layer's visibility; the inline meta is not drawn in the sets.",
   },
+  "Tree.checkRule": {
+    figma:
+      "Which checks a check clears (GAP-277): a client's sites, or a site's client, or none. It is what a click does to the other rows, not how a row draws; each row's check is the Checkable and Checked booleans on the row sets.",
+  },
+  "Tree.disclosurePosition": {
+    figma:
+      "Modelled as the row sets' Disclosure Start (on) and Disclosure End (off) booleans (GAP-277): a boolean can show a layer but not hide another, so a designer turns one off and the other on. A variant axis would double TreeItem's 216 variants for a layer's visibility.",
+  },
   "ThemeProvider.theme": {
     figma:
       "A React context provider, not a drawn component. Figma expresses the theme as a variable mode on the whole file, which is why the set is absent rather than missing an axis.",

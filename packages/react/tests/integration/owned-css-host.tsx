@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Surface,
@@ -35,6 +35,22 @@ import {
   SegmentedControl,
   POIResultCard,
   POIResultGroup,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+  Switch,
+  Checkbox,
+  RadioGroup,
+  RadioGroupItem,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  Backdrop,
 } from "@kozmos-ds/react";
 import type {
   POIPresentation,
@@ -249,6 +265,150 @@ function MapBoard({
         </MapOverlay>
       )}
     </div>
+  );
+}
+
+/* GAP-261: each part whose look is its state, on its own and as a tooltip's
+   trigger. Radix's tooltip trigger writes its own data-state (closed,
+   delayed-open, instant-open) over the part's, so a look keyed on data-state
+   was lost in the trigger; each pair must draw alike. GAP-262: a pressed
+   ToggleButton (plain, outline and disabled) and a Backdrop with and without
+   a target, which must draw without @scope. */
+function StateLooks({ id }: { id: string }) {
+  const tip = (testId: string, child: ReactElement) => (
+    <Tooltip>
+      <TooltipTrigger asChild data-testid={testId}>
+        {child}
+      </TooltipTrigger>
+      <TooltipContent>{testId}</TooltipContent>
+    </Tooltip>
+  );
+  return (
+    <TooltipProvider delayDuration={0}>
+      <div data-testid={`${id}-state-looks`}>
+        <ToggleButton data-testid={`${id}-toggle-off`} aria-label="Off">
+          B
+        </ToggleButton>
+        <ToggleButton
+          data-testid={`${id}-toggle-on`}
+          aria-label="On"
+          defaultPressed
+        >
+          B
+        </ToggleButton>
+        {tip(
+          `${id}-toggle-on-tip`,
+          <ToggleButton aria-label="On, in a tooltip" defaultPressed>
+            B
+          </ToggleButton>,
+        )}
+        <ToggleButton
+          data-testid={`${id}-toggle-on-outline`}
+          aria-label="On, outline"
+          variant="outline"
+          defaultPressed
+        >
+          B
+        </ToggleButton>
+        <ToggleButton
+          data-testid={`${id}-toggle-on-disabled`}
+          aria-label="On, disabled"
+          defaultPressed
+          disabled
+        >
+          B
+        </ToggleButton>
+        <Switch
+          data-testid={`${id}-switch-on`}
+          aria-label="On"
+          defaultChecked
+        />
+        {tip(
+          `${id}-switch-on-tip`,
+          <Switch aria-label="On, in a tooltip" defaultChecked />,
+        )}
+        <Checkbox data-testid={`${id}-check-on`} aria-label="On" checked />
+        {tip(
+          `${id}-check-on-tip`,
+          <Checkbox aria-label="On, in a tooltip" checked />,
+        )}
+        <Checkbox
+          data-testid={`${id}-check-mixed`}
+          aria-label="Mixed"
+          checked="indeterminate"
+        />
+        {tip(
+          `${id}-check-mixed-tip`,
+          <Checkbox aria-label="Mixed, in a tooltip" checked="indeterminate" />,
+        )}
+        <RadioGroup aria-label={`${id} radios`} defaultValue="a">
+          <RadioGroupItem
+            data-testid={`${id}-radio-on`}
+            value="a"
+            aria-label="A"
+          />
+          {tip(
+            `${id}-radio-on-tip`,
+            <RadioGroupItem value="a" aria-label="A, in a tooltip" />,
+          )}
+        </RadioGroup>
+        <RadioGroup aria-label={`${id} cards`} defaultValue="a">
+          <RadioGroupItem
+            data-testid={`${id}-radio-card-on`}
+            value="a"
+            variant="card"
+            label="Card"
+          />
+          {tip(
+            `${id}-radio-card-on-tip`,
+            <RadioGroupItem
+              value="a"
+              variant="card"
+              label="Card, in a tooltip"
+            />,
+          )}
+        </RadioGroup>
+        <Tabs defaultValue="a">
+          <TabsList>
+            <TabsTrigger data-testid={`${id}-tab-on`} value="a">
+              A
+            </TabsTrigger>
+            {tip(`${id}-tab-on-tip`, <TabsTrigger value="a">A</TabsTrigger>)}
+          </TabsList>
+        </Tabs>
+        <Accordion type="multiple" variant="boxed" defaultValue={["a", "b"]}>
+          <AccordionItem value="a">
+            <AccordionTrigger data-testid={`${id}-accordion-on`}>
+              A
+            </AccordionTrigger>
+            <AccordionContent>A</AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="b">
+            {tip(
+              `${id}-accordion-on-tip`,
+              <AccordionTrigger>B, in a tooltip</AccordionTrigger>,
+            )}
+            <AccordionContent>B</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+        <div
+          data-testid={`${id}-backdrop-box`}
+          style={{ position: "relative", width: 120, height: 40 }}
+        >
+          <Backdrop data-testid={`${id}-backdrop`} placement="inline" />
+        </div>
+        <div
+          data-testid={`${id}-backdrop-target-box`}
+          style={{ position: "relative", width: 120, height: 40 }}
+        >
+          <Backdrop
+            data-testid={`${id}-backdrop-targeted`}
+            placement="inline"
+            target={{ top: 0, left: 0, width: 1, height: 1 }}
+          />
+        </div>
+      </div>
+    </TooltipProvider>
   );
 }
 
@@ -570,6 +730,7 @@ function Controls({ id }: { id: string }) {
       </div>
       <TravelTimes id={id} />
       <ResultTabs id={id} />
+      <StateLooks id={id} />
       <POIDetailPanel
         data-testid={`${id}-poi`}
         poi={{

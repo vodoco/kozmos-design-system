@@ -37,6 +37,7 @@ import {
   $,
   $$,
   bridgedParts,
+  eventually,
   heard,
   mount,
   press,
@@ -61,6 +62,10 @@ import {
 // hear an element-less part's portal; that host ran `@click` when the part
 // chose not to call `onClick` (LocationPin's second tap, a disabled
 // NavigationItem), and is gone.
+//
+// Most checks below count the calls an event made, or check it made none, so
+// they wait a fixed `settle()` after it: a wait until a count is reached
+// would miss one more (react-bridge-harness.ts).
 
 const page = (template: string, state: Record<string, unknown> = {}) =>
   defineComponent({
@@ -785,9 +790,14 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosMenu: { slot: true },
   KozmosContextMenu: { slot: true },
   KozmosKbd: { props: { keys: ["Esc"] } },
+  KozmosPersonaMark: { props: { color: "#FF9800", name: "Customer" } },
+  KozmosPersonaMarkGroup: {
+    props: { personas: [{ name: "Customer", color: "#FF9800" }] },
+  },
   KozmosNotice: { props: { summary: "Geometry is set" } },
   KozmosDrawer: { slot: true },
   KozmosBreadcrumb: { slot: true },
+  KozmosPageHeader: { props: { title: "Settings" } },
   KozmosPagination: { slot: true },
   KozmosStepper: { props: { steps: ["Pick", "Pay"], currentStep: 0 } },
   KozmosAlert: { props: { title: "Saved" } },
@@ -797,6 +807,9 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosAvatar: { props: { fallback: "AL" } },
   KozmosTag: { slot: true },
   KozmosList: { slot: true },
+  KozmosListItem: { slot: true },
+  KozmosListItemStatus: { props: { status: "done" } },
+  KozmosSettingsRow: { props: { label: "Analytics" } },
   // A table cannot hold the slot's box.
   KozmosTable: { click: first("table") },
   KozmosTree: { props: { data: [{ id: "1", name: "a.ts" }] } },
@@ -822,6 +835,7 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Floor plan" },
     click: (drawn) => drawn.querySelector("input[type=file]")?.parentElement,
   },
+  KozmosImageCropper: { props: { src: "logo.png", alt: "Logo" } },
   KozmosDatePicker: { props: { "aria-label": "Date" }, click: first("input") },
   KozmosTimePicker: { props: { "aria-label": "Time" }, click: first("input") },
   KozmosFloatingActionButton: { slot: true },
@@ -1375,28 +1389,29 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
       }),
     );
     type(input, "A");
-    await settle();
-    // The native event, of its own type.
-    expect(seen.click).toBeInstanceOf(MouseEvent);
-    expect(seen.keydown).toBeInstanceOf(KeyboardEvent);
-    expect(seen.focusin).toBeInstanceOf(FocusEvent);
-    // React's, which names its own type: React made it from focusin,
-    // mouseover and input.
-    expect(
-      Object.fromEntries(
-        ["click", "keydown", "focus", "mouseenter", "change", "focusin"].map(
-          (name) => [name, seen[name]?.type],
+    await eventually(() => {
+      // The native event, of its own type.
+      expect(seen.click).toBeInstanceOf(MouseEvent);
+      expect(seen.keydown).toBeInstanceOf(KeyboardEvent);
+      expect(seen.focusin).toBeInstanceOf(FocusEvent);
+      // React's, which names its own type: React made it from focusin,
+      // mouseover and input.
+      expect(
+        Object.fromEntries(
+          ["click", "keydown", "focus", "mouseenter", "change", "focusin"].map(
+            (name) => [name, seen[name]?.type],
+          ),
         ),
-      ),
-    ).toEqual({
-      click: "click",
-      keydown: "keydown",
-      focus: "focus",
-      mouseenter: "mouseenter",
-      change: "change",
-      focusin: "focusin",
+      ).toEqual({
+        click: "click",
+        keydown: "keydown",
+        focus: "focus",
+        mouseenter: "mouseenter",
+        change: "change",
+        focusin: "focusin",
+      });
+      expect(seen.mouseenter.target).toBe(input);
     });
-    expect(seen.mouseenter.target).toBe(input);
   });
 
   it("@mouseenter and @mouseleave: outside, the label, the input, the label, outside", async () => {
@@ -1732,10 +1747,13 @@ describe("the playground's field", () => {
     await settle();
     expect(addTask).not.toHaveBeenCalled();
     press(input, "Enter");
+    // A fixed wait: Enter adds the task once, and no more.
     await settle();
     expect(addTask).toHaveBeenCalledTimes(1);
-    expect(tasks.value).toEqual(["Buy milk"]);
-    expect(input.value).toBe("");
+    await eventually(() => {
+      expect(tasks.value).toEqual(["Buy milk"]);
+      expect(input.value).toBe("");
+    });
   });
 });
 

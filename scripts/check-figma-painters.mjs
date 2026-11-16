@@ -42,6 +42,7 @@ import {
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  propertiesBoundToNoLayer,
   strokeLayoutsThatDisagree,
   variantsThatOverlap,
 } from "./lib/figma-verify-rules.mjs";
@@ -1401,6 +1402,8 @@ section("A set runs after the sets it reaches into");
     retintTourStepCloseIcon: ["IconButton", "TourStep"],
     // GAP-169: the header action's pencil, tinted again after the swap.
     retintCardHeaderActionIcon: ["IconButton", "Card"],
+    // GAP-036: PageHeader's info-circle, tinted again after the swap.
+    retintPageHeaderInfoIcon: ["IconButton", "PageHeader"],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1454,8 +1457,8 @@ section("A set runs after the sets it reaches into");
     // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
       [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
-        "Card,TourStep",
-      `after IconButton: TourStep and Card (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+        "Card,PageHeader,TourStep",
+      `after IconButton: TourStep, Card and PageHeader (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -4198,6 +4201,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       `each keeps its node id and is renamed Tone=Neutral (${["Content=Basic", "Content=Action"].map((name) => (byId.get(oldIds[name]) || { name: "gone" }).name).join("; ")})`,
     );
   }
+}
+
+// GAP-268: ToastClose's `visible`. The set's Close Always Visible boolean, on
+// by default so the file draws as it did, shows the close at rest in every
+// variant: React's visible="always". Off is the default "hover" close.
+section("Toast's Close Always Visible (GAP-268)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const variants = [];
+  for (const value of ["Basic", "Action"])
+    for (const tone of ["Neutral", "Critical"])
+      variants.push(
+        await plugin.createToastVariant({
+          value,
+          second: tone,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "Toast";
+  plugin.configureToastProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const key = Object.keys(definitions).find(
+    (name) =>
+      name.split("#")[0] === "Close Always Visible" &&
+      definitions[name].type === "BOOLEAN",
+  );
+  ok(
+    key && definitions[key].defaultValue === true,
+    "Toast: a Close Always Visible boolean, on by default",
+  );
+  ok(
+    variants.every((variant) => {
+      const close = named(variant, "Toast Close");
+      return (
+        close &&
+        close.componentPropertyReferences &&
+        close.componentPropertyReferences.visible === key
+      );
+    }),
+    "Toast: Close Always Visible shows the close in all four variants drawn",
+  );
+  ok(
+    ["Title Text", "Description Text", "Action Text"].every((name) =>
+      Object.keys(definitions).some((key) => key.split("#")[0] === name),
+    ),
+    "Toast: its text properties are kept",
+  );
+  set.remove();
 }
 
 // --- Decision 59: the theme fill and what sits on it ------------------------------
@@ -7571,6 +7625,8 @@ section("Typography inference");
     ["FormField", "Required Mark", "fieldLabel"],
     ["FileUpload", "Browse Text", "fieldLabel"],
     ["FileUpload", "Drop Text", "fieldText"],
+    // GAP-270: Content=Preview's Change button, drawn as Browse Text is.
+    ["FileUpload", "Change Text", "fieldLabel"],
     ["Input", "Label Text", "fieldLabel"],
     ["Input", "Optional Text", "fieldMeta"],
     ["Input", "Value Text", "fieldText"],
@@ -7588,12 +7644,44 @@ section("Typography inference");
     ["ColorPicker", "Value Text", "fieldMeta", "ColorPicker Hex Field"],
     ["ColorPicker", "Value Text", "fieldText", "ColorPicker Field"],
     ["FormField", "Description Text", "fieldText"],
+    // GAP-162: a control's description and Switch's state words are regular,
+    // React's text-sm text-muted-foreground; GAP-158: a tile's description
+    // is 12/16. Guessed Medium, the audit called them stale and Apply Text
+    // Styles restyled them as labels.
+    ["Checkbox", "Label Text", "controlLabel"],
+    ["Checkbox", "Description Text", "fieldText", "Description Row"],
+    ["Switch", "Description Text", "fieldText", "Description Row"],
+    ["Switch", "State Label", "fieldText", "Label Row"],
+    ["Radio", "Description Text", "fieldText", "Description Row"],
+    [
+      "Radio",
+      "Description Text",
+      "fieldText",
+      "Text",
+      "Checked=Checked, State=Default, Variant=Card",
+    ],
+    [
+      "Radio",
+      "Description Text",
+      "fieldMeta",
+      undefined,
+      "Checked=Checked, State=Default, Variant=Tile",
+    ],
+    [
+      "Radio",
+      "Label Text",
+      "controlLabel",
+      undefined,
+      "Checked=Checked, State=Default, Variant=Tile",
+    ],
   ];
   const ready = typeof plugin.inferTextStyleKeyForComponentText === "function";
   ok(ready, "the audit's style guess is reachable");
-  for (const [setName, textName, expected, parentName] of ready ? cases : []) {
+  for (const [setName, textName, expected, parentName, variantName] of ready
+    ? cases
+    : []) {
     const set = new MockNode("COMPONENT_SET", setName);
-    const component = new MockNode("COMPONENT", "State=Default");
+    const component = new MockNode("COMPONENT", variantName || "State=Default");
     const text = new MockNode("TEXT", textName);
     if (parentName) {
       const parent = new MockNode("FRAME", parentName);
@@ -7606,7 +7694,7 @@ section("Typography inference");
     const key = plugin.inferTextStyleKeyForComponentText(text, set);
     ok(
       key === expected,
-      `${setName} · ${textName}${parentName ? ` in ${parentName}` : ""} is ${expected} (got ${key})`,
+      `${setName}${variantName ? ` (${variantName})` : ""} · ${textName}${parentName ? ` in ${parentName}` : ""} is ${expected} (got ${key})`,
     );
   }
   const source = fs.readFileSync(PLUGIN, "utf8");
@@ -9056,6 +9144,84 @@ section("Rating");
     ) === JSON.stringify({ scale: "Thumbs", value: "2", state: "Readonly" }),
     "and accepts the three values it does have",
   );
+
+  // Decision 181: a read-only star rating shows a score to the nearest half.
+  // The halves are a read-only star's only: editing stays whole stars, and
+  // thumbs are a choice.
+  ok(
+    Array.isArray(ratingAxes && ratingAxes.Value) &&
+      ["0.5", "1.5", "2.5", "3.5", "4.5"].every(
+        (half) => ratingAxes.Value.indexOf(half) !== -1,
+      ),
+    `the Value axis takes the halves, 0.5 to 4.5 (got ${JSON.stringify(ratingAxes && ratingAxes.Value)})`,
+  );
+  ok(
+    JSON.stringify(
+      plugin.parseRatingVariantName("Scale=Stars, Value=4.5, State=Readonly"),
+    ) === JSON.stringify({ scale: "Stars", value: "4.5", state: "Readonly" }),
+    "a read-only star rating draws a half",
+  );
+  ok(
+    plugin.parseRatingVariantName("Scale=Stars, Value=4.5, State=Default") ===
+      null &&
+      plugin.parseRatingVariantName(
+        "Scale=Thumbs, Value=1.5, State=Readonly",
+      ) === null,
+    "and nothing else does: editing is whole stars, and thumbs are a choice",
+  );
+  if (typeof plugin.updateRatingVariant === "function") {
+    const halves = (await paint("Stars", "4.5", "Readonly")).component;
+    ok(
+      halves.name === "Scale=Stars, Value=4.5, State=Readonly",
+      `a half variant is named for its value (got "${halves.name}")`,
+    );
+    const glyphOf = (cell) => cell.children[0];
+    ok(
+      halves.children
+        .slice(0, 4)
+        .every((cell) => glyphOf(cell).name === "Star / filled"),
+      "4.5 fills four stars",
+    );
+    const half = glyphOf(halves.children[4]);
+    ok(
+      half && half.name === "Star / half" && half.children.length === 2,
+      `and draws the fifth as a half (got "${half && half.name}")`,
+    );
+    const [under, clip] = half ? half.children : [];
+    const over = clip && clip.children[0];
+    ok(
+      under &&
+        under.name === "Star / empty" &&
+        under.width === 22 &&
+        under.fills.length === 0 &&
+        boundVariableName(under.strokes[0]) === "Colors/foreground/500",
+      "the empty star underneath, as an empty star is drawn",
+    );
+    ok(
+      clip &&
+        clip.name === "Half Clip" &&
+        clip.clipsContent === true &&
+        clip.x === 0 &&
+        clip.width === 11 &&
+        clip.height === 22,
+      "a clip of its start half, the left",
+    );
+    ok(
+      over &&
+        over.name === "Star / filled" &&
+        over.width === 22 &&
+        over.x === 0 &&
+        boundVariableName(over.fills[0]) === "Data/Yellow",
+      "holding the filled star, the same size and the same yellow",
+    );
+    const whole = (await paint("Stars", "4", "Readonly")).component;
+    ok(
+      whole.children.every(
+        (cell) => glyphOf(cell).name !== "Star / half",
+      ),
+      "a whole score draws no half",
+    );
+  }
 }
 
 // --- Card's padding, and the second axis the helper now takes ------------------------
@@ -9372,8 +9538,8 @@ section("The rest of the batch");
   const ctWindow = await paint("updateContainerVariant", "True", "Window");
   const ctPanel = await paint("updateContainerVariant", "True", "Panel");
   ok(
-    ctWindow.name === "Centered=True, Inset=Window",
-    `Container carries both axes (got "${ctWindow.name}")`,
+    ctWindow.name === "Centered=True, Inset=Window, Block=None",
+    `Container carries its axes (got "${ctWindow.name}")`,
   );
   ok(
     ctWindow.paddingLeft === 24 && ctPanel.paddingLeft === 16,
@@ -9381,8 +9547,123 @@ section("The rest of the batch");
   );
   ok(
     JSON.stringify(plugin.parseContainerVariantName("Centered=True")) ===
-      JSON.stringify({ value: "True", second: "Window", centered: "True" }),
-    "Container: no Inset reads as Window",
+      JSON.stringify({
+        value: "True",
+        second: "Window/None",
+        centered: "True",
+      }),
+    "Container: no Inset reads as Window, and no Block as None",
+  );
+
+  // GAP-116: Container's Block, React's `block`: none, 16, 24 or 32 above
+  // and below, bound to Container/padding/y/*, which alias the layout
+  // spacing steps 200, 300 and 400.
+  ok(
+    JSON.stringify(axis("Container", "Block")) ===
+      JSON.stringify(["None", "Small", "Medium", "Large"]),
+    `Container expects a Block (got ${JSON.stringify(axis("Container", "Block"))})`,
+  );
+  ok(
+    JSON.stringify(
+      plugin.parseContainerVariantName("Centered=True, Inset=Window"),
+    ) ===
+      JSON.stringify({
+        value: "True",
+        second: "Window/None",
+        centered: "True",
+      }) &&
+      JSON.stringify(
+        plugin.parseContainerVariantName(
+          "Centered=False, Inset=Panel, Block=Large",
+        ),
+      ) ===
+        JSON.stringify({
+          value: "False",
+          second: "Panel/Large",
+          centered: "False",
+        }) &&
+      plugin.parseContainerVariantName("Centered=True, Block=Huge") === null,
+    "Container: a variant drawn before Block reads as None, so Update renames it; an unknown Block is not the set's",
+  );
+  ok(
+    JSON.stringify(plugin.CONTAINER_INSET_BLOCKS) ===
+      JSON.stringify([
+        "Window/None",
+        "Window/Small",
+        "Window/Medium",
+        "Window/Large",
+        "Panel/None",
+        "Panel/Small",
+        "Panel/Medium",
+        "Panel/Large",
+      ]),
+    `Container draws every Inset with every Block, one row each (${JSON.stringify(plugin.CONTAINER_INSET_BLOCKS)})`,
+  );
+  const ctBound = (node, field) => {
+    const alias = node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const ctFloat = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  // The component tokens too, which the payload alone does not carry.
+  const ctTokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const paintContainer = async (
+    second,
+    component = figma.createComponent(),
+  ) => {
+    await plugin.updateContainerVariant(component, {
+      value: "True",
+      second,
+      variableByName: ctTokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  for (const [block, padding, token, step] of [
+    ["Small", 16, "Container/padding/y/small", "Layout/spacing/200"],
+    ["Medium", 24, "Container/padding/y/medium", "Layout/spacing/300"],
+    ["Large", 32, "Container/padding/y/large", "Layout/spacing/400"],
+  ]) {
+    const ct = await paintContainer(`Panel/${block}`);
+    ok(
+      ct.name === `Centered=True, Inset=Panel, Block=${block}` &&
+        ct.paddingTop === padding &&
+        ct.paddingBottom === padding &&
+        ctBound(ct, "paddingTop") === token &&
+        ctBound(ct, "paddingBottom") === token &&
+        ctFloat.get(token)?.value === padding &&
+        ctFloat.get(token)?.alias === step &&
+        ct.paddingLeft === 16,
+      `Block=${block}: ${padding} above and below, ${token} (${step}), the panel's 16 a side (got ${ct.paddingTop}/${ct.paddingBottom}, ${ctBound(ct, "paddingTop")})`,
+    );
+    ok(
+      ct.height === 64 + 2 * padding && ctBound(ct, "height") === null,
+      `Block=${block}: the example is its content and the space above and below it, ${64 + 2 * padding}, not the fixed 120 (got ${ct.height}, ${ctBound(ct, "height")})`,
+    );
+  }
+  ok(
+    ctWindow.paddingTop === 0 &&
+      ctWindow.paddingBottom === 0 &&
+      ctBound(ctWindow, "paddingTop") === null &&
+      ctWindow.height === 120,
+    `Block=None: no top or bottom, 120 tall, as before (got ${ctWindow.paddingTop}, ${ctWindow.height})`,
+  );
+  // An Update from a block back to none drops the block's binding.
+  const ctBack = await paintContainer("Window/Large");
+  const ctBackBound = ctBound(ctBack, "paddingTop");
+  await paintContainer("Window/None", ctBack);
+  ok(
+    ctBackBound === "Container/padding/y/large" &&
+      ctBack.paddingTop === 0 &&
+      ctBound(ctBack, "paddingTop") === null &&
+      ctBound(ctBack, "paddingBottom") === null,
+    `Container: redrawn with no Block, a variant keeps no block binding (got ${ctBack.paddingTop}, ${ctBound(ctBack, "paddingTop")})`,
   );
 
   // POIResultCard
@@ -9528,6 +9809,625 @@ section("Decision 65: Tabs draw React's raised segment");
     ) && boundColours(focused).indexOf("Colors/theme/500") === -1,
     `focused, the only theme colour is the ring's 600 (${boundColours(focused).join(", ")})`,
   );
+}
+
+// --- Tabs' icons and Select's counts (GAP-152, GAP-164, decision 132) -------
+
+// Tabs gains a Content axis: Label, today's triggers, and Icon Over Label, a
+// 20 icon 4 above the words, so a trigger is 6 + 20 + 4 + 20 + 6 = 56 and the
+// list, inside 4 all round, 64; each icon is Tab N Icon, an instance swap, in
+// its words' colour. Select gains Content: Closed, today's trigger, and Open,
+// the trigger with SelectContent under it, three rows of Combobox's, each
+// `[words] [count] [check]` with the count the neutral Counter, the counts
+// and words editable (Option N Text, Option N Count) and shown by Show
+// Counts. Every row keeps the check's 16 at its end, so the counts form one
+// column, and Open is drawn at State=Default only (#525 review): an open list
+// is neither disabled nor the trigger's focus ring. Both reach the file
+// through Update: today's variants are renamed in place, their node ids
+// kept, and the new ones created beside them.
+section("Tabs' icons and Select's counts (GAP-152, GAP-164, decision 132)");
+{
+  const ready =
+    Array.isArray(plugin.TABS_CONTENT) &&
+    Array.isArray(plugin.SELECT_CONTENT) &&
+    typeof plugin.createOptionCount === "function";
+  ok(
+    ready,
+    "Tabs has a Content axis, Select a Content axis, and a row count painter",
+  );
+  // Not gated on `ready`: run over a plugin without the axes, every
+  // assertion below fails on what it paints, rather than being skipped.
+  {
+    ok(
+      ready &&
+        plugin.TABS_CONTENT.join(",") === "Label,Icon Over Label" &&
+        plugin.SELECT_CONTENT.join(",") === "Closed,Open",
+      `the axes' values, Label first and Closed first (${ready ? `${plugin.TABS_CONTENT.join(", ")}; ${plugin.SELECT_CONTENT.join(", ")}` : "none"})`,
+    );
+    const floats = new Map(
+      plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+    );
+    const tokens = payloadVariables(
+      [...floats.keys()].concat([...variableByName.keys()]),
+    );
+    const iconsPage = () => {
+      const page = new MockNode("PAGE", "Icons");
+      for (const name of [
+        "home-line",
+        "info-circle",
+        "activity",
+        "clock",
+        "check",
+        "chevron-down",
+        "search-md",
+      ])
+        page.appendChild(mockIconComponent(name));
+      return page;
+    };
+    const own = (pages) => {
+      const mock = createFigmaMock({ pages });
+      mock.__kozmosVariables = tokens.variableByName;
+      return {
+        mock,
+        plugin: loadPlugin({
+          pluginPath: PLUGIN,
+          figma: mock,
+          append: `
+ensureComponentRuntimeVariables = async () => figma.__kozmosVariables;
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+        }),
+      };
+    };
+    const boundTo = (node, field) => {
+      const alias = node && node.boundVariables && node.boundVariables[field];
+      return alias && alias.id
+        ? String(alias.id).replace(/^VariableID:/, "")
+        : null;
+    };
+    const value = (name) => {
+      let token = floats.get(name);
+      let depth = 0;
+      while (token && token.alias && floats.get(token.alias) && depth < 8) {
+        token = floats.get(token.alias);
+        depth += 1;
+      }
+      return token && token.value;
+    };
+    const painter = own([new MockNode("PAGE", "Components"), iconsPage()]);
+    const paintTabs = async (props) => {
+      const component = painter.mock.createComponent();
+      await painter.plugin.updateTabsVariant(
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    };
+
+    // Label is today's: 40, 32 triggers, no icon.
+    const label = await paintTabs({
+      count: "Three",
+      active: "Two",
+      state: "Default",
+      content: "Label",
+    });
+    const labelTrigger = named(label, "Tab 1 Trigger");
+    ok(
+      label.name === "Count=Three, Active=Two, State=Default, Content=Label" &&
+        label.height === 40 &&
+        boundTo(label, "height") === "Tabs/list/height" &&
+        labelTrigger.height === 32 &&
+        boundTo(labelTrigger, "height") === "Tabs/trigger/height" &&
+        labelTrigger.layoutMode === "HORIZONTAL" &&
+        !label.findOne((node) => /^Tab \d+ Icon$/.test(node.name)),
+      `Content=Label draws as before: a 40 list of 32 triggers with no icon (${label.name}; ${label.height}, ${labelTrigger.height}, ${labelTrigger.layoutMode})`,
+    );
+
+    // Icon Over Label: 64, 56, the icon 20 and 4 above the words.
+    const stacked = await paintTabs({
+      count: "Three",
+      active: "Two",
+      state: "Default",
+      content: "Icon Over Label",
+    });
+    ok(
+      stacked.name ===
+        "Count=Three, Active=Two, State=Default, Content=Icon Over Label" &&
+        stacked.height === 64 &&
+        boundTo(stacked, "height") === "Tabs/list/height/stacked" &&
+        value("Tabs/list/height/stacked") === 64,
+      `Icon Over Label's list is 64, bound to Tabs/list/height/stacked (${stacked.name}; ${stacked.height} through ${boundTo(stacked, "height")})`,
+    );
+    for (let n = 1; n <= 3; n += 1) {
+      const trigger = named(stacked, `Tab ${n} Trigger`);
+      const icon = named(trigger, `Tab ${n} Icon`);
+      const words = named(trigger, `Tab ${n} Text`);
+      const kids = trigger.children.filter((c) => c.name !== "Focus Ring");
+      const wordsPaint = boundVariableName(words.fills[0]);
+      ok(
+        trigger.height === 56 &&
+          boundTo(trigger, "height") === "Tabs/trigger/height/stacked" &&
+          value("Tabs/trigger/height/stacked") === 56 &&
+          trigger.layoutMode === "VERTICAL" &&
+          trigger.primaryAxisAlignItems === "CENTER" &&
+          trigger.counterAxisAlignItems === "CENTER" &&
+          trigger.paddingTop === 6 &&
+          trigger.paddingBottom === 6 &&
+          boundTo(trigger, "paddingTop") === "Tabs/trigger/padding/y" &&
+          trigger.itemSpacing === 4 &&
+          boundTo(trigger, "itemSpacing") === "Tabs/trigger/icon/gap" &&
+          kids[0] === icon &&
+          kids[1] === words,
+        `tab ${n} is 56, VERTICAL and centred, 6 above and below, its icon 4 above its words (${trigger.height}, ${trigger.layoutMode}, ${trigger.paddingTop}/${trigger.itemSpacing}, ${kids.map((c) => c.name).join(" > ")})`,
+      );
+      ok(
+        icon &&
+          icon.type === "INSTANCE" &&
+          icon.width === 20 &&
+          icon.height === 20 &&
+          boundTo(icon, "width") === "Tabs/trigger/icon/size" &&
+          value("Tabs/trigger/icon/size") === 20 &&
+          icon.mainComponent &&
+          icon.mainComponent.name ===
+            `Icon / ${["home-line", "info-circle", "activity"][n - 1]}` &&
+          icon.getSharedPluginData("kozmos_ds_importer", "foreground-token") ===
+            wordsPaint,
+        `tab ${n}'s icon is a 20 instance of ${icon && icon.mainComponent && icon.mainComponent.name}, in its words' ${wordsPaint} (${icon && icon.getSharedPluginData("kozmos_ds_importer", "foreground-token")})`,
+      );
+    }
+    const activeTrigger = named(stacked, "Tab 2 Trigger");
+    ok(
+      boundVariableName(activeTrigger.fills[0]) === "Colors/background/0" &&
+        JSON.stringify(activeTrigger.effects) ===
+          JSON.stringify([painter.plugin.elevationEffect("raised")]) &&
+        boundVariableName(named(stacked, "Tab 2 Text").fills[0]) ===
+          "Colors/foreground/0" &&
+        boundVariableName(named(stacked, "Tab 1 Text").fills[0]) ===
+          "Colors/foreground/400",
+      "stacked, the active tab keeps decision 65's raised segment, the others' words foreground/400",
+    );
+    const focus = await paintTabs({
+      count: "Two",
+      active: "One",
+      state: "Focus",
+      content: "Icon Over Label",
+    });
+    const focusRing = named(named(focus, "Tab 1 Trigger"), "Focus Ring");
+    ok(
+      focusRing && focusRing.height === 56 + 4 * 2,
+      `a stacked tab's ring is 4 outside its 56 (${focusRing && focusRing.height})`,
+    );
+
+    // Select: Closed is today's trigger; Open adds the list with counts.
+    const paintSelect = async (props) => {
+      const component = painter.mock.createComponent();
+      await painter.plugin.updateSelectVariant(
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    };
+    const closed = await paintSelect({
+      state: "Default",
+      status: "Default",
+      type: "Closed",
+    });
+    ok(
+      closed.name === "State=Default, Status=Default, Content=Closed" &&
+        // #521's Reset Mixed, hidden until Reset Mixed is on, stays under it.
+        closed.children.map((c) => c.name).join(",") ===
+          "Select Trigger,Reset Mixed" &&
+        closed.height === 44 &&
+        closed.itemSpacing === 6,
+      `Content=Closed is the trigger alone, 44 (${closed.name}; ${closed.children.map((c) => c.name).join(", ")}; ${closed.height})`,
+    );
+    const open = await paintSelect({
+      state: "Default",
+      status: "Default",
+      type: "Open",
+    });
+    const listbox = named(open, "Select Listbox");
+    ok(
+      open.name === "State=Default, Status=Default, Content=Open" &&
+        open.children.map((c) => c.name).join(",") ===
+          "Select Trigger,Reset Mixed,Select Listbox" &&
+        open.itemSpacing === 4 &&
+        boundTo(open, "itemSpacing") === "Select/listbox/offset" &&
+        listbox.paddingTop === 12 &&
+        boundTo(listbox, "paddingTop") === "Select/listbox/padding" &&
+        listbox.itemSpacing === 2 &&
+        boundVariableName(listbox.fills[0]) === "Surface/0" &&
+        boundVariableName(listbox.strokes[0]) === "Border/Subtle" &&
+        listbox.cornerRadius === 16 &&
+        listbox.children.length === 3,
+      `Content=Open is the trigger and, 4 under it, SelectContent: Surface/0, Border/Subtle, 12 inside, 2 between 3 rows (${open.children.map((c) => c.name).join(", ")}; ${open.itemSpacing}, ${listbox && listbox.paddingTop}, ${listbox && listbox.children.length})`,
+    );
+    const counts = ["128", "96", "32"];
+    for (let n = 1; n <= 3; n += 1) {
+      const row = listbox && listbox.children[n - 1];
+      const pill = row && named(row, `Option ${n} Counter`);
+      const digits = pill && named(pill, `Option ${n} Count`);
+      const order = row ? row.children.map((c) => c.name).join(" > ") : "";
+      ok(
+        row &&
+          row.name === `Select Option ${n}` &&
+          order ===
+            (n === 1
+              ? `Option ${n} Text > Option ${n} Counter > Icon`
+              : `Option ${n} Text > Option ${n} Counter > Check Slot`) &&
+          row.itemSpacing === 8 &&
+          row.height === 44,
+        `row ${n} is [words] [count] ${n === 1 ? "[check]" : "[the check's empty slot]"}, 8 apart, 44 tall (${order}; ${row && row.itemSpacing}, ${row && row.height})`,
+      );
+      ok(
+        pill &&
+          digits &&
+          digits.characters === counts[n - 1] &&
+          pill.height === 20 &&
+          boundTo(pill, "height") === "Counter/height/default" &&
+          pill.paddingLeft === 6 &&
+          boundTo(pill, "minWidth") === "Counter/min-width/default" &&
+          pill.cornerRadius === 9999 &&
+          boundVariableName(pill.fills[0]) === "Colors/background/200" &&
+          boundVariableName(digits.fills[0]) === "Colors/foreground/0" &&
+          digits.fontSize === 12,
+        `row ${n}'s count reads ${digits && digits.characters} in the neutral Counter's 20 pill, 6 at the sides, background/200 under foreground/0 12px (${pill && pill.height}, ${pill && pill.paddingLeft}, ${pill && boundVariableName(pill.fills[0])}, ${digits && boundVariableName(digits.fills[0])}, ${digits && digits.fontSize})`,
+      );
+    }
+
+    // Decision 1 (#525 review): the counts form one column. Every row keeps
+    // the check's 16 at its end, the chosen row's check, the others an empty
+    // Check Slot bound to the same size, so each count ends where the others
+    // do, laid out as Figma would.
+    await withAutoLayout(async () => {
+      for (const status of ["Default", "Error"]) {
+        const laid = await paintSelect({
+          state: "Default",
+          status,
+          type: "Open",
+        });
+        const rows = named(laid, "Select Listbox").children;
+        const ends = rows.map((row, i) => {
+          const pill = named(row, `Option ${i + 1} Counter`);
+          return pill ? pill.x + pill.width : null;
+        });
+        const slots = rows.map((row) => row.children[row.children.length - 1]);
+        ok(
+          ends.length === 3 &&
+            ends.every((end) => end !== null && end === ends[0]) &&
+            ends[0] === rows[0].width - 12 - 16 - 8 &&
+            slots.every(
+              (slot, i) =>
+                slot.width === 16 &&
+                slot.height === 16 &&
+                (i === 0
+                  ? slot.type === "INSTANCE"
+                  : slot.name === "Check Slot" &&
+                    slot.type === "FRAME" &&
+                    slot.fills.length === 0 &&
+                    boundTo(slot, "width") === "Select/icon/size"),
+            ),
+          `Status=${status}, Open: the three counts end at one x, 16 + 8 inside the row's 12, each row closed by the check or its empty 16 slot (ends ${ends.join(", ")}; ${slots.map((slot) => `${slot.name} ${slot.width}`).join(", ")})`,
+        );
+      }
+    });
+
+    // Combobox's row is unchanged with no count.
+    const comboRow = await painter.plugin.createComboboxOption({
+      index: 0,
+      text: "Metro Station",
+      selected: true,
+      active: false,
+      focused: false,
+      disabled: false,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      comboRow.name === "Combobox Option 1" &&
+        comboRow.children.map((c) => c.name).join(",") ===
+          "Option 1 Text,Icon" &&
+        boundVariableName(named(comboRow, "Option 1 Text").fills[0]) ===
+          "Colors/foreground/0",
+      `with no count, Combobox's row is as it was (${comboRow.name}: ${comboRow.children.map((c) => c.name).join(", ")})`,
+    );
+    const comboPlain = await painter.plugin.createComboboxOption({
+      index: 1,
+      text: "Gate A12",
+      selected: false,
+      active: true,
+      focused: false,
+      disabled: false,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    ok(
+      comboPlain.name === "Combobox Option 2" &&
+        comboPlain.children.map((c) => c.name).join(",") === "Option 2 Text",
+      `with no count, an unchosen Combobox row keeps no check slot (${comboPlain.children.map((c) => c.name).join(", ")})`,
+    );
+
+    // Update over the sets as the file has them today.
+    const overlapsIn = (set) => {
+      const boxes = set.children.map((c) => [
+        c.x,
+        c.y,
+        c.x + c.width,
+        c.y + c.height,
+        c.name,
+      ]);
+      const found = [];
+      for (let i = 0; i < boxes.length; i += 1)
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          const [a, b] = [boxes[i], boxes[j]];
+          if (a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+            found.push(`${a[4]} / ${b[4]}`);
+        }
+      return found;
+    };
+    const definitionsOf = (set) =>
+      Object.entries(set.componentPropertyDefinitions || {}).map(
+        ([key, definition]) => [key.split("#")[0], definition],
+      );
+
+    {
+      const oldNames = [];
+      for (const count of ["Two", "Three", "Four"]) {
+        const tabsN = { Two: 2, Three: 3, Four: 4 }[count];
+        for (const active of ["One", "Two", "Three", "Four"].slice(0, tabsN))
+          for (const state of ["Default", "Focus", "Disabled"])
+            oldNames.push(`Count=${count}, Active=${active}, State=${state}`);
+      }
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Tabs");
+      const oldIds = {};
+      for (const name of oldNames) {
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        oldIds[name] = variant.id;
+      }
+      livePage.appendChild(liveSet);
+      const setId = liveSet.id;
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateTabsComponent();
+      const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+      const names = liveSet.children.map((child) => child.name);
+      ok(
+        updated.updated === true &&
+          updated.componentSetId === setId &&
+          updated.variantsUpdated === 27 &&
+          updated.variantsCreated === 27 &&
+          liveSet.children.length === 54 &&
+          new Set(names).size === 54 &&
+          !(updated.warnings || []).some((w) => /Missing Tabs/.test(w)),
+        `Tabs Update keeps the set and its 27 variants and creates the 27 Icon Over Label ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+      );
+      ok(
+        oldNames.every(
+          (name) =>
+            byId.get(oldIds[name]) &&
+            byId.get(oldIds[name]).name === `${name}, Content=Label`,
+        ),
+        "each of the 27 keeps its node id and gains Content=Label",
+      );
+      const tabsDefs = definitionsOf(liveSet);
+      const swaps = tabsDefs
+        .filter(([, d]) => d.type === "INSTANCE_SWAP")
+        .map(([name]) => name)
+        .sort();
+      ok(
+        swaps.join(",") === "Tab 1 Icon,Tab 2 Icon,Tab 3 Icon,Tab 4 Icon" &&
+          ["Tab 1 Text", "Tab 2 Text", "Tab 3 Text", "Tab 4 Text"].every(
+            (name) =>
+              tabsDefs.some(([n, d]) => n === name && d.type === "TEXT"),
+          ),
+        `Tab 1 Icon to Tab 4 Icon are instance swaps beside the Tab N Text properties (${swaps.join(", ")})`,
+      );
+      const stackedIcons = liveSet.findAll(
+        (node) => node.type === "INSTANCE" && /^Tab \d Icon$/.test(node.name),
+      );
+      const unboundIcons = stackedIcons.filter(
+        (icon) =>
+          !icon.componentPropertyReferences ||
+          !String(icon.componentPropertyReferences.mainComponent || "")
+            .split("#")[0]
+            .startsWith(icon.name),
+      );
+      ok(
+        // Two tabs in 6 variants, three in 9, four in 12.
+        stackedIcons.length === 6 * 2 + 9 * 3 + 12 * 4 &&
+          unboundIcons.length === 0,
+        `every stacked trigger's icon is bound to its Tab N Icon (${stackedIcons.length} icons, ${unboundIcons.length} unbound)`,
+      );
+      const tabsOverlaps = overlapsIn(liveSet);
+      ok(
+        tabsOverlaps.length === 0,
+        `the updated Tabs set has no two variants overlapping (${tabsOverlaps.slice(0, 3).join("; ")})`,
+      );
+    }
+
+    {
+      const oldNames = [];
+      for (const state of ["Default", "Focus", "Disabled"])
+        for (const status of ["Default", "Error"])
+          oldNames.push(`State=${state}, Status=${status}`);
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Select");
+      const oldIds = {};
+      for (const name of oldNames) {
+        const variant = new MockNode("COMPONENT", name);
+        liveSet.appendChild(variant);
+        oldIds[name] = variant.id;
+      }
+      livePage.appendChild(liveSet);
+      const setId = liveSet.id;
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateSelectComponent();
+      const byId = new Map(liveSet.children.map((child) => [child.id, child]));
+      ok(
+        updated.updated === true &&
+          updated.componentSetId === setId &&
+          updated.variantsUpdated === 6 &&
+          // #521's two Mixed variants and the two Open ones.
+          updated.variantsCreated === 4 &&
+          liveSet.children.length === 10,
+        `Select Update keeps the set and its 6 variants and creates the 2 Mixed and 2 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+      );
+      // #525 review: an open list is neither disabled nor the trigger's focus
+      // ring, so Open is drawn at State=Default only.
+      const openNames = liveSet.children
+        .map((child) => child.name)
+        .filter((name) => /Content=Open/.test(name))
+        .sort();
+      ok(
+        openNames.join(" | ") ===
+          "State=Default, Status=Default, Content=Open | State=Default, Status=Error, Content=Open",
+        `the Open variants are State=Default's two Statuses alone (${openNames.join(" | ")})`,
+      );
+      ok(
+        oldNames.every(
+          (name) =>
+            byId.get(oldIds[name]) &&
+            byId.get(oldIds[name]).name === `${name}, Content=Closed`,
+        ),
+        "each of the 6 keeps its node id and gains Content=Closed",
+      );
+      const selectDefs = definitionsOf(liveSet);
+      const typeOf = (name) => {
+        const hit = selectDefs.find(([n]) => n === name);
+        return hit ? `${hit[1].type}:${hit[1].defaultValue}` : "missing";
+      };
+      const expected = {
+        "Option 1 Text": "TEXT:Everything",
+        "Option 2 Text": "TEXT:POI",
+        "Option 3 Text": "TEXT:Interior asset",
+        "Option 1 Count": "TEXT:128",
+        "Option 2 Count": "TEXT:96",
+        "Option 3 Count": "TEXT:32",
+        "Show Counts": "BOOLEAN:true",
+        "Placeholder Text": "TEXT:Select an option",
+      };
+      const drift = Object.entries(expected).filter(
+        ([name, want]) => typeOf(name) !== want,
+      );
+      ok(
+        drift.length === 0,
+        `Select's properties: Option N Text, Option N Count, Show Counts on, Placeholder Text kept (${drift.map(([n]) => `${n} ${typeOf(n)}`).join("; ")})`,
+      );
+      const pills = liveSet.findAll(
+        (node) =>
+          node.type === "FRAME" && /^Option \d Counter$/.test(node.name),
+      );
+      const showKey = Object.keys(liveSet.componentPropertyDefinitions).find(
+        (key) => key.split("#")[0] === "Show Counts",
+      );
+      ok(
+        pills.length === 2 * 3 &&
+          pills.every(
+            (pill) =>
+              pill.componentPropertyReferences &&
+              pill.componentPropertyReferences.visible === showKey,
+          ),
+        `Show Counts shows each of the 6 counts (${pills.length} counts)`,
+      );
+      const countTexts = liveSet.findAll(
+        (node) => node.type === "TEXT" && /^Option \d Count$/.test(node.name),
+      );
+      ok(
+        countTexts.length === 6 &&
+          countTexts.every(
+            (text) =>
+              text.componentPropertyReferences &&
+              String(text.componentPropertyReferences.characters || "").split(
+                "#",
+              )[0] === text.name,
+          ),
+        `each count's digits are bound to their Option N Count (${countTexts.length})`,
+      );
+      const selectOverlaps = overlapsIn(liveSet);
+      ok(
+        selectOverlaps.length === 0,
+        `the updated Select set has no two variants overlapping (${selectOverlaps.slice(0, 3).join("; ")})`,
+      );
+    }
+
+    // A Build draws the same 8: 6 Closed, 2 Open.
+    {
+      const buildPage = new MockNode("PAGE", "Components");
+      const file = own([buildPage, iconsPage()]);
+      const built = await file.plugin.buildSelectComponent();
+      const set = buildPage.children.find(
+        (node) => node.type === "COMPONENT_SET" && node.name === "Select",
+      );
+      const names = set ? set.children.map((child) => child.name).sort() : [];
+      const want = [];
+      for (const state of ["Default", "Focus", "Disabled", "Mixed"])
+        for (const status of ["Default", "Error"])
+          want.push(`State=${state}, Status=${status}, Content=Closed`);
+      for (const status of ["Default", "Error"])
+        want.push(`State=Default, Status=${status}, Content=Open`);
+      want.sort();
+      ok(
+        built.created === true &&
+          built.variants === 10 &&
+          names.join(" | ") === want.join(" | "),
+        `Select Build draws 8 Closed (Mixed among them) and State=Default's 2 Open variants, no Mixed Open (${built.variants}: ${names.filter((n) => /Open/.test(n)).join(" | ")})`,
+      );
+    }
+
+    // A set an earlier run gave all six Open variants keeps them: removing a
+    // variant would break the instances that use it.
+    {
+      const livePage = new MockNode("PAGE", "Components");
+      const liveSet = new MockNode("COMPONENT_SET", "Select");
+      const ids = {};
+      for (const state of ["Default", "Focus", "Disabled"])
+        for (const status of ["Default", "Error"])
+          for (const content of ["Closed", "Open"]) {
+            const name = `State=${state}, Status=${status}, Content=${content}`;
+            const variant = new MockNode("COMPONENT", name);
+            liveSet.appendChild(variant);
+            ids[name] = variant.id;
+          }
+      livePage.appendChild(liveSet);
+      const file = own([livePage, iconsPage()]);
+      const updated = await file.plugin.updateSelectComponent();
+      const kept = Object.entries(ids).filter(([name, id]) =>
+        liveSet.children.some(
+          (child) => child.id === id && child.name === name,
+        ),
+      );
+      const warned = (updated.warnings || []).filter((w) =>
+        /no longer generated/.test(w),
+      );
+      ok(
+        updated.variantsUpdated === 12 &&
+          // #521's two Mixed Closed variants; no Mixed Open.
+          updated.variantsCreated === 2 &&
+          liveSet.children.length === 14 &&
+          kept.length === 12 &&
+          updated.variantsNotGenerated === 4 &&
+          warned.length === 4,
+        `Update keeps an earlier run's Focus and Disabled Open variants, ids and all, and warns of each (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${kept.length} kept, ${warned.length} warnings)`,
+      );
+    }
+  }
 }
 
 section("Decisions 115 and 26: the list rows draw React's rows");
@@ -11670,9 +12570,25 @@ section(
     ]),
   );
 
-  // A file of its own: Counter, the curated icons and the three UI icons on
+  // A file of its own: Counter, the curated icons and the UI icons on
   // their pages, and an IconButton set for the card's action to nest.
-  const uiIcons = ["copy-01", "pencil-01", "star-01"];
+  const uiIcons = [
+    "copy-01",
+    "pencil-01",
+    "star-01",
+    // MapEditToolbar's items (CLOUD-UI-005).
+    "pentagon",
+    "circle",
+    "code-02",
+    "flip-forward",
+    "x-square",
+    "refresh-ccw-01",
+    "transform",
+    "scissors-cut-01",
+    "divider",
+    "ruler",
+    "dots-horizontal",
+  ];
   const controlsPages = () => {
     const [components, icons] = pages();
     for (const name of uiIcons) icons.appendChild(mockIconComponent(name));
@@ -11699,7 +12615,7 @@ section(
             (registry) => registry.name === definition.name,
           ),
       ),
-    `the importer's UI icons are copy-01, pencil-01 and star-01, each with the catalog's key and none a registry icon (${uiList.map((d) => `${d.name} ${d.componentKey}`).join(", ")})`,
+    `the importer's UI icons are ${uiIcons.join(", ")}, each with the catalog's key and none a registry icon (${uiList.map((d) => `${d.name} ${d.componentKey}`).join(", ")})`,
   );
   {
     const library = new Map();
@@ -11742,7 +12658,7 @@ section(
               JSON.stringify(slotOf(registryCount + wayfindingCount + offset))
           );
         }),
-      `Curated Icons imports the three by their catalog keys, after the wayfinding glyphs (${uiIcons.map((name) => `${name} ${JSON.stringify(at(placed(name)))}`).join(", ")})`,
+      `Curated Icons imports the UI icons by their catalog keys, after the wayfinding glyphs (${uiIcons.map((name) => `${name} ${JSON.stringify(at(placed(name)))}`).join(", ")})`,
     );
     const lastRegistry = run.KOSMOS_ICON_DEFINITIONS[registryCount - 1];
     const lastGlyph = (run.KOZMOS_WAYFINDING_ICONS || [])[wayfindingCount - 1];
@@ -12716,6 +13632,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         `Select: Reset Mixed is bound on every variant but Mixed, which has none, 6 under the trigger as React's field gap (${key})`,
       );
     }
+    // The live file (figma:verify, 15 Nov) held Combobox's Reset Mixed and
+    // Reset Mixed Text declared and referenced by no layer, which blocks
+    // publishing: an Update from a build older than #521 redrew its variants
+    // without the reset and left the properties behind. Each of the four
+    // sets GAP-153 reaches, painted with a Default and a Mixed variant (and
+    // Open, where the set has it, for the list's properties) and its
+    // properties configured, declares nothing a layer does not reference.
+    for (const [setName, update, configure, variants] of [
+      ["Input", "updateInputVariant", null, [{ action: "None" }]],
+      ["NumberInput", "updateNumberInputVariant", null, [{ steppers: "True" }]],
+      [
+        "Combobox",
+        "updateComboboxVariant",
+        "configureComboboxProperties",
+        [{ content: "Closed" }, { content: "Open" }],
+      ],
+      [
+        "Select",
+        "updateSelectVariant",
+        "configureSelectProperties",
+        // Select's painter names its Content `type`.
+        [{ type: "Closed" }, { type: "Open" }],
+      ],
+    ]) {
+      const set = new MockNode("COMPONENT_SET", setName);
+      for (const state of ["Default", "Mixed"]) {
+        for (const extra of variants) {
+          set.appendChild(
+            await paint(
+              update,
+              Object.assign({ state, status: "Default" }, extra),
+            ),
+          );
+        }
+      }
+      const stats = freshStats();
+      await attempt(() =>
+        configure
+          ? controls[configure](set, stats)
+          : controls.configureResetMixedProperty(set, stats),
+      );
+      const unbound = propertiesBoundToNoLayer(set).map(
+        (property) => property.split("#")[0],
+      );
+      ok(
+        propertyNamed(set, "Reset Mixed", "BOOLEAN") &&
+          propertyNamed(set, "Reset Mixed Text", "TEXT") &&
+          unbound.length === 0,
+        `${setName}: every property it declares is bound to a layer, Reset Mixed and Reset Mixed Text among them (unbound: ${unbound.join(", ") || "none"})`,
+      );
+    }
   }
 
   // GAP-165: EmptyState's list ------------------------------------------------
@@ -12780,6 +13747,42 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
             "Colors/foreground/400",
         ),
       `the list's three items, each a bullet and its words in foreground 400 (${words.map((text) => text.characters).join(" | ")})`,
+    );
+    // React's bullet is a list marker (list-style: disc in a 1.25rem
+    // padding-inline-start), not a character in the text, so the painter
+    // draws it as a shape: a 5 disc in foreground 400 inside a 20 column, at
+    // Chromium's marker place (4 in, 8 down a 20 line), the words starting
+    // 20 in as React's do. A typed "•" read as an icon typed as a character
+    // to figma:verify (15 Nov).
+    const rows = lists[0] ? lists[0].children : [];
+    const typed = rows.flatMap((row) =>
+      row.findAll((child) => isTypedGlyph(child)).map((child) => child.name),
+    );
+    const marks = rows.map((row) => {
+      const column = named(row, "Bullet");
+      const dot = column && named(column, "Bullet Dot");
+      return { row, column, dot };
+    });
+    ok(
+      rows.length === 3 &&
+        typed.length === 0 &&
+        marks.every(
+          ({ row, column, dot }) =>
+            column &&
+            column.type === "FRAME" &&
+            column.width === 20 &&
+            column.height === 20 &&
+            row.children[0] === column &&
+            row.itemSpacing === 0 &&
+            dot &&
+            dot.type === "ELLIPSE" &&
+            dot.width === 5 &&
+            dot.height === 5 &&
+            dot.x === 4 &&
+            dot.y === 8 &&
+            boundVariableName((dot.fills || [])[0]) === "Colors/foreground/400",
+        ),
+      `each item's bullet is a 5 disc in foreground 400 in a 20 column, as React's disc marker, not a typed character (typed: ${typed.join(", ") || "none"}; ${marks[0] && marks[0].column ? `${marks[0].column.type} ${marks[0].column.width}` : "no Bullet"})`,
     );
     controls.configureEmptyStateProperties(set, freshStats());
     const list = propertyNamed(set, "List", "BOOLEAN");
@@ -13201,6 +14204,14 @@ section("An edge takes room in every variant or in none");
         ...drawn,
         stats: freshStats(),
       }),
+    Select: (pair) =>
+      plugin.createSelectVariant({
+        state: pair[0],
+        status: pair[1],
+        type: pair[2],
+        ...drawn,
+        stats: freshStats(),
+      }),
   };
   // The variants each set had before, and the ones the Update added to it.
   const eras = {
@@ -13255,6 +14266,18 @@ section("An edge takes room in every variant or in none");
       [
         ["Basic", "Success"],
         ["Action", "Info"],
+      ],
+    ],
+    // figma:verify, 15 Nov: Select Trigger laid out in the 4 variants #521
+    // and GAP-164 added (Mixed, Open), not in the 6 drawn before.
+    Select: [
+      [
+        ["Default", "Default", "Closed"],
+        ["Focus", "Error", "Closed"],
+      ],
+      [
+        ["Mixed", "Default", "Closed"],
+        ["Default", "Default", "Open"],
       ],
     ],
   };
@@ -13676,6 +14699,44 @@ section("Figma draws React's values (the 4 Nov triage)");
     `FileUpload's dropzone draws 20 corners and React's px-4 (${shown(dropzone, "cornerRadius")}, ${shown(dropzone, "paddingLeft")} through ${boundName(dropzone, "paddingLeft")})`,
   );
 
+  // GAP-270: Content=Preview is React's preview="image" holding its image:
+  // no drop area, the image round at Avatar's 40, an outline Change button
+  // at Button's small height, its words a set property, and the remove icon
+  // last. Focus rings Change, where React moves focus once an image is chosen.
+  const previewVariant = await paint("updateFileUploadVariant", {
+    state: "Focus",
+    status: "Error",
+    content: "Preview",
+  });
+  const previewRow = find(previewVariant, "FileUpload Preview");
+  const previewImage = find(previewVariant, "Preview Image");
+  const changeButton = find(previewVariant, "Change Button");
+  const changeText = find(previewVariant, "Change Text");
+  const previewOrder = previewRow
+    ? previewRow.children.map((node) => node.name)
+    : [];
+  ok(
+    !find(previewVariant, "FileUpload Dropzone") &&
+      previewVariant.name === "State=Focus, Status=Error, Content=Preview" &&
+      shown(previewImage, "width") === 40 &&
+      shown(previewImage, "cornerRadius") >= 20 &&
+      boundName(previewImage, "width") === "Avatar/size/default" &&
+      shown(changeButton, "height") === 44 &&
+      boundName(changeButton, "paddingLeft") === "Button/padding/x/small" &&
+      changeText &&
+      changeText.characters === "Change" &&
+      Boolean(find(changeButton, "Focus Ring")) &&
+      previewOrder[0] === "Preview Image" &&
+      previewOrder[previewOrder.length - 2] === "Change Button" &&
+      previewOrder[previewOrder.length - 1] === "Remove Icon",
+    `FileUpload's Preview draws the image at Avatar's 40, then Change and Remove, with no drop area (${JSON.stringify(previewOrder)}, image ${shown(previewImage, "width")} via ${boundName(previewImage, "width")}, Change ${shown(changeButton, "height")} "${changeText && changeText.characters}", ring ${Boolean(find(changeButton, "Focus Ring"))})`,
+  );
+  ok(
+    JSON.stringify(plugin.FILE_UPLOAD_CONTENT) ===
+      JSON.stringify(["Dropzone", "Files", "Preview"]),
+    `FileUpload's Content axis carries Preview after the two it had (${JSON.stringify(plugin.FILE_UPLOAD_CONTENT)})`,
+  );
+
   // The control's corner, 16.
   const toggle = await paint("updateToggleButtonVariant", {
     variant: "Default",
@@ -13954,8 +15015,11 @@ section("Figma draws React's values (the 4 Nov triage)");
   );
   const routeSwitch = find(kiosk, "Accessible Route Switch");
   ok(
-    routeSwitch && routeSwitch.height === 44,
-    `Kiosk: the route switch is React's min-h-11 row, 44 (${routeSwitch && routeSwitch.height})`,
+    routeSwitch &&
+      routeSwitch.height === 44 &&
+      routeSwitch.width === 220 &&
+      routeSwitch.layoutSizingVertical === "HUG",
+    `Kiosk: the route switch is React's min-h-11 row, 44, and hugs its height, so Show Description grows it rather than clipping it (GAP-162) (${routeSwitch && routeSwitch.height}, ${routeSwitch && routeSwitch.layoutSizingVertical})`,
   );
   const findRoute = find(kiosk, "Kiosk Find Route Button");
   ok(
@@ -13998,6 +15062,375 @@ const menusBound = (node, field) => {
   const alias = node && node.boundVariables && node.boundVariables[field];
   return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
 };
+
+section(
+  "GAP-036: PageHeader draws a band, a breadcrumb, the title's line and the actions",
+);
+{
+  // React's PageHeader: a band in theme 0 (Subtle) or none (Default), its
+  // content in a Container, 24 a side, 32 above and 24 below (GAP-116); a
+  // breadcrumb 8 above the title; the title (Heading 3, 24/32, at Medium;
+  // Heading 2, 30/36, at Large) with the info button 8 after it; the
+  // description 4 under it, 14/20 in foreground/400; the actions 16 after
+  // the text, centred on the title's line.
+  const ready =
+    Array.isArray(plugin.PAGE_HEADER_TONES) &&
+    typeof plugin.updatePageHeaderVariant === "function" &&
+    typeof plugin.configurePageHeaderProperties === "function";
+  ok(ready, "PageHeader's axes, painter and properties are reachable");
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("PageHeader"),
+      ) ===
+        JSON.stringify({
+          Tone: ["Subtle", "Default"],
+          Size: ["Medium", "Large"],
+        }),
+    `PageHeader's axes are Tone (Subtle, Default) and Size (Medium, Large) (${ready && JSON.stringify(plugin.expectedVariantAxesForComponentSetName("PageHeader"))})`,
+  );
+  const core = plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name);
+  ok(
+    core.includes("PageHeader") &&
+      ["Breadcrumb", "Button", "IconButton", "Container"].every(
+        (name) => core.indexOf(name) < core.indexOf("PageHeader"),
+      ),
+    "Update All runs PageHeader after the sets it nests and the Container it pads as",
+  );
+  const handlers = plugin.additionalComponentActionHandlers();
+  ok(
+    ["build", "update", "rebuild"].every(
+      (verb) => typeof handlers[`${verb}-page-header`] === "function",
+    ),
+    "the plugin UI's build, update and rebuild of PageHeader reach a handler",
+  );
+  const uiHtml = fs.readFileSync(
+    path.join(ROOT, "figma/foundations-importer/ui.html"),
+    "utf8",
+  );
+  ok(
+    /<option value="pageHeader">PageHeader<\/option>/.test(uiHtml) &&
+      /build: "build-page-header"/.test(uiHtml),
+    "the plugin UI offers PageHeader",
+  );
+  ok(
+    plugin.shouldAuditLayoutBindings("PageHeader") === true,
+    "the audit checks PageHeader's layout bindings",
+  );
+
+  // The file: Breadcrumb's Basic, Button's Default with its Label Text,
+  // IconButton's Ghost at Small with its Icon swap, and info-circle.
+  const breadcrumbSet = mockComponentSet("Breadcrumb", [
+    {
+      properties: { Content: "Basic" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "AUTO";
+        node.counterAxisSizingMode = "AUTO";
+        node.resize(240, 20);
+      },
+    },
+  ]);
+  const buttonSet = mockComponentSet("Button", [
+    {
+      properties: { Variant: "Default", Size: "Default", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(120, 44);
+        const label = new MockNode("TEXT", "Label Text");
+        label.characters = "Button";
+        label.componentPropertyReferences = { characters: "Label Text#1:0" };
+        node.appendChild(label);
+      },
+    },
+  ]);
+  buttonSet.componentPropertyDefinitions = {
+    "Label Text#1:0": { type: "TEXT", defaultValue: "Button" },
+  };
+  const plusGlyph = mockIconComponent("plus");
+  const infoGlyph = mockIconComponent("info-circle");
+  const ghostInk = "Secondary Buttons/themed/button/foreground/content/idle";
+  const iconButtonSet = mockComponentSet("IconButton", [
+    {
+      properties: { Variant: "Ghost", Size: "Small", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(32, 32);
+        const icon = plusGlyph.createInstance();
+        icon.name = "Icon";
+        icon.resize(16, 16);
+        icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+        node.appendChild(icon);
+      },
+    },
+  ]);
+  iconButtonSet.componentPropertyDefinitions = {
+    "Icon#2:0": { type: "INSTANCE_SWAP", defaultValue: plusGlyph.id },
+  };
+  const components = new MockNode("PAGE", "Components");
+  for (const set of [breadcrumbSet, buttonSet, iconButtonSet])
+    components.appendChild(set);
+  const icons = new MockNode("PAGE", "Icons");
+  for (const icon of [plusGlyph, infoGlyph]) icons.appendChild(icon);
+  const fileFigma = createFigmaMock({ pages: [components, icons] });
+  const file = loadPlugin({ pluginPath: PLUGIN, figma: fileFigma });
+  await file.ensureKozmosTextStyles(FONTS, freshStats());
+  const phTokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+      ghostInk,
+    ]),
+  );
+  const phFloats = new Map(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => [token.name, token]),
+  );
+  const phBound = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const draw = async (tone, size, component = fileFigma.createComponent()) => {
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      file.updatePageHeaderVariant(component, {
+        value: tone,
+        second: size,
+        variableByName: phTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    component.stats = stats;
+    return component;
+  };
+
+  const variants = [];
+  for (const tone of ready ? plugin.PAGE_HEADER_TONES : [])
+    for (const size of plugin.PAGE_HEADER_SIZES) {
+      const at = `${tone}/${size}`;
+      const component = await draw(tone, size);
+      variants.push(component);
+      const line = size === "Large" ? 36 : 32;
+      ok(
+        component.name === `Tone=${tone}, Size=${size}` &&
+          JSON.stringify(file.parsePageHeaderVariantName(component.name)) ===
+            JSON.stringify({ value: tone, second: size }),
+        `${at}: named Tone=${tone}, Size=${size}, and reads back as itself (${component.name})`,
+      );
+      ok(
+        component.layoutMode === "VERTICAL" &&
+          component.width === 960 &&
+          phBound(component, "width") === "PageHeader/width/default" &&
+          component.paddingLeft === 24 &&
+          component.paddingRight === 24 &&
+          phBound(component, "paddingLeft") === "Container/padding/x/window" &&
+          component.paddingTop === 32 &&
+          phBound(component, "paddingTop") === "Container/padding/y/large" &&
+          component.paddingBottom === 24 &&
+          phBound(component, "paddingBottom") === "Container/padding/y/medium",
+        `${at}: 960 wide, Container's 24 a side, 32 above and 24 below, bound to Container's tokens (${component.width}, ${component.paddingLeft}, ${component.paddingTop}/${component.paddingBottom}, ${phBound(component, "paddingTop")})`,
+      );
+      ok(
+        tone === "Subtle"
+          ? component.fills.length === 1 &&
+              boundVariableName(component.fills[0]) === "Colors/theme/0"
+          : component.fills.length === 0,
+        `${at}: ${tone === "Subtle" ? "the band in theme 0" : "no band"} (${component.fills.map(boundVariableName)})`,
+      );
+      ok(
+        JSON.stringify(component.children.map((child) => child.name)) ===
+          JSON.stringify(["Breadcrumb", "Header Row"]) &&
+          component.itemSpacing === 8 &&
+          phBound(component, "itemSpacing") === "PageHeader/breadcrumb/gap" &&
+          phFloats.get("PageHeader/breadcrumb/gap").alias ===
+            "Layout/spacing/100",
+        `${at}: the Breadcrumb 8 above the header row (${component.children.map((child) => child.name)}, ${component.itemSpacing})`,
+      );
+      const breadcrumb = named(component, "Breadcrumb");
+      ok(
+        breadcrumb &&
+          breadcrumb.type === "INSTANCE" &&
+          breadcrumb.mainComponent &&
+          breadcrumb.mainComponent.parent === breadcrumbSet,
+        `${at}: the Breadcrumb is a live Breadcrumb instance`,
+      );
+      const row = named(component, "Header Row");
+      const text = named(component, "Header Text");
+      const actions = named(component, "Actions");
+      ok(
+        row &&
+          JSON.stringify(row.children.map((child) => child.name)) ===
+            JSON.stringify(["Header Text", "Actions"]) &&
+          row.itemSpacing === 16 &&
+          phBound(row, "itemSpacing") === "PageHeader/gap" &&
+          row.layoutSizingHorizontal === "FILL" &&
+          text.layoutSizingHorizontal === "FILL",
+        `${at}: the text fills the row and the Actions sit 16 after it (${row && row.children.map((child) => child.name)}, ${row && row.itemSpacing})`,
+      );
+      ok(
+        JSON.stringify(text.children.map((child) => child.name)) ===
+          JSON.stringify(["Title Row", "Description Text"]) &&
+          text.itemSpacing === 4 &&
+          phBound(text, "itemSpacing") === "PageHeader/text/gap",
+        `${at}: the description 4 under the title's line (${text.children.map((child) => child.name)}, ${text.itemSpacing})`,
+      );
+      const titleRow = named(component, "Title Row");
+      const title = named(component, "Title Text");
+      ok(
+        JSON.stringify(titleRow.children.map((child) => child.name)) ===
+          JSON.stringify(["Title Text", "Info"]) &&
+          titleRow.itemSpacing === 8 &&
+          phBound(titleRow, "itemSpacing") === "PageHeader/title/gap",
+        `${at}: the Info 8 after the title (${titleRow.children.map((child) => child.name)}, ${titleRow.itemSpacing})`,
+      );
+      const token = size === "Large" ? "3xl" : "2xl";
+      ok(
+        title.fontSize === (size === "Large" ? 30 : 24) &&
+          title.lineHeight.value === line &&
+          title.fontName.style === "Bold" &&
+          phBound(title, "fontSize") === `Text/font-size/${token}` &&
+          phBound(title, "lineHeight") === `Text/line-height/${token}` &&
+          boundVariableName(title.fills[0]) === "Colors/foreground/0",
+        `${at}: the title is ${size === "Large" ? "Heading 2, 30/36" : "Heading 3, 24/32"}, bold, in the foreground (${title.fontSize}/${title.lineHeight.value}, ${title.fontName.style})`,
+      );
+      const description = named(component, "Description Text");
+      ok(
+        description.fontSize === 14 &&
+          description.lineHeight.value === 20 &&
+          phBound(description, "fontSize") === "Text/font-size/sm" &&
+          boundVariableName(description.fills[0]) === "Colors/foreground/400",
+        `${at}: the description is 14/20 in foreground/400 (${description.fontSize}/${description.lineHeight.value}, ${boundVariableName(description.fills[0])})`,
+      );
+      const info = named(component, "Info");
+      for (const [frame, name] of [
+        [info, "Info"],
+        [actions, "Actions"],
+      ])
+        ok(
+          frame.height === line &&
+            frame.counterAxisAlignItems === "CENTER" &&
+            frame.clipsContent === false,
+          `${at}: ${name} is as tall as the title's line, ${line}, and centres what it holds, which spills past it (${frame.height}, ${frame.counterAxisAlignItems})`,
+        );
+      ok(
+        info.visible === false && actions.visible !== false,
+        `${at}: Info is hidden by default, the Actions shown (${info.visible}, ${actions.visible})`,
+      );
+      const infoButton = named(info, "Info Button");
+      const infoIcon =
+        infoButton &&
+        infoButton.findOne(
+          (node) => node.type === "INSTANCE" && node.name === "Icon",
+        );
+      ok(
+        infoButton &&
+          infoButton.type === "INSTANCE" &&
+          infoButton.mainComponent.parent === iconButtonSet &&
+          infoIcon &&
+          infoIcon.mainComponent === infoGlyph,
+        `${at}: the Info is IconButton's Ghost at Small with info-circle (${infoIcon && infoIcon.mainComponent && infoIcon.mainComponent.name})`,
+      );
+      const action = named(actions, "Primary Action");
+      ok(
+        action &&
+          action.type === "INSTANCE" &&
+          action.mainComponent.parent === buttonSet,
+        `${at}: the action is a live Button`,
+      );
+      // React's action is as wide as its words: Button's Default variant is
+      // fixed at 112, where "Save changes" ran 14 past its padding
+      // (figma:verify, 15 Nov), so the instance hugs.
+      ok(
+        action && action.layoutSizingHorizontal === "HUG",
+        `${at}: the action hugs its label (${action && action.layoutSizingHorizontal})`,
+      );
+      // An Update redraws the same layers, once.
+      await draw(tone, size, component);
+      ok(
+        JSON.stringify(component.children.map((child) => child.name)) ===
+          JSON.stringify(["Breadcrumb", "Header Row"]) &&
+          component.findAll((node) => node.name === "Title Text").length === 1,
+        `${at}: an Update keeps the Breadcrumb and the header row once`,
+      );
+    }
+  ok(
+    JSON.stringify(file.parsePageHeaderVariantName("Tone=Subtle")) ===
+      JSON.stringify({ value: "Subtle", second: "Medium" }) &&
+      file.parsePageHeaderVariantName("Tone=Loud, Size=Medium") === null &&
+      file.parsePageHeaderVariantName("Tone=Subtle, Size=Huge") === null,
+    "PageHeader: no Size reads as Medium; an unknown Tone or Size is not the set's",
+  );
+
+  // The set's properties, on the layers they drive.
+  const set = ready
+    ? fileFigma.combineAsVariants(variants, fileFigma.currentPage)
+    : fileFigma.createComponent();
+  set.name = "PageHeader";
+  if (ready) file.configurePageHeaderProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions || {};
+  const keyOf = (name, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === name && definitions[key].type === type,
+    );
+  const expected = [
+    ["Title Text", "TEXT", "Settings"],
+    [
+      "Description Text",
+      "TEXT",
+      "Manage the site's map, its levels and who can edit them.",
+    ],
+    ["Breadcrumb", "BOOLEAN", true],
+    ["Info", "BOOLEAN", false],
+    ["Description", "BOOLEAN", true],
+    ["Actions", "BOOLEAN", true],
+  ];
+  for (const [name, type, value] of expected) {
+    const key = keyOf(name, type);
+    ok(
+      key && definitions[key].defaultValue === value,
+      `PageHeader: ${name} is a ${type} property, ${JSON.stringify(value)} by default (${key && JSON.stringify(definitions[key].defaultValue)})`,
+    );
+  }
+  const drives = (layer, field, property) =>
+    variants.length === 4 &&
+    variants.every((variant) => {
+      const node = named(variant, layer);
+      return (
+        node &&
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences[field] ===
+          keyOf(property[0], property[1])
+      );
+    });
+  ok(
+    drives("Title Text", "characters", ["Title Text", "TEXT"]) &&
+      drives("Description Text", "characters", ["Description Text", "TEXT"]) &&
+      drives("Breadcrumb", "visible", ["Breadcrumb", "BOOLEAN"]) &&
+      drives("Info", "visible", ["Info", "BOOLEAN"]) &&
+      drives("Description Text", "visible", ["Description", "BOOLEAN"]) &&
+      drives("Actions", "visible", ["Actions", "BOOLEAN"]),
+    "PageHeader: each property drives its layer in every variant",
+  );
+  const titleInSet = variants[1] && named(variants[1], "Title Text");
+  const descriptionInSet =
+    variants[0] && named(variants[0], "Description Text");
+  ok(
+    titleInSet &&
+      file.inferTextStyleKeyForComponentText(titleInSet, set) ===
+        file.textStyleKeyForHeading("H2") &&
+      file.inferTextStyleKeyForComponentText(
+        named(variants[0], "Title Text"),
+        set,
+      ) === file.textStyleKeyForHeading("H3") &&
+      file.inferTextStyleKeyForComponentText(descriptionInSet, set) ===
+        file.textStyleKeyForText("Small", "Normal"),
+    `PageHeader: the audit expects Heading / H3 at Medium, H2 at Large, Text / Small / Normal on the description (${titleInSet && file.inferTextStyleKeyForComponentText(titleInSet, set)})`,
+  );
+  set.remove();
+}
 
 section("GAP-156: Kbd draws a key cap, one key or a combination");
 {
@@ -14113,9 +15546,11 @@ section("GAP-156: Kbd draws a key cap, one key or a combination");
           boundVariableName(text.fills[0]) === "Colors/foreground/0",
         `${at}: 12/16 medium in the foreground (${text.fontName.style}, ${text.fontSize}/${text.lineHeight.value}, ${boundVariableName(text.fills[0])})`,
       );
+      // Down to its 20 floor (Kbd/min-width), which the stand-in keeps as
+      // Figma does.
       ok(
-        Math.abs(cap.width - (text.width + 2 * 4 + 2 * 1)) < 0.01,
-        `${at}: the cap hugs its key, 4 and the 1 edge each side (${cap.width} for ${text.width})`,
+        Math.abs(cap.width - Math.max(20, text.width + 2 * 4 + 2 * 1)) < 0.01,
+        `${at}: the cap hugs its key, 4 and the 1 edge each side, 20 at least (${cap.width} for ${text.width})`,
       );
     }
     // An Update redraws the same layers, once.
@@ -14210,6 +15645,491 @@ section("GAP-156: Kbd draws a key cap, one key or a combination");
     core.indexOf("ContextMenu") === core.indexOf("Menu") + 1,
     "ContextMenu updates right after Menu, whose painter it shares",
   );
+}
+
+section("GAP-106: PersonaMark draws a persona's diamond, one or a group");
+{
+  // React's PersonaMark: a 12 diamond (.kozmos-persona-mark-shape), its
+  // points on the box's edges, filled with the persona's colour, product data
+  // no variable holds; PersonaMarkGroup's marks layout spacing 25 (2) apart.
+  const painted =
+    typeof plugin.updatePersonaMarkVariant === "function" &&
+    typeof plugin.configurePersonaMarkProperties === "function";
+  ok(painted, "PersonaMark's painter and properties are reachable");
+  const draw = async (value, component = figma.createComponent()) => {
+    await withAutoLayout(() =>
+      plugin.updatePersonaMarkVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  ok(
+    JSON.stringify(plugin.PERSONA_MARK_FORMS) ===
+      JSON.stringify(["Single", "Group"]) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("PersonaMark"),
+      ) === JSON.stringify({ Form: ["Single", "Group"] }),
+    `PersonaMark's one axis is Form: Single, Group (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("PersonaMark"))})`,
+  );
+  const layers = { Single: ["Mark"], Group: ["Mark 1", "Mark 2", "Mark 3"] };
+  const fills = {
+    Single: ["#FF9800"],
+    Group: ["#FF9800", "#2196F3", "#4CAF50"],
+  };
+  for (const value of painted ? plugin.PERSONA_MARK_FORMS : []) {
+    const component = await draw(value);
+    const order = component.children.map((child) => child.name);
+    ok(
+      component.name === `Form=${value}` &&
+        plugin.parsePersonaMarkVariantName(component.name).value === value,
+      `${value}: named Form=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(order) === JSON.stringify(layers[value]),
+      `${value}: ${layers[value].join(", ")} (${order.join(", ")})`,
+    );
+    const marks = component.children;
+    ok(
+      component.itemSpacing === 2 &&
+        menusBound(component, "itemSpacing") === "PersonaMark/gap" &&
+        menusValueOf("PersonaMark/gap") === 2 &&
+        component.fills.length === 0 &&
+        component.strokes.length === 0 &&
+        component.height === 12 &&
+        Math.abs(
+          component.width - (12 * marks.length + 2 * (marks.length - 1)),
+        ) < 0.01,
+      `${value}: an unpainted row 12 tall, its marks 2 apart, PersonaMark/gap (${component.itemSpacing}, ${menusBound(component, "itemSpacing")}, ${component.width}x${component.height})`,
+    );
+    marks.forEach((mark, index) => {
+      const at = `${value} / ${mark.name}`;
+      ok(
+        mark.type === "VECTOR" &&
+          mark.vectorPaths.length === 1 &&
+          mark.vectorPaths[0].data === "M 6 0 L 12 6 L 6 12 L 0 6 Z",
+        `${at}: a diamond, its points on the box's edges (${mark.vectorPaths && mark.vectorPaths[0].data})`,
+      );
+      ok(
+        mark.width === 12 &&
+          mark.height === 12 &&
+          menusBound(mark, "width") === "PersonaMark/size" &&
+          menusBound(mark, "height") === "PersonaMark/size" &&
+          menusValueOf("PersonaMark/size") === 12,
+        `${at}: 12 by 12, PersonaMark/size (${mark.width}x${mark.height})`,
+      );
+      ok(
+        mark.fills.length === 1 &&
+          !mark.fills[0].boundVariables &&
+          hexOf(mark.fills[0]) === fills[value][index] &&
+          mark.strokes.length === 0,
+        `${at}: filled with an example persona's colour, ${fills[value][index]}, bound to no variable (${hexOf(mark.fills[0])})`,
+      );
+    });
+    // An Update redraws the same layers, once.
+    await draw(value, component);
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(layers[value]),
+      `${value}: an Update keeps ${layers[value].join(", ")} once`,
+    );
+  }
+
+  // Registered everywhere a set is: the Core sequence, the actions the UI
+  // sends, the Components page's layout and the audit's axes.
+  const core = plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name);
+  const handlers = plugin.additionalComponentActionHandlers();
+  const { names, axes } = expectations();
+  ok(
+    core.includes("PersonaMark") &&
+      ["build", "update", "rebuild"].every(
+        (verb) => typeof handlers[`${verb}-persona-mark`] === "function",
+      ) &&
+      names.includes("PersonaMark") &&
+      axes.PersonaMark,
+    "PersonaMark is in the Core sequence, the UI's actions, the page's layout and the audit's axes",
+  );
+}
+
+section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
+{
+  // React's ListItem filled in: a row 360 wide, padded 16 across and 12
+  // down (List's own variables), its mark, body and control 12 apart
+  // (gap-3); the mark 20 (h-5 w-5) in the theme fill with a check; the
+  // body's lines 2 apart, the title 14/20 medium in the foreground with its
+  // tag 8 after it, the description 14/20 and the meta 12/16 in the muted
+  // foreground; Selected tints the row theme 0. SettingsRow is that row with
+  // a setting in it: its state's tag, Reset to default while overridden, the
+  // reason while disabled, and Switch's 44 by 24 track at the end.
+  const painted =
+    typeof plugin.updateListItemVariant === "function" &&
+    typeof plugin.configureListItemProperties === "function" &&
+    typeof plugin.updateSettingsRowVariant === "function" &&
+    typeof plugin.configureSettingsRowProperties === "function";
+  ok(
+    painted,
+    "ListItem's and SettingsRow's painters and properties are reachable",
+  );
+  ok(
+    painted &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ListItem"),
+      ) === JSON.stringify({ Selected: ["False", "True"] }) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("SettingsRow"),
+      ) ===
+        JSON.stringify({
+          State: ["None", "Inherited", "Overridden"],
+          Disabled: ["False", "True"],
+        }),
+    "ListItem's axis is Selected; SettingsRow's are State (None, Inherited, Overridden) and Disabled",
+  );
+  const drawItem = async (value, component = figma.createComponent()) => {
+    await withAutoLayout(() =>
+      plugin.updateListItemVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const drawRow = async (
+    value,
+    second,
+    component = figma.createComponent(),
+  ) => {
+    await withAutoLayout(() =>
+      plugin.updateSettingsRowVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const childNames = (node) => (node ? node.children.map((c) => c.name) : []);
+  const rowBound = (component, at) => {
+    ok(
+      component.paddingLeft === 16 &&
+        component.paddingRight === 16 &&
+        component.paddingTop === 12 &&
+        component.paddingBottom === 12 &&
+        menusBound(component, "paddingLeft") === "List/item/padding/x" &&
+        menusBound(component, "paddingRight") === "List/item/padding/x" &&
+        menusBound(component, "paddingTop") === "List/item/padding/y/default" &&
+        menusBound(component, "paddingBottom") ===
+          "List/item/padding/y/default",
+      `${at}: padded 16 across and 12 down, List's own variables`,
+    );
+    ok(
+      component.itemSpacing === 12 &&
+        menusBound(component, "itemSpacing") === "ListItem/gap" &&
+        menusValueOf("ListItem/gap") === 12,
+      `${at}: its columns 12 apart, ListItem/gap (${component.itemSpacing}, ${menusBound(component, "itemSpacing")})`,
+    );
+    const body = named(component, "Body");
+    ok(
+      body &&
+        body.itemSpacing === 2 &&
+        menusBound(body, "itemSpacing") === "ListItem/body/gap" &&
+        menusValueOf("ListItem/body/gap") === 2 &&
+        body.layoutSizingHorizontal === "FILL",
+      `${at}: the body takes the rest, its lines 2 apart, ListItem/body/gap`,
+    );
+    const heading = named(component, "Heading");
+    ok(
+      heading &&
+        heading.itemSpacing === 8 &&
+        menusBound(heading, "itemSpacing") === "ListItem/heading/gap" &&
+        menusValueOf("ListItem/heading/gap") === 8,
+      `${at}: the title's addon 8 after it, ListItem/heading/gap`,
+    );
+  };
+  const textLooks = (text, at, size, line, style, colour) =>
+    ok(
+      text &&
+        text.fontSize === size &&
+        text.lineHeight.value === line &&
+        text.fontName.style === style &&
+        boundVariableName(text.fills[0]) === colour,
+      `${at}: ${size}/${line} ${style} in ${colour} (${text && text.fontSize}/${text && text.lineHeight.value} ${text && text.fontName.style}, ${text && boundVariableName(text.fills[0])})`,
+    );
+
+  for (const value of painted ? plugin.LIST_ITEM_SELECTED : []) {
+    const at = `ListItem ${value}`;
+    const component = await drawItem(value);
+    ok(
+      component.name === `Selected=${value}` &&
+        plugin.parseListItemVariantName(component.name).value === value,
+      `${at}: named Selected=${value}, and reads back as itself`,
+    );
+    ok(
+      JSON.stringify(childNames(component)) ===
+        JSON.stringify(["Leading", "Body", "Trailing"]) &&
+        JSON.stringify(childNames(named(component, "Body"))) ===
+          JSON.stringify(["Heading", "Description Text", "Meta Text"]) &&
+        JSON.stringify(childNames(named(component, "Heading"))) ===
+          JSON.stringify(["Title Text", "Title Addon"]),
+      `${at}: Leading, Body (Heading: Title Text, Title Addon; Description Text; Meta Text), Trailing (${childNames(component)})`,
+    );
+    ok(
+      value === "True"
+        ? component.fills.length === 1 &&
+            boundVariableName(component.fills[0]) === "Colors/theme/0"
+        : component.fills.length === 0,
+      `${at}: ${value === "True" ? "tinted theme 0" : "unpainted"} (${component.fills.map(boundVariableName)})`,
+    );
+    ok(
+      component.width === 360 &&
+        menusBound(component, "width") === "List/width/default",
+      `${at}: 360 wide, List/width/default (${component.width})`,
+    );
+    rowBound(component, at);
+    const mark = named(component, "Leading");
+    ok(
+      mark &&
+        mark.width === 20 &&
+        mark.height === 20 &&
+        menusBound(mark, "width") === "ListItem/status/size" &&
+        menusBound(mark, "height") === "ListItem/status/size" &&
+        menusValueOf("ListItem/status/size") === 20 &&
+        boundVariableName(mark.fills[0]) ===
+          "Primary Buttons/themed/button/background/idle" &&
+        Boolean(named(mark, "Status Icon")),
+      `${at}: the status mark 20 across in the theme fill with its check, ListItem/status/size`,
+    );
+    textLooks(
+      named(component, "Title Text"),
+      `${at} / Title Text`,
+      14,
+      20,
+      "Medium",
+      "Colors/foreground/0",
+    );
+    textLooks(
+      named(component, "Description Text"),
+      `${at} / Description Text`,
+      14,
+      20,
+      "Regular",
+      "Colors/foreground/400",
+    );
+    textLooks(
+      named(component, "Meta Text"),
+      `${at} / Meta Text`,
+      12,
+      16,
+      "Regular",
+      "Colors/foreground/400",
+    );
+    ok(
+      Boolean(named(component, "Action Text")) &&
+        named(component, "Trailing").height === 32,
+      `${at}: one action at the end, 32 tall, its words Action Text`,
+    );
+    await drawItem(value, component);
+    ok(
+      JSON.stringify(childNames(component)) ===
+        JSON.stringify(["Leading", "Body", "Trailing"]),
+      `${at}: an Update keeps Leading, Body, Trailing once`,
+    );
+  }
+
+  const expectedRows = {
+    None: { tag: null },
+    Inherited: { tag: "outline" },
+    Overridden: { tag: "secondary" },
+  };
+  for (const state of painted ? plugin.SETTINGS_ROW_STATES : []) {
+    for (const disabled of plugin.SETTINGS_ROW_DISABLED) {
+      const at = `SettingsRow ${state}/${disabled}`;
+      const component = await drawRow(state, disabled);
+      const parsed = plugin.parseSettingsRowVariantName(component.name);
+      ok(
+        component.name === `State=${state}, Disabled=${disabled}` &&
+          parsed.value === state &&
+          parsed.second === disabled,
+        `${at}: named State=${state}, Disabled=${disabled}, and reads back as itself (${component.name})`,
+      );
+      ok(
+        component.width === 560 &&
+          menusBound(component, "width") === "SettingsRow/width/default" &&
+          menusValueOf("SettingsRow/width/default") === 560,
+        `${at}: 560 wide, SettingsRow/width/default (${component.width})`,
+      );
+      rowBound(component, at);
+      ok(
+        JSON.stringify(childNames(component)) ===
+          JSON.stringify(["Body", "Control"]),
+        `${at}: Body, Control (${childNames(component)})`,
+      );
+      const heading = named(component, "Heading");
+      const tag = named(component, "State");
+      const want = expectedRows[state].tag;
+      ok(
+        want === null
+          ? JSON.stringify(childNames(heading)) ===
+              JSON.stringify(["Label Text"])
+          : JSON.stringify(childNames(heading)) ===
+              JSON.stringify(["Label Text", "State"]) &&
+              named(tag, "State Text").characters === state &&
+              (want === "outline"
+                ? tag.fills.length === 0 &&
+                  boundVariableName(tag.strokes[0]) === "Border/Subtle"
+                : boundVariableName(tag.fills[0]) === "Colors/background/100" &&
+                  tag.strokes.length === 0),
+        `${at}: ${want ? `the ${want} tag "${state}" beside the label` : "the label alone"} (${childNames(heading)})`,
+      );
+      textLooks(
+        named(component, "Label Text"),
+        `${at} / Label Text`,
+        14,
+        20,
+        "Medium",
+        disabled === "True" ? "Colors/foreground/400" : "Colors/foreground/0",
+      );
+      const reset = named(component, "Reset Text");
+      const reason = named(component, "Reason Text");
+      ok(
+        disabled === "True"
+          ? Boolean(reason) && !reset
+          : !reason && Boolean(reset) === (state === "Overridden"),
+        `${at}: ${disabled === "True" ? "the reason, no reset" : state === "Overridden" ? "Reset to default, no reason" : "neither reset nor reason"}`,
+      );
+      if (reset)
+        ok(
+          reset.characters === "Reset to default" &&
+            boundVariableName(reset.fills[0]) === "Colors/theme/600",
+          `${at}: Reset to default in the theme's 600`,
+        );
+      const control = named(component, "Control");
+      ok(
+        control &&
+          control.width === 44 &&
+          control.height === 24 &&
+          menusBound(control, "width") === "Switch/track/width" &&
+          menusBound(control, "height") === "Switch/track/height" &&
+          control.opacity === (disabled === "True" ? 0.5 : 1),
+        `${at}: Switch's 44 by 24 track at the end${disabled === "True" ? ", at half" : ""} (${control && control.width}x${control && control.height}, ${control && control.opacity})`,
+      );
+    }
+  }
+
+  // The sets' properties: each text a TEXT property bound to its layers;
+  // each ListItem slot a boolean on its layer.
+  const keyOf = (definitions, name, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === name && definitions[key].type === type,
+    );
+  const items = [];
+  for (const value of painted ? plugin.LIST_ITEM_SELECTED : [])
+    items.push(await drawItem(value));
+  const itemSet = painted
+    ? figma.combineAsVariants(items, figma.currentPage)
+    : figma.createComponent();
+  itemSet.name = "ListItem";
+  if (painted) plugin.configureListItemProperties(itemSet, freshStats());
+  const itemDefinitions = itemSet.componentPropertyDefinitions || {};
+  const itemTexts = [
+    "Title Text",
+    "Addon Text",
+    "Description Text",
+    "Meta Text",
+    "Action Text",
+  ];
+  ok(
+    itemTexts.every((name) => keyOf(itemDefinitions, name, "TEXT")) &&
+      items.every((variant) =>
+        itemTexts.every(
+          (name) =>
+            named(variant, name).componentPropertyReferences.characters ===
+            keyOf(itemDefinitions, name, "TEXT"),
+        ),
+      ),
+    `ListItem: ${itemTexts.join(", ")} drive each variant's texts (${Object.keys(itemDefinitions).join(", ")})`,
+  );
+  const booleans = [
+    ["Leading", "Show Leading"],
+    ["Title Addon", "Show Title Addon"],
+    ["Description Text", "Show Description"],
+    ["Meta Text", "Show Meta"],
+    ["Trailing", "Show Trailing"],
+  ];
+  ok(
+    booleans.every(
+      ([layer, name]) =>
+        keyOf(itemDefinitions, name, "BOOLEAN") &&
+        items.every(
+          (variant) =>
+            named(variant, layer).componentPropertyReferences.visible ===
+            keyOf(itemDefinitions, name, "BOOLEAN"),
+        ),
+    ),
+    "ListItem: Show Leading, Show Title Addon, Show Description, Show Meta and Show Trailing show each slot",
+  );
+  const titleInSet = items[0] && named(items[0], "Title Text");
+  ok(
+    titleInSet &&
+      plugin.inferTextStyleKeyForComponentText(titleInSet, itemSet) ===
+        plugin.textStyleKeyForText("Small", "Medium") &&
+      plugin.inferTextStyleKeyForComponentText(
+        named(items[0], "Meta Text"),
+        itemSet,
+      ) === plugin.textStyleKeyForText("XS", "Normal"),
+    "ListItem: the audit expects Text / Small / Medium on the title, Text / XS / Normal on the meta",
+  );
+  itemSet.remove();
+
+  const rows = [];
+  for (const state of painted ? plugin.SETTINGS_ROW_STATES : [])
+    for (const disabled of plugin.SETTINGS_ROW_DISABLED)
+      rows.push(await drawRow(state, disabled));
+  const rowSet = painted
+    ? figma.combineAsVariants(rows, figma.currentPage)
+    : figma.createComponent();
+  rowSet.name = "SettingsRow";
+  if (painted) plugin.configureSettingsRowProperties(rowSet, freshStats());
+  const rowDefinitions = rowSet.componentPropertyDefinitions || {};
+  ok(
+    ["Label Text", "Description Text", "Reason Text"].every((name) =>
+      keyOf(rowDefinitions, name, "TEXT"),
+    ) &&
+      keyOf(rowDefinitions, "Show Description", "BOOLEAN") &&
+      rows.every(
+        (variant) =>
+          named(variant, "Label Text").componentPropertyReferences
+            .characters === keyOf(rowDefinitions, "Label Text", "TEXT") &&
+          named(variant, "Description Text").componentPropertyReferences
+            .visible === keyOf(rowDefinitions, "Show Description", "BOOLEAN"),
+      ),
+    `SettingsRow: Label Text, Description Text, Reason Text and Show Description (${Object.keys(rowDefinitions).join(", ")})`,
+  );
+  rowSet.remove();
+
+  const core = plugin.CORE_UPDATE_SEQUENCE.map(([name]) => name);
+  const handlers = plugin.additionalComponentActionHandlers();
+  const { names, axes } = expectations();
+  for (const [name, slug] of [
+    ["ListItem", "list-item"],
+    ["SettingsRow", "settings-row"],
+  ]) {
+    ok(
+      core.includes(name) &&
+        ["build", "update", "rebuild"].every(
+          (verb) => typeof handlers[`${verb}-${slug}`] === "function",
+        ) &&
+        names.includes(name) &&
+        axes[name],
+      `${name} is in the Core sequence, the UI's actions, the page's layout and the audit's axes`,
+    );
+  }
 }
 
 section("Decision 152: Menu's and ContextMenu's items take External");
@@ -14389,6 +16309,390 @@ section("Decision 152: Menu's and ContextMenu's items take External");
         .join(", ")})`,
     );
     set.remove();
+  }
+}
+
+// GAP-158 (decision 132): Radio gains a Variant axis, Default, Card and Tile,
+// React's RadioGroupItem `variant`. A card is a box 240 wide, 12 in: the
+// Media over the ring and a column of the title and the description; a tile
+// a box 112 wide, at least 96 tall, its Media, title and description centred,
+// and, chosen, a check badge 8 in from its top-end corner. Chosen, the edge is
+// theme 600 and 2 wide (React's 1px border and its 1px outline inside), and
+// the ring's dot or the tile's check shows: never colour alone. A variant
+// from before the axis parses as Default, so Update renames it in place.
+section("GAP-158: Radio draws cards and tiles");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const axes = plugin.expectedVariantAxesForComponentSetName("Radio") || {};
+  ok(
+    JSON.stringify(axes.Variant) ===
+      JSON.stringify(["Default", "Card", "Tile"]) &&
+      JSON.stringify(axes.Checked) ===
+        JSON.stringify(["Unchecked", "Checked"]) &&
+      JSON.stringify(axes.State) ===
+        JSON.stringify(["Default", "Disabled", "Error"]),
+    `Radio declares Checked, State and Variant, Default first (${JSON.stringify(axes)})`,
+  );
+  const combinations =
+    typeof plugin.radioVariantCombinations === "function"
+      ? plugin.radioVariantCombinations()
+      : [];
+  ok(
+    combinations.length === 18 &&
+      new Set(combinations.map((c) => plugin.radioVariantKey(c))).size === 18,
+    `each Variant at each Checked and State: 18 variants (${combinations.length})`,
+  );
+  const parsed = [
+    "Checked=Checked, State=Default",
+    "Checked=Unchecked, State=Error, Variant=Tile",
+    "Checked=Checked, State=Default, Variant=Chip",
+  ].map((name) => plugin.parseRadioVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { variant: "Default", checked: "Checked", state: "Default" },
+        { variant: "Tile", checked: "Unchecked", state: "Error" },
+        null,
+      ]),
+    `a variant from before the axis parses as Default; an unknown one as none (${JSON.stringify(parsed)})`,
+  );
+
+  const drawRadio = async (variant, checked, state) =>
+    withAutoLayout(async () => {
+      const component = figma.createComponent();
+      await plugin.updateRadioVariant(component, {
+        variant,
+        checked,
+        state,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      return component;
+    });
+
+  for (const variant of ["Card", "Tile"]) {
+    const chosen = await drawRadio(variant, "Checked", "Default");
+    const open = await drawRadio(variant, "Unchecked", "Default");
+    const wrong = await drawRadio(variant, "Checked", "Error");
+    const off = await drawRadio(variant, "Unchecked", "Disabled");
+    const tile = variant === "Tile";
+    ok(
+      chosen.name === `Checked=Checked, State=Default, Variant=${variant}` &&
+        chosen.width === (tile ? 112 : 240) &&
+        chosen.paddingLeft === 12 &&
+        chosen.paddingTop === 12 &&
+        chosen.cornerRadius === 20 &&
+        (!tile || chosen.height >= 96) &&
+        boundVariableName(chosen.fills[0]) === "Colors/background/0",
+      `${variant}: a box ${tile ? 112 : 240} wide, 12 in, the container corner, on background/0 (${chosen.name}, ${chosen.width}x${chosen.height}, pad ${chosen.paddingLeft}, r${chosen.cornerRadius})`,
+    );
+    ok(
+      boundVariableName(chosen.strokes[0]) === "Colors/theme/600" &&
+        chosen.strokeWeight === 2 &&
+        chosen.strokeAlign === "INSIDE" &&
+        boundVariableName(open.strokes[0]) === "Border/Subtle" &&
+        open.strokeWeight === 1 &&
+        boundVariableName(wrong.strokes[0]) === "Colors/emotional/danger/600",
+      `${variant}: the edge is Border/Subtle at 1, theme 600 at 2 inside when chosen, danger 600 on error (${boundVariableName(open.strokes[0])} ${open.strokeWeight}; ${boundVariableName(chosen.strokes[0])} ${chosen.strokeWeight} ${chosen.strokeAlign}; ${boundVariableName(wrong.strokes[0])})`,
+    );
+    ok(
+      off.opacity === 0.5 && chosen.opacity === 1,
+      `${variant}: disabled, the whole box is at half (${off.opacity})`,
+    );
+    // The edge takes no room, so the content is 12 in whether it is 1 or 2
+    // wide, and a card's Media is concentric with the card: 20 - 12 = 8
+    // (docs/nested-radius.md; the strict check on the live file found the
+    // Media at r16 13 or 14 in).
+    const cardMedia = named(chosen, "Media");
+    ok(
+      chosen.strokesIncludedInLayout === false &&
+        open.strokesIncludedInLayout === false &&
+        (tile ||
+          (cardMedia &&
+            cardMedia.cornerRadius === 8 &&
+            cardMedia.cornerRadius + chosen.paddingLeft ===
+              chosen.cornerRadius)),
+      `${variant}: the edge is out of the layout, and ${tile ? "the tile's Media is unfilled" : "the card's Media is r8, the card's 20 less its 12"} (${chosen.strokesIncludedInLayout}/${open.strokesIncludedInLayout}, media r${cardMedia && cardMedia.cornerRadius})`,
+    );
+    const title = named(chosen, "Label Text");
+    const description = named(chosen, "Description Text");
+    const media = named(chosen, "Media");
+    ok(
+      title &&
+        title.type === "TEXT" &&
+        description &&
+        description.type === "TEXT" &&
+        description.visible === false &&
+        media &&
+        chosen.children[0] === media,
+      `${variant}: the Media first, then the title and a hidden description (${chosen.children.map((c) => c.name).join(", ")})`,
+    );
+    if (tile) {
+      const badge = named(chosen, "Check Badge");
+      ok(
+        badge &&
+          badge.layoutPositioning === "ABSOLUTE" &&
+          badge.width === 20 &&
+          badge.x === 112 - 8 - 20 &&
+          badge.y === 8 &&
+          boundVariableName(badge.fills[0]) === plugin.THEME_FILL.name &&
+          !named(open, "Check Badge"),
+        `Tile: chosen, a 20 check badge 8 in from the top-end corner, out of the flow, on the theme fill; none unchosen (${badge && `${badge.x},${badge.y} ${badge.width} ${badge.layoutPositioning} ${boundVariableName(badge.fills[0])}`})`,
+      );
+      ok(
+        chosen.primaryAxisAlignItems === "CENTER" &&
+          chosen.counterAxisAlignItems === "CENTER" &&
+          !named(chosen, "Radio Control"),
+        `Tile: everything centred, and no ring (${chosen.counterAxisAlignItems})`,
+      );
+    } else {
+      const body = named(chosen, "Body");
+      const ring = body && named(body, "Radio Control");
+      ok(
+        body &&
+          ring &&
+          body.children[0] === ring &&
+          named(ring, "Radio Dot") &&
+          !named(named(open, "Body"), "Radio Dot") &&
+          body.itemSpacing === 8 &&
+          title.parent &&
+          title.parent.name === "Text",
+        `Card: the Body is the ring, its dot when chosen, and the title's column, 8 apart (${body && body.children.map((c) => c.name).join(", ")})`,
+      );
+    }
+  }
+
+  const oldNames = [];
+  for (const checked of ["Unchecked", "Checked"]) {
+    for (const state of ["Default", "Disabled", "Error"]) {
+      oldNames.push(`Checked=${checked}, State=${state}`);
+    }
+  }
+  const replay = await withAutoLayout(() =>
+    replayUpdate("Radio", oldNames, "updateRadioComponent"),
+  );
+  ok(
+    replay.result.updated === true &&
+      replay.result.componentSetId === replay.setId &&
+      replay.result.variantsUpdated === 6 &&
+      replay.result.variantsCreated === 12 &&
+      replay.liveSet.children.length === 18 &&
+      new Set(replay.names).size === 18,
+    `Update keeps the set and its 6 variants, and adds the 12 cards and tiles (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.liveSet.children.length} in all)`,
+  );
+  ok(
+    replay.kept.every(
+      (variant, i) =>
+        variant && variant.name === `${oldNames[i]}, Variant=Default`,
+    ),
+    `each of the 6 keeps its node id and is renamed Variant=Default (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
+  );
+  const radioOverlaps = overlapsIn(replay.liveSet);
+  ok(
+    radioOverlaps.length === 0 &&
+      topLeftOf(replay.liveSet).name ===
+        "Checked=Unchecked, State=Default, Variant=Default",
+    `the laid-out set has no two variants overlapping, its top-left the default (${topLeftOf(replay.liveSet).name}; ${radioOverlaps.slice(0, 2).join("; ")})`,
+  );
+  const definitions = replay.liveSet.componentPropertyDefinitions;
+  const propertyNamed = (name, type) =>
+    Object.keys(definitions).find(
+      (key) => key.split("#")[0] === name && definitions[key].type === type,
+    );
+  const media = propertyNamed("Show Media", "BOOLEAN");
+  const shown = propertyNamed("Show Description", "BOOLEAN");
+  const words = propertyNamed("Description Text", "TEXT");
+  const drivenBy = (key, field) =>
+    replay.liveSet.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences[field] === key,
+    );
+  ok(
+    media &&
+      definitions[media].defaultValue === true &&
+      drivenBy(media, "visible").length === 12 &&
+      drivenBy(media, "visible").every((node) => node.name === "Media"),
+    `Show Media, on by default, shows each card's and tile's Media (${media}: ${drivenBy(media, "visible").length})`,
+  );
+  ok(
+    shown &&
+      words &&
+      definitions[shown].defaultValue === false &&
+      drivenBy(words, "characters").length === 18 &&
+      drivenBy(shown, "visible").length === 24,
+    `Description Text writes all 18 descriptions, and Show Description, off, shows them: the 6 Default rows with their texts and the 12 boxes' texts (${drivenBy(words, "characters").length} texts, ${drivenBy(shown, "visible").length} layers)`,
+  );
+  ok(
+    propertyNamed("Label Text", "TEXT") &&
+      propertyNamed("Focus Visible", "BOOLEAN"),
+    `Label Text and Focus Visible are kept (${Object.keys(definitions)
+      .map((key) => key.split("#")[0])
+      .join(", ")})`,
+  );
+}
+
+// GAP-162 (decision 132): Checkbox, Switch and a Default radio draw their
+// label row and, under it, a description; Switch can say On or Off beside
+// its track. Each is a column at least 44 tall (X/height/default, its
+// minimum now): the Label Row, the control, the State Label (Switch) and the
+// label, 8 apart (X/gap); then the Description Row, indented to start under
+// the label. Hidden, as their booleans are off by default, the control draws
+// as it did: 176 by 44, centred.
+section("GAP-162: the controls draw a description, and Switch its state");
+{
+  const tokens = payloadVariables([
+    ...variableByName.keys(),
+    ...["Checkbox", "Radio", "Switch"].flatMap((kind) => [
+      `${kind}/height/default`,
+      `${kind}/gap`,
+    ]),
+  ]);
+  const drawControl = async (fn, props) =>
+    withAutoLayout(async () => {
+      const component = figma.createComponent();
+      await plugin[fn](
+        component,
+        Object.assign(
+          {
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          },
+          props,
+        ),
+      );
+      return component;
+    });
+  const kinds = [
+    ["Checkbox", "updateCheckboxVariant", "Checkbox Control", 28],
+    ["Radio", "updateRadioVariant", "Radio Control", 28],
+    ["Switch", "updateSwitchVariant", "Switch Track", 52],
+  ];
+  for (const [kind, fn, controlName, indent] of kinds) {
+    const component = await drawControl(fn, {
+      checked: "Checked",
+      state: "Default",
+    });
+    const row = named(component, "Label Row");
+    const descriptionRow = named(component, "Description Row");
+    const description =
+      descriptionRow && named(descriptionRow, "Description Text");
+    ok(
+      component.layoutMode === "VERTICAL" &&
+        component.width === 176 &&
+        component.height === 44 &&
+        component.minHeight === 44 &&
+        menusBound(component, "minHeight") === `${kind}/height/default` &&
+        menusBound(component, "height") === null &&
+        component.primaryAxisAlignItems === "CENTER",
+      `${kind}: a column 176 wide, at least 44 (${kind}/height/default) and 44 with its description hidden, centred (${component.layoutMode} ${component.width}x${component.height}, min ${menusBound(component, "minHeight")}, height ${menusBound(component, "height")})`,
+    );
+    ok(
+      row &&
+        row.children[0] &&
+        row.children[0].name === controlName &&
+        row.children[row.children.length - 1].name === "Label Text" &&
+        row.itemSpacing === 8 &&
+        menusBound(row, "itemSpacing") === `${kind}/gap` &&
+        row.counterAxisAlignItems === "CENTER",
+      `${kind}: the Label Row is the control then the label, 8 apart (${kind}/gap), centred on each other (${row && row.children.map((c) => c.name).join(", ")})`,
+    );
+    ok(
+      descriptionRow &&
+        component.children[1] === descriptionRow &&
+        descriptionRow.paddingLeft === indent &&
+        descriptionRow.visible === false &&
+        description &&
+        description.type === "TEXT" &&
+        description.textAutoResize === "HEIGHT" &&
+        boundVariableName(description.fills[0]) === "Colors/foreground/400" &&
+        description.fontSize === 14,
+      `${kind}: the Description Row starts ${indent} in, under the label; its text 14/20 in foreground/400, wrapping; hidden until shown (${descriptionRow && descriptionRow.paddingLeft}, ${description && boundVariableName(description.fills[0])})`,
+    );
+  }
+
+  const on = await drawControl("updateSwitchVariant", {
+    checked: "Checked",
+    state: "Default",
+  });
+  const offSwitch = await drawControl("updateSwitchVariant", {
+    checked: "Unchecked",
+    state: "Default",
+  });
+  const stateOf = (component) => {
+    const row = named(component, "Label Row");
+    return row ? named(row, "State Label") : null;
+  };
+  ok(
+    stateOf(on) &&
+      stateOf(on).characters === "On" &&
+      stateOf(offSwitch).characters === "Off" &&
+      named(on, "Label Row") &&
+      named(on, "Label Row").children[1] === stateOf(on) &&
+      stateOf(on).visible === false &&
+      boundVariableName(stateOf(on).fills[0]) === "Colors/foreground/400" &&
+      on.itemSpacing === 0,
+    `Switch: the State Label sits between the track and the label, On or Off by Checked, muted, hidden until shown; the column has no gap (${stateOf(on) && stateOf(on).characters}/${stateOf(offSwitch) && stateOf(offSwitch).characters}, gap ${on.itemSpacing})`,
+  );
+
+  for (const [kind, update] of [
+    ["Checkbox", "updateCheckboxComponent"],
+    ["Switch", "updateSwitchComponent"],
+  ]) {
+    const names = [];
+    for (const checked of ["Unchecked", "Checked"]) {
+      for (const state of ["Default", "Disabled", "Error"]) {
+        names.push(`Checked=${checked}, State=${state}`);
+      }
+    }
+    const replay = await withAutoLayout(() =>
+      replayUpdate(kind, names, update),
+    );
+    const definitions = replay.liveSet.componentPropertyDefinitions;
+    const propertyNamed = (name, type) =>
+      Object.keys(definitions).find(
+        (key) => key.split("#")[0] === name && definitions[key].type === type,
+      );
+    const shown = propertyNamed("Show Description", "BOOLEAN");
+    const words = propertyNamed("Description Text", "TEXT");
+    const state = propertyNamed("Show State Label", "BOOLEAN");
+    const drivenBy = (key, field) =>
+      key
+        ? replay.liveSet.findAll(
+            (node) =>
+              node.componentPropertyReferences &&
+              node.componentPropertyReferences[field] === key,
+          )
+        : [];
+    ok(
+      replay.kept.every((variant, i) => variant && variant.name === names[i]) &&
+        replay.liveSet.children.length === 6,
+      `${kind}: Update keeps its 6 variants, ids and names (${replay.names.join("; ")})`,
+    );
+    ok(
+      shown &&
+        words &&
+        definitions[shown].defaultValue === false &&
+        drivenBy(shown, "visible").length === 6 &&
+        drivenBy(shown, "visible").every(
+          (node) => node.name === "Description Row",
+        ) &&
+        drivenBy(words, "characters").length === 6,
+      `${kind}: Show Description, off, shows each variant's Description Row, and Description Text writes it (${drivenBy(shown, "visible").length} rows, ${drivenBy(words, "characters").length} texts)`,
+    );
+    ok(
+      kind === "Switch"
+        ? state &&
+            definitions[state].defaultValue === false &&
+            drivenBy(state, "visible").length === 6 &&
+            drivenBy(state, "visible").every(
+              (node) => node.name === "State Label",
+            )
+        : !state,
+      `${kind}: ${kind === "Switch" ? "Show State Label, off, shows each variant's State Label" : "no Show State Label"} (${state || "none"}: ${drivenBy(state, "visible").length})`,
+    );
   }
 }
 
@@ -15278,6 +17582,1087 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       `a second Update keeps the set and its six variants' ids (${error ? error.message : second && `${second.variantsUpdated} updated, ${second.variantsCreated} created, ${second.variantsRemoved} removed`})`,
     );
   }
+}
+
+section("figma:verify reads each set's axes as the plugin declares them");
+{
+  // figma:verify reads the axes from code.js's text, without running it. It
+  // read only quoted strings, so Input's and NumberInput's State
+  // (INPUT_STATES.concat([MIXED_FIELD_STATE])) dropped out and Combobox's
+  // MIXED_FIELD_STATE went unread: on 15 Nov it called the live file's
+  // correct State=Mixed drift on three sets. Every set it expects, it reads
+  // exactly as the plugin's own expectedVariantAxesForComponentSetName.
+  const { names, axes } = expectations();
+  const wrong = [];
+  for (const name of new Set([...names, ...Object.keys(axes)])) {
+    const declared = plugin.expectedVariantAxesForComponentSetName(name);
+    const want = JSON.stringify(
+      Object.fromEntries(
+        Object.entries(declared || {}).filter(
+          ([, values]) => Array.isArray(values) && values.length,
+        ),
+      ),
+    );
+    const read = JSON.stringify(axes[name] || {});
+    if (read !== want) wrong.push(`${name}: read ${read}, declared ${want}`);
+  }
+  ok(
+    wrong.length === 0 && axes.Input && axes.Combobox,
+    `figma:verify reads every set's axes as the plugin declares them${wrong.length ? ` (${wrong.length}: ${wrong.slice(0, 3).join("; ")})` : ""}`,
+  );
+}
+
+// GAP-277: checkable rows and the disclosure at the end, as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`. Booleans
+// on the three row sets, as Divided and Meta Below: Checkable (off) shows
+// Checkbox's box before the leading icon, Checked (off) its checked fill and
+// mark, Disclosure Start (on) the disclosure before the label and Disclosure
+// End (off) one at the row's end. At their defaults a row draws as before.
+section("GAP-277: the tree rows' Checkable, Checked and Disclosure End");
+{
+  const painters = [
+    [
+      "updateTreeParentItemVariant",
+      { content: "Actions", expanded: "True", state: "Selected" },
+      true,
+    ],
+    ["updateTreeChildItemVariant", { content: "Count", state: "Idle" }, false],
+    [
+      "updateTreeItemVariant",
+      { type: "Parent", content: "Basic", expanded: "False", state: "Idle" },
+      true,
+    ],
+  ];
+  const reachable = painters.every(([fn]) => typeof plugin[fn] === "function");
+  ok(reachable, "the three row painters are reachable");
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const kindOf = (node) =>
+    node && node.getSharedPluginData("kozmos_ds_importer", "kind");
+  for (const [fn, base, parent] of reachable ? painters : []) {
+    for (const density of ["Default", "Compact"]) {
+      const at = `${fn} ${density}`;
+      const floor = density === "Compact" ? 32 : 40;
+      const row = await draw(fn, Object.assign({ density, depth: "1" }, base));
+      const flow = row.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const names = flow.map((child) => child.name);
+      const box = row.children.find((child) => child.name === "Checkbox");
+      const checked =
+        box && box.children.find((child) => child.name === "Checkbox Checked");
+      const mark =
+        checked &&
+        checked.children.find((child) => child.name === "Checkbox Mark");
+      const end = row.children.find((child) => child.name === "Disclosure End");
+      ok(
+        names.indexOf("Checkbox") === 1 &&
+          names[names.length - 1] === "Disclosure End" &&
+          ["tree-disclosure-icon", "tree-icon-spacer"].indexOf(
+            kindOf(flow[0]),
+          ) !== -1,
+        `${at}: the start disclosure, then Checkbox, and Disclosure End last (${names.join(", ")})`,
+      );
+      ok(
+        box &&
+          box.visible === false &&
+          kindOf(box) === "tree-checkbox" &&
+          box.width === 20 &&
+          box.height === 20 &&
+          box.cornerRadius === 4 &&
+          box.fills.length === 0 &&
+          boundVariableName(box.strokes[0]) === "Border/Input" &&
+          box.strokeWeight === 1,
+        `${at}: Checkbox is a hidden 20 box, radius 4, a 1px Border/Input edge and no fill (${box && `${box.visible}, ${box.width}x${box.height}, r${box.cornerRadius}, ${boundVariableName(box.strokes[0])}`})`,
+      );
+      ok(
+        checked &&
+          checked.visible === false &&
+          kindOf(checked) === "tree-checkbox-checked" &&
+          checked.width === 20 &&
+          checked.cornerRadius === 4 &&
+          boundVariableName(checked.fills[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          boundVariableName(checked.strokes[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          mark &&
+          mark.width === 16 &&
+          mark.x === 2 &&
+          mark.y === 2,
+        `${at}: Checkbox Checked, hidden in it, is the theme fill with a 16 mark at 2,2 (${checked && `${checked.visible}, ${boundVariableName(checked.fills[0])}, mark ${mark && `${mark.width} at ${mark.x},${mark.y}`}`})`,
+      );
+      ok(
+        end &&
+          end.visible === false &&
+          (parent
+            ? end.type === "INSTANCE" &&
+              kindOf(end) === "tree-disclosure-end-icon" &&
+              end.width === 16
+            : kindOf(end) === "tree-disclosure-end-spacer" &&
+              end.width === 16 &&
+              end.height === 16),
+        `${at}: Disclosure End is a hidden ${parent ? "chevron" : "16 spacer"} (${end && `${end.type}, ${kindOf(end)}, ${end.width}, ${end.visible}`})`,
+      );
+      ok(
+        row.height === floor,
+        `${at}: with them hidden the row is ${floor}, as before (${row.height})`,
+      );
+      if (box && end && checked) {
+        await withAutoLayout(async () => {
+          flow[0].visible = false;
+          box.visible = true;
+          checked.visible = true;
+          end.visible = true;
+          row.resizeWithoutConstraints(row.width, row.height);
+        });
+        const inset = 8 + 20;
+        ok(
+          box.x === inset &&
+            end.x + end.width === row.width - 8 &&
+            row.height === floor,
+          `${at}: shown, with the start disclosure off, Checkbox opens the row at its inset (${inset}), Disclosure End closes it 8 from its edge, and the row stays ${floor} (${box.x}, ${end.x + end.width} of ${row.width}, ${row.height})`,
+        );
+      }
+    }
+  }
+
+  // The sets' properties, each bound to its layers and nothing else.
+  for (const [setName, fn, props] of [
+    [
+      "TreeParentItem",
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "False" },
+    ],
+    ["TreeChildItem", "updateTreeChildItemVariant", { content: "Count" }],
+    [
+      "TreeItem",
+      "updateTreeItemVariant",
+      { type: "Child", content: "Actions", expanded: "False" },
+    ],
+  ]) {
+    if (!reachable) break;
+    const variants = [];
+    for (const state of ["Idle", "Selected"]) {
+      variants.push(
+        await draw(
+          fn,
+          Object.assign({ depth: "0", density: "Default" }, props, { state }),
+        ),
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    await plugin.configureTreeItemProperties(
+      set,
+      freshStats(),
+      menusTokens.variableByName,
+    );
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name) =>
+      Object.keys(definitions).find(
+        (key) =>
+          key.split("#")[0] === name && definitions[key].type === "BOOLEAN",
+      );
+    const shownBy = (key) =>
+      set.findAll(
+        (node) =>
+          key &&
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.visible === key,
+      );
+    for (const [name, defaultValue, layer] of [
+      ["Checkable", false, (node) => node.name === "Checkbox"],
+      ["Checked", false, (node) => node.name === "Checkbox Checked"],
+      [
+        "Disclosure Start",
+        true,
+        (node) =>
+          node.parent.type === "COMPONENT" &&
+          node.parent.children.indexOf(node) === 0 &&
+          /^Disclosure (Icon|Spacer)/.test(node.name),
+      ],
+      ["Disclosure End", false, (node) => node.name === "Disclosure End"],
+    ]) {
+      const key = keyOf(name);
+      const shown = shownBy(key);
+      ok(
+        key &&
+          definitions[key].defaultValue === defaultValue &&
+          shown.length === 2 &&
+          shown.every(layer),
+        `${setName}: ${name}, ${defaultValue ? "on" : "off"} by default, shows each row's ${name === "Disclosure Start" ? "start disclosure" : name === "Checkable" ? "Checkbox" : name === "Checked" ? "Checkbox Checked" : "Disclosure End"} and nothing else (${key}, ${shown.map((node) => node.name).join(", ")})`,
+      );
+    }
+    set.remove();
+  }
+
+  // Update over the three sets as the file has them: every variant keeps its
+  // node id and name, none is added, and each gains the four properties.
+  const icons = () => {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    return [page];
+  };
+  const names = (setName) => {
+    const out = [];
+    for (const type of setName === "TreeItem" ? ["Parent", "Child"] : [null])
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                out.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return out;
+  };
+  for (const [setName, update, total] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72],
+    ["TreeItem", "updateTreeItemComponent", 216],
+  ]) {
+    if (!reachable) break;
+    const oldNames = names(setName);
+    const replay = await replayUpdate(setName, oldNames, update, icons());
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const key = (name) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === "BOOLEAN",
+      );
+    const boxes = replay.liveSet.findAll((n) => n.name === "Checkbox");
+    const ends = replay.liveSet.findAll((n) => n.name === "Disclosure End");
+    ok(
+      replay.result.variantsUpdated === total &&
+        replay.result.variantsCreated === 0 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) => variant && variant.name === oldNames[i],
+        ) &&
+        ["Checkable", "Checked", "Disclosure Start", "Disclosure End"].every(
+          (name) => key(name),
+        ) &&
+        boxes.length === total &&
+        boxes.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Checkable"),
+        ) &&
+        ends.length === total &&
+        ends.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Disclosure End"),
+        ),
+      `${setName}: Update keeps all ${total} variants and their ids, and gives each a hidden Checkbox (Checkable) and Disclosure End (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${boxes.length} boxes, ${ends.length} ends)`,
+    );
+  }
+}
+
+// --- ImageCropper (GAP-273) ----------------------------------------------------
+
+// React's ImageCropper: a column 320 wide, the frame and the zoom row 12
+// apart; the frame in the Ratio's shape on the control radius, muted, with a
+// 1 inner edge in Border/Input, clipping an Image slot; the zoom row Zoom out,
+// a Slider slot and Zoom in, 8 apart, shown by Zoom Controls. One Ratio axis,
+// Square first, in Update All Core and the page's Inputs section.
+section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
+{
+  const ready =
+    Array.isArray(plugin.IMAGE_CROPPER_RATIOS) &&
+    typeof plugin.updateImageCropperVariant === "function" &&
+    typeof plugin.configureImageCropperProperties === "function";
+  ok(ready, "ImageCropper's painter and properties are reachable");
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateImageCropperVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  for (const [value, height] of ready
+    ? [
+        ["Square", 320],
+        ["Landscape", 180],
+      ]
+    : []) {
+    const { component, stats } = await paint(value);
+    ok(
+      component.name === `Ratio=${value}` &&
+        plugin.parseImageCropperVariantName(component.name).value === value,
+      `${value}: named Ratio=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(["Frame", "Zoom Row"]) &&
+        component.width === 320 &&
+        menusBound(component, "width") === "ImageCropper/width/default" &&
+        component.itemSpacing === 12 &&
+        menusBound(component, "itemSpacing") === "ImageCropper/gap" &&
+        menusValueOf("ImageCropper/gap") === 12 &&
+        component.fills.length === 0,
+      `${value}: an unpainted column 320 wide, the frame and the zoom row 12 apart (${component.children.map((child) => child.name)}, ${component.width}, ${component.itemSpacing}, ${menusBound(component, "itemSpacing")})`,
+    );
+    const frame = named(component, "Frame");
+    ok(
+      frame &&
+        frame.width === 320 &&
+        frame.height === height &&
+        frame.clipsContent === true &&
+        frame.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        menusBound(frame, "cornerRadius") === "ImageCropper/radius" &&
+        boundVariableName(frame.fills[0]) === "Colors/background/100" &&
+        frame.strokeWeight === 1 &&
+        frame.strokeAlign === "INSIDE" &&
+        boundVariableName(frame.strokes[0]) === "Border/Input",
+      `${value}: the frame is 320 × ${height} on the control radius, muted, a 1 inner edge in Border/Input (${frame && `${frame.width} × ${frame.height}, r${frame.cornerRadius}, ${boundVariableName(frame.strokes[0])}`})`,
+    );
+    const image = frame && named(frame, "Image Slot");
+    ok(
+      image && image.width === 288 && image.height === height - 32,
+      `${value}: the Image slot sits 16 inside the frame (${image && `${image.width} × ${image.height}`})`,
+    );
+    const row = named(component, "Zoom Row");
+    const parts = row ? row.children.map((child) => child.name) : [];
+    ok(
+      JSON.stringify(parts) ===
+        JSON.stringify([
+          "Zoom Out Button",
+          "Zoom Slider Slot",
+          "Zoom In Button",
+        ]) &&
+        row.itemSpacing === 8 &&
+        menusBound(row, "itemSpacing") === "ImageCropper/zoom/gap" &&
+        menusValueOf("ImageCropper/zoom/gap") === 8,
+      `${value}: the zoom row is Zoom out, the Slider slot and Zoom in, 8 apart (${parts}, ${row && row.itemSpacing})`,
+    );
+    ok(
+      ["Zoom Out Button", "Zoom In Button"].every((name) => {
+        const button = named(component, name);
+        return (
+          button &&
+          button.width === 44 &&
+          button.height === 44 &&
+          boundVariableName(button.strokes[0]) === "Border/Subtle"
+        );
+      }) && named(component, "Zoom Slider Slot").width === 320 - 88 - 16,
+      `${value}: two 44 outline buttons, the Slider slot filling between (${named(component, "Zoom Slider Slot") && named(component, "Zoom Slider Slot").width})`,
+    );
+    ok(
+      framesLargerThanAsked(component).length === 0,
+      `${value}: no frame larger than it was drawn (${framesLargerThanAsked(
+        component,
+      )
+        .map((node) => node.name)
+        .join(", ")})`,
+    );
+    ok(
+      // The stand-in file has no Icons page, so every icon warns; nothing else may.
+      stats.warnings.every((warning) =>
+        /is not on the Icons page/.test(warning),
+      ),
+      `${value}: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+    );
+  }
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ImageCropper"),
+      ) === JSON.stringify({ Ratio: ["Square", "Landscape"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ImageCropper" &&
+          update === plugin.updateImageCropperComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Inputs" &&
+          entry.components.includes("ImageCropper"),
+      ),
+    "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
+  );
+}
+
+// --- The audit's expected sets are sets, never a section's title ------------------
+
+// figma:verify reads the sets it expects off the Components page's layout. A
+// section's title is not a set: the Dashboard section's, new with decision
+// 183, was read as one and reported missing on the live file (15 Nov).
+section("The audit expects every section's sets and no section's title");
+{
+  const { names } = expectations();
+  const sections = plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || [];
+  const sets = [...new Set(sections.flatMap((entry) => entry.components))];
+  const titles = sections
+    .map((entry) => entry.title)
+    .filter((title) => !sets.includes(title));
+  ok(
+    titles.every((title) => !names.includes(title)),
+    `no section title is an expected set (${titles.filter((title) => names.includes(title)).join(", ") || "none"})`,
+  );
+  ok(
+    names.length === sets.length && sets.every((name) => names.includes(name)),
+    `the expected sets are the sections' sets, ${sets.length} (${names.length}: ${names.filter((name) => !sets.includes(name)).join(", ") || "none extra"})`,
+  );
+  const dashboard = sections.find((entry) => entry.title === "Dashboard");
+  ok(
+    dashboard &&
+      dashboard.components.length === 8 &&
+      dashboard.components.every((name) => names.includes(name)) &&
+      !names.includes("Dashboard"),
+    `the Dashboard section's eight modules are expected, "Dashboard" is not (${dashboard && dashboard.components.join(", ")})`,
+  );
+}
+
+// --- ImageField (Dashboard, CLOUD-UI-004) ---------------------------------------
+
+// Pointr Cloud's image field, as React's ImageField draws it: a bordered group
+// on the container radius with its Label property and count; one image with
+// its alt-text slot and three ghost icon buttons; the FileUpload slot and the
+// URL row. Full turns the drop zone and the URL row off (50 %), Disabled the
+// whole field, as a disabled Button is drawn. It rides Update All Product /
+// SDK, in the Dashboard section, on one State axis.
+section("ImageField (Dashboard)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateImageFieldVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    return { component, stats };
+  };
+  const { component: field, stats } = await paint("Default");
+  const label = named(field, "Label Text");
+  const count = named(field, "Count Text");
+  ok(
+    field.name === "State=Default" &&
+      field.cornerRadius === plugin.KOZMOS_RADIUS.container &&
+      boundVariableName(field.strokes[0]) === "Border/Subtle" &&
+      field.width === 368 &&
+      field.opacity === 1,
+    `Default: a 368 group on the container radius with the subtle edge (${field.name}, ${field.width}, r${field.cornerRadius}, ${field.strokes[0] && boundVariableName(field.strokes[0])})`,
+  );
+  ok(
+    label &&
+      label.characters === "Images" &&
+      count &&
+      count.characters === "1 of 7 images" &&
+      boundVariableName(count.fills[0]) === "Colors/foreground/400",
+    `Default: "Images" and its count in the muted foreground (${label && label.characters}; ${count && count.characters})`,
+  );
+  const thumbnail = named(field, "Thumbnail Slot");
+  ok(
+    thumbnail && thumbnail.width === 120 && thumbnail.height === 68,
+    `Default: the thumbnail is 120 × 68, 16:9 (${thumbnail && `${thumbnail.width} × ${thumbnail.height}`})`,
+  );
+  const buttons = ["Preview Button", "Frame Button", "Remove Button"].map(
+    (name) => named(field, name),
+  );
+  ok(
+    buttons.every(
+      (button) =>
+        button && button.fills.length === 0 && button.strokes.length === 0,
+    ),
+    `Default: Preview, Frame and Remove are ghost icon buttons (${buttons.map((button) => (button ? button.name : "missing")).join(", ")})`,
+  );
+  ok(
+    named(field, "Upload Slot") &&
+      named(field, "Upload Slot").height === 112 &&
+      named(field, "URL Slot") &&
+      named(field, "Add Button"),
+    "Default: the 112 drop zone and the URL row with Add",
+  );
+  {
+    // With the curated icons on the Icons page, Add draws plus as every
+    // Button does, never a typed "+". Frame's crop-01 is not curated yet (it
+    // has no library key), so it alone keeps its typed glyph, and says so.
+    const iconsPage =
+      figma.root.children.find((page) => page.name === "Icons") ||
+      (() => {
+        const page = figma.createPage();
+        page.name = "Icons";
+        return page;
+      })();
+    for (const name of ["eye", "crop-01", "trash-01", "plus"])
+      if (!iconsPage.findOne((node) => node.name === `Icon / ${name}`))
+        iconsPage.appendChild(mockIconComponent(name));
+    const { component: drawn } = await paint("Default");
+    const add = named(drawn, "Add Button");
+    const icon = add && named(add, "Add Button Icon");
+    ok(
+      icon &&
+        icon.type === "INSTANCE" &&
+        icon.mainComponent &&
+        icon.mainComponent.name === "Icon / plus" &&
+        icon.width === 16 &&
+        !named(add, "Add Button Glyph") &&
+        named(add, "Add Button Label"),
+      `Default: Add draws the curated plus, 16, before its label, no typed "+" (${add ? add.children.map((child) => child.name).join(", ") : "no Add"})`,
+    );
+    const frame = named(drawn, "Frame Button");
+    const frameIcon = frame && named(frame, "Frame Button Icon");
+    ok(
+      named(drawn, "Preview Button Icon") &&
+        named(drawn, "Remove Button Icon") &&
+        frameIcon &&
+        frameIcon.type === "INSTANCE" &&
+        frameIcon.mainComponent &&
+        frameIcon.mainComponent.name === "Icon / crop-01" &&
+        !named(frame, "Frame Button Glyph") &&
+        Array.isArray(plugin.KOSMOS_ICON_DEFINITIONS) &&
+        plugin.KOSMOS_ICON_DEFINITIONS.some(
+          (entry) =>
+            entry.name === "crop-01" &&
+            entry.componentKey === "fddad04e9391ca336ab6424463793db41ee7aaed",
+        ),
+      `Default: Preview, Frame and Remove draw eye, crop-01 (the Pointr library's, docs/figma-pointr-icon-catalog.json) and trash-01, no typed glyph (${frame ? frame.children.map((child) => child.name).join(", ") : "no Frame"})`,
+    );
+  }
+  ok(
+    framesLargerThanAsked(field).length === 0,
+    `Default: no frame larger than it was drawn (${framesLargerThanAsked(field)
+      .map((node) => node.name)
+      .join(", ")})`,
+  );
+  ok(
+    // The stand-in file has no Icons page, so every icon warns; nothing else may.
+    stats.warnings.every((warning) => /is not on the Icons page/.test(warning)),
+    `Default: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+  );
+
+  const { component: full } = await paint("Full");
+  ok(
+    full.opacity === 1 &&
+      named(full, "Upload Slot").opacity === 0.5 &&
+      named(full, "URL Row").opacity === 0.5 &&
+      named(full, "Count Text").characters === "7 of 7 images",
+    `Full: the count at max, the drop zone and URL row at 50 % (${named(full, "Upload Slot").opacity}, ${named(full, "URL Row").opacity})`,
+  );
+  const { component: disabled } = await paint("Disabled");
+  ok(
+    disabled.opacity === 0.5 && named(disabled, "Upload Slot").opacity === 1,
+    `Disabled: the whole field at a plain 50 % (${disabled.opacity})`,
+  );
+
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("ImageField"),
+    ) === JSON.stringify({ State: ["Default", "Full", "Disabled"] }) &&
+      plugin.PRODUCT_SDK_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ImageField" && update === plugin.updateImageFieldComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Dashboard" &&
+          entry.components.includes("ImageField"),
+      ),
+    "ImageField: one State axis, in Update All Product / SDK and the Dashboard section",
+  );
+}
+
+section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
+{
+  ok(
+    typeof plugin.updateMapEditToolbarVariant === "function" &&
+      typeof plugin.buildMapEditToolbarComponent === "function" &&
+      typeof plugin.updateMapEditToolbarComponent === "function" &&
+      typeof plugin.rebuildMapEditToolbarComponent === "function",
+    "MapEditToolbar's painter, Build, Update and Rebuild are reachable",
+  );
+  const modes = [
+    "Create",
+    "Draw Polygon",
+    "Draw Circle",
+    "Draw Point",
+    "Geometry Set",
+    "JSON",
+    "Edit Existing",
+  ];
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("MapEditToolbar"),
+    ) === JSON.stringify({ Mode: modes, Overflow: ["False", "True"] }),
+    `MapEditToolbar's axes are Mode (Cloud's seven toolbars) and Overflow (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("MapEditToolbar"))})`,
+  );
+  const dashboard = (plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || []).find(
+    (s) => s.title === "Dashboard",
+  );
+  const sequence = (plugin.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(
+    ([name]) => name,
+  );
+  const ui = fs.readFileSync(
+    path.join(path.dirname(PLUGIN), "ui.html"),
+    "utf8",
+  );
+  ok(
+    dashboard &&
+      dashboard.components.includes("MapEditToolbar") &&
+      sequence.includes("MapEditToolbar") &&
+      (plugin.COMPONENT_DOCS || []).some(
+        (doc) => doc.componentSetName === "MapEditToolbar",
+      ) &&
+      /<option value="mapEditToolbar">MapEditToolbar<\/option>/.test(ui) &&
+      /update: "update-map-edit-toolbar"/.test(ui),
+    `MapEditToolbar is in the Dashboard section, Update All Product / SDK, the docs and the panel (${dashboard && dashboard.components.join(", ")})`,
+  );
+
+  // Its items' icons on the Icons page, as Curated Icons puts them there.
+  const iconsPage = figma.root.children.find((page) => page.name === "Icons");
+  for (const name of [
+    "pentagon",
+    "circle",
+    "code-02",
+    "flip-forward",
+    "x-square",
+    "refresh-ccw-01",
+    "transform",
+    "scissors-cut-01",
+    "divider",
+    "ruler",
+    "dots-horizontal",
+    "pencil-01",
+  ])
+    if (!iconsPage.findOne((node) => node.name === `Icon / ${name}`))
+      iconsPage.appendChild(mockIconComponent(name));
+
+  const draw = async (value, second) => {
+    const component = figma.createComponent();
+    if (typeof plugin.updateMapEditToolbarVariant !== "function")
+      return component;
+    await withAutoLayout(() =>
+      plugin.updateMapEditToolbarVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  // React's stories: the items each of Cloud's toolbars shows, the chosen
+  // tool, and the disabled ones.
+  const expected = {
+    Create: "Polygon Point Circle | JSON | Undo- Redo- Clear",
+    "Draw Polygon": "Draw* Split- Straighten- | Undo- Redo- Clear",
+    "Draw Circle": "Draw* Split- Straighten- | Undo- Redo- Clear",
+    "Draw Point": "Draw* | Undo- Redo- Clear",
+    "Geometry Set": "Adjust* | Cut-out Split Straighten | Undo Redo- Clear",
+    JSON: "Undo Redo- Clear Reset",
+    "Edit Existing":
+      "Adjust* | Cut-out Split Straighten | Undo Redo Clear Reset",
+  };
+  const read = (row) =>
+    row.children
+      .map((item) => {
+        if (item.name === "Divider") return "|";
+        const state = item.getSharedPluginData(
+          "kozmos_ds_importer",
+          "itemState",
+        );
+        return (
+          item.name + (state === "On" ? "*" : state === "Disabled" ? "-" : "")
+        );
+      })
+      .join(" ");
+  for (const mode of modes) {
+    for (const overflow of ["False", "True"]) {
+      const at = `Mode=${mode}, Overflow=${overflow}`;
+      const card = await draw(mode, overflow);
+      const parsed =
+        typeof plugin.parseMapEditToolbarVariantName === "function"
+          ? plugin.parseMapEditToolbarVariantName(card.name)
+          : null;
+      ok(
+        card.name === at &&
+          parsed &&
+          parsed.value === mode &&
+          parsed.second === overflow,
+        `${at}: named so, and reads back as itself (${card.name})`,
+      );
+      ok(
+        card.layoutMode === "HORIZONTAL" &&
+          card.height === 60 &&
+          menusBound(card, "height") === "MapEditToolbar/height" &&
+          card.paddingTop === 6 &&
+          card.paddingBottom === 6 &&
+          card.paddingLeft === 8 &&
+          card.paddingRight === 8 &&
+          menusBound(card, "paddingTop") === "MapEditToolbar/padding/y" &&
+          menusValueOf("MapEditToolbar/padding/y") === 6 &&
+          card.cornerRadius === 16 &&
+          menusBound(card, "cornerRadius") === "MapEditToolbar/radius" &&
+          boundVariableName(card.fills[0]) === "Surface/0" &&
+          card.strokes.length === 0 &&
+          card.effects.length === 1 &&
+          card.effects[0].offset.y === 4 &&
+          card.effects[0].radius === 8,
+        `${at}: a 60 card, padding 6 and 8, corner 16, Surface/0 with no edge, the floating elevation (${card.height}, ${card.paddingTop}/${card.paddingLeft}, ${card.cornerRadius}, ${card.strokes.length})`,
+      );
+      const row = named(card, "Items");
+      const drawn = row ? read(row) : "";
+      if (overflow === "False") {
+        ok(
+          drawn === expected[mode],
+          `${at}: Cloud's items, as React's stories show them (${drawn})`,
+        );
+      } else {
+        const full = expected[mode].split(" ");
+        const shown = drawn.split(" ");
+        // A toolbar that fits a 320 map is drawn whole, with no More.
+        ok(
+          card.width <= 320 &&
+            (drawn === expected[mode] || shown[shown.length - 1] === "More") &&
+            shown[shown.length - 2] !== "|" &&
+            shown.slice(0, -1).every((item, index) => item === full[index]),
+          `${at}: on a 320 map, the items that fit, from the start, then More when any did not (${card.width}: ${drawn})`,
+        );
+      }
+      const json = named(card, "GeoJSON Field");
+      ok(
+        mode === "JSON"
+          ? json &&
+              card.children[0] === json &&
+              json.width === 200 &&
+              boundVariableName(json.strokes[0]) === "Border/Input"
+          : !json,
+        `${at}: ${mode === "JSON" ? "the GeoJSON field before the items" : "no field"}`,
+      );
+      if (json)
+        // An Input placed in the card keeps its control radius, as a button
+        // in a card does (docs/nested-radius.md): stamped a control, so the
+        // nesting check reads it as one.
+        ok(
+          json.getSharedPluginData("kozmos_ds_importer", "surface") ===
+            "control",
+          `${at}: the GeoJSON field is stamped a control (${json.getSharedPluginData("kozmos_ds_importer", "surface") || "none"})`,
+        );
+      for (const item of row ? row.children : []) {
+        if (item.name === "Divider") {
+          const rule = item.children[0];
+          ok(
+            item.paddingLeft === 4 &&
+              item.paddingRight === 4 &&
+              rule &&
+              rule.width === 1 &&
+              rule.height === 32 &&
+              boundVariableName(rule.fills[0]) === "Border/Subtle",
+            `${at}: a divider is a 1 × 32 Border/Subtle rule, 4 of margin each side`,
+          );
+          continue;
+        }
+        const state = item.getSharedPluginData(
+          "kozmos_ds_importer",
+          "itemState",
+        );
+        const label = named(item, "Label Text");
+        const icon = named(item, "Icon");
+        const ink =
+          state === "On"
+            ? "Primary Buttons/themed/button/foreground/content/idle"
+            : "Colors/foreground/400";
+        // React's item is min-inline-size 56 and inline-size auto: it hugs
+        // its label, 4 each side, and stops at 56 (Straighten is wider). The
+        // label never runs out of the item's content box.
+        const hugged = label ? Math.max(56, label.width + 2 * 4) : NaN;
+        ok(
+          item.counterAxisSizingMode === "AUTO" &&
+            item.minWidth === 56 &&
+            menusBound(item, "minWidth") === "MapEditToolbar/item/width" &&
+            menusBound(item, "height") === "MapEditToolbar/item/height" &&
+            Math.abs(item.width - hugged) < 0.01 &&
+            label.width <= item.width - 2 * 4 + 0.01,
+          `${at}: ${item.name} hugs its label, at least 56 (MapEditToolbar/item/width as its minimum), the label inside its content box (${item.width} for a ${label && label.width} label, min ${item.minWidth}, ${item.counterAxisSizingMode})`,
+        );
+        if (item.name === "Straighten")
+          ok(
+            item.width > 56,
+            `${at}: Straighten, longer than 56 holds, is wider than 56 (${item.width})`,
+          );
+        ok(
+          item.layoutMode === "VERTICAL" &&
+            item.height === 48 &&
+            item.cornerRadius === 8 &&
+            icon &&
+            icon.width === 24 &&
+            label &&
+            label.characters === item.name &&
+            label.fontSize === 11 &&
+            label.lineHeight.value === 14 &&
+            boundVariableName(label.fills[0]) === ink &&
+            (state === "On"
+              ? boundVariableName(item.fills[0]) ===
+                "Primary Buttons/themed/button/background/idle"
+              : item.fills.length === 0) &&
+            item.opacity === (state === "Disabled" ? 0.5 : 1),
+          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : "no fill"}${state === "Disabled" ? ", at half strength" : ""} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+        );
+      }
+      card.remove();
+    }
+  }
+  {
+    const set = figma.combineAsVariants(
+      [await draw("JSON", "False")],
+      figma.currentPage,
+    );
+    set.name = "MapEditToolbar";
+    const item = named(set, "Undo");
+    const label = item && named(item, "Label Text");
+    const field = named(set, "Field Text");
+    ok(
+      label &&
+        field &&
+        plugin.inferTextStyleKeyForComponentText(label, set) ===
+          "mapEditToolbarLabel" &&
+        plugin.inferTextStyleKeyForComponentText(field, set) === "fieldText",
+      "the audit expects MapEditToolbar / Label on an item and Field / Text in the field",
+    );
+    set.remove();
+  }
+}
+
+// --- RatingEditor (CLOUD-UI-004), a Dashboard module -----------------------------
+
+// React's preview (rating-editor.css): the stars and the words on one line
+// that wraps, 8 apart either way, the words their own width — in the 340
+// editor they go under the stars, whole. The stars are Rating's Readonly
+// instance at 4.3 of 5's nearest half, 4.5 (decision 181), where Rating's set
+// has half values, and 4 where it has whole values only.
+section("RatingEditor: the preview's words wrap whole, the stars at the half");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const hidden = [];
+  for (const page of figma.root.children)
+    for (const node of page.findAll((n) => n.type === "COMPONENT_SET"))
+      if (node.name === "Rating") {
+        node.name = "Rating (set aside)";
+        hidden.push(node);
+      }
+  const ratingSet = (values) =>
+    mockComponentSet(
+      "Rating",
+      values.flatMap((value) =>
+        ["Default", "Readonly"].map((state) => ({
+          properties: { Value: value, State: state },
+          build: (variant) => variant.resize(208, 40),
+        })),
+      ),
+    );
+  const paint = async (values) => {
+    const set = ratingSet(values);
+    figma.currentPage.appendChild(set);
+    const component = figma.createComponent();
+    const stats = freshStats();
+    if (typeof plugin.updateRatingEditorVariant === "function")
+      await withAutoLayout(() =>
+        plugin.updateRatingEditorVariant(component, {
+          value: "Default",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
+    set.remove();
+    return component;
+  };
+  const valueOf = (component) => {
+    const stars = named(component, "Stars");
+    const main = stars && stars.mainComponent;
+    return main
+      ? `${main.variantProperties.Value}/${main.variantProperties.State}`
+      : "none";
+  };
+
+  const halves = await paint(["0", "1", "2", "3", "4", "4.5", "5"]);
+  ok(
+    valueOf(halves) === "4.5/Readonly",
+    `a Rating set with half values: the stars are Value=4.5, Readonly, 4.3 to the nearest half (${valueOf(halves)})`,
+  );
+  const wholes = await paint(["0", "1", "2", "3", "4", "5"]);
+  ok(
+    valueOf(wholes) === "4/Readonly",
+    `a Rating set with whole values only: the stars are Value=4, Readonly (${valueOf(wholes)})`,
+  );
+
+  const preview = named(halves, "Preview");
+  const words = preview && named(preview, "Summary Text");
+  const need = words ? words.characters.length * words.fontSize * 0.55 : NaN;
+  ok(
+    preview &&
+      preview.layoutMode === "HORIZONTAL" &&
+      preview.layoutWrap === "WRAP" &&
+      preview.itemSpacing === 8 &&
+      preview.counterAxisSpacing === 8 &&
+      words &&
+      words.characters === "4.3 of 5 · 120 ratings" &&
+      words.textAutoResize === "WIDTH_AND_HEIGHT" &&
+      words.textTruncation === "DISABLED" &&
+      words.layoutSizingHorizontal !== "FILL" &&
+      words.width >= need - 0.01,
+    `the preview wraps, 8 apart both ways, and its words hug, untruncated (${preview ? `${preview.layoutWrap}, ${preview.itemSpacing}/${preview.counterAxisSpacing}` : "no preview"}; ${words ? `${words.textAutoResize}, ${words.textTruncation}, ${words.layoutSizingHorizontal}, ${words.width} for ${need}` : "no words"})`,
+  );
+  for (const node of hidden) node.name = "Rating";
+  halves.remove();
+  wholes.remove();
+}
+
+// --- PropertyPicker (CLOUD-UI-003), a Dashboard module ---------------------------
+
+// React's PropertyPicker: the subtle Button in Cloud's 368 column, and under
+// it, 4 below, the popup as wide: the labelled search, the tabs only while
+// something is suggested, the property rows (name over type and
+// description), the empty state when the search finds nothing, and the
+// Custom field action. Every paint is a variable's.
+section("PropertyPicker: the subtle Button and its popup");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const painted = {};
+  for (const value of ["Closed", "Open", "Suggested", "Empty"]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    let error = null;
+    try {
+      await plugin.updatePropertyPickerVariant(component, {
+        value,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    painted[value] = component;
+    ok(
+      !error && stats.warnings.length === 0,
+      `${value}: painted, no warnings (${error ? error.message : stats.warnings.join(" | ")})`,
+    );
+    const unbound = component
+      .findAll(() => true)
+      .flatMap((node) =>
+        [...(node.fills || []), ...(node.strokes || [])]
+          .filter(
+            (paint) => paint.type === "SOLID" && !boundVariableName(paint),
+          )
+          .map(() => node.name),
+      );
+    ok(
+      unbound.length === 0,
+      `${value}: every paint is a variable's (${unbound.join(", ")})`,
+    );
+  }
+  const closed = painted.Closed;
+  const trigger = closed && named(closed, "Trigger");
+  ok(
+    Boolean(
+      closed &&
+      closed.name === "State=Closed" &&
+      closed.width === 368 &&
+      closed.children.length === 1 &&
+      trigger &&
+      trigger.width === 368 &&
+      trigger.height === 44 &&
+      boundVariableName(trigger.fills[0]) ===
+        "Subtle Buttons/themed/button/background/idle" &&
+      named(trigger, "Label") &&
+      named(trigger, "Label").characters === "Add additional field",
+    ),
+    `Closed: the subtle Button alone, 368 by 44, its words the Label text (${trigger && [trigger.width, trigger.height, boundVariableName(trigger.fills[0])].join(" ")})`,
+  );
+  const open = painted.Open;
+  const popup = open && named(open, "Popup");
+  ok(
+    Boolean(
+      popup &&
+      open.itemSpacing === 4 &&
+      popup.width === 368 &&
+      popup.paddingLeft === 12 &&
+      popup.itemSpacing === 8 &&
+      boundVariableName(popup.fills[0]) === "Surface/0" &&
+      named(popup, "Search Label").characters === "Search properties" &&
+      !named(popup, "Tabs") &&
+      named(popup, "List").children.length === 5 &&
+      named(popup, "Access Programs Type").characters ===
+        "Array · Named access program accepted" &&
+      named(popup, "Custom Field"),
+    ),
+    "Open: 4 below the button, as wide; a labelled search, no tabs, five rows of name over type and description, then Custom field",
+  );
+  const suggested = painted.Suggested && named(painted.Suggested, "Popup");
+  ok(
+    Boolean(
+      suggested &&
+      named(suggested, "Tabs") &&
+      named(suggested, "Suggested Tab Label").characters === "Suggested" &&
+      named(suggested, "Others Tab Label").characters === "Others" &&
+      named(suggested, "List")
+        .children.map((row) => row.name)
+        .join() ===
+        "Access Restrictions,Description,Has Assistance,Has Wifi,Occupancy Status",
+    ),
+    "Suggested: the Suggested and Others tabs over Booth's five",
+  );
+  const empty = painted.Empty && named(painted.Empty, "Popup");
+  ok(
+    Boolean(
+      empty &&
+      !named(empty, "List") &&
+      named(empty, "Empty Title").characters === "No properties match" &&
+      named(empty, "Custom Field"),
+    ),
+    "Empty: the empty state where the list was, and Custom field still after it",
+  );
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("PropertyPicker"),
+    ) === JSON.stringify({ State: ["Closed", "Open", "Suggested", "Empty"] }),
+    "the set's one axis is State: Closed (its default), Open, Suggested, Empty",
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------

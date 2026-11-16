@@ -383,6 +383,31 @@ to one widget: modal behavior remains document-wide. Toast and MenuSubContent re
 inline unless composed with an explicit exported portal; inline content inherits its
 nearest DOM scope.
 
+## Dashboard modules
+
+Pointr Cloud's own patterns (the brand loader, and the panels, pickers and toolbars that follow it) ship from a
+second entry, `@kozmos-ds/react/dashboard`, with a stylesheet of their own, so a product that never draws one pays
+nothing for them: the main entry and `style.css` hold none of their code. Load `dashboard.css` after `style.css`,
+whose tokens it reads:
+
+```tsx
+import "@kozmos-ds/react/style.css";
+import "@kozmos-ds/react/dashboard.css";
+import { ThemeProvider } from "@kozmos-ds/react";
+import { BrandLoader } from "@kozmos-ds/react/dashboard";
+
+export function LoadingCloud() {
+  return (
+    <ThemeProvider defaultTheme="light">
+      <BrandLoader label="Loading Pointr Cloud" overlay />
+    </ThemeProvider>
+  );
+}
+```
+
+The modules take their Core parts from `@kozmos-ds/react` itself, so a Button is one Button whichever entry drew it.
+They are web parts (React, and Vue later), with no SwiftUI or Compose counterpart.
+
 ## Analytics
 
 Components report interactions, such as a toggle being pressed. With no

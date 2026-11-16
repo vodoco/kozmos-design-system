@@ -23,6 +23,7 @@ import {
 import {
   $,
   bridgedParts,
+  eventually,
   mount,
   settle,
   unmount,
@@ -59,13 +60,21 @@ const page = (template: string) =>
 /** What React was last given as the props of `part`, while `run` drew it. */
 async function propsOf(part: unknown, run: () => void) {
   const created = vi.spyOn(React, "createElement");
-  run();
-  await settle();
-  const calls = created.mock.calls.filter(([type]) => type === part);
-  created.mockRestore();
-  const props = calls.at(-1)?.[1] as Record<string, unknown> | undefined;
-  if (!props) throw new Error("the part was never drawn");
-  return props;
+  const last = () => {
+    const calls = created.mock.calls.filter(([type]) => type === part);
+    const props = calls.at(-1)?.[1] as Record<string, unknown> | undefined;
+    if (!props) throw new Error("the part was never drawn");
+    return props;
+  };
+  try {
+    run();
+    await eventually(last);
+    // A fixed wait once it is drawn: the last draw is what React was given.
+    await settle();
+    return last();
+  } finally {
+    created.mockRestore();
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -206,6 +215,16 @@ const CASES: Case[] = [
     byDefault: false,
   },
   {
+    // GAP-162: the state in words beside the track, off unless asked.
+    name: "KozmosSwitch",
+    part: KozmosReact.Switch,
+    prop: "showStateLabel",
+    attribute: "show-state-label",
+    template: (a) => `<KozmosSwitch label="Gate alerts" ${a} />`,
+    drawn: () => $("[data-slot=state-label]") !== null,
+    byDefault: false,
+  },
+  {
     // Its toggle is drawn unless told otherwise.
     name: "KozmosPasswordInput",
     part: KozmosReact.PasswordInput,
@@ -214,6 +233,17 @@ const CASES: Case[] = [
     template: (a) => `<KozmosPasswordInput aria-label="Password" ${a} />`,
     drawn: () => $("[aria-label='Show password']") !== null,
     byDefault: true,
+  },
+  {
+    // Decision 159: a border and the control radius round the table.
+    name: "KozmosTable",
+    part: KozmosReact.Table,
+    prop: "framed",
+    attribute: "framed",
+    template: (a) => `<KozmosTable aria-label="Places" ${a} />`,
+    drawn: () =>
+      $("table")!.parentElement!.classList.contains("rounded-control"),
+    byDefault: false,
   },
 ];
 

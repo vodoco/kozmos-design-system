@@ -5,13 +5,16 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
@@ -199,6 +202,50 @@ class KozmosContextMenuAreaTest {
             touch(MotionEvent.ACTION_UP, at)
             frames(30)
             assertNull(state.openAt)
+        }
+    }
+
+    /**
+     * Over pressable content — a row, a button — a long press still opens
+     * the menu, at the press, and the release clicks nothing; a tap there
+     * still clicks and opens nothing. The child's press detector takes the
+     * down, which the area read as another handler's press: a long press
+     * over a clickable child never opened the menu until 13 Nov (#517).
+     */
+    @Test fun aLongPressOverAClickableChildOpensTheMenuAndATapStillClicks() {
+        val state = KozmosContextMenuState()
+        var clicks = 0
+        paparazzi.live(content = {
+            KozmosMaterialTheme {
+                Box {
+                    KozmosContextMenuArea(menu, {}, Modifier.size(200.dp, 80.dp), "Show menu", state) {
+                        Box(
+                            Modifier
+                                .size(200.dp, 80.dp)
+                                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { clicks++ }
+                                .kozmosContextMenuTarget()
+                        ) { Text("Gate A12") }
+                    }
+                }
+            }
+        }) {
+            frames(2)
+            val at = Offset(60f, 30f)
+            touch(MotionEvent.ACTION_DOWN, at)
+            frames(30) // a second of frames, past the long-press timeout
+            assertEquals("open at the press while still held", IntOffset(60, 30), state.openAt)
+            touch(MotionEvent.ACTION_UP, at)
+            frames(2)
+            assertEquals("the long press's release clicks nothing", 0, clicks)
+
+            state.openAt = null
+            frames(2)
+            touch(MotionEvent.ACTION_DOWN, at)
+            frames(1)
+            touch(MotionEvent.ACTION_UP, at)
+            frames(30)
+            assertEquals("a tap still clicks the child", 1, clicks)
+            assertNull("a tap opens nothing", state.openAt)
         }
     }
 

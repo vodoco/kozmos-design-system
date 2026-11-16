@@ -4935,10 +4935,15 @@ test.describe("components", () => {
     await page.goto("/components");
     await hydrated(page);
     await expect(page.getByText(`${total} of ${total} shown`)).toBeVisible();
+    await expect(page.locator("main")).toContainText(
+      `${total} components in five lanes`,
+    );
 
     // One table per lane, one row per component, each row the status
-    // script's four answers.
-    const lanes = ["core", "product-sdk", "platform-form-factor", "code-only"];
+    // script's four answers. Every lane the data names, so a new lane cannot
+    // be counted in the total and missing from the page.
+    const lanes = Object.keys(componentIndex.lanes);
+    expect(lanes).toContain("dashboard");
     let rows = 0;
     for (const lane of lanes) {
       const table = page.getByRole("table", {
@@ -5041,6 +5046,14 @@ test.describe("components", () => {
     await expect(
       rowOf(utilities, "ThemeProvider").getByRole("cell").last(),
     ).toHaveText("Not expected");
+    // A Dashboard module is a web part (decision 88): SwiftUI and Compose
+    // read as not expected, never as a gap to close.
+    const dashboard = page.getByRole("table", {
+      name: `${componentIndex.lanes.dashboard.title} components by platform`,
+    });
+    await expect(
+      rowOf(dashboard, "OpeningHoursEditor").getByRole("cell"),
+    ).toHaveText(["Implemented", "Not expected", "Not expected", "Linked"]);
     // A lane nobody expects in Figma says so, rather than "0 of 0".
     await expect(
       page.getByRole("region", {

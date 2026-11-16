@@ -118,5 +118,8 @@ describe("the bridge's event tables, against the installed react-dom", () => {
     if (major === 18)
       for (const dom of Object.values(REACT_19_EVENTS))
         expect(known[dom], `react-dom 18 synthesises ${dom}`).toBeUndefined();
-  });
+    // Several hundred synchronous renders: 2.8 to 4 s on CI, beside the
+    // consumer-types suite's compiler runs, against vitest's default 5 s. It
+    // timed out on main's push run of #524 (12 Nov) with nothing changed.
+  }, 30_000);
 });

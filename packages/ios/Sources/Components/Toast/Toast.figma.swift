@@ -4,6 +4,9 @@ import Figma
 // Tone=Neutral only: SwiftUI's KozmosToast has no tone yet (GAP-167 is web and
 // Figma first), so a Success, Info, Warning or Critical instance shows no
 // SwiftUI snippet rather than a plain toast without its icon.
+//
+// Close Always Visible (GAP-268) is not mapped: SwiftUI has no hover, so its
+// close shows the whole time the toast does, which is the property on.
 struct KozmosToastBasicConnect: FigmaConnect {
     let component = KozmosToast.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=101-8189"

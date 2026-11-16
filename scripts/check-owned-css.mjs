@@ -1947,6 +1947,232 @@ try {
       "1px",
       `${mode}: the solid surface has no edge`,
     );
+    // GAP-261: a part whose look is its state draws it as a tooltip's
+    // trigger too. Radix's tooltip trigger writes its own data-state
+    // (closed, delayed-open, instant-open) over the part's, so a look read
+    // from data-state was lost there: a pressed ToggleButton in a tooltip
+    // drew unpressed. Each part in a tooltip is drawn as the same part out
+    // of one, with the tooltip closed and open; the ToggleButton's look is
+    // owned (GAP-262), so it is held without @scope too, and the others,
+    // scoped utilities, with it. GAP-262: the pressed ToggleButton's fill,
+    // ink, focus ring and half-strength disabled look, and a Backdrop's
+    // scrim with and without a target, draw without @scope and under the
+    // host's hostile button rule.
+    for (const id of ["outer", "nested"]) {
+      const theme = id === "outer" ? "dark" : "light";
+      const looks = page.getByTestId(`${id}-state-looks`);
+      await looks.scrollIntoViewIfNeeded();
+      const away = async () => {
+        await page.mouse.move(1099, 1);
+      };
+      // The look of a part and everything in it, once its transitions end.
+      const lookOf = (testId) =>
+        page.getByTestId(testId).evaluate(async (node) => {
+          await Promise.all(
+            node.getAnimations({ subtree: true }).map((a) => a.finished),
+          );
+          return [node, ...node.querySelectorAll("*")].map((at) => {
+            const s = getComputedStyle(at);
+            return [
+              at.tagName,
+              s.backgroundColor,
+              s.color,
+              s.borderTopColor,
+              s.borderInlineStartColor,
+              s.boxShadow,
+              s.opacity,
+              s.transform,
+            ].join(" | ");
+          });
+        });
+      const stateOf = (testId) =>
+        page.getByTestId(testId).getAttribute("data-state");
+      const pairs =
+        mode === "full"
+          ? ["toggle-on", "switch-on", "check-on", "check-mixed", "radio-on", "radio-card-on", "tab-on", "accordion-on"]
+          : ["toggle-on"];
+      for (const part of pairs) {
+        const plain = `${id}-${part}`;
+        const tipped = `${id}-${part}-tip`;
+        await away();
+        const closed = await stateOf(tipped);
+        assert.equal(
+          closed,
+          "closed",
+          `${mode}, ${theme}: ${part}'s tooltip trigger is not the tooltip's (data-state ${closed})`,
+        );
+        assert.deepEqual(
+          await lookOf(tipped),
+          await lookOf(plain),
+          `${mode}, ${theme}: ${part} in a closed tooltip's trigger does not draw as it does alone`,
+        );
+        await page.getByTestId(plain).hover();
+        const hovered = await lookOf(plain);
+        await page.getByTestId(tipped).hover();
+        await page.waitForFunction(
+          (testId) =>
+            /open/.test(
+              document
+                .querySelector(`[data-testid="${testId}"]`)
+                .getAttribute("data-state"),
+            ),
+          tipped,
+        );
+        assert.deepEqual(
+          await lookOf(tipped),
+          hovered,
+          `${mode}, ${theme}: ${part} in an open tooltip's trigger does not draw as it does alone, hovered`,
+        );
+        await away();
+        await page.keyboard.press("Escape");
+        await page
+          .waitForFunction(
+            (testId) =>
+              document
+                .querySelector(`[data-testid="${testId}"]`)
+                .getAttribute("data-state") === "closed",
+            tipped,
+            { timeout: 5000 },
+          )
+          .catch(async () => {
+            throw new Error(
+              `${mode}, ${theme}: ${part}'s tooltip did not close: ${await stateOf(tipped)}`,
+            );
+          });
+      }
+      console.log(
+        `PASS GAP-261, ${theme}, ${mode}: ${pairs.join(", ")} draw alike alone and as a tooltip's trigger, closed and open`,
+      );
+      // The ToggleButton's owned look (GAP-262).
+      const fill = await value(
+        `${id}-state-looks`,
+        "--primitives-colors-theme-500",
+      );
+      const ink = await value(
+        `${id}-state-looks`,
+        "--components-primary-buttons-themed-button-foreground-content-idle",
+      );
+      const ring = await value(
+        `${id}-state-looks`,
+        "--primitives-colors-theme-600",
+      );
+      await away();
+      await page
+        .getByTestId(`${id}-toggle-off`)
+        .evaluate((node) =>
+          Promise.all(node.getAnimations().map((a) => a.finished)),
+        );
+      const off = await measure(page.getByTestId(`${id}-toggle-off`));
+      assert.equal(
+        off.backgroundColor,
+        "rgba(0, 0, 0, 0)",
+        `${mode}, ${theme}: an unpressed ToggleButton is filled ${off.backgroundColor}, not clear`,
+      );
+      for (const testId of [
+        `${id}-toggle-on`,
+        `${id}-toggle-on-tip`,
+        `${id}-toggle-on-outline`,
+        `${id}-toggle-on-disabled`,
+      ]) {
+        const on = await page
+          .getByTestId(testId)
+          .evaluate(async (node) => {
+            await Promise.all(node.getAnimations().map((a) => a.finished));
+            const s = getComputedStyle(node);
+            return { fill: s.backgroundColor, ink: s.color, opacity: s.opacity };
+          });
+        assert.equal(
+          on.fill,
+          fill,
+          `${mode}, ${theme}: ${testId} is not the theme fill when pressed (${on.fill})`,
+        );
+        assert.equal(
+          on.ink,
+          ink,
+          `${mode}, ${theme}: ${testId} is not the theme ink when pressed (${on.ink})`,
+        );
+        assert.equal(
+          on.opacity,
+          testId.endsWith("-disabled") ? "0.5" : "1",
+          `${mode}, ${theme}: ${testId}'s opacity is ${on.opacity}`,
+        );
+      }
+      await page.getByTestId(`${id}-toggle-off`).focus();
+      await page.keyboard.press("Tab");
+      const focused = await page
+        .getByTestId(`${id}-toggle-on`)
+        .evaluate((node) => ({
+          active: node === document.activeElement,
+          visible: node.matches(":focus-visible"),
+          shadow: getComputedStyle(node).boxShadow,
+          outline: getComputedStyle(node).outlineStyle,
+        }));
+      assert.ok(
+        focused.active && focused.visible,
+        `${mode}, ${theme}: Tab did not focus the pressed ToggleButton from the keyboard`,
+      );
+      assert.ok(
+        focused.shadow.includes(`${ring} 0px 0px 0px 4px`) ||
+          focused.shadow.includes(`0px 0px 0px 4px ${ring}`),
+        `${mode}, ${theme}: the pressed ToggleButton's focus ring is not the theme 600 offset ring: ${focused.shadow}`,
+      );
+      await page.evaluate(() => document.activeElement?.blur());
+      // Backdrop: the overlay scrim over its box, with and without a target.
+      const scrim = await page
+        .getByTestId(`${id}-backdrop-box`)
+        .evaluate((node) => {
+          const probe = document.createElement("span");
+          probe.style.backgroundColor = "var(--semantics-overlay-scrim)";
+          node.parentElement.append(probe);
+          const colour = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return colour;
+        });
+      for (const [testId, boxId, layer] of [
+        [`${id}-backdrop`, `${id}-backdrop-box`, null],
+        [
+          `${id}-backdrop-targeted`,
+          `${id}-backdrop-target-box`,
+          ".kozmos-backdrop-scrim",
+        ],
+      ]) {
+        const box = await page.getByTestId(boxId).boundingBox();
+        const drawn = await page
+          .getByTestId(testId)
+          .evaluate((node, selector) => {
+            const s = getComputedStyle(node);
+            const r = node.getBoundingClientRect();
+            const dim = selector ? node.querySelector(selector) : node;
+            return {
+              position: s.position,
+              zIndex: s.zIndex,
+              width: r.width,
+              height: r.height,
+              x: r.x,
+              y: r.y,
+              scrim: dim ? getComputedStyle(dim).backgroundColor : null,
+            };
+          }, layer);
+        assert.deepEqual(
+          [drawn.position, drawn.x, drawn.y, drawn.width, drawn.height],
+          ["absolute", box.x, box.y, box.width, box.height],
+          `${mode}, ${theme}: ${testId} does not cover its box: ${JSON.stringify(drawn)}`,
+        );
+        assert.equal(
+          drawn.zIndex,
+          "50",
+          `${mode}, ${theme}: ${testId} is not on layer 50`,
+        );
+        assert.equal(
+          drawn.scrim,
+          scrim,
+          `${mode}, ${theme}: ${testId} draws ${drawn.scrim}, not the overlay scrim ${scrim}`,
+        );
+      }
+      console.log(
+        `PASS GAP-262, ${theme}, ${mode}: a pressed ToggleButton is ${fill} under ${ink} (outline too; disabled at 0.5), clear unpressed, with the theme 600 ring from the keyboard; a Backdrop with and without a target covers its box in ${scrim}`,
+      );
+    }
     // Rotate/reflow a narrow host and switch direction without remounting. This
     // checks composition geometry, not certification of physical foldable devices.
     const outer = page.getByTestId("outer");
@@ -3170,6 +3396,284 @@ try {
     `PASS the AI search ring's band: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)} of 2.5, a spread of ${spread.toFixed(2)} on 36 rays`,
   );
   await sharp.close();
+
+  // GAP-262's family: a modal surface's overlay and its panel draw without
+  // @scope. Each was drawn with scoped utilities alone, so in a host where no
+  // @scope rule applies a Dialog's, a Drawer's and a BottomSheet's overlay
+  // had no place, no layer and no scrim, and covered nothing; the panel lost
+  // its place, its centre and its surface. Each part is opened on its own,
+  // in both themes, with and without @scope, under the host's hostile rules:
+  // the overlay covers the window (inline, its box) on layer 50 in the
+  // theme's scrim and takes what is behind it, and the panel sits above it
+  // where it is drawn, on the page's surface with its edge.
+  {
+    const { code: overlayCode } = await buildReactFixture(
+      "owned-css-overlays.tsx",
+    );
+    const [width, height] = [1000, 800];
+    const parts = [
+      "dialog",
+      "drawer-right",
+      "drawer-left",
+      "drawer-top",
+      "drawer-bottom",
+      "bottom-sheet",
+      "drawer-inline",
+    ];
+    for (const [mode, stylesheet] of [
+      ["full", css],
+      ["without-scope", root.toString()],
+    ]) {
+      const drawn = [];
+      for (const theme of ["light", "dark"]) {
+        for (const part of parts) {
+          const page = await browser.newPage({ viewport: { width, height } });
+          const errors = [];
+          page.on("pageerror", (error) => errors.push(error.message));
+          await page.setContent(`<!doctype html><html><head><style>
+            html {font-size:16px} body {margin:13px}
+            button {background:orange;border:3px solid purple;border-radius:3px}
+            p {margin:20px} .flex {display:block}
+          </style><script>
+            window.kozmosOverlay = ${JSON.stringify(part)};
+            window.kozmosOverlayTheme = ${JSON.stringify(theme)};
+          </script></head><body><button id="host">Host</button><div id="fixture"></div></body></html>`);
+          await page.addStyleTag({ content: stylesheet });
+          await page.addScriptTag({ content: overlayCode });
+          await page.getByTestId("panel").waitFor();
+          await settleLayout(page);
+          const got = await page.evaluate(async () => {
+            await Promise.all(
+              document.getAnimations().map((a) => a.finished.catch(() => {})),
+            );
+            const panel = document.querySelector('[data-testid="panel"]');
+            const overlay = panel.previousElementSibling;
+            const region = document.querySelector('[data-testid="region"]');
+            // The tokens the parts promise, as this root resolves them.
+            const token = (property, value) => {
+              const probe = document.createElement("div");
+              probe.style.setProperty(property, value);
+              panel.parentElement.append(probe);
+              const read = getComputedStyle(probe).getPropertyValue(property);
+              probe.remove();
+              return read;
+            };
+            const box = (node) => {
+              const r = node.getBoundingClientRect();
+              return {
+                x: Math.round(r.x * 100) / 100,
+                y: Math.round(r.y * 100) / 100,
+                width: Math.round(r.width * 100) / 100,
+                height: Math.round(r.height * 100) / 100,
+              };
+            };
+            const look = (node) => {
+              const s = getComputedStyle(node);
+              return {
+                position: s.position,
+                zIndex: s.zIndex,
+                background: s.backgroundColor,
+                ...box(node),
+              };
+            };
+            const host = document
+              .getElementById("host")
+              .getBoundingClientRect();
+            const p = panel.getBoundingClientRect();
+            const s = getComputedStyle(panel);
+            const edge = ["Top", "Right", "Bottom", "Left"].find(
+              (side) => s[`border${side}Width`] === "1px",
+            );
+            return {
+              overlayIsScrim:
+                overlay !== null &&
+                overlay.getAttribute("role") !== "dialog" &&
+                overlay.getAttribute("data-state") === "open",
+              overlay: overlay ? look(overlay) : null,
+              panel: look(panel),
+              region: region ? box(region) : null,
+              scrim: token(
+                "background-color",
+                "var(--semantics-overlay-scrim)",
+              ),
+              surface: token(
+                "background-color",
+                "var(--primitives-colors-background-0)",
+              ),
+              edgeColour: token(
+                "border-top-color",
+                "var(--semantics-border-subtle)",
+              ),
+              edge: edge
+                ? {
+                    side: edge,
+                    style: s[`border${edge}Style`],
+                    colour: s[`border${edge}Color`],
+                  }
+                : null,
+              // What a press lands on: the host's own button, at the page's
+              // start, is under the overlay or a panel drawn at that edge;
+              // the panel is above its overlay.
+              hostCovered: (() => {
+                const hit = document.elementFromPoint(
+                  host.x + host.width / 2,
+                  host.y + host.height / 2,
+                );
+                return hit === overlay || panel.contains(hit);
+              })(),
+              panelOnTop: panel.contains(
+                document.elementFromPoint(
+                  p.x + p.width / 2,
+                  p.y + Math.min(p.height / 2, 12),
+                ),
+              ),
+              // Its close, against the panel's padding box, and its name.
+              close: (() => {
+                const close = panel.querySelector("button");
+                const c = close.getBoundingClientRect();
+                const name = close.querySelector("span");
+                return {
+                  position: getComputedStyle(close).position,
+                  end:
+                    Math.round(
+                      (p.right - parseFloat(s.borderRightWidth) - c.right) *
+                        100,
+                    ) / 100,
+                  top:
+                    Math.round(
+                      (c.top - p.top - parseFloat(s.borderTopWidth)) * 100,
+                    ) / 100,
+                  width: c.width,
+                  height: c.height,
+                  nameDrawn: name
+                    ? name.getBoundingClientRect().width > 1
+                    : false,
+                };
+              })(),
+            };
+          });
+          const where = `${mode}, ${theme}, ${part}`;
+          assert.ok(
+            got.overlayIsScrim,
+            `${where}: no overlay before the panel`,
+          );
+          const inline = part === "drawer-inline";
+          const cover = inline ? got.region : { x: 0, y: 0, width, height };
+          assert.deepEqual(
+            got.overlay,
+            {
+              position: inline ? "absolute" : "fixed",
+              zIndex: "50",
+              background: got.scrim,
+              ...cover,
+            },
+            `${where}: the overlay does not cover ${inline ? "its box" : "the window"} on layer 50 in the scrim ${got.scrim}`,
+          );
+          if (!inline)
+            assert.ok(
+              got.hostCovered,
+              `${where}: the page behind the overlay is not covered`,
+            );
+          assert.ok(
+            got.panelOnTop,
+            `${where}: the panel is not above its overlay`,
+          );
+          assert.equal(
+            got.panel.position,
+            inline ? "absolute" : "fixed",
+            `${where}: the panel is ${got.panel.position}`,
+          );
+          assert.equal(
+            got.panel.zIndex,
+            "50",
+            `${where}: the panel is not on layer 50`,
+          );
+          assert.equal(
+            got.panel.background,
+            got.surface,
+            `${where}: the panel is not the page's surface ${got.surface}: ${got.panel.background}`,
+          );
+          // Where the panel is drawn, as its utilities place it.
+          const { x, y, width: w, height: h } = got.panel;
+          const expected = {
+            dialog: {
+              x: (width - Math.min(width - 32, 512)) / 2,
+              width: Math.min(width - 32, 512),
+              centreY: height / 2,
+              edge: "Top",
+            },
+            "drawer-right": {
+              x: width - 384,
+              y: 0,
+              width: 384,
+              height,
+              edge: "Left",
+            },
+            "drawer-left": { x: 0, y: 0, width: 384, height, edge: "Right" },
+            "drawer-top": { x: 0, y: 0, width, edge: "Bottom" },
+            "drawer-bottom": { x: 0, bottom: height, width, edge: "Top" },
+            "bottom-sheet": { x: 0, bottom: height, width, edge: "Top" },
+            "drawer-inline": got.region && {
+              x: got.region.x + got.region.width - 16 - 420,
+              y: got.region.y + 16,
+              width: 420,
+              edge: "Top",
+            },
+          }[part];
+          const placed = {
+            x,
+            width: w,
+            ...("y" in expected && { y }),
+            ...("height" in expected && { height: h }),
+            ...("bottom" in expected && {
+              bottom: Math.round((y + h) * 100) / 100,
+            }),
+            ...("centreY" in expected && {
+              centreY: Math.round((y + h / 2) * 2) / 2,
+            }),
+            edge: got.edge?.side,
+          };
+          assert.deepEqual(
+            placed,
+            expected,
+            `${where}: the panel is not where it is drawn: ${JSON.stringify(got.panel)}`,
+          );
+          assert.deepEqual(
+            [got.edge.style, got.edge.colour],
+            ["solid", got.edgeColour],
+            `${where}: the panel's edge is not the subtle border: ${JSON.stringify(got.edge)}`,
+          );
+          // The close, in the panel's top end corner (decision 82): 24 in
+          // on a Dialog, 16 on a Drawer, and on a BottomSheet at its end, 8
+          // down; the icon button's 44, its name never drawn.
+          const [end, top] =
+            part === "dialog"
+              ? [24, 24]
+              : part === "bottom-sheet"
+                ? [0, 8]
+                : [16, 16];
+          assert.deepEqual(
+            got.close,
+            {
+              position: "absolute",
+              end,
+              top,
+              width: 44,
+              height: 44,
+              nameDrawn: false,
+            },
+            `${where}: the close is not in the panel's top end corner`,
+          );
+          assert.deepEqual(errors, [], `${where}: page errors`);
+          drawn.push(`${theme} ${part}`);
+          await page.close();
+        }
+      }
+      console.log(
+        `PASS GAP-262 overlays, ${mode}: ${drawn.join(", ")} cover what is behind them on layer 50 in the theme's scrim, the panel above on the page's surface, where it is drawn, its close in its top end corner`,
+      );
+    }
+  }
 } finally {
   await browser.close();
 }

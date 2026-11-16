@@ -1,0 +1,104 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../../components/DocumentationControls";
+import * as MapEditToolbarStories from "./MapEditToolbar.stories";
+import { PlatformSnippets } from "../../components/PlatformSnippets";
+
+<Meta of={MapEditToolbarStories} />
+
+# MapEditToolbar
+
+Pointr Cloud's map edit toolbar (CLOUD-UI-005): one part for its seven geometry toolbars, a card on the map of tools, actions and dividers, with one tool chosen at a time. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
+
+The card is 60 tall, with padding 6 and 8, a corner of 16 and the map controls' lift (decisions 139 and 151). Each item is 56 wide and 48 tall, a 24 icon over an 11/14 label. A tool is a ToggleButton, drawn pressed while it is chosen; an action is a ghost Button. The product decides which items each mode shows, and passes them as data: the toolbar draws them and reports what is pressed.
+
+<Canvas>
+  <Story of={MapEditToolbarStories.Create} />
+</Canvas>
+
+<Controls />
+
+## Cloud's toolbars
+
+Each is the same part with the product's items. Drawing a polygon or a circle, Draw is the tool, and Split and Straighten wait for a shape:
+
+<Canvas>
+  <Story of={MapEditToolbarStories.DrawPolygon} />
+</Canvas>
+
+<Canvas>
+  <Story of={MapEditToolbarStories.DrawCircle} />
+</Canvas>
+
+Placing a point, Draw alone:
+
+<Canvas>
+  <Story of={MapEditToolbarStories.DrawPoint} />
+</Canvas>
+
+With a geometry set, Adjust is the tool; Cut-out and Split are tools too, and Straighten an action, done once:
+
+<Canvas>
+  <Story of={MapEditToolbarStories.GeometrySet} />
+</Canvas>
+
+In JSON mode, a labelled GeoJSON field, passed as `field`, takes the tools' place:
+
+<Canvas>
+  <Story of={MapEditToolbarStories.Json} />
+</Canvas>
+
+Editing a saved geometry adds Reset:
+
+<Canvas>
+  <Story of={MapEditToolbarStories.EditExisting} />
+</Canvas>
+
+MAP-619's Merge, after Split, waits for its glyph (GAP-223).
+
+## One tab stop
+
+The toolbar is one tab stop (`role="toolbar"`, named by `label`): Tab reaches the chosen tool, or the first item, and leaves. The arrow keys move between the items in the writing direction, wrapping at the ends, and Home and End go to the first and the last. A disabled item is skipped, as every disabled Kozmos button is. Every item is named by its label; a tool says whether it is pressed (`aria-pressed`). A `tooltip` describes an item where it adds to the label, on hover and on keyboard focus.
+
+<Canvas>
+  <Story of={MapEditToolbarStories.RightToLeft} />
+</Canvas>
+
+## On a narrow map
+
+The toolbar spans the space it is given and centres its card in it. When the items do not fit, those that do not go, from the end, into a More menu: a tool there is a checkbox item, checked while chosen, and an action a menu item. Nothing runs off the screen.
+
+<Canvas>
+  <Story of={MapEditToolbarStories.NarrowMap} />
+</Canvas>
+
+Leave room above the card for the guidance strip (CLOUD-UI-006), which the toolbar does not draw.
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { FlipBackward, Transform, XSquare } from "@kozmos-ds/icons";
+import { MapEditToolbar } from "@kozmos-ds/react/dashboard";
+
+export function Example() {
+  const [tool, setTool] = useState<string | null>("adjust");
+  return (
+    <MapEditToolbar
+      label="Geometry tools"
+      items={[
+        { type: "tool", id: "adjust", label: "Adjust", icon: Transform },
+        { type: "divider" },
+        { type: "action", id: "undo", label: "Undo", icon: FlipBackward },
+        { type: "action", id: "clear", label: "Clear", icon: XSquare },
+      ]}
+      value={tool}
+      onValueChange={setTool}
+      onAction={(id) => console.log(id)}
+    />
+  );
+}
+    `}
+/>
