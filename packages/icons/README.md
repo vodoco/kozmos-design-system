@@ -55,12 +55,12 @@ the set the Figma icons page pairs with the Pointr icon library, so
 
 A named export brings in that icon alone: 0.4 to 1.9 KB gzip with the code
 that draws it. A lookup by name brings in every icon a name can reach, the
-registry's 72 and the 29, about 23.4 KB gzip today, because any of them could
+registry's 73 and the 29, about 23.5 KB gzip today, because any of them could
 be asked for. That covers `getIconComponent`, `isKozmosIconKey` and
 `@kozmos-ds/react`'s `Icon`, which takes a `name`, so importing `Icon` pays it
-even where every use passes `icon`. The registry alone is 14.9 KB, and
+even where every use passes `icon`. The registry alone is 15.0 KB, and
 `getIconDefinition` and the definitions, which carry each icon's Figma node,
-category and description, 16.9 to 17.4 KB.
+category and description, about 17.5 KB.
 Import the icon when you know which one you need, and look it up when the name
 comes from data.
 

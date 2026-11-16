@@ -109,7 +109,11 @@ if (!TOKEN_MEMBERS.swift.size || !TOKEN_MEMBERS.kotlin.size) {
 }
 
 const problems = [];
-const mdxFiles = walk(COMPONENTS_DIR, [".mdx"]);
+const mdxFiles = [
+  ...walk(COMPONENTS_DIR, [".mdx"]),
+  // The Dashboard modules' pages (decision 183).
+  ...walk(path.join(ROOT, "packages/react/src/dashboard"), [".mdx"]),
+];
 let snippetCount = 0;
 let identifierCount = 0;
 let unknownIdentifiers = 0;

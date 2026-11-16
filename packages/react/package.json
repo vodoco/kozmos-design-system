@@ -41,13 +41,25 @@
         "default": "./dist/kozmos-react.umd.cjs"
       }
     },
+    "./dashboard": {
+      "import": {
+        "types": "./dist/dashboard/index.d.mts",
+        "default": "./dist/kozmos-react-dashboard.mjs"
+      },
+      "require": {
+        "types": "./dist/dashboard/index.d.cts",
+        "default": "./dist/kozmos-react-dashboard.cjs"
+      }
+    },
     "./style.css": "./dist/style.css",
+    "./dashboard.css": "./dist/dashboard.css",
     "./reset.css": "./dist/reset.css",
     "./dist/style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "dashboard/package.json",
     "THIRD-PARTY-NOTICES"
   ],
   "//browserslist": "Declared browser minimums, not whole-library or embedded-WebView certification. Remaining utility styles require native CSS @scope. Firefox enabled it by default in 146 (https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146); the earlier 128 declaration was incorrect. Supporting older Firefox requires the owned-CSS migration. See README migration guidance and the scoped-utility regression checks.",
@@ -60,7 +72,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "rm -rf dist && tsc && vite build && node ../../scripts/emit-format-declarations.mjs",
+    "build": "rm -rf dist && tsc && vite build && vite build --config vite.dashboard.config.mts && node ../../scripts/emit-format-declarations.mjs && node ../../scripts/emit-format-declarations.mjs dist/dashboard",
     "lint": "eslint src",
     "preview": "vite preview",
     "test": "vitest run",

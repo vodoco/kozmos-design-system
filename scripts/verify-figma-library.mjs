@@ -125,15 +125,12 @@ export function expectations(source = fs.readFileSync(PLUGIN, "utf8")) {
   const sectionsBlock = source.match(
     /const COMPONENT_PAGE_LAYOUT_SECTIONS = \[([\s\S]*?)\n\];/,
   )[1];
-  const names = [...sectionsBlock.matchAll(/"([A-Za-z][A-Za-z0-9 /]*)"/g)]
-    .map((m) => m[1])
-    .filter(
-      (n) =>
-        !n.includes("/") &&
-        !/^(Typography|Actions|Status|Selection|Layout|Data display|Navigation|Disclosure|Overlay|Controls|Inputs|Feedback|Media)$/.test(
-          n,
-        ),
-    );
+  // Only a section's components are sets: its title never is. A list of the
+  // titles to skip let a new section's ("Dashboard", 15 Nov) through as a
+  // set the page was missing.
+  const names = [...sectionsBlock.matchAll(/components:\s*\[([^\]]*)\]/g)]
+    .flatMap((m) => [...m[1].matchAll(/"([^"]+)"/g)])
+    .map((m) => m[1]);
 
   const start = source.indexOf(
     "function expectedVariantAxesForComponentSetName(",

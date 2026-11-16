@@ -1,0 +1,16 @@
+/* RatingEditor (CLOUD-UI-004, decisions 180 and 181): the rating, its max
+   and the number of ratings, one field a line, then the preview, the stars
+   and the numbers in words on one line that wraps. */
+@kozmos-owned {
+  .kozmos-rating-editor {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+  .kozmos-rating-editor-preview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+}

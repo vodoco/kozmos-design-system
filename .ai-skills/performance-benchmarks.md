@@ -226,7 +226,9 @@ Radix, which unmounts their content when they close; none sets `forceMount`.
 ### Code Splitting Strategy
 
 `@kozmos-ds/react` has no per-component entry points: its exports are `.`, `./style.css` and
-`./reset.css`, and the per-module build already keeps only what an app imports. Split your own
+`./reset.css`, and `./dashboard` with `./dashboard.css` for Pointr Cloud's Dashboard modules
+(decision 183), which the main entry and `style.css` never include. The per-module build already
+keeps only what an app imports. Split your own
 screens, and make each `lazy` once, at module scope: one made during a render is remade on every
 retry and never settles.
 
