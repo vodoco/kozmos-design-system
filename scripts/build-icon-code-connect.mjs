@@ -183,24 +183,7 @@ if (unknown.length) {
 // them they have none, and Dev Mode has no node to show one on. List only what
 // such an Update is still to draw, and empty this when its baseline lands: a
 // name here that the page draws is an error, so the list cannot go stale.
-const AWAITING_THE_ICONS_PAGE = new Set([
-  "accessibility",
-  "battery-charging-01",
-  "beaker-01",
-  "clapperboard",
-  "credit-card-01",
-  "crop-01",
-  "droplets-01",
-  "graduation-hat-01",
-  "luggage-01",
-  "medical-cross",
-  "package",
-  "passport",
-  "plane",
-  "scissors-01",
-  "ticket-01",
-  "utensils",
-]);
+const AWAITING_THE_ICONS_PAGE = new Set([]);
 const drawnAlready = [...AWAITING_THE_ICONS_PAGE].filter((n) =>
   icons.some((i) => i.name === n),
 );
@@ -321,9 +304,11 @@ const nativeNote = `KozmosIcon takes every one of them by its
 const swiftBody = (icon) => {
   if (!uiGlyphs.has(icon.name)) return `KozmosIcon("${icon.name}")`;
   const entry = uiNative(icon.name);
+  // SwiftUI's Code Connect parser drops comments, so the note is the
+  // snippet's own words: help text on a view that draws nothing.
   return entry.swift
     ? entry.swift
-    : `// ${icon.name}: ${entry.none}\n        EmptyView()`;
+    : `EmptyView().help(${JSON.stringify(`${icon.name}: ${entry.none}`)})`;
 };
 const kotlinBody = (icon) => {
   if (!uiGlyphs.has(icon.name)) return `KozmosIcon(name = "${icon.name}")`;
