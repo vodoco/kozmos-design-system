@@ -14,6 +14,18 @@ import path from "node:path";
 import { compilerOptions, hostWith, ts } from "./claude-design-typescript.mjs";
 
 export const DECLARATIONS = "packages/react/dist/index.d.ts";
+/**
+ * @kozmos-ds/react/dashboard's (decision 183): Pointr Cloud's Dashboard
+ * modules, published from an entry of their own and read beside the main
+ * entry's. Each export says which entry it is imported from (`module`).
+ */
+export const DASHBOARD_DECLARATIONS =
+  "packages/react/dist/dashboard/index.d.ts";
+/** The entry each built declarations file is imported from. */
+export const ENTRY_MODULES = {
+  [DECLARATIONS]: "@kozmos-ds/react",
+  [DASHBOARD_DECLARATIONS]: "@kozmos-ds/react/dashboard",
+};
 
 /** A code span that holds any text, backticks included. */
 export function code(text) {
@@ -41,10 +53,10 @@ export function originOf(file) {
  * says `React.ReactNode`, `JSX.Element` and `Text`. The names are read from
  * the bundle's own imports and exports, not assumed.
  */
-function renamer(dts) {
+function renamer(bundles) {
   const namespaces = new Map(); // a local name → what a reader calls it
   const renames = new Map();
-  for (const statement of dts.statements) {
+  for (const statement of bundles.flatMap((dts) => [...dts.statements])) {
     if (
       ts.isImportDeclaration(statement) &&
       ts.isStringLiteral(statement.moduleSpecifier) &&
@@ -142,27 +154,46 @@ export function readPublishedApi(
   { declarations = path.join(root, DECLARATIONS), virtual = new Map() } = {},
 ) {
   const file = declarations;
-  if (!virtual.has(file) && !fs.existsSync(file))
-    throw new Error(
-      `${DECLARATIONS} is missing. The Claude Design cards are read from the built types: run \`pnpm --filter "@kozmos-ds/react..." build\` first.`,
-    );
+  // The built package's entries: the main one and ./dashboard. Declarations
+  // a test hands in from memory are one entry, the main one.
+  const files = virtual.has(file)
+    ? [[file, ENTRY_MODULES[DECLARATIONS]]]
+    : [DECLARATIONS, DASHBOARD_DECLARATIONS].map((relative) => [
+        relative === DECLARATIONS ? file : path.join(root, relative),
+        ENTRY_MODULES[relative],
+      ]);
+  for (const [name] of files)
+    if (!virtual.has(name) && !fs.existsSync(name))
+      throw new Error(
+        `${path.relative(root, name)} is missing. The Claude Design cards are read from the built types: run \`pnpm --filter "@kozmos-ds/react..." build\` first.`,
+      );
   const program = ts.createProgram({
-    rootNames: [file],
+    rootNames: files.map(([name]) => name),
     options: compilerOptions,
     host: hostWith(virtual),
   });
   const checker = program.getTypeChecker();
-  const dts = program.getSourceFile(file);
-  const rename = renamer(dts);
-  const moduleSymbol = checker.getSymbolAtLocation(dts);
+  const bundles = files.map(([name]) => program.getSourceFile(name));
+  const dts = bundles[0];
+  const rename = renamer(bundles);
   const entries = new Map();
-  for (const exported of checker.getExportsOfModule(moduleSymbol)) {
-    const target =
-      exported.flags & ts.SymbolFlags.Alias
-        ? checker.getAliasedSymbol(exported)
-        : exported;
-    entries.set(exported.name, classify(exported.name, target));
-  }
+  files.forEach(([, module], index) => {
+    const moduleSymbol = checker.getSymbolAtLocation(bundles[index]);
+    for (const exported of checker.getExportsOfModule(moduleSymbol)) {
+      if (entries.has(exported.name))
+        throw new Error(
+          `${exported.name} is exported by both ${entries.get(exported.name).module} and ${module}: a Dashboard module's names must be its own`,
+        );
+      const target =
+        exported.flags & ts.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(exported)
+          : exported;
+      entries.set(exported.name, {
+        ...classify(exported.name, target),
+        module,
+      });
+    }
+  });
 
   function classify(name, symbol) {
     const declarations = symbol.declarations ?? [];
@@ -206,6 +237,8 @@ export function readPublishedApi(
   function packageOf(fileName) {
     // A file served from memory has no real path of its own.
     const real = fs.existsSync(fileName) ? fs.realpathSync(fileName) : fileName;
+    if (/\/packages\/react\/dist\/dashboard\//.test(real))
+      return ENTRY_MODULES[DASHBOARD_DECLARATIONS];
     const match = real.match(/\/packages\/([^/]+)\/dist\//);
     if (match) return `@kozmos-ds/${match[1]}`;
     const npm = real.match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)\//g);
@@ -217,6 +250,7 @@ export function readPublishedApi(
     program,
     checker,
     dts,
+    bundles,
     rename,
     entries,
     packageOf,
@@ -289,7 +323,7 @@ function propsDeclaration(api, entry) {
 
 /** A declaration in the bundle that is not exported under its own name. */
 function findLocal(api, name) {
-  for (const statement of api.dts.statements)
+  for (const statement of api.bundles.flatMap((dts) => [...dts.statements]))
     if (
       (ts.isInterfaceDeclaration(statement) ||
         ts.isTypeAliasDeclaration(statement)) &&

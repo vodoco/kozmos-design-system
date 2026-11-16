@@ -30,6 +30,7 @@ import {
 } from "./claude-design-api.mjs";
 import {
   COMPONENTS,
+  DASHBOARD,
   exportOwners,
   readModules,
 } from "./claude-design-source.mjs";
@@ -409,10 +410,15 @@ export function describeAccepted(accepted) {
  * says rather than hide.
  */
 export function componentDirectories(root, facts) {
-  const base = path.join(root, COMPONENTS);
-  const names = fs
-    .readdirSync(base)
-    .filter((c) => fs.existsSync(path.join(base, c, `${c}.tsx`)))
+  // Core's directories and the Dashboard modules' (decision 183).
+  const names = [COMPONENTS, DASHBOARD]
+    .map((dir) => path.join(root, dir))
+    .filter((base) => fs.existsSync(base))
+    .flatMap((base) =>
+      fs
+        .readdirSync(base)
+        .filter((c) => fs.existsSync(path.join(base, c, `${c}.tsx`))),
+    )
     .sort();
   const modules = readModules(root, names).filter(
     (m) => m.kind === "component",

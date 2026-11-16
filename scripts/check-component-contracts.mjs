@@ -1950,8 +1950,19 @@ assertContains(
     }
     return nodes;
   };
+  // Pointr Cloud's Dashboard modules are web only (decision 88: React, Vue
+  // and Figma; decision 183: @kozmos-ds/react/dashboard), so their sets have
+  // no SwiftUI or Compose snippet to map. Dev Mode shows a native label
+  // React's snippet for them, whose import names the dashboard entry.
+  const webOnly = (filePath) =>
+    filePath.split(path.sep).join("/").includes("src/dashboard/");
+  const reactNodes = new Map(
+    [...nodesOf(files.figmaLinked, "packages/react", ".figma.tsx")].filter(
+      ([, filePath]) => !webOnly(filePath),
+    ),
+  );
   const platforms = [
-    ["React", nodesOf(files.figmaLinked, "packages/react", ".figma.tsx")],
+    ["React", reactNodes],
     ["SwiftUI", nodesOf(files.iosFigmaLinked, "packages/ios", ".figma.swift")],
     [
       "Compose",
@@ -8541,8 +8552,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const FILE_UPLOAD_CONTENT = ["Dropzone", "Files"]',
-  "Figma FileUpload content axis includes DropZone alias",
+  'const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"]',
+  "Figma FileUpload content axis includes DropZone alias and the image preview (GAP-270)",
 );
 assertContains(
   files.figma,
@@ -9194,7 +9205,8 @@ assertOccurrenceCount(
   files.figma,
   source.figma,
   /normalizeInputFamilyChildSizing\(component\);/g,
-  17,
+  // FileUpload's Content=Preview draws its own children (GAP-270).
+  18,
   "input-family fill sizing normalization calls",
 );
 assertContains(

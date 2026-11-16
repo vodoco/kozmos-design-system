@@ -1,0 +1,48 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../../components/DocumentationControls";
+import * as BrandLoaderStories from "./BrandLoader.stories";
+import { PlatformSnippets } from "../../components/PlatformSnippets";
+
+<Meta of={BrandLoaderStories} />
+
+# BrandLoader
+
+Pointr Cloud's brand loader (CLOUD-UI-008): the pin, with two rings rippling out from it, while the product loads. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
+
+The rings are the theme's prominent colour, theme 500, as every prominent fill is (decisions 59 and 176), in both themes. The loop is Cloud's: 3 seconds, the second ring half a second ahead, the pin wobbling for the first third of each cycle.
+
+<Canvas>
+  <Story of={BrandLoaderStories.Default} />
+</Canvas>
+
+<Controls />
+
+## Said once, still when asked
+
+It is a status region, mounted empty, whose words, `label`, arrive after it: a screen reader announces them once, and nothing that moves is inside it, so the loop says nothing more. Under reduced motion, the reader's or `DesignConfigProvider`'s, the rings and the pin stand still: one ring at rest round the pin.
+
+<Canvas>
+  <Story of={BrandLoaderStories.Still} />
+</Canvas>
+
+## Over the page
+
+With `overlay`, it covers the window with the theme's scrim (Backdrop's), the loader in the middle, as Cloud shows it until the app is ready. The scrim takes every pointer event, and the rest of the page is inert and marked busy until the loader goes. Focus is not moved to the loader; when it goes, focus is back where it was.
+
+<Canvas>
+  <Story of={BrandLoaderStories.Overlay} />
+</Canvas>
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { BrandLoader } from "@kozmos-ds/react/dashboard";
+
+export function Example({ loading }: { loading: boolean }) {
+  return loading ? <BrandLoader label="Loading Pointr Cloud" overlay /> : null;
+}
+    `}
+/>

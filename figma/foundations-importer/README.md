@@ -37,6 +37,7 @@ Select **SettingsRow** and click **Build** after ListItem. It creates `SettingsR
 
 Select **PageHeader** and click **Build** after Breadcrumb, Button, IconButton and Curated Icons. It creates `PageHeader` (GAP-036, decision 135), the top of a page as React's `PageHeader` draws it: 960 wide (`PageHeader/width/default`), padded as its Container is, 24 a side (`Container/padding/x/window`), 32 above (`Container/padding/y/large`) and 24 below (`Container/padding/y/medium`, GAP-116). Its `Tone` axis is `Subtle`, the band in `Colors/theme/0`, or `Default`, none; its `Size` axis is `Medium`, the title in Heading / H3 (24/32), or `Large`, Heading / H2 (30/36). A live `Breadcrumb` sits 8 above the title (`PageHeader/breadcrumb/gap`); the title's line holds `Title Text` and, 8 after it (`PageHeader/title/gap`), the Info button, IconButton's Ghost at Small with info-circle; `Description Text` is 4 under it (`PageHeader/text/gap`), 14/20 in `Colors/foreground/400`; and a live `Button` sits 16 after the text (`PageHeader/gap`), centred on the title's line. The `Breadcrumb`, `Info` (off), `Description` and `Actions` booleans show each. Update it after IconButton, which it tints inside.
 
+Select **ImageCropper** and click **Build** after Curated Icons. It creates `ImageCropper` (GAP-273), an image framed to a ratio as React's `ImageCropper` draws it: a column 320 wide (`ImageCropper/width/default`), the frame and the zoom row 12 apart (`ImageCropper/gap`). Its `Ratio` axis is `Square` (320 by 320, React's default `aspectRatio` of 1, MAP-32's logo) or `Landscape` (320 by 180, 16:9). The frame is on the control radius (`ImageCropper/radius`) in `Colors/background/100` with a 1 inner edge in `Border/Input`, clipping an `Image Slot` for the product's image. The `Zoom Row` is Zoom out, a `Zoom Slider Slot` (Core's Slider) and Zoom in, 8 apart (`ImageCropper/zoom/gap`), two 44 outline icon buttons with the curated minus and plus (React draws its zoom-out and zoom-in magnifiers, not curated yet); the `Zoom Controls` boolean shows it.
 Select **PersonaMark** and click **Build**. It creates `PersonaMark` (GAP-106), a persona's colour as React's `PersonaMark` draws it: a diamond 12 by 12 (`PersonaMark/size`), a square turned an eighth with its points on the box's edges, drawn as a path. Its `Form` axis is `Single`, one mark, or `Group`, three marks 2 apart (`PersonaMark/gap`), as `PersonaMarkGroup` draws the personas a row is visible to. The fill is the persona's colour, product data that no variable holds: the set carries example personas' colours, and a designer overrides the fill. It has no text and no component property: the persona's name is never drawn.
 
 Select **Skeleton** and click **Build** for loading placeholders. It creates Line, Block, and Circle shapes with variable-bound dimensions; runtime animation stays in React and product code.
@@ -81,7 +82,7 @@ Select **Badge** and click **Build** after Counter and the Button/IconButton ico
 
 Select **Card** and click **Build** after the core content/status primitives are stable. It creates `Card` with `Content` variants for Basic, Header, and Full card anatomy plus editable title, description, and body text. Full cards compose live `Button` instances for footer actions instead of hand-drawn button frames. Use **Update** after token or documentation changes to preserve the Code Connect node ID.
 
-Select **TreeSection** and click **Update** (or **Build**) for a tree's section headings (GAP-151). Update builds the set when the file has none, so the owner's Update, or Update All Core, puts it in the file; once it exists, Update keeps its node id. It draws React's `TreeSectionRow`: the section's name in Tree / Section (11/14 medium) in `Colors/theme/600`, the rows' count pill after it, 6 apart (`Tree/section/gap`), at least 32 tall, 24 compact (`Tree/section/height/*`), indented by depth as a row is (depth × 20 + 8), with no surface and no divider. Its axes are `Density` (Default, Compact) and `Depth` (0, 1, 2); `Label Text`, `Count Text` and `Show Count` (on) are its properties. TreeParentItem, TreeChildItem and TreeItem take `Meta Below` (off) and `Meta Text` (GAP-107): a `Meta` line under the label in Text / XS (12/16) and `Colors/foreground/400`, `metaPlacement="below"` in code. The label and its meta share a column padded 6 (4 compact, `Tree/item/padding/y/*`) and the row hugs it above a floor of its height (`Tree/item/height/*` on Min H), so it is 48 (44 compact) with its meta and as it was without.
+Select **TreeSection** and click **Update** (or **Build**) for a tree's section headings (GAP-151). Update builds the set when the file has none, so the owner's Update, or Update All Core, puts it in the file; once it exists, Update keeps its node id. It draws React's `TreeSectionRow`: the section's name in Tree / Section (11/14 medium) in `Colors/theme/600`, the rows' count pill after it, 6 apart (`Tree/section/gap`), at least 32 tall, 24 compact (`Tree/section/height/*`), indented by depth as a row is (depth × 20 + 8), with no surface and no divider. Its axes are `Density` (Default, Compact) and `Depth` (0, 1, 2); `Label Text`, `Count Text` and `Show Count` (on) are its properties. TreeParentItem, TreeChildItem and TreeItem take `Meta Below` (off) and `Meta Text` (GAP-107): a `Meta` line under the label in Text / XS (12/16) and `Colors/foreground/400`, `metaPlacement="below"` in code. The label and its meta share a column padded 6 (4 compact, `Tree/item/padding/y/*`) and the row hugs it above a floor of its height (`Tree/item/height/*` on Min H), so it is 48 (44 compact) with its meta and as it was without. The three row sets also take `Checkable` (off), `Checked` (off), `Disclosure Start` (on) and `Disclosure End` (off) (GAP-277): a `Checkbox` box before the leading icon, 20 square with a 1px `Border/Input` edge and radius 4, and inside it `Checkbox Checked`, the theme fill with the check mark, `checkable` and a row's `checked` in code; and a `Disclosure End` chevron (a 16 spacer on a row with no children) after the row's actions, `disclosurePosition="end"` in code. A boolean shows a layer but cannot hide another, so a designer turns Disclosure Start off and Disclosure End on. At their defaults a row is as it was.
 
 Select **Tabs** and click **Build** after Card is stable. It creates `Tabs` with `Count`, `Active`, `State` and `Content` axes plus editable trigger labels. `Content` is `Label`, the words alone, or `Icon Over Label` (GAP-152): each trigger stacks a 20 icon 4 above its words, centred, 6 above and below, so a trigger is 56 and the list 64 (`Tabs/trigger/height/stacked`, `Tabs/list/height/stacked`, `Tabs/trigger/icon/size`, `Tabs/trigger/icon/gap`, `Tabs/trigger/padding/y`), the icon in its words' colour; `Tab 1 Icon` to `Tab 4 Icon` swap them. Use **Update** after token, copy, or focus-state changes to preserve the Code Connect node ID; on a set drawn before `Content`, Update renames today's variants `Content=Label` in place and creates the `Icon Over Label` ones. Run Curated Icons first.
 
@@ -168,6 +169,66 @@ convention that avoids variant explosion:
 
 Use **Update** rather than **Build** after the first pass so the Code Connect node
 IDs stay stable, exactly as with Core sets.
+
+## Dashboard Lane
+
+The **Dashboard** group builds Pointr Cloud's web modules, which ship from
+`@kozmos-ds/react/dashboard` and exist in React only (decision 183). They live
+in their own `Dashboard` section on the `Components` page, after Platform /
+Form-Factor, and **Update All Product / SDK** updates them with the rest.
+
+- **BrandLoader** — Pointr Cloud's brand loader (CLOUD-UI-008, decisions 133
+  and 176): `Overlay` of False, the loader alone in its 120 box
+  (`BrandLoader/size`), and True, the loader centred on Backdrop's example
+  scrim, 320×180 in `Overlay/Scrim`. A frame cannot ripple, so the set draws
+  the still state, as reduced motion draws it: the first ring at rest round
+  the pin, 108 (`BrandLoader/ring/size`) and 6 thick
+  (`BrandLoader/ring/stroke/width`, border-width lg + md), and the pin,
+  `marker-pin-01` at 32 (`BrandLoader/pin/size`), both in the theme fill, theme
+  500 (decisions 176 and 59). The second ring is a hidden `Second Ring` layer
+  at its ripple's start, 40 and 4 thick (`Border Width/lg`). React's `label` is
+  screen-reader text, never drawn, so the set has no text property. Run
+  Curated Icons first.
+- **PropertyField**, **OpeningHoursEditor**, **RatingEditor** and
+  **KeyValueList** — Pointr Cloud's property editors (CLOUD-UI-004, decisions
+  177–181). PropertyField is the frame (`Removable` True or False, a `Name`
+  text property, a `Content Slot` for the editor); OpeningHoursEditor's
+  `State` is Default, Overnight (+1 day) or Mixed; RatingEditor's is Default
+  (with its preview, Rating's own Readonly instance at Value=4.5 when the
+  Rating set has half values, else 4, and the words wrapped under it whole),
+  Error or Mixed;
+  KeyValueList's is Default, Empty or Mixed. Their fields are drawn as Core's
+  fields look, not nested, so an Update keeps their words. Run Core and
+  Curated Icons first.
+- **PropertyPicker** — Pointr Cloud's "+ Add additional field" (CLOUD-UI-003,
+  decision 133): the subtle Button (GAP-200) in Cloud's 368 column and, 4
+  below, the popup on Popover's surface, 12 in: the labelled search, the
+  Suggested and Others tabs, the property rows (name over type and
+  description, as Listbox draws an option's description) and the Custom field
+  ghost Button. `State` is Closed, Open, Suggested and Empty (a search that
+  finds nothing); `Label` is the button's words, React's `label`. The rows are
+  examples: in code they are data. Run Curated Icons first.
+- **MapEditToolbar** — Pointr Cloud's map edit toolbar (CLOUD-UI-005,
+  decisions 139 and 151): `Mode` is each of Cloud's seven toolbars (Create,
+  Draw Polygon, Draw Circle, Draw Point, Geometry Set, JSON, Edit Existing),
+  drawn with Cloud's items, and `Overflow` True draws it on a 320 map, the
+  items that do not fit behind More. A card of `Surface/0` with no edge, 60
+  tall (`MapEditToolbar/height`), padding 6 and 8, corner 16, the floating
+  elevation; items 48 tall and at least 56 wide, each hugging its label as
+  React's do (`MapEditToolbar/item/*`, the width their minimum), a 24 icon
+  over an 11/14 label (MapEditToolbar / Label); a chosen tool is the theme fill, a disabled
+  item at half strength; dividers `Border/Subtle`, 32 tall. Its icons are UI
+  icons the Pointr library holds (decision 121); run Curated Icons first.
+- **ImageField** — Pointr Cloud's image field (CLOUD-UI-004's image part,
+  decisions 133 and 183): a bordered group 368 wide, the `Label` text property
+  in Field / Label and the count in Field / Meta; one image, a 120 × 68 (16:9)
+  thumbnail beside its alt-text Input slot and its Preview (`eye`), Frame
+  (`crop-01`) and Remove (`trash-01`) ghost icon buttons; the FileUpload slot,
+  112 tall; and the URL row, an Input slot and an outline Add. `State` is
+  Default, Full (the count at max, the drop zone and URL row at 50%) and
+  Disabled (the whole field at 50%). The cropper and the full-screen preview
+  are dialogs React opens, not drawn. Run Curated Icons first: it carries
+  `crop-01` from the Pointr icon library, which the Frame button draws.
 
 Click **Document Components** after the component audit is green. This creates a generated `Docs` page with a side-by-side documentation grid for every generated component set, adds title, category, usage, properties, Code Connect, accessibility notes, and a small live preview, and refreshes each component set's Figma description field from the same documentation source. The docs preview uses representative examples instead of blindly sampling the first variants, so Badge previews avoid icon-size label clipping. The source component sets stay on the `Components` page so existing node IDs and Code Connect links remain stable. If an older run created split `Docs / ...` pages, the next documentation run removes those generated pages.
 

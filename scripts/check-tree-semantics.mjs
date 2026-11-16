@@ -38,18 +38,27 @@ const base = process.env.STORYBOOK_URL ?? "http://127.0.0.1:6006";
 const TAGS = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 const TREE_RULES = ["aria-required-children", "aria-required-parent"];
 
-/** A row as the story means it: expanded null for a row with no children. */
+/**
+ * A row as the story means it: expanded null for a row with no children;
+ * checked null for a row of a tree that is not checkable, and selected null
+ * for one that is (GAP-277): a checkable row is aria-checked, never
+ * aria-selected.
+ */
 const row = (
   name,
   level,
-  { expanded = null, selected = false, disabled = false } = {},
+  { expanded = null, selected = false, disabled = false, checked = null } = {},
 ) => ({
   name,
   level,
   expanded,
   selected,
   disabled,
+  checked,
 });
+/** A checkable tree's row (GAP-277): its check, and no aria-selected. */
+const checkRow = (name, level, { checked = false, ...rest } = {}) =>
+  row(name, level, { ...rest, checked, selected: null });
 
 const SCENARIOS = [
   {
@@ -136,6 +145,30 @@ const SCENARIOS = [
       row("Level 2", 1),
     ],
   },
+  {
+    // GAP-277: Add New Access's scope picker, checkable, the chevron at the
+    // end. A click on a client checks it and clears its checked site.
+    id: "data-display-tree--checkable",
+    nested: true,
+    rows: [
+      checkRow("Acme Airports", 1, { expanded: true }),
+      checkRow("Istanbul Terminal 1", 2),
+      checkRow("Sabiha Gökçen", 2, { checked: true }),
+      checkRow("Esenboğa", 2),
+      checkRow("Northwind Health", 1, { expanded: false }),
+      checkRow("Contoso Retail", 1, { checked: true }),
+    ],
+    click: "Acme Airports",
+    clickState: "aria-checked",
+    after: [
+      checkRow("Acme Airports", 1, { expanded: true, checked: true }),
+      checkRow("Istanbul Terminal 1", 2),
+      checkRow("Sabiha Gökçen", 2),
+      checkRow("Esenboğa", 2),
+      checkRow("Northwind Health", 1, { expanded: false }),
+      checkRow("Contoso Retail", 1, { checked: true }),
+    ],
+  },
 ];
 
 /** The tree's rows as the page's ARIA says them, in document order. */
@@ -170,6 +203,7 @@ function readRows(page) {
           byGroups: groups + 1,
           expanded: node.getAttribute("aria-expanded"),
           selected: node.getAttribute("aria-selected"),
+          checked: node.getAttribute("aria-checked"),
           disabled: node.getAttribute("aria-disabled"),
         };
       }),
@@ -203,6 +237,7 @@ async function readChromium(page) {
         level: p.level ?? null,
         expanded: p.expanded ?? null,
         selected: p.selected ?? null,
+        checked: p.checked === undefined ? null : String(p.checked),
         disabled: p.disabled ?? false,
       };
     });
@@ -285,9 +320,14 @@ async function verify(page, label, scenario, wanted) {
       `read ${got.expanded}`,
     );
     expect(
-      `${at}: aria-selected ${want.selected}`,
-      got.selected === String(want.selected),
+      `${at}: aria-selected ${want.selected ?? "absent"}`,
+      got.selected === (want.selected === null ? null : String(want.selected)),
       `read ${got.selected}`,
+    );
+    expect(
+      `${at}: aria-checked ${want.checked ?? "absent"}`,
+      got.checked === (want.checked === null ? null : String(want.checked)),
+      `read ${got.checked}`,
     );
     expect(
       `${at}: ${want.disabled ? "aria-disabled" : "not disabled"}`,
@@ -309,11 +349,14 @@ async function verify(page, label, scenario, wanted) {
       const got = ax[i];
       if (!got) return;
       const at = `${label}: Chromium reads ${want.name}`;
+      // A checkable row's check is read; its selected state, which it
+      // never sets, is not (GAP-277).
       const as = {
         name: got.name.startsWith(want.name),
         level: got.level,
         expanded: got.expanded,
-        selected: got.selected,
+        selected: want.selected === null ? null : got.selected,
+        checked: want.checked === null ? null : got.checked,
         disabled: got.disabled,
       };
       const is = {
@@ -321,6 +364,7 @@ async function verify(page, label, scenario, wanted) {
         level: want.level,
         expanded: want.expanded,
         selected: want.selected,
+        checked: want.checked === null ? null : String(want.checked),
         disabled: want.disabled,
       };
       expect(
@@ -354,14 +398,15 @@ try {
           // Tree's own renderer: a click on the row's name selects it, and
           // opens a parent.
           await tree.getByText(scenario.click, { exact: true }).click();
+          // A checkable row is checked by it (GAP-277).
           await page.waitForFunction(
-            (name) =>
+            ([name, state]) =>
               [...document.querySelectorAll('[role="treeitem"]')].some(
                 (node) =>
                   node.textContent.startsWith(name) &&
-                  node.getAttribute("aria-selected") === "true",
+                  node.getAttribute(state) === "true",
               ),
-            scenario.click,
+            [scenario.click, scenario.clickState ?? "aria-selected"],
             { polling: 50, timeout: 5000 },
           );
           await verify(
@@ -390,6 +435,6 @@ if (failures.length) {
 }
 console.log(
   `PASS tree semantics: ${checked} checks in ${SCENARIOS.length} stories, light and dark — axe finds nothing and its tree rules ran; ` +
-    "every row, composed or Tree's own, is one treeitem with its level, expanded, selected and disabled" +
+    "every row, composed or Tree's own, is one treeitem with its level, expanded, selected, checked and disabled" +
     (chromium ? ", and Chromium's accessibility tree says the same" : ""),
 );

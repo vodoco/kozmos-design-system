@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -84,6 +85,10 @@ import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -149,6 +154,23 @@ enum class KozmosTreeMetaPlacement {
 }
 
 /**
+ * How a checkable tree's checks on a row and the rows under it go together
+ * (GAP-277).
+ */
+enum class KozmosTreeCheckRule {
+    /** A row and the rows above or below it are never checked together: checking a client clears its sites, and checking a site its client. */
+    Exclusive,
+    /** Every row's check is its own. */
+    Independent
+}
+
+/** Where a row's disclosure is drawn: before its name, or at its end (GAP-277). */
+enum class KozmosTreeDisclosurePosition {
+    Start,
+    End
+}
+
+/**
  * A tree of [data], one lazy list over its visible rows: only the rows on
  * screen are composed, so a tree of thousands of items (Pointr Cloud's Map
  * Content, 13,031) scrolls as a short one does. Give it a height. Which
@@ -182,6 +204,17 @@ enum class KozmosTreeMetaPlacement {
  * if it is not selected, and opens the items [contextMenu] gives for it; a
  * picked item goes to [onContextMenuSelect] with the row's node.
  *
+ * [checkable] draws a checkbox on every row (GAP-277), its checks the
+ * [selectedIds] set and [onSelectedIdsChange]: a tap, Space or Enter checks
+ * or clears the row; its chevron, Right and Left open and close it. Shift
+ * ranges and Ctrl+A do not apply, and closing a parent keeps its rows'
+ * checks. [checkRule]
+ * [KozmosTreeCheckRule.Exclusive], the default, clears a row's ancestors and
+ * descendants as it is checked: a client and its sites are never checked
+ * together. [disclosurePosition] [KozmosTreeDisclosurePosition.End] draws the
+ * chevron at the row's end. TalkBack reads a checkable row as a checkbox,
+ * checked or not.
+ *
  * TalkBack reads each row's place as "n of m" among the visible rows, an
  * open or closed parent as "Expanded" or "Collapsed", and a selected row as
  * selected.
@@ -199,10 +232,14 @@ fun KozmosTree(
     metaPlacement: KozmosTreeMetaPlacement = KozmosTreeMetaPlacement.Inline,
     contextMenu: ((TreeNode) -> KozmosMenuContent)? = null,
     onContextMenuSelect: (TreeNode, KozmosMenuItem) -> Unit = { _, _ -> },
-    state: LazyListState = rememberLazyListState()
+    state: LazyListState = rememberLazyListState(),
+    checkable: Boolean = false,
+    checkRule: KozmosTreeCheckRule = KozmosTreeCheckRule.Exclusive,
+    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start
 ) = KozmosTree(
     data, modifier, density, divided, bleed, selectionMode, selectedIds, onSelectedIdsChange,
-    metaPlacement, contextMenu, onContextMenuSelect, state, expandedIds = emptySet()
+    metaPlacement, contextMenu, onContextMenuSelect, state, expandedIds = emptySet(),
+    checkable = checkable, checkRule = checkRule, disclosurePosition = disclosurePosition
 )
 
 /** A tree with the nodes of [expandedIds] open from the start: for tests. */
@@ -221,16 +258,24 @@ internal fun KozmosTree(
     onContextMenuSelect: (TreeNode, KozmosMenuItem) -> Unit = { _, _ -> },
     state: LazyListState = rememberLazyListState(),
     expandedIds: Set<String>,
-    menuState: KozmosContextMenuState = remember { KozmosContextMenuState() }
+    menuState: KozmosContextMenuState = remember { KozmosContextMenuState() },
+    checkable: Boolean = false,
+    checkRule: KozmosTreeCheckRule = KozmosTreeCheckRule.Exclusive,
+    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start
 ) {
     val reach = if (divided) bleed.coerceAtLeast(0.dp) else 0.dp
     val open = rememberSaveable(stateSaver = KozmosTreeExpandedSaver) { mutableStateOf(expandedIds) }
     val tree = remember(open) { KozmosTreeController(open) }
     tree.scope = rememberCoroutineScope()
     tree.list = state
-    tree.mode = selectionMode
+    // A checkable tree's checks are its selected set (GAP-277), with no
+    // ranges and kept through a collapse, as a single tree keeps its row.
+    tree.mode = if (checkable) KozmosTreeSelectionMode.Single else selectionMode
     tree.selectedIds = selectedIds
     tree.onSelectedIdsChange = onSelectedIdsChange
+    tree.checkable = checkable
+    tree.checkRule = checkRule
+    tree.data = data
     tree.rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     tree.menuState = if (contextMenu != null) menuState else null
     tree.rowHeightPx = with(LocalDensity.current) { kozmosTreeRowHeight(density, divided).toPx() }
@@ -289,10 +334,12 @@ internal fun KozmosTree(
                         bleed = reach,
                         metaPlacement = metaPlacement,
                         expanded = row.node.id in tree.expanded,
-                        selected = row.node.id in selectedIds,
-                        selectable = onSelectedIdsChange != null,
+                        selected = !checkable && row.node.id in selectedIds,
+                        selectable = !checkable && onSelectedIdsChange != null,
                         tree = tree,
-                        itemIndex = row.itemIndex
+                        itemIndex = row.itemIndex,
+                        checked = if (checkable) row.node.id in selectedIds else null,
+                        disclosurePosition = disclosurePosition
                     )
                 }
             }
@@ -379,6 +426,40 @@ internal fun treeRange(order: List<String>, from: String, to: String): Set<Strin
     return order.subList(minOf(a, b), maxOf(a, b) + 1).toCollection(LinkedHashSet())
 }
 
+/**
+ * [checked] with [id] checked or cleared (GAP-277). Checked under
+ * [KozmosTreeCheckRule.Exclusive], the rows above it and below it are
+ * cleared, open or not, past any section: a client and its sites are never
+ * checked together.
+ */
+internal fun toggleTreeCheck(
+    id: String,
+    data: List<TreeNode>,
+    checked: Set<String>,
+    rule: KozmosTreeCheckRule
+): Set<String> {
+    if (id in checked) return checked - id
+    val next = LinkedHashSet(checked)
+    next += id
+    if (rule != KozmosTreeCheckRule.Exclusive) return next
+    fun path(nodes: List<TreeNode>): List<TreeNode>? {
+        for (node in nodes) {
+            if (node.id == id) return listOf(node)
+            path(node.children)?.let { return listOf(node) + it }
+        }
+        return null
+    }
+    val found = path(data) ?: return next
+    found.dropLast(1).filter { !it.section }.forEach { next -= it.id }
+    fun clear(nodes: List<TreeNode>) = nodes.forEach { next -= it.id; clearBelow(it, next) }
+    clear(found.last().children)
+    return next
+}
+
+private fun clearBelow(node: TreeNode, from: MutableSet<String>) {
+    node.children.forEach { from -= it.id; clearBelow(it, from) }
+}
+
 /** What a tree's rows share: which are open, the selection's anchor, focus, the menu's row. */
 internal class KozmosTreeController(private val open: MutableState<Set<String>>) {
     constructor(initiallyExpanded: Set<String>) : this(mutableStateOf(initiallyExpanded))
@@ -391,6 +472,10 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
     var mode = KozmosTreeSelectionMode.Single
     var selectedIds: Set<String> = emptySet()
     var onSelectedIdsChange: ((Set<String>) -> Unit)? = null
+    /** A checkable tree (GAP-277): its rule, and the whole tree the rule reads. */
+    var checkable = false
+    var checkRule = KozmosTreeCheckRule.Exclusive
+    var data: List<TreeNode> = emptyList()
     var anchorId: String? = null
     var rtl = false
     var scope: kotlinx.coroutines.CoroutineScope? = null
@@ -447,9 +532,18 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
         change(ids)
     }
 
+    /** Checks or clears [row] by the tree's rule (GAP-277). */
+    fun toggleCheck(row: TreeNode) {
+        if (!checkable || row.disabled || row.section) return
+        anchorId = row.id
+        select(toggleTreeCheck(row.id, data, selectedIds, checkRule))
+    }
+
     /** A press, with the keyboard modifiers held. */
     fun click(row: TreeNode, shift: Boolean, toggle: Boolean) {
         if (row.disabled) return
+        // A checkable row's press checks or clears it; its chevron opens it.
+        if (checkable) return toggleCheck(row)
         val id = row.id
         if (mode == KozmosTreeSelectionMode.Multiple && (shift || toggle)) {
             if (shift) {
@@ -549,6 +643,7 @@ internal class KozmosTreeController(private val open: MutableState<Set<String>>)
                 when {
                     // A space inside a typed name is typed (APG).
                     typed.isNotEmpty() && System.currentTimeMillis() - typedAt <= 500 -> typeAhead(row, event)
+                    checkable -> toggleCheck(row)
                     !multiple -> click(row, shift = false, toggle = false)
                     event.isShiftPressed -> select(treeRange(ids, anchorId ?: row.id, row.id))
                     else -> click(row, shift = false, toggle = true)
@@ -653,6 +748,11 @@ private fun Modifier.kozmosTreeBleed(bleed: Dp): Modifier =
 /**
  * One node and, open, its children, drawn as rows in a column: for a tree a
  * screen composes itself. [KozmosTree] draws its rows lazily instead.
+ *
+ * [checked], set, draws the item's checkbox and makes its row a checkbox to
+ * TalkBack (GAP-277): a tap calls [onCheckedChange] with the other state,
+ * and its chevron opens it. [disclosurePosition] is its rows' and its
+ * children's.
  */
 @Composable
 fun TreeItem(
@@ -661,8 +761,14 @@ fun TreeItem(
     density: KozmosTreeDensity = KozmosTreeDensity.Default,
     divided: Boolean = false,
     bleed: Dp = 0.dp,
-    metaPlacement: KozmosTreeMetaPlacement = KozmosTreeMetaPlacement.Inline
-) = TreeItem(item, depth, density, divided, bleed, expandedIds = emptySet(), metaPlacement = metaPlacement)
+    metaPlacement: KozmosTreeMetaPlacement = KozmosTreeMetaPlacement.Inline,
+    checked: Boolean? = null,
+    onCheckedChange: ((Boolean) -> Unit)? = null,
+    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start
+) = TreeItem(
+    item, depth, density, divided, bleed, expandedIds = emptySet(), metaPlacement = metaPlacement,
+    checked = checked, onCheckedChange = onCheckedChange, disclosurePosition = disclosurePosition
+)
 
 @Composable
 internal fun TreeItem(
@@ -672,13 +778,17 @@ internal fun TreeItem(
     divided: Boolean,
     bleed: Dp,
     expandedIds: Set<String>,
-    metaPlacement: KozmosTreeMetaPlacement = KozmosTreeMetaPlacement.Inline
+    metaPlacement: KozmosTreeMetaPlacement = KozmosTreeMetaPlacement.Inline,
+    checked: Boolean? = null,
+    onCheckedChange: ((Boolean) -> Unit)? = null,
+    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start
 ) {
     if (item.section) {
         Column {
             TreeSectionRow(item.name, Modifier.padding(horizontal = bleed), item.count, depth, density)
             item.children.forEach { child ->
-                TreeItem(child, depth, density, divided, bleed, expandedIds, metaPlacement)
+                TreeItem(child, depth, density, divided, bleed, expandedIds, metaPlacement,
+                    disclosurePosition = disclosurePosition)
             }
         }
         return
@@ -697,12 +807,16 @@ internal fun TreeItem(
             selectable = false,
             tree = null,
             itemIndex = -1,
-            onToggle = { isExpanded = !isExpanded }
+            onToggle = { isExpanded = !isExpanded },
+            checked = checked,
+            disclosurePosition = disclosurePosition,
+            onCheck = checked?.let { now -> { onCheckedChange?.invoke(!now) } }
         )
         AnimatedVisibility(visible = isExpanded) {
             Column {
                 item.children.forEach { child ->
-                    TreeItem(child, depth + 1, density, divided, bleed, expandedIds, metaPlacement)
+                    TreeItem(child, depth + 1, density, divided, bleed, expandedIds, metaPlacement,
+                        disclosurePosition = disclosurePosition)
                 }
             }
         }
@@ -806,7 +920,11 @@ private fun TreeRow(
     selectable: Boolean,
     tree: KozmosTreeController?,
     itemIndex: Int,
-    onToggle: () -> Unit = {}
+    onToggle: () -> Unit = {},
+    checked: Boolean? = null,
+    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start,
+    /** A composed checkable row's press; a lazy tree's goes to [tree]. */
+    onCheck: (() -> Unit)? = null
 ) {
     val hasChildren = node.children.isNotEmpty()
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -855,9 +973,18 @@ private fun TreeRow(
             .then(if (tree != null) treeRowInput(node, tree, press, focus, itemIndex) else Modifier)
             .semantics {
                 if (selectable) this.selected = selected
+                // A checkable row is a checkbox to TalkBack (GAP-277).
+                if (checked != null) {
+                    role = Role.Checkbox
+                    toggleableState = ToggleableState(checked)
+                }
                 if (hasChildren && !node.disabled) {
                     val state = if (expanded) "Expanded" else "Collapsed"
-                    stateDescription = if (selectable && selected) "Selected, $state" else state
+                    stateDescription = when {
+                        checked != null -> "${if (checked) "Checked" else "Not checked"}, $state"
+                        selectable && selected -> "Selected, $state"
+                        else -> state
+                    }
                     if (expanded) collapse { tree?.toggleExpanded(node.id) ?: onToggle(); true }
                     else expand { tree?.toggleExpanded(node.id) ?: onToggle(); true }
                 }
@@ -870,6 +997,8 @@ private fun TreeRow(
                     tree.click(currentNode, press.shift, press.toggle)
                     press.shift = false
                     press.toggle = false
+                } else if (checked != null) {
+                    onCheck?.invoke()
                 } else if (hasChildren) {
                     onToggle()
                 }
@@ -877,17 +1006,37 @@ private fun TreeRow(
             .padding(vertical = verticalPadding, horizontal = KozmosDimensions.primitivesLayoutSpacing100)
     ) {
         Spacer(modifier = Modifier.width((depth * 16).dp))
-        if (hasChildren) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                // The row says Expanded or Collapsed: the chevron is drawing.
-                contentDescription = null,
-                modifier = Modifier
-                    .size(KozmosDimensions.primitivesLayoutSizing300)
-                    .rotate(rotation)
+        // A checkable parent's chevron takes its own press, over the row's,
+        // which checks it (GAP-277).
+        val disclosure = @Composable {
+            if (hasChildren) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    // The row says Expanded or Collapsed: the chevron is drawing.
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(KozmosDimensions.primitivesLayoutSizing300)
+                        .then(
+                            if (checked != null && !node.disabled) Modifier.clickable {
+                                tree?.toggleExpanded(node.id) ?: onToggle()
+                            } else Modifier
+                        )
+                        .rotate(rotation)
+                )
+            } else {
+                Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300))
+            }
+        }
+        if (disclosurePosition == KozmosTreeDisclosurePosition.Start) disclosure()
+        if (checked != null) {
+            TreeCheckBox(
+                checked,
+                Modifier.padding(
+                    start = if (disclosurePosition == KozmosTreeDisclosurePosition.Start) {
+                        KozmosDimensions.primitivesLayoutSpacing100
+                    } else 0.dp
+                )
             )
-        } else {
-            Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300))
         }
         val meta = node.meta
         if (meta != null && metaPlacement == KozmosTreeMetaPlacement.Below) {
@@ -912,6 +1061,37 @@ private fun TreeRow(
         node.count?.let { TreeCount(it, Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing100)) }
         if (meta != null && metaPlacement == KozmosTreeMetaPlacement.Inline) {
             TreeMeta(meta, Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing100))
+        }
+        if (disclosurePosition == KozmosTreeDisclosurePosition.End) {
+            Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
+            disclosure()
+        }
+    }
+}
+
+/**
+ * Checkbox's box, drawn (GAP-277): the row is the checkbox TalkBack reads.
+ * Checked, the theme fill with the theme foreground's mark (decision 59), as
+ * KozmosCheckbox draws it. Internal for the tests.
+ */
+@Composable
+internal fun TreeCheckBox(checked: Boolean, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusMarker)
+    val fill = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(20.dp)
+            .background(if (checked) fill else Color.Transparent, shape)
+            .border(1.dp, if (checked) fill else KozmosThemeTokens.semanticsBorderInput, shape)
+    ) {
+        if (checked) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }

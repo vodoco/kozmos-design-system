@@ -59,12 +59,23 @@ figma.connect(TreeParentItemRow, parentUrl, {
       true: "below",
       false: undefined,
     }),
+    // GAP-277: Checkable draws the box, and Checked is its check.
+    checked: figma.boolean("Checkable", {
+      true: figma.boolean("Checked"),
+      false: undefined,
+    }),
+    disclosurePosition: figma.boolean("Disclosure End", {
+      true: "end",
+      false: undefined,
+    }),
     expanded: figma.enum("Expanded", { True: true, False: undefined }),
   },
   example: ({
+    checked,
     count,
     density,
     depth,
+    disclosurePosition,
     divided,
     expanded,
     meta,
@@ -77,6 +88,8 @@ figma.connect(TreeParentItemRow, parentUrl, {
       count={count}
       meta={meta}
       metaPlacement={metaPlacement}
+      checked={checked}
+      disclosurePosition={disclosurePosition}
       depth={depth}
       density={density}
       expanded={expanded}
@@ -115,11 +128,22 @@ figma.connect(TreeChildItemRow, childUrl, {
       true: "below",
       false: undefined,
     }),
+    // GAP-277: Checkable draws the box, and Checked is its check.
+    checked: figma.boolean("Checkable", {
+      true: figma.boolean("Checked"),
+      false: undefined,
+    }),
+    disclosurePosition: figma.boolean("Disclosure End", {
+      true: "end",
+      false: undefined,
+    }),
   },
   example: ({
+    checked,
     count,
     density,
     depth,
+    disclosurePosition,
     divided,
     meta,
     metaPlacement,
@@ -131,6 +155,8 @@ figma.connect(TreeChildItemRow, childUrl, {
       count={count}
       meta={meta}
       metaPlacement={metaPlacement}
+      checked={checked}
+      disclosurePosition={disclosurePosition}
       depth={depth}
       density={density}
       selected={selected}
@@ -168,13 +194,24 @@ figma.connect(TreeItemRow, itemUrl, {
       true: "below",
       false: undefined,
     }),
+    // GAP-277: Checkable draws the box, and Checked is its check.
+    checked: figma.boolean("Checkable", {
+      true: figma.boolean("Checked"),
+      false: undefined,
+    }),
+    disclosurePosition: figma.boolean("Disclosure End", {
+      true: "end",
+      false: undefined,
+    }),
     expanded: figma.enum("Expanded", { True: true, False: undefined }),
     hasChildren: figma.enum("Type", { Parent: true, Child: undefined }),
   },
   example: ({
+    checked,
     count,
     density,
     depth,
+    disclosurePosition,
     divided,
     expanded,
     hasChildren,
@@ -188,6 +225,8 @@ figma.connect(TreeItemRow, itemUrl, {
       count={count}
       meta={meta}
       metaPlacement={metaPlacement}
+      checked={checked}
+      disclosurePosition={disclosurePosition}
       depth={depth}
       density={density}
       hasChildren={hasChildren}

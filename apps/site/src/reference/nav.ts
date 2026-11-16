@@ -14,9 +14,17 @@ export const componentIndex = index as ComponentIndex;
 export const laneOrder: readonly Lane[] = [
   "core",
   "product-sdk",
+  "dashboard",
   "platform-form-factor",
   "code-only",
 ];
+
+/** How many lanes there are, as the site's sentences write it: "five lanes". */
+export const lanesInWords = `${
+  ["no", "one", "two", "three", "four", "five", "six", "seven", "eight"][
+    laneOrder.length
+  ] ?? laneOrder.length
+} lane${laneOrder.length === 1 ? "" : "s"}`;
 
 export function laneTitle(lane: Lane): string {
   return componentIndex.lanes[lane].title;

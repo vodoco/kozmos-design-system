@@ -609,6 +609,54 @@ test("the consuming page names the global, the files, the provider, the cards an
     );
 });
 
+// Decision 183: the Dashboard modules ship from @kozmos-ds/react/dashboard,
+// with dashboard.css, and their cards must say so, or a design session
+// imports them from the main entry, where they are not.
+test("a Dashboard module's card imports it from @kozmos-ds/react/dashboard, with its sheet, and the consuming page says how", () => {
+  const modules = [...api.entries.values()].filter(
+    (e) => e.component && e.module === "@kozmos-ds/react/dashboard",
+  );
+  assert.ok(
+    modules.some((e) => e.name === "BrandLoader"),
+    "the built ./dashboard declarations were not read",
+  );
+  for (const { name } of modules) {
+    const card = fs.readFileSync(
+      path.join(root, CARDS_DIR, `${name}.md`),
+      "utf8",
+    );
+    assert.ok(
+      card.includes(
+        `- **Import:** \`import { ${name} } from "@kozmos-ds/react/dashboard";\``,
+      ),
+      `${name}'s card does not import it from @kozmos-ds/react/dashboard`,
+    );
+    assert.ok(
+      card.includes('import "@kozmos-ds/react/dashboard.css";'),
+      `${name}'s card does not name dashboard.css`,
+    );
+    assert.match(card, /^- \*\*Group:\*\* Dashboard$/m);
+    assert.doesNotMatch(
+      card,
+      new RegExp(
+        `import \\{[^}]*\\b${name}\\b[^}]*\\} from "@kozmos-ds/react";`,
+      ),
+      `${name}'s example imports it from the main entry`,
+    );
+  }
+  const readme = fs.readFileSync(path.join(root, OUT_DIR, "README.md"), "utf8");
+  assert.match(readme, /^### Dashboard modules$/m);
+  for (const phrase of [
+    'from "@kozmos-ds/react/dashboard"',
+    'import "@kozmos-ds/react/dashboard.css";',
+    "dist/dashboard/index.d.ts",
+  ])
+    assert.ok(
+      readme.includes(phrase),
+      `the consuming page does not say ${phrase}`,
+    );
+});
+
 test("the consuming page carries the rules a design session gets wrong", () => {
   const text = fs.readFileSync(path.join(root, OUT_DIR, "README.md"), "utf8");
   for (const [rule, phrase] of [

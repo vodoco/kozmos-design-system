@@ -149,7 +149,7 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## ToastClose
 
-It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.ToastCloseProps & React.RefAttributes<HTMLButtonElement>, "ref"> & { "aria-label"?: string }`.
+It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.ToastCloseProps & React.RefAttributes<HTMLButtonElement>, "ref"> & { "aria-label"?: string; visible?: ToastCloseVisibility }`.
 
 - `aria-label`: `string`, optional, default `"Dismiss notification"`.
 
@@ -157,6 +157,10 @@ It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.T
   The close button's accessible name: it shows only a cross. "Dismiss
   notification" by default, as SwiftUI's and Compose's `closeLabel`; a
   product that translates passes its own.
+
+- `visible`: `ToastCloseVisibility`, optional, default `"hover"`.
+
+  When it shows: `hover` (the default) or `always`.
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
@@ -218,6 +222,12 @@ Its props are `ToasterProps`.
 
   Each toast's close button. "Dismiss notification".
 
+- `closeVisible`: `ToastCloseVisibility`, optional, default `"hover"`.
+
+  When each toast's close button shows, unless the toast says:
+  ToastClose's `visible`. `hover`, the default, shows it while the toasts
+  are hovered or it has focus; `always` shows it the whole time (GAP-268).
+
 - `hotkey`: `string[]`, optional.
 
   The keys that move focus to the toasts. F8.
@@ -249,6 +259,22 @@ From `@kozmos-ds/react`.
  * icon, in the tone's text colour.
  */
 type ToastTone = "neutral" | "success" | "info" | "warning" | "critical";
+```
+
+### ToastCloseVisibility
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * When the close button shows. `hover`, the default, is only while the toast
+ * is hovered or the button has focus, where the primary input can hover (on
+ * a touch screen, where nothing hovers, it shows as `always` does); `always`
+ * is the whole time the toast shows, so a visitor who never hovers it still sees how to close it
+ * (GAP-268). SwiftUI's and Compose's toasts have no hover: their close always
+ * shows, as `always` does.
+ */
+type ToastCloseVisibility = "hover" | "always";
 ```
 
 ## Also exported
@@ -307,6 +333,11 @@ type ToastTone = "neutral" | "success" | "info" | "warning" | "critical";
     id?: string;
     /** The `id` of the Toaster that draws it, when a page has more than one. */
     toaster?: string;
+    /**
+     * When its close button shows: `hover`, only while the toasts are hovered
+     * or it has focus, or `always`. Defaults to the Toaster's `closeVisible`.
+     */
+    closeVisible?: "hover" | "always";
     /**
      * Runs once when it closes, however it closes. Being replaced is not
      * closing: a replaced toast's `onDismiss` runs when its replacement

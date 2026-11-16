@@ -1,6 +1,8 @@
 import SwiftUI
 import UIKit.UIGestureRecognizerSubclass
 import Kozmos
+import GameController
+import ObjectiveC
 
 /// Offline fixtures exercise the public component API. No SDK, credentials or
 /// private accessibility switch is needed: XCTest launches this real app.
@@ -20,6 +22,8 @@ private struct InteractionFixture: View {
     @State private var galleryIndex = 1
     @State private var replaced = false
     @State private var controlAccessibilityReport = "not inspected"
+    /// "chip-remove-targets": each chip's laid-out height, by its words.
+    @State private var chipHeights: [String: CGFloat] = [:]
     @State private var fieldAccessibilityReport = "not inspected"
     @State private var manoeuvreExpanded = true
     @State private var groupedSelection: String?
@@ -585,6 +589,20 @@ private struct InteractionFixture: View {
             KozmosChip(text: "Coffee", selected: true, onRemove: { events.append("remove Coffee") },
                        action: { events.append("Coffee") })
             KozmosChip(text: "Open now", onRemove: { events.append("remove Open now") })
+        case "chip-remove-targets":
+            // 24 apart, so no remove's 44 target reaches the next chip's.
+            VStack(spacing: 24) {
+                ForEach([("Lift", KozmosChipSize.sm), ("Coffee", .default), ("Gate", .lg)], id: \.0) { text, size in
+                    KozmosChip(text: text, size: size, onRemove: { events.append("remove \(text)") },
+                               action: { events.append(text) })
+                        .background(GeometryReader { geometry in
+                            Color.clear.onAppear { chipHeights[text] = geometry.size.height }
+                        })
+                }
+                Text(["Lift", "Coffee", "Gate"].map { chipHeights[$0].map { "\(Int($0))" } ?? "?" }
+                    .joined(separator: "|"))
+                    .accessibilityIdentifier("chip-heights")
+            }
         case "localized-remove":
             KozmosChip(text: "Kaffee", removeLabel: "Kaffee entfernen",
                        onRemove: { events.append("remove Kaffee") }, action: { events.append("Kaffee") })
@@ -869,6 +887,7 @@ private struct SearchEscapeFixture: View {
     }
 
     private var logText: String { log.isEmpty ? "none" : log.joined(separator: "|") }
+    @ObservedObject private var keys = KeyEventLog.shared
 
     private var fields: some View {
         VStack(spacing: 12) {
@@ -878,6 +897,7 @@ private struct SearchEscapeFixture: View {
                          onClear: { note("clear empty") })
             Text(full.isEmpty ? "empty" : full).accessibilityIdentifier("search-query")
             Text(logText).accessibilityIdentifier("escape-events")
+            Text(keys.text).font(.caption2).accessibilityIdentifier("key-events")
         }
         .padding(16)
         .frame(width: 320)
@@ -891,6 +911,7 @@ private struct SearchEscapeFixture: View {
                 Text(logText).accessibilityIdentifier("presenter-events")
             }
             .sheet(isPresented: $presented, onDismiss: { note("dismissed") }) { fields }
+            .onAppear { KeyEventLog.shared.install() }
         case "search-escape-popover":
             VStack {
                 Button("Open") { presented = true }
@@ -898,10 +919,109 @@ private struct SearchEscapeFixture: View {
             }
             .popover(isPresented: $presented, attachmentAnchor: .rect(.bounds), arrowEdge: .top) { fields.compactPopover() }
             .onChange(of: presented) { if !$0 { note("dismissed") } }
+            .onAppear { KeyEventLog.shared.install() }
         default:
-            fields
+            fields.onAppear { KeyEventLog.shared.install() }
         }
     }
+}
+
+/// What the Escape scenarios hear, for a failure to name: every hardware key
+/// press and release the app is sent, with the responder that has the
+/// keyboard focus and whether a hardware keyboard is attached, and every move
+/// of the on-screen keyboard, each with the seconds since the log began.
+///
+/// `install()` also keeps the on-screen keyboard down in these scenarios, as
+/// it is for a visitor typing on a hardware keyboard: a field that begins
+/// editing gets an empty input view. While the on-screen keyboard is up, the
+/// hardware key that puts it away reaches the app without its modifiers, and
+/// on a loaded simulator it came back up after the End key that put it away
+/// (measured 15 Nov, 1 run in 20): Command-period then arrived as a bare ".",
+/// which no Escape handler hears. See `escape()` in the interaction tests.
+final class KeyEventLog: ObservableObject {
+    static let shared = KeyEventLog()
+    @Published private(set) var entries: [String] = []
+    private var start = Date()
+    private var installed = false
+
+    var text: String { entries.isEmpty ? "no keys" : entries.joined(separator: "; ") }
+
+    func note(_ entry: String) {
+        entries.append(String(format: "%.2f ", Date().timeIntervalSince(start)) + entry)
+    }
+
+    func install() {
+        guard !installed else { return }
+        installed = true
+        start = Date()
+        if let original = class_getInstanceMethod(UIApplication.self, #selector(UIApplication.sendEvent(_:))),
+           let logging = class_getInstanceMethod(UIApplication.self, #selector(UIApplication.kozmosLoggingSendEvent(_:))) {
+            method_exchangeImplementations(original, logging)
+        }
+        let center = NotificationCenter.default
+        // Synchronous, inside `becomeFirstResponder`: in place before UIKit
+        // picks the input view to show.
+        center.addObserver(forName: UITextField.textDidBeginEditingNotification, object: nil, queue: nil) { note in
+            guard let field = note.object as? UITextField, field.inputView == nil else { return }
+            field.inputView = UIView(frame: .zero)
+            field.reloadInputViews()
+        }
+        let moves: [(Notification.Name, String)] = [
+            (UIResponder.keyboardWillShowNotification, "kb willShow"),
+            (UIResponder.keyboardDidShowNotification, "kb didShow"),
+            (UIResponder.keyboardWillHideNotification, "kb willHide"),
+            (UIResponder.keyboardDidHideNotification, "kb didHide"),
+        ]
+        for (name, label) in moves {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
+                self?.note("\(label) h\(Int(frame.height))")
+            }
+        }
+        center.addObserver(forName: .GCKeyboardDidConnect, object: nil, queue: .main) { [weak self] _ in
+            self?.note("GCKeyboard connect")
+        }
+        center.addObserver(forName: .GCKeyboardDidDisconnect, object: nil, queue: .main) { [weak self] _ in
+            self?.note("GCKeyboard disconnect")
+        }
+    }
+
+    func press(_ press: UIPress) {
+        guard press.phase == .began || press.phase == .ended, let key = press.key else { return }
+        if press.phase == .ended { note("up \(key.keyCode.rawValue)"); return }
+        let flags = key.modifierFlags.intersection([.command, .shift, .control, .alternate])
+        var name = key.charactersIgnoringModifiers.isEmpty ? "code \(key.keyCode.rawValue)" : key.charactersIgnoringModifiers
+        if key.keyCode == .keyboardEnd { name = "End" }
+        if key.charactersIgnoringModifiers == UIKeyCommand.inputEscape { name = "Esc" }
+        let first = FirstResponder.current().map { String(describing: type(of: $0)) } ?? "none"
+        let hardware = GCKeyboard.coalesced == nil ? "" : " hw"
+        note("press \(flags.contains(.command) ? "cmd-" : "")\(name) to \(first)\(hardware)")
+    }
+}
+
+extension UIApplication {
+    /// Swapped with `sendEvent(_:)` by `KeyEventLog.install()`: this name then
+    /// runs UIKit's own.
+    @objc func kozmosLoggingSendEvent(_ event: UIEvent) {
+        if let presses = event as? UIPressesEvent {
+            presses.allPresses.forEach(KeyEventLog.shared.press)
+        }
+        kozmosLoggingSendEvent(event)
+    }
+}
+
+private enum FirstResponder {
+    private static weak var found: UIResponder?
+    static func current() -> UIResponder? {
+        found = nil
+        UIApplication.shared.sendAction(#selector(UIResponder.kozmosReportFirstResponder), to: nil, from: nil, for: nil)
+        return found
+    }
+    fileprivate static func report(_ responder: UIResponder) { found = responder }
+}
+
+extension UIResponder {
+    @objc fileprivate func kozmosReportFirstResponder() { FirstResponder.report(self) }
 }
 
 private extension View {

@@ -42,6 +42,7 @@ import {
 import {
   isTypedGlyph,
   layersShortOfTheirFrame,
+  propertiesBoundToNoLayer,
   strokeLayoutsThatDisagree,
   variantsThatOverlap,
 } from "./lib/figma-verify-rules.mjs";
@@ -4202,6 +4203,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
 }
 
+// GAP-268: ToastClose's `visible`. The set's Close Always Visible boolean, on
+// by default so the file draws as it did, shows the close at rest in every
+// variant: React's visible="always". Off is the default "hover" close.
+section("Toast's Close Always Visible (GAP-268)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const variants = [];
+  for (const value of ["Basic", "Action"])
+    for (const tone of ["Neutral", "Critical"])
+      variants.push(
+        await plugin.createToastVariant({
+          value,
+          second: tone,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = "Toast";
+  plugin.configureToastProperties(set, freshStats());
+  const definitions = set.componentPropertyDefinitions;
+  const key = Object.keys(definitions).find(
+    (name) =>
+      name.split("#")[0] === "Close Always Visible" &&
+      definitions[name].type === "BOOLEAN",
+  );
+  ok(
+    key && definitions[key].defaultValue === true,
+    "Toast: a Close Always Visible boolean, on by default",
+  );
+  ok(
+    variants.every((variant) => {
+      const close = named(variant, "Toast Close");
+      return (
+        close &&
+        close.componentPropertyReferences &&
+        close.componentPropertyReferences.visible === key
+      );
+    }),
+    "Toast: Close Always Visible shows the close in all four variants drawn",
+  );
+  ok(
+    ["Title Text", "Description Text", "Action Text"].every((name) =>
+      Object.keys(definitions).some((key) => key.split("#")[0] === name),
+    ),
+    "Toast: its text properties are kept",
+  );
+  set.remove();
+}
+
 // --- Decision 59: the theme fill and what sits on it ------------------------------
 
 // Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary
@@ -7573,6 +7625,8 @@ section("Typography inference");
     ["FormField", "Required Mark", "fieldLabel"],
     ["FileUpload", "Browse Text", "fieldLabel"],
     ["FileUpload", "Drop Text", "fieldText"],
+    // GAP-270: Content=Preview's Change button, drawn as Browse Text is.
+    ["FileUpload", "Change Text", "fieldLabel"],
     ["Input", "Label Text", "fieldLabel"],
     ["Input", "Optional Text", "fieldMeta"],
     ["Input", "Value Text", "fieldText"],
@@ -12516,9 +12570,25 @@ section(
     ]),
   );
 
-  // A file of its own: Counter, the curated icons and the three UI icons on
+  // A file of its own: Counter, the curated icons and the UI icons on
   // their pages, and an IconButton set for the card's action to nest.
-  const uiIcons = ["copy-01", "pencil-01", "star-01"];
+  const uiIcons = [
+    "copy-01",
+    "pencil-01",
+    "star-01",
+    // MapEditToolbar's items (CLOUD-UI-005).
+    "pentagon",
+    "circle",
+    "code-02",
+    "flip-forward",
+    "x-square",
+    "refresh-ccw-01",
+    "transform",
+    "scissors-cut-01",
+    "divider",
+    "ruler",
+    "dots-horizontal",
+  ];
   const controlsPages = () => {
     const [components, icons] = pages();
     for (const name of uiIcons) icons.appendChild(mockIconComponent(name));
@@ -12545,7 +12615,7 @@ section(
             (registry) => registry.name === definition.name,
           ),
       ),
-    `the importer's UI icons are copy-01, pencil-01 and star-01, each with the catalog's key and none a registry icon (${uiList.map((d) => `${d.name} ${d.componentKey}`).join(", ")})`,
+    `the importer's UI icons are ${uiIcons.join(", ")}, each with the catalog's key and none a registry icon (${uiList.map((d) => `${d.name} ${d.componentKey}`).join(", ")})`,
   );
   {
     const library = new Map();
@@ -12588,7 +12658,7 @@ section(
               JSON.stringify(slotOf(registryCount + wayfindingCount + offset))
           );
         }),
-      `Curated Icons imports the three by their catalog keys, after the wayfinding glyphs (${uiIcons.map((name) => `${name} ${JSON.stringify(at(placed(name)))}`).join(", ")})`,
+      `Curated Icons imports the UI icons by their catalog keys, after the wayfinding glyphs (${uiIcons.map((name) => `${name} ${JSON.stringify(at(placed(name)))}`).join(", ")})`,
     );
     const lastRegistry = run.KOSMOS_ICON_DEFINITIONS[registryCount - 1];
     const lastGlyph = (run.KOZMOS_WAYFINDING_ICONS || [])[wayfindingCount - 1];
@@ -13562,6 +13632,57 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         `Select: Reset Mixed is bound on every variant but Mixed, which has none, 6 under the trigger as React's field gap (${key})`,
       );
     }
+    // The live file (figma:verify, 15 Nov) held Combobox's Reset Mixed and
+    // Reset Mixed Text declared and referenced by no layer, which blocks
+    // publishing: an Update from a build older than #521 redrew its variants
+    // without the reset and left the properties behind. Each of the four
+    // sets GAP-153 reaches, painted with a Default and a Mixed variant (and
+    // Open, where the set has it, for the list's properties) and its
+    // properties configured, declares nothing a layer does not reference.
+    for (const [setName, update, configure, variants] of [
+      ["Input", "updateInputVariant", null, [{ action: "None" }]],
+      ["NumberInput", "updateNumberInputVariant", null, [{ steppers: "True" }]],
+      [
+        "Combobox",
+        "updateComboboxVariant",
+        "configureComboboxProperties",
+        [{ content: "Closed" }, { content: "Open" }],
+      ],
+      [
+        "Select",
+        "updateSelectVariant",
+        "configureSelectProperties",
+        // Select's painter names its Content `type`.
+        [{ type: "Closed" }, { type: "Open" }],
+      ],
+    ]) {
+      const set = new MockNode("COMPONENT_SET", setName);
+      for (const state of ["Default", "Mixed"]) {
+        for (const extra of variants) {
+          set.appendChild(
+            await paint(
+              update,
+              Object.assign({ state, status: "Default" }, extra),
+            ),
+          );
+        }
+      }
+      const stats = freshStats();
+      await attempt(() =>
+        configure
+          ? controls[configure](set, stats)
+          : controls.configureResetMixedProperty(set, stats),
+      );
+      const unbound = propertiesBoundToNoLayer(set).map(
+        (property) => property.split("#")[0],
+      );
+      ok(
+        propertyNamed(set, "Reset Mixed", "BOOLEAN") &&
+          propertyNamed(set, "Reset Mixed Text", "TEXT") &&
+          unbound.length === 0,
+        `${setName}: every property it declares is bound to a layer, Reset Mixed and Reset Mixed Text among them (unbound: ${unbound.join(", ") || "none"})`,
+      );
+    }
   }
 
   // GAP-165: EmptyState's list ------------------------------------------------
@@ -13626,6 +13747,42 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
             "Colors/foreground/400",
         ),
       `the list's three items, each a bullet and its words in foreground 400 (${words.map((text) => text.characters).join(" | ")})`,
+    );
+    // React's bullet is a list marker (list-style: disc in a 1.25rem
+    // padding-inline-start), not a character in the text, so the painter
+    // draws it as a shape: a 5 disc in foreground 400 inside a 20 column, at
+    // Chromium's marker place (4 in, 8 down a 20 line), the words starting
+    // 20 in as React's do. A typed "•" read as an icon typed as a character
+    // to figma:verify (15 Nov).
+    const rows = lists[0] ? lists[0].children : [];
+    const typed = rows.flatMap((row) =>
+      row.findAll((child) => isTypedGlyph(child)).map((child) => child.name),
+    );
+    const marks = rows.map((row) => {
+      const column = named(row, "Bullet");
+      const dot = column && named(column, "Bullet Dot");
+      return { row, column, dot };
+    });
+    ok(
+      rows.length === 3 &&
+        typed.length === 0 &&
+        marks.every(
+          ({ row, column, dot }) =>
+            column &&
+            column.type === "FRAME" &&
+            column.width === 20 &&
+            column.height === 20 &&
+            row.children[0] === column &&
+            row.itemSpacing === 0 &&
+            dot &&
+            dot.type === "ELLIPSE" &&
+            dot.width === 5 &&
+            dot.height === 5 &&
+            dot.x === 4 &&
+            dot.y === 8 &&
+            boundVariableName((dot.fills || [])[0]) === "Colors/foreground/400",
+        ),
+      `each item's bullet is a 5 disc in foreground 400 in a 20 column, as React's disc marker, not a typed character (typed: ${typed.join(", ") || "none"}; ${marks[0] && marks[0].column ? `${marks[0].column.type} ${marks[0].column.width}` : "no Bullet"})`,
     );
     controls.configureEmptyStateProperties(set, freshStats());
     const list = propertyNamed(set, "List", "BOOLEAN");
@@ -14047,6 +14204,14 @@ section("An edge takes room in every variant or in none");
         ...drawn,
         stats: freshStats(),
       }),
+    Select: (pair) =>
+      plugin.createSelectVariant({
+        state: pair[0],
+        status: pair[1],
+        type: pair[2],
+        ...drawn,
+        stats: freshStats(),
+      }),
   };
   // The variants each set had before, and the ones the Update added to it.
   const eras = {
@@ -14101,6 +14266,18 @@ section("An edge takes room in every variant or in none");
       [
         ["Basic", "Success"],
         ["Action", "Info"],
+      ],
+    ],
+    // figma:verify, 15 Nov: Select Trigger laid out in the 4 variants #521
+    // and GAP-164 added (Mixed, Open), not in the 6 drawn before.
+    Select: [
+      [
+        ["Default", "Default", "Closed"],
+        ["Focus", "Error", "Closed"],
+      ],
+      [
+        ["Mixed", "Default", "Closed"],
+        ["Default", "Default", "Open"],
       ],
     ],
   };
@@ -14520,6 +14697,44 @@ section("Figma draws React's values (the 4 Nov triage)");
       shown(dropzone, "paddingLeft") === 16 &&
       shown(dropzone, "paddingRight") === 16,
     `FileUpload's dropzone draws 20 corners and React's px-4 (${shown(dropzone, "cornerRadius")}, ${shown(dropzone, "paddingLeft")} through ${boundName(dropzone, "paddingLeft")})`,
+  );
+
+  // GAP-270: Content=Preview is React's preview="image" holding its image:
+  // no drop area, the image round at Avatar's 40, an outline Change button
+  // at Button's small height, its words a set property, and the remove icon
+  // last. Focus rings Change, where React moves focus once an image is chosen.
+  const previewVariant = await paint("updateFileUploadVariant", {
+    state: "Focus",
+    status: "Error",
+    content: "Preview",
+  });
+  const previewRow = find(previewVariant, "FileUpload Preview");
+  const previewImage = find(previewVariant, "Preview Image");
+  const changeButton = find(previewVariant, "Change Button");
+  const changeText = find(previewVariant, "Change Text");
+  const previewOrder = previewRow
+    ? previewRow.children.map((node) => node.name)
+    : [];
+  ok(
+    !find(previewVariant, "FileUpload Dropzone") &&
+      previewVariant.name === "State=Focus, Status=Error, Content=Preview" &&
+      shown(previewImage, "width") === 40 &&
+      shown(previewImage, "cornerRadius") >= 20 &&
+      boundName(previewImage, "width") === "Avatar/size/default" &&
+      shown(changeButton, "height") === 44 &&
+      boundName(changeButton, "paddingLeft") === "Button/padding/x/small" &&
+      changeText &&
+      changeText.characters === "Change" &&
+      Boolean(find(changeButton, "Focus Ring")) &&
+      previewOrder[0] === "Preview Image" &&
+      previewOrder[previewOrder.length - 2] === "Change Button" &&
+      previewOrder[previewOrder.length - 1] === "Remove Icon",
+    `FileUpload's Preview draws the image at Avatar's 40, then Change and Remove, with no drop area (${JSON.stringify(previewOrder)}, image ${shown(previewImage, "width")} via ${boundName(previewImage, "width")}, Change ${shown(changeButton, "height")} "${changeText && changeText.characters}", ring ${Boolean(find(changeButton, "Focus Ring"))})`,
+  );
+  ok(
+    JSON.stringify(plugin.FILE_UPLOAD_CONTENT) ===
+      JSON.stringify(["Dropzone", "Files", "Preview"]),
+    `FileUpload's Content axis carries Preview after the two it had (${JSON.stringify(plugin.FILE_UPLOAD_CONTENT)})`,
   );
 
   // The control's corner, 16.
@@ -15331,9 +15546,11 @@ section("GAP-156: Kbd draws a key cap, one key or a combination");
           boundVariableName(text.fills[0]) === "Colors/foreground/0",
         `${at}: 12/16 medium in the foreground (${text.fontName.style}, ${text.fontSize}/${text.lineHeight.value}, ${boundVariableName(text.fills[0])})`,
       );
+      // Down to its 20 floor (Kbd/min-width), which the stand-in keeps as
+      // Figma does.
       ok(
-        Math.abs(cap.width - (text.width + 2 * 4 + 2 * 1)) < 0.01,
-        `${at}: the cap hugs its key, 4 and the 1 edge each side (${cap.width} for ${text.width})`,
+        Math.abs(cap.width - Math.max(20, text.width + 2 * 4 + 2 * 1)) < 0.01,
+        `${at}: the cap hugs its key, 4 and the 1 edge each side, 20 at least (${cap.width} for ${text.width})`,
       );
     }
     // An Update redraws the same layers, once.
@@ -15552,11 +15769,15 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
     typeof plugin.configureListItemProperties === "function" &&
     typeof plugin.updateSettingsRowVariant === "function" &&
     typeof plugin.configureSettingsRowProperties === "function";
-  ok(painted, "ListItem's and SettingsRow's painters and properties are reachable");
+  ok(
+    painted,
+    "ListItem's and SettingsRow's painters and properties are reachable",
+  );
   ok(
     painted &&
-      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("ListItem")) ===
-        JSON.stringify({ Selected: ["False", "True"] }) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ListItem"),
+      ) === JSON.stringify({ Selected: ["False", "True"] }) &&
       JSON.stringify(
         plugin.expectedVariantAxesForComponentSetName("SettingsRow"),
       ) ===
@@ -15577,7 +15798,11 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
     );
     return component;
   };
-  const drawRow = async (value, second, component = figma.createComponent()) => {
+  const drawRow = async (
+    value,
+    second,
+    component = figma.createComponent(),
+  ) => {
     await withAutoLayout(() =>
       plugin.updateSettingsRowVariant(component, {
         value,
@@ -15599,7 +15824,8 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
         menusBound(component, "paddingLeft") === "List/item/padding/x" &&
         menusBound(component, "paddingRight") === "List/item/padding/x" &&
         menusBound(component, "paddingTop") === "List/item/padding/y/default" &&
-        menusBound(component, "paddingBottom") === "List/item/padding/y/default",
+        menusBound(component, "paddingBottom") ===
+          "List/item/padding/y/default",
       `${at}: padded 16 across and 12 down, List's own variables`,
     );
     ok(
@@ -15757,8 +15983,8 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
               (want === "outline"
                 ? tag.fills.length === 0 &&
                   boundVariableName(tag.strokes[0]) === "Border/Subtle"
-                : boundVariableName(tag.fills[0]) ===
-                    "Colors/background/100" && tag.strokes.length === 0),
+                : boundVariableName(tag.fills[0]) === "Colors/background/100" &&
+                  tag.strokes.length === 0),
         `${at}: ${want ? `the ${want} tag "${state}" beside the label` : "the label alone"} (${childNames(heading)})`,
       );
       textLooks(
@@ -17356,6 +17582,1087 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       `a second Update keeps the set and its six variants' ids (${error ? error.message : second && `${second.variantsUpdated} updated, ${second.variantsCreated} created, ${second.variantsRemoved} removed`})`,
     );
   }
+}
+
+section("figma:verify reads each set's axes as the plugin declares them");
+{
+  // figma:verify reads the axes from code.js's text, without running it. It
+  // read only quoted strings, so Input's and NumberInput's State
+  // (INPUT_STATES.concat([MIXED_FIELD_STATE])) dropped out and Combobox's
+  // MIXED_FIELD_STATE went unread: on 15 Nov it called the live file's
+  // correct State=Mixed drift on three sets. Every set it expects, it reads
+  // exactly as the plugin's own expectedVariantAxesForComponentSetName.
+  const { names, axes } = expectations();
+  const wrong = [];
+  for (const name of new Set([...names, ...Object.keys(axes)])) {
+    const declared = plugin.expectedVariantAxesForComponentSetName(name);
+    const want = JSON.stringify(
+      Object.fromEntries(
+        Object.entries(declared || {}).filter(
+          ([, values]) => Array.isArray(values) && values.length,
+        ),
+      ),
+    );
+    const read = JSON.stringify(axes[name] || {});
+    if (read !== want) wrong.push(`${name}: read ${read}, declared ${want}`);
+  }
+  ok(
+    wrong.length === 0 && axes.Input && axes.Combobox,
+    `figma:verify reads every set's axes as the plugin declares them${wrong.length ? ` (${wrong.length}: ${wrong.slice(0, 3).join("; ")})` : ""}`,
+  );
+}
+
+// GAP-277: checkable rows and the disclosure at the end, as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`. Booleans
+// on the three row sets, as Divided and Meta Below: Checkable (off) shows
+// Checkbox's box before the leading icon, Checked (off) its checked fill and
+// mark, Disclosure Start (on) the disclosure before the label and Disclosure
+// End (off) one at the row's end. At their defaults a row draws as before.
+section("GAP-277: the tree rows' Checkable, Checked and Disclosure End");
+{
+  const painters = [
+    [
+      "updateTreeParentItemVariant",
+      { content: "Actions", expanded: "True", state: "Selected" },
+      true,
+    ],
+    ["updateTreeChildItemVariant", { content: "Count", state: "Idle" }, false],
+    [
+      "updateTreeItemVariant",
+      { type: "Parent", content: "Basic", expanded: "False", state: "Idle" },
+      true,
+    ],
+  ];
+  const reachable = painters.every(([fn]) => typeof plugin[fn] === "function");
+  ok(reachable, "the three row painters are reachable");
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const kindOf = (node) =>
+    node && node.getSharedPluginData("kozmos_ds_importer", "kind");
+  for (const [fn, base, parent] of reachable ? painters : []) {
+    for (const density of ["Default", "Compact"]) {
+      const at = `${fn} ${density}`;
+      const floor = density === "Compact" ? 32 : 40;
+      const row = await draw(fn, Object.assign({ density, depth: "1" }, base));
+      const flow = row.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const names = flow.map((child) => child.name);
+      const box = row.children.find((child) => child.name === "Checkbox");
+      const checked =
+        box && box.children.find((child) => child.name === "Checkbox Checked");
+      const mark =
+        checked &&
+        checked.children.find((child) => child.name === "Checkbox Mark");
+      const end = row.children.find((child) => child.name === "Disclosure End");
+      ok(
+        names.indexOf("Checkbox") === 1 &&
+          names[names.length - 1] === "Disclosure End" &&
+          ["tree-disclosure-icon", "tree-icon-spacer"].indexOf(
+            kindOf(flow[0]),
+          ) !== -1,
+        `${at}: the start disclosure, then Checkbox, and Disclosure End last (${names.join(", ")})`,
+      );
+      ok(
+        box &&
+          box.visible === false &&
+          kindOf(box) === "tree-checkbox" &&
+          box.width === 20 &&
+          box.height === 20 &&
+          box.cornerRadius === 4 &&
+          box.fills.length === 0 &&
+          boundVariableName(box.strokes[0]) === "Border/Input" &&
+          box.strokeWeight === 1,
+        `${at}: Checkbox is a hidden 20 box, radius 4, a 1px Border/Input edge and no fill (${box && `${box.visible}, ${box.width}x${box.height}, r${box.cornerRadius}, ${boundVariableName(box.strokes[0])}`})`,
+      );
+      ok(
+        checked &&
+          checked.visible === false &&
+          kindOf(checked) === "tree-checkbox-checked" &&
+          checked.width === 20 &&
+          checked.cornerRadius === 4 &&
+          boundVariableName(checked.fills[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          boundVariableName(checked.strokes[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          mark &&
+          mark.width === 16 &&
+          mark.x === 2 &&
+          mark.y === 2,
+        `${at}: Checkbox Checked, hidden in it, is the theme fill with a 16 mark at 2,2 (${checked && `${checked.visible}, ${boundVariableName(checked.fills[0])}, mark ${mark && `${mark.width} at ${mark.x},${mark.y}`}`})`,
+      );
+      ok(
+        end &&
+          end.visible === false &&
+          (parent
+            ? end.type === "INSTANCE" &&
+              kindOf(end) === "tree-disclosure-end-icon" &&
+              end.width === 16
+            : kindOf(end) === "tree-disclosure-end-spacer" &&
+              end.width === 16 &&
+              end.height === 16),
+        `${at}: Disclosure End is a hidden ${parent ? "chevron" : "16 spacer"} (${end && `${end.type}, ${kindOf(end)}, ${end.width}, ${end.visible}`})`,
+      );
+      ok(
+        row.height === floor,
+        `${at}: with them hidden the row is ${floor}, as before (${row.height})`,
+      );
+      if (box && end && checked) {
+        await withAutoLayout(async () => {
+          flow[0].visible = false;
+          box.visible = true;
+          checked.visible = true;
+          end.visible = true;
+          row.resizeWithoutConstraints(row.width, row.height);
+        });
+        const inset = 8 + 20;
+        ok(
+          box.x === inset &&
+            end.x + end.width === row.width - 8 &&
+            row.height === floor,
+          `${at}: shown, with the start disclosure off, Checkbox opens the row at its inset (${inset}), Disclosure End closes it 8 from its edge, and the row stays ${floor} (${box.x}, ${end.x + end.width} of ${row.width}, ${row.height})`,
+        );
+      }
+    }
+  }
+
+  // The sets' properties, each bound to its layers and nothing else.
+  for (const [setName, fn, props] of [
+    [
+      "TreeParentItem",
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "False" },
+    ],
+    ["TreeChildItem", "updateTreeChildItemVariant", { content: "Count" }],
+    [
+      "TreeItem",
+      "updateTreeItemVariant",
+      { type: "Child", content: "Actions", expanded: "False" },
+    ],
+  ]) {
+    if (!reachable) break;
+    const variants = [];
+    for (const state of ["Idle", "Selected"]) {
+      variants.push(
+        await draw(
+          fn,
+          Object.assign({ depth: "0", density: "Default" }, props, { state }),
+        ),
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    await plugin.configureTreeItemProperties(
+      set,
+      freshStats(),
+      menusTokens.variableByName,
+    );
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name) =>
+      Object.keys(definitions).find(
+        (key) =>
+          key.split("#")[0] === name && definitions[key].type === "BOOLEAN",
+      );
+    const shownBy = (key) =>
+      set.findAll(
+        (node) =>
+          key &&
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.visible === key,
+      );
+    for (const [name, defaultValue, layer] of [
+      ["Checkable", false, (node) => node.name === "Checkbox"],
+      ["Checked", false, (node) => node.name === "Checkbox Checked"],
+      [
+        "Disclosure Start",
+        true,
+        (node) =>
+          node.parent.type === "COMPONENT" &&
+          node.parent.children.indexOf(node) === 0 &&
+          /^Disclosure (Icon|Spacer)/.test(node.name),
+      ],
+      ["Disclosure End", false, (node) => node.name === "Disclosure End"],
+    ]) {
+      const key = keyOf(name);
+      const shown = shownBy(key);
+      ok(
+        key &&
+          definitions[key].defaultValue === defaultValue &&
+          shown.length === 2 &&
+          shown.every(layer),
+        `${setName}: ${name}, ${defaultValue ? "on" : "off"} by default, shows each row's ${name === "Disclosure Start" ? "start disclosure" : name === "Checkable" ? "Checkbox" : name === "Checked" ? "Checkbox Checked" : "Disclosure End"} and nothing else (${key}, ${shown.map((node) => node.name).join(", ")})`,
+      );
+    }
+    set.remove();
+  }
+
+  // Update over the three sets as the file has them: every variant keeps its
+  // node id and name, none is added, and each gains the four properties.
+  const icons = () => {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    return [page];
+  };
+  const names = (setName) => {
+    const out = [];
+    for (const type of setName === "TreeItem" ? ["Parent", "Child"] : [null])
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                out.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return out;
+  };
+  for (const [setName, update, total] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72],
+    ["TreeItem", "updateTreeItemComponent", 216],
+  ]) {
+    if (!reachable) break;
+    const oldNames = names(setName);
+    const replay = await replayUpdate(setName, oldNames, update, icons());
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const key = (name) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === "BOOLEAN",
+      );
+    const boxes = replay.liveSet.findAll((n) => n.name === "Checkbox");
+    const ends = replay.liveSet.findAll((n) => n.name === "Disclosure End");
+    ok(
+      replay.result.variantsUpdated === total &&
+        replay.result.variantsCreated === 0 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) => variant && variant.name === oldNames[i],
+        ) &&
+        ["Checkable", "Checked", "Disclosure Start", "Disclosure End"].every(
+          (name) => key(name),
+        ) &&
+        boxes.length === total &&
+        boxes.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Checkable"),
+        ) &&
+        ends.length === total &&
+        ends.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Disclosure End"),
+        ),
+      `${setName}: Update keeps all ${total} variants and their ids, and gives each a hidden Checkbox (Checkable) and Disclosure End (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${boxes.length} boxes, ${ends.length} ends)`,
+    );
+  }
+}
+
+// --- ImageCropper (GAP-273) ----------------------------------------------------
+
+// React's ImageCropper: a column 320 wide, the frame and the zoom row 12
+// apart; the frame in the Ratio's shape on the control radius, muted, with a
+// 1 inner edge in Border/Input, clipping an Image slot; the zoom row Zoom out,
+// a Slider slot and Zoom in, 8 apart, shown by Zoom Controls. One Ratio axis,
+// Square first, in Update All Core and the page's Inputs section.
+section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
+{
+  const ready =
+    Array.isArray(plugin.IMAGE_CROPPER_RATIOS) &&
+    typeof plugin.updateImageCropperVariant === "function" &&
+    typeof plugin.configureImageCropperProperties === "function";
+  ok(ready, "ImageCropper's painter and properties are reachable");
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateImageCropperVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  for (const [value, height] of ready
+    ? [
+        ["Square", 320],
+        ["Landscape", 180],
+      ]
+    : []) {
+    const { component, stats } = await paint(value);
+    ok(
+      component.name === `Ratio=${value}` &&
+        plugin.parseImageCropperVariantName(component.name).value === value,
+      `${value}: named Ratio=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(["Frame", "Zoom Row"]) &&
+        component.width === 320 &&
+        menusBound(component, "width") === "ImageCropper/width/default" &&
+        component.itemSpacing === 12 &&
+        menusBound(component, "itemSpacing") === "ImageCropper/gap" &&
+        menusValueOf("ImageCropper/gap") === 12 &&
+        component.fills.length === 0,
+      `${value}: an unpainted column 320 wide, the frame and the zoom row 12 apart (${component.children.map((child) => child.name)}, ${component.width}, ${component.itemSpacing}, ${menusBound(component, "itemSpacing")})`,
+    );
+    const frame = named(component, "Frame");
+    ok(
+      frame &&
+        frame.width === 320 &&
+        frame.height === height &&
+        frame.clipsContent === true &&
+        frame.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        menusBound(frame, "cornerRadius") === "ImageCropper/radius" &&
+        boundVariableName(frame.fills[0]) === "Colors/background/100" &&
+        frame.strokeWeight === 1 &&
+        frame.strokeAlign === "INSIDE" &&
+        boundVariableName(frame.strokes[0]) === "Border/Input",
+      `${value}: the frame is 320 × ${height} on the control radius, muted, a 1 inner edge in Border/Input (${frame && `${frame.width} × ${frame.height}, r${frame.cornerRadius}, ${boundVariableName(frame.strokes[0])}`})`,
+    );
+    const image = frame && named(frame, "Image Slot");
+    ok(
+      image && image.width === 288 && image.height === height - 32,
+      `${value}: the Image slot sits 16 inside the frame (${image && `${image.width} × ${image.height}`})`,
+    );
+    const row = named(component, "Zoom Row");
+    const parts = row ? row.children.map((child) => child.name) : [];
+    ok(
+      JSON.stringify(parts) ===
+        JSON.stringify([
+          "Zoom Out Button",
+          "Zoom Slider Slot",
+          "Zoom In Button",
+        ]) &&
+        row.itemSpacing === 8 &&
+        menusBound(row, "itemSpacing") === "ImageCropper/zoom/gap" &&
+        menusValueOf("ImageCropper/zoom/gap") === 8,
+      `${value}: the zoom row is Zoom out, the Slider slot and Zoom in, 8 apart (${parts}, ${row && row.itemSpacing})`,
+    );
+    ok(
+      ["Zoom Out Button", "Zoom In Button"].every((name) => {
+        const button = named(component, name);
+        return (
+          button &&
+          button.width === 44 &&
+          button.height === 44 &&
+          boundVariableName(button.strokes[0]) === "Border/Subtle"
+        );
+      }) && named(component, "Zoom Slider Slot").width === 320 - 88 - 16,
+      `${value}: two 44 outline buttons, the Slider slot filling between (${named(component, "Zoom Slider Slot") && named(component, "Zoom Slider Slot").width})`,
+    );
+    ok(
+      framesLargerThanAsked(component).length === 0,
+      `${value}: no frame larger than it was drawn (${framesLargerThanAsked(
+        component,
+      )
+        .map((node) => node.name)
+        .join(", ")})`,
+    );
+    ok(
+      // The stand-in file has no Icons page, so every icon warns; nothing else may.
+      stats.warnings.every((warning) =>
+        /is not on the Icons page/.test(warning),
+      ),
+      `${value}: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+    );
+  }
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ImageCropper"),
+      ) === JSON.stringify({ Ratio: ["Square", "Landscape"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ImageCropper" &&
+          update === plugin.updateImageCropperComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Inputs" &&
+          entry.components.includes("ImageCropper"),
+      ),
+    "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
+  );
+}
+
+// --- The audit's expected sets are sets, never a section's title ------------------
+
+// figma:verify reads the sets it expects off the Components page's layout. A
+// section's title is not a set: the Dashboard section's, new with decision
+// 183, was read as one and reported missing on the live file (15 Nov).
+section("The audit expects every section's sets and no section's title");
+{
+  const { names } = expectations();
+  const sections = plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || [];
+  const sets = [...new Set(sections.flatMap((entry) => entry.components))];
+  const titles = sections
+    .map((entry) => entry.title)
+    .filter((title) => !sets.includes(title));
+  ok(
+    titles.every((title) => !names.includes(title)),
+    `no section title is an expected set (${titles.filter((title) => names.includes(title)).join(", ") || "none"})`,
+  );
+  ok(
+    names.length === sets.length && sets.every((name) => names.includes(name)),
+    `the expected sets are the sections' sets, ${sets.length} (${names.length}: ${names.filter((name) => !sets.includes(name)).join(", ") || "none extra"})`,
+  );
+  const dashboard = sections.find((entry) => entry.title === "Dashboard");
+  ok(
+    dashboard &&
+      dashboard.components.length === 8 &&
+      dashboard.components.every((name) => names.includes(name)) &&
+      !names.includes("Dashboard"),
+    `the Dashboard section's eight modules are expected, "Dashboard" is not (${dashboard && dashboard.components.join(", ")})`,
+  );
+}
+
+// --- ImageField (Dashboard, CLOUD-UI-004) ---------------------------------------
+
+// Pointr Cloud's image field, as React's ImageField draws it: a bordered group
+// on the container radius with its Label property and count; one image with
+// its alt-text slot and three ghost icon buttons; the FileUpload slot and the
+// URL row. Full turns the drop zone and the URL row off (50 %), Disabled the
+// whole field, as a disabled Button is drawn. It rides Update All Product /
+// SDK, in the Dashboard section, on one State axis.
+section("ImageField (Dashboard)");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateImageFieldVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    return { component, stats };
+  };
+  const { component: field, stats } = await paint("Default");
+  const label = named(field, "Label Text");
+  const count = named(field, "Count Text");
+  ok(
+    field.name === "State=Default" &&
+      field.cornerRadius === plugin.KOZMOS_RADIUS.container &&
+      boundVariableName(field.strokes[0]) === "Border/Subtle" &&
+      field.width === 368 &&
+      field.opacity === 1,
+    `Default: a 368 group on the container radius with the subtle edge (${field.name}, ${field.width}, r${field.cornerRadius}, ${field.strokes[0] && boundVariableName(field.strokes[0])})`,
+  );
+  ok(
+    label &&
+      label.characters === "Images" &&
+      count &&
+      count.characters === "1 of 7 images" &&
+      boundVariableName(count.fills[0]) === "Colors/foreground/400",
+    `Default: "Images" and its count in the muted foreground (${label && label.characters}; ${count && count.characters})`,
+  );
+  const thumbnail = named(field, "Thumbnail Slot");
+  ok(
+    thumbnail && thumbnail.width === 120 && thumbnail.height === 68,
+    `Default: the thumbnail is 120 × 68, 16:9 (${thumbnail && `${thumbnail.width} × ${thumbnail.height}`})`,
+  );
+  const buttons = ["Preview Button", "Frame Button", "Remove Button"].map(
+    (name) => named(field, name),
+  );
+  ok(
+    buttons.every(
+      (button) =>
+        button && button.fills.length === 0 && button.strokes.length === 0,
+    ),
+    `Default: Preview, Frame and Remove are ghost icon buttons (${buttons.map((button) => (button ? button.name : "missing")).join(", ")})`,
+  );
+  ok(
+    named(field, "Upload Slot") &&
+      named(field, "Upload Slot").height === 112 &&
+      named(field, "URL Slot") &&
+      named(field, "Add Button"),
+    "Default: the 112 drop zone and the URL row with Add",
+  );
+  {
+    // With the curated icons on the Icons page, Add draws plus as every
+    // Button does, never a typed "+". Frame's crop-01 is not curated yet (it
+    // has no library key), so it alone keeps its typed glyph, and says so.
+    const iconsPage =
+      figma.root.children.find((page) => page.name === "Icons") ||
+      (() => {
+        const page = figma.createPage();
+        page.name = "Icons";
+        return page;
+      })();
+    for (const name of ["eye", "crop-01", "trash-01", "plus"])
+      if (!iconsPage.findOne((node) => node.name === `Icon / ${name}`))
+        iconsPage.appendChild(mockIconComponent(name));
+    const { component: drawn } = await paint("Default");
+    const add = named(drawn, "Add Button");
+    const icon = add && named(add, "Add Button Icon");
+    ok(
+      icon &&
+        icon.type === "INSTANCE" &&
+        icon.mainComponent &&
+        icon.mainComponent.name === "Icon / plus" &&
+        icon.width === 16 &&
+        !named(add, "Add Button Glyph") &&
+        named(add, "Add Button Label"),
+      `Default: Add draws the curated plus, 16, before its label, no typed "+" (${add ? add.children.map((child) => child.name).join(", ") : "no Add"})`,
+    );
+    const frame = named(drawn, "Frame Button");
+    const frameIcon = frame && named(frame, "Frame Button Icon");
+    ok(
+      named(drawn, "Preview Button Icon") &&
+        named(drawn, "Remove Button Icon") &&
+        frameIcon &&
+        frameIcon.type === "INSTANCE" &&
+        frameIcon.mainComponent &&
+        frameIcon.mainComponent.name === "Icon / crop-01" &&
+        !named(frame, "Frame Button Glyph") &&
+        Array.isArray(plugin.KOSMOS_ICON_DEFINITIONS) &&
+        plugin.KOSMOS_ICON_DEFINITIONS.some(
+          (entry) =>
+            entry.name === "crop-01" &&
+            entry.componentKey === "fddad04e9391ca336ab6424463793db41ee7aaed",
+        ),
+      `Default: Preview, Frame and Remove draw eye, crop-01 (the Pointr library's, docs/figma-pointr-icon-catalog.json) and trash-01, no typed glyph (${frame ? frame.children.map((child) => child.name).join(", ") : "no Frame"})`,
+    );
+  }
+  ok(
+    framesLargerThanAsked(field).length === 0,
+    `Default: no frame larger than it was drawn (${framesLargerThanAsked(field)
+      .map((node) => node.name)
+      .join(", ")})`,
+  );
+  ok(
+    // The stand-in file has no Icons page, so every icon warns; nothing else may.
+    stats.warnings.every((warning) => /is not on the Icons page/.test(warning)),
+    `Default: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+  );
+
+  const { component: full } = await paint("Full");
+  ok(
+    full.opacity === 1 &&
+      named(full, "Upload Slot").opacity === 0.5 &&
+      named(full, "URL Row").opacity === 0.5 &&
+      named(full, "Count Text").characters === "7 of 7 images",
+    `Full: the count at max, the drop zone and URL row at 50 % (${named(full, "Upload Slot").opacity}, ${named(full, "URL Row").opacity})`,
+  );
+  const { component: disabled } = await paint("Disabled");
+  ok(
+    disabled.opacity === 0.5 && named(disabled, "Upload Slot").opacity === 1,
+    `Disabled: the whole field at a plain 50 % (${disabled.opacity})`,
+  );
+
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("ImageField"),
+    ) === JSON.stringify({ State: ["Default", "Full", "Disabled"] }) &&
+      plugin.PRODUCT_SDK_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ImageField" && update === plugin.updateImageFieldComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Dashboard" &&
+          entry.components.includes("ImageField"),
+      ),
+    "ImageField: one State axis, in Update All Product / SDK and the Dashboard section",
+  );
+}
+
+section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
+{
+  ok(
+    typeof plugin.updateMapEditToolbarVariant === "function" &&
+      typeof plugin.buildMapEditToolbarComponent === "function" &&
+      typeof plugin.updateMapEditToolbarComponent === "function" &&
+      typeof plugin.rebuildMapEditToolbarComponent === "function",
+    "MapEditToolbar's painter, Build, Update and Rebuild are reachable",
+  );
+  const modes = [
+    "Create",
+    "Draw Polygon",
+    "Draw Circle",
+    "Draw Point",
+    "Geometry Set",
+    "JSON",
+    "Edit Existing",
+  ];
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("MapEditToolbar"),
+    ) === JSON.stringify({ Mode: modes, Overflow: ["False", "True"] }),
+    `MapEditToolbar's axes are Mode (Cloud's seven toolbars) and Overflow (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("MapEditToolbar"))})`,
+  );
+  const dashboard = (plugin.COMPONENT_PAGE_LAYOUT_SECTIONS || []).find(
+    (s) => s.title === "Dashboard",
+  );
+  const sequence = (plugin.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(
+    ([name]) => name,
+  );
+  const ui = fs.readFileSync(
+    path.join(path.dirname(PLUGIN), "ui.html"),
+    "utf8",
+  );
+  ok(
+    dashboard &&
+      dashboard.components.includes("MapEditToolbar") &&
+      sequence.includes("MapEditToolbar") &&
+      (plugin.COMPONENT_DOCS || []).some(
+        (doc) => doc.componentSetName === "MapEditToolbar",
+      ) &&
+      /<option value="mapEditToolbar">MapEditToolbar<\/option>/.test(ui) &&
+      /update: "update-map-edit-toolbar"/.test(ui),
+    `MapEditToolbar is in the Dashboard section, Update All Product / SDK, the docs and the panel (${dashboard && dashboard.components.join(", ")})`,
+  );
+
+  // Its items' icons on the Icons page, as Curated Icons puts them there.
+  const iconsPage = figma.root.children.find((page) => page.name === "Icons");
+  for (const name of [
+    "pentagon",
+    "circle",
+    "code-02",
+    "flip-forward",
+    "x-square",
+    "refresh-ccw-01",
+    "transform",
+    "scissors-cut-01",
+    "divider",
+    "ruler",
+    "dots-horizontal",
+    "pencil-01",
+  ])
+    if (!iconsPage.findOne((node) => node.name === `Icon / ${name}`))
+      iconsPage.appendChild(mockIconComponent(name));
+
+  const draw = async (value, second) => {
+    const component = figma.createComponent();
+    if (typeof plugin.updateMapEditToolbarVariant !== "function")
+      return component;
+    await withAutoLayout(() =>
+      plugin.updateMapEditToolbarVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  // React's stories: the items each of Cloud's toolbars shows, the chosen
+  // tool, and the disabled ones.
+  const expected = {
+    Create: "Polygon Point Circle | JSON | Undo- Redo- Clear",
+    "Draw Polygon": "Draw* Split- Straighten- | Undo- Redo- Clear",
+    "Draw Circle": "Draw* Split- Straighten- | Undo- Redo- Clear",
+    "Draw Point": "Draw* | Undo- Redo- Clear",
+    "Geometry Set": "Adjust* | Cut-out Split Straighten | Undo Redo- Clear",
+    JSON: "Undo Redo- Clear Reset",
+    "Edit Existing":
+      "Adjust* | Cut-out Split Straighten | Undo Redo Clear Reset",
+  };
+  const read = (row) =>
+    row.children
+      .map((item) => {
+        if (item.name === "Divider") return "|";
+        const state = item.getSharedPluginData(
+          "kozmos_ds_importer",
+          "itemState",
+        );
+        return (
+          item.name + (state === "On" ? "*" : state === "Disabled" ? "-" : "")
+        );
+      })
+      .join(" ");
+  for (const mode of modes) {
+    for (const overflow of ["False", "True"]) {
+      const at = `Mode=${mode}, Overflow=${overflow}`;
+      const card = await draw(mode, overflow);
+      const parsed =
+        typeof plugin.parseMapEditToolbarVariantName === "function"
+          ? plugin.parseMapEditToolbarVariantName(card.name)
+          : null;
+      ok(
+        card.name === at &&
+          parsed &&
+          parsed.value === mode &&
+          parsed.second === overflow,
+        `${at}: named so, and reads back as itself (${card.name})`,
+      );
+      ok(
+        card.layoutMode === "HORIZONTAL" &&
+          card.height === 60 &&
+          menusBound(card, "height") === "MapEditToolbar/height" &&
+          card.paddingTop === 6 &&
+          card.paddingBottom === 6 &&
+          card.paddingLeft === 8 &&
+          card.paddingRight === 8 &&
+          menusBound(card, "paddingTop") === "MapEditToolbar/padding/y" &&
+          menusValueOf("MapEditToolbar/padding/y") === 6 &&
+          card.cornerRadius === 16 &&
+          menusBound(card, "cornerRadius") === "MapEditToolbar/radius" &&
+          boundVariableName(card.fills[0]) === "Surface/0" &&
+          card.strokes.length === 0 &&
+          card.effects.length === 1 &&
+          card.effects[0].offset.y === 4 &&
+          card.effects[0].radius === 8,
+        `${at}: a 60 card, padding 6 and 8, corner 16, Surface/0 with no edge, the floating elevation (${card.height}, ${card.paddingTop}/${card.paddingLeft}, ${card.cornerRadius}, ${card.strokes.length})`,
+      );
+      const row = named(card, "Items");
+      const drawn = row ? read(row) : "";
+      if (overflow === "False") {
+        ok(
+          drawn === expected[mode],
+          `${at}: Cloud's items, as React's stories show them (${drawn})`,
+        );
+      } else {
+        const full = expected[mode].split(" ");
+        const shown = drawn.split(" ");
+        // A toolbar that fits a 320 map is drawn whole, with no More.
+        ok(
+          card.width <= 320 &&
+            (drawn === expected[mode] || shown[shown.length - 1] === "More") &&
+            shown[shown.length - 2] !== "|" &&
+            shown.slice(0, -1).every((item, index) => item === full[index]),
+          `${at}: on a 320 map, the items that fit, from the start, then More when any did not (${card.width}: ${drawn})`,
+        );
+      }
+      const json = named(card, "GeoJSON Field");
+      ok(
+        mode === "JSON"
+          ? json &&
+              card.children[0] === json &&
+              json.width === 200 &&
+              boundVariableName(json.strokes[0]) === "Border/Input"
+          : !json,
+        `${at}: ${mode === "JSON" ? "the GeoJSON field before the items" : "no field"}`,
+      );
+      if (json)
+        // An Input placed in the card keeps its control radius, as a button
+        // in a card does (docs/nested-radius.md): stamped a control, so the
+        // nesting check reads it as one.
+        ok(
+          json.getSharedPluginData("kozmos_ds_importer", "surface") ===
+            "control",
+          `${at}: the GeoJSON field is stamped a control (${json.getSharedPluginData("kozmos_ds_importer", "surface") || "none"})`,
+        );
+      for (const item of row ? row.children : []) {
+        if (item.name === "Divider") {
+          const rule = item.children[0];
+          ok(
+            item.paddingLeft === 4 &&
+              item.paddingRight === 4 &&
+              rule &&
+              rule.width === 1 &&
+              rule.height === 32 &&
+              boundVariableName(rule.fills[0]) === "Border/Subtle",
+            `${at}: a divider is a 1 × 32 Border/Subtle rule, 4 of margin each side`,
+          );
+          continue;
+        }
+        const state = item.getSharedPluginData(
+          "kozmos_ds_importer",
+          "itemState",
+        );
+        const label = named(item, "Label Text");
+        const icon = named(item, "Icon");
+        const ink =
+          state === "On"
+            ? "Primary Buttons/themed/button/foreground/content/idle"
+            : "Colors/foreground/400";
+        // React's item is min-inline-size 56 and inline-size auto: it hugs
+        // its label, 4 each side, and stops at 56 (Straighten is wider). The
+        // label never runs out of the item's content box.
+        const hugged = label ? Math.max(56, label.width + 2 * 4) : NaN;
+        ok(
+          item.counterAxisSizingMode === "AUTO" &&
+            item.minWidth === 56 &&
+            menusBound(item, "minWidth") === "MapEditToolbar/item/width" &&
+            menusBound(item, "height") === "MapEditToolbar/item/height" &&
+            Math.abs(item.width - hugged) < 0.01 &&
+            label.width <= item.width - 2 * 4 + 0.01,
+          `${at}: ${item.name} hugs its label, at least 56 (MapEditToolbar/item/width as its minimum), the label inside its content box (${item.width} for a ${label && label.width} label, min ${item.minWidth}, ${item.counterAxisSizingMode})`,
+        );
+        if (item.name === "Straighten")
+          ok(
+            item.width > 56,
+            `${at}: Straighten, longer than 56 holds, is wider than 56 (${item.width})`,
+          );
+        ok(
+          item.layoutMode === "VERTICAL" &&
+            item.height === 48 &&
+            item.cornerRadius === 8 &&
+            icon &&
+            icon.width === 24 &&
+            label &&
+            label.characters === item.name &&
+            label.fontSize === 11 &&
+            label.lineHeight.value === 14 &&
+            boundVariableName(label.fills[0]) === ink &&
+            (state === "On"
+              ? boundVariableName(item.fills[0]) ===
+                "Primary Buttons/themed/button/background/idle"
+              : item.fills.length === 0) &&
+            item.opacity === (state === "Disabled" ? 0.5 : 1),
+          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : "no fill"}${state === "Disabled" ? ", at half strength" : ""} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+        );
+      }
+      card.remove();
+    }
+  }
+  {
+    const set = figma.combineAsVariants(
+      [await draw("JSON", "False")],
+      figma.currentPage,
+    );
+    set.name = "MapEditToolbar";
+    const item = named(set, "Undo");
+    const label = item && named(item, "Label Text");
+    const field = named(set, "Field Text");
+    ok(
+      label &&
+        field &&
+        plugin.inferTextStyleKeyForComponentText(label, set) ===
+          "mapEditToolbarLabel" &&
+        plugin.inferTextStyleKeyForComponentText(field, set) === "fieldText",
+      "the audit expects MapEditToolbar / Label on an item and Field / Text in the field",
+    );
+    set.remove();
+  }
+}
+
+// --- RatingEditor (CLOUD-UI-004), a Dashboard module -----------------------------
+
+// React's preview (rating-editor.css): the stars and the words on one line
+// that wraps, 8 apart either way, the words their own width — in the 340
+// editor they go under the stars, whole. The stars are Rating's Readonly
+// instance at 4.3 of 5's nearest half, 4.5 (decision 181), where Rating's set
+// has half values, and 4 where it has whole values only.
+section("RatingEditor: the preview's words wrap whole, the stars at the half");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const hidden = [];
+  for (const page of figma.root.children)
+    for (const node of page.findAll((n) => n.type === "COMPONENT_SET"))
+      if (node.name === "Rating") {
+        node.name = "Rating (set aside)";
+        hidden.push(node);
+      }
+  const ratingSet = (values) =>
+    mockComponentSet(
+      "Rating",
+      values.flatMap((value) =>
+        ["Default", "Readonly"].map((state) => ({
+          properties: { Value: value, State: state },
+          build: (variant) => variant.resize(208, 40),
+        })),
+      ),
+    );
+  const paint = async (values) => {
+    const set = ratingSet(values);
+    figma.currentPage.appendChild(set);
+    const component = figma.createComponent();
+    const stats = freshStats();
+    if (typeof plugin.updateRatingEditorVariant === "function")
+      await withAutoLayout(() =>
+        plugin.updateRatingEditorVariant(component, {
+          value: "Default",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
+    set.remove();
+    return component;
+  };
+  const valueOf = (component) => {
+    const stars = named(component, "Stars");
+    const main = stars && stars.mainComponent;
+    return main
+      ? `${main.variantProperties.Value}/${main.variantProperties.State}`
+      : "none";
+  };
+
+  const halves = await paint(["0", "1", "2", "3", "4", "4.5", "5"]);
+  ok(
+    valueOf(halves) === "4.5/Readonly",
+    `a Rating set with half values: the stars are Value=4.5, Readonly, 4.3 to the nearest half (${valueOf(halves)})`,
+  );
+  const wholes = await paint(["0", "1", "2", "3", "4", "5"]);
+  ok(
+    valueOf(wholes) === "4/Readonly",
+    `a Rating set with whole values only: the stars are Value=4, Readonly (${valueOf(wholes)})`,
+  );
+
+  const preview = named(halves, "Preview");
+  const words = preview && named(preview, "Summary Text");
+  const need = words ? words.characters.length * words.fontSize * 0.55 : NaN;
+  ok(
+    preview &&
+      preview.layoutMode === "HORIZONTAL" &&
+      preview.layoutWrap === "WRAP" &&
+      preview.itemSpacing === 8 &&
+      preview.counterAxisSpacing === 8 &&
+      words &&
+      words.characters === "4.3 of 5 · 120 ratings" &&
+      words.textAutoResize === "WIDTH_AND_HEIGHT" &&
+      words.textTruncation === "DISABLED" &&
+      words.layoutSizingHorizontal !== "FILL" &&
+      words.width >= need - 0.01,
+    `the preview wraps, 8 apart both ways, and its words hug, untruncated (${preview ? `${preview.layoutWrap}, ${preview.itemSpacing}/${preview.counterAxisSpacing}` : "no preview"}; ${words ? `${words.textAutoResize}, ${words.textTruncation}, ${words.layoutSizingHorizontal}, ${words.width} for ${need}` : "no words"})`,
+  );
+  for (const node of hidden) node.name = "Rating";
+  halves.remove();
+  wholes.remove();
+}
+
+// --- PropertyPicker (CLOUD-UI-003), a Dashboard module ---------------------------
+
+// React's PropertyPicker: the subtle Button in Cloud's 368 column, and under
+// it, 4 below, the popup as wide: the labelled search, the tabs only while
+// something is suggested, the property rows (name over type and
+// description), the empty state when the search finds nothing, and the
+// Custom field action. Every paint is a variable's.
+section("PropertyPicker: the subtle Button and its popup");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const painted = {};
+  for (const value of ["Closed", "Open", "Suggested", "Empty"]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    let error = null;
+    try {
+      await plugin.updatePropertyPickerVariant(component, {
+        value,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    painted[value] = component;
+    ok(
+      !error && stats.warnings.length === 0,
+      `${value}: painted, no warnings (${error ? error.message : stats.warnings.join(" | ")})`,
+    );
+    const unbound = component
+      .findAll(() => true)
+      .flatMap((node) =>
+        [...(node.fills || []), ...(node.strokes || [])]
+          .filter(
+            (paint) => paint.type === "SOLID" && !boundVariableName(paint),
+          )
+          .map(() => node.name),
+      );
+    ok(
+      unbound.length === 0,
+      `${value}: every paint is a variable's (${unbound.join(", ")})`,
+    );
+  }
+  const closed = painted.Closed;
+  const trigger = closed && named(closed, "Trigger");
+  ok(
+    Boolean(
+      closed &&
+      closed.name === "State=Closed" &&
+      closed.width === 368 &&
+      closed.children.length === 1 &&
+      trigger &&
+      trigger.width === 368 &&
+      trigger.height === 44 &&
+      boundVariableName(trigger.fills[0]) ===
+        "Subtle Buttons/themed/button/background/idle" &&
+      named(trigger, "Label") &&
+      named(trigger, "Label").characters === "Add additional field",
+    ),
+    `Closed: the subtle Button alone, 368 by 44, its words the Label text (${trigger && [trigger.width, trigger.height, boundVariableName(trigger.fills[0])].join(" ")})`,
+  );
+  const open = painted.Open;
+  const popup = open && named(open, "Popup");
+  ok(
+    Boolean(
+      popup &&
+      open.itemSpacing === 4 &&
+      popup.width === 368 &&
+      popup.paddingLeft === 12 &&
+      popup.itemSpacing === 8 &&
+      boundVariableName(popup.fills[0]) === "Surface/0" &&
+      named(popup, "Search Label").characters === "Search properties" &&
+      !named(popup, "Tabs") &&
+      named(popup, "List").children.length === 5 &&
+      named(popup, "Access Programs Type").characters ===
+        "Array · Named access program accepted" &&
+      named(popup, "Custom Field"),
+    ),
+    "Open: 4 below the button, as wide; a labelled search, no tabs, five rows of name over type and description, then Custom field",
+  );
+  const suggested = painted.Suggested && named(painted.Suggested, "Popup");
+  ok(
+    Boolean(
+      suggested &&
+      named(suggested, "Tabs") &&
+      named(suggested, "Suggested Tab Label").characters === "Suggested" &&
+      named(suggested, "Others Tab Label").characters === "Others" &&
+      named(suggested, "List")
+        .children.map((row) => row.name)
+        .join() ===
+        "Access Restrictions,Description,Has Assistance,Has Wifi,Occupancy Status",
+    ),
+    "Suggested: the Suggested and Others tabs over Booth's five",
+  );
+  const empty = painted.Empty && named(painted.Empty, "Popup");
+  ok(
+    Boolean(
+      empty &&
+      !named(empty, "List") &&
+      named(empty, "Empty Title").characters === "No properties match" &&
+      named(empty, "Custom Field"),
+    ),
+    "Empty: the empty state where the list was, and Custom field still after it",
+  );
+  ok(
+    JSON.stringify(
+      plugin.expectedVariantAxesForComponentSetName("PropertyPicker"),
+    ) === JSON.stringify({ State: ["Closed", "Open", "Suggested", "Empty"] }),
+    "the set's one axis is State: Closed (its default), Open, Suggested, Empty",
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------

@@ -1,0 +1,72 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import { Controls } from "../../components/DocumentationControls";
+import * as RatingEditorStories from "./RatingEditor.stories";
+import { PlatformSnippets } from "../../components/PlatformSnippets";
+
+<Meta of={RatingEditorStories} />
+
+# RatingEditor
+
+Pointr Cloud's Rating property editor (CLOUD-UI-004, decision 180): the rating, its max and the number of ratings, checked against each other, and a read-only preview of five stars with the exact numbers in words. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
+
+<Canvas>
+  <Story of={RatingEditorStories.Default} />
+</Canvas>
+
+<Controls />
+
+## Three numbers
+
+The rating takes one decimal at most and is 0 or more; the max is 1 or more, 5 usually and 100 at times; the count is a whole number of 0 or more (Cloud took −3). A rating above its max is an error on both fields. Each error is the field's own: the field is invalid and described by its message. `validateRating` gives the same messages to a product that disables Save while any is set, and `messages` puts them in its words.
+
+<Canvas>
+  <Story of={RatingEditorStories.Errors} />
+</Canvas>
+
+## The preview
+
+Always five stars, filled to the rating's share of its max and rounded to the nearest half (decision 181): 4.3 of 5 and 86 of 100 are both four and a half. The words under them carry the exact value, "4.3 of 5 · 120 ratings", and are what a screen reader hears; the stars are hidden from it. Until Rating draws half stars, a half is drawn as the whole star below it; the words are exact.
+
+<Canvas>
+  <Story of={RatingEditorStories.OutOf100} />
+</Canvas>
+
+## A multi-selection
+
+A field in `mixed` differs across the selection (GAP-153): it shows "Multiple values" and no number, and the preview waits for it.
+
+<Canvas>
+  <Story of={RatingEditorStories.Mixed} />
+</Canvas>
+
+## Implementation
+
+<div className="subheading">Code</div>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { Text } from "@kozmos-ds/react";
+import {
+  PropertyField,
+  RatingEditor,
+  validateRating,
+  type RatingEditorValue,
+} from "@kozmos-ds/react/dashboard";
+
+export function Example() {
+  const [rating, setRating] = useState<RatingEditorValue>({
+    rating: 4.3,
+    max: 5,
+    count: 120,
+  });
+  const valid = Object.keys(validateRating(rating)).length === 0;
+  return (
+    <PropertyField name="Rating">
+      <RatingEditor value={rating} onValueChange={setRating} />
+      {valid ? null : <Text size="sm">Fix the rating to save.</Text>}
+    </PropertyField>
+  );
+}
+    `}
+/>
