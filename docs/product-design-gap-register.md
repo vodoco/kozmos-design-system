@@ -1571,8 +1571,8 @@ camera control, branding/provider policy and product ranking in their host adapt
     `MarkerPin01`, and GAP-263 stays open for a Pointr pin; its overlay leaves focus where it was, moving none to the
     loader, and gives it back when it goes; and a read-only Rating says its rounded value ("4.5 out of 5"), which
     settles decision 181's open point.
-  - **185, Compose's snackbar adapter and a persona's checkbox (15 Nov):** the owner took the recommendation he asked
-    for. Compose keeps `KozmosToast(hostState)` as the adapter for Material's `SnackbarHostState`, and the docs name
+  - **185, Compose's snackbar adapter and a persona's checkbox (15 Nov):** the owner asked for a recommendation and
+    took it. Compose keeps `KozmosToast(hostState)` as the adapter for Material's `SnackbarHostState`, and the docs name
     `toast()` (decision 145) the one to use (GAP-167). A Checkbox's label stays text: a persona row puts the
     PersonaMark in ListItem's leading slot (GAP-106, GAP-195).
   - **186, five rows of the 15 Nov export go into 0.16.0 (15 Nov):** GAP-269 (Alert's title-less
