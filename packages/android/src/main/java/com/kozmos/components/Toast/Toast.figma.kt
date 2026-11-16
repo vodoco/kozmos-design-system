@@ -10,6 +10,8 @@ import com.figma.code.connect.FigmaVariant
 // Tone is toast()'s tone and KozmosToast's (GAP-167, decision 145): an app
 // shows one from anywhere with `toast(title, description = …, tone = …)` and
 // a KozmosToaster; this is the toast that call draws, laid out in place.
+// Close Always Visible (GAP-268) is not mapped: Compose has no hover, so its
+// close shows the whole time the toast does, which is the property on.
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=101-8189")
 @FigmaVariant("Content", "Basic")
 class KozmosToastBasicConnect {

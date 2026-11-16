@@ -14,6 +14,8 @@
  * - Paused while hovered or focused, and resumed after.
  * - Closed by its close button, Escape, a swipe and its action, each once;
  *   Escape with focus in a field closes the newest and leaves focus there.
+ * - The close shows while hovered or focused by default, and all the time
+ *   with `closeVisible: "always"`, the Toaster's or the toast's (GAP-268).
  * - Reduced motion, by the media query and by the design config's mark:
  *   no entry, no exit and no spring; with neither, it moves.
  * - Several ThemeProviders: each Toaster draws in its own provider's portal
@@ -672,7 +674,101 @@ await scenario(
   },
 );
 
+/** Each close button's opacity as drawn, once its fade has run. */
+const closeOpacity = (page, title) =>
+  item(page, title)
+    .getByRole("button", { name: "Dismiss notification" })
+    .evaluate(async (button) => {
+      await Promise.all(
+        button.getAnimations().map((animation) => animation.finished),
+      );
+      return Number(getComputedStyle(button).opacity);
+    });
+
+// GAP-268: the close was opacity-0 until the toast was hovered or the button
+// focused, so a visitor who never hovered never saw how to close it. The
+// Toaster's `closeVisible` is every toast's default, and a toast's own wins.
+await scenario(
+  "the close shows on hover or focus by default, and all the time when the Toaster or the toast says always",
+  { toaster: { duration: Infinity, limit: 5 } },
+  async (page) => {
+    await show(page, "Saved");
+    await show(page, "Units merged", { closeVisible: "always" });
+    await arrived(page, "Units merged");
+    await page.mouse.move(5, 5);
+    const rest = {
+      hover: await closeOpacity(page, "Saved"),
+      always: await closeOpacity(page, "Units merged"),
+    };
+    assert.deepEqual(rest, { hover: 0, always: 1 }, "at rest");
+    const box = await item(page, "Saved").boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    assert.equal(await closeOpacity(page, "Saved"), 1, "hovered");
+    return `at rest ${JSON.stringify(rest)}, and 1 when the hover one's toast is hovered`;
+  },
+);
+
+await scenario(
+  "a Toaster that says always shows every close at rest, unless the toast says hover",
+  { toaster: { duration: Infinity, limit: 5, closeVisible: "always" } },
+  async (page) => {
+    await show(page, "Published");
+    await show(page, "Draft kept", { closeVisible: "hover" });
+    await arrived(page, "Draft kept");
+    await page.mouse.move(5, 5);
+    const rest = {
+      always: await closeOpacity(page, "Published"),
+      hover: await closeOpacity(page, "Draft kept"),
+    };
+    assert.deepEqual(rest, { always: 1, hover: 0 }, "at rest");
+    return `at rest ${JSON.stringify(rest)}`;
+  },
+);
+
 await browser.close();
+
+// GAP-268 on a device whose primary input cannot hover (a phone): the
+// default "hover" close could never show, as nothing hovers it. It shows
+// there as "always" does; with a mouse it still waits for hover.
+{
+  const name =
+    "on a touch device, where nothing hovers, the default close shows at rest";
+  const touch = await launchFixtureBrowser({ pointer: "touch" });
+  const page = await touch.newPage({
+    viewport: { width: 390, height: 700 },
+    hasTouch: true,
+  });
+  try {
+    assert.deepEqual(
+      await page.evaluate(() => ({
+        fineHover: matchMedia("(hover: hover) and (pointer: fine)").matches,
+        coarseNoHover: matchMedia("(hover: none) and (pointer: coarse)")
+          .matches,
+      })),
+      { fineHover: false, coarseNoHover: true },
+      "browser input capability precondition",
+    );
+    await page.setContent(
+      `<!doctype html><html lang="en"><head><title>Toaster</title><style>body{margin:0}</style><style>${css}</style></head><body><div id="fixture"></div></body></html>`,
+    );
+    await page.addScriptTag({ content: code });
+    await page.evaluate(() =>
+      window.toaster.mount({ toaster: { duration: Infinity } }),
+    );
+    await show(page, "Saved");
+    await arrived(page, "Saved");
+    const opacity = await closeOpacity(page, "Saved");
+    assert.equal(opacity, 1, "the default close at rest");
+    passed += 1;
+    console.log(`PASS ${name}: opacity ${opacity}`);
+  } catch (error) {
+    failures.push(name);
+    console.error(`FAIL ${name}\n${error.stack ?? error}`);
+  } finally {
+    await touch.close();
+  }
+}
+
 if (failures.length) {
   console.error(`\n${failures.length} of ${passed + failures.length} failed`);
   process.exit(1);

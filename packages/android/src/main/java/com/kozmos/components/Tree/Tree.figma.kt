@@ -69,6 +69,17 @@ class KozmosTreeParentItemConnect {
     @FigmaProperty(FigmaType.Text, "Meta Text")
     val metaText: String = "Changes awaiting publish"
 
+    // GAP-277: Checkable draws the row's box and Checked its check;
+    // Disclosure End puts the chevron at the row's end.
+    @FigmaProperty(FigmaType.Boolean, "Checkable")
+    val checkable: Boolean = false
+
+    @FigmaProperty(FigmaType.Boolean, "Checked")
+    val checked: Boolean = false
+
+    @FigmaProperty(FigmaType.Boolean, "Disclosure End")
+    val disclosureEnd: Boolean = false
+
     @Composable
     fun ComponentExample() {
         TreeItem(
@@ -76,7 +87,9 @@ class KozmosTreeParentItemConnect {
             depth = depth,
             density = density,
             divided = divided,
-            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline,
+            checked = if (checkable) checked else null,
+            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start
         )
     }
 }
@@ -109,6 +122,17 @@ class KozmosTreeChildItemConnect {
     @FigmaProperty(FigmaType.Text, "Meta Text")
     val metaText: String = "Changes awaiting publish"
 
+    // GAP-277: Checkable draws the row's box and Checked its check;
+    // Disclosure End puts the chevron at the row's end.
+    @FigmaProperty(FigmaType.Boolean, "Checkable")
+    val checkable: Boolean = false
+
+    @FigmaProperty(FigmaType.Boolean, "Checked")
+    val checked: Boolean = false
+
+    @FigmaProperty(FigmaType.Boolean, "Disclosure End")
+    val disclosureEnd: Boolean = false
+
     @Composable
     fun ComponentExample() {
         TreeItem(
@@ -116,7 +140,9 @@ class KozmosTreeChildItemConnect {
             depth = depth,
             density = density,
             divided = divided,
-            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline,
+            checked = if (checkable) checked else null,
+            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start
         )
     }
 }
@@ -149,6 +175,17 @@ class KozmosTreeItemConnect {
     @FigmaProperty(FigmaType.Text, "Meta Text")
     val metaText: String = "Changes awaiting publish"
 
+    // GAP-277: Checkable draws the row's box and Checked its check;
+    // Disclosure End puts the chevron at the row's end.
+    @FigmaProperty(FigmaType.Boolean, "Checkable")
+    val checkable: Boolean = false
+
+    @FigmaProperty(FigmaType.Boolean, "Checked")
+    val checked: Boolean = false
+
+    @FigmaProperty(FigmaType.Boolean, "Disclosure End")
+    val disclosureEnd: Boolean = false
+
     @Composable
     fun ComponentExample() {
         TreeItem(
@@ -156,7 +193,9 @@ class KozmosTreeItemConnect {
             depth = depth,
             density = density,
             divided = divided,
-            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline
+            metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline,
+            checked = if (checkable) checked else null,
+            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start
         )
     }
 }

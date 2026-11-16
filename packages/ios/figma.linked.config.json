@@ -123,6 +123,8 @@
       "Sources/Components/TimePicker/TimePicker.swift",
       "Sources/Components/FileUpload/FileUpload.figma.swift",
       "Sources/Components/FileUpload/FileUpload.swift",
+      "Sources/Components/ImageCropper/ImageCropper.figma.swift",
+      "Sources/Components/ImageCropper/ImageCropper.swift",
       "Sources/Components/ColorPicker/ColorPicker.figma.swift",
       "Sources/Components/ColorPicker/ColorPicker.swift",
       "Sources/Components/Textarea/Textarea.figma.swift",

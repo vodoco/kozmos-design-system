@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 79         | 79/79 | 79/79     | 74/79   | 74/79 | 74/79   | 75/79   | 74/79       |
+| Core                   | 80         | 80/80 | 80/80     | 75/80   | 75/80 | 75/80   | 76/80   | 75/80       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -66,6 +66,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Grid                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Icon                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | IconButton           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| ImageCropper         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Input                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Kbd                  | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Link                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -194,18 +195,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 127/127
-- Web stories: 127/127
-- Web tests: 127/127
-- Web Code Connect files: 104/122
-- Web Code Connect scaffolds: 0/122
-- Web Code Connect linked: 104/122
-- iOS components: 117/127
-- iOS Code Connect files: 104/122
-- iOS Code Connect scaffolds: 0/122
-- iOS Code Connect linked: 104/122
-- Android components: 118/127
-- Android Code Connect files: 104/122
-- Android Code Connect scaffolds: 0/122
-- Android Code Connect linked: 104/122
-- Code Connect not applicable: 5/127
+- Web components: 128/128
+- Web stories: 128/128
+- Web tests: 128/128
+- Web Code Connect files: 105/123
+- Web Code Connect scaffolds: 0/123
+- Web Code Connect linked: 105/123
+- iOS components: 118/128
+- iOS Code Connect files: 105/123
+- iOS Code Connect scaffolds: 0/123
+- iOS Code Connect linked: 105/123
+- Android components: 119/128
+- Android Code Connect files: 105/123
+- Android Code Connect scaffolds: 0/123
+- Android Code Connect linked: 105/123
+- Code Connect not applicable: 5/128

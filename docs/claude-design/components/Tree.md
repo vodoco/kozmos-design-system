@@ -97,6 +97,29 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
 
   Every change to a `"multiple"` tree's selected rows.
 
+- `checkable`: `boolean`, optional, default `false`.
+
+  A checkbox on every row (GAP-277): the tree is a set of rows, as
+  `selectionMode="multiple"` is, held in `selectedIds` (or
+  `defaultSelectedIds`) and `onSelectedIdsChange`, and each row's check is
+  its `aria-checked`, with no `aria-selected`. A click on a row, Space or
+  Enter checks or clears it; the disclosure, and the Right and Left
+  arrows, open and close it. Shift ranges and Ctrl or Cmd+A do not apply,
+  and closing a parent leaves its rows' checks as they are.
+
+- `checkRule`: `TreeCheckRule`, optional, default `"exclusive"`.
+
+  How a row's check and the checks above and below it go together:
+  `"exclusive"` (the default) clears a row's ancestors and descendants
+  when it is checked, so a client and its sites are never checked
+  together; `"independent"` leaves every other row as it is.
+
+- `disclosurePosition`: `TreeDisclosurePosition`, optional.
+
+  Where each row's disclosure goes: `"start"`, before its name (the
+  default), or `"end"`, at the row's end, after its meta and actions
+  (GAP-277). Rows composed as children take it from here too.
+
 - `metaPlacement`: `TreeMetaPlacement`, optional.
 
   Where each row's meta goes: `"inline"`, after the name (the default), or
@@ -158,6 +181,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, 
   Dims the row, and is its `aria-disabled`.
 
 - `name`: `React.ReactNode`, **required**.
+- `checked`: `boolean`, optional.
+
+  A checkbox before the row's icon, and the row's `aria-checked`
+  (GAP-277): given, the row is a checkable tree's and has no
+  `aria-selected`. The box is drawn for the eye; the row is what a
+  screen reader hears as checked.
+
 - `actions`: `React.ReactNode`, optional.
 - `actionsVisibility`: `"auto" | "always"`, optional.
 - `count`: `React.ReactNode`, optional.
@@ -178,6 +208,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, 
   name (GAP-107). Defaults to the Tree's, else `"inline"`.
 
 - `focusVisible`: `boolean`, optional.
+- `disclosurePosition`: `TreeDisclosurePosition`, optional.
+
+  As Tree's `disclosurePosition`: `"end"` draws the disclosure at the
+  row's end. Defaults to the Tree's, else `"start"`.
+
 - `icon`: `React.ReactNode`, optional.
 - `indent`: `number`, optional.
 - `onDisclosureClick`: `(event: React.MouseEvent<HTMLSpanElement>) => void`, optional.
@@ -239,6 +274,18 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which
 
   Draws the disclosure, and gives the row `aria-expanded`.
 
+- `checked`: `boolean`, optional.
+
+  A checkbox before the row's icon, and the row's `aria-checked`
+  (GAP-277): given, the row is a checkable tree's and has no
+  `aria-selected`. The box is drawn for the eye; the row is what a
+  screen reader hears as checked.
+
+- `disclosurePosition`: `TreeDisclosurePosition`, optional.
+
+  As Tree's `disclosurePosition`: `"end"` draws the disclosure at the
+  row's end. Defaults to the Tree's, else `"start"`.
+
 - `icon`: `React.ReactNode`, optional.
 - `indent`: `number`, optional, default `20`.
 - `meta`: `React.ReactNode`, optional.
@@ -265,6 +312,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
   Dims the row, and is its `aria-disabled`.
 
 - `name`: `React.ReactNode`, **required**.
+- `checked`: `boolean`, optional.
+
+  A checkbox before the row's icon, and the row's `aria-checked`
+  (GAP-277): given, the row is a checkable tree's and has no
+  `aria-selected`. The box is drawn for the eye; the row is what a
+  screen reader hears as checked.
+
 - `expanded`: `boolean`, optional.
 
   Whether a row with children shows them: its `aria-expanded`.
@@ -289,6 +343,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
   name (GAP-107). Defaults to the Tree's, else `"inline"`.
 
 - `focusVisible`: `boolean`, optional.
+- `disclosurePosition`: `TreeDisclosurePosition`, optional.
+
+  As Tree's `disclosurePosition`: `"end"` draws the disclosure at the
+  row's end. Defaults to the Tree's, else `"start"`.
+
 - `icon`: `React.ReactNode`, optional.
 - `indent`: `number`, optional.
 - `onDisclosureClick`: `(event: React.MouseEvent<HTMLSpanElement>) => void`, optional.
@@ -378,6 +437,29 @@ From `@kozmos-ds/react`.
 type TreeSelectionMode = "single" | "multiple";
 ```
 
+### TreeCheckRule
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * How a checkable tree's checks on a row and the rows under it go together
+ * (GAP-277). `"exclusive"`: a row and the rows above or below it are never
+ * checked together, so checking a row clears its ancestors' and its
+ * descendants' checks. `"independent"`: every row's check is its own.
+ */
+type TreeCheckRule = "exclusive" | "independent";
+```
+
+### TreeDisclosurePosition
+
+From `@kozmos-ds/react`.
+
+```ts
+/** Where a row's disclosure goes: before its name, or at its end (GAP-277). */
+type TreeDisclosurePosition = "start" | "end";
+```
+
 ### TreeMetaPlacement
 
 From `@kozmos-ds/react`.
@@ -398,6 +480,8 @@ interface TreeItemRenderContext {
   hasChildren: boolean;
   expanded: boolean;
   selected: boolean;
+  /** Whether a checkable tree's row is checked (GAP-277); false otherwise. */
+  checked: boolean;
   focused: boolean;
   disabled: boolean;
   toggle: (force?: boolean) => void;

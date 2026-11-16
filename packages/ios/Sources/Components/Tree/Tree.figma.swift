@@ -66,12 +66,26 @@ struct KozmosTreeParentItemConnect: FigmaConnect {
     @FigmaString("Meta Text")
     var metaText: String = "Changes awaiting publish"
 
+    // GAP-277: Checkable draws the row's box and Checked its check;
+    // Disclosure End puts the chevron at the row's end.
+    @FigmaBoolean("Checkable")
+    var checkable: Bool = false
+
+    @FigmaBoolean("Checked")
+    var checked: Bool = false
+
+    @FigmaBoolean("Disclosure End")
+    var disclosureEnd: Bool = false
+
     var body: some View {
         KozmosTree(
-            nodes: [Node(value: self.name, children: [], meta: self.metaBelow ? self.metaText : nil)],
+            nodes: [Node(id: "row", value: self.name, children: [], meta: self.metaBelow ? self.metaText : nil)],
             density: self.density,
             divided: self.divided,
-            metaPlacement: self.metaBelow ? .below : .inline
+            selection: .constant(self.checked ? ["row"] : []),
+            metaPlacement: self.metaBelow ? .below : .inline,
+            checkable: self.checkable,
+            disclosurePosition: self.disclosureEnd ? .end : .start
         )
     }
 }
@@ -103,12 +117,26 @@ struct KozmosTreeChildItemConnect: FigmaConnect {
     @FigmaString("Meta Text")
     var metaText: String = "Changes awaiting publish"
 
+    // GAP-277: Checkable draws the row's box and Checked its check;
+    // Disclosure End puts the chevron at the row's end.
+    @FigmaBoolean("Checkable")
+    var checkable: Bool = false
+
+    @FigmaBoolean("Checked")
+    var checked: Bool = false
+
+    @FigmaBoolean("Disclosure End")
+    var disclosureEnd: Bool = false
+
     var body: some View {
         KozmosTree(
-            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            nodes: [Node(id: "row", value: self.name, meta: self.metaBelow ? self.metaText : nil)],
             density: self.density,
             divided: self.divided,
-            metaPlacement: self.metaBelow ? .below : .inline
+            selection: .constant(self.checked ? ["row"] : []),
+            metaPlacement: self.metaBelow ? .below : .inline,
+            checkable: self.checkable,
+            disclosurePosition: self.disclosureEnd ? .end : .start
         )
     }
 }
@@ -140,12 +168,26 @@ struct KozmosTreeItemConnect: FigmaConnect {
     @FigmaString("Meta Text")
     var metaText: String = "Changes awaiting publish"
 
+    // GAP-277: Checkable draws the row's box and Checked its check;
+    // Disclosure End puts the chevron at the row's end.
+    @FigmaBoolean("Checkable")
+    var checkable: Bool = false
+
+    @FigmaBoolean("Checked")
+    var checked: Bool = false
+
+    @FigmaBoolean("Disclosure End")
+    var disclosureEnd: Bool = false
+
     var body: some View {
         KozmosTree(
-            nodes: [Node(value: self.name, meta: self.metaBelow ? self.metaText : nil)],
+            nodes: [Node(id: "row", value: self.name, meta: self.metaBelow ? self.metaText : nil)],
             density: self.density,
             divided: self.divided,
-            metaPlacement: self.metaBelow ? .below : .inline
+            selection: .constant(self.checked ? ["row"] : []),
+            metaPlacement: self.metaBelow ? .below : .inline,
+            checkable: self.checkable,
+            disclosurePosition: self.disclosureEnd ? .end : .start
         )
     }
 }
