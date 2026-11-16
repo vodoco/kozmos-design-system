@@ -59,54 +59,68 @@ function token() {
   return "";
 }
 
-/** Expected set names and variant axes, read from the plugin source. */
-export function expectations() {
-  const source = fs.readFileSync(PLUGIN, "utf8");
-
-  // An axis's values are a top-level array of strings, but not always a
-  // literal one: GAP-153's Mixed state is a named string (MIXED_FIELD_STATE)
-  // inside COMBOBOX_STATES, and Input's states are INPUT_STATES.concat([…]).
-  // Reading only the quoted strings dropped those, and the live file's correct
-  // State=Mixed read as drift. Each element is a quoted string, a named string
-  // constant, or a spread of another array; a value list may also be one array
-  // concatenated with others.
+/**
+ * The plugin's top-level lists of names, as the plugin itself computes them.
+ * A list may name a string constant (`MIXED_FIELD_STATE`), spread another
+ * list (`...INPUT_STATES`) or extend one (`INPUT_STATES.concat([...])`), so
+ * reading only its quoted strings drops values: from 12 Nov (#521) that made
+ * Input's and NumberInput's State axis unknown and Combobox's Mixed
+ * undeclared, three drifts the file never had. A list holding anything else
+ * is left out, as if it were no list, rather than guessed at.
+ */
+export function constantLists(source) {
   const strings = {};
   for (const m of source.matchAll(/^const ([A-Z0-9_]+) = "([^"]*)";/gm)) {
     strings[m[1]] = m[2];
   }
-  const raw = {};
+  const declared = [];
   for (const m of source.matchAll(/^const ([A-Z0-9_]+) = \[([^\]]*)\];/gm)) {
-    raw[m[1]] = { items: m[2] };
+    declared.push({ name: m[1], base: null, body: m[2] });
   }
   for (const m of source.matchAll(
-    /^const ([A-Z0-9_]+) = ([A-Z0-9_]+)\.concat\(([^;]*)\);/gm,
+    /^const ([A-Z0-9_]+) = ([A-Z0-9_]+)\.concat\(\[([^\]]*)\]\);/gm,
   )) {
-    raw[m[1]] = { base: m[2], items: m[3].replace(/[[\]]/g, "") };
+    declared.push({ name: m[1], base: m[2], body: m[3] });
   }
-  const arrays = {};
-  const resolve = (name, seen = []) => {
-    if (name in arrays) return arrays[name];
-    const entry = raw[name];
-    if (!entry || seen.includes(name)) return undefined;
-    const values = entry.base
-      ? [...(resolve(entry.base, [...seen, name]) || [])]
-      : [];
-    // Strip line comments first: a quoted word in a comment is not a value.
-    const body = entry.items.replace(/\/\/[^\n]*/g, "");
-    for (const t of body.matchAll(
-      /"([^"]+)"|(\.\.\.)?\b([A-Z][A-Z0-9_]*)\b/g,
+
+  const lists = {};
+  const resolve = ({ base, body }) => {
+    if (base && !lists[base]) return null;
+    const items = base ? [...lists[base]] : [];
+    const code = body.replace(/\/\/[^\n]*/g, "");
+    let rest = code;
+    for (const token of code.matchAll(
+      /"([^"]*)"|\.\.\.([A-Z0-9_]+)|([A-Za-z0-9_$.]+)/g,
     )) {
-      if (t[1] !== undefined) values.push(t[1]);
-      else if (t[2]) values.push(...(resolve(t[3], [...seen, name]) || []));
-      else if (t[3] in strings) values.push(strings[t[3]]);
-      // concat() spreads an array argument; inside a literal it would nest.
-      else if (entry.base && raw[t[3]])
-        values.push(...(resolve(t[3], [...seen, name]) || []));
+      rest = rest.replace(token[0], "");
+      if (token[1] !== undefined) items.push(token[1]);
+      else if (token[2] !== undefined) {
+        if (!lists[token[2]]) return null;
+        items.push(...lists[token[2]]);
+      } else if (token[3] in strings) items.push(strings[token[3]]);
+      else return null;
     }
-    arrays[name] = values;
-    return values;
+    // Only commas and white space may be left between the items.
+    return /^[\s,]*$/.test(rest) ? items : null;
   };
-  for (const name of Object.keys(raw)) resolve(name);
+  // A list may use one declared after it, so resolve until nothing changes.
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const list of declared) {
+      if (lists[list.name]) continue;
+      const items = resolve(list);
+      if (items) {
+        lists[list.name] = items;
+        changed = true;
+      }
+    }
+  }
+  return lists;
+}
+
+/** Expected set names and variant axes, read from the plugin source. */
+export function expectations(source = fs.readFileSync(PLUGIN, "utf8")) {
+  const arrays = constantLists(source);
 
   const sectionsBlock = source.match(
     /const COMPONENT_PAGE_LAYOUT_SECTIONS = \[([\s\S]*?)\n\];/,
