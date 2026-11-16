@@ -85,3 +85,7 @@ Next useful plugin features:
 - Keep the Core and Product / SDK sets clean as React, SwiftUI, and Compose APIs evolve
 - Add new platform-specific component sets only after the Core library stays stable
 - Add controlled repair actions for recurring audit findings
+- Refuse, or at least warn, when an Update would run over a set that a newer build drew, read from the build each set
+  is stamped with. Today an older build's Update goes through: one from `fa86312e5dfd` (4 Nov) ran over the Combobox
+  that #521's build drew on 12 Nov and left its Reset Mixed and Reset Mixed Text properties bound to no layer, which
+  blocks publishing until the next Update.

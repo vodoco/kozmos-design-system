@@ -412,7 +412,8 @@ Pointr Cloud's Add New Access picks several clients, or some of a client's sites
 
 SwiftUI's `KozmosTree(checkable:)` and Compose's `KozmosTree(checkable = true)` take the same: the checks are the tree's
 selection (`selection` / `selectedIds`), with the check rule and the disclosure position. On SwiftUI each row is heard as a toggle that is on or off; on Compose each row
-is a checkbox in TalkBack (`toggleableState`).
+is a checkbox in TalkBack (`toggleableState`). A checkable leaf keeps the chevron's room on every platform, so its box
+lines up with its parent's; in a tree that is not checkable, SwiftUI's leaf rows keep none, where React's keep 16.
 
 ## Implementation
 

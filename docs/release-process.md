@@ -1035,3 +1035,24 @@ SwiftUI and Compose are unchanged by this release: SwiftUI's OTPInput rebuild an
 (decision 170) came after it, in #492 (merged on 8 Nov, `b60a0d0d`). Figma's field-end hover and pressed variants
 follow decision 164 separately, and Olcay keeps Pointr's Claude Design artifact as it is until 0.16.0, so no
 0.15.2 kit is built.
+
+### 0.16.0
+
+Not published yet: decision 174 holds it until every item the
+[gap register](product-design-gap-register.md#baseline-and-scope) promises for it is in. This entry keeps what the
+release must do besides the publish; its evidence table follows the publish.
+
+**Figma and Code Connect, after the publish.** Publish React's, SwiftUI's and Compose's linked mappings from the released `main` (`figma:publish:linked` and
+`figma:publish:native:linked`, each after its dry run), then read them back. Besides every mapping 0.16.0's pull
+requests add, these must be on it:
+
+- **The owner's Figma sitting of 15 Nov (wave 5):** FileUpload (444:12724), Content=Preview and Change Text (GAP-270);
+  the new ImageCropper set (2516:15104), Ratio and Zoom Controls (GAP-273); Toast (101:8189), Close Always Visible
+  (GAP-268); and TreeParentItem (684:6080), TreeChildItem (687:6789) and TreeItem (723:8776), Checkable, Checked,
+  Disclosure Start and Disclosure End (GAP-277).
+- **ImageCropper's Code Connect** on all three platforms (#553, in #560): the linked mappings go from 107 to 108.
+- **#537's sets:** the Dashboard modules' sets, and the Curated Icons and ImageField Update with #537's build
+  (`a7dd4d512bce`), which draws `crop-01` from the library (GAP-264).
+- **UI glyphs and icons (decision 187):** the icons snapshot of 16 Nov (`2026-11-16-0837Z`, 110 icons) connects the
+  venue set and `crop-01`. **TODO: the icon Code Connect pull request, number to come; name it here once it is
+  open.**
