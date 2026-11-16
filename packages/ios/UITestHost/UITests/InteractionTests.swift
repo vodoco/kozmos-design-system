@@ -1443,7 +1443,7 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["escape-events"].label, "none")
         app.textFields["Full search"].tap()
         escape()
-        XCTAssertEqual(app.staticTexts["search-query"].label, "empty")
+        XCTAssertEqual(app.staticTexts["search-query"].label, "empty", "after Escape; the app heard: \(heardKeys())")
         XCTAssertEqual(app.staticTexts["escape-events"].label, "clear full")
         XCTAssertEqual(app.textFields["Full search"].value(forKey: "hasKeyboardFocus") as? Bool, true,
                        "the field lost the focus")
@@ -1453,11 +1453,18 @@ final class InteractionTests: XCTestCase {
     /// `XCUIKeyboardKey.escape` never reaches the app on the iOS simulator
     /// (measured on 26.5: no press arrives, where every letter does); its
     /// Command-period does, as `UIKeyCommand.inputEscape`, the input the
-    /// hardware Escape key sends and the one `onKeyPress(.escape)` hears. The
-    /// first hardware key after the on-screen keyboard came up only puts it
-    /// away, and no key command hears it (measured in a sheet, where even a
-    /// visible `.cancelAction` button did not fire): a press of the End key,
-    /// which edits nothing, goes first, as a visitor's typing would.
+    /// hardware Escape key sends and the one `onKeyPress(.escape)` hears.
+    ///
+    /// The End key goes first and edits nothing. The first hardware key after
+    /// the field takes the focus switches the system into hardware-keyboard
+    /// mode and loses its modifiers on the way: Command-period sent alone
+    /// reaches the field as a bare "." (measured 15 Nov on a starved
+    /// simulator, 20 runs of 20; with End first, 20 of 20 heard Escape). The
+    /// fixture keeps the on-screen keyboard down (`KeyEventLog`), as a
+    /// hardware keyboard does: while it was up, it could come back between
+    /// End and Command-period, and Command-period was spent on the switch
+    /// again (`press . to UITextField`, then `kb willShow`), which is how
+    /// these tests failed on CI, 13–15 Nov.
     private func escape() {
         app.typeKey(XCUIKeyboardKey.end, modifierFlags: [])
         app.typeKey(".", modifierFlags: [.command])
@@ -1472,6 +1479,13 @@ final class InteractionTests: XCTestCase {
     /// In a popover, the same: cleared and kept, then dismissed.
     func testEscapeInAPopoversSearchClearsItAndKeepsThePopover() {
         escapeInPresentation("search-escape-popover")
+    }
+
+    /// What the app heard: each key press, the responder it went to, and the
+    /// on-screen keyboard's moves (the fixture's `key-events`).
+    private func heardKeys() -> String {
+        let keys = app.staticTexts["key-events"]
+        return keys.exists ? keys.label : "no key log on screen"
     }
 
     private func escapeInPresentation(_ scenario: String, file: StaticString = #filePath, line: UInt = #line) {
@@ -1493,7 +1507,7 @@ final class InteractionTests: XCTestCase {
         let events = app.staticTexts["escape-events"]
         let shown = events.waitForExistence(timeout: 1)
         let report = shown ? events.label : "gone; presenter: " + app.staticTexts["presenter-events"].label
-        XCTAssertEqual(report, "clear full", "after Escape", file: file, line: line)
+        XCTAssertEqual(report, "clear full", "after Escape; the app heard: \(heardKeys())", file: file, line: line)
         XCTAssertEqual(app.staticTexts["search-query"].label, "empty", file: file, line: line)
         XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true,
                        "the field lost the focus", file: file, line: line)
