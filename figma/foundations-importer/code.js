@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "dc9b9f4e8e9e";
+const PLUGIN_BUILD = "4200c258f350";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -641,6 +641,9 @@ const EMPTY_STATE_CONTENT = ["Basic", "Icon", "Action"];
 // Found"). A layer in every variant, shown by the List boolean, its three
 // items' words List Item 1 Text to List Item 3 Text.
 const EMPTY_STATE_LIST_PROPERTY = "List";
+// React's marker column (padding-inline-start 1.25rem) and its disc.
+const EMPTY_STATE_LIST_MARKER_COLUMN = 20;
+const EMPTY_STATE_LIST_MARKER_SIZE = 5;
 const EMPTY_STATE_LIST_ITEMS = [
   "Check the building and level",
   "Clear the type filters",
@@ -81446,6 +81449,9 @@ async function syncSelectVariantChildren({
     ),
   ];
   trigger.strokeWeight = 1;
+  // Out, as Input's field: the variants #521 (Mixed) and GAP-164 (Open)
+  // added came out laid in beside the six drawn before (figma:verify, 15 Nov).
+  keepStrokeOutOfLayout(trigger);
   trigger.clipsContent = false;
 
   let placeholder = directChildNamed(trigger, "Placeholder Text");
@@ -82532,6 +82538,12 @@ async function syncEmptyStateVariantChildren({
  * 280 column from the start, each item a bullet and its words in
  * foreground/400 at the description's size, 4 between items. Hidden: the
  * List boolean shows it.
+ *
+ * React's bullet is a list marker (list-style: disc, padding-inline-start
+ * 1.25rem), not a character in the item, so it is drawn as one: a 5 disc in
+ * a 20 column, where Chromium puts the marker (4 in, 8 down a 20 line), and
+ * the words start 20 in as React's do. A typed "•" read to figma:verify as an
+ * icon typed as a character, and started the words 13 in.
  */
 async function appendEmptyStateList(
   component,
@@ -82562,7 +82574,7 @@ async function appendEmptyStateList(
     row.counterAxisSizingMode = "AUTO";
     row.primaryAxisAlignItems = "MIN";
     row.counterAxisAlignItems = "MIN";
-    row.itemSpacing = 8;
+    row.itemSpacing = 0;
     row.paddingLeft = 0;
     row.paddingRight = 0;
     row.paddingTop = 0;
@@ -82571,16 +82583,23 @@ async function appendEmptyStateList(
     row.strokes = [];
     row.clipsContent = false;
 
-    const bullet = figma.createText();
+    const bullet = figma.createFrame();
     bullet.name = "Bullet";
-    await applyEmptyStateDescriptionTypography(
-      bullet,
-      fonts,
-      variableByName,
-      stats,
+    bullet.layoutMode = "NONE";
+    bullet.resizeWithoutConstraints(
+      EMPTY_STATE_LIST_MARKER_COLUMN,
+      EMPTY_STATE_LIST_MARKER_COLUMN,
     );
-    bullet.characters = "\u2022";
-    setTextAutoResize(bullet, "WIDTH_AND_HEIGHT");
+    bullet.fills = [];
+    bullet.strokes = [];
+    bullet.clipsContent = false;
+    const dot = figma.createEllipse();
+    dot.name = "Bullet Dot";
+    dot.resize(EMPTY_STATE_LIST_MARKER_SIZE, EMPTY_STATE_LIST_MARKER_SIZE);
+    dot.strokes = [];
+    bullet.appendChild(dot);
+    dot.x = 4;
+    dot.y = 8;
 
     const words = figma.createText();
     words.name = `List Item ${index + 1} Text`;
@@ -82593,8 +82612,8 @@ async function appendEmptyStateList(
     words.characters = EMPTY_STATE_LIST_ITEMS[index];
     words.textAlignHorizontal = "LEFT";
 
-    for (const text of [bullet, words]) {
-      text.fills = [
+    for (const node of [dot, words]) {
+      node.fills = [
         paintFromVariable(
           "Colors/foreground/400",
           "#5E6575",

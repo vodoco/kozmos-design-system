@@ -120,6 +120,28 @@ export function strokeLayoutsThatDisagree(name, set) {
 }
 
 /**
+ * The properties `set` declares that no layer references, by name.
+ *
+ * Figma refuses to publish a set carrying one, so this is the rule that
+ * answers "can the library ship?". VARIANT is exempt: a variant property lives
+ * in the variant's name, not in a layer reference.
+ */
+export function propertiesBoundToNoLayer(set) {
+  const definitions = (set && set.componentPropertyDefinitions) || {};
+  const referenced = new Set();
+  (function walk(node) {
+    const refs = node.componentPropertyReferences;
+    if (refs)
+      for (const field of Object.keys(refs)) referenced.add(refs[field]);
+    for (const child of node.children || []) walk(child);
+  })(set || {});
+  return Object.keys(definitions).filter(
+    (property) =>
+      definitions[property].type !== "VARIANT" && !referenced.has(property),
+  );
+}
+
+/**
  * Variants that cover one another in `name`'s set, one line per pair.
  *
  * A set lays its variants out on a grid of fixed steps, and a variant that
