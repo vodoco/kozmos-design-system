@@ -15660,11 +15660,15 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
     typeof plugin.configureListItemProperties === "function" &&
     typeof plugin.updateSettingsRowVariant === "function" &&
     typeof plugin.configureSettingsRowProperties === "function";
-  ok(painted, "ListItem's and SettingsRow's painters and properties are reachable");
+  ok(
+    painted,
+    "ListItem's and SettingsRow's painters and properties are reachable",
+  );
   ok(
     painted &&
-      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("ListItem")) ===
-        JSON.stringify({ Selected: ["False", "True"] }) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ListItem"),
+      ) === JSON.stringify({ Selected: ["False", "True"] }) &&
       JSON.stringify(
         plugin.expectedVariantAxesForComponentSetName("SettingsRow"),
       ) ===
@@ -15685,7 +15689,11 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
     );
     return component;
   };
-  const drawRow = async (value, second, component = figma.createComponent()) => {
+  const drawRow = async (
+    value,
+    second,
+    component = figma.createComponent(),
+  ) => {
     await withAutoLayout(() =>
       plugin.updateSettingsRowVariant(component, {
         value,
@@ -15707,7 +15715,8 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
         menusBound(component, "paddingLeft") === "List/item/padding/x" &&
         menusBound(component, "paddingRight") === "List/item/padding/x" &&
         menusBound(component, "paddingTop") === "List/item/padding/y/default" &&
-        menusBound(component, "paddingBottom") === "List/item/padding/y/default",
+        menusBound(component, "paddingBottom") ===
+          "List/item/padding/y/default",
       `${at}: padded 16 across and 12 down, List's own variables`,
     );
     ok(
@@ -15865,8 +15874,8 @@ section("GAP-195 and GAP-040: ListItem's slots and SettingsRow");
               (want === "outline"
                 ? tag.fills.length === 0 &&
                   boundVariableName(tag.strokes[0]) === "Border/Subtle"
-                : boundVariableName(tag.fills[0]) ===
-                    "Colors/background/100" && tag.strokes.length === 0),
+                : boundVariableName(tag.fills[0]) === "Colors/background/100" &&
+                  tag.strokes.length === 0),
         `${at}: ${want ? `the ${want} tag "${state}" beside the label` : "the label alone"} (${childNames(heading)})`,
       );
       textLooks(
@@ -17492,6 +17501,286 @@ section("figma:verify reads each set's axes as the plugin declares them");
     wrong.length === 0 && axes.Input && axes.Combobox,
     `figma:verify reads every set's axes as the plugin declares them${wrong.length ? ` (${wrong.length}: ${wrong.slice(0, 3).join("; ")})` : ""}`,
   );
+}
+
+// GAP-277: checkable rows and the disclosure at the end, as React's
+// `checkable` with a row's `checked`, and `disclosurePosition="end"`. Booleans
+// on the three row sets, as Divided and Meta Below: Checkable (off) shows
+// Checkbox's box before the leading icon, Checked (off) its checked fill and
+// mark, Disclosure Start (on) the disclosure before the label and Disclosure
+// End (off) one at the row's end. At their defaults a row draws as before.
+section("GAP-277: the tree rows' Checkable, Checked and Disclosure End");
+{
+  const painters = [
+    [
+      "updateTreeParentItemVariant",
+      { content: "Actions", expanded: "True", state: "Selected" },
+      true,
+    ],
+    ["updateTreeChildItemVariant", { content: "Count", state: "Idle" }, false],
+    [
+      "updateTreeItemVariant",
+      { type: "Parent", content: "Basic", expanded: "False", state: "Idle" },
+      true,
+    ],
+  ];
+  const reachable = painters.every(([fn]) => typeof plugin[fn] === "function");
+  ok(reachable, "the three row painters are reachable");
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const kindOf = (node) =>
+    node && node.getSharedPluginData("kozmos_ds_importer", "kind");
+  for (const [fn, base, parent] of reachable ? painters : []) {
+    for (const density of ["Default", "Compact"]) {
+      const at = `${fn} ${density}`;
+      const floor = density === "Compact" ? 32 : 40;
+      const row = await draw(fn, Object.assign({ density, depth: "1" }, base));
+      const flow = row.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const names = flow.map((child) => child.name);
+      const box = row.children.find((child) => child.name === "Checkbox");
+      const checked =
+        box && box.children.find((child) => child.name === "Checkbox Checked");
+      const mark =
+        checked &&
+        checked.children.find((child) => child.name === "Checkbox Mark");
+      const end = row.children.find((child) => child.name === "Disclosure End");
+      ok(
+        names.indexOf("Checkbox") === 1 &&
+          names[names.length - 1] === "Disclosure End" &&
+          ["tree-disclosure-icon", "tree-icon-spacer"].indexOf(
+            kindOf(flow[0]),
+          ) !== -1,
+        `${at}: the start disclosure, then Checkbox, and Disclosure End last (${names.join(", ")})`,
+      );
+      ok(
+        box &&
+          box.visible === false &&
+          kindOf(box) === "tree-checkbox" &&
+          box.width === 20 &&
+          box.height === 20 &&
+          box.cornerRadius === 4 &&
+          box.fills.length === 0 &&
+          boundVariableName(box.strokes[0]) === "Border/Input" &&
+          box.strokeWeight === 1,
+        `${at}: Checkbox is a hidden 20 box, radius 4, a 1px Border/Input edge and no fill (${box && `${box.visible}, ${box.width}x${box.height}, r${box.cornerRadius}, ${boundVariableName(box.strokes[0])}`})`,
+      );
+      ok(
+        checked &&
+          checked.visible === false &&
+          kindOf(checked) === "tree-checkbox-checked" &&
+          checked.width === 20 &&
+          checked.cornerRadius === 4 &&
+          boundVariableName(checked.fills[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          boundVariableName(checked.strokes[0]) ===
+            "Primary Buttons/themed/button/background/idle" &&
+          mark &&
+          mark.width === 16 &&
+          mark.x === 2 &&
+          mark.y === 2,
+        `${at}: Checkbox Checked, hidden in it, is the theme fill with a 16 mark at 2,2 (${checked && `${checked.visible}, ${boundVariableName(checked.fills[0])}, mark ${mark && `${mark.width} at ${mark.x},${mark.y}`}`})`,
+      );
+      ok(
+        end &&
+          end.visible === false &&
+          (parent
+            ? end.type === "INSTANCE" &&
+              kindOf(end) === "tree-disclosure-end-icon" &&
+              end.width === 16
+            : kindOf(end) === "tree-disclosure-end-spacer" &&
+              end.width === 16 &&
+              end.height === 16),
+        `${at}: Disclosure End is a hidden ${parent ? "chevron" : "16 spacer"} (${end && `${end.type}, ${kindOf(end)}, ${end.width}, ${end.visible}`})`,
+      );
+      ok(
+        row.height === floor,
+        `${at}: with them hidden the row is ${floor}, as before (${row.height})`,
+      );
+      if (box && end && checked) {
+        await withAutoLayout(async () => {
+          flow[0].visible = false;
+          box.visible = true;
+          checked.visible = true;
+          end.visible = true;
+          row.resizeWithoutConstraints(row.width, row.height);
+        });
+        const inset = 8 + 20;
+        ok(
+          box.x === inset &&
+            end.x + end.width === row.width - 8 &&
+            row.height === floor,
+          `${at}: shown, with the start disclosure off, Checkbox opens the row at its inset (${inset}), Disclosure End closes it 8 from its edge, and the row stays ${floor} (${box.x}, ${end.x + end.width} of ${row.width}, ${row.height})`,
+        );
+      }
+    }
+  }
+
+  // The sets' properties, each bound to its layers and nothing else.
+  for (const [setName, fn, props] of [
+    [
+      "TreeParentItem",
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "False" },
+    ],
+    ["TreeChildItem", "updateTreeChildItemVariant", { content: "Count" }],
+    [
+      "TreeItem",
+      "updateTreeItemVariant",
+      { type: "Child", content: "Actions", expanded: "False" },
+    ],
+  ]) {
+    if (!reachable) break;
+    const variants = [];
+    for (const state of ["Idle", "Selected"]) {
+      variants.push(
+        await draw(
+          fn,
+          Object.assign({ depth: "0", density: "Default" }, props, { state }),
+        ),
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    await plugin.configureTreeItemProperties(
+      set,
+      freshStats(),
+      menusTokens.variableByName,
+    );
+    const definitions = set.componentPropertyDefinitions;
+    const keyOf = (name) =>
+      Object.keys(definitions).find(
+        (key) =>
+          key.split("#")[0] === name && definitions[key].type === "BOOLEAN",
+      );
+    const shownBy = (key) =>
+      set.findAll(
+        (node) =>
+          key &&
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.visible === key,
+      );
+    for (const [name, defaultValue, layer] of [
+      ["Checkable", false, (node) => node.name === "Checkbox"],
+      ["Checked", false, (node) => node.name === "Checkbox Checked"],
+      [
+        "Disclosure Start",
+        true,
+        (node) =>
+          node.parent.type === "COMPONENT" &&
+          node.parent.children.indexOf(node) === 0 &&
+          /^Disclosure (Icon|Spacer)/.test(node.name),
+      ],
+      ["Disclosure End", false, (node) => node.name === "Disclosure End"],
+    ]) {
+      const key = keyOf(name);
+      const shown = shownBy(key);
+      ok(
+        key &&
+          definitions[key].defaultValue === defaultValue &&
+          shown.length === 2 &&
+          shown.every(layer),
+        `${setName}: ${name}, ${defaultValue ? "on" : "off"} by default, shows each row's ${name === "Disclosure Start" ? "start disclosure" : name === "Checkable" ? "Checkbox" : name === "Checked" ? "Checkbox Checked" : "Disclosure End"} and nothing else (${key}, ${shown.map((node) => node.name).join(", ")})`,
+      );
+    }
+    set.remove();
+  }
+
+  // Update over the three sets as the file has them: every variant keeps its
+  // node id and name, none is added, and each gains the four properties.
+  const icons = () => {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    return [page];
+  };
+  const names = (setName) => {
+    const out = [];
+    for (const type of setName === "TreeItem" ? ["Parent", "Child"] : [null])
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                out.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return out;
+  };
+  for (const [setName, update, total] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72],
+    ["TreeItem", "updateTreeItemComponent", 216],
+  ]) {
+    if (!reachable) break;
+    const oldNames = names(setName);
+    const replay = await replayUpdate(setName, oldNames, update, icons());
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const key = (name) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === "BOOLEAN",
+      );
+    const boxes = replay.liveSet.findAll((n) => n.name === "Checkbox");
+    const ends = replay.liveSet.findAll((n) => n.name === "Disclosure End");
+    ok(
+      replay.result.variantsUpdated === total &&
+        replay.result.variantsCreated === 0 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) => variant && variant.name === oldNames[i],
+        ) &&
+        ["Checkable", "Checked", "Disclosure Start", "Disclosure End"].every(
+          (name) => key(name),
+        ) &&
+        boxes.length === total &&
+        boxes.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Checkable"),
+        ) &&
+        ends.length === total &&
+        ends.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key("Disclosure End"),
+        ),
+      `${setName}: Update keeps all ${total} variants and their ids, and gives each a hidden Checkbox (Checkable) and Disclosure End (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${boxes.length} boxes, ${ends.length} ends)`,
+    );
+  }
 }
 
 // --- Summary ---------------------------------------------------------------------

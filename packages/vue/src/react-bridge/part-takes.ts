@@ -718,7 +718,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [ListItemStatus, H],
   [SettingsRow, settingsRowBooleans],
   [Table, html(["framed"])],
-  [Tree, html(["divided", "virtualized"])],
+  [Tree, html(["checkable", "divided", "virtualized"])],
   [Timeline, H],
   [
     Tooltip,

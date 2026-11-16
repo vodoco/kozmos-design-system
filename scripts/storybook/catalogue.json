@@ -1305,6 +1305,7 @@
       "title": "Core/Data display/Tree",
       "component": "Tree",
       "exports": [
+        "Checkable",
         "Composed",
         "Default",
         "Divided",
