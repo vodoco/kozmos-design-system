@@ -22,6 +22,8 @@ private struct InteractionFixture: View {
     @State private var galleryIndex = 1
     @State private var replaced = false
     @State private var controlAccessibilityReport = "not inspected"
+    /// "chip-remove-targets": each chip's laid-out height, by its words.
+    @State private var chipHeights: [String: CGFloat] = [:]
     @State private var fieldAccessibilityReport = "not inspected"
     @State private var manoeuvreExpanded = true
     @State private var groupedSelection: String?
@@ -587,6 +589,20 @@ private struct InteractionFixture: View {
             KozmosChip(text: "Coffee", selected: true, onRemove: { events.append("remove Coffee") },
                        action: { events.append("Coffee") })
             KozmosChip(text: "Open now", onRemove: { events.append("remove Open now") })
+        case "chip-remove-targets":
+            // 24 apart, so no remove's 44 target reaches the next chip's.
+            VStack(spacing: 24) {
+                ForEach([("Lift", KozmosChipSize.sm), ("Coffee", .default), ("Gate", .lg)], id: \.0) { text, size in
+                    KozmosChip(text: text, size: size, onRemove: { events.append("remove \(text)") },
+                               action: { events.append(text) })
+                        .background(GeometryReader { geometry in
+                            Color.clear.onAppear { chipHeights[text] = geometry.size.height }
+                        })
+                }
+                Text(["Lift", "Coffee", "Gate"].map { chipHeights[$0].map { "\(Int($0))" } ?? "?" }
+                    .joined(separator: "|"))
+                    .accessibilityIdentifier("chip-heights")
+            }
         case "localized-remove":
             KozmosChip(text: "Kaffee", removeLabel: "Kaffee entfernen",
                        onRemove: { events.append("remove Kaffee") }, action: { events.append("Kaffee") })

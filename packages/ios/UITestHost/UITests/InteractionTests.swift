@@ -792,6 +792,49 @@ final class InteractionTests: XCTestCase {
         received("Coffee|remove Coffee|remove Open now")
     }
 
+    /// A chip's remove is drawn 20 but takes a tap 44 square, Apple's minimum
+    /// and Kozmos's SwiftUI one, at every size, with the chip no taller for
+    /// it, and a tap on the chip's words is never a remove, up to their last
+    /// point. It took a tap only on the 20.
+    func testAChipsRemoveTakesATap44SquareWhileTheChipKeepsItsHeight() {
+        launch("chip-remove-targets")
+        XCTAssertEqual(app.staticTexts["chip-heights"].label, "28|32|36", "a remove target made a chip taller")
+        func last() -> String {
+            String(app.staticTexts["received-events"].label.split(separator: "|").last ?? "none")
+        }
+        for text in ["Lift", "Coffee", "Gate"] {
+            let remove = app.buttons["Remove \(text)"]
+            XCTAssertTrue(remove.waitForExistence(timeout: 3), text)
+            let frame = remove.frame
+            XCTAssertGreaterThanOrEqual(frame.width, 44, "\(text): \(frame)")
+            XCTAssertGreaterThanOrEqual(frame.height, 44, "\(text): \(frame)")
+            // The trailing corners, the mark, and above and below it: the
+            // mark is 20 wide, 4 in from the target's leading edge.
+            for (x, y) in [(42.0, 2.0), (42.0, 42.0), (14.0, 22.0), (14.0, 2.0), (14.0, 42.0), (8.0, 22.0)] {
+                remove.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: y)).tap()
+                XCTAssertEqual(last(), "remove \(text)", "\(text): a tap at \(x),\(y) in the remove's \(frame)")
+            }
+            // Across the words to their last point, every tap is the chip's.
+            // The words stop where the remove's target starts, 4 before the
+            // mark; the chip's element reads as the whole chip on iOS, so its
+            // frame does not say where they stop.
+            let words = app.buttons[text]
+            for back in [1.0, 2.0, 4.0, 8.0] {
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.minX - back, dy: frame.midY)).tap()
+                XCTAssertEqual(last(), text, "\(text): a tap \(back) before the remove's \(frame), on the words")
+            }
+            // Where the target's leading edge yields to the words, for the
+            // record: printed, not asserted.
+            var edge: [String] = []
+            for x in stride(from: 1.0, through: 7.0, by: 2.0) {
+                remove.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: 22)).tap()
+                edge.append("\(Int(x))=\(last())")
+            }
+            print("chip-remove-edge \(text) remove=\(frame) words=\(words.frame) \(edge.joined(separator: " "))")
+        }
+    }
+
     func testTheDocsExampleSaysWhichCategoryIsSelected() {
         launch("chip-docs")
         XCTAssertTrue(app.buttons["All"].isSelected)
