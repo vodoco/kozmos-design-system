@@ -4,7 +4,8 @@
 // node id recorded in figma-icons-2026-10-05-2002Z.json. A registry icon
 // reaches code through Icon's name prop, so the mapping survives a change of
 // which component the registry resolves that name to; a Pointr Maps - Express
-// wayfinding glyph, which the registry does not name, through its icon prop.
+// wayfinding glyph or a UI glyph (decision 121), which the registry does not
+// name, through its icon prop.
 import figma from "@figma/code-connect";
 import {
   Arriving,

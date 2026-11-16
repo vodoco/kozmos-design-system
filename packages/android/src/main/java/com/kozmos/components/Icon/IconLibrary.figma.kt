@@ -3,7 +3,9 @@
 // One connection per Icon / * component on the library's Icons page, from the
 // node id recorded in figma-icons-2026-10-05-2002Z.json, as React's
 // IconLibrary.figma.tsx maps them. KozmosIcon takes every one of them by its
-// Kozmos name, a Pointr Maps - Express wayfinding glyph too.
+// Kozmos name, a Pointr Maps - Express wayfinding glyph too, except the
+// importer's UI glyphs (decision 121): one a native part draws maps to that
+// part's system symbol, and the rest say where they belong.
 package com.kozmos.components.icon
 
 import androidx.compose.runtime.Composable
