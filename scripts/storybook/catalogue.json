@@ -433,7 +433,13 @@
       "id": "components-fileupload",
       "title": "Core/Inputs/FileUpload",
       "component": "FileUpload",
-      "exports": ["Default", "Multiple", "Error"]
+      "exports": [
+        "Default",
+        "Multiple",
+        "Error",
+        "ImagePreview",
+        "ImagePreviewEmpty"
+      ]
     },
     {
       "file": "packages/react/src/components/FloatingActionButton/FloatingActionButton.stories.tsx",

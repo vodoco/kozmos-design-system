@@ -17440,6 +17440,7 @@
           "mappedProps": [
             "accept",
             "browseLabel",
+            "changeLabel",
             "disabled",
             "dropLabel",
             "emptyDescription",
@@ -17447,6 +17448,7 @@
             "label",
             "maxSize",
             "multiple",
+            "preview",
             "status"
           ],
           "unmappedProps": []
@@ -17458,6 +17460,7 @@
           "aria-label",
           "aria-labelledby",
           "browseLabel",
+          "changeLabel",
           "children",
           "defaultFiles",
           "description",
@@ -17471,6 +17474,8 @@
           "maxFiles",
           "maxSize",
           "multiple",
+          "preview",
+          "previewAlt",
           "removeLabel",
           "role",
           "status",

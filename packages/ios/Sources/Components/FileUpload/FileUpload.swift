@@ -1,12 +1,26 @@
+import ImageIO
 import SwiftUI
 import UniformTypeIdentifiers
+
+/// What FileUpload shows of the file it holds, as React's `preview` prop.
+public enum KozmosFileUploadPreview: Equatable {
+    /// The file's name, with a remove button.
+    case none
+    /// One image, shown once chosen as an avatar-sized thumbnail beside its
+    /// name, with Change and Remove (GAP-270).
+    case image
+}
 
 public struct KozmosFileUpload: View {
     @State private var isImporting = false
     @State private var file: URL?
+    @State private var image: CGImage?
     let allowedContentTypes: [UTType]
     let browseLabel: String
     let removeLabel: String
+    let preview: KozmosFileUploadPreview
+    let changeLabel: String
+    let previewAlt: String?
     var onFileSelected: ((URL) -> Void)?
     var onFileRemoved: ((URL) -> Void)?
     
@@ -20,30 +34,73 @@ public struct KozmosFileUpload: View {
     /// The labels are last so that a lone trailing closure is still
     /// `onFileSelected` in every language mode: with the two callbacks last,
     /// Swift 5's backward matching gave it to `onFileRemoved`.
+    ///
+    /// `preview: .image` holds one image: the importer offers images unless
+    /// `allowedContentTypes` names others, and the chosen one shows as an
+    /// avatar-sized thumbnail, its accessibility label `previewAlt` (the
+    /// file's name unless you pass one), with a `changeLabel` button,
+    /// "Change" by default, that opens the importer again, and the remove
+    /// button.
     public init(
         allowedContentTypes: [UTType] = [.content],
         onFileSelected: ((URL) -> Void)? = nil,
         onFileRemoved: ((URL) -> Void)? = nil,
         browseLabel: String = "Tap to upload file",
-        removeLabel: String = "Remove"
+        removeLabel: String = "Remove",
+        preview: KozmosFileUploadPreview = .none,
+        changeLabel: String = "Change",
+        previewAlt: String? = nil
     ) {
         self.allowedContentTypes = allowedContentTypes
         self.browseLabel = browseLabel
         self.removeLabel = removeLabel
+        self.preview = preview
+        self.changeLabel = changeLabel
+        self.previewAlt = previewAlt
         self.onFileSelected = onFileSelected
         self.onFileRemoved = onFileRemoved
     }
 
     /// A part already holding `file`, for the tests: a picked file comes only
     /// from the system's importer.
-    init(holding file: URL, onFileRemoved: ((URL) -> Void)? = nil, removeLabel: String = "Remove") {
-        self.init(onFileRemoved: onFileRemoved, removeLabel: removeLabel)
+    init(
+        holding file: URL,
+        onFileRemoved: ((URL) -> Void)? = nil,
+        removeLabel: String = "Remove",
+        preview: KozmosFileUploadPreview = .none,
+        changeLabel: String = "Change",
+        previewAlt: String? = nil
+    ) {
+        self.init(
+            onFileRemoved: onFileRemoved,
+            removeLabel: removeLabel,
+            preview: preview,
+            changeLabel: changeLabel,
+            previewAlt: previewAlt
+        )
         self._file = State(initialValue: file)
+    }
+
+    /// The types the importer offers: images for an image preview whose
+    /// caller named none, as React's `accept` falls back to `image/*`.
+    var importedTypes: [UTType] {
+        preview == .image && allowedContentTypes == [.content] ? [.image] : allowedContentTypes
+    }
+
+    /// The image at `url`, read inside its security scope, as the importer
+    /// hands out; nil for a file that is not one.
+    static func loadImage(at url: URL) -> CGImage? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }
     
     public var body: some View {
         VStack {
-            if let file {
+            if let file, preview == .image {
+                imagePreview(of: file)
+            } else if let file {
                 HStack {
                     // A theme-coloured icon: theme 600 (decision 59).
                     // Decoration, as React's file icon: the name beside it
@@ -89,9 +146,16 @@ public struct KozmosFileUpload: View {
                 }
             }
         }
+        .task(id: preview == .image ? file : nil) {
+            guard preview == .image, let file else {
+                image = nil
+                return
+            }
+            image = Self.loadImage(at: file)
+        }
         .fileImporter(
             isPresented: $isImporting,
-            allowedContentTypes: allowedContentTypes,
+            allowedContentTypes: importedTypes,
             allowsMultipleSelection: false
         ) { result in
             do {
@@ -102,5 +166,39 @@ public struct KozmosFileUpload: View {
                 print("Error selecting file: \(error.localizedDescription)")
             }
         }
+    }
+
+    /// The chosen image, avatar-sized and round as KozmosAvatar, then its
+    /// name, Change and the remove button, on the file row's surface.
+    private func imagePreview(of file: URL) -> some View {
+        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+            ZStack {
+                Circle().fill(KozmosColors.primitivesColorsBackground300)
+                if let image {
+                    Image(image, scale: 1, label: Text(verbatim: previewAlt ?? file.lastPathComponent))
+                        .resizable()
+                        .scaledToFill()
+                }
+            }
+            .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: KozmosDimensions.primitivesLayoutSizing500)
+            .clipShape(Circle())
+            Text(file.lastPathComponent)
+                .font(KozmosTypography.body)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 0)
+            KozmosButton(changeLabel, variant: .outline, size: .sm) { isImporting = true }
+            Button(action: {
+                self.file = nil
+                onFileRemoved?(file)
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+            }
+            .accessibilityLabel(Text(verbatim: removeLabel))
+        }
+        .padding()
+        .background(KozmosColors.primitivesColorsBackground100)
+        .cornerRadius(KozmosDimensions.semanticsRadiusControl)
     }
 }
