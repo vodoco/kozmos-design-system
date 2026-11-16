@@ -1585,7 +1585,7 @@ camera control, branding/provider policy and product ranking in their host adapt
     `doc.on.doc` and `ContentCopy`, `star-01` is `star` and `Star`), or else to a snippet that says where the glyph
     belongs: `pencil-01` in a Card header's actions is the product's, and the Dashboard modules' glyphs are web only
     (decision 183). The icons snapshot of 16 Nov (`2026-11-16-0837Z`, 110 icons) connects the venue set and `crop-01`.
-    **TODO: the icon Code Connect pull request, number to come, builds it; write its number here.**
+    #561 builds it.
   - Also on 26 Oct: GAP-045 is closed as won't do, and the Coachmark, GAP-157, closes with TourStep, which with no
     `stepCount` is the coachmark (GAP-188, #422).
   - Also on 1 Nov: Vue 3 (GAP-016, GAP-148) starts after 0.16.0, as a track of its own alongside Cloud (moved on

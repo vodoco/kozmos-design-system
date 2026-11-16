@@ -1054,5 +1054,4 @@ requests add, these must be on it:
 - **#537's sets:** the Dashboard modules' sets, and the Curated Icons and ImageField Update with #537's build
   (`a7dd4d512bce`), which draws `crop-01` from the library (GAP-264).
 - **UI glyphs and icons (decision 187):** the icons snapshot of 16 Nov (`2026-11-16-0837Z`, 110 icons) connects the
-  venue set and `crop-01`. **TODO: the icon Code Connect pull request, number to come; name it here once it is
-  open.**
+  venue set and `crop-01`; #561 builds it.
