@@ -51,27 +51,42 @@ describe("RatingEditor", () => {
       "4.3 of 5 · 120 ratings",
     ).previousElementSibling!;
     expect(stars).toHaveAttribute("aria-hidden", "true");
-    expect(stars.querySelectorAll("svg")).toHaveLength(5);
-    // How many are filled: Core's Rating draws whole stars, so 4.5 fills
-    // four (it draws no half yet).
-    const filled = () =>
-      document.querySelectorAll(
-        ".kozmos-rating-editor-preview svg.fill-data-yellow",
+    // Five faces, each a whole star or, for the half, the empty star with
+    // the filled one clipped over it (Core's read-only Rating, decision 181).
+    expect(stars.children).toHaveLength(5);
+    // The stars drawn, a half counting as one half: whole filled stars, plus
+    // a half for the face holding a clipped one.
+    const shown = () => {
+      const faces = Array.from(
+        document.querySelector(".kozmos-rating-editor-preview")!
+          .firstElementChild!.children,
+      );
+      expect(faces).toHaveLength(5);
+      const whole = faces.filter(
+        (face) =>
+          face.matches("svg") && face.classList.contains("fill-data-yellow"),
       ).length;
-    expect(filled()).toBe(4);
+      const halves = faces.filter((face) =>
+        face.querySelector("[data-rating-half] svg.fill-data-yellow"),
+      ).length;
+      return whole + halves / 2;
+    };
+    expect(shown()).toBe(4.5);
     rerender(<RatingEditor value={value(86, 100, 1)} />);
     expect(screen.getByText("86 of 100 · 1 rating")).toBeVisible();
-    expect(filled()).toBe(4);
+    expect(shown()).toBe(4.5);
     rerender(<RatingEditor value={value(3, 5, null)} />);
     expect(screen.getByText("3 of 5")).toBeVisible();
-    expect(filled()).toBe(3);
-    // 3.3 of 6 is 2.75 stars, a half: 3, not 2.5's two.
+    expect(shown()).toBe(3);
+    // 3.3 of 6 is 2.75 stars, which rounds up to 3, not down to 2.5.
     rerender(<RatingEditor value={value(3.3, 6, null)} />);
-    expect(filled()).toBe(3);
+    expect(shown()).toBe(3);
+    rerender(<RatingEditor value={value(3.2, 5, null)} />);
+    expect(shown()).toBe(3);
     rerender(<RatingEditor value={value(5, 5, null)} />);
-    expect(filled()).toBe(5);
+    expect(shown()).toBe(5);
     rerender(<RatingEditor value={value(0, 5, null)} />);
-    expect(filled()).toBe(0);
+    expect(shown()).toBe(0);
   });
 
   it("rounds the preview's share to the nearest half star (decision 181)", () => {

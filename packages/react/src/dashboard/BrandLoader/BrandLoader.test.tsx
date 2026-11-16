@@ -158,7 +158,14 @@ describe("BrandLoader (CLOUD-UI-008)", () => {
       // In the theme's portal, not where it was rendered.
       expect(container).toBeEmptyDOMElement();
       const scrim = document.querySelector(".kozmos-brand-loader-overlay")!;
-      expect(scrim).toHaveClass("fixed", "inset-0", "bg-overlay-scrim");
+      // Core's Backdrop, over the window: its owned rules (GAP-262) place
+      // it fixed over the window and draw the theme's scrim, not inline in
+      // a box, and Backdrop's own tests hold what those rules draw.
+      expect(scrim).toHaveClass(
+        "kozmos-backdrop-layer",
+        "kozmos-backdrop-solid",
+      );
+      expect(scrim).not.toHaveClass("kozmos-backdrop-inline");
       expect(scrim.querySelector('[role="status"]')).not.toBeNull();
     });
 
