@@ -1,5 +1,8 @@
 import type { Preview } from "@storybook/react";
 import "../../../packages/react/dist/style.css";
+// The Dashboard modules' sheet (decision 183), after style.css as a product
+// loads it: their stories are under Dashboard/.
+import "../../../packages/react/dist/dashboard.css";
 import { DesignConfigProvider } from "@kozmos-ds/react";
 import "./preview.css";
 
@@ -52,7 +55,14 @@ const preview: Preview = {
   parameters: {
     options: {
       storySort: {
-        order: ["Foundations", "Core", "SDK", "Examples", "Guides"],
+        order: [
+          "Foundations",
+          "Core",
+          "SDK",
+          "Dashboard",
+          "Examples",
+          "Guides",
+        ],
       },
     },
     // A canvas paint selector is not a component theme. The Theme toolbar

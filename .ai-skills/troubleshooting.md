@@ -202,7 +202,9 @@ Error: useState only works in Client Components. Add the "use client" directive.
    modules behind what it imports. A module that does something when imported breaks that.
 
 4. **There are no per-component entry points:** `@kozmos-ds/react` exports `.`, `./style.css` and
-   `./reset.css`. The per-module build is what keeps an app's cost to what it uses.
+   `./reset.css`, and `./dashboard` with `./dashboard.css` for Pointr Cloud's Dashboard modules
+   (decision 183), which an SDK or Core app never loads. The per-module build is what keeps an
+   app's cost to what it uses.
 
 5. **Remove duplicate dependencies:**
 

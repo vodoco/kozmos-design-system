@@ -496,6 +496,27 @@ try {
 }
 console.error = consoleError;
 
+// @kozmos-ds/react/dashboard (decision 183): the Dashboard modules' own
+// entry, through import() and require() alike, takes its Core parts from the
+// installed main entry (Backdrop here), and renders on the server.
+try {
+  const dashboardEsm = await import("@kozmos-ds/react/dashboard");
+  const dashboardCjs = require("@kozmos-ds/react/dashboard");
+  const loader = renderToStaticMarkup(
+    createElement(dashboardEsm.BrandLoader, { label: "Loading Pointr Cloud" }),
+  );
+  results.push([
+    loader.includes('role="status"') &&
+      loader.includes("kozmos-brand-loader") &&
+      typeof dashboardCjs.BrandLoader === "object" &&
+      Object.keys(dashboardCjs).sort().join() === Object.keys(dashboardEsm).sort().join() &&
+      !("BrandLoader" in kozmos),
+    "renders a BrandLoader from @kozmos-ds/react/dashboard on the server; require() gives the same exports, and the main entry none of them",
+  ]);
+} catch (error) {
+  results.push([false, "@kozmos-ds/react/dashboard — " + error.message]);
+}
+
 process.stdout.write(JSON.stringify(results));
 `;
 
@@ -558,7 +579,7 @@ for (const major of REACT_MAJORS) {
     for (const [, what] of failed) fail(`React ${major}: ${what}`);
     if (failed.length === 0) {
       ok(
-        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requireSpecifiers.length} through require too, ${requirable.length} CommonJS entr(y/ies) load, a Button, a Calendar and a Toaster render on the server, with no warning`,
+        `React ${major}: installs, ${specifiers.length} export(s) resolve, ${requireSpecifiers.length} through require too, ${requirable.length} CommonJS entr(y/ies) load, a Button, a Calendar, a Toaster and the dashboard entry's BrandLoader render on the server, with no warning`,
       );
     }
   } catch (error) {

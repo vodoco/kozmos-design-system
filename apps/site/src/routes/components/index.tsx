@@ -21,6 +21,7 @@ import {
   componentsInLane,
   countOn,
   laneOrder,
+  lanesInWords,
   laneTitle,
   platformLabel,
   platformOrder,
@@ -37,7 +38,7 @@ export function meta() {
     { title: pageTitle("Components") },
     {
       name: "description",
-      content: `${total} Kozmos components in four lanes, and where each one exists: React, SwiftUI, Compose and Figma. Their docs, stories and code are in Storybook.`,
+      content: `${total} Kozmos components in ${lanesInWords}, and where each one exists: React, SwiftUI, Compose and Figma. Their docs, stories and code are in Storybook.`,
     },
   ];
 }
@@ -140,7 +141,7 @@ export default function Components() {
     <Container className="site-page">
       <PageHeader
         title="Components"
-        lead={`${total} components in four lanes, and where each one exists: React, SwiftUI, Compose and Figma. Each one’s docs, stories and controls, and its code on every platform, are in Storybook.`}
+        lead={`${total} components in ${lanesInWords}, and where each one exists: React, SwiftUI, Compose and Figma. Each one’s docs, stories and controls, and its code on every platform, are in Storybook.`}
       >
         <Stack direction="row">
           <StorybookButtonLink>Open Storybook</StorybookButtonLink>

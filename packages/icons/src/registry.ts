@@ -23,6 +23,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Crop01,
   ChevronUp,
   Clapperboard,
   Clock,
@@ -188,6 +189,7 @@ export const kozmosIconNames = [
   "ticket-01",
   "package",
   "scissors-01",
+  "crop-01",
 ] as const;
 
 export type KozmosIconName = (typeof kozmosIconNames)[number];
@@ -820,6 +822,14 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     description: "A salon: hair and barber services.",
     component: Scissors01,
   },
+  {
+    name: "crop-01",
+    figmaName: "crop-01",
+    figmaNodeId: "1007:11258",
+    category: "Editor",
+    description: "Frame an image to its aspect ratio (ImageField's cropper).",
+    component: Crop01,
+  },
 ];
 
 // Every name and the component it draws, written out rather than built from
@@ -906,6 +916,7 @@ export const kozmosIconRegistry: Record<KozmosIconName, KozmosIconComponent> = {
   "ticket-01": Ticket01,
   package: Package,
   "scissors-01": Scissors01,
+  "crop-01": Crop01,
 };
 
 export const kozmosIconAliases = {

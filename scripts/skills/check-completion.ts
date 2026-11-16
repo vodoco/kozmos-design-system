@@ -110,7 +110,8 @@ type ComponentLaneId =
   | "core"
   | "code-only"
   | "product-sdk"
-  | "platform-form-factor";
+  | "platform-form-factor"
+  | "dashboard";
 
 const COMPONENT_LANES: Array<{
   id: ComponentLaneId;
@@ -141,21 +142,35 @@ const COMPONENT_LANES: Array<{
     description:
       "Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surfaces that need separate platform validation before Core promotion.",
   },
+  {
+    id: "dashboard",
+    title: "Dashboard",
+    description:
+      "Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipped from @kozmos-ds/react/dashboard with dashboard.css (decision 183), with Figma and no SwiftUI or Compose counterpart.",
+  },
 ];
+
+// The Dashboard modules live under packages/react/src/dashboard, one folder
+// each, and are exported by its index.ts, not the package's (decision 183).
+// A folder there is a module; Storybook files each under Dashboard/.
+const DASHBOARD_ROOT = "packages/react/src/dashboard";
+
+/** The folder a web component lives in: a Dashboard module's, or Core's. */
+const webDir = (name: string) =>
+  exists(`${DASHBOARD_ROOT}/${name}/${name}.tsx`)
+    ? `${DASHBOARD_ROOT}/${name}`
+    : `packages/react/src/components/${name}`;
 
 const PATHS = {
   web: {
     root: "packages/react/src/components",
-    component: (name: string) =>
-      `packages/react/src/components/${name}/${name}.tsx`,
-    story: (name: string) =>
-      `packages/react/src/components/${name}/${name}.stories.tsx`,
-    test: (name: string) =>
-      `packages/react/src/components/${name}/${name}.test.tsx`,
+    component: (name: string) => `${webDir(name)}/${name}.tsx`,
+    story: (name: string) => `${webDir(name)}/${name}.stories.tsx`,
+    test: (name: string) => `${webDir(name)}/${name}.test.tsx`,
     figma: (name: string) =>
       CODE_CONNECT_FILE_OVERRIDES.web[name] ??
-      `packages/react/src/components/${name}/${name}.figma.tsx`,
-    barrel: (name: string) => `packages/react/src/components/${name}/index.ts`,
+      `${webDir(name)}/${name}.figma.tsx`,
+    barrel: (name: string) => `${webDir(name)}/index.ts`,
   },
   ios: {
     root: "packages/ios/Sources/Components",
@@ -250,6 +265,7 @@ function readComponentDirectories(repoPath: string): string[] {
 function discoverComponents(): string[] {
   const names = new Set<string>([
     ...readComponentDirectories(PATHS.web.root),
+    ...readComponentDirectories(DASHBOARD_ROOT),
     ...readComponentDirectories(PATHS.ios.root),
     ...readComponentDirectories(PATHS.android.root),
   ]);
@@ -262,6 +278,7 @@ function codeConnectReason(name: string): string | undefined {
 }
 
 function componentLane(name: string): ComponentLaneId {
+  if (exists(`${DASHBOARD_ROOT}/${name}`)) return "dashboard";
   if (CODE_ONLY_UTILITY_COMPONENT_NAMES.has(name)) return "code-only";
   if (PRODUCT_SDK_COMPONENT_NAMES.has(name)) return "product-sdk";
   if (PLATFORM_FORM_FACTOR_COMPONENT_NAMES.has(name))
@@ -290,6 +307,16 @@ function laneDrift(statuses: ComponentStatus[]): string[] {
       problems.push(`${status.name}: ${file} has no Storybook title`);
       continue;
     }
+    const filedAsDashboard = title.startsWith("Dashboard/");
+    const inDashboardLane = status.lane === "dashboard";
+    if (filedAsDashboard !== inDashboardLane) {
+      problems.push(
+        inDashboardLane
+          ? `${status.name}: it is a Dashboard module, but Storybook files it as ${title}`
+          : `${status.name}: Storybook files it as ${title}, but it is not under ${DASHBOARD_ROOT}`,
+      );
+      continue;
+    }
     const filedAsSdk = title.startsWith("SDK/");
     const inSdkLane = status.lane === "product-sdk";
     if (filedAsSdk && !inSdkLane)
@@ -306,6 +333,7 @@ function laneDrift(statuses: ComponentStatus[]): string[] {
 
 async function checkExports(componentNames: string[]): Promise<Set<string>> {
   const indexPath = path.join(ROOT_DIR, "packages/react/src/index.ts");
+  const dashboardIndexPath = path.join(ROOT_DIR, DASHBOARD_ROOT, "index.ts");
   const exportedSet = new Set<string>();
 
   if (fs.existsSync(indexPath)) {
@@ -314,6 +342,17 @@ async function checkExports(componentNames: string[]): Promise<Set<string>> {
       if (content.includes(`./components/${name}`)) {
         exportedSet.add(name);
       }
+    });
+  }
+  // A Dashboard module is exported by the ./dashboard entry.
+  if (fs.existsSync(dashboardIndexPath)) {
+    const content = fs.readFileSync(dashboardIndexPath, "utf-8");
+    componentNames.forEach((name) => {
+      if (
+        exists(`${DASHBOARD_ROOT}/${name}`) &&
+        new RegExp(`["']\\./${name}(?:/${name})?["']`).test(content)
+      )
+        exportedSet.add(name);
     });
   }
 

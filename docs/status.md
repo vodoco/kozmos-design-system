@@ -28,6 +28,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
+| Dashboard              | 8          | 8/8   | 8/8       | 8/8     | 0/8   | 0/8     | 0/8     | 0/8         |
 
 ## Core
 
@@ -185,6 +186,21 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 | DynamicIsland | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | FeedbackCard  | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 
+## Dashboard
+
+Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipped from @kozmos-ds/react/dashboard with dashboard.css (decision 183), with Figma and no SwiftUI or Compose counterpart.
+
+| Component          | Web (Comp) | Web (Story) | Web (Test) | Web (Code Connect File) | Web (Code Connect Linked) | Web (Barrel) | Web (Export) | iOS (Comp) | iOS (Code Connect File) | iOS (Code Connect Linked) | Android (Comp) | Android (Code Connect File) | Android (Code Connect Linked) |
+| ------------------ | ---------- | ----------- | ---------- | ----------------------- | ------------------------- | ------------ | ------------ | ---------- | ----------------------- | ------------------------- | -------------- | --------------------------- | ----------------------------- |
+| BrandLoader        | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| ImageField         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| KeyValueList       | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| MapEditToolbar     | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| OpeningHoursEditor | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| PropertyField      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| PropertyPicker     | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+| RatingEditor       | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
+
 ## Code Connect Not Applicable
 
 - Heading: Typography primitive maintained through text styles/tokens rather than a Figma component set.
@@ -195,18 +211,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 128/128
-- Web stories: 128/128
-- Web tests: 128/128
-- Web Code Connect files: 105/123
-- Web Code Connect scaffolds: 0/123
-- Web Code Connect linked: 105/123
-- iOS components: 118/128
-- iOS Code Connect files: 105/123
-- iOS Code Connect scaffolds: 0/123
-- iOS Code Connect linked: 105/123
-- Android components: 119/128
-- Android Code Connect files: 105/123
-- Android Code Connect scaffolds: 0/123
-- Android Code Connect linked: 105/123
-- Code Connect not applicable: 5/128
+- Web components: 136/136
+- Web stories: 136/136
+- Web tests: 136/136
+- Web Code Connect files: 113/131
+- Web Code Connect scaffolds: 0/131
+- Web Code Connect linked: 113/131
+- iOS components: 118/136
+- iOS Code Connect files: 105/131
+- iOS Code Connect scaffolds: 0/131
+- iOS Code Connect linked: 105/131
+- Android components: 119/136
+- Android Code Connect files: 105/131
+- Android Code Connect scaffolds: 0/131
+- Android Code Connect linked: 105/131
+- Code Connect not applicable: 5/136

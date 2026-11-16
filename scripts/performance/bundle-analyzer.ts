@@ -109,6 +109,28 @@ const MAX_VUE_GZIP_KB = 3;
 // is 11.5. It never counts towards the main entry's, which must not import it
 // (packages/vue/test/react-free.spec.ts).
 const MAX_VUE_BRIDGE_GZIP_KB = 11.5;
+// @kozmos-ds/react/dashboard, on lines of its own (decision 183, owner, 13 Nov
+// 2026): Pointr Cloud's Dashboard modules ship from that entry and its sheet,
+// dashboard.css, so an SDK or Core product pays nothing for them; the main
+// entry must not reach a module of it (checked below, with "Everything").
+// Measured as ./react-bridge is: everything the entry exports at once, its
+// own code alone, with @kozmos-ds/react, which it imports its Core parts
+// from (vite.dashboard.config.mts), and the dependencies left out as the
+// app's own. The sheet is measured as style.css is, whole. The caps follow
+// the same rule, 110% of the first measurement to the next half kilobyte:
+// on 13 Nov 2026, with BrandLoader alone (CLOUD-UI-008), the entry measured
+// 0.99 KB here and the sheet 0.71 KB, so 1.5 and 1. Main's lines did not
+// move: its built files are byte for byte what they were. A module that
+// follows raises them with its own measurement, as the bridge's did. On 13
+// Nov 2026, with the property editors (CLOUD-UI-004: PropertyField,
+// OpeningHoursEditor, RatingEditor, KeyValueList) beside BrandLoader, the
+// entry measured 4.00 KB and the sheet 1.07 KB, so 4.5 and 1.5. With all of
+// decision 133's phase 1 together (BrandLoader, the property editors,
+// PropertyPicker, MapEditToolbar and ImageField: CLOUD-UI-003, 004, 005 and
+// 008), the entry measured 10.02 KB and the sheet 2.19 KB (13 Nov 2026), so
+// 11.5 and 2.5.
+const MAX_DASHBOARD_GZIP_KB = 11.5;
+const MAX_DASHBOARD_CSS_GZIP_KB = 2.5;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");
 const DIST_DIR = path.join(REACT_PKG_DIR, "dist");
@@ -122,6 +144,13 @@ const STYLESHEET = path.resolve(
   "../../packages/styles/dist/style.css",
 );
 const REACT_STYLESHEET = path.join(DIST_DIR, "style.css");
+const DASHBOARD_ENTRY = path.join(DIST_DIR, "kozmos-react-dashboard.mjs");
+const DASHBOARD_ESM_DIR = path.join(ESM_DIR, "dashboard");
+const DASHBOARD_STYLESHEET = path.resolve(
+  __dirname,
+  "../../packages/styles/dist/dashboard.css",
+);
+const REACT_DASHBOARD_STYLESHEET = path.join(DIST_DIR, "dashboard.css");
 const VUE_PKG_DIR = path.resolve(__dirname, "../../packages/vue");
 const VUE_ENTRY = path.join(VUE_PKG_DIR, "dist/kozmos-vue.mjs");
 const VUE_BRIDGE = path.join(VUE_PKG_DIR, "dist/react-bridge.mjs");
@@ -132,6 +161,7 @@ interface RollupChunk {
   exports?: string[];
   imports?: string[];
   dynamicImports?: string[];
+  modules?: Record<string, unknown>;
 }
 interface RollupBundle {
   cache: unknown;
@@ -209,7 +239,14 @@ async function main() {
     console.error("❌ Build failed! Bundle analysis aborted.");
     process.exit(1);
   }
-  for (const file of [ENTRY, STYLESHEET, VUE_ENTRY, VUE_BRIDGE]) {
+  for (const file of [
+    ENTRY,
+    STYLESHEET,
+    DASHBOARD_ENTRY,
+    DASHBOARD_STYLESHEET,
+    VUE_ENTRY,
+    VUE_BRIDGE,
+  ]) {
     if (!fs.existsSync(file)) {
       console.error(`❌ Output file not found: ${file}`);
       process.exit(1);
@@ -394,6 +431,80 @@ async function main() {
         `the stylesheet is ${kb(cssGzip).toFixed(2)} KB, over ${MAX_CSS_GZIP_KB} KB`,
       );
     }
+
+    // @kozmos-ds/react/dashboard (decision 183): the entry and its sheet.
+    const dashboard = await cost(
+      `import * as dashboard from ${JSON.stringify(DASHBOARD_ENTRY)}; console.log(dashboard);`,
+      "react_dashboard",
+    );
+    const dashboardCss = fs.readFileSync(DASHBOARD_STYLESHEET);
+    const dashboardCssGzip = gzipSync(dashboardCss).length;
+    console.log(
+      `\n📊 What an app pays for @kozmos-ds/react/dashboard (minified, gzip):`,
+    );
+    console.log(`---------------------------------`);
+    console.log(
+      `./dashboard:       ${kb(dashboard.gzip).toFixed(2)} KB / ${MAX_DASHBOARD_GZIP_KB.toFixed(2)} KB (${kb(dashboard.raw).toFixed(2)} KB minified; the Core parts it uses from @kozmos-ds/react besides)`,
+    );
+    console.log(
+      `dashboard.css:     ${kb(dashboardCssGzip).toFixed(2)} KB / ${MAX_DASHBOARD_CSS_GZIP_KB.toFixed(2)} KB (with style.css)`,
+    );
+    console.log(`---------------------------------`);
+    const modulesOf = (output: RollupChunk[]) =>
+      output.flatMap((chunk) => Object.keys(chunk.modules ?? {}));
+    // The main entry reaches no Dashboard module: they are the dashboard
+    // entry's alone.
+    const leaked = modulesOf(everything.output).filter((id) =>
+      id.startsWith(DASHBOARD_ESM_DIR + path.sep),
+    );
+    if (leaked.length)
+      fail.push(
+        `@kozmos-ds/react's main entry reaches ${leaked.length} Dashboard module(s) (${leaked
+          .slice(0, 3)
+          .map((id) => path.relative(DIST_DIR, id))
+          .join(", ")}): they belong to ./dashboard alone`,
+      );
+    // ...and the dashboard entry carries no copy of a Core part: it imports
+    // them from @kozmos-ds/react.
+    const copied = modulesOf(dashboard.output).filter(
+      (id) =>
+        id.startsWith(DIST_DIR + path.sep) &&
+        id !== DASHBOARD_ENTRY &&
+        !id.startsWith(DASHBOARD_ESM_DIR + path.sep),
+    );
+    if (copied.length)
+      fail.push(
+        `@kozmos-ds/react/dashboard bundles ${copied.length} module(s) of the main entry (${copied
+          .slice(0, 3)
+          .map((id) => path.relative(DIST_DIR, id))
+          .join(", ")}): it must import them from @kozmos-ds/react`,
+      );
+    if (!dashboardCss.equals(fs.readFileSync(REACT_DASHBOARD_STYLESHEET)))
+      fail.push(
+        "packages/react/dist/dashboard.css is not @kozmos-ds/styles's dist/dashboard.css: react must ship the shared sheet byte for byte",
+      );
+    // style.css draws no Dashboard module: a class dashboard.css defines is
+    // never in it.
+    const classesOf = (css: string) =>
+      new Set(
+        [...css.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((match) => match[1]),
+      );
+    const styleClasses = classesOf(fs.readFileSync(STYLESHEET, "utf8"));
+    const shared = [...classesOf(dashboardCss.toString("utf8"))].filter(
+      (name) => styleClasses.has(name),
+    );
+    if (shared.length)
+      fail.push(
+        `style.css defines ${shared.length} class(es) dashboard.css does (${shared.slice(0, 3).join(", ")}): a Dashboard module's rules belong in dashboard.css alone`,
+      );
+    if (kb(dashboard.gzip) > MAX_DASHBOARD_GZIP_KB)
+      fail.push(
+        `@kozmos-ds/react/dashboard costs ${kb(dashboard.gzip).toFixed(2)} KB, over ${MAX_DASHBOARD_GZIP_KB} KB`,
+      );
+    if (kb(dashboardCssGzip) > MAX_DASHBOARD_CSS_GZIP_KB)
+      fail.push(
+        `@kozmos-ds/react/dashboard.css is ${kb(dashboardCssGzip).toFixed(2)} KB, over ${MAX_DASHBOARD_CSS_GZIP_KB} KB`,
+      );
 
     // @kozmos-ds/vue: the main entry, and ./react-bridge on its own line.
     const vue = await cost(

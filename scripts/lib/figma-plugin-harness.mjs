@@ -558,6 +558,16 @@ export class MockNode {
     settleAutoLayout(this.parent || this);
   }
 
+  // The same floor on a frame's width: a hug axis stops at it.
+  get minWidth() {
+    return this._minWidth === undefined ? null : this._minWidth;
+  }
+
+  set minWidth(value) {
+    this._minWidth = value;
+    settleAutoLayout(this.parent || this);
+  }
+
   get layoutPositioning() {
     return this._layoutPositioning;
   }
@@ -1134,7 +1144,8 @@ function isAutoLayoutNode(node) {
  * - `minHeight` is a floor on a hug axis: the frame hugs what is in it and
  *   stops there, as the panel's Min H does. Unlike the rules above, this one
  *   was not read off the live file: Accordion's boxed Update is its first
- *   read-back. `minWidth` is not modelled.
+ *   read-back. `minWidth` is the same floor on the width: MapEditToolbar's
+ *   items hug their labels and stop at 56, as React's min-inline-size does.
  * - `layoutWrap` is not modelled: a row that would wrap overflows here, which
  *   is the worse of the two for a check to read.
  */
@@ -1209,11 +1220,13 @@ function hugWidth(node) {
     (node.paddingLeft || 0) +
     (node.paddingRight || 0) +
     2 * laidOutStroke(node);
-  return node.layoutMode === "HORIZONTAL"
-    ? inset +
+  const content =
+    node.layoutMode === "HORIZONTAL"
+      ? inset +
         widths.reduce((sum, width) => sum + width, 0) +
         flowGap(node, flow.length)
-    : inset + Math.max(...widths);
+      : inset + Math.max(...widths);
+  return Math.max(content, node.minWidth || 0);
 }
 
 function followConstraints(node, fromWidth, fromHeight) {
@@ -1288,7 +1301,11 @@ function layOut(node) {
     const content = horizontal
       ? Math.max(...heights)
       : heights.reduce((sum, height) => sum + height, 0) + gap;
-    placeSize(node, node.width, Math.max(content + insetY, node.minHeight || 0));
+    placeSize(
+      node,
+      node.width,
+      Math.max(content + insetY, node.minHeight || 0),
+    );
   }
 
   // Where each child ends up, so a check can read a row's edges.

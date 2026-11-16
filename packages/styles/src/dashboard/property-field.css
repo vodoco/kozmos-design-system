@@ -1,0 +1,35 @@
+/* PropertyField (CLOUD-UI-004): the frame every property of a Pointr Cloud
+   item sits in. A bordered group, the subtle edge at border-width sm and the
+   control radius, 12 inside, with the property's name and the info button
+   on its first line and the editor under them; the remove button beside the
+   group, centred on it, as Cloud draws it. Every side is logical, so right
+   to left mirrors it. */
+@kozmos-owned {
+  .kozmos-property-field {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    min-inline-size: 0;
+  }
+  /* Two classes: the scoped preflight's border reset weighs one (GAP-52). */
+  .kozmos-property-field .kozmos-property-field-box {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    min-inline-size: 0;
+    box-sizing: border-box;
+    padding: calc(var(--primitives-layout-spacing-150) * 1px);
+    border: var(--primitives-border-width-sm) solid
+      var(--semantics-border-subtle);
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background-color: var(--primitives-colors-background-0);
+  }
+  .kozmos-property-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    min-block-size: calc(var(--primitives-layout-spacing-300) * 1px);
+  }
+}
