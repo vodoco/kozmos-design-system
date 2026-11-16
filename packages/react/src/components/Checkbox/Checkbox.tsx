@@ -57,7 +57,7 @@ const Checkbox = React.forwardRef<
               // `indeterminate` is painted exactly like `checked` — same border, same fill. It is a
               // real answer ("these disagree"), not a disabled or half-pressed control, so it must not
               // read as weaker than the other two. Only the mark inside differs.
-              "peer h-5 w-5 shrink-0 rounded-marker border border-input ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-theme-fill data-[state=checked]:bg-theme-fill data-[state=checked]:text-theme-fill-foreground data-[state=indeterminate]:border-theme-fill data-[state=indeterminate]:bg-theme-fill data-[state=indeterminate]:text-theme-fill-foreground",
+              "peer h-5 w-5 shrink-0 rounded-marker border border-input ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-theme-fill aria-checked:bg-theme-fill aria-checked:text-theme-fill-foreground aria-[checked=mixed]:border-theme-fill aria-[checked=mixed]:bg-theme-fill aria-[checked=mixed]:text-theme-fill-foreground",
               hasError && "border-destructive focus-visible:ring-destructive",
               className,
             )}

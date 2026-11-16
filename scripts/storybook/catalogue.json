@@ -995,7 +995,7 @@
       "id": "input-rating",
       "title": "Core/Inputs/Rating",
       "component": "Rating",
-      "exports": ["Default", "Thumbs", "ReadOnly"]
+      "exports": ["Default", "Thumbs", "ReadOnly", "ReadOnlyHalves"]
     },
     {
       "file": "packages/react/src/components/RouteLocationField/RouteLocationField.stories.tsx",
@@ -1290,7 +1290,7 @@
       "id": "action-togglebutton",
       "title": "Core/Actions/ToggleButton",
       "component": "ToggleButton",
-      "exports": ["Default", "On"]
+      "exports": ["Default", "On", "InTooltip"]
     },
     {
       "file": "packages/react/src/components/Tooltip/Tooltip.stories.tsx",

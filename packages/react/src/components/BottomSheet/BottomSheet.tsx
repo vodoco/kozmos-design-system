@@ -46,23 +46,25 @@ const BottomSheetContent = React.forwardRef<
     side="bottom"
     showClose={false}
     className={cn(
-      "inset-x-0 bottom-0 mt-24 flex h-auto max-h-[min(100%,calc(100dvh-env(safe-area-inset-top)-1rem))] flex-col overscroll-contain rounded-t-container border-t bg-background !px-4 !pb-[max(1.5rem,env(safe-area-inset-bottom))] !pt-0",
+      "kozmos-bottom-sheet inset-x-0 bottom-0 mt-24 flex h-auto max-h-[min(100%,calc(100dvh-env(safe-area-inset-top)-1rem))] flex-col overscroll-contain rounded-t-container border-t bg-background !px-4 !pb-[max(1.5rem,env(safe-area-inset-bottom))] !pt-0",
       className,
     )}
     {...props}
   >
     <div
       aria-hidden="true"
-      className="mx-auto my-2 h-[5px] w-12 shrink-0 rounded-pill bg-muted-foreground/40"
+      className="kozmos-bottom-sheet-grip mx-auto my-2 h-[5px] w-12 shrink-0 rounded-pill bg-muted-foreground/40"
     />
     {title ? (
       <BottomSheetTitle className="sr-only">{title}</BottomSheetTitle>
     ) : null}
     {children}
     {showClose ? (
-      <BottomSheetClose className="absolute right-0 top-2 inline-flex h-11 w-11 items-start justify-end rounded-control p-2 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
+      <BottomSheetClose className="kozmos-bottom-sheet-close absolute right-0 top-2 inline-flex h-11 w-11 items-start justify-end rounded-control p-2 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
         <X aria-hidden="true" className="h-4 w-4" />
-        <span className="sr-only">Close bottom sheet</span>
+        <span className="kozmos-modal-close-name sr-only">
+          Close bottom sheet
+        </span>
       </BottomSheetClose>
     ) : null}
   </DrawerContent>
