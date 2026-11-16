@@ -87,6 +87,7 @@ import {
   OTPInput,
   Rating,
   FileUpload,
+  ImageCropper,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -274,6 +275,10 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [
     FileUpload,
     { dom: true, except: ["onChange"], own: ["onFileSelect", "onFilesChange"] },
+  ],
+  [
+    ImageCropper,
+    { dom: true, except: ["onChange"], own: ["onCrop", "onImageLoad"] },
   ],
   [DatePicker, datePickerTakes],
   [TimePicker, datePickerTakes],
@@ -747,6 +752,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [OTPInput, html(["disabled", "readOnly"], [], ["error"])],
   [Rating, html(["readOnly"])],
   [FileUpload, html(["disabled", "multiple"], [], ["error"])],
+  [ImageCropper, html(["disabled", "showZoomControls"])],
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
   [FloatingActionButton, floatingActionButtonBooleans],

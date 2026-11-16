@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 107 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 108 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 107 Core SwiftUI and 107 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 108 Core SwiftUI and 108 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15714,13 +15714,13 @@
   },
   "components": {
     "summary": {
-      "total": 127,
-      "stories": 127,
-      "tests": 127,
-      "exported": 127,
-      "codeConnectFiles": 104,
+      "total": 128,
+      "stories": 128,
+      "tests": 128,
+      "exported": 128,
+      "codeConnectFiles": 105,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 104
+      "codeConnectLinked": 105
     },
     "firstBatch": [
       "Accordion",
@@ -15761,6 +15761,7 @@
       "Grid",
       "Icon",
       "IconButton",
+      "ImageCropper",
       "Input",
       "Itinerary",
       "Kbd",
@@ -17694,6 +17695,49 @@
             "secondary"
           ]
         }
+      },
+      {
+        "name": "ImageCropper",
+        "source": "packages/react/src/components/ImageCropper/ImageCropper.tsx",
+        "story": "packages/react/src/components/ImageCropper/ImageCropper.stories.tsx",
+        "test": "packages/react/src/components/ImageCropper/ImageCropper.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/ImageCropper/ImageCropper.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2516-15104",
+          "needsNodeId": false,
+          "status": "linked",
+          "issues": [],
+          "connectedComponents": ["ImageCropper"],
+          "mappedProps": ["alt", "aspectRatio", "showZoomControls", "src"],
+          "unmappedProps": []
+        },
+        "props": [
+          "alt",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "aspectRatio",
+          "children",
+          "defaultValue",
+          "disabled",
+          "id",
+          "instructions",
+          "label",
+          "maxZoom",
+          "role",
+          "showZoomControls",
+          "src",
+          "statusLabel",
+          "tabIndex",
+          "title",
+          "value",
+          "zoomInLabel",
+          "zoomLabel",
+          "zoomOutLabel"
+        ],
+        "variants": {}
       },
       {
         "name": "Input",
