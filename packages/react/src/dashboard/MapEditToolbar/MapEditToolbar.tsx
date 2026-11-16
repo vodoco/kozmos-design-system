@@ -297,6 +297,7 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
 
     const control = (item: MapEditToolbarTool | MapEditToolbarAction) => {
       const Glyph = item.icon;
+      const described = Boolean(item.tooltip) && !item.disabled;
       const content = (
         <>
           <Glyph
@@ -307,6 +308,14 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
             className="kozmos-map-edit-toolbar-icon"
           />
           <span className="kozmos-map-edit-toolbar-label">{item.label}</span>
+          {described ? (
+            // The tooltip's words, always the button's description: Radix
+            // describes a trigger by its tooltip only while it is open.
+            // Hidden, so no part of the name or the layout.
+            <span id={`${hintId}-${item.id}`} hidden>
+              {item.tooltip}
+            </span>
+          ) : null}
         </>
       );
       const shared = {
@@ -316,8 +325,7 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
         tabIndex: tabStop === item.id ? 0 : -1,
         onFocus: () => setFocusId(item.id),
         "data-item": item.id,
-        "aria-describedby":
-          item.tooltip && !item.disabled ? `${hintId}-${item.id}` : undefined,
+        "aria-describedby": described ? `${hintId}-${item.id}` : undefined,
       };
       const button =
         item.type === "tool" ? (
@@ -337,23 +345,12 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
             {content}
           </Button>
         );
-      if (!item.tooltip || item.disabled) return button;
-      // The tooltip's trigger is a box round the button, not the button: a
-      // trigger drawn asChild writes its own data-state over the
-      // ToggleButton's, and a pressed tool lost its pressed look. Focus
-      // reaches the box from the button inside it, so the keyboard still
-      // opens it; the button is described by a hidden copy of the words beside it, as
-      // the tooltip's own copy describes the box.
+      if (!described) return button;
+      // The button is the trigger: a pressed tool's look reads aria-pressed,
+      // which the trigger's data-state leaves alone (GAP-261).
       return (
         <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="kozmos-map-edit-toolbar-tip">
-              {button}
-              <span id={`${hintId}-${item.id}`} hidden>
-                {item.tooltip}
-              </span>
-            </span>
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
           <TooltipContent>{item.tooltip}</TooltipContent>
         </Tooltip>
       );

@@ -124,16 +124,10 @@
     .kozmos-brand-loader-ring[data-ring="second"] {
     display: none;
   }
-  /* The overlay: Backdrop's scrim over the window, the loader in its middle,
-     and a pointer that says the page is not ready. Backdrop draws its scrim
-     with utilities, which a host without @scope drops; covering the window
-     is this module's promise, so it is owned here too, with Backdrop's own
-     values. */
+  /* The overlay: Backdrop over the window, its place and scrim Backdrop's
+     own owned rules (GAP-262), the loader in its middle, and a pointer that
+     says the page is not ready. */
   .kozmos-brand-loader-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: var(--primitives-layer-50);
-    background-color: var(--semantics-overlay-scrim);
     display: grid;
     place-items: center;
     cursor: wait;

@@ -526,7 +526,6 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
       defaultValue ?? [],
     );
     const images = value ?? inner;
-    const upload = React.useRef<HTMLDivElement>(null);
 
     // An object URL the field made is revoked once it has been drawn and
     // left the images (removed, or the product swapped in its uploaded URL),
@@ -578,12 +577,8 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
     };
 
     const onFiles = (files: File[]) => {
-      // The same file picked again is a change: FileUpload keeps the last
-      // pick in its input, so the field empties it after each one. FileUpload
-      // forwards its box, not its input (a Core gap), so the field finds it.
-      const input =
-        upload.current?.querySelector<HTMLInputElement>('input[type="file"]');
-      if (input) input.value = "";
+      // FileUpload empties its input after each pick, so the same file picked
+      // again is a change.
       if (files.length === 0) return;
       const wrong = files.find((file) => !accepts(accept, file));
       const large = maxSize
@@ -792,7 +787,6 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
         ) : null}
 
         <FileUpload
-          ref={upload}
           aria-label={labels.upload}
           accept={accept}
           // Always multiple, so FileUpload sets no count of its own: with

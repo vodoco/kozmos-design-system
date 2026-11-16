@@ -12,7 +12,8 @@
  * overlay, the window covered and the page under it inert.
  *
  * MapEditToolbar (CLOUD-UI-005): on maps 640, 700 and 760 wide its items,
- * the dividers' inline margins counted, stay inside the card. PropertyPicker
+ * the dividers' inline margins counted, stay inside the card, and its chosen
+ * tool draws ToggleButton's pressed theme fill. PropertyPicker
  * (CLOUD-UI-003): its status region is in the page before it has words.
  * KeyValueList (CLOUD-UI-004): a row lays out the same inside a <form>,
  * where a Select adds a hidden native select to it, as outside one.
@@ -295,6 +296,56 @@ try {
       );
     }
 
+    // The chosen tool is a pressed ToggleButton: the theme fill under the
+    // theme's ink (decision 59), drawn by ToggleButton's own owned rules
+    // (GAP-262), and an unchosen tool has no fill. The toolbar keeps no copy.
+    const tools = await page.getByTestId("toolbar-760").evaluate((box) => {
+      const colour = (value, property) => {
+        const probe = document.createElement("span");
+        probe.style[property] = value;
+        box.append(probe);
+        const resolved = getComputedStyle(probe)[property];
+        probe.remove();
+        return resolved;
+      };
+      const pressed = box.querySelector(
+        '.kozmos-map-edit-toolbar-item[aria-pressed="true"]',
+      );
+      const off = box.querySelector(
+        '.kozmos-map-edit-toolbar-item[aria-pressed="false"]',
+      );
+      return {
+        id: pressed?.dataset.item,
+        fill: pressed && getComputedStyle(pressed).backgroundColor,
+        ink: pressed && getComputedStyle(pressed).color,
+        offFill: off && getComputedStyle(off).backgroundColor,
+        theme500: colour(
+          "var(--primitives-colors-theme-500)",
+          "backgroundColor",
+        ),
+        themeInk: colour(
+          "var(--components-primary-buttons-themed-button-foreground-content-idle)",
+          "color",
+        ),
+      };
+    });
+    assert.equal(tools.id, "adjust", `${mode} toolbar: the chosen tool shows`);
+    assert.equal(
+      tools.fill,
+      tools.theme500,
+      `${mode} toolbar: the chosen tool's fill is theme 500`,
+    );
+    assert.equal(
+      tools.ink,
+      tools.themeInk,
+      `${mode} toolbar: the chosen tool's ink is the theme fill's`,
+    );
+    assert.equal(
+      tools.offFill,
+      "rgba(0, 0, 0, 0)",
+      `${mode} toolbar: an unchosen tool has no fill`,
+    );
+
     // The picker: its status region is rendered (not display: none) before
     // anything is typed, and draws the empty state once nothing matches.
     await page.locator(".kozmos-property-picker-trigger").click();
@@ -497,5 +548,5 @@ try {
   await browser.close();
 }
 console.log(
-  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay; MapEditToolbar inside its card at 640, 700 and 760; PropertyPicker's status region rendered before its words; KeyValueList's rows inside a form as outside; OpeningHoursEditor's arrows, and its day rows 640 wide and in a 296 column, English and German (${passed.join("; ")})`,
+  `PASS dashboard.css in ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: BrandLoader's box, rings, pin, label, stillness and overlay; MapEditToolbar inside its card at 640, 700 and 760, its chosen tool in the theme fill; PropertyPicker's status region rendered before its words; KeyValueList's rows inside a form as outside; OpeningHoursEditor's arrows, and its day rows 640 wide and in a 296 column, English and German (${passed.join("; ")})`,
 );

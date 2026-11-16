@@ -317,11 +317,44 @@ describe("MapEditToolbar (CLOUD-UI-005)", () => {
         "Double click to finish drawing",
       );
       expect(item("Undo")).toHaveAccessibleDescription("Ctrl+Z");
-      // A trigger drawn on the button would write its own data-state over
-      // the ToggleButton's "on".
-      expect(item("Polygon")).toHaveAttribute("data-state", "on");
+      expect(item("Polygon")).toHaveAttribute("aria-pressed", "true");
       await user.hover(item("Undo"));
       expect(await screen.findByRole("tooltip")).toHaveTextContent("Ctrl+Z");
+    });
+
+    it("makes the tool itself the trigger, still pressed with its tooltip open", async () => {
+      const user = userEvent.setup();
+      render(
+        <MapEditToolbar
+          label="Geometry tools"
+          items={[
+            {
+              type: "tool",
+              id: "polygon",
+              label: "Polygon",
+              icon: Hexagon01,
+              tooltip: "Double click to finish drawing",
+            },
+          ]}
+          value="polygon"
+        />,
+      );
+      // No box round it: the trigger is the item in the row.
+      expect(item("Polygon").parentElement).toHaveClass(
+        "kozmos-map-edit-toolbar-items",
+      );
+      await user.hover(item("Polygon"));
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "Double click to finish drawing",
+      );
+      // The trigger writes its data-state over the ToggleButton's "on"; the
+      // pressed look reads aria-pressed (GAP-261), which it leaves alone.
+      expect(item("Polygon")).toHaveAttribute("data-state", "delayed-open");
+      expect(item("Polygon")).toHaveAttribute("aria-pressed", "true");
+      expect(item("Polygon")).toHaveAccessibleName("Polygon");
+      expect(item("Polygon")).toHaveAccessibleDescription(
+        "Double click to finish drawing",
+      );
     });
 
     it("gives a disabled item none", () => {
@@ -341,9 +374,8 @@ describe("MapEditToolbar (CLOUD-UI-005)", () => {
         />,
       );
       expect(item("Redo")).not.toHaveAccessibleDescription();
-      expect(
-        toolbar().querySelector(".kozmos-map-edit-toolbar-tip"),
-      ).toBeNull();
+      expect(item("Redo")).not.toHaveAttribute("aria-describedby");
+      expect(item("Redo").querySelector("[hidden]")).toBeNull();
     });
   });
 

@@ -12,11 +12,11 @@
    toolbar's shape and the muted ink of Cloud's labels. An item's corner is
    8, the card's 16 less its padding (docs/nested-radius.md). Three classes
    on every item rule: the parts draw with utilities, scoped, which weigh two
-   (`:scope .h-9`) and win a tie on proximity. The parts' looks the toolbar
-   promises, the pressed tool's theme fill, the hover fill, the focus ring
-   and half strength when disabled, are owned here too, with the parts' own
-   values, as BrandLoader owns Backdrop's scrim: a host without @scope drops
-   the utilities a ToggleButton and a Separator draw with.
+   (`:scope .h-9`) and win a tie on proximity. The pressed tool's theme fill,
+   the focus ring and half strength when disabled are the parts' own, owned
+   by Button and ToggleButton (GAP-262), so they hold in a host without
+   @scope; the toolbar owns only what it changes, the hover fill and the
+   ink, and Separator's rule, which a host without @scope drops.
    The frame spans the space the product gives it and centres the card; it
    takes no pointer, so the map under it still does. Logical sides
    throughout, so right to left mirrors. */
@@ -56,10 +56,6 @@
     align-items: center;
     column-gap: calc(var(--primitives-layout-spacing-50) * 1px);
   }
-  .kozmos-map-edit-toolbar-tip {
-    display: flex;
-    flex: none;
-  }
   .kozmos-map-edit-toolbar
     .kozmos-map-edit-toolbar-items
     .kozmos-map-edit-toolbar-item {
@@ -97,29 +93,6 @@
     ):hover {
     background-color: var(--semantics-hover-fill);
     color: var(--primitives-colors-foreground-400);
-  }
-  /* On: the pressed ToggleButton's theme fill and its ink (decision 59). */
-  .kozmos-map-edit-toolbar
-    .kozmos-map-edit-toolbar-items
-    .kozmos-map-edit-toolbar-item[aria-pressed="true"] {
-    background-color: var(
-      --components-primary-buttons-themed-button-background-idle
-    );
-    color: var(
-      --components-primary-buttons-themed-button-foreground-content-idle
-    );
-  }
-  /* The parts' focus ring, the theme's 600, 2 wide and 2 out. */
-  .kozmos-map-edit-toolbar
-    .kozmos-map-edit-toolbar-items
-    .kozmos-map-edit-toolbar-item:focus-visible {
-    outline: 2px solid var(--primitives-colors-theme-600);
-    outline-offset: 2px;
-  }
-  .kozmos-map-edit-toolbar
-    .kozmos-map-edit-toolbar-items
-    .kozmos-map-edit-toolbar-item:disabled {
-    opacity: 0.5;
   }
   .kozmos-map-edit-toolbar-icon {
     flex: none;
