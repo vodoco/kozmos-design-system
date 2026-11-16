@@ -14,7 +14,7 @@ describe("Backdrop", () => {
     const { container } = render(<Backdrop data-testid="backdrop" />);
     expect(container).toBeEmptyDOMElement();
     expect(document.querySelector('[data-testid="backdrop"]')).toHaveClass(
-      "fixed inset-0",
+      "kozmos-backdrop-layer",
     );
   });
 
@@ -117,7 +117,8 @@ describe("Backdrop target (GAP-189)", () => {
     const root = document.querySelector<HTMLElement>(
       '[data-testid="backdrop"]',
     )!;
-    expect(root).toHaveClass("fixed inset-0 z-50 bg-overlay-scrim");
+    expect(root).toHaveClass("kozmos-backdrop-layer kozmos-backdrop-solid");
+    expect(root).not.toHaveClass("kozmos-backdrop-inline");
     expect(root.style.getPropertyValue("clip-path")).toBe("");
     expect(root.querySelector(".kozmos-backdrop-ring")).toBeNull();
     expect(root).not.toHaveAttribute("data-lit");
@@ -566,7 +567,7 @@ describe("Backdrop target (GAP-189)", () => {
     const { container, rerender } = render(<Backdrop />);
     expect(container).toBeEmptyDOMElement();
     expect(document.body.lastElementChild!.outerHTML).toBe(
-      '<div class="fixed inset-0 z-50 bg-overlay-scrim"></div>',
+      '<div class="kozmos-backdrop-layer kozmos-backdrop-solid"></div>',
     );
     // Inline, it is drawn in place, absolute in the box it is rendered in.
     rerender(
@@ -575,7 +576,7 @@ describe("Backdrop target (GAP-189)", () => {
       </Backdrop>,
     );
     expect(container.innerHTML).toBe(
-      '<div class="absolute inset-0 z-50 bg-overlay-scrim"><p>Step</p></div>',
+      '<div class="kozmos-backdrop-layer kozmos-backdrop-inline kozmos-backdrop-solid"><p>Step</p></div>',
     );
   });
 
@@ -846,8 +847,9 @@ describe("Backdrop in the theme's portal", () => {
     );
     const backdrop = getByTestId("backdrop");
     expect(backdrop.parentElement).toBe(getByTestId("panel"));
-    expect(backdrop).toHaveClass("absolute inset-0 z-50");
-    expect(backdrop).not.toHaveClass("fixed");
+    expect(backdrop).toHaveClass(
+      "kozmos-backdrop-layer kozmos-backdrop-inline",
+    );
   });
 
   it("draws its cut-out once the portal it is drawn in exists", async () => {

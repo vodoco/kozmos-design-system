@@ -126,7 +126,10 @@ for (const role of ["Border/Subtle", "Border/Input"]) {
 // painter is still caught — allow-listing a whole function is how
 // createTreeCount kept a dark grey badge outline for a month.
 const STROKE_MARKS_ALLOWED = {
-  createRatingStar: {
+  // The star's glyph moved into its own function when Rating drew halves
+  // (decision 181): the half star is the empty glyph under a clipped filled
+  // one, so both stars are drawn by createRatingStarGlyph.
+  createRatingStarGlyph: {
     primitive: "Colors/foreground/500",
     why: "an unfilled star's outline is the mark itself",
   },
@@ -315,6 +318,17 @@ const NATIVE_MARKS_ALLOWED = {
   "Stepper.kt": {
     primitive: "primitivesColorsForeground500",
     why: "a pending step's ring is its glyph, as in Figma",
+  },
+  // A not-started checklist row's status (ListItemStatus, GAP-195): its 1
+  // ring is the mark, in foreground 500 as a pending step's, as React's
+  // .kozmos-list-item-status draws it.
+  "List.swift": {
+    primitive: "primitivesColorsForeground500",
+    why: "a not-started status's ring is its glyph, as a pending step's",
+  },
+  "List.kt": {
+    primitive: "primitivesColorsForeground500",
+    why: "a not-started status's ring is its glyph, as a pending step's",
   },
   "ColorPicker.swift": {
     primitive: "primitivesColorsForeground0",

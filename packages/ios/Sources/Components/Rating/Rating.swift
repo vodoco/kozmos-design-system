@@ -25,6 +25,10 @@ public struct KozmosRating: View {
     let label: String
     let itemLabel: (Int, Int, KozmosRatingVariant) -> String
     let valueLabel: (Int, Int, KozmosRatingVariant) -> String
+    /// A read-only score that need not be whole, from `init(rating:)`; nil
+    /// for the control.
+    let rating: Double?
+    let ratingLabel: (Double, Int) -> String
 
     public init(
         value: Binding<Int>,
@@ -42,6 +46,61 @@ public struct KozmosRating: View {
         self.label = label
         self.itemLabel = itemLabel
         self.valueLabel = valueLabel
+        self.rating = nil
+        self.ratingLabel = KozmosRating.defaultRatingLabel
+    }
+
+    /// A read-only star rating of a score that need not be whole, an average
+    /// of reviews: it is drawn to the nearest half (decision 181), 4.3 as 4.5,
+    /// 4.2 as 4 and 4.25 as 4.5, and VoiceOver hears the rounded value,
+    /// "Rated 4.5 out of 5 stars". Editing stays whole stars:
+    /// `init(value:)` is the control.
+    public init(
+        rating: Double,
+        max: Int = 5,
+        label: String = "Rating",
+        valueLabel: @escaping (Double, Int) -> String = KozmosRating.defaultRatingLabel
+    ) {
+        self._value = .constant(0)
+        self.variant = .stars
+        self.max = max
+        self.readOnly = true
+        self.label = label
+        self.itemLabel = KozmosRating.defaultItemLabel
+        self.valueLabel = KozmosRating.defaultValueLabel
+        self.rating = rating
+        self.ratingLabel = valueLabel
+    }
+
+    /// A score to the nearest half: the doubled value rounded half up, as
+    /// React's `Math.round(value * 2) / 2` and Compose's are.
+    public static func roundedToHalf(_ value: Double) -> Double {
+        (value * 2 + 0.5).rounded(.down) / 2
+    }
+
+    /// How `init(rating:)` reads, given the rounded value: "Rated 4.5 out of
+    /// 5 stars", or "Rated 4 out of 5 stars" when it is whole.
+    public static func defaultRatingLabel(_ value: Double, _ max: Int) -> String {
+        if value == 0 { return "Not rated" }
+        return "Rated \(String(format: "%g", value)) out of \(max) stars"
+    }
+
+    /// The value the stars draw: a read-only score to the nearest half, the
+    /// control's whole value as it is.
+    var shown: Double {
+        if let rating { return KozmosRating.roundedToHalf(rating) }
+        return Double(value)
+    }
+
+    /// What VoiceOver hears for the whole row.
+    var accessibilityText: String {
+        if rating != nil { return ratingLabel(shown, max) }
+        return readOnly ? valueLabel(value, max, variant) : label
+    }
+
+    /// Whether a star is filled only to its middle: a read-only score's half.
+    func isHalf(_ item: Int) -> Bool {
+        variant == .stars && Double(item) - 0.5 == shown
     }
 
     public static func defaultItemLabel(_ item: Int, _ max: Int, _ variant: KozmosRatingVariant) -> String {
@@ -56,7 +115,7 @@ public struct KozmosRating: View {
     }
 
     private func filled(_ item: Int) -> Bool {
-        variant == .thumbs ? item == value : item <= value
+        variant == .thumbs ? item == value : Double(item) <= shown
     }
 
     public var body: some View {
@@ -82,11 +141,25 @@ public struct KozmosRating: View {
         // Read-only is not a control: it reads as one image with the rating as
         // its label, rather than as a row of things that cannot be pressed.
         .accessibilityElement(children: readOnly ? .ignore : .contain)
-        .accessibilityLabel(readOnly ? valueLabel(value, max, variant) : label)
+        .accessibilityLabel(accessibilityText)
     }
 
     @ViewBuilder private func face(_ item: Int) -> some View {
         switch variant {
+        case .stars where isHalf(item):
+            // The empty star, and the filled one over it masked to its leading
+            // half: an HStack lays out in the writing direction, so the mask
+            // keeps the left half left to right and the right half right to
+            // left. Same glyphs, size and colours as a full and an empty star.
+            Image(systemName: "star")
+                .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                .font(KozmosTypography.title2)
+                .overlay(
+                    Image(systemName: "star.fill")
+                        .foregroundColor(KozmosColors.semanticsDataYellow)
+                        .font(KozmosTypography.title2)
+                        .mask(HStack(spacing: 0) { Rectangle(); Color.clear })
+                )
         case .stars:
             Image(systemName: filled(item) ? "star.fill" : "star")
                 .foregroundColor(
