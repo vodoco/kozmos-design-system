@@ -16,6 +16,67 @@ Renders a semantic heading using the Kozmos level-based type scale.
 
 <Controls />
 
+## Display size
+
+`size="display"` draws a heading at the one display size, 48 on 54 lines, bold (decision 203, GAP-272), for a marketing-style headline such as Pointr Cloud's sign-in hero; `level` stays its rank. It is above Heading 1's 36, from the display type tokens (`--semantics-typography-display-size`, `-line-height`, `-weight` and `-letter-spacing`), in rem, so it follows the reader's text size. SwiftUI's `KozmosHeading(_:level:size: .display)` grows with Dynamic Type along the large title's curve, as Heading 1 does, and Compose's `KozmosHeading(size = KozmosHeadingSize.Display)` is in sp. Figma's text style is Heading / Display.
+
+<PlatformSnippets
+    react={`
+import { Heading } from "@kozmos-ds/react";
+
+// The sign-in page's headline at the display size, 48 on 54, still a level 1
+// heading to a screen reader.
+export function SignInHero() {
+  return (
+    <Heading level={1} size="display">
+      Digitize your building like never before.
+    </Heading>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosHeading } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosHeading :level="1" size="display">
+    Digitize your building like never before.
+  </KozmosHeading>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The sign-in page's headline at the display size, 48pt bold on 54pt lines,
+// still a level 1 heading to VoiceOver.
+struct SignInHero: View {
+    var body: some View {
+        KozmosHeading("Digitize your building like never before.", level: .h1, size: .display)
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.heading.KozmosHeading
+import com.kozmos.components.heading.KozmosHeadingLevel
+import com.kozmos.components.heading.KozmosHeadingSize
+
+// The sign-in page's headline at the display size, 48sp bold on 54sp lines,
+// still a heading to TalkBack.
+@Composable
+fun SignInHero() {
+    KozmosHeading(
+        text = "Digitize your building like never before.",
+        level = KozmosHeadingLevel.H1,
+        size = KozmosHeadingSize.Display
+    )
+}
+`}
+
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

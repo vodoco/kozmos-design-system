@@ -49,4 +49,19 @@ describe("Heading", () => {
       "consumer-title",
     );
   });
+
+  it("takes the display size and keeps its level as its rank (decision 203)", () => {
+    render(
+      <Heading level={1} size="display">
+        Digitize your building like never before.
+      </Heading>,
+    );
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Digitize your building like never before.",
+    });
+    expect(heading.tagName).toBe("H1");
+    expect(heading).toHaveClass("kozmos-text-display", "kozmos-text-bold");
+    expect(heading).not.toHaveClass("kozmos-text-4xl");
+  });
 });
