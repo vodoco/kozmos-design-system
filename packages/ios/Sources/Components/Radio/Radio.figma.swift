@@ -22,8 +22,8 @@ struct KozmosRadioConnect: FigmaConnect {
     )
     var checked: String = "unchecked"
 
-    @FigmaString("Mixed Text")
-    var mixedLabel: String = "Multiple values"
+    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
+    // put it in the library: the dry run reads the live file.
 
     @FigmaString("Label Text")
     var label: String = "Option"
@@ -46,7 +46,7 @@ struct KozmosRadioConnect: FigmaConnect {
     var descriptionText: String = "Description"
 
     var body: some View {
-        KozmosRadioGroup(mixed: self.checked == "mixed", mixedLabel: self.mixedLabel) {
+        KozmosRadioGroup(mixed: self.checked == "mixed") {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,
@@ -76,8 +76,8 @@ struct KozmosRadioCardConnect: FigmaConnect {
     )
     var checked: String = "unchecked"
 
-    @FigmaString("Mixed Text")
-    var mixedLabel: String = "Multiple values"
+    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
+    // put it in the library: the dry run reads the live file.
 
     @FigmaString("Label Text")
     var label: String = "Satellite"
@@ -104,7 +104,7 @@ struct KozmosRadioCardConnect: FigmaConnect {
     var showMedia: Bool = true
 
     var body: some View {
-        KozmosRadioGroup(mixed: self.checked == "mixed", mixedLabel: self.mixedLabel) {
+        KozmosRadioGroup(mixed: self.checked == "mixed") {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,
@@ -139,8 +139,8 @@ struct KozmosRadioTileConnect: FigmaConnect {
     )
     var checked: String = "unchecked"
 
-    @FigmaString("Mixed Text")
-    var mixedLabel: String = "Multiple values"
+    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
+    // put it in the library: the dry run reads the live file.
 
     @FigmaString("Label Text")
     var label: String = "Fade"
@@ -167,7 +167,7 @@ struct KozmosRadioTileConnect: FigmaConnect {
     var showMedia: Bool = true
 
     var body: some View {
-        KozmosRadioGroup(mixed: self.checked == "mixed", mixedLabel: self.mixedLabel) {
+        KozmosRadioGroup(mixed: self.checked == "mixed") {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,

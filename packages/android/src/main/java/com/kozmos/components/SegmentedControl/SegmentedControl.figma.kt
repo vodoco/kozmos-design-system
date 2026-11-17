@@ -40,9 +40,9 @@ class KozmosSegmentedControlConnect {
         "Mixed" to "mixed"
     )
 
-    // Decision 191: no option chosen, and the "Multiple values" line.
-    @FigmaProperty(FigmaType.Text, "Mixed Text")
-    val mixedLabel: String = "Multiple values"
+    // Decision 191: no option chosen, and the "Multiple values" line. Mixed
+    // Text is mapped once the owner's plugin Update has put it in the
+    // library: the dry run reads the live file.
 
     @Composable
     fun ComponentExample() {
@@ -52,8 +52,7 @@ class KozmosSegmentedControlConnect {
             onOptionSelected = {},
             size = size,
             enabled = state != "disabled",
-            mixed = state == "mixed",
-            mixedLabel = mixedLabel
+            mixed = state == "mixed"
         )
     }
 }

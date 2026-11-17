@@ -31,11 +31,10 @@ figma.connect(
         Mixed: false,
       }),
       // Decision 191: no option chosen, whatever Active says, and the
-      // "Multiple values" line under the track.
+      // "Multiple values" line under the track. Mixed Text is mapped once the
+      // owner's plugin Update has put it in the library: the dry run reads
+      // the live file, which has none before it.
       mixed: figma.enum("State", { Mixed: true }),
-      mixedLabel: figma.enum("State", {
-        Mixed: figma.string("Mixed Text"),
-      }),
       item1Text: figma.string("Item 1 Text"),
       item2Text: figma.string("Item 2 Text"),
       item3Text: figma.string("Item 3 Text"),
@@ -48,7 +47,6 @@ figma.connect(
       item2Text,
       item3Text,
       mixed,
-      mixedLabel,
       size,
     }) => (
       <SegmentedControl
@@ -56,7 +54,6 @@ figma.connect(
         disabled={disabled}
         error={error}
         mixed={mixed}
-        mixedLabel={mixedLabel}
         items={[
           { value: "one", label: item1Text },
           { value: "two", label: item2Text },
