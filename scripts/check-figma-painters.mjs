@@ -4365,6 +4365,95 @@ section("Decision 59: the theme fill and what sits on it");
     offThumb && boundVariableName(offThumb.fills[0]) === "Colors/background/0",
     `Switch, unchecked: the thumb keeps the background (${offThumb && reads(offThumb.fills[0])})`,
   );
+  // Decision 189: Mixed is the track filled as when checked, the thumb
+  // hidden, and Checkbox's dash (React's minus at 16) centred in the track
+  // in the thumb's colour, the theme foreground; in error the danger fill
+  // and edge as a checked one's. Checked keeps its thumb and has no dash.
+  const isLevelDash = (node) =>
+    !!node &&
+    node.type === "VECTOR" &&
+    node.width === 16 &&
+    node.height === 16 &&
+    node.vectorNetwork.vertices.length === 2 &&
+    node.vectorNetwork.vertices[0].y === 8 &&
+    node.vectorNetwork.vertices[1].y === 8 &&
+    Math.abs(
+      node.vectorNetwork.vertices[1].x - node.vectorNetwork.vertices[0].x -
+        28 / 3,
+    ) < 1e-9 &&
+    Math.abs(node.strokeWeight - 4 / 3) < 1e-9 &&
+    node.strokeCap === "ROUND";
+  for (const state of ["Default", "Error"]) {
+    const mixed = await painted("updateSwitchVariant", {
+      checked: "Mixed",
+      state,
+    });
+    const mixedTrack = named(mixed, "Switch Track");
+    const mixedThumb = mixedTrack && named(mixedTrack, "Switch Thumb");
+    const dash = mixedTrack && named(mixedTrack, "Mixed Dash");
+    const trackFill = state === "Error" ? "Colors/emotional/danger/600" : null;
+    ok(
+      mixed.name === `Checked=Mixed, State=${state}` &&
+        mixedTrack &&
+        (trackFill
+          ? boundVariableName(mixedTrack.fills[0]) === trackFill &&
+            boundVariableName(mixedTrack.strokes[0]) === trackFill
+          : reads(mixedTrack.fills[0]) === fill &&
+            reads(mixedTrack.strokes[0]) === fill) &&
+        mixedThumb &&
+        mixedThumb.visible === false &&
+        isLevelDash(dash) &&
+        dash.x === 14 &&
+        dash.y === 4 &&
+        (state === "Error"
+          ? boundVariableName(dash.strokes[0]) === "Colors/background/0"
+          : reads(dash.strokes[0]) === ink),
+      `Switch, mixed (${state}): the track filled as checked, no thumb, and the dash centred in it (${mixedTrack && reads(mixedTrack.fills[0])}; thumb ${mixedThumb && mixedThumb.visible}; dash ${dash && `${dash.x},${dash.y} ${reads(dash.strokes[0])}`})`,
+    );
+  }
+  ok(
+    !named(track, "Mixed Dash") && thumb && thumb.visible !== false,
+    `Switch, checked: its thumb shows and it draws no dash`,
+  );
+  // Decision 190: a mixed toggle is a dashed edge in the theme fill, 3 and
+  // 3, on the muted fill under the page's ink, with the dash 8 before its
+  // label; pressed keeps its solid look and has no dash.
+  for (const variant of ["Default", "Outline"]) {
+    const mixedToggle = await painted("updateToggleButtonVariant", {
+      variant,
+      size: "Default",
+      state: "Mixed",
+    });
+    const dash = mixedToggle.children[0];
+    ok(
+      mixedToggle.name === `Variant=${variant}, Size=Default, State=Mixed` &&
+        boundVariableName(mixedToggle.fills[0]) === "Colors/background/100" &&
+        reads(mixedToggle.strokes[0]) === fill &&
+        mixedToggle.strokeWeight === 1 &&
+        JSON.stringify(mixedToggle.dashPattern) === "[3,3]" &&
+        dash &&
+        dash.name === "Mixed Dash" &&
+        isLevelDash(dash) &&
+        boundVariableName(dash.strokes[0]) === "Colors/foreground/0" &&
+        mixedToggle.itemSpacing === 8 &&
+        named(mixedToggle, "Label Text") &&
+        boundVariableName(named(mixedToggle, "Label Text").fills[0]) ===
+          "Colors/foreground/0",
+      `ToggleButton ${variant}, mixed: a dashed theme edge on the muted fill, the dash before the label (${boundVariableName(mixedToggle.fills[0])}; ${reads(mixedToggle.strokes[0])}; dashes ${JSON.stringify(mixedToggle.dashPattern)}; first ${dash && dash.name}; gap ${mixedToggle.itemSpacing})`,
+    );
+    const pressed = await painted("updateToggleButtonVariant", {
+      variant,
+      size: "Default",
+      state: "Pressed",
+    });
+    ok(
+      !named(pressed, "Mixed Dash") &&
+        JSON.stringify(pressed.dashPattern || []) === "[]" &&
+        pressed.itemSpacing === 0 &&
+        reads(pressed.fills[0]) === fill,
+      `ToggleButton ${variant}, pressed: as it was, the solid theme fill with no dash (${JSON.stringify(pressed.dashPattern || [])}, gap ${pressed.itemSpacing})`,
+    );
+  }
 
   const radio = await painted("updateRadioVariant", {
     checked: "Checked",
@@ -16650,6 +16739,9 @@ section("GAP-162: the controls draw a description, and Switch its state");
     const replay = await withAutoLayout(() =>
       replayUpdate(kind, names, update),
     );
+    // Decision 189: Switch's Update keeps the six and adds the three Mixed
+    // variants the live set lacks.
+    const total = kind === "Switch" ? 9 : 6;
     const definitions = replay.liveSet.componentPropertyDefinitions;
     const propertyNamed = (name, type) =>
       Object.keys(definitions).find(
@@ -16668,25 +16760,29 @@ section("GAP-162: the controls draw a description, and Switch its state");
         : [];
     ok(
       replay.kept.every((variant, i) => variant && variant.name === names[i]) &&
-        replay.liveSet.children.length === 6,
-      `${kind}: Update keeps its 6 variants, ids and names (${replay.names.join("; ")})`,
+        replay.liveSet.children.length === total &&
+        (kind !== "Switch" ||
+          ["Default", "Disabled", "Error"].every((state) =>
+            replay.names.includes(`Checked=Mixed, State=${state}`),
+          )),
+      `${kind}: Update keeps its 6 variants, ids and names${kind === "Switch" ? " and adds the 3 Mixed ones" : ""} (${replay.names.join("; ")})`,
     );
     ok(
       shown &&
         words &&
         definitions[shown].defaultValue === false &&
-        drivenBy(shown, "visible").length === 6 &&
+        drivenBy(shown, "visible").length === total &&
         drivenBy(shown, "visible").every(
           (node) => node.name === "Description Row",
         ) &&
-        drivenBy(words, "characters").length === 6,
+        drivenBy(words, "characters").length === total,
       `${kind}: Show Description, off, shows each variant's Description Row, and Description Text writes it (${drivenBy(shown, "visible").length} rows, ${drivenBy(words, "characters").length} texts)`,
     );
     ok(
       kind === "Switch"
         ? state &&
             definitions[state].defaultValue === false &&
-            drivenBy(state, "visible").length === 6 &&
+            drivenBy(state, "visible").length === total &&
             drivenBy(state, "visible").every(
               (node) => node.name === "State Label",
             )
@@ -16694,6 +16790,32 @@ section("GAP-162: the controls draw a description, and Switch its state");
       `${kind}: ${kind === "Switch" ? "Show State Label, off, shows each variant's State Label" : "no Show State Label"} (${state || "none"}: ${drivenBy(state, "visible").length})`,
     );
   }
+
+  // Decision 190: ToggleButton's Update keeps the 24 variants of the live
+  // set, their node ids and names, and adds the 6 Mixed ones it lacks.
+  const toggleNames = [];
+  for (const variant of ["Default", "Outline"])
+    for (const size of ["Small", "Default", "Large"])
+      for (const state of ["Default", "Pressed", "Disabled", "Focus"])
+        toggleNames.push(`Variant=${variant}, Size=${size}, State=${state}`);
+  const toggleReplay = await withAutoLayout(() =>
+    replayUpdate("ToggleButton", toggleNames, "updateToggleButtonComponent"),
+  );
+  ok(
+    toggleReplay.kept.every(
+      (variant, i) => variant && variant.name === toggleNames[i],
+    ) &&
+      toggleReplay.liveSet.children.length === 30 &&
+      toggleReplay.result.variantsCreated === 6 &&
+      ["Default", "Outline"].every((variant) =>
+        ["Small", "Default", "Large"].every((size) =>
+          toggleReplay.names.includes(
+            `Variant=${variant}, Size=${size}, State=Mixed`,
+          ),
+        ),
+      ),
+    `ToggleButton: Update keeps its 24 variants, ids and names and adds the 6 Mixed ones (${toggleReplay.result.variantsUpdated} updated, ${toggleReplay.result.variantsCreated} created)`,
+  );
 }
 
 // --- Decision 132's fields: Search's clear, NumberInput's unit, Slider's readout ---

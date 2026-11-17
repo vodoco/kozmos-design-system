@@ -51,3 +51,11 @@ test("the plugin's mixed fields declare their Mixed state", () => {
     assert.ok(axes[set].State.includes("Mixed"), `${set} declares Mixed`);
   }
 });
+
+// Decisions 188 to 190: Switch's Mixed is a value of its Checked axis, so a
+// mixed switch can be disabled or in error too; ToggleButton's of its State.
+test("the plugin's Switch and ToggleButton declare their Mixed value", () => {
+  const { axes } = expectations();
+  assert.deepEqual(axes.Switch?.Checked, ["Unchecked", "Checked", "Mixed"]);
+  assert.ok(axes.ToggleButton?.State?.includes("Mixed"), "ToggleButton declares Mixed");
+});
