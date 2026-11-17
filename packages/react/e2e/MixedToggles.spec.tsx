@@ -11,6 +11,8 @@ import { MixedTogglesFixture } from "./MixedToggles.fixture";
 const FILL = "rgb(19, 91, 236)"; // theme 500, both themes
 const INK = "rgb(255, 255, 255)"; // the theme foreground, both themes
 const MUTED = { light: "rgb(227, 228, 232)", dark: "rgb(23, 25, 28)" }; // background/100
+// The hover fill (decision 173): background/100 in light, /200 in dark.
+const HOVER = { light: "rgb(227, 228, 232)", dark: "rgb(46, 49, 56)" };
 const TEXT = { light: "rgb(0, 0, 0)", dark: "rgb(255, 255, 255)" }; // foreground/0
 const DANGER = { light: "rgb(212, 28, 66)", dark: "rgb(233, 90, 119)" }; // danger 600
 
@@ -75,13 +77,14 @@ for (const theme of ["light", "dark"] as const) {
         color: TEXT[theme],
       };
       expect(await style(toggle, Object.keys(look))).toEqual(look);
+      // Hovered, after the colour transition has run its course.
       await toggle.hover();
-      expect(
-        await style(toggle, ["background-color", "border-top-style"]),
-      ).toEqual({
-        "background-color": MUTED[theme],
-        "border-top-style": "dashed",
-      });
+      await expect
+        .poll(() => style(toggle, ["background-color", "border-top-style"]))
+        .toEqual({
+          "background-color": HOVER[theme],
+          "border-top-style": "dashed",
+        });
       await page.mouse.move(0, 0);
       const dash = toggle.locator('[data-slot="mixed-dash"]');
       const [dashBox, toggleBox] = [
