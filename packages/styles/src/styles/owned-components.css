@@ -2768,3 +2768,107 @@
     }
   }
 }
+/* GAP-276: TableRow's highlight="new", a row just added. It shows on the
+   informative surface, holds three deliberate durations and fades over the
+   fourth (1.84 s in all), so the eye finds it. Under reduced motion, the
+   system's or the design config's, it shows and clears at the same time
+   with no fade: one step at the end. The animation's fill is the row's
+   while it runs, over its hover and selected fills; after it, the row's
+   own again (no forwards fill). */
+@kozmos-owned {
+  .kozmos-table-row-highlight {
+    animation: table-row-highlight
+      calc(var(--semantics-motion-duration-deliberate) * 4)
+      var(--semantics-motion-easing-standard) backwards;
+  }
+  @keyframes table-row-highlight {
+    0%,
+    75% {
+      background-color: var(--semantics-emotion-informative-surface);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-table-row-highlight {
+      animation-timing-function: steps(1, end);
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-table-row-highlight {
+    animation-timing-function: steps(1, end);
+  }
+}
+/* GAP-271: an embedded Listbox, inside a container that is the box (a
+   Dialog, a Popover, a Card): no border, surface, shadow or padding of its
+   own. Two classes, over .kozmos-listbox's one. The shadow is cleared as
+   Tailwind's shadow variable, so the focus ring, drawn with the same
+   box-shadow, still shows. */
+@kozmos-owned {
+  .kozmos-listbox.kozmos-listbox-embedded {
+    border-width: 0;
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+  }
+}
+/* GAP-221, decision 199: DescriptionList, a value under each label with no
+   field chrome. The label 12/16 in the muted foreground (foreground 400),
+   the value 14/20 in the foreground, layout spacing 50 (4) between them and
+   200 (16) between items. Stacked, one item under another; in a row, as
+   many side by side as fit, each at least 10rem, 300 (24) between them. An
+   action sits after the value on its line, which keeps the line's 20: a
+   small IconButton is drawn past it rather than making the item taller. */
+@kozmos-owned {
+  .kozmos-description-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(var(--primitives-layout-spacing-200) * 1px);
+    margin: 0;
+  }
+  .kozmos-description-list[data-layout="row"] {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+    column-gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  }
+  .kozmos-description-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    min-width: 0;
+  }
+  .kozmos-description-list-label {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 400;
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-description-list-value {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    min-width: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-description-list-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-description-list-action {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 1.25rem;
+  }
+}

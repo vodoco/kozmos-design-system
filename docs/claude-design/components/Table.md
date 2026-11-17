@@ -108,7 +108,18 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## TableRow
 
-It forwards its ref to `HTMLTableRowElement`. Its props are `React.HTMLAttributes<HTMLTableRowElement>`.
+It forwards its ref to `HTMLTableRowElement`. Its props are `TableRowProps`, which extends `React.HTMLAttributes<HTMLTableRowElement>`.
+
+- `highlight`: `TableRowHighlight`, optional.
+
+  `"new"` tints a row just added in the informative surface
+  (`--semantics-emotion-informative-surface`) so the eye finds it, then
+  fades it (GAP-276): held three deliberate durations, faded over one
+  (`--semantics-motion-duration-deliberate`, 1.84 s in all). Under reduced
+  motion, the system's or the design config's, the tint shows and clears
+  at the same time with no fade. It plays once, when the row is drawn
+  with it or is given it; give it again, after taking it away, to play it
+  again.
 
 - `children`: `ReactNode`, optional.
 
@@ -129,3 +140,17 @@ It forwards its ref to `HTMLTableCaptionElement`. Its props are `React.HTMLAttri
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### TableRowHighlight
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * A row's passing highlight (GAP-276): `"new"`, a row just added, drawn on
+ * the informative surface that holds, then fades.
+ */
+type TableRowHighlight = "new";
+```

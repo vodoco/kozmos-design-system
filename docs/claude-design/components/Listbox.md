@@ -41,6 +41,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `ListboxProps`, which ext
 
 - `defaultValue`: `string | string[]`, optional.
 - `disabled`: `boolean`, optional.
+- `embedded`: `boolean`, optional, default `false`.
+
+  Draws no panel of its own (GAP-271): no border, surface, shadow or
+  padding, for a list inside a container that is the box, a Dialog, a
+  Popover or a Card, such as Switch client's. The rows, their fills and
+  the keyboard are as they are; the focus ring still shows.
+
 - `multiple`: `boolean`, optional.
 - `onValueChange`: `(value: string | string[], option: ComboboxOption) => void`, optional.
 - `options`: `ComboboxOption[]`, **required**.

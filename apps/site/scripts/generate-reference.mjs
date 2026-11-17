@@ -301,6 +301,10 @@ export function storybookPathOf(name) {
   const mdxPath = path.join(directory, `${name}.mdx`);
   const mdx = fs.existsSync(mdxPath) ? fs.readFileSync(mdxPath, "utf8") : "";
   const attached = attachedStories(mdx);
+  // A docs page of its own, `<Meta title="…" />`, with no stories yet
+  // (DescriptionList, GAP-221): Storybook files it at its title.
+  const standalone = mdx.match(/<Meta\s+title="([^"]+)"/)?.[1];
+  if (!attached && standalone) return `/docs/${sanitize(standalone)}--docs`;
   const storiesPath = attached
     ? path.resolve(
         directory,

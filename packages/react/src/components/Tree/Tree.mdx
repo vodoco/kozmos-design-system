@@ -399,7 +399,8 @@ Pointr Cloud's Add New Access picks several clients, or some of a client's sites
   client checked is the whole client, its sites to come among them; some of its sites checked is those sites alone.
   The conventional tri-state rule, where checking a parent checks all its children and a parent with some children
   checked is drawn mixed, cannot tell the two apart, which is why Kozmos keeps them exclusive.
-  `checkRule="independent"` leaves every other row as it is.
+  `checkRule="independent"` leaves every other row as it is, and draws a parent some of whose rows are checked as
+  mixed ([Mixed parents](#mixed-parents)).
 - **The disclosure at the end:** `disclosurePosition="end"` (on Tree, or a row of its own) draws a row's chevron at its
   end, after its meta and actions, as Pointr Cloud's scope picker has it; `"start"`, the default, keeps it before the
   name.
@@ -414,6 +415,207 @@ SwiftUI's `KozmosTree(checkable:)` and Compose's `KozmosTree(checkable = true)` 
 selection (`selection` / `selectedIds`), with the check rule and the disclosure position. On SwiftUI each row is heard as a toggle that is on or off; on Compose each row
 is a checkbox in TalkBack (`toggleableState`). A checkable leaf keeps the chevron's room on every platform, so its box
 lines up with its parent's; in a tree that is not checkable, SwiftUI's leaf rows keep none, where React's keep 16.
+
+## Band rows
+
+Pointr Cloud's Map Content tree draws its selected and hovered rows as bands across the panel, not as pills inside the
+row (GAP-217, decision 196). `rowFill="band"` draws them that way: a band with no corners across the tree's full width,
+and past it by `bleed` to the panel's edges, as `divided`'s strokes and an open row's surface already reach. Selected is
+the hover fill at full strength and hover is half of it (decision 173), as with the default. The focus ring is drawn
+inside the band. `rowFill="inset"`, the default, keeps the pill with the control's corners inside the row, for a
+navigation tree. Rows composed as children take it from the Tree, and `TreeItemRow` takes `rowFill` of its own.
+
+| `rowFill`           | Selected and hover                                         | For                         |
+| ------------------- | ---------------------------------------------------------- | --------------------------- |
+| `"inset"` (default) | A pill with the control's corners, inside the row's inset  | A navigation tree           |
+| `"band"`            | A band with no corners, the tree's full width and `bleed`  | A list of records, Map Content |
+
+SwiftUI's `KozmosTree(rowFill: .band)` and Compose's `KozmosTree(rowFill = KozmosTreeRowFill.Band)` draw the same, and
+their default is the same inset pill on the control radius (16), inside the bleed. Until 0.17.0 Compose drew a selected
+row square and across the bleed; it now draws React's pill unless asked for the band. In Figma, the tree row sets'
+`RowFill` axis is Inset or Band (Band for the Hover and Selected states).
+
+<PlatformSnippets
+    react={`
+import { Tree } from "@kozmos-ds/react";
+
+export function MapContentLevels() {
+  return (
+    <div style={{ paddingInline: 16 }}>
+      <Tree
+        ariaLabel="Map content"
+        rowFill="band"
+        divided
+        bleed={16}
+        defaultSelectedId="level-1"
+        data={[
+          { id: "level-1", name: "Level 1", count: 6 },
+          { id: "level-2", name: "Level 2", count: 0 },
+        ]}
+      />
+    </div>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosTree } from "@kozmos-ds/vue/react-bridge"
+
+const data = [
+  { id: "level-1", name: "Level 1", count: 6 },
+  { id: "level-2", name: "Level 2", count: 0 },
+]
+</script>
+
+<template>
+  <div style="padding-inline: 16px">
+    <KozmosTree aria-label="Map content" :data="data" row-fill="band" divided :bleed="16" />
+  </div>
+</template>
+    `}
+/>
+
+## Mixed parents
+
+Under `checkRule="independent"` every row's check is its own, so a client can be checked with some of its sites. A
+parent some but not all of whose enabled rows are checked, open or closed, is drawn mixed: Checkbox's dash on its fill,
+as `checked="indeterminate"` draws it (decision 211, owner, 17 Nov; GAP-279). It is announced as mixed:
+`aria-checked="mixed"` on the web, "Mixed" from VoiceOver and `ToggleableState.Indeterminate` ("Partially checked") from
+TalkBack.
+
+- **Checking a mixed parent** checks it and every enabled row under it.
+- **Clearing a checked parent** clears it and every enabled row under it.
+- **Checking a parent that is not mixed** checks it alone, as before: every row's check is still its own.
+- **Disabled rows** are left out: they never check, and they do not count towards a parent's mix.
+- **The default `"exclusive"` rule** never checks a parent with its rows, so a mixed parent cannot happen there.
+
+A row's slots are given `mixed` beside `checked` (a mixed row is not `checked`), and a composed `TreeItemRow` takes
+`checked="mixed"`. SwiftUI's and Compose's `KozmosTree` do the same with `checkRule: .independent` and
+`KozmosTreeCheckRule.Independent`.
+
+<PlatformSnippets
+    react={`
+import { Tree } from "@kozmos-ds/react";
+import { useState } from "react";
+
+export function MixedSites() {
+  const [checked, setChecked] = useState<string[]>(["acme-hq"]);
+  return (
+    <Tree
+      ariaLabel="Clients and sites"
+      checkable
+      checkRule="independent"
+      selectedIds={checked}
+      onSelectedIdsChange={setChecked}
+      defaultExpandedIds={["acme"]}
+      data={[
+        {
+          id: "acme",
+          name: "Acme",
+          children: [
+            { id: "acme-hq", name: "Acme HQ" },
+            { id: "acme-lab", name: "Acme Lab" },
+          ],
+        },
+        { id: "initech", name: "Initech" },
+      ]}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosTree } from "@kozmos-ds/vue/react-bridge"
+
+const checked = ref(["acme-hq"])
+const data = [
+  {
+    id: "acme",
+    name: "Acme",
+    children: [
+      { id: "acme-hq", name: "Acme HQ" },
+      { id: "acme-lab", name: "Acme Lab" },
+    ],
+  },
+  { id: "initech", name: "Initech" },
+]
+</script>
+
+<template>
+  <KozmosTree
+    v-model:selectedIds="checked"
+    aria-label="Clients and sites"
+    :data="data"
+    checkable
+    check-rule="independent"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Each row's check is its own. A client with some of its sites checked is
+// mixed, heard as "Mixed"; a tap on it checks all its sites, and a tap on a
+// checked client clears them.
+struct MixedSites: View {
+    @State private var checked: Set<String> = ["acme-hq"]
+
+    var body: some View {
+        KozmosTree(
+            nodes: [
+                Node(id: "acme", value: "Acme", children: [
+                    Node(id: "acme-hq", value: "Acme HQ"),
+                    Node(id: "acme-lab", value: "Acme Lab"),
+                ]),
+            ],
+            selection: $checked,
+            checkable: true,
+            checkRule: .independent
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.kozmos.components.tree.KozmosTree
+import com.kozmos.components.tree.KozmosTreeCheckRule
+import com.kozmos.components.tree.TreeNode
+
+// Independent checks: Acme with one of its sites checked is mixed. Checking
+// it checks every site; unchecking it unchecks them.
+@Composable
+fun MixedSites() {
+    var checked by remember { mutableStateOf(setOf("acme-hq")) }
+    KozmosTree(
+        data = listOf(
+            TreeNode(
+                id = "acme",
+                name = "Acme",
+                children = listOf(
+                    TreeNode(id = "acme-hq", name = "Acme HQ"),
+                    TreeNode(id = "acme-lab", name = "Acme Lab")
+                )
+            ),
+            TreeNode(id = "initech", name = "Initech")
+        ),
+        modifier = Modifier.height(240.dp),
+        selectedIds = checked,
+        onSelectedIdsChange = { checked = it },
+        checkable = true,
+        checkRule = KozmosTreeCheckRule.Independent
+    )
+}
+`}
+/>
 
 ## Implementation
 

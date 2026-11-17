@@ -8654,7 +8654,8 @@ section("One run at a time, and a long set says where it is");
       .map((message) => `${message.title} — ${message.detail}`);
     ok(
       progress.some((line) =>
-        /Updating TreeItem — variant 1 of 216$/.test(line),
+        // 216 Inset and 108 Band variants (GAP-217).
+        /Updating TreeItem — variant 1 of 324$/.test(line),
       ) &&
         progress.some((line) =>
           /Updating TreeItem — component properties$/.test(line),
@@ -12056,21 +12057,23 @@ section("Tree rows' Divided (GAP-201)");
         replay.result.updated === true &&
         replay.result.componentSetId === replay.setId &&
         replay.result.variantsUpdated === total &&
-        replay.result.variantsCreated === 0 &&
+        // GAP-217: and its Band variants, half as many.
+        replay.result.variantsCreated === total / 2 &&
         replay.result.variantsRemoved === 0 &&
         replay.kept.every(
-          (variant, i) => variant && variant.name === oldNames[i],
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         key &&
         defs[key].defaultValue === false,
-      `${setName}: Update keeps all ${total} variants, their node ids and names, adds none, and declares Divided off by default (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${key})`,
+      `${setName}: Update keeps all ${total} variants, their node ids and names, adds its Band ones, and declares Divided off by default (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${key})`,
     );
     ok(
       key &&
-        dividers.length === total &&
+        dividers.length === total * 1.5 &&
         surfaces.length === openRows &&
         surfaced.every((name) =>
-          /Expanded=True, .*State=(Idle|Focus)$/.test(name),
+          /Expanded=True, .*State=(Idle|Focus), RowFill=Inset$/.test(name),
         ) &&
         dividers
           .concat(surfaces)
@@ -12080,7 +12083,7 @@ section("Tree rows' Divided (GAP-201)");
               n.componentPropertyReferences &&
               n.componentPropertyReferences.visible === key,
           ),
-      `${setName}: a divider on each of its ${total} rows and a surface on its ${openRows} open Idle and Focus rows, every one hidden and shown by Divided (${dividers.length} dividers, ${surfaces.length} surfaces)`,
+      `${setName}: a divider on each of its ${total * 1.5} rows and a surface on its ${openRows} open Idle and Focus rows, every one hidden and shown by Divided (${dividers.length} dividers, ${surfaces.length} surfaces)`,
     );
   }
 }
@@ -17336,16 +17339,18 @@ section("GAP-107: the tree rows' Meta Below");
     const metas = replay.liveSet.findAll((n) => n.name === "Meta");
     ok(
       replay.result.variantsUpdated === total &&
-        replay.result.variantsCreated === 0 &&
+        // GAP-217: and its Band variants, half as many.
+        replay.result.variantsCreated === total / 2 &&
         replay.result.variantsRemoved === 0 &&
         replay.kept.every(
-          (variant, i) => variant && variant.name === oldNames[i],
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         below &&
         defs[below].defaultValue === false &&
         words &&
         defs[words].defaultValue === "Changes awaiting publish" &&
-        metas.length === total &&
+        metas.length === total * 1.5 &&
         metas.every(
           (n) =>
             n.visible === false &&
@@ -17905,21 +17910,23 @@ section("GAP-277: the tree rows' Checkable, Checked and Disclosure End");
     const ends = replay.liveSet.findAll((n) => n.name === "Disclosure End");
     ok(
       replay.result.variantsUpdated === total &&
-        replay.result.variantsCreated === 0 &&
+        // GAP-217: and its Band variants, half as many.
+        replay.result.variantsCreated === total / 2 &&
         replay.result.variantsRemoved === 0 &&
         replay.kept.every(
-          (variant, i) => variant && variant.name === oldNames[i],
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         ["Checkable", "Checked", "Disclosure Start", "Disclosure End"].every(
           (name) => key(name),
         ) &&
-        boxes.length === total &&
+        boxes.length === total * 1.5 &&
         boxes.every(
           (n) =>
             n.visible === false &&
             n.componentPropertyReferences.visible === key("Checkable"),
         ) &&
-        ends.length === total &&
+        ends.length === total * 1.5 &&
         ends.every(
           (n) =>
             n.visible === false &&
@@ -17928,6 +17935,532 @@ section("GAP-277: the tree rows' Checkable, Checked and Disclosure End");
       `${setName}: Update keeps all ${total} variants and their ids, and gives each a hidden Checkbox (Checkable) and Disclosure End (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${boxes.length} boxes, ${ends.length} ends)`,
     );
   }
+}
+
+// GAP-279, decision 211 (owner, 17 Nov): a checkable tree's mixed parent,
+// as React's TreeItemRow `checked="mixed"`. A hidden Checkbox Mixed inside
+// each row's Checkbox, beside Checkbox Checked: the theme fill and edge on
+// the marker radius with a 16 minus mark at 2,2, as Checkbox's Indeterminate
+// draws its dash (decision 188). Mixed, a boolean off by default, shows it
+// and nothing else; at its default a row draws as before.
+section("GAP-279: the tree rows' Mixed check");
+{
+  const painters = [
+    [
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "True", state: "Idle" },
+    ],
+    ["updateTreeChildItemVariant", { content: "Count", state: "Idle" }],
+    [
+      "updateTreeItemVariant",
+      { type: "Parent", content: "Basic", expanded: "False", state: "Idle" },
+    ],
+  ];
+  const reachable =
+    painters.every(([fn]) => typeof plugin[fn] === "function") &&
+    typeof plugin.configureTreeCheckableProperties === "function";
+  ok(reachable, "the three row painters are reachable");
+  const kindOf = (node) =>
+    node && node.getSharedPluginData("kozmos_ds_importer", "kind");
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  for (const [fn, base] of reachable ? painters : []) {
+    const row = await draw(
+      fn,
+      Object.assign({ density: "Default", depth: "0" }, base),
+    );
+    const box = row.children.find((child) => child.name === "Checkbox");
+    const kids = box ? box.children.map((child) => child.name) : [];
+    const mixed =
+      box && box.children.find((child) => child.name === "Checkbox Mixed");
+    const mark =
+      mixed &&
+      mixed.children.find((child) => child.name === "Checkbox Mixed Mark");
+    ok(
+      JSON.stringify(kids) ===
+        JSON.stringify(["Checkbox Checked", "Checkbox Mixed"]),
+      `${fn}: the Checkbox holds Checkbox Checked, then Checkbox Mixed (${kids.join(", ")})`,
+    );
+    ok(
+      mixed &&
+        mixed.visible === false &&
+        kindOf(mixed) === "tree-checkbox-mixed" &&
+        mixed.width === 20 &&
+        mixed.height === 20 &&
+        mixed.x === 0 &&
+        mixed.y === 0 &&
+        mixed.cornerRadius === 4 &&
+        boundVariableName(mixed.fills[0]) ===
+          "Primary Buttons/themed/button/background/idle" &&
+        boundVariableName(mixed.strokes[0]) ===
+          "Primary Buttons/themed/button/background/idle" &&
+        mark &&
+        mark.width === 16 &&
+        mark.x === 2 &&
+        mark.y === 2,
+      `${fn}: Checkbox Mixed, hidden, is the theme fill and edge, radius 4, with a 16 mark at 2,2 (${mixed && `${mixed.visible}, ${kindOf(mixed)}, ${mixed.width}x${mixed.height}, r${mixed.cornerRadius}, ${boundVariableName(mixed.fills[0])}, mark ${mark && `${mark.width} at ${mark.x},${mark.y}`}`})`,
+    );
+    ok(
+      row.height === 40 && box && box.visible === false,
+      `${fn}: at its defaults the row is 40 with the Checkbox hidden, as before (${row.height})`,
+    );
+  }
+
+  // The property: Mixed, off, bound to each row's Checkbox Mixed alone.
+  for (const [setName, fn, props] of [
+    [
+      "TreeParentItem",
+      "updateTreeParentItemVariant",
+      { content: "Basic", expanded: "False" },
+    ],
+    ["TreeChildItem", "updateTreeChildItemVariant", { content: "Count" }],
+    [
+      "TreeItem",
+      "updateTreeItemVariant",
+      { type: "Child", content: "Actions", expanded: "False" },
+    ],
+  ]) {
+    if (!reachable) break;
+    const variants = [];
+    for (const state of ["Idle", "Selected"]) {
+      variants.push(
+        await draw(
+          fn,
+          Object.assign({ depth: "0", density: "Default" }, props, { state }),
+        ),
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = setName;
+    await plugin.configureTreeItemProperties(
+      set,
+      freshStats(),
+      menusTokens.variableByName,
+    );
+    const definitions = set.componentPropertyDefinitions;
+    const key = Object.keys(definitions).find(
+      (k) => k.split("#")[0] === "Mixed" && definitions[k].type === "BOOLEAN",
+    );
+    const shown = set.findAll(
+      (node) =>
+        key &&
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.visible === key,
+    );
+    ok(
+      key &&
+        definitions[key].defaultValue === false &&
+        shown.length === 2 &&
+        shown.every((node) => node.name === "Checkbox Mixed"),
+      `${setName}: Mixed, off by default, shows each row's Checkbox Mixed and nothing else (${key}, ${shown.map((node) => node.name).join(", ")})`,
+    );
+    set.remove();
+  }
+
+  // Update over TreeChildItem as the file has it: every variant keeps its
+  // id and name, and each gains a hidden Checkbox Mixed under Mixed.
+  if (reachable) {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "minus",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    const oldNames = [];
+    for (const content of ["Basic", "Count", "Actions"])
+      for (const depth of ["0", "1", "2"])
+        for (const density of ["Default", "Compact"])
+          for (const state of ["Idle", "Hover", "Selected", "Focus"])
+            oldNames.push(
+              `Content=${content}, Depth=${depth}, Density=${density}, State=${state}`,
+            );
+    const replay = await replayUpdate(
+      "TreeChildItem",
+      oldNames,
+      "updateTreeChildItemComponent",
+      [page],
+    );
+    const defs = replay.liveSet.componentPropertyDefinitions;
+    const key = Object.keys(defs).find(
+      (k) => k.split("#")[0] === "Mixed" && defs[k].type === "BOOLEAN",
+    );
+    const mixed = replay.liveSet.findAll((n) => n.name === "Checkbox Mixed");
+    ok(
+      replay.result.variantsUpdated === 72 &&
+        // GAP-217: and its 36 Band variants.
+        replay.result.variantsCreated === 36 &&
+        replay.kept.every(
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
+        ) &&
+        key &&
+        mixed.length === 108 &&
+        mixed.every(
+          (n) =>
+            n.visible === false &&
+            n.componentPropertyReferences.visible === key,
+        ),
+      `TreeChildItem: Update keeps all 72 variants and their ids, and gives each of the 108 a hidden Checkbox Mixed under Mixed (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${mixed.length} mixed)`,
+    );
+  }
+}
+
+// GAP-217, decision 196: React's Tree `rowFill`, "inset" (the default) or
+// "band". A RowFill axis on the three row sets, Inset first, so a variant
+// named before the axis existed parses as Inset and Update renames it in
+// place, keeping its node id. Sparse: Band only where a fill shows, the Hover
+// and Selected states, since an Idle or Focus band draws as its inset. A
+// Band row is the inset row's width with its fill's corners at 0, unbound
+// from Tree/item/radius; an Inset row is drawn as before.
+section("GAP-217: the tree rows' Row Fill");
+{
+  const fills = plugin.TREE_ROW_FILLS || [];
+  ok(
+    JSON.stringify(fills) === JSON.stringify(["Inset", "Band"]),
+    `RowFill is Inset, then Band (${fills.join(", ")})`,
+  );
+  for (const [setName, base] of [
+    ["TreeParentItem", 144],
+    ["TreeChildItem", 72],
+    ["TreeItem", 216],
+  ]) {
+    const axes = plugin.expectedVariantAxesForComponentSetName(setName) || {};
+    const config = plugin[
+      {
+        TreeParentItem: "treeParentItemComponentConfig",
+        TreeChildItem: "treeChildItemComponentConfig",
+        TreeItem: "treeItemComponentConfig",
+      }[setName]
+    ]();
+    const combos = config.combinations();
+    const bands = combos.filter((c) => c.rowFill === "Band");
+    const keys = new Set(combos.map((c) => config.keyForProps(c)));
+    ok(
+      JSON.stringify(axes.RowFill) === JSON.stringify(["Inset", "Band"]) &&
+        combos.length === base + base / 2 &&
+        keys.size === combos.length &&
+        bands.length === base / 2 &&
+        bands.every((c) => c.state === "Hover" || c.state === "Selected") &&
+        combos.filter((c) => c.rowFill === "Inset").length === base,
+      `${setName}: RowFill declared, ${base} Inset variants as before and ${base / 2} Band ones, Hover and Selected only (${axes.RowFill}, ${combos.length} in all, ${bands.length} Band)`,
+    );
+    ok(
+      (config.description || []).some((line) =>
+        /RowFill maps to rowFill/.test(line),
+      ),
+      `${setName}: its description says RowFill maps to rowFill`,
+    );
+  }
+
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const reachable =
+    typeof plugin.updateTreeChildItemVariant === "function" &&
+    typeof plugin.parseTreeChildItemVariantName === "function";
+  for (const [fn, parse, props] of reachable
+    ? [
+        [
+          "updateTreeChildItemVariant",
+          "parseTreeChildItemVariantName",
+          { content: "Count" },
+        ],
+        [
+          "updateTreeParentItemVariant",
+          "parseTreeParentItemVariantName",
+          { content: "Basic", expanded: "True" },
+        ],
+        [
+          "updateTreeItemVariant",
+          "parseTreeItemVariantName",
+          { type: "Child", content: "Basic", expanded: "False" },
+        ],
+      ]
+    : []) {
+    const common = Object.assign(
+      { depth: "1", density: "Default", state: "Selected" },
+      props,
+    );
+    const inset = await draw(fn, Object.assign({ rowFill: "Inset" }, common));
+    const band = await draw(fn, Object.assign({ rowFill: "Band" }, common));
+    const read = plugin[parse](band.name);
+    ok(
+      /, State=Selected, RowFill=Band$/.test(band.name) &&
+        /, State=Selected, RowFill=Inset$/.test(inset.name) &&
+        read &&
+        read.rowFill === "Band",
+      `${fn}: named with RowFill last, and reads back as itself (${band.name})`,
+    );
+    ok(
+      band.cornerRadius === 0 &&
+        !menusBound(band, "cornerRadius") &&
+        band.width === inset.width &&
+        band.height === inset.height &&
+        boundVariableName(band.fills[0]) === "Colors/background/100",
+      `${fn}: Band is the inset row's ${inset.width} × ${inset.height}, its fill's corners 0 and unbound (r${band.cornerRadius}, ${menusBound(band, "cornerRadius")}, ${band.width} × ${band.height})`,
+    );
+    ok(
+      inset.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        menusBound(inset, "cornerRadius") === "Tree/item/radius",
+      `${fn}: Inset keeps the control radius on Tree/item/radius, as before (r${inset.cornerRadius}, ${menusBound(inset, "cornerRadius")})`,
+    );
+  }
+  if (reachable) {
+    const old = "Content=Basic, Depth=0, Density=Default, State=Idle";
+    const read = plugin.parseTreeChildItemVariantName(old);
+    ok(
+      read &&
+        read.rowFill === "Inset" &&
+        plugin.parseTreeChildItemVariantName(
+          "Content=Basic, Depth=0, Density=Default, State=Idle, RowFill=Band",
+        ) === null,
+      `a name from before the axis reads as Inset, and an Idle Band is no variant (${read && read.rowFill})`,
+    );
+  }
+
+  // Update over TreeChildItem as the file has it: each of its 72 variants is
+  // renamed RowFill=Inset in place, keeping its id, and the 36 Band ones
+  // are added; nothing is removed.
+  if (reachable) {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "minus",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    const oldNames = [];
+    for (const content of ["Basic", "Count", "Actions"])
+      for (const depth of ["0", "1", "2"])
+        for (const density of ["Default", "Compact"])
+          for (const state of ["Idle", "Hover", "Selected", "Focus"])
+            oldNames.push(
+              `Content=${content}, Depth=${depth}, Density=${density}, State=${state}`,
+            );
+    const replay = await replayUpdate(
+      "TreeChildItem",
+      oldNames,
+      "updateTreeChildItemComponent",
+      [page],
+    );
+    const added = replay.names.filter((name) => / RowFill=Band$/.test(name));
+    ok(
+      replay.result.variantsUpdated === 72 &&
+        replay.result.variantsCreated === 36 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
+        ) &&
+        added.length === 36 &&
+        added.every((name) => /State=(Hover|Selected), RowFill=Band$/.test(name)),
+      `TreeChildItem: Update renames its 72 variants RowFill=Inset in place, keeping their ids, and adds 36 Band ones (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${added.length} Band)`,
+    );
+  }
+}
+
+// --- DescriptionList (GAP-221) -------------------------------------------------
+
+// GAP-221, decision 199: React's DescriptionList, a value under each label
+// with no field chrome. Each item is its label, 12/16 regular in
+// Colors/foreground/400, over its value, 14/20 in Colors/foreground/0, 4
+// apart (DescriptionList/item/gap); Stack sets the items 16 apart
+// (DescriptionList/gap), Row side by side 24 apart (DescriptionList/row/gap),
+// each 160 wide. No fill, no stroke. The third item's value carries an
+// Action, a copy icon on the value's 20 line, shown by Action. One Layout
+// axis, Stack first, in Update All Core and the page's Data display section.
+section("GAP-221: DescriptionList draws each label over its value");
+{
+  const ready =
+    Array.isArray(plugin.DESCRIPTION_LIST_LAYOUTS) &&
+    typeof plugin.updateDescriptionListVariant === "function" &&
+    typeof plugin.parseDescriptionListVariantName === "function" &&
+    typeof plugin.configureDescriptionListProperties === "function";
+  ok(ready, "DescriptionList's painter and properties are reachable");
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateDescriptionListVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  for (const value of ready ? ["Stack", "Row"] : []) {
+    const { component, stats } = await paint(value);
+    variants.push(component);
+    const row = value === "Row";
+    ok(
+      component.name === `Layout=${value}` &&
+        plugin.parseDescriptionListVariantName(component.name).value === value,
+      `${value}: named Layout=${value}, and reads back as itself (${component.name})`,
+    );
+    const items = component.children.map((child) => child.name);
+    ok(
+      JSON.stringify(items) ===
+        JSON.stringify(["Item 1", "Item 2", "Item 3"]) &&
+        component.layoutMode === (row ? "HORIZONTAL" : "VERTICAL") &&
+        component.itemSpacing === (row ? 24 : 16) &&
+        menusBound(component, "itemSpacing") ===
+          (row ? "DescriptionList/row/gap" : "DescriptionList/gap") &&
+        menusValueOf("DescriptionList/gap") === 16 &&
+        menusValueOf("DescriptionList/row/gap") === 24 &&
+        component.fills.length === 0 &&
+        component.strokes.length === 0,
+      `${value}: three items ${row ? "side by side 24" : "stacked 16"} apart, no fill and no stroke (${items}, ${component.layoutMode}, ${component.itemSpacing}, ${menusBound(component, "itemSpacing")})`,
+    );
+    for (const [index, label, words] of [
+      [1, "Name", "Gate A12"],
+      [2, "Featured", "Yes"],
+      [3, "FID", "f-1209"],
+    ]) {
+      const item = named(component, `Item ${index}`);
+      const labelText = item && named(item, `Label ${index}`);
+      const valueText = item && named(item, `Value ${index}`);
+      ok(
+        item &&
+          item.layoutMode === "VERTICAL" &&
+          item.itemSpacing === 4 &&
+          menusBound(item, "itemSpacing") === "DescriptionList/item/gap" &&
+          menusValueOf("DescriptionList/item/gap") === 4 &&
+          item.fills.length === 0 &&
+          item.strokes.length === 0 &&
+          (!row || item.width === 160) &&
+          labelText &&
+          labelText.characters === label &&
+          labelText.fontSize === 12 &&
+          labelText.lineHeight.value === 16 &&
+          boundVariableName(labelText.fills[0]) === "Colors/foreground/400" &&
+          valueText &&
+          valueText.characters === words &&
+          valueText.fontSize === 14 &&
+          valueText.lineHeight.value === 20 &&
+          boundVariableName(valueText.fills[0]) === "Colors/foreground/0",
+        `${value}: Item ${index} is ${label} 12/16 in foreground 400 over ${words} 14/20 in foreground 0, 4 apart${row ? ", 160 wide" : ""} (${item && `${item.itemSpacing}, ${item.width}`}, ${labelText && `${labelText.fontSize}/${labelText.lineHeight.value} ${boundVariableName(labelText.fills[0])}`}, ${valueText && `${valueText.fontSize}/${valueText.lineHeight.value} ${boundVariableName(valueText.fills[0])}`})`,
+      );
+    }
+    const line = named(component, "Value Row 3");
+    const action = line && named(line, "Action");
+    ok(
+      line &&
+        line.layoutMode === "HORIZONTAL" &&
+        line.height === 20 &&
+        line.children.map((child) => child.name).join() === "Value 3,Action" &&
+        action &&
+        action.width === 20 &&
+        action.height === 20,
+      `${value}: the FID's value and its Action share a 20 line (${line && `${line.children.map((child) => child.name)}, ${line.height}`}, ${action && `${action.width}x${action.height}`})`,
+    );
+    ok(
+      framesLargerThanAsked(component).length === 0,
+      `${value}: no frame larger than it was drawn (${framesLargerThanAsked(
+        component,
+      )
+        .map((node) => node.name)
+        .join(", ")})`,
+    );
+    ok(
+      stats.warnings.every((warning) =>
+        /is not on the Icons page|icon/i.test(warning),
+      ),
+      `${value}: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+    );
+  }
+  if (ready) {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "DescriptionList";
+    plugin.configureDescriptionListProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const key = (name, type) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === type,
+      );
+    const action = key("Action", "BOOLEAN");
+    const shown = set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.visible === action,
+    );
+    ok(
+      action &&
+        defs[action].defaultValue === true &&
+        shown.length === 2 &&
+        shown.every((node) => node.name === "Action"),
+      `DescriptionList: Action, on by default, shows each variant's Action and nothing else (${action}, ${shown.map((node) => node.name)})`,
+    );
+    const texts = [1, 2, 3].flatMap((index) => [
+      `Label ${index} Text`,
+      `Value ${index} Text`,
+    ]);
+    ok(
+      texts.every((name) => key(name, "TEXT")),
+      `DescriptionList: a text property for each label and value (${texts.filter((name) => !key(name, "TEXT")).join(", ") || "all"})`,
+    );
+    set.remove();
+  }
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("DescriptionList"),
+      ) === JSON.stringify({ Layout: ["Stack", "Row"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "DescriptionList" &&
+          update === plugin.updateDescriptionListComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Data display" &&
+          entry.components.includes("DescriptionList"),
+      ) &&
+      plugin.COMPONENT_DOCS.some(
+        (entry) => entry.componentSetName === "DescriptionList",
+      ),
+    "DescriptionList: one Layout axis, in Update All Core, the Data display section and the docs",
+  );
 }
 
 // --- ImageCropper (GAP-273) ----------------------------------------------------

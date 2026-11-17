@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 80         | 80/80 | 80/80     | 75/80   | 75/80 | 75/80   | 76/80   | 75/80       |
+| Core                   | 81         | 81/81 | 81/81     | 75/81   | 76/81 | 75/81   | 77/81   | 75/81       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -58,6 +58,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Counter              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | DatePicker           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | DateRangePicker      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| DescriptionList      | ✅         | ❌          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | Dialog               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Drawer               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | EmptyState           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -211,18 +212,18 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 ## Summary
 
-- Web components: 136/136
-- Web stories: 136/136
-- Web tests: 136/136
-- Web Code Connect files: 113/131
-- Web Code Connect scaffolds: 0/131
-- Web Code Connect linked: 113/131
-- iOS components: 118/136
-- iOS Code Connect files: 105/131
-- iOS Code Connect scaffolds: 0/131
-- iOS Code Connect linked: 105/131
-- Android components: 119/136
-- Android Code Connect files: 105/131
-- Android Code Connect scaffolds: 0/131
-- Android Code Connect linked: 105/131
-- Code Connect not applicable: 5/136
+- Web components: 137/137
+- Web stories: 136/137
+- Web tests: 137/137
+- Web Code Connect files: 113/132
+- Web Code Connect scaffolds: 0/132
+- Web Code Connect linked: 113/132
+- iOS components: 119/137
+- iOS Code Connect files: 105/132
+- iOS Code Connect scaffolds: 0/132
+- iOS Code Connect linked: 105/132
+- Android components: 120/137
+- Android Code Connect files: 105/132
+- Android Code Connect scaffolds: 0/132
+- Android Code Connect linked: 105/132
+- Code Connect not applicable: 5/137

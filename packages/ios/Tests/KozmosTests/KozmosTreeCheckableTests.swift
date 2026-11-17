@@ -39,10 +39,14 @@ final class KozmosTreeCheckableTests: XCTestCase {
         XCTAssertEqual(checked, ["initech"])
     }
 
-    /// `.independent` leaves every other row as it is.
+    /// `.independent` leaves every other row as it is: a site, or a client
+    /// that is not mixed (a mixed client checks its sites, decision 211,
+    /// KozmosTreeMixedTests).
     func testIndependentChecksLeaveTheOthers() {
-        let checked = KozmosTreeChecks.toggle("acme", in: Self.clients, checked: ["acme-hq"], rule: .independent)
-        XCTAssertEqual(checked, ["acme", "acme-hq"])
+        var checked = KozmosTreeChecks.toggle("acme-lab", in: Self.clients, checked: ["acme-hq"], rule: .independent)
+        XCTAssertEqual(checked, ["acme-hq", "acme-lab"])
+        checked = KozmosTreeChecks.toggle("globex", in: Self.clients, checked: ["acme-hq"], rule: .independent)
+        XCTAssertEqual(checked, ["acme-hq", "globex"])
     }
 
     /// A tap on a checkable row writes its check to the selection once, by
@@ -74,8 +78,8 @@ final class KozmosTreeCheckableTests: XCTestCase {
     }
 
     func testARowSaysItsCheckThenWhetherItIsOpen() {
-        XCTAssertEqual(KozmosTreeChecks.spokenValue(checked: true, isParent: true, open: false), "Checked, Collapsed")
-        XCTAssertEqual(KozmosTreeChecks.spokenValue(checked: false, isParent: false, open: false), "Unchecked")
+        XCTAssertEqual(KozmosTreeChecks.spokenValue(checked: .checked, isParent: true, open: false), "Checked, Collapsed")
+        XCTAssertEqual(KozmosTreeChecks.spokenValue(checked: .unchecked, isParent: false, open: false), "Unchecked")
         XCTAssertEqual(KozmosTreeChecks.spokenValue(checked: nil, isParent: true, open: true), "Expanded")
         XCTAssertEqual(KozmosTreeChecks.spokenValue(checked: nil, isParent: false, open: false), "")
     }
@@ -109,7 +113,7 @@ extension KozmosTreeCheckableTests {
         let leaf = Node(value: "Acme HQ")
         let checked = try await render(
             KozmosTreeDividedRow(node: leaf, depth: 0, isParent: false, open: false, density: .default, bleed: 0,
-                                 divided: false, checked: true) {}, "gap-277-checked")
+                                 divided: false, checked: .checked) {}, "gap-277-checked")
         let box = try XCTUnwrap(checked.boundingBox(in: CGRect(origin: .zero, size: Self.size), where: Self.isThemeFill),
                                 "no theme fill drawn")
         XCTAssertEqual(box.width, 20, accuracy: 2, "\(box)")
@@ -117,7 +121,7 @@ extension KozmosTreeCheckableTests {
         XCTAssertEqual(box.minX, 32, accuracy: 2, "the box is not after the disclosure's room: \(box)")
         let unchecked = try await render(
             KozmosTreeDividedRow(node: leaf, depth: 0, isParent: false, open: false, density: .default, bleed: 0,
-                                 divided: false, checked: false) {}, "gap-277-unchecked")
+                                 divided: false, checked: .unchecked) {}, "gap-277-unchecked")
         XCTAssertNil(unchecked.boundingBox(in: CGRect(origin: .zero, size: Self.size), where: Self.isThemeFill))
     }
 
@@ -142,9 +146,9 @@ extension KozmosTreeCheckableTests {
         let rows = VStack(spacing: 0) {
             KozmosTreeDividedRow(node: Node(value: "Acme", children: [Node(value: "Acme HQ")]), depth: 0,
                                  isParent: true, open: false, density: .default, bleed: 0, divided: false,
-                                 checked: true, onDisclosure: {}) {}
+                                 checked: .checked, onDisclosure: {}) {}
             KozmosTreeDividedRow(node: Node(value: "Initech"), depth: 0, isParent: false, open: false,
-                                 density: .default, bleed: 0, divided: false, checked: false) {}
+                                 density: .default, bleed: 0, divided: false, checked: .unchecked) {}
         }
         try await inspectAccessibility(rows, size: CGSize(width: 400, height: 200)) { window in
             let elements = accessibilityElements(window)

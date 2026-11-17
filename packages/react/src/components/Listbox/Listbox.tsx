@@ -16,6 +16,13 @@ export interface ListboxProps extends Omit<
 > {
   defaultValue?: string | string[];
   disabled?: boolean;
+  /**
+   * Draws no panel of its own (GAP-271): no border, surface, shadow or
+   * padding, for a list inside a container that is the box, a Dialog, a
+   * Popover or a Card, such as Switch client's. The rows, their fills and
+   * the keyboard are as they are; the focus ring still shows.
+   */
+  embedded?: boolean;
   multiple?: boolean;
   onValueChange?: (value: string | string[], option: ComboboxOption) => void;
   options: ComboboxOption[];
@@ -57,6 +64,7 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
       className,
       defaultValue,
       disabled,
+      embedded = false,
       id,
       multiple,
       onBlur,
@@ -163,7 +171,12 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
         aria-multiselectable={multiple || undefined}
         tabIndex={disabled ? -1 : 0}
         data-modality={focused ? modality : undefined}
-        className={cn("kozmos-reset kozmos-listbox", className)}
+        data-embedded={embedded || undefined}
+        className={cn(
+          "kozmos-reset kozmos-listbox",
+          embedded && "kozmos-listbox-embedded",
+          className,
+        )}
         onFocus={(event) => {
           onFocus?.(event);
           setFocused(true);

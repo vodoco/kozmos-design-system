@@ -1095,6 +1095,7 @@
                 <option value="listItem">ListItem</option>
                 <option value="settingsRow">SettingsRow</option>
                 <option value="metaStrip">MetaStrip</option>
+                <option value="descriptionList">DescriptionList</option>
                 <option value="personaMark">PersonaMark</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
@@ -1957,6 +1958,13 @@
           update: "update-meta-strip",
           rebuild: "rebuild-meta-strip",
           hint: "Build creates MetaStrip with Label and Icon axes: a row of small facts, each a label and a value, drawn as three editable tiles. Label maps to MetaStripItem.showLabel and Icon to whether a tile carries a leading glyph. Update preserves the node ID Code Connect pins; Rebuild mints a new one.",
+        },
+        descriptionList: {
+          label: "DescriptionList",
+          build: "build-description-list",
+          update: "update-description-list",
+          rebuild: "rebuild-description-list",
+          hint: "Build creates DescriptionList (GAP-221) after Curated Icons: three items, each a label over its value with no field chrome, the third with a copy Action, in Stack and Row Layout variants, with a text property for each label and value and an Action boolean. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         counter: {
           label: "Counter",

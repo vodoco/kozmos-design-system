@@ -62,6 +62,47 @@ public enum KozmosTreeCheckRule {
     case independent
 }
 
+/// How a selected row's fill is drawn (GAP-217, decision 196), as React's
+/// `rowFill`: an inset pill, as a navigation tree has it, or a band with no
+/// corners across the panel, as the Dashboard's Map Content tree draws it.
+public enum KozmosTreeRowFill: Hashable, Sendable {
+    /// The default: a pill on the control radius (16), the tree's own width,
+    /// inside the bleed, as React's `rounded-control` row.
+    case inset
+    /// A band with no corners across the row and its bleed on both sides,
+    /// over an open row's surface, with or without `divided`.
+    case band
+
+    /// The selected fill's shape: its corners, and how far past the tree it
+    /// reaches on each side.
+    struct Shape: Equatable {
+        let cornerRadius: CGFloat
+        let reachesBleed: Bool
+        let outset: CGFloat
+    }
+
+    func selectedFill(bleed: CGFloat) -> Shape {
+        switch self {
+        case .inset:
+            return Shape(cornerRadius: KozmosDimensions.semanticsRadiusControl, reachesBleed: false, outset: 0)
+        case .band:
+            return Shape(cornerRadius: 0, reachesBleed: true, outset: max(0, bleed))
+        }
+    }
+
+    /// The focus ring's corners: the fill's, so a band's ring is square.
+    var focusRingRadius: CGFloat { selectedFill(bleed: 0).cornerRadius }
+
+    /// What the row's outer box, the one that reaches the bleed, is filled
+    /// with.
+    enum OuterFill: Equatable { case none, openSurface, hoverFill }
+
+    func outerFillRole(selected: Bool, divided: Bool, open: Bool) -> OuterFill {
+        if self == .band, selected { return .hoverFill }
+        return divided && open ? .openSurface : .none
+    }
+}
+
 /// Where a row's disclosure is drawn (GAP-277).
 public enum KozmosTreeDisclosurePosition {
     /// Before the row's name, as every tree has it.
@@ -169,6 +210,7 @@ public struct KozmosTree: View {
     let checkable: Bool
     let checkRule: KozmosTreeCheckRule
     let disclosurePosition: KozmosTreeDisclosurePosition
+    let rowFill: KozmosTreeRowFill
     let contextMenu: ((Node) -> KozmosMenuContent?)?
     let onContextMenuSelect: (Node, KozmosMenuItem) -> Void
 
@@ -215,6 +257,9 @@ public struct KozmosTree: View {
     ///     them.
     ///   - disclosurePosition: The chevron before the name, or at the row's
     ///     end (GAP-277).
+    ///   - rowFill: `.inset`, the default, draws a selected row as a pill on
+    ///     the control radius inside the tree; `.band` as a band with no
+    ///     corners across the row and its bleed (GAP-217, decision 196).
     ///   - contextMenu: The menu a row opens on a long press, or a secondary
     ///     click on iPad and Mac, as `kozmosContextMenu` draws it; nil for a
     ///     row with none.
@@ -233,6 +278,7 @@ public struct KozmosTree: View {
         checkable: Bool = false,
         checkRule: KozmosTreeCheckRule = .exclusive,
         disclosurePosition: KozmosTreeDisclosurePosition = .start,
+        rowFill: KozmosTreeRowFill = .inset,
         contextMenu: ((Node) -> KozmosMenuContent?)? = nil,
         onContextMenuSelect: @escaping (Node, KozmosMenuItem) -> Void = { _, _ in }
     ) {
@@ -246,6 +292,7 @@ public struct KozmosTree: View {
         self.checkable = checkable
         self.checkRule = checkRule
         self.disclosurePosition = disclosurePosition
+        self.rowFill = rowFill
         self.contextMenu = contextMenu
         self.onContextMenuSelect = onContextMenuSelect
     }
@@ -393,8 +440,11 @@ public struct KozmosTree: View {
                 node: row.node, depth: row.depth, isParent: row.isParent, open: open, density: density, bleed: bleed,
                 divided: divided, selected: selectionShown && currentSelection.contains(row.node.id),
                 focused: treeFocused && focusedID == row.node.id, metaPlacement: metaPlacement,
-                checked: checkable ? currentSelection.contains(row.node.id) : nil,
+                checked: checkable
+                    ? KozmosTreeChecks.state(of: row.node.id, in: nodes, checked: currentSelection, rule: checkRule)
+                    : nil,
                 disclosurePosition: disclosurePosition,
+                rowFill: rowFill,
                 // A checkable row's tap checks it: its chevron opens it.
                 onDisclosure: checkable && row.isParent && !row.node.isDisabled ? { toggleOpen(row) } : nil
             ) {
@@ -806,9 +856,13 @@ struct KozmosTreeDividedRow: View {
     let selected: Bool
     let focused: Bool
     let metaPlacement: KozmosTreeMetaPlacement
-    /// A checkable tree's row (GAP-277): its check; nil in a tree that is not.
-    let checked: Bool?
+    /// A checkable tree's row (GAP-277): its check, mixed for a parent whose
+    /// rows are partly checked under `.independent` (decision 211); nil in a
+    /// tree that is not checkable.
+    let checked: KozmosCheckboxState?
     let disclosurePosition: KozmosTreeDisclosurePosition
+    /// The selected fill's shape (GAP-217): an inset pill or a band.
+    let rowFill: KozmosTreeRowFill
     /// Opens or closes a checkable parent from its chevron, and from
     /// VoiceOver's Expand or Collapse action; nil where the row's tap does.
     let onDisclosure: (() -> Void)?
@@ -816,9 +870,9 @@ struct KozmosTreeDividedRow: View {
 
     init(node: Node, depth: Int, isParent: Bool, open: Bool, density: KozmosTreeDensity, bleed: CGFloat,
          divided: Bool = true, selected: Bool = false, focused: Bool = false,
-         metaPlacement: KozmosTreeMetaPlacement = .inline, checked: Bool? = nil,
-         disclosurePosition: KozmosTreeDisclosurePosition = .start, onDisclosure: (() -> Void)? = nil,
-         action: @escaping () -> Void) {
+         metaPlacement: KozmosTreeMetaPlacement = .inline, checked: KozmosCheckboxState? = nil,
+         disclosurePosition: KozmosTreeDisclosurePosition = .start, rowFill: KozmosTreeRowFill = .inset,
+         onDisclosure: (() -> Void)? = nil, action: @escaping () -> Void) {
         self.node = node
         self.depth = depth
         self.isParent = isParent
@@ -831,6 +885,7 @@ struct KozmosTreeDividedRow: View {
         self.metaPlacement = metaPlacement
         self.checked = checked
         self.disclosurePosition = disclosurePosition
+        self.rowFill = rowFill
         self.onDisclosure = onDisclosure
         self.action = action
     }
@@ -839,7 +894,7 @@ struct KozmosTreeDividedRow: View {
         Button(action: action) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 if disclosurePosition == .start { disclosure }
-                if let checked { KozmosTreeCheckBox(checked: checked) }
+                if let checked { KozmosTreeCheckBox(state: checked) }
                 icon
                 text
                 Spacer(minLength: 0)
@@ -849,12 +904,14 @@ struct KozmosTreeDividedRow: View {
             .padding(.vertical, density.verticalPadding)
             .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
             .frame(minHeight: density.rowHeight)
+            // Inset (the default), the pill on the row itself, inside the
+            // bleed; a band's fill is the outer box's, below (GAP-217).
             .background(
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
-                    .fill(selected ? KozmosColors.semanticsHoverFill : Color.clear)
+                    .fill(selected && rowFill == .inset ? KozmosColors.semanticsHoverFill : Color.clear)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
+                RoundedRectangle(cornerRadius: rowFill.focusRingRadius, style: .continuous)
                     .strokeBorder(focused ? KozmosColors.primitivesColorsTheme600 : Color.clear, lineWidth: 2)
             )
             .contentShape(Rectangle())
@@ -864,7 +921,9 @@ struct KozmosTreeDividedRow: View {
         .padding(.horizontal, bleed)
         // The open row's surface, and the stroke under the row, outside its
         // height: the row and its stroke, as a row and a separator.
-        .background(divided && open ? KozmosColors.primitivesColorsBackground50 : Color.clear)
+        // A band's selected fill is here too, over the surface, across the
+        // bleed with no corners (GAP-217).
+        .background(outerFill)
         .padding(.bottom, divided ? 1 : 0)
         .background(alignment: .bottom) {
             if divided { KozmosColors.semanticsBorderSubtle.frame(height: 1) }
@@ -873,6 +932,14 @@ struct KozmosTreeDividedRow: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
         .modifier(KozmosTreeToggleTrait(on: checked != nil))
         .modifier(KozmosTreeDisclosureAction(open: open, action: onDisclosure))
+    }
+
+    private var outerFill: Color {
+        switch rowFill.outerFillRole(selected: selected, divided: divided, open: open) {
+        case .none: return Color.clear
+        case .openSurface: return KozmosColors.primitivesColorsBackground50
+        case .hoverFill: return KozmosColors.semanticsHoverFill
+        }
     }
 
     /// The chevron, before the name or at the row's end; on a row with no
@@ -943,8 +1010,28 @@ enum KozmosTreeChecks {
     /// `checked` with `id` checked or cleared. Checked under `.exclusive`,
     /// the rows above it and below it are cleared, open or not, past any
     /// section: a client and its sites are never checked together.
+    ///
+    /// Under `.independent` (decision 211), a mixed parent checks itself
+    /// and every enabled row below it, and a checked parent clears itself
+    /// and them; an unchecked parent checks itself alone.
     static func toggle(_ id: String, in nodes: [Node], checked: Set<String>, rule: KozmosTreeCheckRule) -> Set<String> {
         var next = checked
+        if rule == .independent, let node = path(to: id, in: nodes)?.last {
+            let below = enabledRows(below: node)
+            switch state(of: id, in: nodes, checked: checked, rule: rule) {
+            case .indeterminate:
+                next.insert(id)
+                next.formUnion(below)
+                return next
+            case .checked:
+                next.remove(id)
+                next.subtract(below)
+                return next
+            case .unchecked:
+                next.insert(id)
+                return next
+            }
+        }
         if next.contains(id) {
             next.remove(id)
             return next
@@ -971,11 +1058,45 @@ enum KozmosTreeChecks {
         return nil
     }
 
+    /// A row's check (decision 211): under `.independent`, a parent whose
+    /// enabled rows below it, open or not and past any section, are some but
+    /// not all checked is mixed, whatever its own check; otherwise, and
+    /// always under `.exclusive`, its own check.
+    static func state(of id: String, in nodes: [Node], checked: Set<String>,
+                      rule: KozmosTreeCheckRule) -> KozmosCheckboxState {
+        let own = KozmosCheckboxState(checked.contains(id))
+        guard rule == .independent, let node = path(to: id, in: nodes)?.last else { return own }
+        let below = enabledRows(below: node)
+        let count = below.filter(checked.contains).count
+        return count > 0 && count < below.count ? .indeterminate : own
+    }
+
+    /// The ids of the enabled rows below `node`, open or not, past any
+    /// section: what a mixed parent counts, checks and clears.
+    static func enabledRows(below node: Node) -> [String] {
+        var ids: [String] = []
+        func walk(_ level: [Node]) {
+            for child in level {
+                if !child.isSection, !child.isDisabled { ids.append(child.id) }
+                walk(child.children ?? [])
+            }
+        }
+        walk(node.children ?? [])
+        return ids
+    }
+
     /// What VoiceOver reads as the row's value: its check, then whether a
-    /// parent is open, "Checked, Collapsed".
-    static func spokenValue(checked: Bool?, isParent: Bool, open: Bool) -> String {
+    /// parent is open, "Checked, Collapsed"; a mixed row "Mixed", Checkbox's
+    /// word.
+    static func spokenValue(checked: KozmosCheckboxState?, isParent: Bool, open: Bool) -> String {
         [
-            checked.map { $0 ? "Checked" : "Unchecked" },
+            checked.map { state -> String in
+                switch state {
+                case .checked: return "Checked"
+                case .unchecked: return "Unchecked"
+                case .indeterminate: return "Mixed"
+                }
+            },
             isParent ? (open ? "Expanded" : "Collapsed") : nil,
         ]
         .compactMap { $0 }
@@ -1029,9 +1150,12 @@ private struct KozmosTreeToggleTrait: ViewModifier {
 
 /// Checkbox's box, drawn for the eye (GAP-277): the row is the control, and
 /// its value says whether it is checked. Checked, the theme fill with the
-/// theme foreground's mark (decision 59), as `KozmosCheckbox` draws it.
+/// theme foreground's mark (decision 59), as `KozmosCheckbox` draws it;
+/// mixed (decision 211), the same fill with Checkbox's dash.
 struct KozmosTreeCheckBox: View {
-    let checked: Bool
+    let state: KozmosCheckboxState
+
+    private var checked: Bool { state != .unchecked }
 
     var body: some View {
         ZStack {
@@ -1041,11 +1165,16 @@ struct KozmosTreeCheckBox: View {
                 .background(checked ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
                 .frame(width: 20, height: 20)
                 .cornerRadius(KozmosDimensions.semanticsRadiusMarker)
-            if checked {
+            if state == .checked {
                 Image(systemName: "checkmark")
                     .font(KozmosTypography.caption)
                     .bold()
                     .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
+            } else if state == .indeterminate {
+                KozmosCheckboxDash()
+                    .stroke(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+                            style: StrokeStyle(lineWidth: 4.0 / 3.0, lineCap: .round))
+                    .frame(width: 16, height: 16)
             }
         }
         .accessibilityHidden(true)

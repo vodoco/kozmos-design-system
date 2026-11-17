@@ -15714,10 +15714,10 @@
   },
   "components": {
     "summary": {
-      "total": 128,
+      "total": 129,
       "stories": 128,
-      "tests": 128,
-      "exported": 128,
+      "tests": 129,
+      "exported": 129,
       "codeConnectFiles": 105,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 105
@@ -17149,6 +17149,36 @@
         "variants": {}
       },
       {
+        "name": "DescriptionList",
+        "source": "packages/react/src/components/DescriptionList/DescriptionList.tsx",
+        "story": null,
+        "test": "packages/react/src/components/DescriptionList/DescriptionList.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "layout",
+          "role",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
         "name": "Dialog",
         "source": "packages/react/src/components/Dialog/Dialog.tsx",
         "story": "packages/react/src/components/Dialog/Dialog.stories.tsx",
@@ -18028,6 +18058,7 @@
           "children",
           "defaultValue",
           "disabled",
+          "embedded",
           "id",
           "multiple",
           "options",
@@ -20868,6 +20899,7 @@
           "renderIcon",
           "renderMeta",
           "role",
+          "rowFill",
           "scrollerRef",
           "selected",
           "selectedId",
