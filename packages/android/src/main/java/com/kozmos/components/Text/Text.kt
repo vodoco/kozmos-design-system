@@ -8,6 +8,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
+import com.kozmos.tokens.KozmosTypography
 
 /**
  * Which step of the type ramp a piece of text sits on: the steps of SwiftUI's
@@ -23,6 +24,12 @@ import androidx.compose.ui.unit.sp
  * do.
  */
 enum class KozmosTextStyle {
+    /**
+     * The one display size, 48sp bold on 54sp lines (decision 203), for a
+     * marketing-style headline such as a sign-in hero; above every heading
+     * level. Kozmos's own style, not a Material role: KozmosTypography.display.
+     */
+    Display,
     Title2,
     Title3,
     Headline,
@@ -36,6 +43,7 @@ enum class KozmosTextStyle {
         @Composable
         @ReadOnlyComposable
         get() = when (this) {
+            Display -> KozmosTypography.display
             Title2 -> MaterialTheme.typography.headlineSmall
             Title3 -> MaterialTheme.typography.titleLarge
             Headline -> MaterialTheme.typography.titleMedium

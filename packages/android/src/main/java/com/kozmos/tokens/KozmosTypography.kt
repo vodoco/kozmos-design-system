@@ -1,7 +1,10 @@
 package com.kozmos.tokens
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 /**
  * One place that decides what the design system renders text in.
@@ -44,6 +47,21 @@ object KozmosTypography {
      * ones reading `MaterialTheme.typography` directly, and the ones that set
      * only a size and inherit the rest from the ambient text style.
      */
+    /**
+     * The one display size (decision 203, GAP-272): 48sp bold on 54sp lines,
+     * with no added tracking, from the display type tokens, for a
+     * marketing-style headline such as a sign-in hero. In sp, so it grows
+     * with the reader's font size. `KozmosText(style = KozmosTextStyle.Display)`
+     * and `KozmosHeading(size = KozmosHeadingSize.Display)` draw it.
+     */
+    val display: TextStyle = TextStyle(
+        fontFamily = family,
+        fontWeight = FontWeight.Bold,
+        fontSize = KozmosDimensions.semanticsTypographyDisplaySize.value.sp,
+        lineHeight = KozmosDimensions.semanticsTypographyDisplayLineheight.value.sp,
+        letterSpacing = KozmosDimensions.semanticsTypographyDisplayLetterspacing.value.sp
+    )
+
     fun typography(base: Typography = Typography()): Typography = Typography(
         displayLarge = base.displayLarge.copy(fontFamily = family),
         displayMedium = base.displayMedium.copy(fontFamily = family),
