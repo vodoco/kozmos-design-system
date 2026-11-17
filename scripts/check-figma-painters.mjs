@@ -9543,7 +9543,8 @@ section("The rest of the batch");
   const esFull = await paint("updateEmptyStateVariant", "Icon", "Default");
   const esCompact = await paint("updateEmptyStateVariant", "Icon", "Compact");
   ok(
-    esFull.name === "Content=Icon, Size=Default",
+    // Decision 194 adds Tone, None for the untoned look.
+    esFull.name === "Content=Icon, Size=Default, Tone=None",
     `EmptyState carries both axes (got "${esFull.name}")`,
   );
   ok(
@@ -10059,7 +10060,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       type: "Closed",
     });
     ok(
-      closed.name === "State=Default, Status=Default, Content=Closed" &&
+      // Decision 151 adds Variant, Default for the bordered field.
+      closed.name ===
+        "State=Default, Status=Default, Content=Closed, Variant=Default" &&
         // #521's Reset Mixed, hidden until Reset Mixed is on, stays under it.
         closed.children.map((c) => c.name).join(",") ===
           "Select Trigger,Reset Mixed" &&
@@ -10074,7 +10077,8 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     });
     const listbox = named(open, "Select Listbox");
     ok(
-      open.name === "State=Default, Status=Default, Content=Open" &&
+      open.name ===
+        "State=Default, Status=Default, Content=Open, Variant=Default" &&
         open.children.map((c) => c.name).join(",") ===
           "Select Trigger,Reset Mixed,Select Listbox" &&
         open.itemSpacing === 4 &&
@@ -10316,10 +10320,11 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         updated.updated === true &&
           updated.componentSetId === setId &&
           updated.variantsUpdated === 6 &&
-          // #521's two Mixed variants and the two Open ones.
-          updated.variantsCreated === 4 &&
-          liveSet.children.length === 10,
-        `Select Update keeps the set and its 6 variants and creates the 2 Mixed and 2 Open ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
+          // #521's two Mixed variants and the two Open ones, and decision
+          // 151's eight Ghost ones.
+          updated.variantsCreated === 12 &&
+          liveSet.children.length === 18,
+        `Select Update keeps the set and its 6 variants and creates the 2 Mixed, 2 Open and 8 Ghost ones (${updated.variantsUpdated} updated, ${updated.variantsCreated} created, ${liveSet.children.length} children)`,
       );
       // #525 review: an open list is neither disabled nor the trigger's focus
       // ring, so Open is drawn at State=Default only.
@@ -10329,16 +10334,17 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         .sort();
       ok(
         openNames.join(" | ") ===
-          "State=Default, Status=Default, Content=Open | State=Default, Status=Error, Content=Open",
+          "State=Default, Status=Default, Content=Open, Variant=Default | State=Default, Status=Error, Content=Open, Variant=Default",
         `the Open variants are State=Default's two Statuses alone (${openNames.join(" | ")})`,
       );
       ok(
         oldNames.every(
           (name) =>
             byId.get(oldIds[name]) &&
-            byId.get(oldIds[name]).name === `${name}, Content=Closed`,
+            byId.get(oldIds[name]).name ===
+              `${name}, Content=Closed, Variant=Default`,
         ),
-        "each of the 6 keeps its node id and gains Content=Closed",
+        "each of the 6 keeps its node id and gains Content=Closed and Variant=Default",
       );
       const selectDefs = definitionsOf(liveSet);
       const typeOf = (name) => {
@@ -10411,15 +10417,18 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       const want = [];
       for (const state of ["Default", "Focus", "Disabled", "Mixed"])
         for (const status of ["Default", "Error"])
-          want.push(`State=${state}, Status=${status}, Content=Closed`);
+          for (const variant of ["Default", "Ghost"])
+            want.push(
+              `State=${state}, Status=${status}, Content=Closed, Variant=${variant}`,
+            );
       for (const status of ["Default", "Error"])
-        want.push(`State=Default, Status=${status}, Content=Open`);
+        want.push(`State=Default, Status=${status}, Content=Open, Variant=Default`);
       want.sort();
       ok(
         built.created === true &&
-          built.variants === 10 &&
+          built.variants === 18 &&
           names.join(" | ") === want.join(" | "),
-        `Select Build draws 8 Closed (Mixed among them) and State=Default's 2 Open variants, no Mixed Open (${built.variants}: ${names.filter((n) => /Open/.test(n)).join(" | ")})`,
+        `Select Build draws 8 Closed (Mixed among them), State=Default's 2 Open variants, no Mixed Open, and 8 Ghost (${built.variants}: ${names.filter((n) => /Open/.test(n)).join(" | ")})`,
       );
     }
 
@@ -10442,7 +10451,8 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       const updated = await file.plugin.updateSelectComponent();
       const kept = Object.entries(ids).filter(([name, id]) =>
         liveSet.children.some(
-          (child) => child.id === id && child.name === name,
+          (child) =>
+            child.id === id && child.name === `${name}, Variant=Default`,
         ),
       );
       const warned = (updated.warnings || []).filter((w) =>
@@ -10450,9 +10460,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       );
       ok(
         updated.variantsUpdated === 12 &&
-          // #521's two Mixed Closed variants; no Mixed Open.
-          updated.variantsCreated === 2 &&
-          liveSet.children.length === 14 &&
+          // #521's two Mixed Closed variants; no Mixed Open; decision 151's
+          // eight Ghost.
+          updated.variantsCreated === 10 &&
+          liveSet.children.length === 22 &&
           kept.length === 12 &&
           updated.variantsNotGenerated === 4 &&
           warned.length === 4,
@@ -14767,8 +14778,8 @@ section("Figma draws React's values (the 4 Nov triage)");
   );
   ok(
     JSON.stringify(plugin.FILE_UPLOAD_CONTENT) ===
-      JSON.stringify(["Dropzone", "Files", "Preview"]),
-    `FileUpload's Content axis carries Preview after the two it had (${JSON.stringify(plugin.FILE_UPLOAD_CONTENT)})`,
+      JSON.stringify(["Dropzone", "Files", "Preview", "Button"]),
+    `FileUpload's Content axis carries Preview after the two it had, and GAP-274's Button after it (${JSON.stringify(plugin.FILE_UPLOAD_CONTENT)})`,
   );
 
   // The control's corner, 16.
@@ -15315,7 +15326,8 @@ section(
       const title = named(component, "Title Text");
       ok(
         JSON.stringify(titleRow.children.map((child) => child.name)) ===
-          JSON.stringify(["Title Text", "Info"]) &&
+          // Decision 210's Title Addon between them, hidden by default.
+          JSON.stringify(["Title Text", "Title Addon", "Info"]) &&
           titleRow.itemSpacing === 8 &&
           phBound(titleRow, "itemSpacing") === "PageHeader/title/gap",
         `${at}: the Info 8 after the title (${titleRow.children.map((child) => child.name)}, ${titleRow.itemSpacing})`,
@@ -19640,6 +19652,480 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     ok(
       notKept.length === 0,
       `Slider, Checkbox and Switch each keep one ${rowParts.map((r) => r[2]).join(", ")}: the one in the row, under its first node id (${notKept.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
+// --- Wave B2 (0.17.0): EmptyState's tone, Chip's emotions, FileUpload's button,
+// PageHeader's title addon, Select's ghost trigger ----------------------------
+//
+// Decision 194 (GAP-213): EmptyState takes a Tone, Tag's six emotions, the
+// emotion's surface edged in its text colour at the container radius, its
+// words in onSurface and its icon in the emotion's text on the page's disc.
+// Decision 200 (GAP-170): Chip takes an Emotion: at rest the surface, its ink
+// and a text-colour edge; selected the text colour filled, the page's colour
+// as ink. GAP-274: FileUpload's Content=Button, an outline Button-sized
+// trigger. Decision 210: PageHeader's Title Addon, beside the title. Decision
+// 151 (CLOUD-UI-009): Select's Variant=Ghost, no edge and no fill, as wide as
+// its value. Update keeps every live variant and its node id and adds the new.
+section(
+  "Wave B2: EmptyState Tone, Chip Emotion, FileUpload Button, PageHeader Title Addon, Select Ghost",
+);
+{
+  // The file as Update paints it: its component tokens too.
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const NS = plugin.RUN_NAMESPACE;
+  const EMOTIONS = [
+    "Themed",
+    "Neutral",
+    "Success",
+    "Danger",
+    "Informative",
+    "Alert",
+  ];
+  const fill = (node) => node && boundVariableName((node.fills || [])[0]);
+  const stroke = (node) => node && boundVariableName((node.strokes || [])[0]);
+  const iconToken = (node) =>
+    node &&
+    (node.findAll
+      ? node.findAll(
+          (child) =>
+            child.type === "INSTANCE" &&
+            child.getSharedPluginData(NS, "kind") === "icon-slot-instance",
+        )
+      : []
+    ).map((icon) => icon.getSharedPluginData(NS, "foreground-token"));
+  const boundFloat = (node, field) =>
+    node &&
+    node.boundVariables &&
+    node.boundVariables[field] &&
+    String(node.boundVariables[field].id || node.boundVariables[field]).replace(
+      /^VariableID:/,
+      "",
+    );
+  const axes = (set) => plugin.expectedVariantAxesForComponentSetName(set) || {};
+  const attemptPaint = async (painter, ...args) => {
+    const component = figma.createComponent();
+    try {
+      await plugin[painter](component, ...args);
+    } catch (error) {
+      ok(false, `${painter} threw: ${error && error.message}`);
+    }
+    return component;
+  };
+
+  // EmptyState ---------------------------------------------------------------
+  ok(
+    JSON.stringify(axes("EmptyState").Tone) ===
+      JSON.stringify(["None", ...EMOTIONS]),
+    `EmptyState declares Tone: None first, then the six emotions (${JSON.stringify(axes("EmptyState").Tone)})`,
+  );
+  const esParse = [
+    "Content=Icon, Size=Default",
+    "Content=Icon, Size=Compact, Tone=None",
+    "Content=Action, Size=Default, Tone=Alert",
+    "Content=Icon, Size=Compact, Tone=Alert",
+  ].map((name) => plugin.parseEmptyStateVariantName(name));
+  ok(
+    JSON.stringify(esParse) ===
+      JSON.stringify([
+        { value: "Icon", second: "Default" },
+        { value: "Icon", second: "Compact" },
+        { value: "Action", second: "Default/Alert" },
+        null,
+      ]),
+    `EmptyState: a variant with no Tone is None, so Update renames it; a tone is drawn at Size=Default only (${JSON.stringify(esParse)})`,
+  );
+  for (const tone of EMOTIONS) {
+    const key = tone.toLowerCase();
+    const es = await attemptPaint("updateEmptyStateVariant", {
+      value: "Icon",
+      second: `Default/${tone}`,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const list = named(es, "List");
+    const words = [
+      named(es, "Title Text"),
+      named(es, "Description Text"),
+      ...(list ? list.findAll((n) => n.type === "TEXT") : []),
+      ...(list ? list.findAll((n) => n.name === "Bullet Dot") : []),
+    ];
+    const disc = named(es, "Icon Container");
+    ok(
+      es.name === `Content=Icon, Size=Default, Tone=${tone}` &&
+        fill(es) === `Emotion/${key}/surface` &&
+        stroke(es) === `Emotion/${key}/text` &&
+        es.strokeWeight === 1 &&
+        es.strokeAlign === "INSIDE" &&
+        es.cornerRadius === 20 &&
+        boundFloat(es, "cornerRadius") === "Radius/Container",
+      `EmptyState Tone=${tone}: the card is Emotion/${key}/surface, edged 1 inside in Emotion/${key}/text, at Radius/Container (${es.name}; ${fill(es)}; ${stroke(es)}; ${es.strokeWeight} ${es.strokeAlign}; ${es.cornerRadius} ${boundFloat(es, "cornerRadius")})`,
+    );
+    ok(
+      words.length >= 8 &&
+        words.every((node) => fill(node) === `Emotion/${key}/onSurface`),
+      `EmptyState Tone=${tone}: the title, description, list words and bullets are Emotion/${key}/onSurface (${words.map(fill).join(", ")})`,
+    );
+    ok(
+      disc &&
+        fill(disc) === "Colors/background/0" &&
+        iconToken(disc).length === 1 &&
+        iconToken(disc)[0] === `Emotion/${key}/text`,
+      `EmptyState Tone=${tone}: the icon is Emotion/${key}/text on a Colors/background/0 disc (${fill(disc)}; ${iconToken(disc)})`,
+    );
+  }
+  {
+    const plain = await attemptPaint("updateEmptyStateVariant", {
+      value: "Icon",
+      second: "Default",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const disc = named(plain, "Icon Container");
+    ok(
+      plain.name === "Content=Icon, Size=Default, Tone=None" &&
+        (plain.fills || []).length === 0 &&
+        (plain.strokes || []).length === 0 &&
+        plain.cornerRadius === 0 &&
+        fill(named(plain, "Title Text")) === "Colors/foreground/0" &&
+        fill(named(plain, "Description Text")) === "Colors/foreground/400" &&
+        fill(disc) === "Colors/background/100" &&
+        iconToken(disc)[0] === "Colors/foreground/400",
+      `EmptyState Tone=None draws as before: no fill, edge or radius, the title foreground/0, the description and icon foreground/400 on a background/100 disc (${plain.name}; ${fill(named(plain, "Title Text"))}; ${fill(disc)})`,
+    );
+  }
+  {
+    const oldNames = [];
+    for (const content of ["Basic", "Icon", "Action"])
+      for (const size of ["Default", "Compact"])
+        oldNames.push(`Content=${content}, Size=${size}`);
+    const replay = await replayUpdate(
+      "EmptyState",
+      oldNames,
+      "updateEmptyStateComponent",
+    );
+    ok(
+      replay.kept.every(
+        (variant, i) => variant && variant.name === `${oldNames[i]}, Tone=None`,
+      ) &&
+        replay.liveSet.children.length === 24 &&
+        EMOTIONS.every((tone) =>
+          ["Basic", "Icon", "Action"].every((content) =>
+            replay.names.includes(
+              `Content=${content}, Size=Default, Tone=${tone}`,
+            ),
+          ),
+        ),
+      `EmptyState: Update keeps its 6 variants and ids, renamed Tone=None, and adds the 18 toned ones (${replay.liveSet.children.length}: ${replay.names.slice(0, 8).join("; ")} …)`,
+    );
+  }
+
+  // Chip -----------------------------------------------------------------
+  ok(
+    JSON.stringify(axes("Chip").Emotion) ===
+      JSON.stringify(["None", ...EMOTIONS]),
+    `Chip declares Emotion: None first, then the six (${JSON.stringify(axes("Chip").Emotion)})`,
+  );
+  for (const tone of EMOTIONS) {
+    const key = tone.toLowerCase();
+    for (const state of ["Default", "Selected"]) {
+      const chip = await attemptPaint("updateChipVariant", {
+        variant: "Neutral",
+        size: "Default",
+        state,
+        removable: "True",
+        emotion: tone,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      const label = named(chip, "Label Text");
+      const remove = named(chip, "Remove Button");
+      const selected = state === "Selected";
+      const ink = selected ? "Colors/background/0" : `Emotion/${key}/onSurface`;
+      ok(
+        chip.name ===
+          `Variant=Neutral, Size=Default, State=${state}, Removable=True, Emotion=${tone}` &&
+          fill(chip) ===
+            (selected ? `Emotion/${key}/text` : `Emotion/${key}/surface`) &&
+          stroke(chip) === `Emotion/${key}/text` &&
+          fill(label) === ink &&
+          remove &&
+          iconToken(remove).every((token) => token === ink) &&
+          iconToken(remove).length === 1,
+        `Chip Emotion=${tone} ${state}: ${selected ? "filled with the text colour, the page's colour as ink" : "the surface, its ink, a text-colour edge"} (${chip.name}; ${fill(chip)}; ${stroke(chip)}; ${fill(label)}; remove ${iconToken(remove)})`,
+      );
+    }
+  }
+  {
+    const parsed = [
+      "Variant=Neutral, Size=Default, State=Default, Removable=False",
+      "Variant=Neutral, Size=Default, State=Selected, Removable=True, Emotion=Alert",
+      "Variant=Brand, Size=Default, State=Default, Removable=False, Emotion=Alert",
+      "Variant=Neutral, Size=Small, State=Default, Removable=False, Emotion=Alert",
+      "Variant=Neutral, Size=Default, State=Disabled, Removable=False, Emotion=Alert",
+    ].map((name) => plugin.parseChipVariantName(name));
+    ok(
+      parsed[0] &&
+        parsed[0].emotion === "None" &&
+        parsed[1] &&
+        parsed[1].emotion === "Alert" &&
+        parsed.slice(2).every((props) => props === null),
+      `Chip: no Emotion is None; an emotion is drawn on the Neutral, Default-size chip at rest and selected only (${JSON.stringify(parsed)})`,
+    );
+    const oldNames = [];
+    for (const variant of ["Neutral", "Brand", "Destructive"])
+      for (const size of ["Small", "Default", "Large"])
+        for (const state of ["Default", "Selected", "Disabled"])
+          for (const removable of ["False", "True"])
+            oldNames.push(
+              `Variant=${variant}, Size=${size}, State=${state}, Removable=${removable}`,
+            );
+    const replay = await replayUpdate("Chip", oldNames, "updateChipComponent");
+    ok(
+      replay.kept.every(
+        (variant, i) =>
+          variant && variant.name === `${oldNames[i]}, Emotion=None`,
+      ) &&
+        replay.liveSet.children.length === 78 &&
+        EMOTIONS.every((tone) =>
+          ["Default", "Selected"].every((state) =>
+            ["False", "True"].every((removable) =>
+              replay.names.includes(
+                `Variant=Neutral, Size=Default, State=${state}, Removable=${removable}, Emotion=${tone}`,
+              ),
+            ),
+          ),
+        ) &&
+        overlapsIn(replay.liveSet).length === 0,
+      `Chip: Update keeps its 54 variants and ids, renamed Emotion=None, and adds 24, none overlapping (${replay.liveSet.children.length}; overlaps ${overlapsIn(replay.liveSet).length})`,
+    );
+  }
+
+  // FileUpload -----------------------------------------------------------
+  ok(
+    JSON.stringify(axes("FileUpload").Content) ===
+      JSON.stringify(["Dropzone", "Files", "Preview", "Button"]),
+    `FileUpload's Content gains Button, last (${JSON.stringify(axes("FileUpload").Content)})`,
+  );
+  for (const [state, status] of [
+    ["Default", "Default"],
+    ["Disabled", "Default"],
+    ["Default", "Error"],
+  ]) {
+    const upload = await attemptPaint("updateFileUploadVariant", {
+      state,
+      status,
+      content: "Button",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const trigger = named(upload, "Browse Button");
+    const words = trigger && named(trigger, "Browse Text");
+    const outline = plugin.buttonConfig(
+      "Outline",
+      state === "Disabled" ? "Disabled" : "Default",
+    );
+    const edge =
+      status === "Error"
+        ? plugin.inputConfig(state, status).fieldStroke
+        : outline.stroke;
+    ok(
+      upload.name === `State=${state}, Status=${status}, Content=Button` &&
+        trigger &&
+        !named(upload, "FileUpload Dropzone") &&
+        !named(upload, "Drop Text") &&
+        named(upload, "Label Text") &&
+        named(upload, "Helper Text") &&
+        trigger.layoutMode === "HORIZONTAL" &&
+        trigger.height === 44 &&
+        boundFloat(trigger, "height") === "Button/height/default" &&
+        boundFloat(trigger, "paddingLeft") === "Button/padding/x/default" &&
+        boundFloat(trigger, "cornerRadius") === "Button/radius" &&
+        fill(trigger) === outline.background &&
+        stroke(trigger) === edge &&
+        words &&
+        words.characters === "Choose file" &&
+        fill(words) === outline.foreground &&
+        iconToken(trigger).length === 1 &&
+        iconToken(trigger)[0] === outline.foreground &&
+        upload.children.indexOf(trigger) === 1,
+      `FileUpload Content=Button (${state}, ${status}): an outline Button-sized trigger, the upload icon and "Choose file", under the label, no drop area (${upload.name}; ${trigger && trigger.height}; ${fill(trigger)}/${stroke(trigger)}; ${words && words.characters})`,
+    );
+  }
+  {
+    const oldNames = [];
+    for (const state of ["Default", "Focus", "Dragging", "Disabled"])
+      for (const status of ["Default", "Error", "Warning", "Success"])
+        for (const content of ["Dropzone", "Files", "Preview"])
+          oldNames.push(
+            `State=${state}, Status=${status}, Content=${content}`,
+          );
+    const replay = await replayUpdate(
+      "FileUpload",
+      oldNames,
+      "updateFileUploadComponent",
+    );
+    ok(
+      replay.kept.every((variant, i) => variant && variant.name === oldNames[i]) &&
+        replay.liveSet.children.length === 64 &&
+        replay.names.filter((name) => name.endsWith("Content=Button")).length ===
+          16 &&
+        overlapsIn(replay.liveSet).length === 0,
+      `FileUpload: Update keeps its 48 variants, ids and names, and adds 16 Content=Button, none overlapping (${replay.liveSet.children.length}; overlaps ${overlapsIn(replay.liveSet).length})`,
+    );
+  }
+
+  // PageHeader -------------------------------------------------------------
+  {
+    const set = new MockNode("COMPONENT_SET", "PageHeader");
+    for (const tone of ["Subtle", "Default"])
+      for (const size of ["Medium", "Large"])
+        set.appendChild(
+          await attemptPaint("updatePageHeaderVariant", {
+            value: tone,
+            second: size,
+            variableByName: tokens.variableByName,
+            fonts: FONTS,
+            stats: freshStats(),
+          }),
+        );
+    plugin.configurePageHeaderProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions || {};
+    const keyOf = (base, type) =>
+      Object.keys(defs).find(
+        (key) => key.split("#")[0] === base && defs[key].type === type,
+      );
+    const shown = keyOf("Show Title Addon", "BOOLEAN");
+    const words = keyOf("Addon Text", "TEXT");
+    const lines = set.children.map((variant) => named(variant, "Title Row"));
+    const orders = lines.map((line) =>
+      line ? line.children.map((child) => child.name).join(",") : "",
+    );
+    const addons = set.children.map((variant) => named(variant, "Title Addon"));
+    ok(
+      orders.every((order) => order === "Title Text,Title Addon,Info"),
+      `PageHeader: the Title Row is the title, the Title Addon, then Info (${orders[0]})`,
+    );
+    ok(
+      addons.every(
+        (addon) =>
+          addon &&
+          addon.visible === false &&
+          addon.counterAxisAlignItems === "CENTER" &&
+          shown &&
+          addon.componentPropertyReferences &&
+          addon.componentPropertyReferences.visible === shown,
+      ) &&
+        defs[shown].defaultValue === false,
+      `PageHeader: Show Title Addon, off, shows each variant's Title Addon, centred on the title's line (${shown})`,
+    );
+    const tag = addons[0] && addons[0].findOne((n) => n.name === "Addon Tag");
+    const text = addons[0] && named(addons[0], "Addon Text");
+    ok(
+      tag &&
+        fill(tag) === "Emotion/alert/surface" &&
+        text &&
+        text.characters === "Changes Awaiting Publish" &&
+        fill(text) === "Emotion/alert/onSurface" &&
+        words &&
+        set.children.every(
+          (variant) =>
+            named(variant, "Addon Text").componentPropertyReferences
+              .characters === words,
+        ),
+      `PageHeader: the addon is an alert Tag, "Changes Awaiting Publish", its words Addon Text (${fill(tag)}; ${text && text.characters}; ${words})`,
+    );
+    const unbound = propertiesBoundToNoLayer(set);
+    ok(
+      unbound.length === 0,
+      `PageHeader: every property is bound to a layer (unbound: ${unbound.join(", ") || "none"})`,
+    );
+  }
+
+  // Select -----------------------------------------------------------------
+  ok(
+    JSON.stringify(axes("Select").Variant) ===
+      JSON.stringify(["Default", "Ghost"]) &&
+      JSON.stringify(axes("Select").Content) ===
+        JSON.stringify(["Closed", "Open"]),
+    `Select declares Variant: Default, Ghost, and Content stays Closed, Open (${JSON.stringify(axes("Select"))})`,
+  );
+  for (const [state, status] of [
+    ["Default", "Default"],
+    ["Mixed", "Default"],
+    ["Default", "Error"],
+  ]) {
+    const select = await attemptPaint("updateSelectVariant", {
+      state,
+      status,
+      type: "Ghost",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const trigger = named(select, "Select Trigger");
+    const edge = (trigger && trigger.strokes) || [];
+    ok(
+      select.name ===
+        `State=${state}, Status=${status}, Content=Closed, Variant=Ghost` &&
+        trigger &&
+        (trigger.fills || []).length === 0 &&
+        (status === "Error"
+          ? stroke(trigger) === plugin.inputConfig(state, status).fieldStroke
+          : edge.length === 0) &&
+        trigger.primaryAxisSizingMode === "AUTO" &&
+        trigger.primaryAxisAlignItems === "MIN" &&
+        trigger.layoutSizingHorizontal === "HUG",
+      `Select Variant=Ghost (${state}, ${status}): no fill and no edge (an error keeps its red), as wide as its value (${select.name}; fills ${(trigger && trigger.fills || []).length}; strokes ${edge.length}; ${trigger && trigger.layoutSizingHorizontal})`,
+    );
+  }
+  {
+    const plain = await attemptPaint("updateSelectVariant", {
+      state: "Default",
+      status: "Default",
+      type: "Closed",
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const trigger = named(plain, "Select Trigger");
+    ok(
+      plain.name === "State=Default, Status=Default, Content=Closed, Variant=Default" &&
+        trigger &&
+        (trigger.fills || []).length === 1 &&
+        (trigger.strokes || []).length === 1,
+      `Select Variant=Default is the bordered field as before (${plain.name})`,
+    );
+    const oldNames = [];
+    for (const state of ["Default", "Focus", "Disabled", "Mixed"])
+      for (const status of ["Default", "Error"])
+        oldNames.push(`State=${state}, Status=${status}, Content=Closed`);
+    oldNames.push("State=Default, Status=Default, Content=Open");
+    oldNames.push("State=Default, Status=Error, Content=Open");
+    const replay = await replayUpdate(
+      "Select",
+      oldNames,
+      "updateSelectComponent",
+    );
+    ok(
+      replay.kept.every(
+        (variant, i) =>
+          variant && variant.name === `${oldNames[i]}, Variant=Default`,
+      ) &&
+        replay.liveSet.children.length === 18 &&
+        replay.names.filter((name) => name.endsWith("Variant=Ghost")).length ===
+          8 &&
+        overlapsIn(replay.liveSet).length === 0,
+      `Select: Update keeps its 10 variants and ids, renamed Variant=Default, and adds 8 Ghost, none overlapping (${replay.liveSet.children.length}; overlaps ${overlapsIn(replay.liveSet).length})`,
     );
   }
 }

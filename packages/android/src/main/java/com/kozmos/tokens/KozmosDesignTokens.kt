@@ -53,6 +53,7 @@ object KozmosDesignTokens {
   val semanticsDataYellow = Color(0xffd97706)
   val semanticsOverlayScrim = Color(0x80000000)
   val semanticsOverlayDim = Color(0x33000000)
+  val semanticsEffectGlassBorderColor = Color(0xffffffff)
   val semanticsCategoryAccentYellow = Color(0xfff9ac17)
   val semanticsCategoryAccentOrange = Color(0xffe5801a)
   val semanticsCategoryAccentTurquoise = Color(0xff37a4a4)

@@ -11,6 +11,11 @@ export interface FileUploadProps extends Omit<
   "onChange"
 > {
   accept?: string;
+  /**
+   * The words that open the picker: "Click to upload" on the drop area,
+   * "Choose file" on `variant="button"`, where a product passes its own,
+   * such as "Add logo".
+   */
   browseLabel?: string;
   /**
    * The Change button's words in `preview="image"`, "Change" by default; its
@@ -36,6 +41,16 @@ export interface FileUploadProps extends Omit<
    * that is not an image, as it turns away one over `maxSize`.
    */
   preview?: "image";
+  /**
+   * What the visitor picks with (GAP-274). `dropzone`, the default, is the
+   * dashed drop area. `button` is a Button-sized trigger, an outline Button
+   * with the upload icon and `browseLabel` as its words ("Add logo"), for a
+   * field with no room for a drop area, such as a logo beside a client's
+   * name. It picks and validates as the drop area does, takes a file
+   * dropped on it, and lists what was chosen, or shows `preview="image"`'s
+   * thumbnail, in the same way.
+   */
+  variant?: "dropzone" | "button";
   /** The thumbnail's alt text in `preview="image"`; the file's name by default. */
   previewAlt?: string;
   removeLabel?: string;
@@ -84,7 +99,7 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
   (
     {
       accept,
-      browseLabel = "Click to upload",
+      browseLabel: browseLabelProp,
       changeLabel = "Change",
       className,
       defaultFiles,
@@ -106,6 +121,7 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
       removeLabel = "Remove file",
       status = "default",
       value,
+      variant = "dropzone",
       wrapperClassName,
       "aria-label": ariaLabel,
       "aria-labelledby": ariaLabelledBy,
@@ -122,6 +138,11 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
     // and the preview to the drop area).
     const pendingFocus = React.useRef<"change" | "dropzone" | null>(null);
     const isImagePreview = preview === "image";
+    const isButton = variant === "button";
+    // The drop area's words lead into "or drag and drop"; a button says
+    // what it does on its own.
+    const browseLabel =
+      browseLabelProp ?? (isButton ? "Choose file" : "Click to upload");
     const { trackEvent } = useKozmosAnalytics();
     const defaultInputId = React.useId();
     const descriptionId = React.useId();
@@ -376,6 +397,40 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
                 </Button>
               </WithoutGenericClick>
             </div>
+          ) : isButton ? (
+            <WithoutGenericClick>
+              <Button
+                ref={dropzoneRef}
+                type="button"
+                variant="outline"
+                id={inputId}
+                data-kozmos-file-trigger="button"
+                disabled={disabled}
+                aria-label={
+                  ariaLabel ?? (label ? `${browseLabel}: ${label}` : undefined)
+                }
+                aria-labelledby={ariaLabelledBy}
+                aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
+                aria-invalid={resolvedStatus === "error" || undefined}
+                className={cn(
+                  dragActive && "border-primary bg-primary/5",
+                  resolvedStatus === "error" &&
+                    "border-destructive focus-visible:ring-destructive",
+                  resolvedStatus === "warning" &&
+                    "border-warning focus-visible:ring-warning",
+                  resolvedStatus === "success" &&
+                    "border-success focus-visible:ring-success",
+                )}
+                onClick={openPicker}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Upload aria-hidden="true" className="h-4 w-4" />
+                {browseLabel}
+              </Button>
+            </WithoutGenericClick>
           ) : (
             <button
               ref={dropzoneRef}

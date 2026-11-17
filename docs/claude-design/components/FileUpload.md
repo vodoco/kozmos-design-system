@@ -37,7 +37,12 @@ export function FileUploadExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "onChange">`.
 
 - `accept`: `string`, optional.
-- `browseLabel`: `string`, optional, default `"Click to upload"`.
+- `browseLabel`: `string`, optional.
+
+  The words that open the picker: "Click to upload" on the drop area,
+  "Choose file" on `variant="button"`, where a product passes its own,
+  such as "Add logo".
+
 - `changeLabel`: `string`, optional, default `"Change"`.
 
   The Change button's words in `preview="image"`, "Change" by default; its
@@ -62,6 +67,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
   takes `image/*` unless `accept` says otherwise, and turns away a file
   that is not an image, as it turns away one over `maxSize`.
 
+- `variant`: `"dropzone" | "button"`, optional, default `"dropzone"`.
+
+  What the visitor picks with (GAP-274). `dropzone`, the default, is the
+  dashed drop area. `button` is a Button-sized trigger, an outline Button
+  with the upload icon and `browseLabel` as its words ("Add logo"), for a
+  field with no room for a drop area, such as a logo beside a client's
+  name. It picks and validates as the drop area does, takes a file
+  dropped on it, and lists what was chosen, or shows `preview="image"`'s
+  thumbnail, in the same way.
+
 - `previewAlt`: `string`, optional.
 
   The thumbnail's alt text in `preview="image"`; the file's name by default.
@@ -81,6 +96,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
 
 - `accept`: `string`, optional.
 - `browseLabel`: `string`, optional.
+
+  The words that open the picker: "Click to upload" on the drop area,
+  "Choose file" on `variant="button"`, where a product passes its own,
+  such as "Add logo".
+
 - `changeLabel`: `string`, optional.
 
   The Change button's words in `preview="image"`, "Change" by default; its
@@ -104,6 +124,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
   Change and Remove in place of the drop area (GAP-270). It holds one file,
   takes `image/*` unless `accept` says otherwise, and turns away a file
   that is not an image, as it turns away one over `maxSize`.
+
+- `variant`: `"dropzone" | "button"`, optional.
+
+  What the visitor picks with (GAP-274). `dropzone`, the default, is the
+  dashed drop area. `button` is a Button-sized trigger, an outline Button
+  with the upload icon and `browseLabel` as its words ("Add logo"), for a
+  field with no room for a drop area, such as a logo beside a client's
+  name. It picks and validates as the drop area does, takes a file
+  dropped on it, and lists what was chosen, or shows `preview="image"`'s
+  thumbnail, in the same way.
 
 - `previewAlt`: `string`, optional.
 

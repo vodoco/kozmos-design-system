@@ -68,7 +68,8 @@ extension View {
 /// border. Glass is the background colour at the token's opacity over the
 /// system's thin material, which blurs what shows through — its blur and
 /// saturation are the system's, where the web draws the token's numbers —
-/// and an edge at the token's border opacity, light in both themes. With
+/// and an edge in the glass edge's colour token (white in both themes,
+/// decision 208) at the token's border opacity. With
 /// Reduce Transparency on, glass is solid: a preference, not a look.
 ///
 /// Glass is not the system's own (`glassEffect`, iOS 26): a hosted snapshot
@@ -117,7 +118,7 @@ public struct KozmosSurface<S: InsettableShape>: ViewModifier {
                     }
                 )
                 .clipShape(shape)
-                .overlay(shape.strokeBorder(Color.white.opacity(glass.borderOpacity), lineWidth: 1))
+                .overlay(shape.strokeBorder(KozmosColors.semanticsEffectGlassBorderColor.opacity(glass.borderOpacity), lineWidth: 1))
         }
     }
 }

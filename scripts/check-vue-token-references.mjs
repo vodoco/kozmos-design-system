@@ -17,10 +17,9 @@
  *   colour written in stays put, even one a token happens to hold, as black
  *   and white are held in both themes. A story's own scaffolding is held
  *   to it too: examples use only Kozmos. Everything drawn in <body> is read
- *   but Storybook's own chrome. One colour is allowed without a token, by
- *   name: a glass surface's 1px edge, white at the glass border opacity
- *   token and following it (in-page.mjs, GLASS_EDGE: ruling §5.13,
- *   decision 167, GAP-229). It fails when no story draws it.
+ *   but Storybook's own chrome. No colour is allowed without a token: a
+ *   glass surface's 1px edge, allowed by name until then (decision 167),
+ *   reads the glass edge's colour token since decision 208 (GAP-229).
  *
  * scripts/vue/coverage.mjs says which stories are drawn; one it does not
  * name fails here before any is.
@@ -29,7 +28,6 @@
  *     node scripts/check-vue-token-references.mjs
  */
 import {
-  colourAllowances,
   finish,
   launch,
   newStoryPage,
@@ -57,7 +55,6 @@ const UNSET_BY_DESIGN = {
 const { base, covered } = await storiesFor(SUITE);
 const browser = await launch();
 const failures = [];
-const allowances = colourAllowances();
 try {
   const { context, page, errors } = await newStoryPage(browser, base);
   try {
@@ -76,20 +73,13 @@ try {
           for (const { message } of unset) failures.push(`${at}: ${message}`);
           for (const problem of colours.problems)
             failures.push(`${at}: ${problem}`);
-          allowances.add(colours.allowances);
-          const used = colours.allowances.filter(({ count }) => count);
-          const moving =
-            colours.colours - used.reduce((sum, { count }) => sum + count, 0);
-          const allowed = used
-            .map(({ name, count }) => `, ${count} allowed by ${name}`)
-            .join("");
           if (!references.reads || !colours.colours)
             failures.push(
               `${at}: read ${references.reads} var() and ${colours.colours} colours: the story drew nothing to check`,
             );
           else if (!unset.length && !colours.problems.length)
             console.log(
-              `PASS ${at}: ${references.reads} var() reads over ${references.elements} elements resolve; ${moving} colours move with the theme's ${colours.tokens} colour tokens${allowed}`,
+              `PASS ${at}: ${references.reads} var() reads over ${references.elements} elements resolve; ${colours.colours} colours move with the theme's ${colours.tokens} colour tokens`,
             );
         } catch (error) {
           failures.push(`${at}: ${error.message}`);
@@ -103,5 +93,4 @@ try {
 } finally {
   await browser.close();
 }
-allowances.report(failures);
 finish(SUITE, covered, failures);

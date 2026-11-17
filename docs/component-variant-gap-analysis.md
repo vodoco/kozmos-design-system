@@ -35,12 +35,12 @@ token was declined, so this is not a gap to close.
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 129    |
-| Declaring at least one React variant axis | 67     |
-| Variations that are compositional only    | 62     |
-| Components with variant gaps — iOS        | 16/67  |
-| Components with variant gaps — Android    | 16/67  |
-| Components with variant gaps — Figma      | 25/67  |
-| Components with variant gaps — Vue        | 11/67  |
+| Declaring at least one React variant axis | 68     |
+| Variations that are compositional only    | 61     |
+| Components with variant gaps — iOS        | 16/68  |
+| Components with variant gaps — Android    | 16/68  |
+| Components with variant gaps — Figma      | 26/68  |
+| Components with variant gaps — Vue        | 11/68  |
 | Components absent entirely — iOS          | 10/129 |
 | Components absent entirely — Android      | 9/129  |
 | Components absent entirely — Figma        | 21/129 |
@@ -96,6 +96,8 @@ DynamicIsland
   - figma missing axes -> islandState (compact, expanded, minimal)
 FieldWrapper
   - figma: component/set absent
+FileUpload
+  - figma missing values -> variant [named "Status" here]: dropzone, button
 FloorSelector
   - figma missing values -> variant: collapsible
 Icon

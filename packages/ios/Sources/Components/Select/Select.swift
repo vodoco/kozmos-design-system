@@ -1,5 +1,29 @@
 import SwiftUI
 
+/// The closed field's form, as React's `SelectTrigger` `variant` (decision
+/// 151, CLOUD-UI-009).
+public enum KozmosSelectVariant: Equatable, Sendable, CaseIterable {
+    /// The bordered field, as it always was.
+    case `default`
+    /// No edge and no fill at rest, as wide as its value and chevron, the
+    /// hover fill while pressed: the map's level control, in a card of its
+    /// own under the building's name. In error it still draws the red edge.
+    case ghost
+}
+
+/// A ghost trigger's press: the hover fill behind the label, at the
+/// control radius, as React's ghost trigger takes it under the pointer and
+/// while open.
+struct KozmosSelectGhostPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+                    .fill(configuration.isPressed ? KozmosColors.semanticsHoverFill : Color.clear)
+            )
+    }
+}
+
 public struct KozmosSelect<Trigger: View, Content: View>: View {
     let trigger: Trigger
     let content: Content
@@ -10,6 +34,8 @@ public struct KozmosSelect<Trigger: View, Content: View>: View {
     let disabled: Bool
     let onResetMixed: (() -> Void)?
     let resetMixedLabel: String
+    /// A ghost trigger's Menu draws the hover fill while pressed.
+    var ghost = false
     @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
 
     public init(
@@ -30,13 +56,9 @@ public struct KozmosSelect<Trigger: View, Content: View>: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing75) {
-            Menu {
-                content
-            } label: {
-                trigger
-            }
-            .disabled(disabled)
-            .accessibilityFocused($fieldAccessibilityFocused)
+            menu
+                .disabled(disabled)
+                .accessibilityFocused($fieldAccessibilityFocused)
 
             if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled) {
                 KozmosMixedReset(label: resetMixedLabel) {
@@ -46,6 +68,18 @@ public struct KozmosSelect<Trigger: View, Content: View>: View {
                     onResetMixed?()
                 }
             }
+        }
+    }
+}
+
+extension KozmosSelect {
+    @ViewBuilder var menu: some View {
+        if ghost {
+            Menu { content } label: { trigger }
+                .menuStyle(.button)
+                .buttonStyle(KozmosSelectGhostPressStyle())
+        } else {
+            Menu { content } label: { trigger }
         }
     }
 }
@@ -64,6 +98,7 @@ public extension KozmosSelect where Trigger == KozmosSelectField {
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
         resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        variant: KozmosSelectVariant = .default,
         @ViewBuilder content: () -> Content
     ) {
         self.init(
@@ -74,11 +109,13 @@ public extension KozmosSelect where Trigger == KozmosSelectField {
             trigger: {
                 KozmosSelectField(
                     value: value, placeholder: placeholder, label: label,
-                    disabled: disabled, error: error, mixed: mixed, mixedLabel: mixedLabel
+                    disabled: disabled, error: error, mixed: mixed, mixedLabel: mixedLabel,
+                    variant: variant
                 )
             },
             content: content
         )
+        self.ghost = variant == .ghost
     }
 }
 
@@ -99,6 +136,7 @@ public struct KozmosSelectField: View {
     let error: Bool
     let mixed: Bool
     let mixedLabel: String
+    let variant: KozmosSelectVariant
 
     public init(
         value: String?,
@@ -107,8 +145,10 @@ public struct KozmosSelectField: View {
         disabled: Bool = false,
         error: Bool = false,
         mixed: Bool = false,
-        mixedLabel: String = KozmosMixedValue.label
+        mixedLabel: String = KozmosMixedValue.label,
+        variant: KozmosSelectVariant = .default
     ) {
+        self.variant = variant
         self.value = value
         self.placeholder = placeholder
         self.label = label
@@ -152,13 +192,29 @@ public struct KozmosSelectField: View {
         .accessibilityValue(shownText)
     }
 
+    /// The field's fill: none on a ghost, background/100 disabled, else
+    /// background/0.
+    var fillColor: Color {
+        if variant == .ghost { return .clear }
+        return disabled ? KozmosColors.primitivesColorsBackground100 : KozmosColors.primitivesColorsBackground0
+    }
+
+    /// The field's edge: danger/600 in error, whatever the form; none on a
+    /// ghost; else the input border.
+    var edgeColor: Color {
+        if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
+        return variant == .ghost ? .clear : KozmosColors.semanticsBorderInput
+    }
+
     private var field: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             Text(shownText)
                 .font(KozmosTypography.subheadline)
                 .foregroundColor(textColor)
                 .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // A ghost is as wide as its value and chevron; the field
+                // takes the row.
+                .frame(maxWidth: variant == .ghost ? nil : .infinity, alignment: .leading)
             Image(systemName: "chevron.down")
                 .font(.footnote.weight(.semibold))
                 .foregroundColor(placeholderColor)
@@ -166,17 +222,13 @@ public struct KozmosSelectField: View {
         }
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
         .frame(height: 44)
-        .background(
-            disabled ? KozmosColors.primitivesColorsBackground100 : KozmosColors.primitivesColorsBackground0
-        )
+        .background(fillColor)
         .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
         .overlay(
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                .stroke(
-                    error ? KozmosColors.primitivesColorsEmotionalDanger600 : KozmosColors.semanticsBorderInput,
-                    lineWidth: 1
-                )
+                .stroke(edgeColor, lineWidth: 1)
         )
+        .fixedSize(horizontal: variant == .ghost, vertical: false)
     }
 
     private var placeholderColor: Color {

@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kozmos.components.KozmosEmotion
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
@@ -90,9 +91,68 @@ fun KozmosChip(
     onRemove: (() -> Unit)? = null,
     removeLabel: String,
     onClick: (() -> Unit)? = null
+) = ChipBody(
+    text = text, modifier = modifier, variant = variant, size = size, selected = selected,
+    active = active, enabled = enabled, leadingIcon = leadingIcon, onRemove = onRemove,
+    removeLabel = removeLabel, emotion = null, onClick = onClick
+)
+
+/**
+ * [KozmosChip] in one of Tag's six emotions (decision 200, GAP-170), selected
+ * and removable included. Set, [emotion] decides the colour whatever the
+ * [variant]; null draws the variant as it always has. The variants read as
+ * emotions this way: [ChipVariant.Neutral] is [KozmosEmotion.Neutral],
+ * [ChipVariant.Brand] [KozmosEmotion.Themed] and [ChipVariant.Destructive]
+ * [KozmosEmotion.Danger], each keeping its own drawing.
+ *
+ * At rest the chip is the emotion's surface, its words, icon and remove in
+ * the emotion's onSurface, edged 1 in the emotion's text colour; selected it
+ * is filled with the emotion's text colour, edged in it, its ink the page's
+ * background (background/0), so both clear 4.5:1 in both themes. A form of
+ * its own, with [emotion] second, so the other forms' positional arguments
+ * and trailing onClick keep their meaning.
+ */
+@Composable
+fun KozmosChip(
+    text: String,
+    emotion: KozmosEmotion?,
+    modifier: Modifier = Modifier,
+    variant: ChipVariant = ChipVariant.Neutral,
+    size: ChipSize = ChipSize.Default,
+    selected: Boolean = false,
+    active: Boolean? = null,
+    enabled: Boolean = true,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    onRemove: (() -> Unit)? = null,
+    removeLabel: String = "Remove $text",
+    onClick: (() -> Unit)? = null
+) = ChipBody(
+    text = text, modifier = modifier, variant = variant, size = size, selected = selected,
+    active = active, enabled = enabled, leadingIcon = leadingIcon, onRemove = onRemove,
+    removeLabel = removeLabel, emotion = emotion, onClick = onClick
+)
+
+@Composable
+private fun ChipBody(
+    text: String,
+    modifier: Modifier,
+    variant: ChipVariant,
+    size: ChipSize,
+    selected: Boolean,
+    active: Boolean?,
+    enabled: Boolean,
+    leadingIcon: (@Composable () -> Unit)?,
+    onRemove: (() -> Unit)?,
+    removeLabel: String,
+    emotion: KozmosEmotion?,
+    onClick: (() -> Unit)?
 ) {
     val isSelected = active ?: selected
-    val colors = chipColors(variant = variant, selected = isSelected)
+    val colors = if (emotion != null) {
+        chipEmotionColors(emotion = emotion, selected = isSelected)
+    } else {
+        chipColors(variant = variant, selected = isSelected)
+    }
     val metrics = chipMetrics(size)
 
     Surface(
@@ -274,6 +334,28 @@ private fun chipColors(variant: ChipVariant, selected: Boolean): ChipColors {
         )
     }
 }
+
+/**
+ * A chip in an emotion (decision 200): at rest the emotion's surface under
+ * its onSurface, edged in the emotion's text colour; selected the text colour
+ * filled, under the page's background, which clears 4.5:1 on it because the
+ * text colour is chosen to clear 4.5:1 on the page.
+ */
+@Composable
+private fun chipEmotionColors(emotion: KozmosEmotion, selected: Boolean): ChipColors =
+    if (selected) {
+        ChipColors(
+            container = emotion.text,
+            content = KozmosThemeTokens.primitivesColorsBackground0,
+            border = emotion.text
+        )
+    } else {
+        ChipColors(
+            container = emotion.surface,
+            content = emotion.onSurface,
+            border = emotion.text
+        )
+    }
 
 private fun chipMetrics(size: ChipSize): ChipMetrics = when (size) {
     ChipSize.Sm -> ChipMetrics(

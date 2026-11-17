@@ -2435,6 +2435,19 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var semanticsEffectGlassBorderColor: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var semanticsCategoryAccentYellow: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in

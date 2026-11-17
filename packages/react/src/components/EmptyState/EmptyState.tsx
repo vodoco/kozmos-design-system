@@ -2,6 +2,7 @@ import * as React from "react";
 import { cn } from "../../utils";
 import { Text } from "../Text";
 import { Progress } from "../Progress/Progress";
+import { emotionSurfaceProperties, type Emotion } from "../../utils/emotion";
 
 /**
  * The density a surrounding slot asks for.
@@ -60,6 +61,16 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
    * content to about 150 (GAP-009).
    */
   size?: "default" | "compact";
+  /**
+   * What the empty state means (GAP-213, decision 194): one of Tag's six
+   * emotions. Set, it is a card of its own: the emotion's quiet surface,
+   * edged in the emotion's text colour as Tag's outline is, with its words
+   * in the ink that pairs with that surface (4.5:1 in both themes) and its
+   * icon in the emotion's text colour on a disc of the page's colour.
+   * "No Map Content Found" is the alert tone. Unset, it draws as it always
+   * has, on the page with no edge.
+   */
+  tone?: Emotion;
 }
 
 /**
@@ -83,6 +94,8 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
       list,
       listLabel,
       size,
+      tone,
+      style,
       ...props
     },
     ref,
@@ -100,11 +113,18 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
       <div
         ref={ref}
         data-size={resolved}
+        data-tone={tone}
         className={cn(
           "flex flex-col items-center justify-center p-8 text-center h-full w-full",
           compact && "h-auto p-4",
+          // The emotion's surface, edged in its text colour, at the
+          // container's radius: a card of its own (GAP-213).
+          tone &&
+            "rounded-container border border-[var(--kz-emotion-text)] bg-[var(--kz-emotion-surface)]",
           className,
         )}
+        // The caller's own style wins, as on Tag: the tone sets a default.
+        style={tone ? { ...emotionSurfaceProperties(tone), ...style } : style}
         {...props}
       >
         {icon && (
@@ -112,6 +132,10 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             className={cn(
               "mb-4 flex items-center justify-center text-muted-foreground w-16 h-16 rounded-pill bg-muted",
               compact && "mb-2 h-10 w-10",
+              // On the surface the muted disc would be grey on a tint: the
+              // page's colour, with the emotion's text on it, 4.5:1 in both
+              // themes as that text is on the page.
+              tone && "bg-background text-[var(--kz-emotion-text)]",
             )}
           >
             {icon}
@@ -125,7 +149,11 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           align="center"
           size="base"
           weight="medium"
-          className={cn("mb-1 text-foreground", compact && "mb-0.5")}
+          className={cn(
+            "mb-1 text-foreground",
+            compact && "mb-0.5",
+            tone && "text-[var(--kz-emotion-on-surface)]",
+          )}
         >
           {title}
         </Text>
@@ -136,6 +164,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             className={cn(
               "mb-4 text-muted-foreground max-w-[280px]",
               compact && "mb-0",
+              tone && "text-[var(--kz-emotion-on-surface)]",
             )}
           >
             {description}
@@ -154,6 +183,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
               "kozmos-empty-state-list mb-4 w-full max-w-[280px] text-start text-sm text-muted-foreground",
               !description && "mt-3",
               compact && (description ? "mb-0 mt-2" : "mb-0 mt-1.5"),
+              tone && "text-[var(--kz-emotion-on-surface)]",
             )}
           >
             {list.map((item, index) => (
@@ -181,11 +211,22 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
               aria-hidden="true"
               className="mb-1 flex items-baseline justify-between gap-2 text-sm"
             >
-              <span id={progressLabelId} className="min-w-0 text-foreground">
+              <span
+                id={progressLabelId}
+                className={cn(
+                  "min-w-0 text-foreground",
+                  tone && "text-[var(--kz-emotion-on-surface)]",
+                )}
+              >
                 {progress.label}
               </span>
               {progress.valueText && (
-                <span className="shrink-0 text-muted-foreground">
+                <span
+                  className={cn(
+                    "shrink-0 text-muted-foreground",
+                    tone && "text-[var(--kz-emotion-on-surface)]",
+                  )}
+                >
                   {progress.valueText}
                 </span>
               )}

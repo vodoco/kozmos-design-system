@@ -256,3 +256,102 @@ describe("EmptyState list (GAP-165)", () => {
     expect(screen.queryByRole("list")).toBeNull();
   });
 });
+
+// GAP-213, decision 194: a tone draws an emotion's surface and edge.
+describe("EmptyState tone", () => {
+  const EMOTIONS = [
+    "themed",
+    "neutral",
+    "success",
+    "danger",
+    "informative",
+    "alert",
+  ] as const;
+
+  it.each(EMOTIONS)(
+    "%s: the card is the emotion's surface, edged in its text colour, its words in its ink",
+    (tone) => {
+      const { container } = render(
+        <EmptyState
+          tone={tone}
+          icon={<svg data-testid="icon" />}
+          title="No Map Content Found"
+          description="Nothing on this level matches your search."
+          list={["Check the building and level"]}
+        />,
+      );
+      const root = container.firstElementChild as HTMLElement;
+      expect(root).toHaveAttribute("data-tone", tone);
+      expect(root.style.getPropertyValue("--kz-emotion-surface")).toBe(
+        `var(--semantics-emotion-${tone}-surface)`,
+      );
+      expect(root.style.getPropertyValue("--kz-emotion-on-surface")).toBe(
+        `var(--semantics-emotion-${tone}-on-surface)`,
+      );
+      expect(root.style.getPropertyValue("--kz-emotion-text")).toBe(
+        `var(--semantics-emotion-${tone}-text)`,
+      );
+      expect(root).toHaveClass(
+        "rounded-container",
+        "border",
+        "border-[var(--kz-emotion-text)]",
+        "bg-[var(--kz-emotion-surface)]",
+      );
+      for (const words of [
+        "No Map Content Found",
+        "Nothing on this level matches your search.",
+      ]) {
+        expect(screen.getByText(words)).toHaveClass(
+          "text-[var(--kz-emotion-on-surface)]",
+        );
+        expect(screen.getByText(words)).not.toHaveClass(
+          "text-muted-foreground",
+          "text-foreground",
+        );
+      }
+      expect(screen.getByRole("list")).toHaveClass(
+        "text-[var(--kz-emotion-on-surface)]",
+      );
+      const disc = screen.getByTestId("icon").parentElement!;
+      expect(disc).toHaveClass(
+        "bg-background",
+        "text-[var(--kz-emotion-text)]",
+      );
+      expect(disc).not.toHaveClass("bg-muted", "text-muted-foreground");
+    },
+  );
+
+  it("with no tone it is unchanged: on the page, no edge, no emotion", () => {
+    const { container } = render(
+      <EmptyState
+        icon={<svg data-testid="icon" />}
+        title="No results"
+        description="Try another search."
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).not.toHaveAttribute("data-tone");
+    expect(root).not.toHaveAttribute("style");
+    expect(root.className).toBe(
+      "flex flex-col items-center justify-center p-8 text-center h-full w-full",
+    );
+    expect(screen.getByTestId("icon").parentElement!.className).toBe(
+      "mb-4 flex items-center justify-center text-muted-foreground w-16 h-16 rounded-pill bg-muted",
+    );
+  });
+
+  it("keeps the caller's style over the tone's", () => {
+    const { container } = render(
+      <EmptyState
+        tone="alert"
+        title="No Map Content Found"
+        style={{ maxWidth: 440 }}
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.maxWidth).toBe("440px");
+    expect(root.style.getPropertyValue("--kz-emotion-surface")).toBe(
+      "var(--semantics-emotion-alert-surface)",
+    );
+  });
+});

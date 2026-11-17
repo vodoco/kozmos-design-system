@@ -176,6 +176,94 @@ struct TypeAcrossSelection: View {
 }
 ```
 
+## A ghost trigger
+
+`variant="ghost"` on `SelectTrigger` draws no edge and no fill at rest, only the value and the chevron, as wide as
+they are, and the hover fill under the pointer and while open (decision 151, CLOUD-UI-009). It is the map's level
+control, borderless under the building's name in a card of its own (decision 139), and stays Select, not a Button
+and a Menu (decision 96). It opens, picks and is read as the field does; an error still draws the field's red edge.
+The bordered field stays the default. SwiftUI's `KozmosSelect` and `KozmosSelectField` take `variant: .ghost`, and
+Compose's `KozmosSelectTrigger` takes `KozmosSelectTriggerVariant.Ghost`: no edge and no fill at rest, as wide as the
+value and chevron, the hover fill pressed or under a pointer, and the red edge in error (decision 88).
+
+Vue cannot draw it yet: `@kozmos-ds/vue` bridges only Select's root, not its trigger (GAP-230).
+
+<PlatformSnippets
+    react={`
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kozmos-ds/react";
+
+export function LevelControl() {
+  return (
+    <Select defaultValue="1">
+      <SelectTrigger aria-label="Level" variant="ghost">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="1">Level 1</SelectItem>
+        <SelectItem value="2">Level 2</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+    `}
+    vue={`
+<!-- Not yet: @kozmos-ds/vue bridges only Select's root, not SelectTrigger (GAP-230). -->
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct LevelControl: View {
+    @State private var level = "Level 1"
+
+    var body: some View {
+        KozmosSelect(value: level, placeholder: "Level", variant: .ghost) {
+            KozmosSelectItem(value: "Level 1", label: "Level 1", selection: $level)
+            KozmosSelectItem(value: "Level 2", label: "Level 2", selection: $level)
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.select.KozmosSelect
+import com.kozmos.components.select.KozmosSelectItem
+import com.kozmos.components.select.KozmosSelectTrigger
+import com.kozmos.components.select.KozmosSelectTriggerVariant
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LevelControl(level: String, onLevelChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    KozmosSelect(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        trigger = {
+            KozmosSelectTrigger(
+                value = level,
+                placeholder = "Level",
+                variant = KozmosSelectTriggerVariant.Ghost
+            )
+        }
+    ) {
+        listOf("Level 1", "Level 2").forEach { option ->
+            KozmosSelectItem(
+                value = option,
+                label = option,
+                onValueChange = onLevelChange,
+                onDismissRequest = { expanded = false }
+            )
+        }
+    }
+}
+`}
+/>
+
 ## Stories
 
 ### Default

@@ -564,6 +564,29 @@
       ]
     }
   ],
+  "hoverFillVisibilityExceptions": [
+    {
+      "name": "an emotion Chip at rest deepens its own tint under the pointer, not the hover fill (decision 200, GAP-251; decision 173's exception by visibility): the neutral emotion's surface in dark is background/200, the hover fill itself, so a hover-fill hover would not show",
+      "surfaces": [
+        "semantics-emotion-themed-surface",
+        "semantics-emotion-neutral-surface",
+        "semantics-emotion-success-surface",
+        "semantics-emotion-danger-surface",
+        "semantics-emotion-informative-surface",
+        "semantics-emotion-alert-surface"
+      ],
+      "sources": [
+        {
+          "file": "packages/react/src/components/Chip/Chip.tsx",
+          "contains": "text-[var(--kz-emotion-on-surface)] hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]"
+        },
+        {
+          "file": "packages/react/src/components/Chip/Chip.tsx",
+          "contains": "\"hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]\""
+        }
+      ]
+    }
+  ],
   "mutedHoverAllowed": [
     {
       "name": "Button's emotion outline and text hover, a named exception (hoverFillExceptions)",

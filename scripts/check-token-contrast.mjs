@@ -91,6 +91,48 @@ for (const emotion of [
     });
 }
 
+// An EmptyState in a tone (GAP-213, decision 194) and an emotion Chip
+// (GAP-170, decision 200) stand on the emotion's surface, with its ink as
+// their words and the remove's glyph. The toned EmptyState's icon is the
+// emotion's text on a disc of the page's colour. A selected emotion Chip is
+// filled with the emotion's text and inked in the page's colour, which is
+// the text's own pair turned over: it reads as the text reads on the page.
+for (const emotion of [
+  "themed",
+  "neutral",
+  "success",
+  "danger",
+  "informative",
+  "alert",
+]) {
+  contract.pairs.push(
+    {
+      name: `EmptyState tone and Chip ${emotion} at rest: words on the emotion's surface`,
+      background: `semantics-emotion-${emotion}-surface`,
+      foreground: `semantics-emotion-${emotion}-on-surface`,
+      minimum: 4.5,
+    },
+    {
+      name: `EmptyState tone ${emotion}: the icon on the page's disc (non-text)`,
+      background: "primitives-colors-background-0",
+      foreground: `semantics-emotion-${emotion}-text`,
+      minimum: 3,
+    },
+    {
+      name: `Chip ${emotion} selected: the page's colour on the emotion's text`,
+      background: `semantics-emotion-${emotion}-text`,
+      foreground: "primitives-colors-background-0",
+      minimum: 4.5,
+    },
+    {
+      name: `Chip ${emotion} selected: the remove hovered, the emotion's text on the page's colour (non-text)`,
+      background: "primitives-colors-background-0",
+      foreground: `semantics-emotion-${emotion}-text`,
+      minimum: 3,
+    },
+  );
+}
+
 // CardHeader's subtle strip (CLOUD-UI-001; decisions 135 and 139) is theme
 // 0, and what it holds reads on it: the title, the description's muted words,
 // and a ghost IconButton's ink at rest and hovered (a close or help action).
@@ -402,6 +444,40 @@ for (const exception of contract.hoverFillExceptions ?? []) {
   if (!needed)
     failures.push(
       `${exception.name}: every ink reaches ${exception.minimum}:1 on the hover fill in both themes; the exception is no longer needed`,
+    );
+}
+
+// Decision 173's exceptions by visibility, not contrast: a part whose resting
+// fill can be the hover fill itself, so a hover-fill hover would not show,
+// hovers on a tint of its own. Each is named here with the source that holds
+// it, and stays only while one of its surfaces is the hover fill in a theme.
+for (const exception of contract.hoverFillVisibilityExceptions ?? []) {
+  for (const { file, contains } of exception.sources) {
+    checked += 1;
+    if (!sourceHolds(file, contains))
+      failures.push(
+        `${exception.name}: ${file} no longer holds ${JSON.stringify(contains)}`,
+      );
+  }
+  let needed = false;
+  for (const mode of modes) {
+    const variables = exceptionVariables[mode];
+    const fill = colorFor(
+      variables,
+      "semantics-hover-fill",
+      mode,
+      exception.name,
+    );
+    for (const surface of exception.surfaces) {
+      const colour = colorFor(variables, surface, mode, exception.name);
+      checked += 1;
+      if (colour.toLowerCase() === fill.toLowerCase()) needed = true;
+    }
+  }
+  checked += 1;
+  if (!needed)
+    failures.push(
+      `${exception.name}: no surface is the hover fill in either theme; the exception is no longer needed`,
     );
 }
 

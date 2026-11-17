@@ -1,6 +1,9 @@
 package com.kozmos.components.emptystate
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kozmos.components.KozmosEmotion
 import com.kozmos.components.progress.KozmosProgress
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -81,11 +85,29 @@ fun KozmosEmptyState(
     modifier: Modifier = Modifier,
     progress: KozmosEmptyStateProgress? = null,
     list: List<String> = emptyList(),
-    listLabel: String? = null
+    listLabel: String? = null,
+    tone: KozmosEmotion? = null
 ) {
+    // A tone (decision 194, GAP-213) makes the empty state a card of its own:
+    // the emotion's surface, edged 1 in the emotion's text colour, at the
+    // container radius, as React's `rounded-container border`. Its words take
+    // the surface's ink, onSurface, 4.5:1 or better in both themes; the
+    // icon's circle is the page and the icon the emotion's text colour, which
+    // clears 4.5:1 on the page. Unset, nothing changes.
+    val card = if (tone != null) {
+        val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer)
+        Modifier
+            .background(tone.surface, shape)
+            .border(1.dp, tone.text, shape)
+    } else {
+        Modifier
+    }
+    val titleInk = tone?.onSurface ?: KozmosThemeTokens.primitivesColorsForeground0
+    val mutedInk = tone?.onSurface ?: KozmosThemeTokens.primitivesColorsForeground400
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .then(card)
             .padding(size.padding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -101,10 +123,13 @@ fun KozmosEmptyState(
             Box(
                 modifier = Modifier
                     .size(size.iconCircle)
-                    .background(KozmosThemeTokens.primitivesColorsBackground100, CircleShape),
+                    .background(
+                        if (tone != null) KozmosThemeTokens.primitivesColorsBackground0 else KozmosThemeTokens.primitivesColorsBackground100,
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground400) {
+                CompositionLocalProvider(LocalContentColor provides (tone?.text ?: KozmosThemeTokens.primitivesColorsForeground400)) {
                     icon()
                 }
             }
@@ -115,7 +140,7 @@ fun KozmosEmptyState(
             text = title,
             // React's text-foreground and Figma's Colors/foreground/0; it was
             // foreground/100.
-            color = KozmosThemeTokens.primitivesColorsForeground0,
+            color = titleInk,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center
@@ -127,7 +152,7 @@ fun KozmosEmptyState(
                 text = description,
                 // The muted colour, as React's text-muted-foreground and
                 // Figma's foreground/400; it was foreground/300.
-                color = KozmosThemeTokens.primitivesColorsForeground400,
+                color = mutedInk,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
@@ -135,7 +160,7 @@ fun KozmosEmptyState(
         
         if (list.isNotEmpty()) {
             Spacer(modifier = Modifier.height(size.gap))
-            KozmosEmptyStateList(items = list, label = listLabel)
+            KozmosEmptyStateList(items = list, label = listLabel, ink = mutedInk)
         }
 
         if (progress != null) {
@@ -156,7 +181,7 @@ fun KozmosEmptyState(
                     Text(
                         text = progress.label,
                         // React's text-foreground, as the title; it was foreground/100.
-                        color = KozmosThemeTokens.primitivesColorsForeground0,
+                        color = titleInk,
                         fontSize = 14.sp,
                         modifier = Modifier.weight(1f)
                     )
@@ -165,7 +190,7 @@ fun KozmosEmptyState(
                             text = progress.valueText,
                             // Muted, as React's text-muted-foreground: foreground/400.
                             // It was foreground/300.
-                            color = KozmosThemeTokens.primitivesColorsForeground400,
+                            color = mutedInk,
                             fontSize = 14.sp
                         )
                     }
@@ -189,7 +214,11 @@ fun KozmosEmptyState(
  * with their places, the bullets not said, and the list named by [label].
  */
 @Composable
-internal fun KozmosEmptyStateList(items: List<String>, label: String?) {
+internal fun KozmosEmptyStateList(
+    items: List<String>,
+    label: String?,
+    ink: Color = KozmosThemeTokens.primitivesColorsForeground400
+) {
     Column(
         modifier = Modifier
             .widthIn(max = 280.dp)
@@ -211,13 +240,13 @@ internal fun KozmosEmptyStateList(items: List<String>, label: String?) {
             ) {
                 Text(
                     text = "\u2022",
-                    color = KozmosThemeTokens.primitivesColorsForeground400,
+                    color = ink,
                     fontSize = 14.sp,
                     modifier = Modifier.clearAndSetSemantics { }
                 )
                 Text(
                     text = item,
-                    color = KozmosThemeTokens.primitivesColorsForeground400,
+                    color = ink,
                     fontSize = 14.sp,
                     modifier = Modifier.weight(1f)
                 )

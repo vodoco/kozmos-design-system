@@ -90,6 +90,33 @@ fun KozmosPageHeader(
     breadcrumb: (@Composable () -> Unit)? = null,
     info: (@Composable () -> Unit)? = null,
     actions: (@Composable RowScope.() -> Unit)? = null
+) = KozmosPageHeader(
+    title = title, titleAddon = null, modifier = modifier, description = description, tone = tone,
+    size = size, inset = inset, breadcrumb = breadcrumb, info = info, actions = actions
+)
+
+/**
+ * [KozmosPageHeader] with [titleAddon] (decision 210, owner, 17 Nov): a node
+ * beside the title, such as a status KozmosTag, as KozmosListItem's
+ * `titleAddon` is. It sits on the title's line, 8 after the title and before
+ * the info button, centred on the line as the info button is, and wraps under
+ * the title, at its start and 8 below, where the line has no room for it. It
+ * is outside the heading: TalkBack hears the title alone as the heading, then
+ * the addon. A form of its own, with [titleAddon] second, so the first
+ * form's positional arguments and trailing actions keep their meaning.
+ */
+@Composable
+fun KozmosPageHeader(
+    title: String,
+    titleAddon: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    tone: KozmosPageHeaderTone = KozmosPageHeaderTone.Subtle,
+    size: KozmosPageHeaderSize = KozmosPageHeaderSize.Md,
+    inset: KozmosContainerInset = KozmosContainerInset.Window,
+    breadcrumb: (@Composable () -> Unit)? = null,
+    info: (@Composable () -> Unit)? = null,
+    actions: (@Composable RowScope.() -> Unit)? = null
 ) {
     val band = when (tone) {
         KozmosPageHeaderTone.Subtle -> Modifier.background(KozmosThemeTokens.primitivesColorsTheme0)
@@ -116,29 +143,63 @@ fun KozmosPageHeader(
                 measurePolicy = policy,
                 content = {
                     Column {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text(
-                                text = title,
-                                modifier = Modifier.weight(1f, fill = false).semantics { heading() },
-                                color = KozmosThemeTokens.primitivesColorsForeground100,
-                                // Exactly the line, as React's: no font padding
-                                // above a 30 on its 36.
-                                style = TextStyle(
-                                    fontSize = size.fontSize,
-                                    lineHeight = size.lineHeight,
-                                    fontWeight = FontWeight.Bold,
-                                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                                    lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+                        if (titleAddon == null) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = title,
+                                    modifier = Modifier.weight(1f, fill = false).semantics { heading() },
+                                    color = KozmosThemeTokens.primitivesColorsForeground100,
+                                    // Exactly the line, as React's: no font padding
+                                    // above a 30 on its 36.
+                                    style = TextStyle(
+                                        fontSize = size.fontSize,
+                                        lineHeight = size.lineHeight,
+                                        fontWeight = FontWeight.Bold,
+                                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                                        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+                                    )
                                 )
-                            )
-                            if (info != null) {
-                                Box(Modifier.height(line), contentAlignment = Alignment.Center) {
-                                    Box(Modifier.wrapContentHeight(unbounded = true)) { info() }
+                                if (info != null) {
+                                    Box(Modifier.height(line), contentAlignment = Alignment.Center) {
+                                        Box(Modifier.wrapContentHeight(unbounded = true)) { info() }
+                                    }
                                 }
                             }
+                        } else {
+                            // The title, the addon and the info button on the
+                            // title's line, 8 apart; the addon under the title
+                            // where the line has no room (PageHeaderTitleLinePolicy).
+                            val titleLine = remember(line) { PageHeaderTitleLinePolicy(line) }
+                            Layout(
+                                measurePolicy = titleLine,
+                                content = {
+                                    Text(
+                                        text = title,
+                                        modifier = Modifier.semantics { heading() },
+                                        color = KozmosThemeTokens.primitivesColorsForeground100,
+                                        // Exactly the line, as React's: no font padding
+                                        // above a 30 on its 36.
+                                        style = TextStyle(
+                                            fontSize = size.fontSize,
+                                            lineHeight = size.lineHeight,
+                                            fontWeight = FontWeight.Bold,
+                                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                                            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+                                        )
+                                    )
+                                    Box(Modifier.height(line), contentAlignment = Alignment.Center) {
+                                        Box(Modifier.wrapContentHeight(unbounded = true)) { titleAddon() }
+                                    }
+                                    if (info != null) {
+                                        Box(Modifier.height(line), contentAlignment = Alignment.Center) {
+                                            Box(Modifier.wrapContentHeight(unbounded = true)) { info() }
+                                        }
+                                    }
+                                }
+                            )
                         }
                         if (description != null) {
                             Text(
@@ -197,6 +258,45 @@ private class PageHeaderRowPolicy(private val line: Dp) : MeasurePolicy {
                     actions.placeRelative(0, text.height + gap)
                 }
             }
+        }
+    }
+}
+
+/**
+ * The title's line with an addon (decision 210): the title, the addon 8
+ * after it and the info button 8 after that, each centred on the title's
+ * first line, while the title's words fit beside both; otherwise the title
+ * keeps the info button beside it and the addon wraps under the title, 8
+ * below and at its start, as React's `flex-wrap` line does.
+ */
+private class PageHeaderTitleLinePolicy(private val line: Dp) : MeasurePolicy {
+    override fun MeasureScope.measure(measurables: List<Measurable>, constraints: Constraints): MeasureResult {
+        val width = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
+        val gap = KozmosDimensions.primitivesLayoutSpacing100.roundToPx()
+        val loose = Constraints(maxWidth = width)
+        val addon = measurables[1].measure(loose)
+        val info = measurables.getOrNull(2)?.measure(loose)?.takeIf { it.width > 0 }
+        val forInfo = if (info != null) info.width + gap else 0
+        val natural = measurables[0].maxIntrinsicWidth(Constraints.Infinity)
+        val beside = width - forInfo - addon.width - gap
+        val onTheLine = addon.width == 0 || natural <= beside
+        val titleMax = (if (onTheLine) beside.coerceAtLeast(natural.coerceAtMost(width - forInfo)) else width - forInfo).coerceAtLeast(0)
+        val title = measurables[0].measure(Constraints(maxWidth = titleMax))
+        val lineHeight = line.roundToPx()
+        val top = maxOf(title.height, lineHeight)
+        val height = if (onTheLine) top else top + gap + addon.height
+        return layout(width, constraints.constrainHeight(height)) {
+            title.placeRelative(0, 0)
+            var x = title.width + gap
+            if (onTheLine) {
+                if (addon.width > 0) {
+                    addon.placeRelative(x, 0)
+                    x += addon.width + gap
+                }
+            } else {
+                addon.placeRelative(0, top + gap)
+            }
+            info?.placeRelative(x, 0)
         }
     }
 }

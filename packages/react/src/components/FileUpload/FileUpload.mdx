@@ -35,6 +35,86 @@ removed. The thumbnail is an object URL, revoked when the image changes or the p
   <Story of={FileUploadStories.ImagePreview} />
 </Canvas>
 
+## A button
+
+`variant="button"` is FileUpload's button form (GAP-274): a Button-sized trigger, the outline Button with the upload
+icon and `browseLabel` as its words, for a field with no room for a drop area, such as New Client's "Add logo"
+beside the client's name. It picks and validates as the drop area does (`accept`, `maxSize`, `maxFiles`, an image
+only with `preview="image"`), takes a file dropped on it, says an error the same way, and lists what was chosen, or
+with `preview="image"` gives its place to the thumbnail with Change and Remove, coming back, focused, when the image
+is removed. Its words are "Choose file" unless the product passes its own; with a `label` the button is named
+"Add logo: Logo", as the drop area is. The drop area stays the default. SwiftUI's and Compose's `KozmosFileUpload` take `variant`, `.button` and
+`KozmosFileUploadVariant.Button`: the outline `KozmosButton` with the upload icon and `browseLabel` ("Choose file" by
+default) in place of the drop area, opening the same picker of the same types, and showing what was chosen, or the
+image preview, as the drop area does. The native parts have no size limit to set, on either form.
+
+<PlatformSnippets
+    react={`
+import { FileUpload } from "@kozmos-ds/react";
+
+export function ClientLogo() {
+  return (
+    <FileUpload
+      variant="button"
+      preview="image"
+      browseLabel="Add logo"
+      label="Logo"
+      maxSize={2 * 1024 * 1024}
+      onFileSelect={(file) => console.log(file.name)}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosFileUpload } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosFileUpload
+    variant="button"
+    preview="image"
+    browse-label="Add logo"
+    label="Logo"
+    :max-size="2 * 1024 * 1024"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct ClientLogoButton: View {
+    var body: some View {
+        KozmosFileUpload(
+            allowedContentTypes: [.png, .jpeg],
+            onFileSelected: { url in print(url.lastPathComponent) },
+            browseLabel: "Add logo",
+            preview: .image,
+            variant: .button
+        )
+    }
+}
+`}
+    kotlin={`
+import android.net.Uri
+import androidx.compose.runtime.Composable
+import com.kozmos.components.fileupload.KozmosFileUpload
+import com.kozmos.components.fileupload.KozmosFileUploadPreview
+import com.kozmos.components.fileupload.KozmosFileUploadVariant
+
+@Composable
+fun ClientLogoButton(onLogoChosen: (Uri) -> Unit) {
+    KozmosFileUpload(
+        browseLabel = "Add logo",
+        preview = KozmosFileUploadPreview.Image,
+        variant = KozmosFileUploadVariant.Button,
+        onFileSelected = onLogoChosen
+    )
+}
+`}
+/>
+
 ## Implementation
 
 SwiftUI's and Compose's FileUpload hold one file. Picking one calls `onFileSelected`, and removing

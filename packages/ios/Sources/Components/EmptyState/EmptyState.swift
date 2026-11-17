@@ -61,6 +61,10 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
     public let list: [String]
     /// The list's name, said as VoiceOver enters it.
     public let listLabel: String?
+    /// An emotion's card (GAP-213, decision 194): its surface, edged in its
+    /// text colour, with the words in its ink and the icon on the page's
+    /// colour in its text colour. Unset, the empty state is drawn as before.
+    public let tone: KozmosEmotion?
 
     public init(
         title: String,
@@ -69,6 +73,7 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
         progress: KozmosEmptyStateProgress? = nil,
         list: [String] = [],
         listLabel: String? = nil,
+        tone: KozmosEmotion? = nil,
         @ViewBuilder icon: () -> Icon,
         @ViewBuilder action: () -> Action
     ) {
@@ -78,6 +83,7 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
         self.progress = progress
         self.list = list
         self.listLabel = listLabel
+        self.tone = tone
         self.icon = icon()
         self.action = action()
     }
@@ -89,11 +95,14 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
                 // `text-muted-foreground` on `bg-muted` and Figma's are: it was
                 // foreground/300, with no circle. A KozmosIcon takes the
                 // colour too, as React's icon is currentColor.
+                // In a tone, the emotion's text colour on a disc of the
+                // page's colour, React's `bg-background`: text on the page
+                // clears 4.5:1, which a glyph on the surface need not.
                 icon
-                    .foregroundColor(KozmosColors.primitivesColorsForeground400)
-                    .environment(\.kozmosIconHostInk, KozmosColors.primitivesColorsForeground400)
+                    .foregroundColor(iconInk)
+                    .environment(\.kozmosIconHostInk, iconInk)
                     .frame(width: size.iconCircle, height: size.iconCircle)
-                    .background(Circle().fill(KozmosColors.primitivesColorsBackground100))
+                    .background(Circle().fill(iconDisc))
             }
             
             VStack(spacing: 4) {
@@ -101,20 +110,21 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
                 // Colors/foreground/0: it was foreground/100.
                 Text(title)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(KozmosColors.primitivesColorsForeground0)
+                    .foregroundColor(tone?.onSurface ?? KozmosColors.primitivesColorsForeground0)
                     .multilineTextAlignment(.center)
                 
                 if let description = description {
                     // The muted foreground, React's `text-muted-foreground`.
                     Text(description)
                         .font(.system(size: 14))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                        .foregroundColor(tone?.onSurface ?? KozmosColors.primitivesColorsForeground400)
                         .multilineTextAlignment(.center)
                 }
             }
             
             if !list.isEmpty {
-                KozmosEmptyStateList(items: list, label: listLabel)
+                KozmosEmptyStateList(items: list, label: listLabel,
+                                     ink: tone?.onSurface ?? KozmosColors.primitivesColorsForeground400)
             }
 
             if let progress {
@@ -124,11 +134,11 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
                         // the muted foreground, as React's `text-foreground` and
                         // `text-muted-foreground`: they were foreground/100 and 300.
                         Text(progress.label)
-                            .foregroundColor(KozmosColors.primitivesColorsForeground0)
+                            .foregroundColor(tone?.onSurface ?? KozmosColors.primitivesColorsForeground0)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         if let valueText = progress.valueText {
                             Text(valueText)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                                .foregroundColor(tone?.onSurface ?? KozmosColors.primitivesColorsForeground400)
                         }
                     }
                     .font(KozmosTypography.subheadline)
@@ -148,6 +158,28 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
         }
         .padding(size.padding)
         .frame(maxWidth: .infinity)
+        .modifier(KozmosEmptyStateToneCard(tone: tone))
+    }
+
+    private var iconInk: Color { tone?.text ?? KozmosColors.primitivesColorsForeground400 }
+    private var iconDisc: Color { tone == nil ? KozmosColors.primitivesColorsBackground100 : KozmosColors.primitivesColorsBackground0 }
+}
+
+/// A toned empty state's card (GAP-213, decision 194): the emotion's surface
+/// with a 1pt edge in its text colour, the container's corners, as React's
+/// `rounded-container border`. With no tone it draws nothing.
+struct KozmosEmptyStateToneCard: ViewModifier {
+    let tone: KozmosEmotion?
+
+    func body(content: Content) -> some View {
+        if let tone {
+            let shape = RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous)
+            content
+                .background(shape.fill(tone.surface))
+                .overlay(shape.strokeBorder(tone.text, lineWidth: 1))
+        } else {
+            content
+        }
     }
 }
 
@@ -155,7 +187,8 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
 public extension KozmosEmptyState where Icon == EmptyView, Action == EmptyView {
     init(
         title: String, description: String? = nil, size: KozmosEmptyStateSize = .default,
-        progress: KozmosEmptyStateProgress? = nil, list: [String] = [], listLabel: String? = nil
+        progress: KozmosEmptyStateProgress? = nil, list: [String] = [], listLabel: String? = nil,
+        tone: KozmosEmotion? = nil
     ) {
         self.title = title
         self.description = description
@@ -163,6 +196,7 @@ public extension KozmosEmptyState where Icon == EmptyView, Action == EmptyView {
         self.progress = progress
         self.list = list
         self.listLabel = listLabel
+        self.tone = tone
         self.icon = nil
         self.action = nil
     }
@@ -175,6 +209,8 @@ public extension KozmosEmptyState where Icon == EmptyView, Action == EmptyView {
 struct KozmosEmptyStateList: View {
     let items: [String]
     let label: String?
+    /// The words' and bullets' colour: the muted foreground, or a tone's ink.
+    var ink: Color = KozmosColors.primitivesColorsForeground400
 
     var body: some View {
         if let label {
@@ -197,7 +233,7 @@ struct KozmosEmptyStateList: View {
             }
         }
         .font(KozmosTypography.subheadline)
-        .foregroundColor(KozmosColors.primitivesColorsForeground400)
+        .foregroundColor(ink)
         .frame(maxWidth: 280, alignment: .leading)
     }
 }
