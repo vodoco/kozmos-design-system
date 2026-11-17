@@ -65,8 +65,9 @@ extension View {
 
 /// The mixed mark (decisions 188 to 190): React's `Minus` icon at 16, a line
 /// from 5 to 19 across the icon's 24, at its middle, stroked 2/24 of its
-/// size with round caps. A mixed Switch draws it in its track where the
-/// thumb was, a mixed ToggleButton before its label. Give it a 16 frame.
+/// size with round caps. A mixed Checkbox draws it for its tick, a mixed
+/// Switch in its track where the thumb was, a mixed ToggleButton before its
+/// label. It frames itself at 16.
 struct KozmosMixedDash: View {
     let color: Color
 

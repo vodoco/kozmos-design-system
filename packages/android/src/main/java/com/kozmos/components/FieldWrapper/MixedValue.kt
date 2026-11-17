@@ -72,8 +72,9 @@ internal fun Modifier.kozmosUnsaidWhen(unsaid: Boolean): Modifier =
 /**
  * The mixed mark (decisions 188 to 190): React's `Minus` icon at 16, a line
  * from 5 to 19 across the icon's 24, at its middle, stroked 2/24 of its size
- * with round caps. A mixed Switch draws it where its thumb was, a mixed
- * ToggleButton before its label. Drawn, never read.
+ * with round caps. A mixed Checkbox draws it for its tick, a mixed Switch
+ * where its thumb was, a mixed ToggleButton before its label. Drawn, never
+ * read.
  */
 @Composable
 internal fun KozmosMixedDash(color: Color, modifier: Modifier = Modifier) {
