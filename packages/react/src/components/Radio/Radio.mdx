@@ -252,6 +252,130 @@ fun MapStyleCards() {
 `}
 />
 
+## Mixed
+
+With several features selected, a property whose features chose different options is one group for
+all of them (decisions 188 and 191). `mixed` says the group stands for those values: no option is
+chosen, and "Multiple values" (`mixedLabel`) is drawn under the options, as a field's helper line.
+A radio has no mixed state to announce, so the group says it: on the web the line is the radio
+group's description (`aria-describedby`), heard as the group is entered, once; SwiftUI and Compose
+read it after the options. Choosing an option ends it: `onValueChange` reports the choice, and the
+product clears `mixed`. Give `onResetMixed` for a group whose values differ: once it is no longer
+mixed it draws "Reset to multiple values" (`resetMixedLabel`) under the options, as the fields draw
+it, never while it is disabled. Pressed, focus goes back to the option chosen, and the product sets
+`mixed` again. Input, NumberInput, Select, Combobox and SegmentedControl take the same names
+(GAP-153).
+
+Given `mixed` at all, an uncontrolled group holds its choice itself: none while mixed, the visitor's
+after, and a choice held before it turned mixed again is dropped. On SwiftUI and Compose the group
+takes `mixed`, `onResetMixed` and their words, and its options draw none chosen while it is mixed,
+whatever their `selection` or `selectedValue` holds; give the group `disabled` (SwiftUI) or
+`enabled` (Compose) when its options are, so it offers no reset.
+
+In Figma, Mixed is a value of Radio's Checked axis: an option drawn unchosen with the group's
+"Multiple values" line under it. Draw the group's other options Unchecked and its last one Mixed.
+Mixed Text holds the words, for a board in another language.
+
+<PlatformSnippets
+    react={`
+import * as React from "react";
+import { RadioGroup, RadioGroupItem } from "@kozmos-ds/react";
+
+// The features' access differs, so the group is mixed until an option is
+// chosen: none is chosen, and "Multiple values" is under the options.
+export function AccessAcrossSelection({ levels }: { levels: string[] }) {
+  const [edit, setEdit] = React.useState<string>();
+  const differs = levels.some((level) => level !== levels[0]);
+  return (
+    <RadioGroup
+      label="Access"
+      mixed={differs && edit === undefined}
+      value={edit ?? (differs ? "" : levels[0])}
+      onValueChange={setEdit}
+      onResetMixed={differs ? () => setEdit(undefined) : undefined}
+    >
+      <RadioGroupItem value="public" label="Public" />
+      <RadioGroupItem value="staff" label="Staff only" />
+      <RadioGroupItem value="closed" label="Closed" />
+    </RadioGroup>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosRadioGroup } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+// Each @kozmos-ds/vue part mounts its own React root, so a KozmosRadioGroupItem inside a KozmosRadioGroup cannot reach its group and throws (GAP-230): the group takes mixed and draws its line, but cannot draw options yet.
+
+const props = defineProps({ levels: Array })
+const edit = ref(null)
+const differs = computed(() => new Set(props.levels).size > 1)
+</script>
+
+<template>
+  <KozmosRadioGroup
+    label="Access"
+    :mixed="differs && edit === null"
+    :model-value="edit ?? (differs ? '' : props.levels[0])"
+    @update:model-value="edit = $event"
+    @reset-mixed="edit = null"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The features' access differs, so the group is mixed until an option is
+// chosen: none shows as chosen, and "Multiple values" is under the options.
+struct AccessAcrossSelection: View {
+    let levels: [String]
+    @State private var edit: String?
+
+    var body: some View {
+        let differs = Set(levels).count > 1
+        let selection = Binding(get: { edit ?? (differs ? "" : levels[0]) }, set: { edit = $0 })
+        KozmosRadioGroup(mixed: differs && edit == nil, onResetMixed: differs ? { edit = nil } : nil) {
+            KozmosRadioGroupItem(value: "public", label: "Public", selection: selection)
+            KozmosRadioGroupItem(value: "staff", label: "Staff only", selection: selection)
+            KozmosRadioGroupItem(value: "closed", label: "Closed", selection: selection)
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.radio.KozmosRadioGroup
+import com.kozmos.components.radio.KozmosRadioGroupItem
+
+// The features' access differs, so the group is mixed until an option is
+// chosen: none is selected, and "Multiple values" is under the options.
+@Composable
+fun AccessAcrossSelection(levels: List<String>) {
+    val differs = levels.distinct().size > 1
+    var edit by remember(levels) { mutableStateOf<String?>(null) }
+    val selected = edit ?: if (differs) "" else levels.first()
+    KozmosRadioGroup(
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    ) {
+        listOf("public" to "Public", "staff" to "Staff only", "closed" to "Closed").forEach { (value, label) ->
+            KozmosRadioGroupItem(
+                value = value,
+                selectedValue = selected,
+                onOptionSelected = { edit = it },
+                label = label
+            )
+        }
+    }
+}
+`}
+/>
+
 ## Stories
 
 ### Default
