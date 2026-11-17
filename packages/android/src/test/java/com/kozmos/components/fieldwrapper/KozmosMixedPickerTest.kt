@@ -94,7 +94,7 @@ class KozmosMixedPickerTest {
         assertEquals(listOf(listOf("b2")), reported)
     }
 
-    @Test fun aMultiSelectsResetHandsFocusBackAndIsNeverOfferedLocked() {
+    @Test fun aMultiSelectsResetHandsFocusBack() {
         paparazzi.live(content = {
             var edit by remember { mutableStateOf<List<String>?>(listOf("b2")) }
             MultiSelect(
@@ -111,6 +111,12 @@ class KozmosMixedPickerTest {
             assertEquals("focus is back on the field", true, field.focused)
             assertNull(reset())
         }
+    }
+
+    // A test of its own, not after the live script above: in one test, the
+    // live script's frames and a read after it left the JVM's Compose frame
+    // clock stopped, and every later class's semantics read found nothing.
+    @Test fun aMultiSelectOffersNoResetLocked() {
         for ((enabled, readOnly) in listOf(false to false, true to true)) {
             val tree = paparazzi.readSemantics {
                 MultiSelect(selected = listOf("b2"), mixed = false, enabled = enabled, readOnly = readOnly)
@@ -144,7 +150,7 @@ class KozmosMixedPickerTest {
         assertEquals(1, time.mixedSaid())
     }
 
-    @Test fun aPickerFieldsResetHandsFocusBackAndIsNeverOfferedLocked() {
+    @Test fun aPickerFieldsResetHandsFocusBack() {
         paparazzi.live(content = {
             var edit by remember { mutableStateOf<LocalDate?>(LocalDate.of(2026, 5, 25)) }
             KozmosMaterialTheme {
@@ -164,6 +170,9 @@ class KozmosMixedPickerTest {
             assertEquals("focus is back on the field", true, field.focused)
             assertNull(reset())
         }
+    }
+
+    @Test fun aPickerFieldOffersNoResetLocked() {
         for ((enabled, readOnly) in listOf(false to false, true to true)) {
             val tree = paparazzi.readSemantics {
                 KozmosMaterialTheme {
