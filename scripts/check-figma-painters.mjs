@@ -4842,9 +4842,9 @@ section("Decision 61: the secondary Button is the neutral fill");
   const fill = `${NEUTRAL}/background/idle #C7CAD1/#464A53`;
   const ink = `${NEUTRAL}/foreground/content/idle #000000/#FFFFFF`;
 
-  // Disabled and Loading are decision 197's disabled pair, every variant
-  // alike: "Decision 197" reads them.
-  for (const state of ["Default"]) {
+  // Disabled is decision 197's disabled pair, every variant alike:
+  // "Decision 197" reads it. Loading is the idle variant, busy.
+  for (const state of ["Default", "Loading"]) {
     const tokenState = "idle";
     const config = plugin.buttonConfig("Secondary", state);
     ok(
@@ -4895,13 +4895,11 @@ section("Decision 61: the secondary Button is the neutral fill");
     textStyle: null,
     stats: freshStats(),
   });
-  // A loading Button is disabled while it waits (decision 197): its ring
-  // is the disabled pair's foreground, not the neutral ink.
+  // A loading Button is busy, not unavailable: its ring is its own ink.
   const spinner = named(loading, "Loading Indicator");
   ok(
-    spinner &&
-      reads(spinner.strokes[0]) === "Disabled/foreground #5D626F/#A29D90",
-    `Button, Secondary, Loading: the ring the disabled foreground (${spinner && reads(spinner.strokes[0])})`,
+    spinner && reads(spinner.strokes[0]) === ink,
+    `Button, Secondary, Loading: the ring the neutral ink (${spinner && reads(spinner.strokes[0])})`,
   );
 }
 
@@ -6981,8 +6979,9 @@ section("AISearchButton");
     `no warnings (${stats.warnings.join(" | ")})`,
   );
   if (typeof plugin.updateAISearchButtonVariant === "function") {
+    // Decision 197: the disabled pair, not half ("Decision 197" reads it).
     const { component: disabled } = await paint("Disabled");
-    ok(disabled.opacity === 0.5, "disabled: at 50 %");
+    ok(disabled.opacity === 1, "disabled: undimmed");
   }
   // If Figma keeps the ring's gradient but drops its stops' bindings, the
   // painter says so rather than leaving plain colours unremarked.
@@ -9413,7 +9412,7 @@ section("Button subtle, CardHeader subtle and CardTitle size");
       !iconAxes?.Variant?.includes("Subtle"),
     `Button's Variant has Subtle; IconButton's does not (${JSON.stringify(buttonAxes?.Variant)}; ${JSON.stringify(iconAxes?.Variant)})`,
   );
-  for (const state of ["Default"]) {
+  for (const state of ["Default", "Loading"]) {
     const config = plugin.buttonConfig("Subtle", state);
     ok(
       config.background === `${SUBTLE}/background/idle` &&
@@ -9422,9 +9421,9 @@ section("Button subtle, CardHeader subtle and CardTitle size");
       `Button, Subtle, ${state}: the Subtle Buttons idle tokens (${config.background}, ${config.foreground})`,
     );
   }
-  // Disabled, and Loading with it, is decision 197's disabled pair, the
-  // same for every filled variant.
-  for (const state of ["Disabled", "Loading"]) {
+  // Disabled is decision 197's disabled pair, the same for every filled
+  // variant; Loading is the idle variant, busy (above).
+  for (const state of ["Disabled"]) {
     const disabled = plugin.buttonConfig("Subtle", state);
     ok(
       disabled.background === "Disabled/fill" &&
@@ -18247,18 +18246,25 @@ section("ImageField (Dashboard)");
     `Default: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
   );
 
+  // Full: the drop zone and the URL field are off, their slots at 50 %;
+  // Add is a disabled Button, the pair, undimmed (decision 197).
   const { component: full } = await paint("Full");
   ok(
     full.opacity === 1 &&
       named(full, "Upload Slot").opacity === 0.5 &&
-      named(full, "URL Row").opacity === 0.5 &&
+      named(full, "URL Row").opacity === 1 &&
+      named(full, "URL Slot").opacity === 0.5 &&
+      named(full, "Add Button").opacity === 1 &&
+      boundVariableName(named(full, "Add Button").strokes[0]) ===
+        "Disabled/foreground" &&
       named(full, "Count Text").characters === "7 of 7 images",
-    `Full: the count at max, the drop zone and URL row at 50 % (${named(full, "Upload Slot").opacity}, ${named(full, "URL Row").opacity})`,
+    `Full: the count at max, the drop zone and URL field at 50 %, Add a disabled Button (${named(full, "Upload Slot").opacity}, ${named(full, "URL Slot").opacity}, ${named(full, "Add Button").opacity})`,
   );
+  // Disabled: nothing at half on the field; "Decision 197" reads its parts.
   const { component: disabled } = await paint("Disabled");
   ok(
-    disabled.opacity === 0.5 && named(disabled, "Upload Slot").opacity === 1,
-    `Disabled: the whole field at a plain 50 % (${disabled.opacity})`,
+    disabled.opacity === 1,
+    `Disabled: the field itself undimmed (${disabled.opacity})`,
   );
 
   ok(
@@ -18478,7 +18484,9 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
         const ink =
           state === "On"
             ? "Primary Buttons/themed/button/foreground/content/idle"
-            : "Colors/foreground/400";
+            : state === "Disabled"
+              ? "Disabled/foreground"
+              : "Colors/foreground/400";
         // React's item is min-inline-size 56 and inline-size auto: it hugs
         // its label, 4 each side, and stops at 56 (Straighten is wider). The
         // label never runs out of the item's content box.
@@ -18511,9 +18519,11 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
             (state === "On"
               ? boundVariableName(item.fills[0]) ===
                 "Primary Buttons/themed/button/background/idle"
-              : item.fills.length === 0) &&
-            item.opacity === (state === "Disabled" ? 0.5 : 1),
-          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : "no fill"}${state === "Disabled" ? ", at half strength" : ""} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+              : state === "Disabled"
+                ? boundVariableName(item.fills[0]) === "Disabled/fill"
+                : item.fills.length === 0) &&
+            item.opacity === 1,
+          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : state === "Disabled" ? "on Disabled/fill" : "no fill"} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
         );
       }
       card.remove();
@@ -19195,9 +19205,11 @@ section(
     `the payload carries Disabled/fill and Disabled/foreground for Import Foundations (${[FILL, INK].filter((name) => tokens.variableByName.has(name)).join(", ") || "neither"})`,
   );
 
-  const FILLED = ["Default", "Destructive", "Secondary", "Subtle"];
-  // What a disabled variant stands on: the pair's fill under a filled one,
-  // the page under an outline, nothing under ghost or link, glass under glass.
+  // Ghost too (the owner, 17 Nov): a disabled ghost takes the pair's fill,
+  // so it never reads as an enabled grey ghost.
+  const FILLED = ["Default", "Destructive", "Secondary", "Subtle", "Ghost"];
+  // What a disabled variant stands on: the pair's fill under a filled one or
+  // a ghost, the page under an outline, nothing under link, glass under glass.
   const groundOf = (variant) =>
     FILLED.includes(variant)
       ? { fill, fallback: "#E3E4E8", stroke: null }
@@ -19282,11 +19294,44 @@ section(
     return out;
   };
 
-  // Every config, both states: the pair, its fallbacks, Loading as Disabled.
+  // Loading is busy, not unavailable (the owner, 17 Nov): the variant's own
+  // idle fill, edge and label, at full strength, its spinner in the label's
+  // colour. Every way a loading node differs from that, as words.
+  const loadingDifferences = (node, variant, label) => {
+    const out = [];
+    if (!node) return [`${label}: not drawn`];
+    const idle = plugin.buttonConfig(variant, "Default");
+    if ((name(node.fills[0]) || null) !== (idle.background || null))
+      out.push(`${label} fill ${name(node.fills[0])}, not ${idle.background}`);
+    const edge =
+      node.strokes.length && node.strokeWeight > 0 ? node.strokes[0] : null;
+    if ((name(edge) || null) !== (idle.stroke || null))
+      out.push(`${label} edge ${name(edge)}, not ${idle.stroke}`);
+    for (const words of node.findAll(
+      (child) => child.type === "TEXT" && child.name === "Label Text",
+    ))
+      if (name(words.fills[0]) !== idle.foreground)
+        out.push(`${label} words ${name(words.fills[0])}`);
+    const spinner = named(node, "Loading Indicator");
+    if (!spinner) out.push(`${label}: no spinner`);
+    else if (name(spinner.strokes[0]) !== idle.foreground)
+      out.push(`${label} spinner ${name(spinner.strokes[0])}`);
+    const dimmed = [node]
+      .concat(node.findAll(() => true))
+      .filter((child) => child.opacity < 1);
+    if (dimmed.length)
+      out.push(
+        `${label} dims ${dimmed.map((child) => `${child.name} ${child.opacity}`).join(", ")}`,
+      );
+    return out;
+  };
+
+  // Every config: Disabled the pair, with its fallbacks; Loading the idle.
   const configs = [];
   for (const variant of plugin.BUTTON_VARIANTS) {
     const disabled = plugin.buttonConfig(variant, "Disabled");
     const loading = plugin.buttonConfig(variant, "Loading");
+    const idleConfig = plugin.buttonConfig(variant, "Default");
     const ground = groundOf(variant);
     const fine =
       disabled.foreground === INK &&
@@ -19299,14 +19344,14 @@ section(
       (ground.stroke === ink
         ? disabled.stroke === INK && disabled.strokeFallback === "#5D626F"
         : (disabled.stroke || null) === ground.stroke) &&
-      JSON.stringify(loading) === JSON.stringify(disabled);
+      JSON.stringify(loading) === JSON.stringify(idleConfig);
     configs.push(
-      `${variant}${fine ? "" : ` ✗ ${disabled.background}/${disabled.foreground}/${disabled.stroke || "-"}${JSON.stringify(loading) === JSON.stringify(disabled) ? "" : ", Loading differs"}`}`,
+      `${variant}${fine ? "" : ` ✗ ${disabled.background}/${disabled.foreground}/${disabled.stroke || "-"}${JSON.stringify(loading) === JSON.stringify(idleConfig) ? "" : `, Loading ${loading.background}/${loading.foreground}`}`}`,
     );
   }
   ok(
     configs.every((entry) => !entry.includes("✗")),
-    `buttonConfig: every variant's Disabled is the pair as the rules give it, and Loading the same (${configs.join("; ")})`,
+    `buttonConfig: every variant's Disabled is the pair as the rules give it (Ghost on the fill), and Loading its own idle paint (${configs.join("; ")})`,
   );
 
   // Button: drawn fresh and updated over an idle variant, as Build and
@@ -19323,14 +19368,15 @@ section(
         textStyle: null,
         stats: freshStats(),
       };
+      const check = state === "Loading" ? loadingDifferences : differences;
       const fresh = await plugin.createButtonVariant(args);
-      buttonIssues.push(...differences(fresh, variant, `${variant}/${state}`));
+      buttonIssues.push(...check(fresh, variant, `${variant}/${state}`));
       const updated = await plugin.createButtonVariant(
         Object.assign({}, args, { state: "Default" }),
       );
       await plugin.updateButtonVariant(updated, args);
       buttonIssues.push(
-        ...differences(updated, variant, `${variant}/${state} updated`),
+        ...check(updated, variant, `${variant}/${state} updated`),
       );
       if (state === "Loading" && !named(fresh, "Loading Indicator"))
         buttonIssues.push(`${variant}/Loading: no spinner`);
@@ -19338,7 +19384,7 @@ section(
   }
   ok(
     buttonIssues.length === 0,
-    `Button: every variant, Disabled and Loading, drawn and updated, from the disabled pair with nothing dimmed (${buttonIssues.slice(0, 6).join("; ")}${buttonIssues.length > 6 ? `; and ${buttonIssues.length - 6} more` : ""})`,
+    `Button: every variant drawn and updated, Disabled from the disabled pair and Loading in its own idle paint, nothing dimmed (${buttonIssues.slice(0, 6).join("; ")}${buttonIssues.length > 6 ? `; and ${buttonIssues.length - 6} more` : ""})`,
   );
 
   // IconButton: the variant, then its icon slot, as configureIconButtonSlot
@@ -19368,15 +19414,47 @@ section(
     Object.assign(freshStats(), { iconSlotsBound: 0 }),
   );
   const iconIssues = [];
+  const counterIssues = [];
   for (const child of iconSet.children) {
     const props = plugin.parseIconButtonVariantName(child.name);
-    iconIssues.push(...differences(child, props.variant, child.name));
+    iconIssues.push(
+      ...(props.state === "Loading" ? loadingDifferences : differences)(
+        child,
+        props.variant,
+        child.name,
+      ),
+    );
     if (props.state === "Disabled" && !named(child, "Icon"))
       iconIssues.push(`${child.name}: no icon`);
+    // A disabled IconButton's counter is the pair turned over: the pill in
+    // the foreground, its digits in the fill (the owner, 17 Nov); otherwise
+    // the brand Counter.
+    const counter = child.children.find((node) => node.name === "Counter");
+    const digits = counter && named(counter, "Counter Text");
+    const [pill, words] =
+      props.state === "Disabled"
+        ? [ink, fill]
+        : [
+            "Primary Buttons/themed/button/background/idle #135BEC/#135BEC",
+            "Primary Buttons/themed/button/foreground/content/idle #FFFFFF/#FFFFFF",
+          ];
+    if (
+      !counter ||
+      reads(counter.fills[0]) !== pill ||
+      !digits ||
+      reads(digits.fills[0]) !== words
+    )
+      counterIssues.push(
+        `${child.name}: pill ${counter && reads(counter.fills[0])}, digits ${digits && reads(digits.fills[0])}`,
+      );
   }
   ok(
+    counterIssues.length === 0,
+    `IconButton: a disabled counter is a Disabled/foreground pill with Disabled/fill digits, a loading one the brand Counter (${counterIssues.slice(0, 4).join("; ")})`,
+  );
+  ok(
     iconIssues.length === 0,
-    `IconButton: every variant, Disabled and Loading, its icon and spinner in the foreground (${iconIssues.slice(0, 6).join("; ")}${iconIssues.length > 6 ? `; and ${iconIssues.length - 6} more` : ""})`,
+    `IconButton: every variant, Disabled from the pair (Ghost on the fill) and Loading in its own idle paint, icon and spinner with it (${iconIssues.slice(0, 6).join("; ")}${iconIssues.length > 6 ? `; and ${iconIssues.length - 6} more` : ""})`,
   );
 
   // SplitButton: the ground and words as Button's; the chevron in the
@@ -19462,6 +19540,157 @@ section(
   ok(
     mapIssues.length === 0,
     `MapControlButton, Disabled: a filled Button's Disabled, the pair's fill and foreground, no edge (${mapIssues.join("; ")})`,
+  );
+
+  // Every bound paint on a part's words and marks, as "name light/dark".
+  const marksOf = (node) =>
+    node
+      .findAll(
+        (child) =>
+          child.type === "TEXT" ||
+          (child.parent &&
+            child.parent.type === "INSTANCE" &&
+            child.type !== "INSTANCE") ||
+          (child.type === "VECTOR" && child.parent.type !== "FRAME"),
+      )
+      .flatMap((child) =>
+        [...(child.fills || []), ...(child.strokes || [])]
+          .filter(
+            (paint) => paint.visible !== false && boundVariableName(paint),
+          )
+          .map(reads),
+      );
+  const iconMarksOf = (node) =>
+    node
+      .findAll((child) => child.type === "INSTANCE")
+      .flatMap((instance) =>
+        instance
+          .findAll(() => true)
+          .flatMap((child) =>
+            [...(child.fills || []), ...(child.strokes || [])]
+              .filter(
+                (paint) => paint.visible !== false && boundVariableName(paint),
+              )
+              .map(reads),
+          ),
+      );
+  const undimmed = (node) =>
+    [node].concat(node.findAll(() => true)).filter((child) => child.opacity < 1)
+      .length === 0;
+
+  // MapEditToolbar: a disabled tool and a disabled action are the pair,
+  // nothing dimmed, as React's toolbar draws them (map-edit-toolbar.css).
+  const toolbarIssues = [];
+  for (const kind of ["tool", "action"]) {
+    const item = await plugin.createMapEditToolbarItem(
+      plugin.mapEditToolbarItem(kind, "Split", "split", "Disabled"),
+      {
+        fonts: FONTS,
+        variableByName: tokens.variableByName,
+        stats: freshStats(),
+      },
+    );
+    const label = named(item, "Label Text");
+    const marks = iconMarksOf(item);
+    if (
+      reads(item.fills[0]) !== fill ||
+      !label ||
+      reads(label.fills[0]) !== ink ||
+      !marks.length ||
+      !marks.every((mark) => mark === ink) ||
+      !undimmed(item)
+    )
+      toolbarIssues.push(
+        `${kind}: ${reads(item.fills[0])}, words ${label && reads(label.fills[0])}, icon ${marks.join(", ") || "none"}, at ${item.opacity}`,
+      );
+  }
+  ok(
+    toolbarIssues.length === 0,
+    `MapEditToolbar: a disabled tool and a disabled action are Disabled/fill under Disabled/foreground words and icon, undimmed (${toolbarIssues.join("; ")})`,
+  );
+
+  // ImageField, Disabled: no layer at half; Frame and Remove are disabled
+  // ghost IconButtons (the fill under the foreground), Preview stays enabled
+  // as React's does, and Add is a disabled outline Button (the page, its
+  // edge and words the foreground).
+  const field = figma.createComponent();
+  await plugin.updateImageFieldVariant(field, {
+    value: "Disabled",
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: freshStats(),
+  });
+  const fieldIssues = [];
+  if (field.opacity !== 1) fieldIssues.push(`the field at ${field.opacity}`);
+  const preview = named(field, "Preview Button");
+  if (!preview || preview.fills.length !== 0 || !undimmed(preview))
+    fieldIssues.push(
+      `Preview: ${preview && reads(preview.fills[0])}, not an enabled ghost`,
+    );
+  for (const buttonName of ["Frame Button", "Remove Button"]) {
+    const button = named(field, buttonName);
+    const marks = button ? marksOf(button).concat(iconMarksOf(button)) : [];
+    if (
+      !button ||
+      reads(button.fills[0]) !== fill ||
+      button.strokes.length !== 0 ||
+      !marks.length ||
+      !marks.every((mark) => mark === ink) ||
+      !undimmed(button)
+    )
+      fieldIssues.push(
+        `${buttonName}: ${button && reads(button.fills[0])}, ${marks.join(", ") || "no marks"}`,
+      );
+  }
+  const add = named(field, "Add Button");
+  const addMarks = add ? marksOf(add).concat(iconMarksOf(add)) : [];
+  if (
+    !add ||
+    name(add.fills[0]) !== "Surface/0" ||
+    reads(add.strokes[0]) !== ink ||
+    !addMarks.length ||
+    !addMarks.every((mark) => mark === ink) ||
+    !undimmed(add) ||
+    named(field, "URL Row").opacity !== 1
+  )
+    fieldIssues.push(
+      `Add: ${add && name(add.fills[0])}, edge ${add && reads(add.strokes[0])}, ${addMarks.join(", ") || "no marks"}, row at ${named(field, "URL Row").opacity}`,
+    );
+  ok(
+    fieldIssues.length === 0,
+    `ImageField, Disabled: nothing at half, Frame and Remove disabled ghosts, Preview enabled, Add a disabled outline Button (${fieldIssues.join("; ")})`,
+  );
+
+  // AISearchButton, Disabled: the disc is Disabled/fill, the glyph
+  // Disabled/foreground, the ring undimmed and as it is enabled.
+  const drawSearch = async (value) => {
+    const component = figma.createComponent();
+    await plugin.updateAISearchButtonVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  const searchOff = await drawSearch("Disabled");
+  const searchOn = await drawSearch("Default");
+  const disc = named(searchOff, "Disc");
+  const glyph = iconMarksOf(searchOff);
+  const ringOf = (node) =>
+    JSON.stringify(
+      (named(node, "Ring").fills[0].gradientStops || []).map((stop) =>
+        boundVariableName({ boundVariables: stop.boundVariables }),
+      ),
+    );
+  ok(
+    undimmed(searchOff) &&
+      disc &&
+      reads(disc.fills[0]) === fill &&
+      glyph.length > 0 &&
+      glyph.every((mark) => mark === ink) &&
+      ringOf(searchOff) === ringOf(searchOn),
+    `AISearchButton, Disabled: a Disabled/fill disc under a Disabled/foreground glyph, the ring as enabled, nothing dimmed (${searchOff.opacity}; ${disc && reads(disc.fills[0])}; ${glyph.join(", ")})`,
   );
 }
 

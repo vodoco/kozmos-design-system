@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "ee64ecaf809a";
+const PLUGIN_BUILD = "59fe7682e81b";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -2276,7 +2276,7 @@ const COMPONENT_DOCS = [
     usage: [
       "Use beside the search field, 48 to its 44, as the prototype does.",
       "The ring turns in the product; keep it at rest in a static design.",
-      "Disabled dims the whole button; the ring keeps its colours.",
+      "Disabled is the disabled pair: the disc Disabled/fill and the icon Disabled/foreground; the ring keeps its colours.",
     ],
     api: [
       "State maps to disabled.",
@@ -2690,7 +2690,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Mode is one of Cloud's seven toolbars, drawn with Cloud's items; in code the items are MapEditToolbar.items, the product's: tools, actions and dividers.",
-      "A chosen tool (the theme fill) is MapEditToolbar.value; a disabled item, at half strength, is an item's disabled.",
+      "A chosen tool (the theme fill) is MapEditToolbar.value; a disabled item, Disabled/fill under Disabled/foreground (decision 197), is an item's disabled.",
       "Overflow True draws a 320 map, the items that do not fit behind More, from the end; in code the toolbar follows its width, and it is no prop.",
       "JSON's GeoJSON field is MapEditToolbar.field, a labelled Input.",
     ],
@@ -52142,10 +52142,18 @@ async function productSdkControlButton({
 }) {
   const labelled = typeof label === "string" && label.length > 0;
   // A disabled filled control is a disabled default Button: decision 197's
-  // pair, Disabled/fill under Disabled/foreground, nothing dimmed.
+  // pair, Disabled/fill under Disabled/foreground, nothing dimmed. A disabled
+  // one off the fill is a disabled outline Button: the surface, its edge and
+  // marks Disabled/foreground (a caller that draws a ghost lays the fill).
   const offFill = Boolean(filled && disabled);
   const fillToken = offFill ? DISABLED_FILL : THEME_FILL;
   const onFillToken = offFill ? DISABLED_FOREGROUND : THEME_FILL_FOREGROUND;
+  const surfaceInk = disabled
+    ? DISABLED_FOREGROUND
+    : { name: "Colors/foreground/0", fallback: "#000000" };
+  const surfaceEdge = disabled
+    ? DISABLED_FOREGROUND
+    : { name: "Border/Subtle", fallback: "#C7CAD1" };
   const button = productSdkFrame(name, {
     direction: "horizontal",
     primarySizing: labelled ? "AUTO" : "FIXED",
@@ -52176,7 +52184,12 @@ async function productSdkControlButton({
       paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
     ];
     button.strokes = [
-      paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+      paintFromVariable(
+        surfaceEdge.name,
+        surfaceEdge.fallback,
+        variableByName,
+        stats,
+      ),
     ];
     button.strokeWeight = 1;
   }
@@ -52185,9 +52198,7 @@ async function productSdkControlButton({
   // the file has it — the typed glyph otherwise, so a file without the
   // curated set still shows a mark. Every glyph the library once typed
   // (×, ‹, ›, →, ☆, ✎, ◎, ⇅, +, −, ◈, ◌) has a curated icon now.
-  const symbolToken = filled
-    ? onFillToken
-    : { name: "Colors/foreground/0", fallback: "#000000" };
+  const symbolToken = filled ? onFillToken : surfaceInk;
   const symbol = iconName
     ? await productSdkIconInstance({
         iconName,
@@ -52231,8 +52242,8 @@ async function productSdkControlButton({
       bold: false,
       fontSize: 14,
       lineHeight: 20,
-      colorToken: filled ? onFillToken.name : "Colors/foreground/0",
-      colorFallback: filled ? onFillToken.fallback : "#000000",
+      colorToken: filled ? onFillToken.name : surfaceInk.name,
+      colorFallback: filled ? onFillToken.fallback : surfaceInk.fallback,
       variableByName,
       stats,
       width: 96,
@@ -53812,7 +53823,9 @@ async function updateAISearchButtonVariant(
   component.cornerRadius = KOZMOS_RADIUS.pill;
   component.fills = [];
   component.strokes = [];
-  component.opacity = disabled ? 0.5 : 1;
+  // Disabled is the disabled pair, not half (decision 197): the disc
+  // Disabled/fill, the glyph Disabled/foreground, the ring as it is.
+  component.opacity = 1;
   markControlSurface(component);
   bindSizeVariables(
     component,
@@ -53861,8 +53874,11 @@ async function updateAISearchButtonVariant(
   const disc = figma.createEllipse();
   disc.name = "Disc";
   disc.resize(AI_SEARCH_BUTTON_DISC_SIZE, AI_SEARCH_BUTTON_DISC_SIZE);
+  const discFill = disabled
+    ? DISABLED_FILL
+    : { name: "Colors/background/0", fallback: "#FFFFFF" };
   disc.fills = [
-    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+    paintFromVariable(discFill.name, discFill.fallback, variableByName, stats),
   ];
   disc.strokes = [];
   component.appendChild(disc);
@@ -53873,7 +53889,9 @@ async function updateAISearchButtonVariant(
 
   const icon = await productSdkIconInstance({
     iconName: AI_SEARCH_BUTTON_ICON,
-    token: { name: "Colors/theme/600", fallback: "#1051E8" },
+    token: disabled
+      ? DISABLED_FOREGROUND
+      : { name: "Colors/theme/600", fallback: "#1051E8" },
     size: AI_SEARCH_BUTTON_ICON_SIZE,
     sizeToken: "AISearchButton/icon/size",
     variableByName,
@@ -53910,7 +53928,7 @@ async function configureAISearchButtonProperties(componentSet, stats) {
 
 const AI_SEARCH_BUTTON_DESCRIPTION = [
   "Kozmos AISearchButton generated from the React AISearchButton API — the search row's AI search, the prototype's.",
-  "State maps to disabled; a disabled button is at 50 %.",
+  "State maps to disabled; a disabled button is the disabled pair (decision 197): the disc Disabled/fill and the icon Disabled/foreground, the ring as it is, nothing dimmed.",
   "A 48 circle: the ring is a band 2.5 wide around a 43 disc, a conic gradient of the six data colours (red, yellow, success, teal, blue, purple, red) that turns in the product — 3.6 s a turn, still under reduced motion — and rests here; the icon is 16 in the theme's colour.",
   "Icon swaps from the Icons page; label is what assistive technology hears and draws nothing.",
 ];
@@ -57243,9 +57261,13 @@ async function rebuildBrandLoaderComponent() {
 // zone (FileUpload, 112 as Cloud's) with its hint line; and the URL row, an
 // Input and an outline Add. The Core parts are slots, as FeedbackCard draws
 // its Rating and Textarea: they are Core's sets, not this one's. State is
-// what changes the drawing: Default; Full, the count at max and the drop zone
-// and the URL row off; Disabled, the whole field at 50%. The cropper and the
-// preview are dialogs React opens; the set does not draw them.
+// what changes the drawing: Default; Full, the count at max, the drop zone
+// and the URL field off (their slots at 50%) and Add a disabled Button;
+// Disabled, the Buttons React disables drawn disabled (decision 197: Frame
+// and Remove disabled ghosts, the pair's fill under its foreground, and Add
+// a disabled outline; Preview stays enabled) with the slots off as Full's,
+// nothing else dimmed. The
+// cropper and the preview are dialogs React opens; the set does not draw them.
 const IMAGE_FIELD_STATES = ["Default", "Full", "Disabled"];
 const IMAGE_FIELD_GEOMETRY = {
   width: 368,
@@ -57285,10 +57307,9 @@ async function updateImageFieldVariant(
     height: 320,
   });
   productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
-  // A disabled field is drawn at a plain 50%. React disables each part, and a
-  // disabled Button is the disabled pair since decision 197: the parts' own
-  // disabled looks are not drawn one by one here.
-  component.opacity = disabled ? 0.5 : 1;
+  // React disables each part, not the field: each Button is drawn disabled
+  // below, the slots off, and the field itself is never dimmed.
+  component.opacity = 1;
 
   const header = productSdkFrame("Header", {
     direction: "horizontal",
@@ -57381,22 +57402,36 @@ async function updateImageFieldVariant(
   details.appendChild(actions);
   // Each glyph is the fallback only, drawn when Curated Icons has not run:
   // eye, crop-01 (the Pointr library's) and trash-01 are curated.
-  for (const [name, iconName, glyph] of [
-    ["Preview Button", "eye", "◉"],
-    ["Frame Button", "crop-01", "⌗"],
-    ["Remove Button", "trash-01", "×"],
+  // Preview stays enabled on a disabled field, as React's does: only Frame
+  // and Remove take disabled.
+  for (const [name, iconName, glyph, follows] of [
+    ["Preview Button", "eye", "◉", false],
+    ["Frame Button", "crop-01", "⌗", true],
+    ["Remove Button", "trash-01", "×", true],
   ]) {
+    const off = disabled && follows;
     const button = await productSdkControlButton({
       name,
       glyph,
       iconName,
       filled: false,
+      disabled: off,
       fonts,
       variableByName,
       stats,
     });
-    // React's ghost IconButton: no fill and no edge until hovered.
-    button.fills = [];
+    // React's ghost IconButton: no fill and no edge until hovered; disabled,
+    // a ghost on the pair's fill (decision 197).
+    button.fills = off
+      ? [
+          paintFromVariable(
+            DISABLED_FILL.name,
+            DISABLED_FILL.fallback,
+            variableByName,
+            stats,
+          ),
+        ]
+      : [];
     button.strokes = [];
     button.strokeWeight = 0;
     actions.appendChild(button);
@@ -57412,7 +57447,7 @@ async function updateImageFieldVariant(
     stats,
     muted: true,
   });
-  upload.opacity = full ? 0.5 : 1;
+  upload.opacity = full || disabled ? 0.5 : 1;
   appendWithSizing(component, upload, "FILL", "FIXED");
 
   const url = productSdkFrame("URL Row", {
@@ -57424,7 +57459,7 @@ async function updateImageFieldVariant(
     width: inner,
     height: geometry.field,
   });
-  url.opacity = full ? 0.5 : 1;
+  url.opacity = 1;
   appendWithSizing(component, url, "FILL", "HUG");
   const urlField = await productSdkSlot({
     name: "URL Slot",
@@ -57436,15 +57471,17 @@ async function updateImageFieldVariant(
     stats,
     muted: true,
   });
+  urlField.opacity = full || disabled ? 0.5 : 1;
   appendWithSizing(url, urlField, "FILL", "FIXED");
   // The curated plus, as every Button draws it; "+" only in a file without
-  // the curated icons.
+  // the curated icons. Full or disabled, a disabled outline Button.
   const add = await productSdkControlButton({
     name: "Add Button",
     glyph: "+",
     iconName: "plus",
     label: "Add",
     filled: false,
+    disabled: full || disabled,
     fonts,
     variableByName,
     stats,
@@ -57464,7 +57501,7 @@ function configureImageFieldProperties(componentSet, stats) {
 
 const IMAGE_FIELD_DESCRIPTION = [
   "Kozmos ImageField generated from the React ImageField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), CLOUD-UI-004's image part.",
-  "Label maps to label. State: Default; Full, the count at max with the drop zone and URL row off; Disabled maps to disabled, drawn at 50%.",
+  "Label maps to label. State: Default; Full, the count at max with the drop zone and URL field off and Add disabled; Disabled maps to disabled: Frame, Remove and Add disabled (decision 197, the disabled pair), Preview enabled, the slots off, the field itself undimmed.",
   "Each image: a thumbnail at aspectRatio, its alt text (an Input), Preview, Frame (the cropper) and Remove. The slots are Core's FileUpload, Input and Button.",
   "The cropper and the full-screen preview are Dialogs React opens; max, accept, maxSize and aspectRatio are set in code.",
 ];
@@ -57522,8 +57559,8 @@ async function rebuildImageFieldComponent() {
 // a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
 // 4 between items; a chosen tool is a pressed ToggleButton, the theme fill
 // under its ink; every other item is Cloud's grey ink (foreground 400), and a
-// disabled one is drawn at half strength (a disabled Button is the disabled
-// pair since decision 197; the toolbar's items are still at half). Dividers
+// disabled one, tool or action, is the disabled pair (decision 197):
+// Disabled/fill under Disabled/foreground, nothing dimmed. Dividers
 // are Border/Subtle, 1 × 32, 8 from the items each side (4 of margin and the
 // gap). Mode is one of Cloud's seven toolbars, with Cloud's items; Overflow
 // True draws it on a 320 map, the items that do not fit gone into More, as
@@ -57704,9 +57741,14 @@ async function createMapEditToolbarItem(
 ) {
   const g = MAP_EDIT_TOOLBAR_GEOMETRY;
   const on = item.state === "On";
+  // Disabled, a tool or an action is the disabled pair, undimmed (decision
+  // 197; map-edit-toolbar.css): Disabled/fill under Disabled/foreground.
+  const off = item.state === "Disabled";
   const ink = on
     ? THEME_FILL_FOREGROUND
-    : { name: "Colors/foreground/400", fallback: "#5D626F" };
+    : off
+      ? DISABLED_FOREGROUND
+      : { name: "Colors/foreground/400", fallback: "#5D626F" };
   // React's item is min-inline-size 56, inline-size auto: it hugs its
   // label, 4 each side, and stops at 56, so "Straighten" is wider than 56.
   const frame = figma.createFrame();
@@ -57726,17 +57768,11 @@ async function createMapEditToolbarItem(
   frame.cornerRadius = g.itemRadius;
   frame.clipsContent = false;
   frame.strokes = [];
-  frame.fills = on
-    ? [
-        paintFromVariable(
-          THEME_FILL.name,
-          THEME_FILL.fallback,
-          variableByName,
-          stats,
-        ),
-      ]
+  const ground = on ? THEME_FILL : off ? DISABLED_FILL : null;
+  frame.fills = ground
+    ? [paintFromVariable(ground.name, ground.fallback, variableByName, stats)]
     : [];
-  frame.opacity = item.state === "Disabled" ? 0.5 : 1;
+  frame.opacity = 1;
   frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
   frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
   frame.setSharedPluginData(RUN_NAMESPACE, "itemState", item.state || "Off");
@@ -57913,7 +57949,7 @@ function configureMapEditToolbarProperties(_componentSet, _stats) {}
 const MAP_EDIT_TOOLBAR_DESCRIPTION = [
   "Kozmos MapEditToolbar generated from the React MapEditToolbar API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
   "Mode is one of Pointr Cloud's seven toolbars (CLOUD-UI-005), with Cloud's items; in code the items are MapEditToolbar.items, the product's.",
-  "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is at half strength. In code the chosen tool is MapEditToolbar.value.",
+  "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is the disabled pair, Disabled/fill under Disabled/foreground, nothing dimmed (decision 197). In code the chosen tool is MapEditToolbar.value.",
   "Overflow True draws a 320 map: what does not fit goes into More, from the end. In code it follows the width; it is no prop.",
   "The card is 60 tall, padding 6 and 8, corner 16; items 48 tall and at least 56 wide, hugging their labels, a 24 icon over an 11/14 label (decisions 139 and 151).",
 ];
@@ -61473,6 +61509,7 @@ async function updateIconButtonVariant(
 
   await syncIconButtonCounter(component, {
     size,
+    state,
     variableByName,
     fonts: fonts || (await loadButtonFonts(stats)),
     stats,
@@ -61526,9 +61563,19 @@ function iconButtonCounterPosition(size) {
  */
 async function syncIconButtonCounter(
   component,
-  { size, variableByName, fonts, stats },
+  { size, state, variableByName, fonts, stats },
 ) {
-  const config = counterConfig("Brand");
+  // A disabled IconButton's counter is the disabled pair turned over: the
+  // pill Disabled/foreground, its digits Disabled/fill (the owner, 17 Nov).
+  const config =
+    state === "Disabled"
+      ? {
+          background: DISABLED_FOREGROUND.name,
+          backgroundFallback: DISABLED_FOREGROUND.fallback,
+          foreground: DISABLED_FILL.name,
+          foregroundFallback: DISABLED_FILL.fallback,
+        }
+      : counterConfig("Brand");
   const metrics = counterMetrics("Small");
 
   let counter = directChildNamed(component, "Counter");
@@ -90555,12 +90602,13 @@ function tabsTriggerConfig(state, isActive) {
  * filled variant (default, destructive, secondary, subtle) takes the fill
  * under it; an outline keeps the page under it and its edge takes the
  * foreground; ghost and link change their words only; glass keeps its glass
- * fill and bevel. Nothing is dimmed. A loading Button is disabled in React
- * while it waits (Button.tsx: disabled={isLoading || disabled}), so Loading
- * draws the same pair, its spinner in the foreground.
+ * fill and bevel. Nothing is dimmed. A ghost takes the fill too (the owner,
+ * 17 Nov), so a disabled ghost never reads as an enabled grey one. Loading is
+ * busy, not unavailable: it keeps the variant's own idle paint at full
+ * strength, its spinner in the label's colour (React's data-loading).
  */
 function buttonConfig(variant, state) {
-  if (state === "Disabled" || state === "Loading") {
+  if (state === "Disabled") {
     return disabledButtonConfig(variant);
   }
   const configs = {
@@ -90639,7 +90687,7 @@ function disabledButtonConfig(variant) {
       ink,
     );
   }
-  if (variant === "Ghost" || variant === "Link") return ink;
+  if (variant === "Link") return ink;
   if (variant === "Glass") {
     return Object.assign(
       {
@@ -90651,7 +90699,8 @@ function disabledButtonConfig(variant) {
       ink,
     );
   }
-  // Default, Destructive, Secondary, Subtle, and any variant not named: filled.
+  // Default, Destructive, Secondary, Subtle, Ghost, and any variant not
+  // named: on the fill.
   return Object.assign(
     {
       background: DISABLED_FILL.name,

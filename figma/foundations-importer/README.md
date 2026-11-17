@@ -68,7 +68,7 @@ Select **Button** and click **Build** to create the first code-aligned component
 
 Select **Button** and click **Update** after token changes or safe Button polish. It updates the existing `Button` component set in place so the Code Connect node ID stays stable.
 
-`State=Disabled` and `State=Loading` are drawn from the disabled pair (decision 197, GAP-218), as React draws a disabled Button and a loading one, which is disabled while it waits: the label, icon and spinner in `Disabled/foreground`; a filled variant (Default, Destructive, Secondary, Subtle) on `Disabled/fill`; Outline on `Surface/0` with its edge in `Disabled/foreground`; Ghost and Link their words only; Glass keeps its glass and bevel. Nothing is dimmed. IconButton, SplitButton, FloatingActionButton, MapControlButton (its surface the pair's fill, on or off), TourStep's disabled Next and RoutePreviewPanel's Continue draw the same. Run **Import Foundations** first, so the Kozmos Semantics collection has `Disabled/fill` and `Disabled/foreground`; until it has, the painters draw their fallbacks unbound.
+`State=Disabled` is drawn from the disabled pair (decision 197, GAP-218), as React draws a disabled Button: the label, icon and spinner in `Disabled/foreground`; a filled variant (Default, Destructive, Secondary, Subtle) and Ghost on `Disabled/fill`; Outline on `Surface/0` with its edge in `Disabled/foreground`; Link its words only; Glass keeps its glass and bevel. Nothing is dimmed. `State=Loading` is busy, not unavailable: the variant's own idle paint at full strength, its spinner in the label's colour. IconButton (its counter, disabled, a `Disabled/foreground` pill with `Disabled/fill` digits), SplitButton, FloatingActionButton, MapControlButton (its surface the pair's fill, on or off), TourStep's disabled Next, RoutePreviewPanel's Continue, MapEditToolbar's disabled items, ImageField's Buttons and AISearchButton (its disc and icon) draw the same. Run **Import Foundations** first, so the Kozmos Semantics collection has `Disabled/fill` and `Disabled/foreground`; until it has, the painters draw their fallbacks unbound.
 
 Component updates also ensure component-level float variables for fixed geometry that is not present in the foundations payload yet: widths, heights, padding, gap, radius, stroke width, icon size, spinner size, and text size/line-height where applicable. Interactive component bounds are kept at 44px minimum across all generated sizes so Figma, React, Vue, iOS, and Android share the same touch-target contract. The repo-level source for this contract is `packages/tokens/src/component-contracts.json`; run `pnpm components:contract:check` after platform or generator changes to catch drift. Where an existing primitive/layout token has the same value, the component token aliases to it instead of duplicating a raw number. The updater applies geometry variables to generated component roots and child icon/spinner layers where the Figma runtime supports numeric variable bindings. Generated text uses the plugin Typography config (`Inter` Regular/Medium/Bold by default, with same-family, Inter, and Arial fallbacks — Inter stands in for the System family role, since Figma takes one family and the role is a stack) across components, examples, docs, and local text styles, while font size and line height still bind to component variables. The library audit checks that local text styles and generated component text match the active Typography config; after changing font settings, run **Apply Text Styles** and update any component sets that still report stale generated text. Figma does not expose font family and weight as normal variable bindings, so the resolved family and styles remain token-aligned direct typography values.
 
@@ -118,7 +118,8 @@ convention that avoids variant explosion:
 
 - **AISearchButton** — `State` of Default and Disabled: the search row's AI
   search, a 48 circle whose ring is a 2.5 band of the six data colours around a
-  43 disc, with a 16 stars-01 icon. Run Curated Icons first.
+  43 disc, with a 16 stars-01 icon; Disabled, the disc `Disabled/fill` and the
+  icon `Disabled/foreground`, the ring as it is. Run Curated Icons first.
 - **CategoryField** — `Tint` of Theme and the taxonomy's eight category colours:
   the search field's form once a category is chosen, 48 tall with a 28 icon, a
   15/20 label, a 22 count pill (`Show Count`) and a 32 clear. Run Curated Icons
@@ -219,7 +220,7 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   elevation; items 48 tall and at least 56 wide, each hugging its label as
   React's do (`MapEditToolbar/item/*`, the width their minimum), a 24 icon
   over an 11/14 label (MapEditToolbar / Label); a chosen tool is the theme fill, a disabled
-  item at half strength; dividers `Border/Subtle`, 32 tall. Its icons are UI
+  item the disabled pair (`Disabled/fill` under `Disabled/foreground`); dividers `Border/Subtle`, 32 tall. Its icons are UI
   icons the Pointr library holds (decision 121); run Curated Icons first.
 - **ImageField** — Pointr Cloud's image field (CLOUD-UI-004's image part,
   decisions 133 and 183): a bordered group 368 wide, the `Label` text property
@@ -227,8 +228,9 @@ Form-Factor, and **Update All Product / SDK** updates them with the rest.
   thumbnail beside its alt-text Input slot and its Preview (`eye`), Frame
   (`crop-01`) and Remove (`trash-01`) ghost icon buttons; the FileUpload slot,
   112 tall; and the URL row, an Input slot and an outline Add. `State` is
-  Default, Full (the count at max, the drop zone and URL row at 50%) and
-  Disabled (the whole field at 50%). The cropper and the full-screen preview
+  Default, Full (the count at max, the drop zone and URL field at 50%, Add a
+  disabled Button) and Disabled (Frame, Remove and Add disabled, the disabled
+  pair, Preview enabled, and the slots as Full's; the field itself undimmed). The cropper and the full-screen preview
   are dialogs React opens, not drawn. Run Curated Icons first: it carries
   `crop-01` from the Pointr icon library, which the Frame button draws.
 

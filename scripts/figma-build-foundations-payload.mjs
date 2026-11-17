@@ -246,8 +246,10 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Components/Subtle Buttons/themed/button/foreground/content/idle", MARK],
   // A disabled Button's foreground (decision 197) is its label, its icon's
   // stroke and fill, its loading ring, an outline's edge and a SplitButton's
-  // seam.
-  ["Semantics/Disabled/foreground", MARK],
+  // seam; and a disabled IconButton's counter pill (a frame), whose digits
+  // are the fill.
+  ["Semantics/Disabled/foreground", ["FRAME_FILL", ...MARK]],
+  ["Semantics/Disabled/fill", ["TEXT_FILL"]],
   // The inverse tooltip (decision 192): its edge is its surface, and its
   // on-surface is its words.
   ["Semantics/Inverse/surface", ["STROKE_COLOR"]],
