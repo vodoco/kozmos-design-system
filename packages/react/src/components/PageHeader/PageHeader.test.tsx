@@ -150,3 +150,43 @@ describe("PageHeader (GAP-036, decision 135)", () => {
     expect(node).toBe(root);
   });
 });
+
+// Decision 210 (owner, 17 Nov): a node beside the title, outside the h1.
+describe("PageHeader titleAddon", () => {
+  it("draws the addon after the title and before the info button, outside the heading", () => {
+    render(
+      <PageHeader
+        title="Map Content"
+        titleAddon={<span>Changes Awaiting Publish</span>}
+        info={<button type="button">About this page</button>}
+      />,
+    );
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent(/^Map Content$/);
+    const addon = screen.getByText("Changes Awaiting Publish");
+    expect(heading).not.toContainElement(addon);
+    const slot = addon.closest('[data-slot="page-header-title-addon"]')!;
+    expect(slot).toHaveClass("kozmos-page-header-title-addon");
+    const line = slot.parentElement!;
+    expect(line).toHaveClass("kozmos-page-header-title");
+    expect(line).toHaveAttribute("data-addon", "");
+    const order = Array.from(line.children).map(
+      (child) => child.getAttribute("data-slot") ?? child.tagName,
+    );
+    expect(order).toEqual([
+      "H1",
+      "page-header-title-addon",
+      "page-header-info",
+    ]);
+  });
+
+  it("with no addon, the title's line is unchanged", () => {
+    render(<PageHeader title="Settings" />);
+    const line = screen.getByRole("heading", { level: 1 }).parentElement!;
+    expect(line).not.toHaveAttribute("data-addon");
+    expect(line.children).toHaveLength(1);
+    expect(
+      document.querySelector('[data-slot="page-header-title-addon"]'),
+    ).toBeNull();
+  });
+});

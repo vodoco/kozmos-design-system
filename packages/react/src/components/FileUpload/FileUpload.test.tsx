@@ -3,6 +3,8 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FileUpload } from "./FileUpload";
+import { buttonVariants } from "../../recipes/button";
+import { cn } from "../../utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("FileUpload", () => {
@@ -359,5 +361,101 @@ describe("FileUpload preview=image", () => {
     expect(
       screen.getByRole("button", { name: "Entfernen: acme.png" }),
     ).toBeInTheDocument();
+  });
+});
+
+// GAP-274: a Button-sized trigger for a field with no room for a drop area,
+// New Client's "Add logo", picking and validating as the drop area does.
+describe("FileUpload variant=button", () => {
+  it("is an outline Button with the upload icon and its words, opening the picker", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <FileUpload variant="button" browseLabel="Add logo" />,
+    );
+    const trigger = screen.getByRole("button", { name: "Add logo" });
+    expect(trigger).toHaveAttribute("data-kozmos-file-trigger", "button");
+    expect(trigger.className).toBe(cn(buttonVariants({ variant: "outline" })));
+    expect(trigger.className).not.toContain("border-dashed");
+    expect(trigger.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.queryByText("or drag and drop")).not.toBeInTheDocument();
+    const input = container.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    const opened = vi.spyOn(input, "click");
+    await user.click(trigger);
+    expect(opened).toHaveBeenCalledTimes(1);
+  });
+
+  it("says Choose file with no words of the product's, and names the field with its label", () => {
+    const { unmount } = render(<FileUpload variant="button" />);
+    expect(
+      screen.getByRole("button", { name: "Choose file" }),
+    ).toBeInTheDocument();
+    unmount();
+    render(<FileUpload variant="button" browseLabel="Add logo" label="Logo" />);
+    expect(
+      screen.getByRole("button", { name: "Add logo: Logo" }),
+    ).toBeInTheDocument();
+  });
+
+  it("validates as the drop area does: a file over maxSize is turned away", async () => {
+    const user = userEvent.setup();
+    const handleFilesChange = vi.fn();
+    const { container } = render(
+      <FileUpload
+        variant="button"
+        browseLabel="Add logo"
+        maxSize={2}
+        onFilesChange={handleFilesChange}
+      />,
+    );
+    const input = container.querySelector('input[type="file"]');
+    const file = new File(["too large"], "logo.png", { type: "image/png" });
+    await user.upload(input as HTMLInputElement, file);
+    expect(screen.getByText("logo.png exceeds 2 B.")).toBeInTheDocument();
+    expect(handleFilesChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Add logo" })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  });
+
+  it("takes a file dropped on it, and lists what was chosen", () => {
+    const handleFilesChange = vi.fn();
+    render(
+      <FileUpload
+        variant="button"
+        browseLabel="Add logo"
+        onFilesChange={handleFilesChange}
+      />,
+    );
+    const file = new File(["hello"], "plan.pdf", { type: "application/pdf" });
+    fireEvent.drop(screen.getByRole("button", { name: "Add logo" }), {
+      dataTransfer: { files: [file] },
+    });
+    expect(handleFilesChange).toHaveBeenCalledWith([file]);
+    expect(screen.getByText("plan.pdf")).toBeInTheDocument();
+  });
+
+  it("with preview=image, the chosen image takes the button's place, and removing it brings the button back", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <FileUpload variant="button" preview="image" browseLabel="Add logo" />,
+    );
+    const input = container.querySelector('input[type="file"]');
+    const file = new File(["png"], "logo.png", { type: "image/png" });
+    await user.upload(input as HTMLInputElement, file);
+    expect(
+      screen.queryByRole("button", { name: "Add logo" }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Remove file: logo.png" }),
+    );
+    expect(screen.getByRole("button", { name: "Add logo" })).toHaveFocus();
+  });
+
+  it("is disabled with the field", () => {
+    render(<FileUpload variant="button" browseLabel="Add logo" disabled />);
+    expect(screen.getByRole("button", { name: "Add logo" })).toBeDisabled();
   });
 });

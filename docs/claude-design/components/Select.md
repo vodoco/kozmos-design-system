@@ -104,10 +104,19 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## SelectTrigger
 
-It forwards its ref to `HTMLButtonElement`. Its props are `Omit<SelectPrimitive.SelectTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref"> & { error?: boolean | string; wrapperClassName?: string }`.
+It forwards its ref to `HTMLButtonElement`. Its props are `Omit<SelectPrimitive.SelectTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref"> & { error?: boolean | string; wrapperClassName?: string; variant?: "default" | "ghost" }`.
 
 - `error`: `boolean | string`, optional.
 - `wrapperClassName`: `string`, optional.
+- `variant`: `"default" | "ghost"`, optional, default `"default"`.
+
+  `default` is the bordered field. `ghost` draws no edge and no fill
+  at rest, only the value and the chevron, as wide as they are, and the
+  hover fill under the pointer and while open (decision 151,
+  CLOUD-UI-009): the map's level control, which sits in a card of its
+  own under the building's name. It opens, picks and is read as the
+  field does; an error still draws the field's red edge.
+
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 

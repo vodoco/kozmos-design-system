@@ -71,6 +71,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `EmptyStateProps`, which 
   (removed 2026-09-25) and 64 this component's. `compact` brings the same
   content to about 150 (GAP-009).
 
+- `tone`: `Emotion`, optional.
+
+  What the empty state means (GAP-213, decision 194): one of Tag's six
+  emotions. Set, it is a card of its own: the emotion's quiet surface,
+  edged in the emotion's text colour as Tag's outline is, with its words
+  in the ink that pairs with that surface (4.5:1 in both themes) and its
+  icon in the emotion's text colour on a disc of the page's colour.
+  "No Map Content Found" is the alert tone. Unset, it draws as it always
+  has, on the page with no edge.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -104,4 +114,12 @@ interface EmptyStateProgress {
   /** How far, in words, shown beside the label and said as the bar's value: "40%", "12 of 30 MB". */
   valueText?: string;
 }
+```
+
+### Emotion
+
+From `@kozmos-ds/react`, which does not export it by name.
+
+```ts
+type Emotion = (typeof EMOTIONS)[number];
 ```

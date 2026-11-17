@@ -66,6 +66,14 @@ It forwards its ref to `HTMLDivElement`. Its props are `PageHeaderProps`, which 
 
   Above the title: the page's place, a Kozmos `Breadcrumb`.
 
+- `titleAddon`: `React.ReactNode`, optional.
+
+  Beside the title, after it and before `info`: a node that goes with the
+  title, such as a status `Tag` ("Changes Awaiting Publish"), as
+  ListItem's `titleAddon` is (decision 210). It is outside the `h1`, so
+  the heading is the title alone, and it is centred on the title's line;
+  where the line has no room it wraps under the title, at its start.
+
 - `info`: `React.ReactNode`, optional.
 
   Beside the title: a button that says more about the page, as an

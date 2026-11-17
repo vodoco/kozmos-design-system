@@ -1,5 +1,6 @@
 import { Meta, Story, Canvas } from "@storybook/blocks";
 import * as ChipStories from "./Chip.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
 
 <Meta of={ChipStories} />
 
@@ -76,6 +77,101 @@ chip and its remove are named by the whole label. In MultiSelect this keeps a lo
 the field's clear and open buttons. On Compose the words take what the icon and remove leave; in
 a row that scrolls sideways, which sets no width, a chip is as wide as its words. On SwiftUI a
 ChipGroup that does not fit scrolls sideways, so each chip keeps its words.
+
+## Emotions
+
+`emotion` gives a chip one of Tag's six emotions (GAP-170, decision 200): `themed`, `neutral`, `success`,
+`danger`, `informative` or `alert`, for statuses a product picks or removes, such as a field's "Changes
+Awaiting Publish", "Marked for Deletion" or "New". At rest the chip is the emotion's quiet surface with its ink,
+edged in the emotion's text colour; selected, it is filled with that text colour, with the page's colour as its
+ink, which reads on it as the emotion's text reads on the page. Both are 4.5:1 in both themes, and
+`pnpm tokens:contrast:check` holds them. Under the pointer a chip at rest deepens its tint, the emotion's text
+mixed a tenth into its surface (its words still 4.5:1 on it): the hover fill would not show on the neutral
+emotion, whose surface in dark is the hover fill itself. A selected chip holds its fill. Removable and
+single-choice chips take an emotion as any other chip does.
+
+The emotion decides the colour whatever the `variant`. The three variants read as emotions, and keep their own
+drawing, so a chip set today is unchanged: `neutral` is the neutral emotion, `brand` is `themed` and
+`destructive` is `danger`. A new chip that means something takes `emotion`. SwiftUI's and Compose's
+`KozmosChip` take `emotion`, a `KozmosEmotion`, and draw the same; Compose's is an overload with `emotion`
+second, so a positional call made before it still means what it did.
+
+The remove button's hover is the hover fill (decision 173). Under the pointer the chip itself turns the hover
+fill too, so while its remove is hovered the chip goes back to its fill at rest, and the button's hover shows on
+it as any hover shows on the page, in both themes (GAP-251). On an emotion chip the remove deepens the tint as
+the chip does; on a selected emotion chip it turns to the page's colour with the emotion's text on it.
+
+<PlatformSnippets
+    react={`
+import { Chip, ChipGroup } from "@kozmos-ds/react";
+import { useState } from "react";
+
+export function FieldStatusChips() {
+  const [showNew, setShowNew] = useState(true);
+  return (
+    <ChipGroup>
+      <Chip emotion="informative" selected={showNew} onClick={() => setShowNew(!showNew)}>
+        New
+      </Chip>
+      <Chip emotion="danger" onRemove={() => undefined}>
+        Marked for Deletion
+      </Chip>
+    </ChipGroup>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosChip } from "@kozmos-ds/vue/react-bridge"
+import { ref } from "vue"
+
+const showNew = ref(true)
+</script>
+
+<template>
+  <KozmosChip emotion="informative" :selected="showNew" @click="showNew = !showNew">New</KozmosChip>
+  <KozmosChip emotion="danger" @remove="() => {}">Marked for Deletion</KozmosChip>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct FieldStatusChips: View {
+    @State private var showNew = true
+
+    var body: some View {
+        KozmosChipGroup {
+            KozmosChip(text: "New", emotion: .informative, selected: showNew, action: { showNew.toggle() })
+            KozmosChip(text: "Marked for Deletion", emotion: .danger, onRemove: {})
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.KozmosEmotion
+import com.kozmos.components.chip.KozmosChip
+import com.kozmos.components.chip.KozmosChipGroup
+
+@Composable
+fun FieldStatusChips(onToggleNew: () -> Unit, onRemoveDeletion: () -> Unit) {
+    KozmosChipGroup {
+        KozmosChip(
+            text = "New",
+            emotion = KozmosEmotion.Informative,
+            selected = true,
+            onClick = onToggleNew
+        )
+        KozmosChip(
+            text = "Marked for Deletion",
+            emotion = KozmosEmotion.Danger,
+            onRemove = onRemoveDeletion
+        )
+    }
+}
+`}
+/>
 
 ## Android Jetpack Compose
 

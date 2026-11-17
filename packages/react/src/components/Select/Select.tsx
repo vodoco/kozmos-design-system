@@ -107,6 +107,15 @@ const SelectTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & {
     error?: boolean | string;
     wrapperClassName?: string;
+    /**
+     * `default` is the bordered field. `ghost` draws no edge and no fill
+     * at rest, only the value and the chevron, as wide as they are, and the
+     * hover fill under the pointer and while open (decision 151,
+     * CLOUD-UI-009): the map's level control, which sits in a card of its
+     * own under the building's name. It opens, picks and is read as the
+     * field does; an error still draws the field's red edge.
+     */
+    variant?: "default" | "ghost";
   }
 >(
   (
@@ -114,6 +123,7 @@ const SelectTrigger = React.forwardRef<
       className,
       children,
       error,
+      variant = "default",
       wrapperClassName,
       id,
       "aria-describedby": ariaDescribedBy,
@@ -154,6 +164,7 @@ const SelectTrigger = React.forwardRef<
           ref={ref}
           id={triggerId}
           data-mixed={mixed ? "" : undefined}
+          data-variant={variant === "ghost" ? "ghost" : undefined}
           aria-invalid={hasError || ariaInvalid}
           aria-describedby={mergeAriaIds(
             ariaDescribedBy,
@@ -162,6 +173,8 @@ const SelectTrigger = React.forwardRef<
           )}
           className={cn(
             "flex h-field w-full items-center justify-between rounded-control border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+            variant === "ghost" &&
+              "w-auto max-w-full self-start justify-start gap-2 border-transparent bg-transparent hover:bg-hover-fill data-[state=open]:bg-hover-fill",
             hasError &&
               "border-destructive text-destructive-text focus:ring-destructive",
             className,

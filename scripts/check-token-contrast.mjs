@@ -91,6 +91,48 @@ for (const emotion of [
     });
 }
 
+// An EmptyState in a tone (GAP-213, decision 194) and an emotion Chip
+// (GAP-170, decision 200) stand on the emotion's surface, with its ink as
+// their words and the remove's glyph. The toned EmptyState's icon is the
+// emotion's text on a disc of the page's colour. A selected emotion Chip is
+// filled with the emotion's text and inked in the page's colour, which is
+// the text's own pair turned over: it reads as the text reads on the page.
+for (const emotion of [
+  "themed",
+  "neutral",
+  "success",
+  "danger",
+  "informative",
+  "alert",
+]) {
+  contract.pairs.push(
+    {
+      name: `EmptyState tone and Chip ${emotion} at rest: words on the emotion's surface`,
+      background: `semantics-emotion-${emotion}-surface`,
+      foreground: `semantics-emotion-${emotion}-on-surface`,
+      minimum: 4.5,
+    },
+    {
+      name: `EmptyState tone ${emotion}: the icon on the page's disc (non-text)`,
+      background: "primitives-colors-background-0",
+      foreground: `semantics-emotion-${emotion}-text`,
+      minimum: 3,
+    },
+    {
+      name: `Chip ${emotion} selected: the page's colour on the emotion's text`,
+      background: `semantics-emotion-${emotion}-text`,
+      foreground: "primitives-colors-background-0",
+      minimum: 4.5,
+    },
+    {
+      name: `Chip ${emotion} selected: the remove hovered, the emotion's text on the page's colour (non-text)`,
+      background: "primitives-colors-background-0",
+      foreground: `semantics-emotion-${emotion}-text`,
+      minimum: 3,
+    },
+  );
+}
+
 // CardHeader's subtle strip (CLOUD-UI-001; decisions 135 and 139) is theme
 // 0, and what it holds reads on it: the title, the description's muted words,
 // and a ghost IconButton's ink at rest and hovered (a close or help action).

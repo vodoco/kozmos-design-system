@@ -84,6 +84,19 @@ It forwards its ref to `HTMLSpanElement`. Its props are `ChipProps`, which exten
 
 - `active`: `boolean`, optional.
 - `disabled`: `boolean`, optional, default `false`.
+- `emotion`: `Emotion`, optional.
+
+  What the chip means (GAP-170, decision 200): one of Tag's six emotions.
+  Set, it decides the colour whatever the `variant`: at rest the emotion's
+  quiet surface and its ink, edged in the emotion's text colour; selected,
+  filled with that text colour, with the page's colour as its ink. Both
+  read 4.5:1 in both themes. Unset, the variant draws as it always has.
+
+  The variants read as emotions: `neutral` is the neutral emotion, `brand`
+  is `themed` and `destructive` is `danger`. They keep their own drawing,
+  so nothing set today changes; a new chip that means something takes
+  `emotion`.
+
 - `icon`: `React.ReactNode`, optional.
 - `onRemove`: `() => void`, optional.
 - `removeLabel`: `string`, optional.
@@ -132,6 +145,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `ChipGroupProps`, which e
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### Emotion
+
+From `@kozmos-ds/react`, which does not export it by name.
+
+```ts
+type Emotion = (typeof EMOTIONS)[number];
+```
 
 ## Also exported
 

@@ -13,6 +13,7 @@ The `EmptyState` component is used to communicate a zero-results condition or an
 
 ```tsx
 import { EmptyState } from "@kozmos-ds/react";
+import { PlatformSnippets } from "../PlatformSnippets";
 import { SearchMd } from "@kozmos-ds/icons";
 
 <EmptyState
@@ -123,6 +124,86 @@ struct NoMapContent: View {
     }
 }
 ```
+
+## A tone
+
+`tone` makes the empty state a card of its own in one of Tag's six emotions (GAP-213, decision 194):
+`themed`, `neutral`, `success`, `danger`, `informative` or `alert`. "No Map Content Found" on Map Content is
+the alert tone. The card is the emotion's quiet surface, edged 1 in the emotion's text colour as Tag's outline
+is, at the container's radius, padded as the empty state always is. Its title, description, list and progress
+words are the ink that pairs with the surface, 4.5:1 on it in both themes, and its icon is the emotion's text
+colour on a disc of the page's colour, which reads 4.5:1 there as the emotion's text does on the page. The
+progress bar and the action keep their own colours. With no `tone` it draws as it always has, on the page with
+no edge. SwiftUI's and Compose's `KozmosEmptyState` take `tone`, a `KozmosEmotion`, and draw the same card;
+`pnpm tokens:contrast:check` holds the words on each surface and the icon on its disc in both themes.
+
+<PlatformSnippets
+    react={`
+import { EmptyState, Button } from "@kozmos-ds/react";
+import { SearchMd } from "@kozmos-ds/icons";
+
+export function NoMapContent() {
+  return (
+    <EmptyState
+      tone="alert"
+      icon={<SearchMd />}
+      title="No Map Content Found"
+      description="Nothing on this level matches your search."
+      listLabel="What to try"
+      list={["Check the building and level", "Clear the type filters"]}
+      action={<Button variant="outline">Clear filters</Button>}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosEmptyState } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosEmptyState
+    tone="alert"
+    title="No Map Content Found"
+    description="Nothing on this level matches your search."
+    list-label="What to try"
+    :list="['Check the building and level', 'Clear the type filters']"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct MapContentEmpty: View {
+    var body: some View {
+        KozmosEmptyState(
+            title: "No Map Content Found",
+            description: "Nothing on this level matches your search.",
+            list: ["Check the building and level", "Clear the type filters"],
+            listLabel: "What to try",
+            tone: .alert
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.KozmosEmotion
+import com.kozmos.components.emptystate.KozmosEmptyState
+
+@Composable
+fun NoMapContentCard() {
+    KozmosEmptyState(
+        title = "No Map Content Found",
+        description = "Nothing on this level matches your search.",
+        list = listOf("Check the building and level", "Clear the type filters"),
+        listLabel = "What to try",
+        tone = KozmosEmotion.Alert
+    )
+}
+`}
+/>
 
 ## Android Jetpack Compose
 

@@ -1,5 +1,6 @@
 import { Meta, Story, Canvas, Source } from '@storybook/blocks';
 import * as SelectStories from './Select.stories';
+import { PlatformSnippets } from "../PlatformSnippets";
 
 <Meta of={SelectStories} />
 
@@ -175,6 +176,40 @@ struct TypeAcrossSelection: View {
     }
 }
 ```
+
+## A ghost trigger
+
+`variant="ghost"` on `SelectTrigger` draws no edge and no fill at rest, only the value and the chevron, as wide as
+they are, and the hover fill under the pointer and while open (decision 151, CLOUD-UI-009). It is the map's level
+control, borderless under the building's name in a card of its own (decision 139), and stays Select, not a Button
+and a Menu (decision 96). It opens, picks and is read as the field does; an error still draws the field's red edge.
+The bordered field stays the default. The level control is a web part of Pointr Cloud: SwiftUI's and Compose's
+Select keep their one field.
+
+Vue cannot draw it yet: `@kozmos-ds/vue` bridges only Select's root, not its trigger (GAP-230).
+
+<PlatformSnippets
+    react={`
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kozmos-ds/react";
+
+export function LevelControl() {
+  return (
+    <Select defaultValue="1">
+      <SelectTrigger aria-label="Level" variant="ghost">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="1">Level 1</SelectItem>
+        <SelectItem value="2">Level 2</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+    `}
+    vue={`
+<!-- Not yet: @kozmos-ds/vue bridges only Select's root, not SelectTrigger (GAP-230). -->
+    `}
+/>
 
 ## Stories
 
