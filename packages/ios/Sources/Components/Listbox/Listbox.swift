@@ -47,7 +47,14 @@ public struct KozmosListbox: View {
     public let onValueChange: (([String], KozmosListboxOption) -> Void)?
     public let actions: [KozmosPickerAction]
     public let emptyText: String?
+    /// Inside a Dialog, a Popover or a Card (GAP-271): the list draws no box
+    /// of its own, so it is not a box inside the container's box.
+    public let embedded: Bool
 
+    /// - Parameter embedded: No box of its own (GAP-271): no surface, no
+    ///   edge, no corners and no padding round the rows, for a list inside a
+    ///   Dialog, a Popover or a Card, as Switch client's list of clients. The
+    ///   rows are drawn as in every list. `false` by default.
     public init(
         options: [KozmosListboxOption],
         selectedValues: Binding<[String]> = .constant([]),
@@ -56,6 +63,7 @@ public struct KozmosListbox: View {
         maxHeight: CGFloat = 256,
         actions: [KozmosPickerAction] = [],
         emptyText: String? = nil,
+        embedded: Bool = false,
         onValueChange: (([String], KozmosListboxOption) -> Void)? = nil
     ) {
         self.options = options
@@ -65,7 +73,17 @@ public struct KozmosListbox: View {
         self.maxHeight = maxHeight
         self.onValueChange = onValueChange
         self.actions = actions; self.emptyText = emptyText
+        self.embedded = embedded
     }
+
+    /// The panel's surface: the popover's background, or none embedded.
+    var surface: Color { embedded ? Color.clear : KozmosColors.primitivesColorsBackground0 }
+    /// The panel's edge: 1 in the subtle border role, or none embedded.
+    var edgeWidth: CGFloat { embedded ? 0 : 1 }
+    /// The panel's corners: the control radius, or none embedded.
+    var cornerRadius: CGFloat { embedded ? 0 : KozmosDimensions.semanticsRadiusControl }
+    /// The room round the rows: 4, or none embedded.
+    var contentPadding: CGFloat { embedded ? 0 : KozmosDimensions.primitivesLayoutSpacing50 }
 
     public var body: some View {
         ScrollView {
@@ -126,18 +144,18 @@ public struct KozmosListbox: View {
                     }
                 }
             }
-            .padding(KozmosDimensions.primitivesLayoutSpacing50)
+            .padding(contentPadding)
             .background(GeometryReader { proxy in
                 Color.clear.preference(key: KozmosListboxContentHeightKey.self, value: proxy.size.height)
             })
         }
         .frame(maxWidth: .infinity, maxHeight: min(contentHeight ?? maxHeight, maxHeight), alignment: .topLeading)
         .onPreferenceChange(KozmosListboxContentHeightKey.self) { contentHeight = $0 }
-        .background(KozmosColors.primitivesColorsBackground0)
-        .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+        .background(surface)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: edgeWidth)
         )
         .opacity(disabled ? 0.6 : 1)
     }
