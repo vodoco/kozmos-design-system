@@ -41,9 +41,50 @@ enum KozmosTooltipEdge: Sendable {
     var isSide: Bool { self == .left || self == .right }
 }
 
+/// How a tooltip reads (decision 192, GAP-210). Mirrors React's
+/// `TooltipContent.tone`.
+public enum KozmosTooltipTone: Sendable {
+    /// The popover surface under the popover's words, with its edge: what a
+    /// tooltip has always drawn.
+    case `default`
+    /// Dark on a light page and light on a dark one, Pointr Cloud's info and
+    /// guidance tooltips: the bubble and its tip are Semantics.Inverse's
+    /// surface and the words its onSurface. The edge takes the surface, so
+    /// the bubble is the size the default one is.
+    case inverse
+}
+
+extension KozmosTooltipTone {
+    /// The bubble and its tip.
+    var surface: Color {
+        switch self {
+        case .default: return KozmosColors.primitivesColorsBackground0
+        case .inverse: return KozmosColors.semanticsInverseSurface
+        }
+    }
+
+    /// The words.
+    var words: Color {
+        switch self {
+        case .default: return KozmosColors.primitivesColorsForeground0
+        case .inverse: return KozmosColors.semanticsInverseOnsurface
+        }
+    }
+
+    /// The bubble's 1 of edge: the inverse bubble's is its surface, so it is
+    /// drawn as the default one is and is the same size.
+    var edge: Color {
+        switch self {
+        case .default: return KozmosColors.primitivesColorsBackground200
+        case .inverse: return KozmosColors.semanticsInverseSurface
+        }
+    }
+}
+
 public struct KozmosTooltip: ViewModifier {
     let text: String
     let side: KozmosTooltipSide
+    let tone: KozmosTooltipTone
     /// Whether assistive technology hears the text as the view's hint, as it
     /// does by default. Pass `false` where the text repeats the view's own
     /// label, or VoiceOver reads it twice; the bubble still shows.
@@ -52,14 +93,15 @@ public struct KozmosTooltip: ViewModifier {
     @State private var isPresented: Bool
     @Environment(\.layoutDirection) private var layoutDirection
 
-    public init(text: String, side: KozmosTooltipSide = .top, isAccessibilityHint: Bool = true) {
-        self.init(text: text, side: side, isAccessibilityHint: isAccessibilityHint, isPresented: false)
+    public init(text: String, side: KozmosTooltipSide = .top, tone: KozmosTooltipTone = .default, isAccessibilityHint: Bool = true) {
+        self.init(text: text, side: side, tone: tone, isAccessibilityHint: isAccessibilityHint, isPresented: false)
     }
 
     /// Shown from the start, so a test can draw it without pressing anything.
-    init(text: String, side: KozmosTooltipSide, isAccessibilityHint: Bool, isPresented: Bool) {
+    init(text: String, side: KozmosTooltipSide, tone: KozmosTooltipTone = .default, isAccessibilityHint: Bool, isPresented: Bool) {
         self.text = text
         self.side = side
+        self.tone = tone
         self.isAccessibilityHint = isAccessibilityHint
         _isPresented = State(initialValue: isPresented)
     }
@@ -84,7 +126,7 @@ public struct KozmosTooltip: ViewModifier {
                 // the view, against its edge, until 2026-10-21.
                 ZStack {
                     if isPresented {
-                        KozmosTooltipBubble(text: text, side: side)
+                        KozmosTooltipBubble(text: text, side: side, tone: tone)
                             .fixedSize()
                             .transition(.opacity.combined(with: .scale(scale: 0.96)))
                     }
@@ -182,6 +224,7 @@ private struct KozmosTooltipPosition: ViewModifier {
 struct KozmosTooltipBubble: View {
     let text: String
     let side: KozmosTooltipSide
+    var tone: KozmosTooltipTone = .default
     @Environment(\.layoutDirection) private var layoutDirection
 
     var body: some View {
@@ -191,22 +234,22 @@ struct KozmosTooltipBubble: View {
             case .top:
                 VStack(spacing: 0) {
                     content
-                    KozmosTooltipTip(edge: edge)
+                    KozmosTooltipTip(edge: edge, fill: tone.surface)
                 }
             case .bottom:
                 VStack(spacing: 0) {
-                    KozmosTooltipTip(edge: edge)
+                    KozmosTooltipTip(edge: edge, fill: tone.surface)
                     content
                 }
             case .right:
                 HStack(spacing: 0) {
-                    KozmosTooltipTip(edge: edge)
+                    KozmosTooltipTip(edge: edge, fill: tone.surface)
                     content
                 }
             case .left:
                 HStack(spacing: 0) {
                     content
-                    KozmosTooltipTip(edge: edge)
+                    KozmosTooltipTip(edge: edge, fill: tone.surface)
                 }
             }
         }
@@ -218,27 +261,48 @@ struct KozmosTooltipBubble: View {
             .environment(\.layoutDirection, layoutDirection)
             .font(.system(size: 14, weight: .regular))
             .lineLimit(1)
-            .foregroundColor(KozmosColors.primitivesColorsForeground0)
+            .foregroundColor(tone.words)
             .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
             .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing75)
             .background(
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                    .fill(KozmosColors.primitivesColorsBackground0)
+                    .fill(tone.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                    .stroke(KozmosColors.primitivesColorsBackground200, lineWidth: 1)
+                    .stroke(tone.edge, lineWidth: 1)
             )
-            .kozmosElevation(KozmosShadows.semanticsElevationOverlay)
+            .modifier(KozmosTooltipShadow(tone: tone))
+    }
+}
+
+/// The overlay's lift. SwiftUI's shadow falls from each thing drawn, the
+/// words as well as the bubble, so it darkens the bubble round the words: on
+/// the default's light bubble in light, by a level or two, and on its black
+/// one in dark not at all. On the inverse bubble, light in dark under a
+/// shadow at 50%, the words were smudged, so the bubble is drawn whole first
+/// and casts the one shadow. The default draws as it always has.
+private struct KozmosTooltipShadow: ViewModifier {
+    let tone: KozmosTooltipTone
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch tone {
+        case .default:
+            content.kozmosElevation(KozmosShadows.semanticsElevationOverlay)
+        case .inverse:
+            content.compositingGroup().kozmosElevation(KozmosShadows.semanticsElevationOverlay)
+        }
     }
 }
 
 private struct KozmosTooltipTip: View {
     let edge: KozmosTooltipEdge
+    let fill: Color
 
     var body: some View {
         KozmosTooltipTipShape(edge: edge)
-            .fill(KozmosColors.primitivesColorsBackground0)
+            .fill(fill)
             .frame(width: edge.isSide ? 4 : 8, height: edge.isSide ? 8 : 4)
     }
 }
@@ -280,8 +344,10 @@ struct KozmosTooltipTipShape: Shape {
 
 public extension View {
     /// Shows `text` in a bubble on hover or a long press. Pass
-    /// `isAccessibilityHint: false` where the text repeats the view's label.
-    func kozmosTooltip(_ text: String, side: KozmosTooltipSide = .top, isAccessibilityHint: Bool = true) -> some View {
-        modifier(KozmosTooltip(text: text, side: side, isAccessibilityHint: isAccessibilityHint))
+    /// `isAccessibilityHint: false` where the text repeats the view's label,
+    /// and `tone: .inverse` for the dark bubble (decision 192).
+    func kozmosTooltip(_ text: String, side: KozmosTooltipSide = .top, tone: KozmosTooltipTone = .default,
+                       isAccessibilityHint: Bool = true) -> some View {
+        modifier(KozmosTooltip(text: text, side: side, tone: tone, isAccessibilityHint: isAccessibilityHint))
     }
 }

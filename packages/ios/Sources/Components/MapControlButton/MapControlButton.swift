@@ -118,6 +118,9 @@ public struct KozmosMapControlButton<Icon: View>: View {
     /// Someone who has asked iOS to reduce motion still needs to read the new
     /// state; they just should not watch the control grow to show it.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// False under a `.disabled` set round the control: drawn as
+    /// `isDisabled` is.
+    @Environment(\.isEnabled) private var isEnabled
 
     /// The SDK's words sit on a 16 line: the callout's 16 at the default size,
     /// scaled with it.
@@ -231,7 +234,16 @@ public struct KozmosMapControlButton<Icon: View>: View {
         reveal.observe(value, enabled: enabled, duration: revealDuration, delay: revealDelay)
     }
 
+    /// Disabled or loading, the control is drawn from the disabled pair
+    /// (decision 197, GAP-218), as a filled Button is, not at half: its
+    /// surface is its fill, so the surface takes the pair's fill, and the
+    /// words and the mark its foreground, on or off, tinted or filled. The
+    /// ink alone would not do: an off toggle's words are already
+    /// foreground/400.
+    var drawsDisabled: Bool { isDisabled || isLoading || !isEnabled }
+
     private func color(_ tone: KozmosMapControlButtonAppearance.Tone) -> Color {
+        if drawsDisabled { return KozmosColors.semanticsDisabledForeground }
         switch tone {
         case .ink:
             return KozmosColors.primitivesColorsForeground100
@@ -250,7 +262,8 @@ public struct KozmosMapControlButton<Icon: View>: View {
     /// fill when filled, pressed and focused from the themed button's tokens.
     /// It was 90% of the surface.
     private func surfaceColor(isPressed: Bool, isFocused: Bool) -> Color {
-        appearance.surface == .filled
+        if drawsDisabled { return KozmosColors.semanticsDisabledFill }
+        return appearance.surface == .filled
             ? KozmosFillStates.background(.themed, isPressed: isPressed, isFocused: isFocused)
             : KozmosColors.primitivesColorsBackground0
     }
@@ -341,15 +354,10 @@ public struct KozmosMapControlButton<Icon: View>: View {
         // the plain style's press.
         .modifier(KozmosMapControlButtonStyle(filled: emphasis == .filled, drawsFill: appearance.surface == .filled, shape: shape))
         .disabled(isDisabled || isLoading)
-        // Loading, it is disabled, and drawn at half as a disabled part is,
-        // as React's and Compose's are: once, and as one. Neither style dims
-        // a disabled control itself; the plain style did, and a tinted
-        // control was dimmed twice. And the surface is four copies, one over
-        // another (itself and the three that cast its shadows): an opacity
-        // spread over them drew it at 94%, so the control is drawn whole
-        // before it is dimmed.
-        .compositingGroup()
-        .opacity(isDisabled || isLoading ? 0.5 : 1)
+        // Disabled, or loading, which disables it, the control is drawn from
+        // the disabled pair (`drawsDisabled`), not at half. Neither style
+        // dims a disabled control itself: the plain style would, and draw
+        // the pair at half.
         // Reduce Motion stops the control growing, not the reveal: the new
         // state is still said, and still said for as long.
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: shown == .labelled)
@@ -365,7 +373,7 @@ public struct KozmosMapControlButton<Icon: View>: View {
 /// The map control's button style: the fill's for a filled control, which
 /// draws the fill only while it is on, and the plain style's press for a
 /// tinted one. Chosen from the emphasis, which does not change on screen.
-/// Neither dims a disabled control: the control does that itself.
+/// Neither dims a disabled control: the control draws the disabled pair.
 private struct KozmosMapControlButtonStyle: ViewModifier {
     let filled: Bool
     let drawsFill: Bool

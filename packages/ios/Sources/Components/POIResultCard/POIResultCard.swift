@@ -780,8 +780,8 @@ private struct KozmosPOIResultActionButton: View {
             leadingIconName: showsNavigationIcon ? "navigation-pointer-01" : nil,
             action: action)
             // Each action its own target, in a list row too. Borderless, not
-            // plain: an outline Button draws itself at half while disabled,
-            // and the plain style drew it at half again, to a quarter.
+            // plain: a disabled Button draws itself from the disabled pair
+            // (decision 197), and the plain style would draw that at half.
             .buttonStyle(.borderless)
     }
 }

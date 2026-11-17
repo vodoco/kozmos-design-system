@@ -235,14 +235,15 @@ final class KozmosThemeFillPressTests: XCTestCase {
         }
     }
 
-    /// Loading, a part is disabled, and drawn at half as a disabled one is:
-    /// React's disabled:opacity-50, and Compose since decision 59. Button,
-    /// IconButton and MapControlButton drew a loading part at full strength.
-    /// Each is drawn on mid grey, so half of anything shows: a loading part
-    /// draws as the same part disabled and loading, and its fill (a Button's
-    /// leading padding, an IconButton's top, a map control's leading edge)
-    /// is not the fill at rest.
-    @MainActor func testALoadingPartIsDrawnAtHalfAsADisabledOneIs() throws {
+    /// Loading, a part is disabled, and drawn as a disabled one is: from the
+    /// disabled pair since decision 197, as React and Compose draw it; at
+    /// half until then. Button, IconButton and MapControlButton drew a
+    /// loading part at full strength once. Each is drawn on mid grey: a
+    /// loading part draws as the same part disabled and loading, and its
+    /// fill (a Button's leading padding, an IconButton's top, a map
+    /// control's leading edge) is not the fill at rest.
+    /// KozmosDisabledPairTests reads the pair itself.
+    @MainActor func testALoadingPartIsDrawnAsADisabledOneIs() throws {
         let leading: (CGRect) -> CGPoint = { CGPoint(x: $0.minX + 6, y: $0.midY) }
         let top: (CGRect) -> CGPoint = { CGPoint(x: $0.midX, y: $0.minY + 6) }
         let parts: [(name: String, rest: AnyView, loading: AnyView, disabledLoading: AnyView, probe: (CGRect) -> CGPoint)] = [

@@ -158,7 +158,8 @@ extension EnvironmentValues {
 /// toggle never swaps its button under the finger or VoiceOver's cursor.
 ///
 /// Layout, the hit area (the label's own drawing), the button's traits and a
-/// disabled part's 50% stay the part's. On an iPad with a pointer, and on a
+/// disabled part's look stay the part's: it dims nothing, so a Button drawn
+/// from the disabled pair (decision 197) is drawn at full strength. On an iPad with a pointer, and on a
 /// Mac, the label keeps the pointer's hover effect, in `hoverShape`, which
 /// SwiftUI gives its own styles and not a custom one.
 struct KozmosFillButtonStyle<HoverShape: Shape>: ButtonStyle {
@@ -179,7 +180,8 @@ struct KozmosFillButtonStyle<HoverShape: Shape>: ButtonStyle {
 }
 
 /// The plain style's press and the pointer's hover, with no disabled look of
-/// its own: for a part that draws its own disabled opacity. SwiftUI's plain
+/// its own: for a part that draws its own disabled look, an opacity or the
+/// disabled pair (a map control, decision 197). SwiftUI's plain
 /// style draws a disabled button's label at half by itself (measured on
 /// iPhone 17 Pro, iOS 26.5, and on a Mac), so under it a part that also
 /// dims itself — a level at 0.4, an unavailable result at 0.6, a chip at

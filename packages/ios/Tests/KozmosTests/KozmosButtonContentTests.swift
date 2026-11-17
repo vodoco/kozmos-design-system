@@ -39,13 +39,14 @@ final class KozmosButtonContentTests: XCTestCase {
 
     @MainActor
     private func paint(_ button: KozmosButton, direction: LayoutDirection = .leftToRight,
-                       large: Bool = false, width: CGFloat = 200) async throws -> CGRect {
+                       large: Bool = false, width: CGFloat = 200,
+                       where matches: (UInt8, UInt8, UInt8) -> Bool = RenderedPixels.isTheme) async throws -> CGRect {
         let pixels = try await RenderedPixels.render(
             button.environment(\.layoutDirection, direction)
                 .environment(\.sizeCategory, large ? .accessibilityExtraExtraExtraLarge : .large),
             size: CGSize(width: width, height: 600))
         return try XCTUnwrap(pixels.boundingBox(
-            in: CGRect(x: 0, y: 0, width: width, height: 600), where: RenderedPixels.isTheme))
+            in: CGRect(x: 0, y: 0, width: width, height: 600), where: matches))
     }
 
     @MainActor func testDecorativeIconAddsSpaceAndLoadingReplacesIt() async throws {
@@ -54,8 +55,15 @@ final class KozmosButtonContentTests: XCTestCase {
             let icon = try await paint(KozmosButton("Go", leadingIconName: "navigation-pointer-01", action: {}), direction: direction)
             XCTAssertGreaterThan(icon.width, plain.width + 8)
             XCTAssertEqual(icon.height, 44, accuracy: 1)
-            let loading = try await paint(KozmosButton("Go", isLoading: true, action: {}), direction: direction)
-            let loadingIcon = try await paint(KozmosButton("Go", isLoading: true, leadingIconName: "navigation-pointer-01", action: {}), direction: direction)
+            // Loading, it is drawn from the disabled pair (decision 197): its
+            // fill is the disabled fill, not the theme's.
+            let fill = try DrawnPixels.resolved(KozmosColors.semanticsDisabledFill, in: .light)
+            let isDisabledFill = { (r: UInt8, g: UInt8, b: UInt8) in
+                abs(Int(r) - Int(fill.r)) <= 2 && abs(Int(g) - Int(fill.g)) <= 2 && abs(Int(b) - Int(fill.b)) <= 2
+            }
+            let loading = try await paint(KozmosButton("Go", isLoading: true, action: {}), direction: direction, where: isDisabledFill)
+            let loadingIcon = try await paint(KozmosButton("Go", isLoading: true, leadingIconName: "navigation-pointer-01", action: {}),
+                                              direction: direction, where: isDisabledFill)
             XCTAssertEqual(loading.width, loadingIcon.width, accuracy: 1)
         }
     }

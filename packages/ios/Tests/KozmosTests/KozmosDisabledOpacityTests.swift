@@ -12,9 +12,11 @@ import UIKit
 /// for itself. SwiftUI's plain button style already draws a disabled
 /// button's label at half (measured on iPhone 17 Pro, iOS 26.5, and on a
 /// Mac), so a part that also set `.opacity` for disabled was dimmed twice:
-/// a quarter, 0.2 or 0.3. The map controls were worse off: their surface is
-/// four copies one over another, and an opacity spread over them left it at
-/// 68% tinted and 94% filled.
+/// a quarter, 0.2 or 0.3. The Button family — Button, IconButton,
+/// FloatingActionButton, SplitButton and the map control — is no longer
+/// drawn at half: since decision 197 it is drawn from the disabled pair,
+/// which `KozmosDisabledPairTests` reads. A disabled Button inside another
+/// part is read here for not being dimmed again.
 ///
 /// Each part is drawn enabled and disabled on a mid grey, in light and in
 /// dark, and read where it draws its own colour: how far the disabled pixel
@@ -109,43 +111,10 @@ final class KozmosDisabledOpacityTests: XCTestCase {
 
     // MARK: The map control
 
-    /// The control, the plain style's half and its own half, was drawn at a
-    /// quarter, its four stacked surfaces at 68%; filled, at 94%. Drawn at
-    /// half as one, every pixel of it is halfway to the page: its surface at
-    /// its leading edge and at its top, and its mark.
-    @MainActor func testADisabledOrLoadingMapControlIsDrawnAtHalfAsOneInLightAndDark() throws {
-        // Each control, and whether its mark is read as well as its surface.
-        let controls: [(String, Bool, (Bool) -> AnyView)] = [
-            ("a disabled tinted control", true, { AnyView(KozmosMapControlButton(label: "Zoom in", systemImage: "plus", isDisabled: $0, action: {})) }),
-            ("a loading tinted control", false, { AnyView(KozmosMapControlButton(label: "Zoom in", systemImage: "plus", isLoading: $0, action: {})) }),
-            ("a disabled filled control that is on", true, {
-                AnyView(KozmosMapControlButton(label: "Zoom in", systemImage: "plus", emphasis: .filled, pressed: true, isDisabled: $0, action: {}))
-            }),
-            // Its mark is grey, too near the page's grey to read: its surface is read.
-            ("a disabled filled control that is off", false, {
-                AnyView(KozmosMapControlButton(label: "Zoom in", systemImage: "plus", emphasis: .filled, pressed: false, isDisabled: $0, action: {}))
-            }),
-        ]
-        var problems: [String] = []
-        for scheme in [ColorScheme.light, .dark] {
-            for (name, marked, make) in controls {
-                let enabled = try draw(make(false), scheme), disabled = try draw(make(true), scheme)
-                let page = enabled.pixel(at: CGPoint(x: 2, y: 2))
-                // The 48 square, inside the 16 of grey round it.
-                let control = CGRect(x: 16, y: 16, width: 48, height: 48)
-                var points = [CGPoint(x: control.minX + 6, y: control.midY), CGPoint(x: control.midX, y: control.minY + 6)]
-                if marked {
-                    // The mark: a loading control draws the spinner there instead.
-                    let surface = enabled.pixel(at: points[0])
-                    points.append(Self.inkPoint(in: enabled, region: control.insetBy(dx: 18, dy: 18), awayFrom: surface))
-                }
-                problems += points.compactMap {
-                    Self.problem(name, scheme, at: $0, enabled: enabled, disabled: disabled, under: page, expected: 0.5)
-                }
-            }
-        }
-        XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
-    }
+    // A disabled or loading map control was drawn at half, as one, here
+    // (testADisabledOrLoadingMapControlIsDrawnAtHalfAsOneInLightAndDark).
+    // Decision 197 draws it from the disabled pair instead:
+    // KozmosDisabledPairTests' testADisabledOrLoadingMapControlIsDrawnFromTheDisabledPairInLightAndDark.
 
     // MARK: The segmented control
 
@@ -307,30 +276,40 @@ final class KozmosDisabledOpacityTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
-    /// A selected result's disabled outline action is drawn at half, as
-    /// every disabled Button is; the plain style the card set round it drew
-    /// it at half again, to a quarter.
-    @MainActor func testADisabledResultActionIsDrawnAtHalfInLightAndDark() throws {
+    #if os(iOS)
+    /// A selected result's disabled outline action is drawn from the
+    /// disabled pair, as every disabled Button is since decision 197: its
+    /// words and its edge are the disabled foreground itself, so no style
+    /// round it dims it again. The plain style the card set round it drew
+    /// it, at half then, at half again, to a quarter. On the simulator only:
+    /// on a Mac the action's borderless style is AppKit's, which
+    /// `ImageRenderer` draws as a yellow placeholder.
+    @MainActor func testADisabledResultActionIsDrawnFromTheDisabledPairInLightAndDark() throws {
         var problems: [String] = []
-        let make = { (disabled: Bool) in
+        // The card with the action, disabled, and the same card with none.
+        let make = { (actions: [KozmosPOIResultActionPresentation]) in
             KozmosPOIResultCard(poi: Self.poi, result: KozmosPOIResultPresentation(
-                poiId: "gate-12", resultIndex: 0, selected: true,
-                actions: [KozmosPOIResultActionPresentation(action: .share, label: "Share", disabled: disabled)]),
+                poiId: "gate-12", resultIndex: 0, selected: true, actions: actions),
                                 onSelect: { _ in }, onAction: { _, _ in })
                 .frame(width: 320)
         }
         for scheme in [ColorScheme.light, .dark] {
-            let enabled = try draw(make(false), scheme), disabled = try draw(make(true), scheme)
-            // The action row: a 44 button between 8s, at the card's foot,
-            // clear of the divider above it.
-            let actions = CGRect(x: 16 + 6, y: enabled.size.height - 16 - 56, width: 320 - 12, height: 52)
-            let card = CGPoint(x: 16 + 4, y: actions.midY)
-            let ink = Self.inkPoint(in: enabled, region: actions, awayFrom: enabled.pixel(at: card))
-            problems += [Self.problem("a disabled outline action", scheme, at: ink, enabled: enabled, disabled: disabled,
-                                      under: disabled.pixel(at: CGPoint(x: card.x, y: ink.y)), expected: 0.5)].compactMap { $0 }
+            let disabled = try draw(make([KozmosPOIResultActionPresentation(action: .share, label: "Share", disabled: true)]), scheme)
+            let without = try draw(make([]), scheme)
+            let ink = try DrawnPixels.resolved(KozmosColors.semanticsDisabledForeground, in: scheme)
+            // What the action adds to the card in the disabled foreground,
+            // read over the whole card: the card's own muted words are the
+            // same foreground/400, and are there with no action too.
+            let whole = { (d: DrawnPixels) in CGRect(origin: .zero, size: d.size) }
+            let before = without.count(in: whole(without), where: DrawnPixels.matches(ink, tolerance: 3))
+            let after = disabled.count(in: whole(disabled), where: DrawnPixels.matches(ink, tolerance: 3))
+            if after - before < 300 {
+                problems.append("\(scheme): the disabled action adds \(after - before) pixels in the disabled foreground \(Self.hex(ink)) (\(before) to \(after)), not its words and its edge")
+            }
         }
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
+    #endif
 
     // MARK: Still disabled
 
