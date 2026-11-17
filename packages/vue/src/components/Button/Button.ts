@@ -77,6 +77,9 @@ export const KozmosButton = defineComponent({
             ? {}
             : { style: drawnStyle as StyleValue }),
           disabled: props.isLoading || props.disabled ? true : undefined,
+          // Busy, not unavailable, as React's Button (decision 197): a
+          // loading button keeps its colours unless it is disabled too.
+          "data-loading": props.isLoading && !props.disabled ? "" : undefined,
           ...rest,
         },
         [

@@ -242,12 +242,27 @@ try {
               ),
               `${label}: Previous lost focus at the first step`,
             );
+            // Unavailable and focused, it is the disabled pair at full
+            // strength, as a disabled Button (decision 197, the owner's
+            // ruling of 17 Nov); it was drawn at half.
             assert.deepEqual(
-              await previous.evaluate((node) => {
+              await previous.evaluate(async (node) => {
+                await Promise.all(
+                  node.getAnimations().map((animation) => animation.finished),
+                );
                 const style = getComputedStyle(node);
-                return [style.opacity, style.cursor];
+                const probe = document.createElement("span");
+                probe.style.color = "var(--semantics-disabled-foreground)";
+                node.parentElement.append(probe);
+                const pair = getComputedStyle(probe).color;
+                probe.remove();
+                return [
+                  style.opacity,
+                  style.cursor,
+                  style.color === pair ? true : `${style.color} not ${pair}`,
+                ];
               }),
-              ["0.5", "default"],
+              ["1", "default", true],
               `${label}: an aria-disabled action does not read unavailable`,
             );
             await page.keyboard.press("Enter");
