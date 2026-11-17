@@ -17034,9 +17034,7 @@
             "helperText",
             "label",
             "mixed",
-            "mixedLabel",
             "readOnly",
-            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []
@@ -17103,9 +17101,7 @@
             "helperText",
             "label",
             "mixed",
-            "mixedLabel",
             "readOnly",
-            "resetMixedLabel",
             "startLabel",
             "status"
           ],
@@ -18482,11 +18478,9 @@
             "helperText",
             "label",
             "mixed",
-            "mixedLabel",
             "options",
             "placeholder",
             "readOnly",
-            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []
@@ -20623,9 +20617,7 @@
             "helperText",
             "label",
             "mixed",
-            "mixedLabel",
             "readOnly",
-            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []

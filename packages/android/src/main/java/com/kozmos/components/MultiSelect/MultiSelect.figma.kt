@@ -31,15 +31,8 @@ class KozmosMultiSelectConnect {
         "Mixed" to "mixed"
     )
 
-    // GAP-255: its way back to the several values, once edited.
-    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
-    val resetMixed: Boolean = false
-
-    @FigmaProperty(FigmaType.Text, "Mixed Text")
-    val mixedLabel: String = "Multiple values"
-
-    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
-    val resetMixedLabel: String = "Reset to multiple values"
+    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
+    // the owner's plugin Update has put them in the library.
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -84,10 +77,7 @@ class KozmosMultiSelectConnect {
             status = status,
             helperText = if (showHelperText) helperText else null,
             defaultExpanded = content == "open",
-            mixed = state == "mixed",
-            mixedLabel = mixedLabel,
-            onResetMixed = if (resetMixed) ({}) else null,
-            resetMixedLabel = resetMixedLabel
+            mixed = state == "mixed"
         )
     }
 }
