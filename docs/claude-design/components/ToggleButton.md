@@ -34,6 +34,25 @@ It forwards its ref to `HTMLButtonElement`. Its props are `ToggleButtonProps`, w
 
 - `variant`: `"default" | "outline"`, optional, default `"default"`.
 - `size`: `"default" | "sm" | "lg"`, optional, default `"default"`.
+- `mixed`: `boolean`, optional, default `false`.
+
+  The toggle stands for several features that differ (decision 190): a
+  property of a multi-selection pressed on some and not on others. It is
+  drawn with a dashed theme edge on the muted fill and a dash before its
+  label, and announced as mixed, `aria-pressed="mixed"`. A press turns it
+  pressed: `onPressedChange` gets `true`, and the product clears `mixed`.
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn after the toggle, in the
+  same parent, while it is not `mixed`, never while it is disabled.
+  Pressed, focus returns to the toggle, and the product sets `mixed`
+  again.
+
+- `resetMixedLabel`: `string`, optional, default `"Reset to multiple values"`.
+
+  The reset's words. Default "Reset to multiple values".
+
 - `asChild`: `boolean`, optional.
 - `pressed`: `boolean`, optional.
 

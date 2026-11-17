@@ -51,6 +51,29 @@ It forwards its ref to `HTMLButtonElement`. Its props are `SwitchProps`, which e
 
 - `error`: `boolean | string`, optional.
 - `wrapperClassName`: `string`, optional.
+- `mixed`: `boolean`, optional, default `false`.
+
+  The switch stands for several settings that differ (decision 188): a
+  property of a multi-selection whose features are some on and some off.
+  It is drawn neither on nor off, the theme fill with a dash and no thumb,
+  and is off to a screen reader (`role="switch"` has no mixed state), with
+  `mixedLabel` as its description. A click turns it on: `onCheckedChange`
+  gets `true`, and the product clears `mixed`.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Said with the mixed switch, and drawn as its state label. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several settings: drawn under the switch while
+  it is not `mixed`, never while it is disabled. Pressed, focus returns
+  to the switch, and the product sets `mixed` again.
+
+- `resetMixedLabel`: `string`, optional, default `"Reset to multiple values"`.
+
+  The reset's words. Default "Reset to multiple values".
+
 - `defaultChecked`: `boolean`, optional.
 - `asChild`: `boolean`, optional.
 - `checked`: `boolean`, optional.
