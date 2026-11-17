@@ -202,4 +202,8 @@ struct KozmosCheckboxDash: Shape {
         path.addLine(to: CGPoint(x: rect.minX + rect.width * 19 / 24, y: y))
         return path
     }
+
+    /// A level line centred in its box reads the same either way.
+    @available(iOS 17.0, macOS 14.0, macCatalyst 17.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
