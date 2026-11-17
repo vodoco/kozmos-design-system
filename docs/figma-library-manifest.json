@@ -20317,6 +20317,7 @@
             "disabled",
             "error",
             "label",
+            "mixed",
             "showStateLabel"
           ],
           "unmappedProps": []
@@ -20333,8 +20334,11 @@
           "error",
           "id",
           "label",
+          "mixed",
+          "mixedLabel",
           "offLabel",
           "required",
+          "resetMixedLabel",
           "role",
           "showStateLabel",
           "tabIndex",
@@ -20692,7 +20696,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["ToggleButton"],
-          "mappedProps": ["disabled", "pressed", "size", "variant"],
+          "mappedProps": ["disabled", "mixed", "pressed", "size", "variant"],
           "unmappedProps": []
         },
         "props": [
@@ -20703,7 +20707,9 @@
           "defaultPressed",
           "disabled",
           "id",
+          "mixed",
           "pressed",
+          "resetMixedLabel",
           "role",
           "size",
           "tabIndex",

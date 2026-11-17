@@ -154,3 +154,111 @@ fun GateAlerts(isOn: Boolean, onChange: (Boolean) -> Unit) {
 }
 `}
 />
+
+## Mixed
+
+With several features selected, a setting that is on for some and off for others is one switch for
+all of them (decision 188). `mixed` draws it neither on nor off: the track filled with the theme
+fill, as when on, no thumb, and a short white dash in its middle, the dash Checkbox draws for its
+mixed state (decision 189). A click turns it on, as a mixed Checkbox becomes checked: the switch
+reports `true` through its change callback, and the product clears `mixed`. Give `onResetMixed`
+for a switch whose settings differ: once it is no longer mixed it draws "Reset to multiple values"
+(`resetMixedLabel`) under it, never while it is disabled. Pressed, focus goes back to the switch,
+and the product sets `mixed` again. Input, NumberInput, Select and Combobox take the same names
+(GAP-153).
+
+A screen reader cannot hear a mixed switch as such: ARIA's `role="switch"` has no mixed state, so
+on the web it is off with "Multiple values" (`mixedLabel`) as its description. SwiftUI says
+"Multiple values" as its value, where it says on or off; iOS has no mixed state for a switch.
+Compose gives TalkBack its own mixed state, Indeterminate, and "Multiple values" as the state it
+says, never "partially checked". With `showStateLabel` the words beside the track are the mixed
+label too. Hold `checked` false while mixed on SwiftUI, so the tap changes the binding.
+
+In Figma, Mixed is a value of the Checked axis, so a mixed switch can be disabled or in error.
+
+<PlatformSnippets
+    react={`
+import * as React from "react";
+import { Switch } from "@kozmos-ds/react";
+
+export function StepFreeAcrossSelection({ settings }: { settings: boolean[] }) {
+  const [edit, setEdit] = React.useState<boolean>();
+  const differs = settings.some((on) => on !== settings[0]);
+  return (
+    <Switch
+      label="Step-free"
+      mixed={differs && edit === undefined}
+      checked={edit ?? settings[0]}
+      onCheckedChange={setEdit}
+      onResetMixed={differs ? () => setEdit(undefined) : undefined}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+
+const props = defineProps({ settings: Array })
+const edit = ref(null)
+const differs = computed(() => new Set(props.settings).size > 1)
+</script>
+
+<template>
+  <KozmosSwitch
+    label="Step-free"
+    :mixed="differs && edit === null"
+    :checked="edit ?? props.settings[0]"
+    @update:checked="edit = $event"
+    @reset-mixed="edit = null"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The features' settings differ, so the switch is mixed until it is tapped:
+// the tap turns it on, and that edit clears mixed. While mixed it is held
+// off, so the tap changes it. VoiceOver says "Multiple values" as its value.
+struct StepFreeAcrossSelection: View {
+    let settings: [Bool]
+    @State private var edit: Bool?
+
+    var body: some View {
+        let differs = Set(settings).count > 1
+        KozmosSwitch(
+            checked: Binding(get: { edit ?? (differs ? false : settings[0]) }, set: { edit = $0 }),
+            label: "Step-free",
+            mixed: differs && edit == nil,
+            onResetMixed: differs ? { edit = nil } : nil
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.switch.KozmosSwitch
+
+// The features' settings differ, so the switch is mixed until it is clicked:
+// the click turns it on, and that edit clears mixed. TalkBack says
+// "Multiple values" as its state.
+@Composable
+fun StepFreeAcrossSelection(settings: List<Boolean>) {
+    val differs = settings.distinct().size > 1
+    var edit by remember(settings) { mutableStateOf<Boolean?>(null) }
+    KozmosSwitch(
+        checked = edit ?: settings.first(),
+        onCheckedChange = { edit = it },
+        label = "Step-free",
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    )
+}
+`}
+/>

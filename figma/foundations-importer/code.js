@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "ed58ef736491";
+const PLUGIN_BUILD = "ee5553f58785";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -325,7 +325,16 @@ const ICON_BUTTON_COUNTER_DEFAULT_TEXT = "3";
 const ICON_BUTTON_COUNTER_OFFSET = 2;
 const TOGGLE_BUTTON_VARIANTS = ["Default", "Outline"];
 const TOGGLE_BUTTON_SIZES = ["Small", "Default", "Large"];
-const TOGGLE_BUTTON_STATES = ["Default", "Pressed", "Disabled", "Focus"];
+// Decision 190: Mixed is React's aria-pressed="mixed", a dashed theme edge on
+// the muted fill with a dash before the label. Last, so a set from before it
+// keeps its order and Update adds the six it lacks.
+const TOGGLE_BUTTON_STATES = [
+  "Default",
+  "Pressed",
+  "Disabled",
+  "Focus",
+  "Mixed",
+];
 const SPLIT_BUTTON_VARIANTS = [
   "Default",
   "Secondary",
@@ -372,7 +381,11 @@ const RADIO_CARD_WIDTH = 240;
 const RADIO_TILE_WIDTH = 112;
 // min-h-24: a tile is at least 96 tall.
 const RADIO_TILE_MIN_HEIGHT = 96;
-const SWITCH_CHECKED = ["Unchecked", "Checked"];
+// Decision 189: Mixed is React's `mixed`, the track filled as when checked,
+// no thumb, and a white dash in its middle. A value of Checked, so a mixed
+// switch can be disabled or in error too; last, so a set from before it keeps
+// its order and Update adds the three it lacks.
+const SWITCH_CHECKED = ["Unchecked", "Checked", "Mixed"];
 const SWITCH_STATES = ["Default", "Disabled", "Error"];
 const INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const INPUT_STATUSES = ["Default", "Error", "Warning", "Success"];
@@ -33197,7 +33210,7 @@ async function buildToggleButtonComponent() {
     "Kozmos ToggleButton component set generated from React ToggleButton API.",
     "Variant maps to ToggleButton.variant.",
     "Size maps to ToggleButton.size.",
-    "State maps to pressed and disabled in Code Connect.",
+    'State maps to pressed and disabled in Code Connect; Mixed is ToggleButton.mixed, aria-pressed="mixed" (decision 190).',
     "Focus Visible controls the generated focus ring.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -33252,7 +33265,7 @@ async function updateToggleButtonComponent() {
     "Kozmos ToggleButton component set generated from React ToggleButton API.",
     "Variant maps to ToggleButton.variant.",
     "Size maps to ToggleButton.size.",
-    "State maps to pressed and disabled in Code Connect.",
+    'State maps to pressed and disabled in Code Connect; Mixed is ToggleButton.mixed, aria-pressed="mixed" (decision 190).',
     "Focus Visible controls the generated focus ring.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -36691,7 +36704,7 @@ async function buildSwitchComponent() {
   componentSet.setSharedPluginData(RUN_NAMESPACE, "component", "Switch");
   applyComponentSetDescription(componentSet, "Switch", false, [
     "Kozmos Switch component set generated from React Switch API.",
-    "Checked maps to Switch.checked.",
+    "Checked maps to Switch.checked; Mixed is Switch.mixed, the several settings of a multi-selection (decision 189).",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
     "Description Text and Show Description map to Switch.description (GAP-162).",
@@ -36721,7 +36734,7 @@ async function updateSwitchComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
-    variantsMissing: 0,
+    variantsCreated: 0,
     warnings: [],
   };
 
@@ -36747,7 +36760,7 @@ async function updateSwitchComponent() {
   existing.setSharedPluginData(RUN_NAMESPACE, "component", "Switch");
   applyComponentSetDescription(existing, "Switch", true, [
     "Kozmos Switch component set generated from React Switch API.",
-    "Checked maps to Switch.checked.",
+    "Checked maps to Switch.checked; Mixed is Switch.mixed, the several settings of a multi-selection (decision 189).",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
     "Description Text and Show Description map to Switch.description (GAP-162).",
@@ -36778,15 +36791,25 @@ async function updateSwitchComponent() {
     stats.variantsUpdated += 1;
   }
 
+  // The Mixed variants (decision 189) a set from before them lacks, added
+  // beside the six it keeps, whose node ids Code Connect pins.
   for (const checked of SWITCH_CHECKED) {
     for (const state of SWITCH_STATES) {
       const key = `${checked}/${state}`;
-      if (!seenKeys[key]) {
-        stats.variantsMissing += 1;
-        stats.warnings.push(`Missing Switch variant ${key}.`);
-      }
+      if (seenKeys[key]) continue;
+      const component = await createSwitchVariant({
+        checked,
+        state,
+        variableByName,
+        fonts,
+        stats,
+      });
+      existing.appendChild(component);
+      seenKeys[key] = true;
+      stats.variantsCreated += 1;
     }
   }
+  layoutSwitchVariants(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -61481,6 +61504,20 @@ async function updateToggleButtonVariant(
     component.strokes = [];
     component.strokeWeight = 0;
   }
+  // Mixed's edge is dashed, 3 and 3, as a 1px CSS dashed border draws it;
+  // every other state's is solid. Written only when it changes.
+  const dashPattern = config.dashed ? [3, 3] : [];
+  try {
+    const current = component.dashPattern || [];
+    if (
+      current.length !== dashPattern.length ||
+      current.some((value, index) => value !== dashPattern[index])
+    ) {
+      component.dashPattern = dashPattern;
+    }
+  } catch (_error) {
+    // Older Figma plugin runtimes do not expose dashed stroke editing.
+  }
 
   bindToggleButtonGeometryVariables(
     component,
@@ -61509,6 +61546,22 @@ async function updateToggleButtonVariant(
     stats,
   );
   label.characters = state === "Pressed" ? "Pressed" : "Toggle";
+  // Mixed: Checkbox's dash, React's minus at 16, 8 before the label, in the
+  // label's colour. Every other state has none, and no gap.
+  removeGeneratedButtonChild(component, "Mixed Dash", state !== "Mixed");
+  if (state === "Mixed") {
+    const dash = syncMixedDash(
+      component,
+      config.foreground,
+      config.foregroundFallback,
+      variableByName,
+      stats,
+    );
+    component.insertChild(0, dash);
+  }
+  if (component.itemSpacing !== (state === "Mixed" ? 8 : 0)) {
+    component.itemSpacing = state === "Mixed" ? 8 : 0;
+  }
   label.fills = [
     paintFromVariable(
       config.foreground,
@@ -68959,6 +69012,32 @@ function parseSwitchVariantName(name) {
     checked: values.Checked,
     state: values.State,
   };
+}
+
+// A row per Checked value, Unchecked, Checked then Mixed, each in State
+// order, 40 apart: the set's top-left, its default, stays Checked=Unchecked,
+// State=Default.
+function layoutSwitchVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+  let y = 0;
+  for (const checked of SWITCH_CHECKED) {
+    let x = 0;
+    let rowHeight = 0;
+    for (const state of SWITCH_STATES) {
+      const child = componentSet.children.find((node) => {
+        if (node.type !== "COMPONENT") return false;
+        const props = parseSwitchVariantName(node.name);
+        return props && props.checked === checked && props.state === state;
+      });
+      if (!child) continue;
+      child.x = x;
+      child.y = y;
+      x += child.width + 40;
+      rowHeight = Math.max(rowHeight, child.height);
+    }
+    if (rowHeight > 0) y += rowHeight + 40;
+  }
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function updateSwitchVariant(
@@ -77985,6 +78064,9 @@ async function syncSwitchVariantChildren({
   thumb.resize(20, 20);
   thumb.x = checked === "Checked" ? 22 : 2;
   thumb.y = 2;
+  // Mixed (decision 189) has no thumb: it is kept, hidden, so the variant's
+  // layers stay those of the other five.
+  thumb.visible = checked !== "Mixed";
   thumb.fills = [
     paintFromVariable(
       config.thumbFill,
@@ -77996,6 +78078,21 @@ async function syncSwitchVariantChildren({
   thumb.strokes = [];
   thumb.setSharedPluginData(RUN_NAMESPACE, "kind", "switch-thumb");
   track.appendChild(thumb);
+
+  // Mixed: Checkbox's dash, React's minus at 16, centred in the track in
+  // the thumb's colour (the theme foreground, white, on the theme fill).
+  removeGeneratedButtonChild(track, "Mixed Dash", checked !== "Mixed");
+  if (checked === "Mixed") {
+    const dash = syncMixedDash(
+      track,
+      config.thumbFill,
+      config.thumbFillFallback,
+      variableByName,
+      stats,
+    );
+    dash.x = 14;
+    dash.y = 4;
+  }
 
   syncFocusRing(track, {
     enabled: state !== "Disabled",
@@ -78173,7 +78270,12 @@ async function syncControlTextRows({
       stats,
     );
     words.textAutoResize = "WIDTH_AND_HEIGHT";
-    words.characters = checked === "Checked" ? "On" : "Off";
+    words.characters =
+      checked === "Mixed"
+        ? "Multiple values"
+        : checked === "Checked"
+          ? "On"
+          : "Off";
     words.textAlignVertical = "CENTER";
     words.visible = false;
     words.setSharedPluginData(RUN_NAMESPACE, "kind", "switch-state-label");
@@ -90291,6 +90393,20 @@ function toggleButtonConfig(variant, state) {
     };
   }
 
+  // Mixed (decision 190): a dashed edge in the theme fill on the muted fill,
+  // under the page's ink, in either variant.
+  if (state === "Mixed") {
+    return {
+      background: "Colors/background/100",
+      foreground: "Colors/foreground/0",
+      stroke: THEME_FILL.name,
+      dashed: true,
+      backgroundFallback: "#E3E4E8",
+      foregroundFallback: "#000000",
+      strokeFallback: THEME_FILL.fallback,
+    };
+  }
+
   // On, a toggle is a prominent fill: the theme fill and the theme
   // foreground, the same in both themes (decision 59).
   if (state === "Pressed") {
@@ -90674,8 +90790,51 @@ function radioConfig(checked, state) {
   };
 }
 
+// The mixed mark (decisions 188 to 190): React's Minus at 16, a line from 5
+// to 19 of its 24 across the middle, stroked 2/24 of its size with round
+// caps, in the given colour. Drawn once, in place, in `parent`, as "Mixed
+// Dash"; a Switch centres it in its track, a ToggleButton puts it before
+// its label.
+function syncMixedDash(parent, variableName, fallback, variableByName, stats) {
+  let dash = directChildNamed(parent, "Mixed Dash");
+  if (dash && dash.type !== "VECTOR") {
+    dash.remove();
+    dash = null;
+  }
+  if (!dash) {
+    dash = figma.createVector();
+    dash.name = "Mixed Dash";
+    parent.appendChild(dash);
+  }
+  dash.resize(16, 16);
+  dash.vectorNetwork = {
+    vertices: [
+      { x: 10 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
+      { x: 38 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
+    ],
+    segments: [
+      {
+        start: 0,
+        end: 1,
+        tangentStart: { x: 0, y: 0 },
+        tangentEnd: { x: 0, y: 0 },
+      },
+    ],
+  };
+  dash.fills = [];
+  dash.strokes = [
+    paintFromVariable(variableName, fallback, variableByName, stats),
+  ];
+  dash.strokeWeight = 4 / 3;
+  dash.strokeCap = "ROUND";
+  dash.strokeJoin = "ROUND";
+  dash.setSharedPluginData(RUN_NAMESPACE, "kind", "mixed-dash");
+  return dash;
+}
+
 function switchConfig(checked, state) {
-  const isChecked = checked === "Checked";
+  // Mixed is filled as Checked is (decision 189).
+  const isChecked = checked === "Checked" || checked === "Mixed";
   const isDisabled = state === "Disabled";
   const isError = state === "Error";
 

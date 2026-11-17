@@ -13,6 +13,14 @@ figma.connect(
       checked: figma.enum("Checked", {
         Unchecked: false,
         Checked: true,
+        Mixed: false,
+      }),
+      // Decision 189: Mixed is a value of the Checked axis, so a mixed
+      // switch can be disabled or in error too.
+      mixed: figma.enum("Checked", {
+        Unchecked: false,
+        Checked: false,
+        Mixed: true,
       }),
       disabled: figma.enum("State", {
         Default: false,
@@ -34,6 +42,7 @@ figma.connect(
     },
     example: ({
       checked,
+      mixed,
       disabled,
       error,
       label,
@@ -42,6 +51,7 @@ figma.connect(
     }) => (
       <Switch
         checked={checked}
+        mixed={mixed}
         disabled={disabled}
         error={error}
         label={label}
