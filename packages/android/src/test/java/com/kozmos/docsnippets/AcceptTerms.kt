@@ -6,8 +6,8 @@ package com.kozmos.docsnippets
 import androidx.compose.runtime.Composable
 import com.kozmos.components.checkbox.KozmosCheckbox
 
-// The checkbox draws its label beside it, and the whole row toggles. It has
-// two states, checked and not: no indeterminate one.
+// The checkbox draws its label beside it, and the whole row toggles. A
+// Boolean gives it two states, checked and not; "Mixed", below, adds the third.
 @Composable
 fun AcceptTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
     KozmosCheckbox(

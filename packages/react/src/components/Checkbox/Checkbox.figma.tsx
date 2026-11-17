@@ -10,9 +10,11 @@ figma.connect(
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1410",
   {
     props: {
+      // Decision 188: Indeterminate is the mixed state.
       checked: figma.enum("Checked", {
         Unchecked: false,
         Checked: true,
+        Indeterminate: "indeterminate",
       }),
       disabled: figma.enum("State", {
         Default: false,

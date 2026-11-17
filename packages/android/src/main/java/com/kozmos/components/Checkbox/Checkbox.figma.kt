@@ -1,6 +1,7 @@
 package com.kozmos.components.checkbox
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.state.ToggleableState
 import com.figma.code.connect.Figma
 import com.figma.code.connect.FigmaConnect
 import com.figma.code.connect.FigmaProperty
@@ -8,10 +9,12 @@ import com.figma.code.connect.FigmaType
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1410")
 class KozmosCheckboxConnect {
+    // Decision 188: Indeterminate is the mixed state.
     @FigmaProperty(FigmaType.Enum, "Checked")
-    val checked: Boolean = Figma.mapping(
-        "Unchecked" to false,
-        "Checked" to true
+    val checked: ToggleableState = Figma.mapping(
+        "Unchecked" to ToggleableState.Off,
+        "Checked" to ToggleableState.On,
+        "Indeterminate" to ToggleableState.Indeterminate
     )
 
     @FigmaProperty(FigmaType.Text, "Label Text")
@@ -33,7 +36,7 @@ class KozmosCheckboxConnect {
     @Composable
     fun ComponentExample() {
         KozmosCheckbox(
-            checked = checked,
+            state = checked,
             onCheckedChange = {},
             label = label,
             enabled = state != "disabled",
