@@ -1,6 +1,7 @@
 # Controlled npm releases
 
-Status (2026-11-07): in use; React 0.15.2 is published, with `@kozmos-ds/styles` 0.15.2 (evidence below).
+Status (2026-11-17): in use; React 0.16.0 is published, with `@kozmos-ds/styles` 0.16.0, tokens 0.9.0 and icons
+0.10.0 (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -1038,20 +1039,55 @@ follow decision 164 separately, and Olcay keeps Pointr's Claude Design artifact 
 
 ### 0.16.0
 
-Not published yet: decision 174 holds it until every item the
-[gap register](product-design-gap-register.md#baseline-and-scope) promises for it is in. This entry keeps what the
-release must do besides the publish; its evidence table follows the publish.
+Published on 2026-11-17 from `8afae665b7a8ae08c33b6bb89d7fbda63bf764f6`, the version merge
+[#563](https://github.com/vodoco/kozmos-design-system/pull/563) (merged at 10:03). React 0.16.0 and
+`@kozmos-ds/styles` 0.16.0 move together, with tokens 0.9.0 and icons 0.10.0; product-contracts 0.10.0 is unchanged
+and not planned. It is the minor decision 174 held until every item the
+[gap register](product-design-gap-register.md#baseline-and-scope) promised for it was in: the register's baseline
+lists them, and each row says "Released in 0.16.0" with its pull request. Fifty changesets went into it.
 
-**Figma and Code Connect, after the publish.** Publish React's, SwiftUI's and Compose's linked mappings from the released `main` (`figma:publish:linked` and
-`figma:publish:native:linked`, each after its dry run), then read them back. Besides every mapping 0.16.0's pull
-requests add, these must be on it:
+The `npm-release` gate was approved under Olcay's authority for 0.16.0 only (dispatch and approve). It was not
+standing, and it is spent. Times are UTC.
 
-- **The owner's Figma sitting of 15 Nov (wave 5):** FileUpload (444:12724), Content=Preview and Change Text (GAP-270);
-  the new ImageCropper set (2516:15104), Ratio and Zoom Controls (GAP-273); Toast (101:8189), Close Always Visible
-  (GAP-268); and TreeParentItem (684:6080), TreeChildItem (687:6789) and TreeItem (723:8776), Checkable, Checked,
-  Disclosure Start and Disclosure End (GAP-277).
-- **ImageCropper's Code Connect** on all three platforms (#553, in #560): the linked mappings go from 107 to 108.
-- **#537's sets:** the Dashboard modules' sets, and the Curated Icons and ImageField Update with #537's build
-  (`a7dd4d512bce`), which draws `crop-01` from the library (GAP-264).
-- **UI glyphs and icons (decision 187):** the icons snapshot of 16 Nov (`2026-11-16-0837Z`, 110 icons) connects the
-  venue set and `crop-01`; #561 builds it.
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.16.0, `@kozmos-ds/styles` 0.16.0, tokens 0.9.0 and icons 0.10.0 on npm `latest`. React pins styles 0.16.0, tokens 0.9.0, icons 0.10.0 and product-contracts 0.10.0 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Exact main-push CI      | [44061295524](https://github.com/vodoco/kozmos-design-system/actions/runs/44061295524), on `8afae665`. Its first attempt failed one iOS UI test, `testMapControlRegionsHaveNamesAndKeepChildActions`: the Locate tap never arrived. The simulator's log shows the only "didn't see a previous touch down … skipping event" lines of the run at 10:57:47.035, about 45 ms after the tap was sent, the simulator race of 24 Oct, which is re-run by rule (8 Nov). The re-run of the iOS job passed, and the run completed green at 12:29. The other workflows on the commit succeeded: [Bundle Size Analysis](https://github.com/vodoco/kozmos-design-system/actions/runs/44061295331), [Visual Regression](https://github.com/vodoco/kozmos-design-system/actions/runs/44061295228), [Lighthouse CI](https://github.com/vodoco/kozmos-design-system/actions/runs/44061295645), [Site](https://github.com/vodoco/kozmos-design-system/actions/runs/44061295282) and [Pages](https://github.com/vodoco/kozmos-design-system/actions/runs/44061295427). |
+| Preflight / publication | `pnpm release:preflight` against attempt 2 saw its 18 jobs succeed and passed, with none of the four versions on npm. [44083986011](https://github.com/vodoco/kozmos-design-system/actions/runs/44083986011), dispatched at 12:31, succeeded: guard and prepare approved the candidate, the `npm-release` deployment was approved, and publish ran from 12:34 to 12:47. Nothing merged to `main` between the preflight and the dispatch.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Registry readback       | All four are on `latest` at their versions, each with its SLSA provenance attestation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Installed consumer      | Clean installations of React 0.16.0 from the registry with React 18.3.1 and with React 19.3.1 exposed 300 exports from CJS and from the ESM entry, with styles 0.16.0 installed. `@kozmos-ds/react/dashboard` loads in both and exports its 12 names, none shared with the main entry.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Tags / GitHub releases  | `@kozmos-ds/styles@0.16.0`, `@kozmos-ds/tokens@0.9.0`, `@kozmos-ds/icons@0.10.0` and `@kozmos-ds/react@0.16.0` at `8afae665`, each with its GitHub Release. React 0.16.0 is Latest. `pnpm release:tag` made them without the dry run the procedure asks for first: it was given `--help`, which it does not know, and it ignores unknown flags. `--dry-run` afterwards found all four as they should be.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+Change details: [React](../packages/react/CHANGELOG.md#0160), [styles](../packages/styles/CHANGELOG.md#0160),
+[tokens](../packages/tokens/CHANGELOG.md#090), [icons](../packages/icons/CHANGELOG.md#0100) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.15.2:
+
+- **A second entry, `@kozmos-ds/react/dashboard`, with `dashboard.css`** (decision 183), for Pointr Cloud's Dashboard
+  modules. An SDK or Core product never loads either; the main entry and `style.css` hold none of their code.
+- **Hovers move to a hover fill role** (decision 173). In light every hover draws what it drew, and the highlighted
+  option in a list is one step stronger (background/100, from background/50); in dark every hover is one step lighter.
+- **A Chip is never wider than its container**; a long label ends in an ellipsis and is still its name.
+- **Android's resources write every `<dimen>` in dp** (#503, #505): a length read as `px` was device pixels.
+- Everything else is additive: new parts and props, on React and, where the register says so, SwiftUI and Compose.
+
+SwiftUI and Compose ship as source in the repository at this commit, not to a registry.
+
+**Figma and Code Connect.** `pnpm figma:verify` on 17 Nov found all 118 sets in the live library with no variant drift
+and the published file matching what the importer generates; one set is on #537's build (`a7dd4d512bce`). Code
+Connect was published from this commit after valid dry runs: 293 React documents, 281 SwiftUI and 275 Compose. Read
+back through Figma's MCP server: ImageCropper (2516:15104) on all three platforms; Toast (101:8189), whose variants
+show `visible="always"`, the file's default for Close Always Visible (GAP-268); FileUpload's image preview with
+`changeLabel` (444:12724, GAP-270); Tree's rows (723:8776), whose Checkable and Disclosure End map to `checked` and
+`disclosurePosition` and default off (GAP-277); and the icons of decision 187: `<Icon icon={Copy01} />` on React and
+`Image(systemName: "doc.on.doc")` on SwiftUI for copy-01 (2373:10320), and `crop-01` by name. **The read-back found a
+defect:** Compose's twelve note-only icon mappings (#561: pencil-01 and the Dashboard toolbar's glyphs) showed
+`import com.kozmos.components.feedbackcard.ComponentExample`, a class that does not exist; CI's parse and the dry runs
+had passed. [#564](https://github.com/vodoco/kozmos-design-system/pull/564) fixes the generator and adds
+`pnpm figma:native:check:android` and `:ios`, which check what the parsers produce; Compose's Code Connect is
+republished from `main` after it merges.
+
+**Claude Design.** The kit for Pointr's Kozmos artifact was built from this tag and verified: 312 exports (300 from
+the main entry and 12 from the Dashboard's), `dashboard.css` after `style.css`, the Dashboard types, the Dashboard
+modules rendering from the bundle, 140 cards, 49 tokens added with their usage notes, and the design skill's shells
+rendering. Its tools first had to learn the second entry, as `docs/claude-design/README.md` describes the kit.
+Applying it needs Can edit on Pointr's artifact, and is Olcay's.
