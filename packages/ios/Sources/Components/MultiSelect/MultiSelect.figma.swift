@@ -23,10 +23,14 @@ struct KozmosMultiSelectConnect: FigmaConnect {
             "Default": "default",
             "Focus": "focus",
             "Disabled": "disabled",
-            "Readonly": "readonly"
+            "Readonly": "readonly",
+            "Mixed": "mixed"
         ]
     )
     var state: String = "default"
+
+    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
+    // the owner's plugin Update has put them in the library.
 
     @FigmaEnum(
         "Status",
@@ -73,7 +77,8 @@ struct KozmosMultiSelectConnect: FigmaConnect {
             readOnly: self.state == "readonly",
             status: self.status,
             helperText: self.showHelperText ? self.helperText : nil,
-            defaultOpen: self.selectedValues.count > 1
+            defaultOpen: self.selectedValues.count > 1,
+            mixed: self.state == "mixed"
         )
     }
 }

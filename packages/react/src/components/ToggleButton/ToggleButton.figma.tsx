@@ -19,18 +19,29 @@ figma.connect(
         Pressed: true,
         Disabled: false,
         Focus: false,
+        Mixed: false,
       }),
       disabled: figma.enum("State", {
         Default: false,
         Pressed: false,
         Disabled: true,
         Focus: false,
+        Mixed: false,
+      }),
+      // Decision 190: the toggle of a multi-selection whose features differ.
+      mixed: figma.enum("State", {
+        Default: false,
+        Pressed: false,
+        Disabled: false,
+        Focus: false,
+        Mixed: true,
       }),
       children: figma.string("Label Text"),
     },
-    example: ({ children, disabled, pressed, size, variant }) => (
+    example: ({ children, disabled, mixed, pressed, size, variant }) => (
       <ToggleButton
         disabled={disabled}
+        mixed={mixed}
         pressed={pressed}
         size={size}
         variant={variant}

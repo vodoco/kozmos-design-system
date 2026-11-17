@@ -32,10 +32,14 @@ struct KozmosDateRangePickerConnect: FigmaConnect {
             "Default": "default",
             "Focus": "focus",
             "Disabled": "disabled",
-            "Readonly": "readonly"
+            "Readonly": "readonly",
+            "Mixed": "mixed"
         ]
     )
     var state: String = "default"
+
+    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
+    // the owner's plugin Update has put them in the library.
 
     @FigmaEnum(
         "Status",
@@ -68,7 +72,8 @@ struct KozmosDateRangePickerConnect: FigmaConnect {
             disabled: self.state == "disabled",
             readOnly: self.state == "readonly",
             status: self.status,
-            showsCalendarPreview: self.showsCalendarPreview
+            showsCalendarPreview: self.showsCalendarPreview,
+            mixed: self.state == "mixed"
         )
     }
 }

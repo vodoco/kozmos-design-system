@@ -8,10 +8,28 @@ struct KozmosTimePickerConnect: FigmaConnect {
     @FigmaString("Label Text")
     var label: String = "Time"
 
+    // GAP-255: State=Mixed, the field of a multi-selection whose values
+    // differ.
+    @FigmaEnum(
+        "State",
+        mapping: [
+            "Default": false,
+            "Focus": false,
+            "Disabled": false,
+            "Readonly": false,
+            "Mixed": true
+        ]
+    )
+    var mixed: Bool = false
+
+    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
+    // the owner's plugin Update has put them in the library.
+
     var body: some View {
         KozmosTimePicker(
             selection: .constant(Date()),
-            label: self.label
+            label: self.label,
+            mixed: self.mixed
         )
     }
 }

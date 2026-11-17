@@ -1,13 +1,19 @@
 package com.kozmos.components.fieldwrapper
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
 
 /**
@@ -62,3 +68,24 @@ internal fun KozmosMixedReset(label: String, onClick: () -> Unit, modifier: Modi
  */
 internal fun Modifier.kozmosUnsaidWhen(unsaid: Boolean): Modifier =
     if (unsaid) clearAndSetSemantics { } else this
+
+/**
+ * The mixed mark (decisions 188 to 190): React's `Minus` icon at 16, a line
+ * from 5 to 19 across the icon's 24, at its middle, stroked 2/24 of its size
+ * with round caps. A mixed Checkbox draws it for its tick, a mixed Switch
+ * where its thumb was, a mixed ToggleButton before its label. Drawn, never
+ * read.
+ */
+@Composable
+internal fun KozmosMixedDash(color: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(16.dp).clearAndSetSemantics {}) {
+        val unit = size.width / 24f
+        drawLine(
+            color = color,
+            start = Offset(5f * unit, size.height / 2f),
+            end = Offset(19f * unit, size.height / 2f),
+            strokeWidth = 2f * unit,
+            cap = StrokeCap.Round
+        )
+    }
+}

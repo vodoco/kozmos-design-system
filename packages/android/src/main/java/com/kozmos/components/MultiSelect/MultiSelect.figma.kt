@@ -27,8 +27,12 @@ class KozmosMultiSelectConnect {
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Readonly" to "readonly"
+        "Readonly" to "readonly",
+        "Mixed" to "mixed"
     )
+
+    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
+    // the owner's plugin Update has put them in the library.
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -72,7 +76,8 @@ class KozmosMultiSelectConnect {
             readOnly = state == "readonly",
             status = status,
             helperText = if (showHelperText) helperText else null,
-            defaultExpanded = content == "open"
+            defaultExpanded = content == "open",
+            mixed = state == "mixed"
         )
     }
 }

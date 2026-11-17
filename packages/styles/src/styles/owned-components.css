@@ -2620,6 +2620,17 @@
   .kozmos-toggle-button.kozmos-toggle-button[aria-pressed="true"] {
     @apply bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)];
   }
+  /* Mixed (decision 190): the toggle stands for features that differ,
+     aria-pressed="mixed". A dashed edge in the theme fill on the muted fill,
+     under the page's ink, in either variant; a dash (Checkbox's minus)
+     before the label. Hovered, the fill is the hover fill (decision 173):
+     muted in light, background/200 in dark, where the edge still reads
+     3.74:1 on the page outside it. Weighs three, as pressed does, so it
+     holds over the outline's edge, its hover and the scoped preflight's
+     border reset. */
+  .kozmos-toggle-button.kozmos-toggle-button[aria-pressed="mixed"] {
+    @apply border border-dashed border-theme-fill bg-muted text-foreground hover:bg-hover-fill hover:text-foreground;
+  }
   /* Backdrop's place and its scrim (GAP-262), owned so they hold where no
      @scope rule applies: fixed over the window, or absolute over its box
      inline, on layer 50, and with no target the overlay scrim itself. With

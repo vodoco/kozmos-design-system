@@ -70,6 +70,30 @@ It forwards its ref to `HTMLDivElement`. Its props are `SegmentedControlProps`, 
   used without one. Give `defaultValue` for the control's first choice.
 
 - `wrapperClassName`: `string`, optional.
+- `mixed`: `boolean`, optional.
+
+  The control stands for several values that differ (decisions 188 and
+  191): a property of a multi-selection whose features chose different
+  options. No option is on, and `mixedLabel` is drawn under the control
+  and said as its description: a segment has no mixed state to announce.
+  Choosing an option calls `onValueChange`, and the product clears
+  `mixed`. Given at all, true or false, the control holds an uncontrolled
+  choice itself: none while mixed, the visitor's after.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Drawn under the mixed control, and said with it. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn under the control while
+  it is not `mixed`, never while it is disabled. Pressed, focus returns
+  to the control's option, and the product sets `mixed` again.
+
+- `resetMixedLabel`: `string`, optional, default `"Reset to multiple values"`.
+
+  The reset's words. Default "Reset to multiple values".
+
 - `dir`: `RovingFocusGroupProps['dir']`, optional.
 - `asChild`: `boolean`, optional.
 - `disabled`: `boolean`, optional, default `false`.

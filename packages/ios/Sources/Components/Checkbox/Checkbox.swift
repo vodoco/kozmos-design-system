@@ -140,10 +140,7 @@ public struct KozmosCheckbox: View {
                             .foregroundColor(markColor)
                             .accessibilityHidden(true)
                     } else if state == .indeterminate {
-                        KozmosCheckboxDash()
-                            .stroke(markColor, style: StrokeStyle(lineWidth: 4.0 / 3.0, lineCap: .round))
-                            .frame(width: 16, height: 16)
-                            .accessibilityHidden(true)
+                        KozmosMixedDash(color: markColor)
                     }
                 }
                 
@@ -190,20 +187,4 @@ public struct KozmosCheckbox: View {
         // control's label is the same colour on every platform (11 Nov).
         return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0
     }
-}
-
-/// React's mixed mark, the `Minus` icon at 16: a line from 5 to 19 across the
-/// icon's 24, at its middle, stroked 2/24 of its size with round caps.
-struct KozmosCheckboxDash: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let y = rect.midY
-        path.move(to: CGPoint(x: rect.minX + rect.width * 5 / 24, y: y))
-        path.addLine(to: CGPoint(x: rect.minX + rect.width * 19 / 24, y: y))
-        return path
-    }
-
-    /// A level line centred in its box reads the same either way.
-    @available(iOS 17.0, macOS 14.0, macCatalyst 17.0, *)
-    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
 }
