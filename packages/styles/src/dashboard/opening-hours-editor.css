@@ -2,8 +2,9 @@
    and its Hours / Closed / Always open choice on one line, its two times
    under them, "+1 day" after an overnight close. In a column too narrow for
    the name and the choice side by side (a 320 window, or German's longer
-   words) the choice wraps under the name, and is held to the column: wider
-   than it, SegmentedControl scrolls its options inside its own box. The
+   words) the choice wraps under the name, and is held to the column: there
+   SegmentedControl shrinks its options to their words (GAP-267), and
+   scrolls them inside its own box only when the words are wider. The
    times share the line and wrap under each other in a narrow column.
    Logical sides throughout. */
 @kozmos-owned {

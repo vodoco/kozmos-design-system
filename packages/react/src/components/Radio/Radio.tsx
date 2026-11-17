@@ -3,6 +3,8 @@ import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { Check, Circle } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
+import { MixedGroupLine } from "../FieldWrapper/MixedGroupLine";
+import { useFieldRef } from "../FieldWrapper/mixedValue";
 import { Label } from "../Label";
 import { ControlText } from "../Label/ControlText";
 import { useKozmosAnalytics } from "../../utils/analytics";
@@ -13,39 +15,113 @@ export interface RadioGroupProps extends React.ComponentPropsWithoutRef<
   label?: string;
   error?: boolean | string;
   wrapperClassName?: string;
+  /**
+   * The group stands for several values that differ (decisions 188 and
+   * 191): a property of a multi-selection whose features chose different
+   * options. No option is chosen, and `mixedLabel` is drawn under the group
+   * and said as its description: a radio has no mixed state to announce.
+   * Choosing an option calls `onValueChange`, and the product clears
+   * `mixed`. Given at all, true or false, the group holds an uncontrolled
+   * choice itself: none while mixed, the visitor's after.
+   */
+  mixed?: boolean;
+  /** Drawn under the mixed group, and said with it. Default "Multiple values". */
+  mixedLabel?: string;
+  /**
+   * Offer to go back to the several values: drawn under the group while it
+   * is not `mixed`, never while it is disabled. Pressed, focus returns to
+   * the group's option, and the product sets `mixed` again.
+   */
+  onResetMixed?: () => void;
+  /** The reset's words. Default "Reset to multiple values". */
+  resetMixedLabel?: string;
 }
 
 const RadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,
   RadioGroupProps
->(({ className, label, error, wrapperClassName, ...props }, ref) => {
-  const errorId = React.useId();
-  const hasError = !!error;
-  const { trackEvent } = useKozmosAnalytics();
+>(
+  (
+    {
+      className,
+      label,
+      error,
+      wrapperClassName,
+      mixed,
+      mixedLabel = "Multiple values",
+      onResetMixed,
+      resetMixedLabel = "Reset to multiple values",
+      value,
+      defaultValue,
+      onValueChange,
+      "aria-describedby": ariaDescribedBy,
+      ...props
+    },
+    ref,
+  ) => {
+    const errorId = React.useId();
+    const mixedId = React.useId();
+    const hasError = !!error;
+    const { trackEvent } = useKozmosAnalytics();
+    const own = React.useRef<HTMLDivElement | null>(null);
+    const groupRef = useFieldRef(own, ref);
+    // A group given `mixed` at all is the field of a multi-selection, and
+    // holds an uncontrolled choice itself, as Select does: `defaultValue`
+    // while it is not mixed, none while it is, and the visitor's choice
+    // after. A choice held before it turned mixed is dropped, never shown
+    // again when it stops being mixed. Without `mixed`, Radix holds it, as
+    // it always has.
+    const takesMixed = mixed !== undefined;
+    const isMixed = mixed === true;
+    const [held, setHeld] = React.useState(isMixed ? "" : (defaultValue ?? ""));
+    if (takesMixed && isMixed && held !== "") setHeld("");
 
-  return (
-    <FieldWrapper
-      label={label}
-      error={error}
-      errorId={errorId}
-      className={wrapperClassName}
-    >
-      <RadioGroupPrimitive.Root
-        className={cn("grid gap-2", className)}
-        aria-invalid={hasError}
-        aria-describedby={
-          hasError && typeof error === "string" ? errorId : undefined
-        }
-        {...props}
-        onValueChange={(value) => {
-          trackEvent("RadioGroup", "radio_selection_changed", { value });
-          props.onValueChange?.(value);
-        }}
-        ref={ref}
-      />
-    </FieldWrapper>
-  );
-});
+    return (
+      <FieldWrapper
+        label={label}
+        error={error}
+        errorId={errorId}
+        className={wrapperClassName}
+      >
+        <RadioGroupPrimitive.Root
+          className={cn("grid gap-2", className)}
+          aria-invalid={hasError}
+          aria-describedby={mergeAriaIds(
+            ariaDescribedBy,
+            isMixed ? mixedId : undefined,
+            hasError && typeof error === "string" ? errorId : undefined,
+          )}
+          data-mixed={isMixed ? "" : undefined}
+          {...props}
+          // Mixed, no option is the value: none is checked, and the first
+          // the visitor chooses is reported.
+          {...(takesMixed
+            ? { value: isMixed ? "" : (value ?? held) }
+            : { value, defaultValue })}
+          onValueChange={(next) => {
+            trackEvent("RadioGroup", "radio_selection_changed", {
+              value: next,
+            });
+            if (takesMixed) setHeld(next);
+            onValueChange?.(next);
+          }}
+          ref={groupRef}
+        />
+        {takesMixed ? (
+          <MixedGroupLine
+            mixed={isMixed}
+            mixedLabel={mixedLabel}
+            mixedId={mixedId}
+            onResetMixed={onResetMixed}
+            resetMixedLabel={resetMixedLabel}
+            disabled={props.disabled}
+            group={own}
+          />
+        ) : null}
+      </FieldWrapper>
+    );
+  },
+);
 RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
 
 /**

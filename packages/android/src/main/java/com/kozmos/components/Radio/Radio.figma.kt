@@ -13,11 +13,17 @@ import com.figma.code.connect.FigmaVariant
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436")
 @FigmaVariant("Variant", "Default")
 class KozmosRadioConnect {
+    // Decision 191: Mixed is an option of a mixed group, unchosen, with the
+    // group's "Multiple values" line under it.
     @FigmaProperty(FigmaType.Enum, "Checked")
-    val checked: Boolean = Figma.mapping(
-        "Unchecked" to false,
-        "Checked" to true
+    val checked: String = Figma.mapping(
+        "Unchecked" to "unchecked",
+        "Checked" to "checked",
+        "Mixed" to "mixed"
     )
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
 
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Option"
@@ -37,10 +43,10 @@ class KozmosRadioConnect {
 
     @Composable
     fun ComponentExample() {
-        KozmosRadioGroup {
+        KozmosRadioGroup(mixed = checked == "mixed", mixedLabel = mixedLabel) {
             KozmosRadioGroupItem(
                 value = "option",
-                selectedValue = if (checked) "option" else "",
+                selectedValue = if (checked == "checked") "option" else "",
                 onOptionSelected = {},
                 label = label,
                 enabled = state != "disabled",
@@ -54,11 +60,17 @@ class KozmosRadioConnect {
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436")
 @FigmaVariant("Variant", "Card")
 class KozmosRadioCardConnect {
+    // Decision 191: Mixed is an option of a mixed group, unchosen, with the
+    // group's "Multiple values" line under it.
     @FigmaProperty(FigmaType.Enum, "Checked")
-    val checked: Boolean = Figma.mapping(
-        "Unchecked" to false,
-        "Checked" to true
+    val checked: String = Figma.mapping(
+        "Unchecked" to "unchecked",
+        "Checked" to "checked",
+        "Mixed" to "mixed"
     )
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
 
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Vector"
@@ -82,10 +94,10 @@ class KozmosRadioCardConnect {
 
     @Composable
     fun ComponentExample() {
-        KozmosRadioGroup {
+        KozmosRadioGroup(mixed = checked == "mixed", mixedLabel = mixedLabel) {
             KozmosRadioGroupItem(
                 value = "option",
-                selectedValue = if (checked) "option" else "",
+                selectedValue = if (checked == "checked") "option" else "",
                 onOptionSelected = {},
                 label = label,
                 enabled = state != "disabled",
@@ -105,11 +117,17 @@ class KozmosRadioCardConnect {
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436")
 @FigmaVariant("Variant", "Tile")
 class KozmosRadioTileConnect {
+    // Decision 191: Mixed is an option of a mixed group, unchosen, with the
+    // group's "Multiple values" line under it.
     @FigmaProperty(FigmaType.Enum, "Checked")
-    val checked: Boolean = Figma.mapping(
-        "Unchecked" to false,
-        "Checked" to true
+    val checked: String = Figma.mapping(
+        "Unchecked" to "unchecked",
+        "Checked" to "checked",
+        "Mixed" to "mixed"
     )
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
 
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Fade"
@@ -133,10 +151,10 @@ class KozmosRadioTileConnect {
 
     @Composable
     fun ComponentExample() {
-        KozmosRadioGroup {
+        KozmosRadioGroup(mixed = checked == "mixed", mixedLabel = mixedLabel) {
             KozmosRadioGroupItem(
                 value = "option",
-                selectedValue = if (checked) "option" else "",
+                selectedValue = if (checked == "checked") "option" else "",
                 onOptionSelected = {},
                 label = label,
                 enabled = state != "disabled",

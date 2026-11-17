@@ -46,18 +46,80 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
+/**
+ * A group of radio options, one chosen.
+ *
+ * [mixed] (decisions 188 and 191): the group stands for several values that
+ * differ, a property of a multi-selection whose features chose different
+ * options. No option is selected, whatever `selectedValue` the options are
+ * given, and [mixedLabel] is drawn under the options and read after them: a
+ * radio has no mixed state to say. Choosing an option calls its
+ * `onOptionSelected`, and the product clears `mixed`. [onResetMixed] offers
+ * [resetMixedLabel] under the group once it is no longer mixed, never while
+ * [enabled] is false; pressed, focus goes back to the chosen option, and the
+ * product sets `mixed` again.
+ */
 @Composable
 fun KozmosRadioGroup(
     modifier: Modifier = Modifier,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    enabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(modifier = modifier.selectableGroup()) {
-        content()
+    val showsReset = KozmosMixedValue.showsReset(mixed, onResetMixed, enabled)
+    // Only a group with a line under it is drawn apart from its options:
+    // without one, it is the column it always was.
+    if (!mixed && !showsReset) {
+        Column(modifier = modifier.selectableGroup()) {
+            content()
+        }
+        return
+    }
+    val chosenFocus = remember { FocusRequester() }
+    val state = remember(mixed, chosenFocus) { KozmosRadioGroupState(mixed, chosenFocus) }
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing75)
+    ) {
+        Column(modifier = Modifier.selectableGroup()) {
+            CompositionLocalProvider(LocalKozmosRadioGroupState provides state) {
+                content()
+            }
+        }
+        if (mixed) {
+            // Drawn and read after the options, as a field's helper text.
+            Text(
+                text = mixedLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = KozmosThemeTokens.primitivesColorsForeground400
+            )
+        } else {
+            KozmosMixedReset(label = resetMixedLabel, onClick = {
+                // The reset goes as the group turns mixed again: focus goes
+                // back to the option chosen, as on the web.
+                chosenFocus.requestFocus()
+                onResetMixed?.invoke()
+            })
+        }
     }
 }
+
+/** What a group with a mixed line tells its options. */
+internal class KozmosRadioGroupState(val mixed: Boolean, val chosenFocus: FocusRequester)
+
+internal val LocalKozmosRadioGroupState = staticCompositionLocalOf<KozmosRadioGroupState?> { null }
 
 @Composable
 fun KozmosRadioGroupItem(
@@ -73,7 +135,15 @@ fun KozmosRadioGroupItem(
     media: (@Composable () -> Unit)? = null
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-    val selected = value == selectedValue
+    val group = LocalKozmosRadioGroupState.current
+    // A mixed group has no option selected (decision 191).
+    val selected = value == selectedValue && group?.mixed != true
+    // The option holding the group's value takes focus back after a reset.
+    val itemModifier = if (group != null && value == selectedValue) {
+        modifier.focusRequester(group.chosenFocus)
+    } else {
+        modifier
+    }
     // Selected, the ring is a border on the surface, theme 600, and the dot a
     // fill, the theme fill, theme 500 in both themes (decision 59). They were
     // one colour, theme 500, which read 3.13:1 as a ring on the dark greys.
@@ -126,13 +196,13 @@ fun KozmosRadioGroupItem(
             ring = if (selected) selectedColor else unselectedColor,
             dot = dotColor,
             onClick = onClick,
-            modifier = modifier
+            modifier = itemModifier
         )
         return
     }
 
     Row(
-        modifier = modifier
+        modifier = itemModifier
             .fillMaxWidth()
             .heightIn(min = 44.dp)
             .selectable(

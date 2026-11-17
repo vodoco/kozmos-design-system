@@ -21,12 +21,20 @@ figma.connect(
         Focus: false,
         Disabled: true,
         Error: false,
+        Mixed: false,
       }),
       error: figma.enum("State", {
         Default: false,
         Focus: false,
         Disabled: false,
         Error: true,
+        Mixed: false,
+      }),
+      // Decision 191: no option chosen, whatever Active says, and the
+      // "Multiple values" line under the track.
+      mixed: figma.enum("State", { Mixed: true }),
+      mixedLabel: figma.enum("State", {
+        Mixed: figma.string("Mixed Text"),
       }),
       item1Text: figma.string("Item 1 Text"),
       item2Text: figma.string("Item 2 Text"),
@@ -39,12 +47,16 @@ figma.connect(
       item1Text,
       item2Text,
       item3Text,
+      mixed,
+      mixedLabel,
       size,
     }) => (
       <SegmentedControl
         defaultValue={defaultValue}
         disabled={disabled}
         error={error}
+        mixed={mixed}
+        mixedLabel={mixedLabel}
         items={[
           { value: "one", label: item1Text },
           { value: "two", label: item2Text },

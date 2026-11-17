@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "8bcb00254e29";
+const PLUGIN_BUILD = "667463a3ae83";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -361,7 +361,18 @@ const CHIP_STATES = ["Default", "Selected", "Disabled"];
 const CHIP_REMOVABLE = ["False", "True"];
 const SEGMENTED_CONTROL_SIZES = ["Small", "Default", "Large"];
 const SEGMENTED_CONTROL_ACTIVE = ["One", "Two", "Three"];
-const SEGMENTED_CONTROL_STATES = ["Default", "Focus", "Disabled", "Error"];
+// Decision 191: State=Mixed is React's `mixed`, a control of a
+// multi-selection whose features chose different options: no option chosen,
+// whatever Active says, and "Multiple values" under the track (Mixed Text).
+// Last, so a set from before it keeps its order and Update adds the nine it
+// lacks.
+const SEGMENTED_CONTROL_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Error",
+  "Mixed",
+];
 const COUNTER_TONES = ["Neutral", "Brand", "Destructive", "Inverse"];
 const COUNTER_SIZES = ["Small", "Default"];
 // Decision 188: Indeterminate is React's `checked="indeterminate"`, painted
@@ -369,7 +380,11 @@ const COUNTER_SIZES = ["Small", "Default"];
 // a set from before it keeps its order and Update adds the three it lacks.
 const CHECKBOX_CHECKED = ["Unchecked", "Checked", "Indeterminate"];
 const CHECKBOX_STATES = ["Default", "Disabled", "Error"];
-const RADIO_CHECKED = ["Unchecked", "Checked"];
+// Decision 191: Checked=Mixed is an option of RadioGroup's `mixed`: drawn
+// unchosen, as every option of a mixed group is, with the group's "Multiple
+// values" line under it (Mixed Text), for the group's last option. Last, so
+// a set from before it keeps its order and Update adds the nine it lacks.
+const RADIO_CHECKED = ["Unchecked", "Checked", "Mixed"];
 const RADIO_STATES = ["Default", "Disabled", "Error"];
 // GAP-158: how an option is drawn, React's RadioGroupItem `variant`. Default
 // first, so a variant built before the axis existed parses as Default and
@@ -3867,13 +3882,14 @@ const COMPONENT_DOCS = [
       "Size maps to SegmentedControl.size.",
       "Active maps to defaultValue or selectedIndex in Code Connect.",
       "State maps to disabled, focus, and error examples.",
+      "State=Mixed maps to SegmentedControl.mixed (decision 191): no option chosen, and Multiple values under the track; Mixed Text is SegmentedControl.mixedLabel.",
       "Item text properties map to segment labels.",
     ],
     properties: [
       "Size: Small, Default, Large",
       "Active: One, Two, Three",
-      "State: Default, Focus, Disabled, Error",
-      "Item 1 Text, Item 2 Text, Item 3 Text, Focus Visible",
+      "State: Default, Focus, Disabled, Error, Mixed",
+      "Item 1 Text, Item 2 Text, Item 3 Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Product code exposes the group as a single-choice segmented control.",
@@ -4613,6 +4629,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
+      "Checked=Mixed maps to RadioGroup.mixed (decision 191): the option unchosen, with Multiple values under it, the group's line; Mixed Text is RadioGroup.mixedLabel.",
       "State maps to disabled and error props in Code Connect.",
       "Variant maps to RadioGroupItem.variant: Default, Card and Tile (GAP-158).",
       "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
@@ -4621,10 +4638,10 @@ const COMPONENT_DOCS = [
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
-      "Checked: Unchecked, Checked",
+      "Checked: Unchecked, Checked, Mixed",
       "State: Default, Disabled, Error",
       "Variant: Default, Card, Tile",
-      "Label Text, Description Text, Show Description, Show Media, Focus Visible",
+      "Label Text, Description Text, Show Description, Show Media, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -35526,6 +35543,7 @@ async function buildSegmentedControlComponent() {
     "Size maps to SegmentedControl.size.",
     "Active maps to the selected/default value.",
     "State maps to disabled, focus, and error examples.",
+    "State=Mixed maps to SegmentedControl.mixed (decision 191): no option chosen, whatever Active says, and Multiple values under the track; Mixed Text is SegmentedControl.mixedLabel.",
     "Item text properties map to segment labels.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -35581,6 +35599,7 @@ async function updateSegmentedControlComponent() {
     "Size maps to SegmentedControl.size.",
     "Active maps to the selected/default value.",
     "State maps to disabled, focus, and error examples.",
+    "State=Mixed maps to SegmentedControl.mixed (decision 191): no option chosen, whatever Active says, and Multiple values under the track; Mixed Text is SegmentedControl.mixedLabel.",
     "Item text properties map to segment labels.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -36565,6 +36584,7 @@ async function buildRadioComponent() {
     "Kozmos Radio component set generated from React RadioGroupItem API.",
     "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
+    "Checked=Mixed maps to RadioGroup.mixed (decision 191): the option unchosen, with the group's Multiple values under it, for the group's last option; Mixed Text is RadioGroup.mixedLabel.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
     "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
@@ -36585,6 +36605,7 @@ async function buildRadioComponent() {
   configureLabelTextProperty(componentSet, "Radio", stats);
   configureFocusVisibleProperty(componentSet, stats);
   configureControlDescriptionProperties(componentSet, stats);
+  configureMixedGroupTextProperty(componentSet, stats);
   return stats;
 }
 
@@ -36623,6 +36644,7 @@ async function updateRadioComponent() {
     "Kozmos Radio component set generated from React RadioGroupItem API.",
     "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
+    "Checked=Mixed maps to RadioGroup.mixed (decision 191): the option unchosen, with the group's Multiple values under it, for the group's last option; Mixed Text is RadioGroup.mixedLabel.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
     "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
@@ -36674,6 +36696,7 @@ async function updateRadioComponent() {
   configureLabelTextProperty(existing, "Radio", stats);
   configureFocusVisibleProperty(existing, stats);
   configureControlDescriptionProperties(existing, stats);
+  configureMixedGroupTextProperty(existing, stats);
   return stats;
 }
 
@@ -59959,6 +59982,7 @@ function configureSegmentedControlProperties(componentSet, stats) {
     "Activity",
     stats,
   );
+  configureMixedGroupTextProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -64801,6 +64825,10 @@ function layoutSegmentedControlVariants(componentSet) {
     if (typeof child.width === "number" && Number.isFinite(child.width)) {
       maxWidth = Math.max(maxWidth, child.width);
     }
+    // A Mixed variant is the track and its line (decision 191).
+    if (typeof child.height === "number" && Number.isFinite(child.height)) {
+      maxHeight = Math.max(maxHeight, child.height);
+    }
   }
 
   const xStep = maxWidth + columnGap;
@@ -64839,29 +64867,66 @@ async function updateSegmentedControlVariant(
   { size, active, state, variableByName, fonts, stats },
 ) {
   const metrics = segmentedControlMetrics(size);
-  const activeIndex = segmentedControlActiveIndex(active);
+  const mixed = state === "Mixed";
+  // Mixed (decision 191), no option is chosen, whatever Active says.
+  const activeIndex = mixed ? -1 : segmentedControlActiveIndex(active);
   const config = segmentedControlConfig(state);
 
   component.name = `Size=${size}, Active=${active}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "AUTO";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "CENTER";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 0;
-  component.paddingLeft = metrics.padding;
-  component.paddingRight = metrics.padding;
-  component.paddingTop = metrics.padding;
-  component.paddingBottom = metrics.padding;
-  component.resizeWithoutConstraints(metrics.width, metrics.height);
-  setNodePropertyIfSupported(component, "minWidth", metrics.width);
-  setNodePropertyIfSupported(component, "minHeight", metrics.height);
-  component.cornerRadius = metrics.radius;
-  component.clipsContent = false;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "SegmentedControl");
 
-  component.fills = [
+  // Every other State is the track itself. Mixed is a stack: the track, a
+  // frame painted as theirs is, then the "Multiple values" line under it,
+  // as React's FieldWrapper stacks them.
+  let track = component;
+  if (mixed) {
+    component.layoutMode = "VERTICAL";
+    component.primaryAxisSizingMode = "AUTO";
+    component.counterAxisSizingMode = "AUTO";
+    component.primaryAxisAlignItems = "MIN";
+    component.counterAxisAlignItems = "MIN";
+    component.itemSpacing = 6;
+    component.paddingLeft = 0;
+    component.paddingRight = 0;
+    component.paddingTop = 0;
+    component.paddingBottom = 0;
+    component.cornerRadius = 0;
+    component.clipsContent = false;
+    component.fills = [];
+    component.strokes = [];
+    track = directChildNamed(component, "Track");
+    if (track && track.type !== "FRAME") {
+      track.remove();
+      track = null;
+    }
+    if (!track) {
+      track = figma.createFrame();
+      track.name = "Track";
+    }
+    component.insertChild(0, track);
+    for (const child of Array.from(component.children)) {
+      if (child !== track && child.name !== MIXED_TEXT_LAYER) child.remove();
+    }
+  }
+
+  track.layoutMode = "HORIZONTAL";
+  track.primaryAxisSizingMode = "AUTO";
+  track.counterAxisSizingMode = "FIXED";
+  track.primaryAxisAlignItems = "CENTER";
+  track.counterAxisAlignItems = "CENTER";
+  track.itemSpacing = 0;
+  track.paddingLeft = metrics.padding;
+  track.paddingRight = metrics.padding;
+  track.paddingTop = metrics.padding;
+  track.paddingBottom = metrics.padding;
+  track.resizeWithoutConstraints(metrics.width, metrics.height);
+  setNodePropertyIfSupported(track, "minWidth", metrics.width);
+  setNodePropertyIfSupported(track, "minHeight", metrics.height);
+  track.cornerRadius = metrics.radius;
+  track.clipsContent = false;
+
+  track.fills = [
     paintFromVariable(
       config.background,
       config.backgroundFallback,
@@ -64869,7 +64934,7 @@ async function updateSegmentedControlVariant(
       stats,
     ),
   ];
-  component.strokes = [
+  track.strokes = [
     paintFromVariable(
       config.stroke,
       config.strokeFallback,
@@ -64877,17 +64942,12 @@ async function updateSegmentedControlVariant(
       stats,
     ),
   ];
-  component.strokeWeight = 1;
+  track.strokeWeight = 1;
 
-  bindSegmentedControlGeometryVariables(
-    component,
-    metrics,
-    variableByName,
-    stats,
-  );
+  bindSegmentedControlGeometryVariables(track, metrics, variableByName, stats);
 
   const sizing = await syncSegmentedControlVariantChildren({
-    component,
+    component: track,
     activeIndex,
     state,
     metrics,
@@ -64897,11 +64957,20 @@ async function updateSegmentedControlVariant(
   });
 
   resizeNodeWithoutConstraints(
-    component,
+    track,
     sizing && sizing.controlWidth ? sizing.controlWidth : metrics.width,
     metrics.height,
   );
-  component.primaryAxisSizingMode = "AUTO";
+  track.primaryAxisSizingMode = "AUTO";
+
+  if (mixed) {
+    await syncMixedGroupLine(component, {
+      mixed,
+      fonts,
+      variableByName,
+      stats,
+    });
+  }
 }
 
 async function updateCounterVariant(
@@ -68986,9 +69055,45 @@ async function updateRadioVariant(
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
 
+  const mixed = checked === "Mixed";
+
   if (variant === "Card" || variant === "Tile") {
+    // Every other card or tile is the box itself. Mixed (decision 191) is a
+    // stack: the box, painted unchosen as theirs is, then the group's
+    // "Multiple values" line under it.
+    let box = component;
+    if (mixed) {
+      component.layoutMode = "VERTICAL";
+      component.primaryAxisSizingMode = "AUTO";
+      component.counterAxisSizingMode = "AUTO";
+      component.primaryAxisAlignItems = "MIN";
+      component.counterAxisAlignItems = "MIN";
+      component.itemSpacing = 6;
+      component.paddingLeft = 0;
+      component.paddingRight = 0;
+      component.paddingTop = 0;
+      component.paddingBottom = 0;
+      component.cornerRadius = 0;
+      component.clipsContent = false;
+      component.fills = [];
+      component.strokes = [];
+      component.opacity = 1;
+      box = directChildNamed(component, "Radio Box");
+      if (box && box.type !== "FRAME") {
+        box.remove();
+        box = null;
+      }
+      if (!box) {
+        box = figma.createFrame();
+        box.name = "Radio Box";
+      }
+      component.insertChild(0, box);
+      for (const child of Array.from(component.children)) {
+        if (child !== box && child.name !== MIXED_TEXT_LAYER) child.remove();
+      }
+    }
     await syncRadioBoxVariantChildren({
-      component,
+      component: box,
       variant,
       checked,
       state,
@@ -68997,6 +69102,13 @@ async function updateRadioVariant(
       fonts,
       stats,
     });
+    if (mixed)
+      await syncMixedGroupLine(component, {
+        mixed,
+        fonts,
+        variableByName,
+        stats,
+      });
     return;
   }
 
@@ -69009,6 +69121,13 @@ async function updateRadioVariant(
     config,
     variableByName,
     fonts,
+    stats,
+  });
+  // Mixed (decision 191): the ring unchosen, and the group's line last.
+  await syncMixedGroupLine(component, {
+    mixed,
+    fonts,
+    variableByName,
     stats,
   });
 }
@@ -87283,6 +87402,58 @@ function configureResetMixedProperty(componentSet, stats) {
     RESET_MIXED_TEXT,
     stats,
   );
+  configureNamedTextProperty(
+    componentSet,
+    MIXED_TEXT_LAYER,
+    MIXED_TEXT_PROPERTY,
+    MIXED_FIELD_TEXT,
+    stats,
+  );
+}
+
+/**
+ * Decision 191: a mixed RadioGroup's or SegmentedControl's line under its
+ * options, "Multiple values", as React's group draws it: a field's helper
+ * line (kozmos-field-message), 14/20 in Colors/foreground/400. A "Mixed
+ * Text" layer last in `parent`, its words the Mixed Text property; outside
+ * Mixed it is removed. Unlike a mixed field's Mixed Text it stands for no
+ * placeholder, so it takes the helper's type, not the field's.
+ */
+async function syncMixedGroupLine(
+  parent,
+  { mixed, fonts, variableByName, stats },
+) {
+  let text = directChildNamed(parent, MIXED_TEXT_LAYER);
+  if (!mixed) {
+    if (text) text.remove();
+    return null;
+  }
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) {
+    text = figma.createText();
+    text.name = MIXED_TEXT_LAYER;
+  }
+  await applyFieldTextTypography(text, fonts, "Input", variableByName, stats);
+  text.characters = MIXED_FIELD_TEXT;
+  text.fills = [
+    paintFromVariable(
+      "Colors/foreground/400",
+      "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+  text.textAlignVertical = "CENTER";
+  parent.appendChild(text);
+  setTextAutoResize(text, "WIDTH_AND_HEIGHT");
+  return text;
+}
+
+/** Mixed Text, the words of a mixed group's line, for a product to localise. */
+function configureMixedGroupTextProperty(componentSet, stats) {
   configureNamedTextProperty(
     componentSet,
     MIXED_TEXT_LAYER,

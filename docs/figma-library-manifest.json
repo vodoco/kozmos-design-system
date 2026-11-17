@@ -19869,7 +19869,15 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["SegmentedControl"],
-          "mappedProps": ["defaultValue", "disabled", "error", "items", "size"],
+          "mappedProps": [
+            "defaultValue",
+            "disabled",
+            "error",
+            "items",
+            "mixed",
+            "mixedLabel",
+            "size"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -19884,6 +19892,9 @@
           "id",
           "items",
           "label",
+          "mixed",
+          "mixedLabel",
+          "resetMixedLabel",
           "role",
           "size",
           "tabIndex",

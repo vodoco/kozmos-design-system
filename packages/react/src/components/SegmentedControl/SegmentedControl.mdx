@@ -37,6 +37,148 @@ keeps working when it is used without one. Give `defaultValue` for the
 control's first choice. A product that wants exactly one choice at all times
 ignores the `undefined` and keeps its `value`.
 
+## In a narrow space
+
+An option keeps its width, 97, 117 or 137 by `size`, when there is room, or its words' if they are
+wider. When the space is short the options shrink toward their words, each giving up its spare
+width, and never past them: no word is cut short or runs into the next option's (GAP-267, decision
+201). Only when the words alone are wider than the space does the track scroll inside its own box,
+each option at its words. A full-width control shares its width equally, and no option is narrower
+than its words there either. SwiftUI and Compose lay their options out by the same rule; Compose's
+track scrolls as the web's does, and SwiftUI's runs past the space.
+
+Three small options, "Hours", "Closed" and "Always open", are 301 wide with room and fit a 296
+column (OpeningHoursEditor's narrow day) at about 95, 95 and 97. In German, "Öffnungszeiten",
+"Geschlossen" and "Immer geöffnet" are wider than 97 at their words, 113, 98 and 113 in the system
+face, so they need 334 and scroll in a 296 column: give the column 334, or shorter words.
+
+## Mixed
+
+With several features selected, a property whose features chose different options is one control
+for all of them (decisions 188 and 191). `mixed` says the control stands for those values: no
+option is chosen, and "Multiple values" (`mixedLabel`) is drawn under the track, as a field's helper
+line. A segment has no mixed state to announce, so the control says it: on the web the line is the
+group's description (`aria-describedby`), heard as the group is entered, once; SwiftUI and Compose
+read it after the options. Choosing an option ends it: `onValueChange` reports the choice, and the
+product clears `mixed`. Give `onResetMixed` for a control whose values differ: once it is no longer
+mixed it draws "Reset to multiple values" (`resetMixedLabel`) under the track, as the fields draw
+it, never while it is disabled. Pressed, focus goes back to the option chosen, and the product sets
+`mixed` again. Input, NumberInput, Select, Combobox and RadioGroup take the same names (GAP-153).
+
+Given `mixed` at all, an uncontrolled control holds its choice itself: none while mixed, the
+visitor's after, and a choice held before it turned mixed again is dropped. On SwiftUI and Compose
+the options draw none chosen while it is mixed, whatever `selection` or `selectedIndex` holds; each
+option is a radio there too, selected when chosen.
+
+In Figma, Mixed is a value of the State axis: the track with no option chosen, whatever Active
+says, and the "Multiple values" line under it. Mixed Text holds the words, for a board in another
+language.
+
+<PlatformSnippets
+  react={`
+import * as React from "react";
+import { SegmentedControl } from "@kozmos-ds/react";
+
+const modes = [
+  { value: "hours", label: "Hours" },
+  { value: "closed", label: "Closed" },
+  { value: "open", label: "Always open" },
+];
+
+// The features' Mondays differ, so the control is mixed until an option is
+// chosen: none is chosen, and "Multiple values" is under the track.
+export function MondayAcrossSelection({ days }: { days: string[] }) {
+  const [edit, setEdit] = React.useState<string>();
+  const differs = days.some((day) => day !== days[0]);
+  return (
+    <SegmentedControl
+      aria-label="Monday"
+      size="sm"
+      items={modes}
+      mixed={differs && edit === undefined}
+      value={edit ?? (differs ? null : days[0])}
+      onValueChange={(next) => next && setEdit(next)}
+      onResetMixed={differs ? () => setEdit(undefined) : undefined}
+    />
+  );
+}
+  `}
+  vue={`
+<script setup>
+import { KozmosSegmentedControl } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+
+const modes = [
+  { value: "hours", label: "Hours" },
+  { value: "closed", label: "Closed" },
+  { value: "open", label: "Always open" },
+]
+const props = defineProps({ days: Array })
+const edit = ref(null)
+const differs = computed(() => new Set(props.days).size > 1)
+</script>
+
+<template>
+  <KozmosSegmentedControl
+    aria-label="Monday"
+    size="sm"
+    :items="modes"
+    :mixed="differs && edit === null"
+    :model-value="edit ?? (differs ? null : props.days[0])"
+    @update:model-value="edit = $event ?? edit"
+    @reset-mixed="edit = null"
+  />
+</template>
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// The features' Mondays differ, so the control is mixed until an option is
+// chosen: none shows as chosen, and "Multiple values" is under the track.
+struct MondayAcrossSelection: View {
+    let days: [Int]
+    @State private var edit: Int?
+
+    var body: some View {
+        let differs = Set(days).count > 1
+        KozmosSegmentedControl(
+            selection: Binding(get: { edit ?? days[0] }, set: { edit = $0 }),
+            items: ["Hours", "Closed", "Always open"],
+            size: .sm,
+            mixed: differs && edit == nil,
+            onResetMixed: differs ? { edit = nil } : nil
+        )
+    }
+}
+`}
+  kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.segmentedcontrol.KozmosSegmentedControl
+import com.kozmos.components.segmentedcontrol.SegmentedControlSize
+
+// The features' Mondays differ, so the control is mixed until an option is
+// chosen: none is selected, and "Multiple values" is under the track.
+@Composable
+fun MondayAcrossSelection(days: List<Int>) {
+    val differs = days.distinct().size > 1
+    var edit by remember(days) { mutableStateOf<Int?>(null) }
+    KozmosSegmentedControl(
+        options = listOf("Hours", "Closed", "Always open"),
+        selectedIndex = edit ?: days.first(),
+        onOptionSelected = { edit = it },
+        size = SegmentedControlSize.Sm,
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    )
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

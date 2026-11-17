@@ -1,16 +1,89 @@
 import SwiftUI
 
+/// A group of radio options, one chosen.
+///
+/// `mixed` (decisions 188 and 191): the group stands for several values that
+/// differ, a property of a multi-selection whose features chose different
+/// options. No option is selected, whatever the options' `selection` holds,
+/// and `mixedLabel` is drawn under the options and read after them: a radio
+/// has no mixed state to say. Choosing an option writes its `selection`, and
+/// the product clears `mixed`. `onResetMixed` offers `resetMixedLabel` under
+/// the group once it is no longer mixed, never while `disabled`; pressed,
+/// VoiceOver goes back to the chosen option, and the product sets `mixed`
+/// again.
 public struct KozmosRadioGroup<Content: View>: View {
     let content: Content
-    
-    public init(@ViewBuilder content: () -> Content) {
+    let mixed: Bool
+    let mixedLabel: String
+    let onResetMixed: (() -> Void)?
+    let resetMixedLabel: String
+    let disabled: Bool
+    @AccessibilityFocusState private var chosenFocused: Bool
+
+    public init(
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        disabled: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) {
         self.content = content()
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
+        self.disabled = disabled
     }
-    
+
+    private var showsReset: Bool {
+        KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled)
+    }
+
     public var body: some View {
+        if mixed || showsReset {
+            // A line under the options, as a field draws its reset.
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing75) {
+                options
+                    .environment(\.kozmosRadioGroupMixed, KozmosRadioGroupMixed(mixed: mixed, chosenFocus: $chosenFocused))
+                if mixed {
+                    KozmosMixedGroupLabel(mixedLabel)
+                } else {
+                    KozmosMixedReset(label: resetMixedLabel) {
+                        // The reset goes as the group turns mixed again:
+                        // VoiceOver goes to the option chosen, read in the
+                        // group with its several values.
+                        chosenFocused = true
+                        onResetMixed?()
+                    }
+                }
+            }
+        } else {
+            options
+        }
+    }
+
+    private var options: some View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             content
         }
+    }
+}
+
+/// What a group with a mixed line tells its options (decision 191).
+struct KozmosRadioGroupMixed {
+    let mixed: Bool
+    let chosenFocus: AccessibilityFocusState<Bool>.Binding
+}
+
+private struct KozmosRadioGroupMixedKey: EnvironmentKey {
+    static let defaultValue: KozmosRadioGroupMixed? = nil
+}
+
+extension EnvironmentValues {
+    var kozmosRadioGroupMixed: KozmosRadioGroupMixed? {
+        get { self[KozmosRadioGroupMixedKey.self] }
+        set { self[KozmosRadioGroupMixedKey.self] = newValue }
     }
 }
 
@@ -33,6 +106,7 @@ public struct KozmosRadioGroupItem<Media: View>: View {
     let media: Media?
     @Binding var selection: String
     @Environment(\.kozmosAnalytics) var trackEvent
+    @Environment(\.kozmosRadioGroupMixed) private var group
 
     /// A card or tile with media: an image (a card's, drawn across its top)
     /// or an icon (a tile's, drawn over its title). The media is decoration:
@@ -81,6 +155,7 @@ public struct KozmosRadioGroupItem<Media: View>: View {
         .disabled(disabled)
         // An untitled card or tile says so once in a debug build (GAP-158).
         .onAppear { KozmosUntitledOption.log(variant: variant, label: label) }
+        .modifier(KozmosRadioResetFocus(focus: selection == value ? group?.chosenFocus : nil))
     }
 
     private var defaultBody: some View {
@@ -224,8 +299,9 @@ public struct KozmosRadioGroupItem<Media: View>: View {
         disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0
     }
 
-    private var isSelected: Bool {
-        selection == value
+    /// Chosen, unless the group is mixed: then none is (decision 191).
+    var isSelected: Bool {
+        selection == value && group?.mixed != true
     }
 
     /// Decision 59: the ring is a border on the surface, theme 600, as
@@ -270,5 +346,21 @@ public extension KozmosRadioGroupItem where Media == EmptyView {
         self.disabled = disabled
         self.error = error
         self.media = nil
+    }
+}
+
+/// Where VoiceOver goes back to after a group's reset: the chosen option.
+/// Set only in a group offering one, so an option elsewhere is the view it
+/// always was (an accessibility focus binding keeps `ImageRenderer` from
+/// drawing a view at all).
+private struct KozmosRadioResetFocus: ViewModifier {
+    let focus: AccessibilityFocusState<Bool>.Binding?
+
+    func body(content: Content) -> some View {
+        if let focus {
+            content.accessibilityFocused(focus)
+        } else {
+            content
+        }
     }
 }

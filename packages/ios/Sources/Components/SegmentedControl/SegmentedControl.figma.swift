@@ -40,17 +40,24 @@ struct KozmosSegmentedControlConnect: FigmaConnect {
             "Default": "default",
             "Focus": "focus",
             "Disabled": "disabled",
-            "Error": "error"
+            "Error": "error",
+            "Mixed": "mixed"
         ]
     )
     var state: String = "default"
+
+    // Decision 191: no option chosen, and the "Multiple values" line.
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
 
     var body: some View {
         KozmosSegmentedControl(
             selection: .constant(self.activeIndex),
             items: [self.item1Text, self.item2Text, self.item3Text],
             size: self.size,
-            disabled: self.state == "disabled"
+            disabled: self.state == "disabled",
+            mixed: self.state == "mixed",
+            mixedLabel: self.mixedLabel
         )
     }
 }
