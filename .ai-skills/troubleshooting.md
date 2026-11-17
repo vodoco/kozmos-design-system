@@ -182,7 +182,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
 **Symptoms:**
 
 ```
-❌ ERROR: everything costs 112.20 KB, over 112 KB
+❌ ERROR: everything costs 120.20 KB, over 120 KB
 ```
 
 **Solutions:**
@@ -213,7 +213,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
    ```
 
 A budget moves only with the measurement that justifies it, on Olcay's decision (decision 53 set
-everything at once to 68 KB; it has been 112 KB since 2026-11-09, decision 175; one export alone has
+everything at once to 68 KB; it has been 120 KB since 2026-11-17, decision 213; one export alone has
 been held to 8.5 KB since 2026-10-16, decision 90).
 
 ---
@@ -1263,7 +1263,7 @@ tween(
 | ----------------------------------------------- | ------------------------------------------------- | ------------------ |
 | `Some token references (1) could not be found`  | A reference to a token that does not exist        | Section 1.1        |
 | `Add the "use client" directive`                | A hook in a file of your own without it           | Section 2.1        |
-| `everything costs … KB, over 112 KB`            | A bundle budget exceeded                          | Section 2.2        |
+| `everything costs … KB, over 120 KB`            | A bundle budget exceeded                          | Section 2.2        |
 | `require() of ES Module`                        | CJS/ESM conflict                                  | Section 2.3        |
 | `Cannot find module '@kozmos-ds/…'`             | The package is not built                          | Section 2.4        |
 | `Hydration mismatch`, or a flash of light theme | The first render uses `defaultSystemTheme`        | Section 3.2        |

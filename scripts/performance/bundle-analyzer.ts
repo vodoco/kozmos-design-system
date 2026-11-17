@@ -70,7 +70,12 @@ const MAX_BUTTON_GZIP_KB = 2;
 // Olcay approved 112 KB on 2026-11-09 (decision 175) for 0.16.0, which carries every item the register
 // promises for it (decision 174): more than 40, among them new parts (ContextMenu, Kbd, the Cloud
 // modules) and Tree's range selection. Main measured 96.53 KB on CI before them.
-const MAX_TOTAL_GZIP_KB = 112;
+// Olcay approved 120 KB on 2026-11-17 (decision 213) for 0.17.0 (decision 209): its first wave, the
+// mixed state on nine parts (#566, #571), takes Everything to 111.88 KB, and the rest of 0.17.0
+// (DescriptionList, EmptyState's and Chip's tones, PageHeader's titleAddon, Dialog's media and full
+// size, TourStep's anchor, the fixes and the larger tracks) has no room left under 112. One raise for
+// the release; the per-export, Button, CSS and module-count guards stay.
+const MAX_TOTAL_GZIP_KB = 120;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
