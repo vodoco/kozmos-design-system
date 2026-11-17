@@ -144,6 +144,10 @@ const searchTakes: Takes = { dom: true, own: ["onClear"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
 const datePickerTakes: Takes = { dom: true, own: ["onOpenChange"] };
+const segmentedControlTakes: Takes = {
+  dom: true,
+  own: ["onResetMixed", "onValueChange"],
+};
 const categoryTileTakes: Takes = { dom: true, except: ["onClick"], own: [] };
 const tourStepTakes: Takes = {
   dom: true,
@@ -285,7 +289,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [FloatingActionButton, D],
   [SplitButton, { dom: true, own: ["onMainClick"] }],
   [ToggleButton, { dom: true, own: ["onPressedChange"] }],
-  [SegmentedControl, accordionTakes],
+  [SegmentedControl, segmentedControlTakes],
   [Link, D],
   [IconButton, D],
   [Tabs, accordionTakes],
@@ -338,7 +342,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [NavigationAnnouncer, { dom: false, own: [] }],
-  [RadioGroup, accordionTakes],
+  [RadioGroup, segmentedControlTakes],
   [RadioGroupItem, D],
   [RouteSummary, { dom: true, own: ["onEndRoute", "onStartNavigation"] }],
   [
@@ -397,7 +401,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [NavigationItem, D],
-  [NumberInput, { dom: true, own: ["onResetMixed", "onValueChange"] }],
+  [NumberInput, segmentedControlTakes],
   [
     POIDetailPanel,
     {
@@ -770,7 +774,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [
     SegmentedControl,
     html(
-      ["asChild", "disabled", "fullWidth", "loop", "rovingFocus"],
+      ["asChild", "disabled", "fullWidth", "loop", "mixed", "rovingFocus"],
       [],
       ["error"],
     ),
@@ -811,7 +815,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [NavigationAnnouncer, { flags: ["isActive"], unions: [], texts: [] }],
   [
     RadioGroup,
-    html(["asChild", "disabled", "loop", "required"], [], ["error"]),
+    html(["asChild", "disabled", "loop", "mixed", "required"], [], ["error"]),
   ],
   [
     RadioGroupItem,

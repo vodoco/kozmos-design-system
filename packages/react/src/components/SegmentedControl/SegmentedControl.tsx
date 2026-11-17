@@ -2,7 +2,9 @@ import * as React from "react";
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { cva, type VariantProps } from "class-variance-authority";
 import { FieldWrapper } from "../FieldWrapper";
-import { cn } from "../../utils";
+import { MixedGroupLine } from "../FieldWrapper/MixedGroupLine";
+import { useFieldRef } from "../FieldWrapper/mixedValue";
+import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export type SegmentedControlItem = {
@@ -33,18 +35,24 @@ const segmentedControlVariants = cva(
 );
 
 const segmentedControlItemVariants = cva(
-  // Eight between an item's parts, as `Button` and `ToggleButton` space
-  // theirs: an item's label is a ReactNode and may be an icon beside text.
-  // No platform had an opinion — iOS spaces the track, not the item, and
-  // Compose's options are plain strings — so this follows the control scale
-  // rather than inventing a number. It costs nothing where the label is one
-  // node, which is every use today: a gap applies between children.
-  "inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-[12px] font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-raised",
+  // GAP-267 (decision 201): an option is a one-column grid whose column is
+  // `minmax(max-content, M)`, M its minimum width less its padding. Its
+  // words are its min-content width, and its words or its minimum,
+  // whichever is wider, its max-content width: every engine reads both off
+  // the grid, so the track asks for the same room it always did, and when
+  // it is given less, each option gives up its spare width, down to its
+  // words (min-width: min-content) and never past them, so they are never
+  // clipped and never run into the next option's. Only when the words alone
+  // are wider does the track scroll. A width with a min-width of
+  // max-content did the same in Chromium and Firefox, but WebKit counted
+  // the width alone in the track's, and scrolled German options with room.
+  // The grid centres the label in the option, as the flex box did.
+  "inline-grid min-w-min items-center justify-center justify-items-center whitespace-nowrap rounded-[12px] font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-raised",
   {
     variants: {
       fullWidth: {
         true: "flex-1",
-        false: "shrink-0",
+        false: "shrink",
       },
       size: {
         sm: "min-h-11 px-3 text-xs",
@@ -52,21 +60,23 @@ const segmentedControlItemVariants = cva(
         lg: "min-h-12 px-5 text-sm",
       },
     },
+    // The minimum widths, 97, 117 and 137, less each size's padding, 12,
+    // 16 and 20 a side.
     compoundVariants: [
       {
         fullWidth: false,
         size: "sm",
-        className: "min-w-[97px]",
+        className: "grid-cols-[minmax(max-content,73px)]",
       },
       {
         fullWidth: false,
         size: "default",
-        className: "min-w-[117px]",
+        className: "grid-cols-[minmax(max-content,85px)]",
       },
       {
         fullWidth: false,
         size: "lg",
-        className: "min-w-[137px]",
+        className: "grid-cols-[minmax(max-content,97px)]",
       },
     ],
     defaultVariants: {
@@ -118,6 +128,26 @@ export interface SegmentedControlProps
    */
   value?: string | null;
   wrapperClassName?: string;
+  /**
+   * The control stands for several values that differ (decisions 188 and
+   * 191): a property of a multi-selection whose features chose different
+   * options. No option is on, and `mixedLabel` is drawn under the control
+   * and said as its description: a segment has no mixed state to announce.
+   * Choosing an option calls `onValueChange`, and the product clears
+   * `mixed`. Given at all, true or false, the control holds an uncontrolled
+   * choice itself: none while mixed, the visitor's after.
+   */
+  mixed?: boolean;
+  /** Drawn under the mixed control, and said with it. Default "Multiple values". */
+  mixedLabel?: string;
+  /**
+   * Offer to go back to the several values: drawn under the control while
+   * it is not `mixed`, never while it is disabled. Pressed, focus returns
+   * to the control's option, and the product sets `mixed` again.
+   */
+  onResetMixed?: () => void;
+  /** The reset's words. Default "Reset to multiple values". */
+  resetMixedLabel?: string;
 }
 
 export const SegmentedControl = React.forwardRef<
@@ -138,12 +168,30 @@ export const SegmentedControl = React.forwardRef<
       size = "default",
       value,
       wrapperClassName,
+      mixed,
+      mixedLabel = "Multiple values",
+      onResetMixed,
+      resetMixedLabel = "Reset to multiple values",
+      "aria-describedby": ariaDescribedBy,
       ...props
     },
     ref,
   ) => {
     const generatedId = React.useId();
     const generatedErrorId = React.useId();
+    const mixedId = React.useId();
+    const own = React.useRef<HTMLDivElement | null>(null);
+    const groupRef = useFieldRef(own, ref);
+    // A control given `mixed` at all is the field of a multi-selection, and
+    // holds an uncontrolled choice itself, as Select does: `defaultValue`
+    // while it is not mixed, none while it is, and the visitor's choice
+    // after. A choice held before it turned mixed is dropped, never shown
+    // again when it stops being mixed. Without `mixed`, Radix holds it, as
+    // it always has.
+    const takesMixed = mixed !== undefined;
+    const isMixed = mixed === true;
+    const [held, setHeld] = React.useState(isMixed ? "" : (defaultValue ?? ""));
+    if (takesMixed && isMixed && held !== "") setHeld("");
     const inputId = props.id || generatedId;
     const hasError = Boolean(error);
     const isStringError = typeof error === "string";
@@ -158,10 +206,12 @@ export const SegmentedControl = React.forwardRef<
         label={label}
       >
         <ToggleGroupPrimitive.Root
-          ref={ref}
-          aria-describedby={
-            hasError && isStringError ? generatedErrorId : undefined
-          }
+          ref={groupRef}
+          aria-describedby={mergeAriaIds(
+            ariaDescribedBy,
+            isMixed ? mixedId : undefined,
+            hasError && isStringError ? generatedErrorId : undefined,
+          )}
           aria-invalid={hasError || undefined}
           aria-label={ariaLabel ?? label ?? "Segmented control"}
           className={cn(
@@ -170,7 +220,7 @@ export const SegmentedControl = React.forwardRef<
             className,
           )}
           data-disabled={disabled ? "true" : undefined}
-          defaultValue={defaultValue}
+          data-mixed={isMixed ? "" : undefined}
           disabled={disabled}
           {...(disabled || items.every((item) => item.disabled)
             ? { tabIndex: 0 }
@@ -185,6 +235,7 @@ export const SegmentedControl = React.forwardRef<
             // action, but "segmented_control_toggled" with no value would change
             // what that event means for anything already counting it. Worth
             // revisiting as its own decision rather than as a side effect here.
+            if (takesMixed) setHeld(nextValue);
             if (!nextValue) {
               onValueChange?.(undefined);
               return;
@@ -195,10 +246,23 @@ export const SegmentedControl = React.forwardRef<
             onValueChange?.(nextValue);
           }}
           type="single"
-          // `null` is a held empty choice, which Radix calls "" (R1).
-          // `undefined` leaves the choice to the control, as in 0.5.0: a
-          // wrapper forwarding its optional `value` must keep working.
-          value={value === null ? "" : value}
+          {...(takesMixed
+            ? // Mixed, no option is the value: none is on, and the first
+              // the visitor chooses is reported.
+              {
+                value: isMixed
+                  ? ""
+                  : value === undefined
+                    ? held
+                    : (value ?? ""),
+              }
+            : {
+                // `null` is a held empty choice, which Radix calls "" (R1).
+                // `undefined` leaves the choice to the control, as in 0.5.0:
+                // a wrapper forwarding its optional `value` must keep working.
+                value: value === null ? "" : value,
+                defaultValue,
+              })}
           {...props}
         >
           {items.map((item) => (
@@ -221,10 +285,27 @@ export const SegmentedControl = React.forwardRef<
                 })
               }
             >
-              {item.label}
+              {/* One grid item, whatever the label holds: eight between
+                its parts, as Button and ToggleButton space theirs (an
+                icon beside its words). No platform had an opinion, so this
+                follows the control scale. */}
+              <span className="inline-flex items-center justify-center gap-2">
+                {item.label}
+              </span>
             </ToggleGroupPrimitive.Item>
           ))}
         </ToggleGroupPrimitive.Root>
+        {takesMixed ? (
+          <MixedGroupLine
+            mixed={isMixed}
+            mixedLabel={mixedLabel}
+            mixedId={mixedId}
+            onResetMixed={onResetMixed}
+            resetMixedLabel={resetMixedLabel}
+            disabled={disabled}
+            group={own}
+          />
+        ) : null}
       </FieldWrapper>
     );
   },

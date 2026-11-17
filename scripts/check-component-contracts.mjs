@@ -5731,7 +5731,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'setNodePropertyIfSupported(component, "minWidth", metrics.width)',
+  // The track: the variant itself, or a Mixed variant's Track (decision 191).
+  'setNodePropertyIfSupported(track, "minWidth", metrics.width)',
   "SegmentedControl outer frame keeps its base minimum width while hugging longer labels",
 );
 assertContains(
@@ -5999,8 +6000,16 @@ assertContains(
 assertContains(
   files.reactSegmentedControl,
   source.reactSegmentedControl,
-  'className: "min-w-[117px]"',
+  // GAP-267 (decision 201): 117 less the default's 16 a side, as the grid
+  // column's most, and the words as its least (min-width: min-content).
+  'className: "grid-cols-[minmax(max-content,85px)]"',
   "React SegmentedControl default segment minimum width",
+);
+assertContains(
+  files.reactSegmentedControl,
+  source.reactSegmentedControl,
+  '"inline-grid min-w-min ',
+  "React SegmentedControl options shrink to their words, never past them (GAP-267)",
 );
 assertContains(
   files.iosSegmentedControl,
