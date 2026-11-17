@@ -18,7 +18,7 @@ Choose a semantic element with `as`, or use Heading for a heading with a level-b
 
 ## Display size
 
-`size="display"` is the one display size, 48 on 54 lines (decision 203, GAP-272), for a marketing-style headline or a figure that leads a page. It is bold from its own token unless `weight` is given. The values come from the display type tokens, in rem, so it follows the reader's text size. For a headline that is a heading, use Heading's `size="display"`, which keeps its level. SwiftUI's `KozmosText(style: .display)` is 48pt bold on 54pt lines and grows with Dynamic Type; Compose's `KozmosTextStyle.Display` is `KozmosTypography.display`, 48sp on 54sp. Figma's Text has Size=Display, and its text styles are Text / Display / Normal to Bold.
+`size="display"` is the one display size, 48 on 54 lines (decision 203, GAP-272), for a marketing-style headline or a figure that leads a page. It is bold from its own token unless `weight` is given. The values come from the display type tokens, in rem, so it follows the reader's text size. For a headline that is a heading, use Heading's `size="display"`, which keeps its level. SwiftUI's `KozmosText(style: .display)` is 48pt bold and grows with Dynamic Type, its wrapped lines SF Pro's own 57.3pt apart (SwiftUI sets none tighter than the font's); Compose's `KozmosTextStyle.Display` is `KozmosTypography.display`, 48sp on 54sp. Figma's Text has Size=Display, and its text styles are Text / Display / Normal to Bold.
 
 <PlatformSnippets
     react={`
@@ -50,7 +50,7 @@ import { KozmosText } from "@kozmos-ds/vue/react-bridge"
 import SwiftUI
 import Kozmos
 
-// A figure at the display size, 48pt bold on 54pt lines, over its label.
+// A figure at the display size, 48pt bold, over its label.
 struct VisitorCount: View {
     var body: some View {
         VStack(alignment: .leading) {

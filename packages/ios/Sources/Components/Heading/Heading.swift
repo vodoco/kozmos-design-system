@@ -52,7 +52,7 @@ public enum KozmosHeadingLevel: Int, CaseIterable, Sendable {
 
 /// A size a heading takes apart from its rank, as React's `Heading size`.
 public enum KozmosHeadingSize: String, CaseIterable, Sendable {
-    /// The one display size, 48pt bold on 54pt lines (decision 203), for a
+    /// The one display size, 48pt bold (decision 203), for a
     /// marketing-style headline such as a sign-in hero. The level stays the
     /// heading's rank for VoiceOver; only its size changes.
     case display
@@ -87,10 +87,6 @@ public struct KozmosHeading: View {
     public var body: some View {
         Text(text)
             .font(.system(size: fontSize, weight: .bold))
-            .transformEnvironment(\.lineSpacing) { spacing in
-                // The display size's lines 54pt apart, as React's.
-                if size == .display { spacing = KozmosTypography.displayOn54ptLineSpacing }
-            }
             .foregroundColor(KozmosColors.primitivesColorsForeground100)
             .accessibilityAddTraits(.isHeader)
             .accessibilityHeading(level.accessibilityHeadingLevel)

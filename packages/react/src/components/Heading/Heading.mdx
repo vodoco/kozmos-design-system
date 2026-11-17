@@ -18,7 +18,7 @@ Renders a semantic heading using the Kozmos level-based type scale.
 
 ## Display size
 
-`size="display"` draws a heading at the one display size, 48 on 54 lines, bold (decision 203, GAP-272), for a marketing-style headline such as Pointr Cloud's sign-in hero; `level` stays its rank. It is above Heading 1's 36, from the display type tokens (`--semantics-typography-display-size`, `-line-height`, `-weight` and `-letter-spacing`), in rem, so it follows the reader's text size. SwiftUI's `KozmosHeading(_:level:size: .display)` grows with Dynamic Type along the large title's curve, as Heading 1 does, and Compose's `KozmosHeading(size = KozmosHeadingSize.Display)` is in sp. Figma's text style is Heading / Display.
+`size="display"` draws a heading at the one display size, 48 on 54 lines, bold (decision 203, GAP-272), for a marketing-style headline such as Pointr Cloud's sign-in hero; `level` stays its rank. It is above Heading 1's 36, from the display type tokens (`--semantics-typography-display-size`, `-line-height`, `-weight` and `-letter-spacing`), in rem, so it follows the reader's text size. SwiftUI's `KozmosHeading(_:level:size: .display)` grows with Dynamic Type along the large title's curve, as Heading 1 does, its wrapped lines SF Pro's own 57.3pt apart (SwiftUI sets none tighter than the font's), and Compose's `KozmosHeading(size = KozmosHeadingSize.Display)` is in sp. Figma's text style is Heading / Display.
 
 <PlatformSnippets
     react={`
@@ -49,8 +49,8 @@ import { KozmosHeading } from "@kozmos-ds/vue/react-bridge"
 import SwiftUI
 import Kozmos
 
-// The sign-in page's headline at the display size, 48pt bold on 54pt lines,
-// still a level 1 heading to VoiceOver.
+// The sign-in page's headline at the display size, 48pt bold, still a
+// level 1 heading to VoiceOver.
 struct SignInHero: View {
     var body: some View {
         KozmosHeading("Digitize your building like never before.", level: .h1, size: .display)

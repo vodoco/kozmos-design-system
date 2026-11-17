@@ -4,7 +4,7 @@
 import SwiftUI
 import Kozmos
 
-// A figure at the display size, 48pt bold on 54pt lines, over its label.
+// A figure at the display size, 48pt bold, over its label.
 struct VisitorCount: View {
     var body: some View {
         VStack(alignment: .leading) {

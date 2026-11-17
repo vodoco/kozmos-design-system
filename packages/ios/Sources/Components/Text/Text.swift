@@ -5,7 +5,7 @@ import SwiftUI
 /// Mirrors `KozmosTypography`, so a caller picks a named step rather than
 /// reaching past the component for `.font(...)`.
 public enum KozmosTextStyle: String, CaseIterable, Sendable {
-    /// The one display size, 48pt bold on 54pt lines (decision 203), for a
+    /// The one display size, 48pt bold (decision 203), for a
     /// marketing-style headline such as a sign-in hero; above every heading
     /// level. `KozmosText` grows it with Dynamic Type as Heading 1 grows.
     case display
@@ -107,7 +107,7 @@ public struct KozmosText: View {
     @ViewBuilder
     public var body: some View {
         // The display size is drawn at the reader's text size, bold unless a
-        // weight is given, on 54pt lines; every other style as before.
+        // weight is given; every other style as before.
         let drawn = style == .display
             ? Text(text).font(.system(size: displaySize, weight: weight ?? .bold))
             : Text(text).font(style.font).fontWeight(weight)
@@ -117,16 +117,8 @@ public struct KozmosText: View {
             // over any map (decision 48), and foreground/400 elsewhere. As the
             // web's `Text color="muted"` does (#416, GAP-203).
             drawn.kozmosMutedText().lineLimit(lineLimit)
-                .transformEnvironment(\.lineSpacing, transform: displayLines)
         } else {
             drawn.foregroundColor(tone.color).lineLimit(lineLimit)
-                .transformEnvironment(\.lineSpacing, transform: displayLines)
         }
-    }
-
-    /// Sets the display size's lines 54pt apart; leaves any other style's
-    /// line spacing as its container gave it.
-    private func displayLines(_ spacing: inout CGFloat) {
-        if style == .display { spacing = KozmosTypography.displayOn54ptLineSpacing }
     }
 }

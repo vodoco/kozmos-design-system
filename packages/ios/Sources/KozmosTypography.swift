@@ -61,27 +61,17 @@ public enum KozmosTypography {
     /// large title's curve as Heading 1 does.
     public static let displaySize: CGFloat = KozmosDimensions.semanticsTypographyDisplaySize
 
-    /// The display size's line, 54pt at the default text size, as React's.
+    /// The display size's line on the web and Compose, 54. SwiftUI sets no
+    /// line tighter than the font's own, SF Pro's 57.3pt at 48pt bold (a
+    /// negative line spacing is ignored, measured on iOS 26), so a wrapped
+    /// display headline's lines are 57.3pt apart there.
     public static let displayLineHeight: CGFloat = KozmosDimensions.semanticsTypographyDisplayLineheight
 
     /// The display size at the default text size, bold, for a caller drawing
     /// its own `Text`. `KozmosText(style: .display)` also grows with the
-    /// reader's text size and sets its lines 54pt apart.
+    /// reader's text size.
     public static var display: Font { .system(size: displaySize, weight: .bold) }
 
-    /// What SwiftUI adds between lines of the bold display size to set them
-    /// `displayLineHeight` apart, as React's 48px headline sits on 54px lines:
-    /// 54 less SF Pro's own line at 48pt, 57.3pt, so less than nothing. It is
-    /// the same at every text size, so the lines still grow with the text.
-    static let displayOn54ptLineSpacing: CGFloat = {
-        #if canImport(UIKit)
-        let display = UIFont.systemFont(ofSize: displaySize, weight: .bold)
-        return displayLineHeight - (display.lineHeight + display.leading)
-        #else
-        let display = NSFont.systemFont(ofSize: displaySize, weight: .bold)
-        return displayLineHeight - (display.ascender - display.descender + display.leading)
-        #endif
-    }()
 
     /// What SwiftUI adds between lines of `caption2` to set them 14pt apart at
     /// the default text size, as React's 11px labels sit on 14px lines: 14

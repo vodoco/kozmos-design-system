@@ -5,8 +5,8 @@ import UIKit
 #endif
 @testable import Kozmos
 
-/// Decision 203 (GAP-272) on SwiftUI: one display size, 48pt bold on 54pt
-/// lines from the display type tokens, as `KozmosText(style: .display)` and
+/// Decision 203 (GAP-272) on SwiftUI: one display size, 48pt bold from the
+/// display type tokens, as `KozmosText(style: .display)` and
 /// `KozmosHeading(size: .display)`, which keeps its level as its rank. It
 /// grows with Dynamic Type along the large title's curve, as Heading 1 does.
 final class KozmosDisplaySizeTests: XCTestCase {
@@ -36,14 +36,16 @@ final class KozmosDisplaySizeTests: XCTestCase {
         XCTAssertLessThan(height(KozmosHeading("Gate", level: .h1)), reference - 8)
     }
 
-    /// Its lines are 54pt apart, as React's 48px headline sits on 54px lines.
-    @MainActor func testTheDisplaySizesLinesAre54ptApart() {
+    /// Wrapped, its lines are SF Pro's own at 48pt bold: SwiftUI sets no
+    /// line tighter than the font's (React's and Compose's are 54).
+    @MainActor func testTheDisplaySizesLinesAreTheFontsOwn() {
+        let font = UIFont.systemFont(ofSize: 48, weight: .bold)
         let one = height(KozmosText("Gate", style: .display))
         let two = height(KozmosText("Gate\nGate", style: .display))
-        XCTAssertEqual(two - one, 54, accuracy: 0.5, "one line \(one), two \(two)")
+        XCTAssertEqual(two - one, font.lineHeight, accuracy: 0.5, "one line \(one), two \(two)")
         let headingOne = height(KozmosHeading("Gate", size: .display))
         let headingTwo = height(KozmosHeading("Gate\nGate", size: .display))
-        XCTAssertEqual(headingTwo - headingOne, 54, accuracy: 0.5, "heading: one line \(headingOne), two \(headingTwo)")
+        XCTAssertEqual(headingTwo - headingOne, font.lineHeight, accuracy: 0.5, "heading: one line \(headingOne), two \(headingTwo)")
     }
 
     /// It grows with the reader's text size, as Heading 1 does.
