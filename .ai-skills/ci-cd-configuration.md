@@ -201,8 +201,11 @@ Nothing collects coverage: `@vitest/coverage-v8` is not installed, so `--coverag
 - **iOS and Android:** not published. No workflow, script or tag releases the Swift package
   (`packages/ios`) or the Compose library (`packages/android`); they ship as source in this
   repository.
-- **Figma Code Connect:** no workflow publishes it. CI parses it on all three platforms and, when
-  `FIGMA_ACCESS_TOKEN` is set, runs each publish as a dry run (`pnpm figma:publish:linked:dry`,
+- **Figma Code Connect:** no workflow publishes it. CI parses it on all three platforms, checks
+  that every native snippet names code that exists (`pnpm figma:native:check:ios` and
+  `pnpm figma:native:check:android`: a SwiftUI snippet's component is declared in
+  `packages/ios/Sources`, and every Kozmos import in a Compose snippet is declared in
+  `packages/android`), and, when `FIGMA_ACCESS_TOKEN` is set, runs each publish as a dry run (`pnpm figma:publish:linked:dry`,
   `pnpm figma:publish:ios:linked:dry`, `pnpm figma:publish:android:linked:dry`). A real publish
   writes to the live Figma file and is run by hand.
 
