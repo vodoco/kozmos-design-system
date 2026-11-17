@@ -24,6 +24,24 @@ const noSubscription = () => () => {};
 export const useCanReplaceDatePicker = () =>
   React.useSyncExternalStore(noSubscription, canReplaceDatePicker, () => false);
 
+/**
+ * A mixed date or time field (GAP-255) holds none of its own: a controlled
+ * one is given "", an uncontrolled one drops its default (and is emptied as
+ * it turns mixed, by useMixedField). No placeholder: a date or time input
+ * draws none, so the mixed label is drawn over its empty segments
+ * (`.kozmos-temporal-mixed`, hidden from screen readers) and said once, as
+ * the field's description.
+ */
+export function mixedTemporalValue(
+  mixed: boolean,
+  props: { value?: unknown; defaultValue?: unknown },
+): { value?: ""; defaultValue?: undefined; "data-mixed"?: "" } {
+  if (!mixed) return {};
+  return props.value !== undefined
+    ? { value: "", "data-mixed": "" }
+    : { defaultValue: undefined, "data-mixed": "" };
+}
+
 /** Sets a field's value as typing would, so React's onChange and a form's change listeners hear it. */
 export function typeInto(input: HTMLInputElement, value: string) {
   Object.getOwnPropertyDescriptor(

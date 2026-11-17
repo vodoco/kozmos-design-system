@@ -12,7 +12,7 @@ import {
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { useInputModality } from "../../utils/input-modality";
 import { Chip, ChipGroup } from "../Chip";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import {
   FIELD_POPUP_MAX_HEIGHT,
   FieldPopupAnchor,
@@ -34,10 +34,13 @@ import {
 import { type ComboboxOption } from "../Combobox";
 import { type InputStatus } from "../Input/inputVariants";
 
-export interface MultiSelectProps extends Omit<
-  React.HTMLAttributes<HTMLDivElement>,
-  "children" | "defaultValue" | "onChange"
-> {
+export interface MultiSelectProps
+  extends
+    Omit<
+      React.HTMLAttributes<HTMLDivElement>,
+      "children" | "defaultValue" | "onChange"
+    >,
+    MixedValueProps {
   clearable?: boolean;
   defaultSearchValue?: string;
   defaultValue?: string[];
@@ -69,6 +72,8 @@ export interface MultiSelectProps extends Omit<
   value?: string[];
   wrapperClassName?: string;
 }
+
+const NO_VALUES: string[] = [];
 
 function defaultFilterOption(option: ComboboxOption, inputValue: string) {
   const query = inputValue.trim().toLowerCase();
@@ -116,12 +121,16 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       label,
       maxSelected,
       maxSelectedLabel = (max) => `Limit of ${max} reached`,
+      mixed = false,
+      mixedLabel = "Multiple values",
+      onResetMixed,
       onSearchValueChange,
       onValueChange,
       options,
       placeholder = "Select options",
       readOnly,
       required,
+      resetMixedLabel,
       searchValue,
       status = "default",
       value,
@@ -160,9 +169,19 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       setLockedFor({ disabled, readOnly });
       if (disabled || readOnly) setOpen(false);
     }
-    const [uncontrolledValue, setUncontrolledValue] =
-      React.useState<string[]>(defaultValue);
-    const selectedValues = value ?? uncontrolledValue;
+    const [uncontrolledValue, setUncontrolledValue] = React.useState<string[]>(
+      mixed ? [] : defaultValue,
+    );
+    // Mixed (GAP-255), the field stands for the several features' own
+    // choices and holds none: no chip, no option checked, nothing to clear,
+    // and a choice is the edit, the one option chosen from none. A choice it
+    // held is dropped as it turns mixed, never shown again after.
+    const [wasMixed, setWasMixed] = React.useState(mixed);
+    if (wasMixed !== mixed) {
+      setWasMixed(mixed);
+      if (mixed) setUncontrolledValue([]);
+    }
+    const selectedValues = mixed ? NO_VALUES : (value ?? uncontrolledValue);
     const selectedOptions = selectedValues
       .map((selectedValue) =>
         options.find((option) => option.value === selectedValue),
@@ -404,6 +423,19 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
         label={label}
         required={required}
         status={resolvedStatus}
+        mixed={mixed}
+        onResetMixed={
+          onResetMixed && !disabled && !readOnly
+            ? () => {
+                // The query goes with the edit, and the list closes.
+                setSearch("");
+                setOpen(false);
+                if (value === undefined) setUncontrolledValue([]);
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         <FieldPopupRoot>
           <div
@@ -474,9 +506,17 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     aria-required={required || undefined}
                     autoComplete="off"
                     className="kozmos-reset kozmos-multiselect-input"
+                    // Mixed, said once: by the empty field's placeholder.
+                    data-mixed={mixed ? "" : undefined}
                     disabled={disabled}
                     readOnly={readOnly}
-                    placeholder={selectedValues.length > 0 ? "" : placeholder}
+                    placeholder={
+                      mixed
+                        ? mixedLabel
+                        : selectedValues.length > 0
+                          ? ""
+                          : placeholder
+                    }
                     value={visibleSearchValue}
                     onFocus={() => {
                       if (!disabled && !readOnly && !keepListClosed.current)

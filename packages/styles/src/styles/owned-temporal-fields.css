@@ -35,6 +35,26 @@
   .kozmos-time-input[data-picker="kozmos"]::-webkit-calendar-picker-indicator {
     display: none;
   }
+  /* A mixed field (GAP-255): a date or time input draws no placeholder, so
+     its empty segments give way to the mixed label, drawn over them in the
+     placeholder's colour where a text field draws its placeholder, and
+     hidden from screen readers, which hear it as the field's description.
+     Focused, the segments come back to be typed in, and the words go. */
+  .kozmos-temporal-input[data-mixed]:not(:focus) {
+    color: transparent;
+  }
+  .kozmos-temporal-mixed {
+    @apply pointer-events-none absolute start-0 top-1/2 block -translate-y-1/2 truncate text-sm leading-5;
+    padding-inline-start: 2.25rem;
+    inset-inline-end: calc(var(--density-field-height-md, 2.75rem) + 0.25rem);
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-temporal-input:disabled ~ .kozmos-temporal-mixed {
+    @apply text-muted-foreground;
+  }
+  .kozmos-temporal-input:focus ~ .kozmos-temporal-mixed {
+    visibility: hidden;
+  }
   /* The button is as tall as the field, at its end, as PasswordInput's is. */
   .kozmos-date-picker-trigger {
     top: 0;

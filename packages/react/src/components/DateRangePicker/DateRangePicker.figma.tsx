@@ -83,19 +83,31 @@ figma.connect(
         Focus: false,
         Disabled: true,
         Readonly: false,
+        Mixed: false,
       }),
       readOnly: figma.enum("State", {
         Default: false,
         Focus: false,
         Disabled: false,
         Readonly: true,
+        Mixed: false,
       }),
       autoFocus: figma.enum("State", {
         Default: false,
         Focus: true,
         Disabled: false,
         Readonly: false,
+        Mixed: false,
       }),
+      // GAP-255: a field of a multi-selection whose values differ, and its
+      // way back once edited.
+      mixed: figma.enum("State", { Mixed: true }),
+      onResetMixed: figma.boolean("Reset Mixed", {
+        true: () => {},
+        false: undefined,
+      }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -119,6 +131,10 @@ figma.connect(
       }),
     },
     example: ({
+      mixed,
+      mixedLabel,
+      onResetMixed,
+      resetMixedLabel,
       autoFocus,
       defaultOpen,
       disabled,
@@ -145,6 +161,10 @@ figma.connect(
         readOnly={readOnly}
         startLabel={startLabel}
         status={status}
+        mixed={mixed}
+        mixedLabel={mixedLabel}
+        onResetMixed={onResetMixed}
+        resetMixedLabel={resetMixedLabel}
       />
     ),
   },
