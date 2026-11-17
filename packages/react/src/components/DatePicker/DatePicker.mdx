@@ -117,6 +117,113 @@ KozmosDatePicker(date = date, onDateSelected = onDateChange, label = "Visit date
 
 />
 
+## Mixed
+
+With several features selected, a date whose values differ is one field for all of them (GAP-255,
+decision 188). `mixed` says the field stands for those values: it holds no date of its own, and
+"Multiple values" (`mixedLabel`) is drawn where a text field draws its placeholder, in its colour.
+A date field draws no placeholder, so the words lie over its empty segments, which give way to them,
+and a screen reader hears them once, as the field's description; the drawn words are hidden from it.
+In focus, the segments come back to be typed in. The calendar opens on no day, its focus on today.
+A typed or chosen date is the edit, and the product clears `mixed`; `onResetMixed` draws "Reset to
+multiple values" (`resetMixedLabel`) under the field once it is edited, never while it is disabled
+or read-only, and hands focus back to the field. An uncontrolled field is emptied as it turns mixed,
+and on reset. DateRangePicker takes the same props, for the range as a whole.
+
+On SwiftUI the system's compact picker stays, as decision 104 says, under the mixed label, and
+VoiceOver hears the field's name with "Multiple values" as its value. On Compose the field shows the
+label, TalkBack says it as the field's state, and Material 3's dialog opens with no date chosen.
+
+In Figma, Mixed is a value of the State axis, as on Input and Combobox, so a mixed field that is also
+disabled, read only or in focus cannot be drawn. A Mixed variant has no Reset Mixed layer; Mixed Text
+and Reset Mixed Text hold the words, for a board in another language. Mixed with Open draws a calendar with no day chosen.
+
+<PlatformSnippets
+  react={`
+import { useState } from "react";
+import { DatePicker } from "@kozmos-ds/react";
+
+// Each selected feature's opening date; where they differ, the field shows
+// "Multiple values" and the calendar opens on no day.
+export function OpeningDateAcrossSelection({ dates }: { dates: string[] }) {
+  const [edit, setEdit] = useState<string | undefined>(undefined);
+  const differs = dates.some((date) => date !== dates[0]);
+  return (
+    <DatePicker
+      label="Opens on"
+      value={edit ?? (differs ? "" : dates[0])}
+      mixed={differs && edit === undefined}
+      onChange={(event) => setEdit(event.target.value)}
+      onResetMixed={differs ? () => setEdit(undefined) : undefined}
+    />
+  );
+}
+  `}
+  vue={`
+<script setup>
+import { KozmosDatePicker } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+
+const props = defineProps({ dates: Array })
+const edit = ref(undefined)
+const differs = computed(() => props.dates.some((date) => date !== props.dates[0]))
+</script>
+
+<template>
+  <KozmosDatePicker
+    label="Opens on"
+    :value="edit ?? (differs ? '' : dates[0])"
+    :mixed="differs && edit === undefined"
+    @change="(event) => (edit = event.target.value)"
+    @resetMixed="edit = undefined"
+  />
+</template>
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+struct OpeningDayAcrossSelection: View {
+    let days: [Date]
+    @State private var edit: Date?
+
+    var body: some View {
+        let differs = Set(days).count > 1
+        KozmosDatePicker(
+            selection: Binding(get: { edit ?? days[0] }, set: { edit = $0 }),
+            label: "Opens on",
+            mixed: differs && edit == nil,
+            onResetMixed: differs ? { edit = nil } : nil
+        )
+    }
+}
+  `}
+  kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.datepicker.KozmosDatePicker
+import java.time.LocalDate
+
+// Each selected feature's opening date; where they differ, the field shows
+// "Multiple values" and the dialog opens with no date chosen.
+@Composable
+fun OpeningDateAcrossSelection(dates: List<LocalDate>) {
+    val differs = dates.distinct().size > 1
+    var edit by remember(dates) { mutableStateOf<LocalDate?>(null) }
+    KozmosDatePicker(
+        date = edit ?: dates.first(),
+        onDateSelected = { edit = it },
+        label = "Opens on",
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    )
+}
+  `}
+/>
+
 ## In Safari
 
 `className` lands on the field. A utility class passed there styles it in Chrome, Edge,
