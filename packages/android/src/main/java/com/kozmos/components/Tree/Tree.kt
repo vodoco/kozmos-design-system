@@ -165,6 +165,17 @@ enum class KozmosTreeCheckRule {
     Independent
 }
 
+/**
+ * How a selected row's fill is drawn (GAP-217, decision 196), as React's
+ * `rowFill`: [Inset], a pill on the control radius across the tree's own
+ * width, for a navigation tree; [Band], a square fill across the row and its
+ * bleed, for a list of records such as the Dashboard's Map Content tree.
+ */
+enum class KozmosTreeRowFill {
+    Inset,
+    Band
+}
+
 /** Where a row's disclosure is drawn: before its name, or at its end (GAP-277). */
 enum class KozmosTreeDisclosurePosition {
     Start,
@@ -236,11 +247,13 @@ fun KozmosTree(
     state: LazyListState = rememberLazyListState(),
     checkable: Boolean = false,
     checkRule: KozmosTreeCheckRule = KozmosTreeCheckRule.Exclusive,
-    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start
+    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start,
+    rowFill: KozmosTreeRowFill = KozmosTreeRowFill.Inset
 ) = KozmosTree(
     data, modifier, density, divided, bleed, selectionMode, selectedIds, onSelectedIdsChange,
     metaPlacement, contextMenu, onContextMenuSelect, state, expandedIds = emptySet(),
-    checkable = checkable, checkRule = checkRule, disclosurePosition = disclosurePosition
+    checkable = checkable, checkRule = checkRule, disclosurePosition = disclosurePosition,
+    rowFill = rowFill
 )
 
 /** A tree with the nodes of [expandedIds] open from the start: for tests. */
@@ -262,9 +275,12 @@ internal fun KozmosTree(
     menuState: KozmosContextMenuState = remember { KozmosContextMenuState() },
     checkable: Boolean = false,
     checkRule: KozmosTreeCheckRule = KozmosTreeCheckRule.Exclusive,
-    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start
+    disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start,
+    rowFill: KozmosTreeRowFill = KozmosTreeRowFill.Inset
 ) {
-    val reach = if (divided) bleed.coerceAtLeast(0.dp) else 0.dp
+    // The bleed reaches past the tree for a divided tree's strokes and
+    // surfaces, and for a band's fill (GAP-217).
+    val reach = if (divided || rowFill == KozmosTreeRowFill.Band) bleed.coerceAtLeast(0.dp) else 0.dp
     val open = rememberSaveable(stateSaver = KozmosTreeExpandedSaver) { mutableStateOf(expandedIds) }
     val tree = remember(open) { KozmosTreeController(open) }
     tree.scope = rememberCoroutineScope()
@@ -347,7 +363,8 @@ internal fun KozmosTree(
                             if (row.node.id in mixedIds) ToggleableState.Indeterminate
                             else ToggleableState(row.node.id in selectedIds)
                         } else null,
-                        disclosurePosition = disclosurePosition
+                        disclosurePosition = disclosurePosition,
+                        rowFill = rowFill
                     )
                 }
             }
@@ -855,11 +872,12 @@ fun TreeItem(
     checked: Boolean? = null,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start,
-    mixed: Boolean = false
+    mixed: Boolean = false,
+    rowFill: KozmosTreeRowFill = KozmosTreeRowFill.Inset
 ) = TreeItem(
     item, depth, density, divided, bleed, expandedIds = emptySet(), metaPlacement = metaPlacement,
     checked = checked, onCheckedChange = onCheckedChange, disclosurePosition = disclosurePosition,
-    mixed = mixed
+    mixed = mixed, rowFill = rowFill
 )
 
 @Composable
@@ -874,14 +892,15 @@ internal fun TreeItem(
     checked: Boolean? = null,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start,
-    mixed: Boolean = false
+    mixed: Boolean = false,
+    rowFill: KozmosTreeRowFill = KozmosTreeRowFill.Inset
 ) {
     if (item.section) {
         Column {
             TreeSectionRow(item.name, Modifier.padding(horizontal = bleed), item.count, depth, density)
             item.children.forEach { child ->
                 TreeItem(child, depth, density, divided, bleed, expandedIds, metaPlacement,
-                    disclosurePosition = disclosurePosition)
+                    disclosurePosition = disclosurePosition, rowFill = rowFill)
             }
         }
         return
@@ -904,13 +923,14 @@ internal fun TreeItem(
             checked = checked?.let { if (mixed) ToggleableState.Indeterminate else ToggleableState(it) },
             disclosurePosition = disclosurePosition,
             // A mixed row, as an unchecked one, checks.
-            onCheck = checked?.let { now -> { onCheckedChange?.invoke(mixed || !now) } }
+            onCheck = checked?.let { now -> { onCheckedChange?.invoke(mixed || !now) } },
+            rowFill = rowFill
         )
         AnimatedVisibility(visible = isExpanded) {
             Column {
                 item.children.forEach { child ->
                     TreeItem(child, depth + 1, density, divided, bleed, expandedIds, metaPlacement,
-                        disclosurePosition = disclosurePosition)
+                        disclosurePosition = disclosurePosition, rowFill = rowFill)
                 }
             }
         }
@@ -1018,7 +1038,8 @@ private fun TreeRow(
     checked: ToggleableState? = null,
     disclosurePosition: KozmosTreeDisclosurePosition = KozmosTreeDisclosurePosition.Start,
     /** A composed checkable row's press; a lazy tree's goes to [tree]. */
-    onCheck: (() -> Unit)? = null
+    onCheck: (() -> Unit)? = null,
+    rowFill: KozmosTreeRowFill = KozmosTreeRowFill.Inset
 ) {
     val hasChildren = node.children.isNotEmpty()
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -1045,11 +1066,20 @@ private fun TreeRow(
         }
     }
 
-    val fill = when {
-        selected -> KozmosThemeTokens.semanticsHoverFill
-        divided && hasChildren && expanded -> KozmosThemeTokens.primitivesColorsBackground50
-        else -> Color.Transparent
-    }
+    // GAP-217: a band's selected fill is the row's box, across the bleed;
+    // inset, React's `rounded-control`, a pill on the tree's own width,
+    // inside the bleed, over the open row's surface.
+    val band = rowFill == KozmosTreeRowFill.Band
+    val surface = if (divided && hasChildren && expanded) {
+        KozmosThemeTokens.primitivesColorsBackground50
+    } else Color.Transparent
+    val fill = if (selected && band) KozmosThemeTokens.semanticsHoverFill else surface
+    val pill = if (selected && !band) {
+        Modifier.background(
+            KozmosThemeTokens.semanticsHoverFill,
+            RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
+        )
+    } else Modifier
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1062,8 +1092,10 @@ private fun TreeRow(
                     .background(fill)
                     .kozmosTreeRowStroke(KozmosThemeTokens.semanticsBorderSubtle)
                     .padding(horizontal = bleed)
+                else if (band) Modifier.background(fill).padding(horizontal = bleed)
                 else Modifier.background(fill)
             )
+            .then(pill)
             .then(if (tree != null) treeRowInput(node, tree, press, focus, itemIndex) else Modifier)
             .semantics {
                 if (selectable) this.selected = selected
