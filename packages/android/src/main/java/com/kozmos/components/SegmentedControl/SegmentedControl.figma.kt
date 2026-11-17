@@ -36,8 +36,13 @@ class KozmosSegmentedControlConnect {
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Error" to "error"
+        "Error" to "error",
+        "Mixed" to "mixed"
     )
+
+    // Decision 191: no option chosen, and the "Multiple values" line.
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
 
     @Composable
     fun ComponentExample() {
@@ -46,7 +51,9 @@ class KozmosSegmentedControlConnect {
             selectedIndex = activeIndex,
             onOptionSelected = {},
             size = size,
-            enabled = state != "disabled"
+            enabled = state != "disabled",
+            mixed = state == "mixed",
+            mixedLabel = mixedLabel
         )
     }
 }

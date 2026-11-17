@@ -17,6 +17,13 @@ const shared = {
   defaultValue: figma.enum("Checked", {
     Unchecked: "",
     Checked: "option",
+    Mixed: "",
+  }),
+  // Decision 191: an option of a mixed group, unchosen, with the group's
+  // "Multiple values" line under it. Both are the group's.
+  mixed: figma.enum("Checked", { Mixed: true }),
+  mixedLabel: figma.enum("Checked", {
+    Mixed: figma.string("Mixed Text"),
   }),
   disabled: figma.enum("State", {
     Default: false,
@@ -39,8 +46,20 @@ const shared = {
 figma.connect(RadioGroupItem, RADIO_URL, {
   variant: { Variant: "Default" },
   props: shared,
-  example: ({ defaultValue, disabled, error, label, description }) => (
-    <RadioGroup defaultValue={defaultValue}>
+  example: ({
+    defaultValue,
+    disabled,
+    error,
+    label,
+    description,
+    mixed,
+    mixedLabel,
+  }) => (
+    <RadioGroup
+      defaultValue={defaultValue}
+      mixed={mixed}
+      mixedLabel={mixedLabel}
+    >
       <RadioGroupItem
         value="option"
         disabled={disabled}
@@ -62,8 +81,21 @@ figma.connect(RadioGroupItem, RADIO_URL, {
       false: undefined,
     }),
   },
-  example: ({ defaultValue, disabled, error, label, description, media }) => (
-    <RadioGroup defaultValue={defaultValue}>
+  example: ({
+    defaultValue,
+    disabled,
+    error,
+    label,
+    description,
+    media,
+    mixed,
+    mixedLabel,
+  }) => (
+    <RadioGroup
+      defaultValue={defaultValue}
+      mixed={mixed}
+      mixedLabel={mixedLabel}
+    >
       <RadioGroupItem
         value="option"
         variant="card"
@@ -87,8 +119,21 @@ figma.connect(RadioGroupItem, RADIO_URL, {
       false: undefined,
     }),
   },
-  example: ({ defaultValue, disabled, error, label, description, media }) => (
-    <RadioGroup defaultValue={defaultValue}>
+  example: ({
+    defaultValue,
+    disabled,
+    error,
+    label,
+    description,
+    media,
+    mixed,
+    mixedLabel,
+  }) => (
+    <RadioGroup
+      defaultValue={defaultValue}
+      mixed={mixed}
+      mixedLabel={mixedLabel}
+    >
       <RadioGroupItem
         value="option"
         variant="tile"
