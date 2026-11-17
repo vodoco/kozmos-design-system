@@ -4336,6 +4336,39 @@ section("Decision 59: the theme fill and what sits on it");
     reads(markPaint(check)) === ink,
     `Checkbox, checked: the mark is the theme foreground (${reads(markPaint(check))})`,
   );
+  // Decision 188: Indeterminate is painted exactly like Checked, the theme
+  // fill edge and all, with React's dash (the minus icon) for the tick.
+  const isDash = (mark) => {
+    if (!mark) return false;
+    if (mark.type === "INSTANCE")
+      return (
+        mark.getSharedPluginData(plugin.RUN_NAMESPACE, "mark-icon") === "minus"
+      );
+    const vertices = (mark.vectorNetwork && mark.vectorNetwork.vertices) || [];
+    return vertices.length === 2 && vertices[0].y === vertices[1].y;
+  };
+  for (const state of ["Default", "Error"]) {
+    const mixed = await painted("updateCheckboxVariant", {
+      checked: "Indeterminate",
+      state,
+    });
+    const mixedBox = named(mixed, "Checkbox Control");
+    const mixedMark = mixedBox && named(mixedBox, "Checkbox Mark");
+    const edge =
+      state === "Error" ? "Colors/emotional/danger/600" : FILL;
+    ok(
+      mixed.name === `Checked=Indeterminate, State=${state}` &&
+        mixedBox &&
+        reads(mixedBox.fills[0]) === fill &&
+        (state === "Error"
+          ? boundVariableName(mixedBox.strokes[0]) === edge
+          : reads(mixedBox.strokes[0]) === fill) &&
+        reads(markPaint(mixedMark)) === ink &&
+        isDash(mixedMark) &&
+        !isDash(check),
+      `Checkbox, indeterminate (${state}): the box is the theme fill like checked, and its mark the theme foreground's dash, not the tick (${mixedBox && reads(mixedBox.fills[0])}; ${mixedMark && mixedMark.type}; dash ${isDash(mixedMark)})`,
+    );
+  }
   const boxRing = box && named(box, "Focus Ring");
   ok(
     boxRing && reads(boxRing.strokes[0]) === accent,
@@ -16666,20 +16699,27 @@ section("GAP-162: the controls draw a description, and Switch its state");
               node.componentPropertyReferences[field] === key,
           )
         : [];
+    // Decision 188: Checkbox's Update keeps the six and adds the three
+    // Indeterminate variants the live set lacks; Switch has none.
+    const total = kind === "Checkbox" ? 9 : 6;
     ok(
       replay.kept.every((variant, i) => variant && variant.name === names[i]) &&
-        replay.liveSet.children.length === 6,
-      `${kind}: Update keeps its 6 variants, ids and names (${replay.names.join("; ")})`,
+        replay.liveSet.children.length === total &&
+        (kind !== "Checkbox" ||
+          ["Default", "Disabled", "Error"].every((state) =>
+            replay.names.includes(`Checked=Indeterminate, State=${state}`),
+          )),
+      `${kind}: Update keeps its 6 variants, ids and names${kind === "Checkbox" ? " and adds the 3 Indeterminate ones" : ""} (${replay.names.join("; ")})`,
     );
     ok(
       shown &&
         words &&
         definitions[shown].defaultValue === false &&
-        drivenBy(shown, "visible").length === 6 &&
+        drivenBy(shown, "visible").length === total &&
         drivenBy(shown, "visible").every(
           (node) => node.name === "Description Row",
         ) &&
-        drivenBy(words, "characters").length === 6,
+        drivenBy(words, "characters").length === total,
       `${kind}: Show Description, off, shows each variant's Description Row, and Description Text writes it (${drivenBy(shown, "visible").length} rows, ${drivenBy(words, "characters").length} texts)`,
     );
     ok(

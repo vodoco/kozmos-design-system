@@ -4,8 +4,8 @@
 import SwiftUI
 import Kozmos
 
-// The checkbox draws its label beside it, and the whole row toggles. It has
-// two states, checked and not: no indeterminate one.
+// The checkbox draws its label beside it, and the whole row toggles. A Bool
+// gives it two states, checked and not; "Mixed", below, adds the third.
 struct AcceptTerms: View {
     @Binding var accepted: Bool
 

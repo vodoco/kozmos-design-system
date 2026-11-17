@@ -5,14 +5,16 @@ struct KozmosCheckboxConnect: FigmaConnect {
     let component = KozmosCheckbox.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1410"
 
+    // Decision 188: Indeterminate is the mixed state.
     @FigmaEnum(
         "Checked",
         mapping: [
-            "Unchecked": false,
-            "Checked": true
+            "Unchecked": .unchecked,
+            "Checked": .checked,
+            "Indeterminate": .indeterminate
         ]
     )
-    var checked: Bool = false
+    var checked: KozmosCheckboxState = .unchecked
 
     @FigmaString("Label Text")
     var label: String = "Accept terms"

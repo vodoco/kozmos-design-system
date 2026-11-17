@@ -4,19 +4,20 @@ import com.kozmos.components.KozmosControlText
 import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.tokens.KozmosDimensions
 
-import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -30,8 +31,37 @@ fun KozmosCheckbox(
     error: Boolean = false,
     description: String? = null
 ) {
+    KozmosCheckbox(
+        state = ToggleableState(checked),
+        onCheckedChange = onCheckedChange,
+        label = label,
+        modifier = modifier,
+        enabled = enabled,
+        error = error,
+        description = description
+    )
+}
+
+/**
+ * A checkbox that can also be mixed, [ToggleableState.Indeterminate]: a
+ * parent whose children are partly checked, React's
+ * `checked="indeterminate"` (decision 188). Mixed is painted exactly like
+ * checked, the theme fill, with a dash for the tick, and TalkBack hears it as
+ * partly checked. A click on a mixed checkbox checks it, as Radix's does:
+ * [onCheckedChange] gets `true`, and from checked `false`.
+ */
+@Composable
+fun KozmosCheckbox(
+    state: ToggleableState,
+    onCheckedChange: (Boolean) -> Unit,
+    label: String? = null,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    error: Boolean = false,
+    description: String? = null
+) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-    // Checked, the box is the theme fill and its check the theme foreground,
+    // Checked or mixed, the box is the theme fill and its mark the theme foreground,
     // the same in both themes (decision 59): background/0 turned the check
     // black on it in the dark.
     val checkedColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
@@ -60,22 +90,27 @@ fun KozmosCheckbox(
         modifier = modifier
             .alpha(if (enabled) 1f else KozmosInertAlpha)
             .heightIn(min = 44.dp)
-            // A checkbox to TalkBack, checked or not: a bare clickable row
-            // was heard as its words and nothing of its state.
-            .toggleable(
-                value = checked,
+            // A checkbox to TalkBack, checked, unchecked or mixed: a bare
+            // clickable row was heard as its words and nothing of its state.
+            .triStateToggleable(
+                state = state,
                 enabled = enabled,
                 role = Role.Checkbox,
-                onValueChange = {
-                    trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Checkbox", eventName = "checkbox_toggled", properties = mapOf("checked" to it.toString())))
-                    onCheckedChange(it)
+                onClick = {
+                    // Mixed or unchecked, a click checks it; checked, it
+                    // unchecks. Reported as the new value, as React reports
+                    // Radix's: a mixed box a click checks is "true".
+                    val next = state != ToggleableState.On
+                    trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Checkbox", eventName = "checkbox_toggled", properties = mapOf("checked" to next.toString())))
+                    onCheckedChange(next)
                 }
             )
             .padding(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = null, // Handled by Row clickable for better touch target
+        // Mixed draws Material's dash on the same fill as checked.
+        TriStateCheckbox(
+            state = state,
+            onClick = null, // Handled by Row clickable for better touch target
             enabled = enabled,
             colors = CheckboxDefaults.colors(
                 checkedColor = checkedColor,
