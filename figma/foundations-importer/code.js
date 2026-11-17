@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c9fde435ab08";
+const PLUGIN_BUILD = "0937929bc7dc";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -422,7 +422,15 @@ const COMBOBOX_STATES = [
 ];
 const COMBOBOX_STATUSES = ["Default", "Error", "Warning", "Success"];
 const COMBOBOX_CONTENT = ["Closed", "Open"];
-const MULTI_SELECT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+// GAP-255 (decision 188): MultiSelect, DatePicker, DateRangePicker and
+// TimePicker take GAP-153's State=Mixed and Reset Mixed, as Combobox does.
+const MULTI_SELECT_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const MULTI_SELECT_STATUSES = ["Default", "Error", "Warning", "Success"];
 const MULTI_SELECT_CONTENT = ["Empty", "Selected", "Open"];
 const LISTBOX_SELECTION = ["Single", "Multiple"];
@@ -430,7 +438,13 @@ const LISTBOX_STATES = ["Default", "Focus", "Disabled"];
 const FORM_FIELD_CONTENT = ["Basic", "Description", "Helper", "Full"];
 const FORM_FIELD_STATUSES = ["Default", "Error", "Warning", "Success"];
 const FORM_FIELD_REQUIRED = ["False", "True"];
-const DATE_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+const DATE_PICKER_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const DATE_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const DATE_PICKER_CONTENT = ["Closed", "Open"];
 const DATE_PICKER_EXAMPLE = {
@@ -448,7 +462,13 @@ const DATE_PICKER_GRID_HEIGHT =
 const DATE_PICKER_CALENDAR_HEIGHT = 328;
 const DATE_PICKER_OPEN_VARIANT_HEIGHT = 430;
 const DATE_PICKER_STATE_ROW_STEP = 500;
-const DATE_RANGE_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+const DATE_RANGE_PICKER_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const DATE_RANGE_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const DATE_RANGE_PICKER_CONTENT = ["Closed", "Open"];
 const DATE_RANGE_PICKER_EXAMPLE = {
@@ -470,7 +490,13 @@ const DATE_RANGE_PICKER_MONTH_HEIGHT = 328;
 const DATE_RANGE_PICKER_CALENDAR_HEIGHT = 352;
 const DATE_RANGE_PICKER_OPEN_VARIANT_HEIGHT = 490;
 const DATE_RANGE_PICKER_STATE_ROW_STEP = 580;
-const TIME_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+const TIME_PICKER_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const TIME_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const TIME_PICKER_CONTENT = ["Closed", "Open"];
 const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
@@ -4820,12 +4846,13 @@ const COMPONENT_DOCS = [
       "Selected values compose live Chip instances for visual and token parity.",
       "Label Text, Placeholder Text, Helper Text, and option text properties map to MultiSelect props and children.",
       "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
+      "State=Mixed maps to MultiSelect.mixed (GAP-255): Multiple values in place of the chips, no option checked; Reset Mixed shows Reset to multiple values, MultiSelect.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Empty, Selected, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Field controls and listbox options meet the 44px minimum target.",
@@ -4878,12 +4905,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed field and open calendar anatomy examples.",
       "Label Text, Value Text, Month Text, Helper Text, and Show Helper Text map to DatePicker props and examples.",
+      "State=Mixed maps to DatePicker.mixed (GAP-255): Multiple values in place of the date, no day chosen; Reset Mixed shows Reset to multiple values, DatePicker.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Value Text, Month Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Value Text, Month Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "The field meets the 44px minimum interactive target.",
@@ -4907,12 +4935,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed two-field and open range calendar anatomy examples.",
       "Label Text, Start Label Text, End Label Text, Start Value Text, End Value Text, Helper Text, and month headings map to DateRangePicker props and examples.",
+      "State=Mixed maps to DateRangePicker.mixed (GAP-255): Multiple values in both fields, no range chosen; Reset Mixed shows Reset to multiple values, DateRangePicker.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Start Label Text, End Label Text, Start Value Text, End Value Text, Start Month Text, End Month Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Start Label Text, End Label Text, Start Value Text, End Value Text, Start Month Text, End Month Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Both fields meet the 44px minimum interactive target.",
@@ -4936,12 +4965,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed field and open time-list anatomy examples.",
       "Label Text, Value Text, Helper Text, and option text properties map to TimePicker props and examples.",
+      "State=Mixed maps to TimePicker.mixed (GAP-255): Multiple values in place of the time, no time chosen; Reset Mixed shows Reset to multiple values, TimePicker.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Value Text, Option 1 Text, Option 2 Text, Option 3 Text, Option 4 Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Value Text, Option 1 Text, Option 2 Text, Option 3 Text, Option 4 Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "The field and list options meet the 44px minimum interactive target.",
@@ -38309,6 +38339,7 @@ async function buildMultiSelectComponent() {
     "Selected values compose live Chip instances for visual and token parity.",
     "Option text properties map to MultiSelect option children in Code Connect examples.",
     "Helper Text maps to MultiSelect.helperText.",
+    "State=Mixed maps to MultiSelect.mixed (GAP-255): Multiple values in place of the chips; Reset Mixed shows Reset to multiple values, MultiSelect.onResetMixed.",
   ]);
   clearComponentSetContainerFill(componentSet);
 
@@ -38366,6 +38397,7 @@ async function updateMultiSelectComponent() {
     "Selected values compose live Chip instances for visual and token parity.",
     "Option text properties map to MultiSelect option children in Code Connect examples.",
     "Helper Text maps to MultiSelect.helperText.",
+    "State=Mixed maps to MultiSelect.mixed (GAP-255): Multiple values in place of the chips; Reset Mixed shows Reset to multiple values, MultiSelect.onResetMixed.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -38704,6 +38736,7 @@ async function buildDatePickerComponent() {
     "Value Text maps to the date input value in Code Connect examples.",
     "Month Text maps to calendar example heading.",
     "Helper Text maps to DatePicker.helperText.",
+    "State=Mixed maps to DatePicker.mixed (GAP-255): Multiple values in place of the date; Reset Mixed shows Reset to multiple values, DatePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -38761,6 +38794,7 @@ async function updateDatePickerComponent() {
     "Value Text maps to the date input value in Code Connect examples.",
     "Month Text maps to calendar example heading.",
     "Helper Text maps to DatePicker.helperText.",
+    "State=Mixed maps to DatePicker.mixed (GAP-255): Multiple values in place of the date; Reset Mixed shows Reset to multiple values, DatePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -38916,6 +38950,7 @@ async function buildDateRangePickerComponent() {
     "Start/End Label and Value text map to DateRangePicker field props.",
     "Start/End Month Text map to calendar example headings.",
     "Helper Text maps to DateRangePicker.helperText.",
+    "State=Mixed maps to DateRangePicker.mixed (GAP-255): Multiple values in both fields; Reset Mixed shows Reset to multiple values, DateRangePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -38974,6 +39009,7 @@ async function updateDateRangePickerComponent() {
     "Start/End Label and Value text map to DateRangePicker field props.",
     "Start/End Month Text map to calendar example headings.",
     "Helper Text maps to DateRangePicker.helperText.",
+    "State=Mixed maps to DateRangePicker.mixed (GAP-255): Multiple values in both fields; Reset Mixed shows Reset to multiple values, DateRangePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -39125,6 +39161,7 @@ async function buildTimePickerComponent() {
     "Value Text maps to the time input value in Code Connect examples.",
     "Option text properties map to time-list examples.",
     "Helper Text maps to TimePicker.helperText.",
+    "State=Mixed maps to TimePicker.mixed (GAP-255): Multiple values in place of the time; Reset Mixed shows Reset to multiple values, TimePicker.onResetMixed.",
   ]);
   clearComponentSetContainerFill(componentSet);
 
@@ -39181,6 +39218,7 @@ async function updateTimePickerComponent() {
     "Value Text maps to the time input value in Code Connect examples.",
     "Option text properties map to time-list examples.",
     "Helper Text maps to TimePicker.helperText.",
+    "State=Mixed maps to TimePicker.mixed (GAP-255): Multiple values in place of the time; Reset Mixed shows Reset to multiple values, TimePicker.onResetMixed.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -47432,6 +47470,7 @@ function configureMultiSelectProperties(componentSet, stats) {
   );
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureListboxProperties(componentSet, stats) {
@@ -47500,6 +47539,7 @@ function configureDatePickerProperties(componentSet, stats) {
   configureHelperTextProperty(componentSet, "Choose a date.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureDateRangePickerProperties(componentSet, stats) {
@@ -47549,6 +47589,7 @@ function configureDateRangePickerProperties(componentSet, stats) {
   configureHelperTextProperty(componentSet, "Choose a date range.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureTimePickerProperties(componentSet, stats) {
@@ -47591,6 +47632,7 @@ function configureTimePickerProperties(componentSet, stats) {
   configureHelperTextProperty(componentSet, "Choose a time.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureFileUploadProperties(componentSet, stats) {
@@ -69690,6 +69732,9 @@ function layoutMultiSelectVariants(componentSet) {
     child.x = statusIndex * 1140 + contentIndex * 380;
     child.y = stateIndex * 300;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createListboxVariant({
@@ -69892,6 +69937,9 @@ function layoutDatePickerVariants(componentSet) {
     child.x = statusIndex * 760 + contentIndex * 380;
     child.y = stateIndex * DATE_PICKER_STATE_ROW_STEP;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createDateRangePickerVariant({
@@ -69997,6 +70045,9 @@ function layoutDateRangePickerVariants(componentSet) {
     child.x = statusIndex * 1440 + contentIndex * 720;
     child.y = stateIndex * DATE_RANGE_PICKER_STATE_ROW_STEP;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createTimePickerVariant({
@@ -70099,6 +70150,9 @@ function layoutTimePickerVariants(componentSet) {
     child.x = statusIndex * 760 + contentIndex * 380;
     child.y = stateIndex * 320;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createFileUploadVariant({
@@ -80588,7 +80642,10 @@ async function syncMultiSelectVariantChildren({
 
   const disabled = state === "Disabled";
   const readonly = state === "Readonly";
-  const hasSelections = content !== "Empty";
+  // Mixed (GAP-255), no chip and nothing to clear: the field stands for
+  // the features' several choices and holds none of its own.
+  const mixed = state === MIXED_FIELD_STATE;
+  const hasSelections = content !== "Empty" && !mixed;
   const isOpen = content === "Open";
 
   const label = figma.createText();
@@ -80706,6 +80763,21 @@ async function syncMultiSelectVariantChildren({
   ];
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
+  await syncMixedFieldText(placeholder, {
+    mixed,
+    hide: [placeholder],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(
+        text,
+        fontSet,
+        "MultiSelect",
+        variables,
+        runStats,
+      ),
+    fonts,
+    variableByName,
+    stats,
+  });
 
   const actionIcons = await appendFieldActions(field, {
     tokenPrefix: "MultiSelect",
@@ -80775,7 +80847,8 @@ async function syncMultiSelectVariantChildren({
       const option = await createMultiSelectOption({
         index,
         text: optionLabels[index],
-        selected: index < 2,
+        // Mixed, no option is checked.
+        selected: index < 2 && !mixed,
         active: index === 2,
         focused: state === "Focus",
         disabled,
@@ -80829,6 +80902,12 @@ async function syncMultiSelectVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (listbox) {
     component.appendChild(listbox);
     setLayoutSizingHorizontal(listbox, "FILL");
@@ -81326,6 +81405,7 @@ async function syncDatePickerVariantChildren({
 
   const disabled = state === "Disabled";
   const isOpen = content === "Open";
+  const mixed = state === MIXED_FIELD_STATE;
 
   const label = figma.createText();
   label.name = "Label Text";
@@ -81414,6 +81494,33 @@ async function syncDatePickerVariantChildren({
   ];
   value.textAlignVertical = "CENTER";
   field.appendChild(value);
+  // Mixed (GAP-255): Multiple values in place of its own, in the
+  // placeholder's colour, as React draws it over the empty field.
+  const valueMixed = await syncMixedFieldText(value, {
+    mixed,
+    hide: [value],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(
+        text,
+        fontSet,
+        "DatePicker",
+        variables,
+        runStats,
+      ),
+    fonts,
+    variableByName,
+    stats,
+  });
+  if (valueMixed) {
+    valueMixed.fills = [
+      paintFromVariable(
+        config.placeholder,
+        config.placeholderFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
 
   const trailingIcon = await createFixedIconInstance(
     isOpen ? "chevron-up" : "chevron-down",
@@ -81445,6 +81552,8 @@ async function syncDatePickerVariantChildren({
     const builtCalendar = await createDatePickerCalendar({
       monthText: preservedText["Month Text"] || "May 2026",
       disabled,
+      // Mixed, the calendar opens on no day.
+      noSelection: mixed,
       variableByName,
       fonts,
       stats,
@@ -81498,6 +81607,12 @@ async function syncDatePickerVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (calendar) component.appendChild(calendar);
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
@@ -81557,6 +81672,7 @@ function calendarDateKey(date) {
 async function createDatePickerCalendar({
   monthText,
   disabled,
+  noSelection = false,
   variableByName,
   fonts,
   stats,
@@ -81723,11 +81839,13 @@ async function createDatePickerCalendar({
 
   const daySpecs = createCalendarDaySpecs({
     monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
-    selectedDate: {
-      day: DATE_PICKER_EXAMPLE.selectedDay,
-      monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
-      year: DATE_PICKER_EXAMPLE.year,
-    },
+    selectedDate: noSelection
+      ? null
+      : {
+          day: DATE_PICKER_EXAMPLE.selectedDay,
+          monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
+          year: DATE_PICKER_EXAMPLE.year,
+        },
     todayDate: {
       day: DATE_PICKER_EXAMPLE.todayDay,
       monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
@@ -81942,6 +82060,7 @@ async function syncDateRangePickerVariantChildren({
 
   const disabled = state === "Disabled";
   const isOpen = content === "Open";
+  const mixed = state === MIXED_FIELD_STATE;
 
   const label = figma.createText();
   label.name = "Label Text";
@@ -82008,6 +82127,42 @@ async function syncDateRangePickerVariantChildren({
   });
   fieldsRow.appendChild(endField.group);
 
+  // Mixed (GAP-255): one mixed state for the range, Multiple values in
+  // both fields, in the placeholder's colour, as React draws it.
+  for (const [part, valueName] of [
+    [startField, "Start Value Text"],
+    [endField, "End Value Text"],
+  ]) {
+    const value = directChildNamed(part.field, valueName);
+    const text = value
+      ? await syncMixedFieldText(value, {
+          mixed,
+          hide: [value],
+          typography: (node, fontSet, variables, runStats) =>
+            applyFieldTextTypography(
+              node,
+              fontSet,
+              "DateRangePicker",
+              variables,
+              runStats,
+            ),
+          fonts,
+          variableByName,
+          stats,
+        })
+      : null;
+    if (text) {
+      text.fills = [
+        paintFromVariable(
+          config.placeholder,
+          config.placeholderFallback,
+          variableByName,
+          stats,
+        ),
+      ];
+    }
+  }
+
   syncFocusRing(startField.field, {
     enabled: state !== "Disabled",
     width: 330,
@@ -82040,6 +82195,8 @@ async function syncDateRangePickerVariantChildren({
       startMonthText: preservedText["Start Month Text"] || "May 2026",
       endMonthText: preservedText["End Month Text"] || "June 2026",
       disabled,
+      // Mixed, the calendar opens on no range.
+      noSelection: mixed,
       variableByName,
       fonts,
       stats,
@@ -82097,6 +82254,13 @@ async function syncDateRangePickerVariantChildren({
   component.appendChild(label);
   component.appendChild(fieldsRow);
   setLayoutSizingHorizontal(fieldsRow, "FILL");
+  // One reset for the range, under both fields.
+  await syncResetMixedText(component, fieldsRow, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (calendar) component.appendChild(calendar);
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
@@ -82230,6 +82394,7 @@ async function createDateRangePickerCalendar({
   startMonthText,
   endMonthText,
   disabled,
+  noSelection = false,
   variableByName,
   fonts,
   stats,
@@ -82263,16 +82428,20 @@ async function createDateRangePickerCalendar({
   const startMonth = await createDateRangePickerMonth({
     daySpecs: createCalendarDaySpecs({
       monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
-      rangeEndDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.endDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.endYear,
-      },
-      rangeStartDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.startDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.startYear,
-      },
+      rangeEndDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.endDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.endYear,
+          },
+      rangeStartDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.startDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.startYear,
+          },
       year: DATE_RANGE_PICKER_EXAMPLE.startYear,
     }),
     monthTextName: "Start Month Text",
@@ -82287,16 +82456,20 @@ async function createDateRangePickerCalendar({
   const endMonth = await createDateRangePickerMonth({
     daySpecs: createCalendarDaySpecs({
       monthIndex: DATE_RANGE_PICKER_EXAMPLE.nextMonthIndex,
-      rangeEndDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.endDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.endYear,
-      },
-      rangeStartDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.startDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.startYear,
-      },
+      rangeEndDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.endDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.endYear,
+          },
+      rangeStartDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.startDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.startYear,
+          },
       year: DATE_RANGE_PICKER_EXAMPLE.endYear,
     }),
     monthTextName: "End Month Text",
@@ -82603,6 +82776,7 @@ async function syncTimePickerVariantChildren({
 
   const disabled = state === "Disabled";
   const isOpen = content === "Open";
+  const mixed = state === MIXED_FIELD_STATE;
 
   const label = figma.createText();
   label.name = "Label Text";
@@ -82691,6 +82865,33 @@ async function syncTimePickerVariantChildren({
   ];
   value.textAlignVertical = "CENTER";
   field.appendChild(value);
+  // Mixed (GAP-255): Multiple values in place of its own, in the
+  // placeholder's colour, as React draws it over the empty field.
+  const valueMixed = await syncMixedFieldText(value, {
+    mixed,
+    hide: [value],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(
+        text,
+        fontSet,
+        "TimePicker",
+        variables,
+        runStats,
+      ),
+    fonts,
+    variableByName,
+    stats,
+  });
+  if (valueMixed) {
+    valueMixed.fills = [
+      paintFromVariable(
+        config.placeholder,
+        config.placeholderFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
 
   const trailingIcon = await createFixedIconInstance(
     isOpen ? "chevron-up" : "chevron-down",
@@ -82753,7 +82954,8 @@ async function syncTimePickerVariantChildren({
       const option = await createTimePickerOption({
         index,
         text: optionLabels[index],
-        selected: index === 3,
+        // Mixed, the list opens on no time.
+        selected: index === 3 && !mixed,
         active: index === 2,
         focused: state === "Focus",
         disabled,
@@ -82806,6 +83008,12 @@ async function syncTimePickerVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (listbox) {
     component.appendChild(listbox);
     setLayoutSizingHorizontal(listbox, "FILL");
