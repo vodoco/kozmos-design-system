@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "88928b6d6e0d";
+const PLUGIN_BUILD = "6e64f7f0aa39";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -371,7 +371,16 @@ const ICON_BUTTON_COUNTER_DEFAULT_TEXT = "3";
 const ICON_BUTTON_COUNTER_OFFSET = 2;
 const TOGGLE_BUTTON_VARIANTS = ["Default", "Outline"];
 const TOGGLE_BUTTON_SIZES = ["Small", "Default", "Large"];
-const TOGGLE_BUTTON_STATES = ["Default", "Pressed", "Disabled", "Focus"];
+// Decision 190: Mixed is React's aria-pressed="mixed", a dashed theme edge on
+// the muted fill with a dash before the label. Last, so a set from before it
+// keeps its order and Update adds the six it lacks.
+const TOGGLE_BUTTON_STATES = [
+  "Default",
+  "Pressed",
+  "Disabled",
+  "Focus",
+  "Mixed",
+];
 const SPLIT_BUTTON_VARIANTS = [
   "Default",
   "Secondary",
@@ -433,7 +442,18 @@ function chipVariantCombinations() {
 }
 const SEGMENTED_CONTROL_SIZES = ["Small", "Default", "Large"];
 const SEGMENTED_CONTROL_ACTIVE = ["One", "Two", "Three"];
-const SEGMENTED_CONTROL_STATES = ["Default", "Focus", "Disabled", "Error"];
+// Decision 191: State=Mixed is React's `mixed`, a control of a
+// multi-selection whose features chose different options: no option chosen,
+// whatever Active says, and "Multiple values" under the track (Mixed Text).
+// Last, so a set from before it keeps its order and Update adds the nine it
+// lacks.
+const SEGMENTED_CONTROL_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Error",
+  "Mixed",
+];
 const COUNTER_TONES = ["Neutral", "Brand", "Destructive", "Inverse"];
 const COUNTER_SIZES = ["Small", "Default"];
 // Decision 188: Indeterminate is React's `checked="indeterminate"`, painted
@@ -441,7 +461,11 @@ const COUNTER_SIZES = ["Small", "Default"];
 // a set from before it keeps its order and Update adds the three it lacks.
 const CHECKBOX_CHECKED = ["Unchecked", "Checked", "Indeterminate"];
 const CHECKBOX_STATES = ["Default", "Disabled", "Error"];
-const RADIO_CHECKED = ["Unchecked", "Checked"];
+// Decision 191: Checked=Mixed is an option of RadioGroup's `mixed`: drawn
+// unchosen, as every option of a mixed group is, with the group's "Multiple
+// values" line under it (Mixed Text), for the group's last option. Last, so
+// a set from before it keeps its order and Update adds the nine it lacks.
+const RADIO_CHECKED = ["Unchecked", "Checked", "Mixed"];
 const RADIO_STATES = ["Default", "Disabled", "Error"];
 // GAP-158: how an option is drawn, React's RadioGroupItem `variant`. Default
 // first, so a variant built before the axis existed parses as Default and
@@ -453,7 +477,11 @@ const RADIO_CARD_WIDTH = 240;
 const RADIO_TILE_WIDTH = 112;
 // min-h-24: a tile is at least 96 tall.
 const RADIO_TILE_MIN_HEIGHT = 96;
-const SWITCH_CHECKED = ["Unchecked", "Checked"];
+// Decision 189: Mixed is React's `mixed`, the track filled as when checked,
+// no thumb, and a white dash in its middle. A value of Checked, so a mixed
+// switch can be disabled or in error too; last, so a set from before it keeps
+// its order and Update adds the three it lacks.
+const SWITCH_CHECKED = ["Unchecked", "Checked", "Mixed"];
 const SWITCH_STATES = ["Default", "Disabled", "Error"];
 const INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
 const INPUT_STATUSES = ["Default", "Error", "Warning", "Success"];
@@ -506,7 +534,15 @@ const COMBOBOX_STATES = [
 ];
 const COMBOBOX_STATUSES = ["Default", "Error", "Warning", "Success"];
 const COMBOBOX_CONTENT = ["Closed", "Open"];
-const MULTI_SELECT_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+// GAP-255 (decision 188): MultiSelect, DatePicker, DateRangePicker and
+// TimePicker take GAP-153's State=Mixed and Reset Mixed, as Combobox does.
+const MULTI_SELECT_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const MULTI_SELECT_STATUSES = ["Default", "Error", "Warning", "Success"];
 const MULTI_SELECT_CONTENT = ["Empty", "Selected", "Open"];
 const LISTBOX_SELECTION = ["Single", "Multiple"];
@@ -514,7 +550,13 @@ const LISTBOX_STATES = ["Default", "Focus", "Disabled"];
 const FORM_FIELD_CONTENT = ["Basic", "Description", "Helper", "Full"];
 const FORM_FIELD_STATUSES = ["Default", "Error", "Warning", "Success"];
 const FORM_FIELD_REQUIRED = ["False", "True"];
-const DATE_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+const DATE_PICKER_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const DATE_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const DATE_PICKER_CONTENT = ["Closed", "Open"];
 const DATE_PICKER_EXAMPLE = {
@@ -532,7 +574,13 @@ const DATE_PICKER_GRID_HEIGHT =
 const DATE_PICKER_CALENDAR_HEIGHT = 328;
 const DATE_PICKER_OPEN_VARIANT_HEIGHT = 430;
 const DATE_PICKER_STATE_ROW_STEP = 500;
-const DATE_RANGE_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+const DATE_RANGE_PICKER_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const DATE_RANGE_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const DATE_RANGE_PICKER_CONTENT = ["Closed", "Open"];
 const DATE_RANGE_PICKER_EXAMPLE = {
@@ -554,7 +602,13 @@ const DATE_RANGE_PICKER_MONTH_HEIGHT = 328;
 const DATE_RANGE_PICKER_CALENDAR_HEIGHT = 352;
 const DATE_RANGE_PICKER_OPEN_VARIANT_HEIGHT = 490;
 const DATE_RANGE_PICKER_STATE_ROW_STEP = 580;
-const TIME_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
+const TIME_PICKER_STATES = [
+  "Default",
+  "Focus",
+  "Disabled",
+  "Readonly",
+  MIXED_FIELD_STATE,
+];
 const TIME_PICKER_STATUSES = ["Default", "Error", "Warning", "Success"];
 const TIME_PICKER_CONTENT = ["Closed", "Open"];
 const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
@@ -3979,13 +4033,14 @@ const COMPONENT_DOCS = [
       "Size maps to SegmentedControl.size.",
       "Active maps to defaultValue or selectedIndex in Code Connect.",
       "State maps to disabled, focus, and error examples.",
+      "State=Mixed maps to SegmentedControl.mixed (decision 191): no option chosen, and Multiple values under the track; Mixed Text is SegmentedControl.mixedLabel.",
       "Item text properties map to segment labels.",
     ],
     properties: [
       "Size: Small, Default, Large",
       "Active: One, Two, Three",
-      "State: Default, Focus, Disabled, Error",
-      "Item 1 Text, Item 2 Text, Item 3 Text, Focus Visible",
+      "State: Default, Focus, Disabled, Error, Mixed",
+      "Item 1 Text, Item 2 Text, Item 3 Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Product code exposes the group as a single-choice segmented control.",
@@ -4759,6 +4814,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
+      "Checked=Mixed maps to RadioGroup.mixed (decision 191): the option unchosen, with Multiple values under it, the group's line; Mixed Text is RadioGroup.mixedLabel.",
       "State maps to disabled and error props in Code Connect.",
       "Variant maps to RadioGroupItem.variant: Default, Card and Tile (GAP-158).",
       "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
@@ -4767,10 +4823,10 @@ const COMPONENT_DOCS = [
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
-      "Checked: Unchecked, Checked",
+      "Checked: Unchecked, Checked, Mixed",
       "State: Default, Disabled, Error",
       "Variant: Default, Card, Tile",
-      "Label Text, Description Text, Show Description, Show Media, Focus Visible",
+      "Label Text, Description Text, Show Description, Show Media, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Rows meet the 44px minimum interactive target.",
@@ -5008,12 +5064,13 @@ const COMPONENT_DOCS = [
       "Selected values compose live Chip instances for visual and token parity.",
       "Label Text, Placeholder Text, Helper Text, and option text properties map to MultiSelect props and children.",
       "Show Group Labels, Group 1 Text and Group 2 Text map to each option's group (GAP-192): Group 1 heads options 1 and 2, Group 2 option 3.",
+      "State=Mixed maps to MultiSelect.mixed (GAP-255): Multiple values in place of the chips, no option checked; Reset Mixed shows Reset to multiple values, MultiSelect.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Empty, Selected, Open",
-      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Placeholder Text, Option 1 Text, Option 2 Text, Option 3 Text, Group 1 Text, Group 2 Text, Show Group Labels, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Field controls and listbox options meet the 44px minimum target.",
@@ -5066,12 +5123,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed field and open calendar anatomy examples.",
       "Label Text, Value Text, Month Text, Helper Text, and Show Helper Text map to DatePicker props and examples.",
+      "State=Mixed maps to DatePicker.mixed (GAP-255): Multiple values in place of the date, no day chosen; Reset Mixed shows Reset to multiple values, DatePicker.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Value Text, Month Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Value Text, Month Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "The field meets the 44px minimum interactive target.",
@@ -5095,12 +5153,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed two-field and open range calendar anatomy examples.",
       "Label Text, Start Label Text, End Label Text, Start Value Text, End Value Text, Helper Text, and month headings map to DateRangePicker props and examples.",
+      "State=Mixed maps to DateRangePicker.mixed (GAP-255): Multiple values in both fields, no range chosen; Reset Mixed shows Reset to multiple values, DateRangePicker.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Start Label Text, End Label Text, Start Value Text, End Value Text, Start Month Text, End Month Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Start Label Text, End Label Text, Start Value Text, End Value Text, Start Month Text, End Month Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "Both fields meet the 44px minimum interactive target.",
@@ -5124,12 +5183,13 @@ const COMPONENT_DOCS = [
       "Status maps to default, error, warning, and success validation tones.",
       "Content maps to closed field and open time-list anatomy examples.",
       "Label Text, Value Text, Helper Text, and option text properties map to TimePicker props and examples.",
+      "State=Mixed maps to TimePicker.mixed (GAP-255): Multiple values in place of the time, no time chosen; Reset Mixed shows Reset to multiple values, TimePicker.onResetMixed.",
     ],
     properties: [
-      "State: Default, Focus, Disabled, Readonly",
+      "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
       "Content: Closed, Open",
-      "Label Text, Value Text, Option 1 Text, Option 2 Text, Option 3 Text, Option 4 Text, Helper Text, Show Helper Text, Focus Visible",
+      "Label Text, Value Text, Option 1 Text, Option 2 Text, Option 3 Text, Option 4 Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
     ],
     accessibility: [
       "The field and list options meet the 44px minimum interactive target.",
@@ -33481,7 +33541,7 @@ async function buildToggleButtonComponent() {
     "Kozmos ToggleButton component set generated from React ToggleButton API.",
     "Variant maps to ToggleButton.variant.",
     "Size maps to ToggleButton.size.",
-    "State maps to pressed and disabled in Code Connect.",
+    'State maps to pressed and disabled in Code Connect; Mixed is ToggleButton.mixed, aria-pressed="mixed" (decision 190).',
     "Focus Visible controls the generated focus ring.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -33536,7 +33596,7 @@ async function updateToggleButtonComponent() {
     "Kozmos ToggleButton component set generated from React ToggleButton API.",
     "Variant maps to ToggleButton.variant.",
     "Size maps to ToggleButton.size.",
-    "State maps to pressed and disabled in Code Connect.",
+    'State maps to pressed and disabled in Code Connect; Mixed is ToggleButton.mixed, aria-pressed="mixed" (decision 190).',
     "Focus Visible controls the generated focus ring.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -35744,6 +35804,7 @@ async function buildSegmentedControlComponent() {
     "Size maps to SegmentedControl.size.",
     "Active maps to the selected/default value.",
     "State maps to disabled, focus, and error examples.",
+    "State=Mixed maps to SegmentedControl.mixed (decision 191): no option chosen, whatever Active says, and Multiple values under the track; Mixed Text is SegmentedControl.mixedLabel.",
     "Item text properties map to segment labels.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -35799,6 +35860,7 @@ async function updateSegmentedControlComponent() {
     "Size maps to SegmentedControl.size.",
     "Active maps to the selected/default value.",
     "State maps to disabled, focus, and error examples.",
+    "State=Mixed maps to SegmentedControl.mixed (decision 191): no option chosen, whatever Active says, and Multiple values under the track; Mixed Text is SegmentedControl.mixedLabel.",
     "Item text properties map to segment labels.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -36797,6 +36859,7 @@ async function buildRadioComponent() {
     "Kozmos Radio component set generated from React RadioGroupItem API.",
     "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
+    "Checked=Mixed maps to RadioGroup.mixed (decision 191): the option unchosen, with the group's Multiple values under it, for the group's last option; Mixed Text is RadioGroup.mixedLabel.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
     "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
@@ -36817,6 +36880,7 @@ async function buildRadioComponent() {
   configureLabelTextProperty(componentSet, "Radio", stats);
   configureFocusVisibleProperty(componentSet, stats);
   configureControlDescriptionProperties(componentSet, stats);
+  configureMixedGroupTextProperty(componentSet, stats);
   return stats;
 }
 
@@ -36855,6 +36919,7 @@ async function updateRadioComponent() {
     "Kozmos Radio component set generated from React RadioGroupItem API.",
     "Variant maps to RadioGroupItem.variant: Default (the ring), Card and Tile (GAP-158).",
     "Checked maps to whether RadioGroup.defaultValue matches RadioGroupItem.value.",
+    "Checked=Mixed maps to RadioGroup.mixed (decision 191): the option unchosen, with the group's Multiple values under it, for the group's last option; Mixed Text is RadioGroup.mixedLabel.",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to RadioGroupItem.label, a card's or a tile's title.",
     "Description Text and Show Description map to RadioGroupItem.description (GAP-162).",
@@ -36906,6 +36971,7 @@ async function updateRadioComponent() {
   configureLabelTextProperty(existing, "Radio", stats);
   configureFocusVisibleProperty(existing, stats);
   configureControlDescriptionProperties(existing, stats);
+  configureMixedGroupTextProperty(existing, stats);
   return stats;
 }
 
@@ -36966,7 +37032,7 @@ async function buildSwitchComponent() {
   componentSet.setSharedPluginData(RUN_NAMESPACE, "component", "Switch");
   applyComponentSetDescription(componentSet, "Switch", false, [
     "Kozmos Switch component set generated from React Switch API.",
-    "Checked maps to Switch.checked.",
+    "Checked maps to Switch.checked; Mixed is Switch.mixed, the several settings of a multi-selection (decision 189).",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
     "Description Text and Show Description map to Switch.description (GAP-162).",
@@ -36996,7 +37062,7 @@ async function updateSwitchComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
-    variantsMissing: 0,
+    variantsCreated: 0,
     warnings: [],
   };
 
@@ -37022,7 +37088,7 @@ async function updateSwitchComponent() {
   existing.setSharedPluginData(RUN_NAMESPACE, "component", "Switch");
   applyComponentSetDescription(existing, "Switch", true, [
     "Kozmos Switch component set generated from React Switch API.",
-    "Checked maps to Switch.checked.",
+    "Checked maps to Switch.checked; Mixed is Switch.mixed, the several settings of a multi-selection (decision 189).",
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Switch.label.",
     "Description Text and Show Description map to Switch.description (GAP-162).",
@@ -37053,15 +37119,25 @@ async function updateSwitchComponent() {
     stats.variantsUpdated += 1;
   }
 
+  // The Mixed variants (decision 189) a set from before them lacks, added
+  // beside the six it keeps, whose node ids Code Connect pins.
   for (const checked of SWITCH_CHECKED) {
     for (const state of SWITCH_STATES) {
       const key = `${checked}/${state}`;
-      if (!seenKeys[key]) {
-        stats.variantsMissing += 1;
-        stats.warnings.push(`Missing Switch variant ${key}.`);
-      }
+      if (seenKeys[key]) continue;
+      const component = await createSwitchVariant({
+        checked,
+        state,
+        variableByName,
+        fonts,
+        stats,
+      });
+      existing.appendChild(component);
+      seenKeys[key] = true;
+      stats.variantsCreated += 1;
     }
   }
+  layoutSwitchVariants(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -38598,6 +38674,7 @@ async function buildMultiSelectComponent() {
     "Selected values compose live Chip instances for visual and token parity.",
     "Option text properties map to MultiSelect option children in Code Connect examples.",
     "Helper Text maps to MultiSelect.helperText.",
+    "State=Mixed maps to MultiSelect.mixed (GAP-255): Multiple values in place of the chips; Reset Mixed shows Reset to multiple values, MultiSelect.onResetMixed.",
   ]);
   clearComponentSetContainerFill(componentSet);
 
@@ -38655,6 +38732,7 @@ async function updateMultiSelectComponent() {
     "Selected values compose live Chip instances for visual and token parity.",
     "Option text properties map to MultiSelect option children in Code Connect examples.",
     "Helper Text maps to MultiSelect.helperText.",
+    "State=Mixed maps to MultiSelect.mixed (GAP-255): Multiple values in place of the chips; Reset Mixed shows Reset to multiple values, MultiSelect.onResetMixed.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -38993,6 +39071,7 @@ async function buildDatePickerComponent() {
     "Value Text maps to the date input value in Code Connect examples.",
     "Month Text maps to calendar example heading.",
     "Helper Text maps to DatePicker.helperText.",
+    "State=Mixed maps to DatePicker.mixed (GAP-255): Multiple values in place of the date; Reset Mixed shows Reset to multiple values, DatePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -39050,6 +39129,7 @@ async function updateDatePickerComponent() {
     "Value Text maps to the date input value in Code Connect examples.",
     "Month Text maps to calendar example heading.",
     "Helper Text maps to DatePicker.helperText.",
+    "State=Mixed maps to DatePicker.mixed (GAP-255): Multiple values in place of the date; Reset Mixed shows Reset to multiple values, DatePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -39205,6 +39285,7 @@ async function buildDateRangePickerComponent() {
     "Start/End Label and Value text map to DateRangePicker field props.",
     "Start/End Month Text map to calendar example headings.",
     "Helper Text maps to DateRangePicker.helperText.",
+    "State=Mixed maps to DateRangePicker.mixed (GAP-255): Multiple values in both fields; Reset Mixed shows Reset to multiple values, DateRangePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
   ]);
   clearComponentSetContainerFill(componentSet);
@@ -39263,6 +39344,7 @@ async function updateDateRangePickerComponent() {
     "Start/End Label and Value text map to DateRangePicker field props.",
     "Start/End Month Text map to calendar example headings.",
     "Helper Text maps to DateRangePicker.helperText.",
+    "State=Mixed maps to DateRangePicker.mixed (GAP-255): Multiple values in both fields; Reset Mixed shows Reset to multiple values, DateRangePicker.onResetMixed.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
@@ -39414,6 +39496,7 @@ async function buildTimePickerComponent() {
     "Value Text maps to the time input value in Code Connect examples.",
     "Option text properties map to time-list examples.",
     "Helper Text maps to TimePicker.helperText.",
+    "State=Mixed maps to TimePicker.mixed (GAP-255): Multiple values in place of the time; Reset Mixed shows Reset to multiple values, TimePicker.onResetMixed.",
   ]);
   clearComponentSetContainerFill(componentSet);
 
@@ -39470,6 +39553,7 @@ async function updateTimePickerComponent() {
     "Value Text maps to the time input value in Code Connect examples.",
     "Option text properties map to time-list examples.",
     "Helper Text maps to TimePicker.helperText.",
+    "State=Mixed maps to TimePicker.mixed (GAP-255): Multiple values in place of the time; Reset Mixed shows Reset to multiple values, TimePicker.onResetMixed.",
     "Updated in place to preserve the Code Connect node ID.",
   ]);
   clearComponentSetContainerFill(existing);
@@ -48003,6 +48087,7 @@ function configureMultiSelectProperties(componentSet, stats) {
   );
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureListboxProperties(componentSet, stats) {
@@ -48071,6 +48156,7 @@ function configureDatePickerProperties(componentSet, stats) {
   configureHelperTextProperty(componentSet, "Choose a date.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureDateRangePickerProperties(componentSet, stats) {
@@ -48120,6 +48206,7 @@ function configureDateRangePickerProperties(componentSet, stats) {
   configureHelperTextProperty(componentSet, "Choose a date range.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureTimePickerProperties(componentSet, stats) {
@@ -48162,6 +48249,7 @@ function configureTimePickerProperties(componentSet, stats) {
   configureHelperTextProperty(componentSet, "Choose a time.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
+  configureResetMixedProperty(componentSet, stats);
 }
 
 function configureFileUploadProperties(componentSet, stats) {
@@ -60504,6 +60592,7 @@ function configureSegmentedControlProperties(componentSet, stats) {
     "Activity",
     stats,
   );
+  configureMixedGroupTextProperty(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
 
@@ -62102,6 +62191,20 @@ async function updateToggleButtonVariant(
     component.strokes = [];
     component.strokeWeight = 0;
   }
+  // Mixed's edge is dashed, 3 and 3, as a 1px CSS dashed border draws it;
+  // every other state's is solid. Written only when it changes.
+  const dashPattern = config.dashed ? [3, 3] : [];
+  try {
+    const current = component.dashPattern || [];
+    if (
+      current.length !== dashPattern.length ||
+      current.some((value, index) => value !== dashPattern[index])
+    ) {
+      component.dashPattern = dashPattern;
+    }
+  } catch (_error) {
+    // Older Figma plugin runtimes do not expose dashed stroke editing.
+  }
 
   bindToggleButtonGeometryVariables(
     component,
@@ -62130,6 +62233,22 @@ async function updateToggleButtonVariant(
     stats,
   );
   label.characters = state === "Pressed" ? "Pressed" : "Toggle";
+  // Mixed: Checkbox's dash, React's minus at 16, 8 before the label, in the
+  // label's colour. Every other state has none, and no gap.
+  removeGeneratedButtonChild(component, "Mixed Dash", state !== "Mixed");
+  if (state === "Mixed") {
+    const dash = syncMixedDash(
+      component,
+      config.foreground,
+      config.foregroundFallback,
+      variableByName,
+      stats,
+    );
+    component.insertChild(0, dash);
+  }
+  if (component.itemSpacing !== (state === "Mixed" ? 8 : 0)) {
+    component.itemSpacing = state === "Mixed" ? 8 : 0;
+  }
   label.fills = [
     paintFromVariable(
       config.foreground,
@@ -65348,6 +65467,10 @@ function layoutSegmentedControlVariants(componentSet) {
     if (typeof child.width === "number" && Number.isFinite(child.width)) {
       maxWidth = Math.max(maxWidth, child.width);
     }
+    // A Mixed variant is the track and its line (decision 191).
+    if (typeof child.height === "number" && Number.isFinite(child.height)) {
+      maxHeight = Math.max(maxHeight, child.height);
+    }
   }
 
   const xStep = maxWidth + columnGap;
@@ -65386,29 +65509,66 @@ async function updateSegmentedControlVariant(
   { size, active, state, variableByName, fonts, stats },
 ) {
   const metrics = segmentedControlMetrics(size);
-  const activeIndex = segmentedControlActiveIndex(active);
+  const mixed = state === "Mixed";
+  // Mixed (decision 191), no option is chosen, whatever Active says.
+  const activeIndex = mixed ? -1 : segmentedControlActiveIndex(active);
   const config = segmentedControlConfig(state);
 
   component.name = `Size=${size}, Active=${active}, State=${state}`;
-  component.layoutMode = "HORIZONTAL";
-  component.primaryAxisSizingMode = "AUTO";
-  component.counterAxisSizingMode = "FIXED";
-  component.primaryAxisAlignItems = "CENTER";
-  component.counterAxisAlignItems = "CENTER";
-  component.itemSpacing = 0;
-  component.paddingLeft = metrics.padding;
-  component.paddingRight = metrics.padding;
-  component.paddingTop = metrics.padding;
-  component.paddingBottom = metrics.padding;
-  component.resizeWithoutConstraints(metrics.width, metrics.height);
-  setNodePropertyIfSupported(component, "minWidth", metrics.width);
-  setNodePropertyIfSupported(component, "minHeight", metrics.height);
-  component.cornerRadius = metrics.radius;
-  component.clipsContent = false;
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "SegmentedControl");
 
-  component.fills = [
+  // Every other State is the track itself. Mixed is a stack: the track, a
+  // frame painted as theirs is, then the "Multiple values" line under it,
+  // as React's FieldWrapper stacks them.
+  let track = component;
+  if (mixed) {
+    component.layoutMode = "VERTICAL";
+    component.primaryAxisSizingMode = "AUTO";
+    component.counterAxisSizingMode = "AUTO";
+    component.primaryAxisAlignItems = "MIN";
+    component.counterAxisAlignItems = "MIN";
+    component.itemSpacing = 6;
+    component.paddingLeft = 0;
+    component.paddingRight = 0;
+    component.paddingTop = 0;
+    component.paddingBottom = 0;
+    component.cornerRadius = 0;
+    component.clipsContent = false;
+    component.fills = [];
+    component.strokes = [];
+    track = directChildNamed(component, "Track");
+    if (track && track.type !== "FRAME") {
+      track.remove();
+      track = null;
+    }
+    if (!track) {
+      track = figma.createFrame();
+      track.name = "Track";
+    }
+    component.insertChild(0, track);
+    for (const child of Array.from(component.children)) {
+      if (child !== track && child.name !== MIXED_TEXT_LAYER) child.remove();
+    }
+  }
+
+  track.layoutMode = "HORIZONTAL";
+  track.primaryAxisSizingMode = "AUTO";
+  track.counterAxisSizingMode = "FIXED";
+  track.primaryAxisAlignItems = "CENTER";
+  track.counterAxisAlignItems = "CENTER";
+  track.itemSpacing = 0;
+  track.paddingLeft = metrics.padding;
+  track.paddingRight = metrics.padding;
+  track.paddingTop = metrics.padding;
+  track.paddingBottom = metrics.padding;
+  track.resizeWithoutConstraints(metrics.width, metrics.height);
+  setNodePropertyIfSupported(track, "minWidth", metrics.width);
+  setNodePropertyIfSupported(track, "minHeight", metrics.height);
+  track.cornerRadius = metrics.radius;
+  track.clipsContent = false;
+
+  track.fills = [
     paintFromVariable(
       config.background,
       config.backgroundFallback,
@@ -65416,7 +65576,7 @@ async function updateSegmentedControlVariant(
       stats,
     ),
   ];
-  component.strokes = [
+  track.strokes = [
     paintFromVariable(
       config.stroke,
       config.strokeFallback,
@@ -65424,17 +65584,12 @@ async function updateSegmentedControlVariant(
       stats,
     ),
   ];
-  component.strokeWeight = 1;
+  track.strokeWeight = 1;
 
-  bindSegmentedControlGeometryVariables(
-    component,
-    metrics,
-    variableByName,
-    stats,
-  );
+  bindSegmentedControlGeometryVariables(track, metrics, variableByName, stats);
 
   const sizing = await syncSegmentedControlVariantChildren({
-    component,
+    component: track,
     activeIndex,
     state,
     metrics,
@@ -65444,11 +65599,20 @@ async function updateSegmentedControlVariant(
   });
 
   resizeNodeWithoutConstraints(
-    component,
+    track,
     sizing && sizing.controlWidth ? sizing.controlWidth : metrics.width,
     metrics.height,
   );
-  component.primaryAxisSizingMode = "AUTO";
+  track.primaryAxisSizingMode = "AUTO";
+
+  if (mixed) {
+    await syncMixedGroupLine(component, {
+      mixed,
+      fonts,
+      variableByName,
+      stats,
+    });
+  }
 }
 
 async function updateCounterVariant(
@@ -69880,9 +70044,45 @@ async function updateRadioVariant(
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Radio");
 
+  const mixed = checked === "Mixed";
+
   if (variant === "Card" || variant === "Tile") {
+    // Every other card or tile is the box itself. Mixed (decision 191) is a
+    // stack: the box, painted unchosen as theirs is, then the group's
+    // "Multiple values" line under it.
+    let box = component;
+    if (mixed) {
+      component.layoutMode = "VERTICAL";
+      component.primaryAxisSizingMode = "AUTO";
+      component.counterAxisSizingMode = "AUTO";
+      component.primaryAxisAlignItems = "MIN";
+      component.counterAxisAlignItems = "MIN";
+      component.itemSpacing = 6;
+      component.paddingLeft = 0;
+      component.paddingRight = 0;
+      component.paddingTop = 0;
+      component.paddingBottom = 0;
+      component.cornerRadius = 0;
+      component.clipsContent = false;
+      component.fills = [];
+      component.strokes = [];
+      component.opacity = 1;
+      box = directChildNamed(component, "Radio Box");
+      if (box && box.type !== "FRAME") {
+        box.remove();
+        box = null;
+      }
+      if (!box) {
+        box = figma.createFrame();
+        box.name = "Radio Box";
+      }
+      component.insertChild(0, box);
+      for (const child of Array.from(component.children)) {
+        if (child !== box && child.name !== MIXED_TEXT_LAYER) child.remove();
+      }
+    }
     await syncRadioBoxVariantChildren({
-      component,
+      component: box,
       variant,
       checked,
       state,
@@ -69891,6 +70091,13 @@ async function updateRadioVariant(
       fonts,
       stats,
     });
+    if (mixed)
+      await syncMixedGroupLine(component, {
+        mixed,
+        fonts,
+        variableByName,
+        stats,
+      });
     return;
   }
 
@@ -69903,6 +70110,13 @@ async function updateRadioVariant(
     config,
     variableByName,
     fonts,
+    stats,
+  });
+  // Mixed (decision 191): the ring unchosen, and the group's line last.
+  await syncMixedGroupLine(component, {
+    mixed,
+    fonts,
+    variableByName,
     stats,
   });
 }
@@ -69948,6 +70162,32 @@ function parseSwitchVariantName(name) {
     checked: values.Checked,
     state: values.State,
   };
+}
+
+// A row per Checked value, Unchecked, Checked then Mixed, each in State
+// order, 40 apart: the set's top-left, its default, stays Checked=Unchecked,
+// State=Default.
+function layoutSwitchVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+  let y = 0;
+  for (const checked of SWITCH_CHECKED) {
+    let x = 0;
+    let rowHeight = 0;
+    for (const state of SWITCH_STATES) {
+      const child = componentSet.children.find((node) => {
+        if (node.type !== "COMPONENT") return false;
+        const props = parseSwitchVariantName(node.name);
+        return props && props.checked === checked && props.state === state;
+      });
+      if (!child) continue;
+      child.x = x;
+      child.y = y;
+      x += child.width + 40;
+      rowHeight = Math.max(rowHeight, child.height);
+    }
+    if (rowHeight > 0) y += rowHeight + 40;
+  }
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function updateSwitchVariant(
@@ -70719,6 +70959,9 @@ function layoutMultiSelectVariants(componentSet) {
     child.x = statusIndex * 1140 + contentIndex * 380;
     child.y = stateIndex * 300;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createListboxVariant({
@@ -70921,6 +71164,9 @@ function layoutDatePickerVariants(componentSet) {
     child.x = statusIndex * 760 + contentIndex * 380;
     child.y = stateIndex * DATE_PICKER_STATE_ROW_STEP;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createDateRangePickerVariant({
@@ -71026,6 +71272,9 @@ function layoutDateRangePickerVariants(componentSet) {
     child.x = statusIndex * 1440 + contentIndex * 720;
     child.y = stateIndex * DATE_RANGE_PICKER_STATE_ROW_STEP;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createTimePickerVariant({
@@ -71128,6 +71377,9 @@ function layoutTimePickerVariants(componentSet) {
     child.x = statusIndex * 760 + contentIndex * 380;
     child.y = stateIndex * 320;
   }
+
+  // The set holds the Mixed row it gained (GAP-255).
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function createFileUploadVariant({
@@ -79192,6 +79444,9 @@ async function syncSwitchVariantChildren({
   thumb.resize(20, 20);
   thumb.x = checked === "Checked" ? 22 : 2;
   thumb.y = 2;
+  // Mixed (decision 189) has no thumb: it is kept, hidden, so the variant's
+  // layers stay those of the other five.
+  thumb.visible = checked !== "Mixed";
   thumb.fills = [
     paintFromVariable(
       config.thumbFill,
@@ -79203,6 +79458,21 @@ async function syncSwitchVariantChildren({
   thumb.strokes = [];
   thumb.setSharedPluginData(RUN_NAMESPACE, "kind", "switch-thumb");
   track.appendChild(thumb);
+
+  // Mixed: Checkbox's dash, React's minus at 16, centred in the track in
+  // the thumb's colour (the theme foreground, white, on the theme fill).
+  removeGeneratedButtonChild(track, "Mixed Dash", checked !== "Mixed");
+  if (checked === "Mixed") {
+    const dash = syncMixedDash(
+      track,
+      config.thumbFill,
+      config.thumbFillFallback,
+      variableByName,
+      stats,
+    );
+    dash.x = 14;
+    dash.y = 4;
+  }
 
   syncFocusRing(track, {
     enabled: state !== "Disabled",
@@ -79382,7 +79652,12 @@ async function syncControlTextRows({
       stats,
     );
     words.textAutoResize = "WIDTH_AND_HEIGHT";
-    words.characters = checked === "Checked" ? "On" : "Off";
+    words.characters =
+      checked === "Mixed"
+        ? "Multiple values"
+        : checked === "Checked"
+          ? "On"
+          : "Off";
     words.textAlignVertical = "CENTER";
     words.visible = false;
     words.setSharedPluginData(RUN_NAMESPACE, "kind", "switch-state-label");
@@ -81894,7 +82169,10 @@ async function syncMultiSelectVariantChildren({
 
   const disabled = state === "Disabled";
   const readonly = state === "Readonly";
-  const hasSelections = content !== "Empty";
+  // Mixed (GAP-255), no chip and nothing to clear: the field stands for
+  // the features' several choices and holds none of its own.
+  const mixed = state === MIXED_FIELD_STATE;
+  const hasSelections = content !== "Empty" && !mixed;
   const isOpen = content === "Open";
 
   const label = figma.createText();
@@ -82012,6 +82290,21 @@ async function syncMultiSelectVariantChildren({
   ];
   placeholder.textAlignVertical = "CENTER";
   field.appendChild(placeholder);
+  await syncMixedFieldText(placeholder, {
+    mixed,
+    hide: [placeholder],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(
+        text,
+        fontSet,
+        "MultiSelect",
+        variables,
+        runStats,
+      ),
+    fonts,
+    variableByName,
+    stats,
+  });
 
   const actionIcons = await appendFieldActions(field, {
     tokenPrefix: "MultiSelect",
@@ -82081,7 +82374,8 @@ async function syncMultiSelectVariantChildren({
       const option = await createMultiSelectOption({
         index,
         text: optionLabels[index],
-        selected: index < 2,
+        // Mixed, no option is checked.
+        selected: index < 2 && !mixed,
         active: index === 2,
         focused: state === "Focus",
         disabled,
@@ -82135,6 +82429,12 @@ async function syncMultiSelectVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (listbox) {
     component.appendChild(listbox);
     setLayoutSizingHorizontal(listbox, "FILL");
@@ -82632,6 +82932,7 @@ async function syncDatePickerVariantChildren({
 
   const disabled = state === "Disabled";
   const isOpen = content === "Open";
+  const mixed = state === MIXED_FIELD_STATE;
 
   const label = figma.createText();
   label.name = "Label Text";
@@ -82720,6 +83021,33 @@ async function syncDatePickerVariantChildren({
   ];
   value.textAlignVertical = "CENTER";
   field.appendChild(value);
+  // Mixed (GAP-255): Multiple values in place of its own, in the
+  // placeholder's colour, as React draws it over the empty field.
+  const valueMixed = await syncMixedFieldText(value, {
+    mixed,
+    hide: [value],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(
+        text,
+        fontSet,
+        "DatePicker",
+        variables,
+        runStats,
+      ),
+    fonts,
+    variableByName,
+    stats,
+  });
+  if (valueMixed) {
+    valueMixed.fills = [
+      paintFromVariable(
+        config.placeholder,
+        config.placeholderFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
 
   const trailingIcon = await createFixedIconInstance(
     isOpen ? "chevron-up" : "chevron-down",
@@ -82751,6 +83079,8 @@ async function syncDatePickerVariantChildren({
     const builtCalendar = await createDatePickerCalendar({
       monthText: preservedText["Month Text"] || "May 2026",
       disabled,
+      // Mixed, the calendar opens on no day.
+      noSelection: mixed,
       variableByName,
       fonts,
       stats,
@@ -82804,6 +83134,12 @@ async function syncDatePickerVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (calendar) component.appendChild(calendar);
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
@@ -82863,6 +83199,7 @@ function calendarDateKey(date) {
 async function createDatePickerCalendar({
   monthText,
   disabled,
+  noSelection = false,
   variableByName,
   fonts,
   stats,
@@ -83029,11 +83366,13 @@ async function createDatePickerCalendar({
 
   const daySpecs = createCalendarDaySpecs({
     monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
-    selectedDate: {
-      day: DATE_PICKER_EXAMPLE.selectedDay,
-      monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
-      year: DATE_PICKER_EXAMPLE.year,
-    },
+    selectedDate: noSelection
+      ? null
+      : {
+          day: DATE_PICKER_EXAMPLE.selectedDay,
+          monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
+          year: DATE_PICKER_EXAMPLE.year,
+        },
     todayDate: {
       day: DATE_PICKER_EXAMPLE.todayDay,
       monthIndex: DATE_PICKER_EXAMPLE.monthIndex,
@@ -83248,6 +83587,7 @@ async function syncDateRangePickerVariantChildren({
 
   const disabled = state === "Disabled";
   const isOpen = content === "Open";
+  const mixed = state === MIXED_FIELD_STATE;
 
   const label = figma.createText();
   label.name = "Label Text";
@@ -83314,6 +83654,42 @@ async function syncDateRangePickerVariantChildren({
   });
   fieldsRow.appendChild(endField.group);
 
+  // Mixed (GAP-255): one mixed state for the range, Multiple values in
+  // both fields, in the placeholder's colour, as React draws it.
+  for (const [part, valueName] of [
+    [startField, "Start Value Text"],
+    [endField, "End Value Text"],
+  ]) {
+    const value = directChildNamed(part.field, valueName);
+    const text = value
+      ? await syncMixedFieldText(value, {
+          mixed,
+          hide: [value],
+          typography: (node, fontSet, variables, runStats) =>
+            applyFieldTextTypography(
+              node,
+              fontSet,
+              "DateRangePicker",
+              variables,
+              runStats,
+            ),
+          fonts,
+          variableByName,
+          stats,
+        })
+      : null;
+    if (text) {
+      text.fills = [
+        paintFromVariable(
+          config.placeholder,
+          config.placeholderFallback,
+          variableByName,
+          stats,
+        ),
+      ];
+    }
+  }
+
   syncFocusRing(startField.field, {
     enabled: state !== "Disabled",
     width: 330,
@@ -83346,6 +83722,8 @@ async function syncDateRangePickerVariantChildren({
       startMonthText: preservedText["Start Month Text"] || "May 2026",
       endMonthText: preservedText["End Month Text"] || "June 2026",
       disabled,
+      // Mixed, the calendar opens on no range.
+      noSelection: mixed,
       variableByName,
       fonts,
       stats,
@@ -83403,6 +83781,13 @@ async function syncDateRangePickerVariantChildren({
   component.appendChild(label);
   component.appendChild(fieldsRow);
   setLayoutSizingHorizontal(fieldsRow, "FILL");
+  // One reset for the range, under both fields.
+  await syncResetMixedText(component, fieldsRow, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (calendar) component.appendChild(calendar);
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
@@ -83536,6 +83921,7 @@ async function createDateRangePickerCalendar({
   startMonthText,
   endMonthText,
   disabled,
+  noSelection = false,
   variableByName,
   fonts,
   stats,
@@ -83569,16 +83955,20 @@ async function createDateRangePickerCalendar({
   const startMonth = await createDateRangePickerMonth({
     daySpecs: createCalendarDaySpecs({
       monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
-      rangeEndDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.endDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.endYear,
-      },
-      rangeStartDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.startDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.startYear,
-      },
+      rangeEndDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.endDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.endYear,
+          },
+      rangeStartDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.startDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.startYear,
+          },
       year: DATE_RANGE_PICKER_EXAMPLE.startYear,
     }),
     monthTextName: "Start Month Text",
@@ -83593,16 +83983,20 @@ async function createDateRangePickerCalendar({
   const endMonth = await createDateRangePickerMonth({
     daySpecs: createCalendarDaySpecs({
       monthIndex: DATE_RANGE_PICKER_EXAMPLE.nextMonthIndex,
-      rangeEndDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.endDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.endYear,
-      },
-      rangeStartDate: {
-        day: DATE_RANGE_PICKER_EXAMPLE.startDay,
-        monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
-        year: DATE_RANGE_PICKER_EXAMPLE.startYear,
-      },
+      rangeEndDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.endDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.endMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.endYear,
+          },
+      rangeStartDate: noSelection
+        ? null
+        : {
+            day: DATE_RANGE_PICKER_EXAMPLE.startDay,
+            monthIndex: DATE_RANGE_PICKER_EXAMPLE.startMonthIndex,
+            year: DATE_RANGE_PICKER_EXAMPLE.startYear,
+          },
       year: DATE_RANGE_PICKER_EXAMPLE.endYear,
     }),
     monthTextName: "End Month Text",
@@ -83909,6 +84303,7 @@ async function syncTimePickerVariantChildren({
 
   const disabled = state === "Disabled";
   const isOpen = content === "Open";
+  const mixed = state === MIXED_FIELD_STATE;
 
   const label = figma.createText();
   label.name = "Label Text";
@@ -83997,6 +84392,33 @@ async function syncTimePickerVariantChildren({
   ];
   value.textAlignVertical = "CENTER";
   field.appendChild(value);
+  // Mixed (GAP-255): Multiple values in place of its own, in the
+  // placeholder's colour, as React draws it over the empty field.
+  const valueMixed = await syncMixedFieldText(value, {
+    mixed,
+    hide: [value],
+    typography: (text, fontSet, variables, runStats) =>
+      applyFieldTextTypography(
+        text,
+        fontSet,
+        "TimePicker",
+        variables,
+        runStats,
+      ),
+    fonts,
+    variableByName,
+    stats,
+  });
+  if (valueMixed) {
+    valueMixed.fills = [
+      paintFromVariable(
+        config.placeholder,
+        config.placeholderFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+  }
 
   const trailingIcon = await createFixedIconInstance(
     isOpen ? "chevron-up" : "chevron-down",
@@ -84059,7 +84481,8 @@ async function syncTimePickerVariantChildren({
       const option = await createTimePickerOption({
         index,
         text: optionLabels[index],
-        selected: index === 3,
+        // Mixed, the list opens on no time.
+        selected: index === 3 && !mixed,
         active: index === 2,
         focused: state === "Focus",
         disabled,
@@ -84112,6 +84535,12 @@ async function syncTimePickerVariantChildren({
   component.appendChild(label);
   component.appendChild(field);
   setLayoutSizingHorizontal(field, "FILL");
+  await syncResetMixedText(component, field, {
+    mixed,
+    fonts,
+    variableByName,
+    stats,
+  });
   if (listbox) {
     component.appendChild(listbox);
     setLayoutSizingHorizontal(listbox, "FILL");
@@ -88381,6 +88810,58 @@ function configureResetMixedProperty(componentSet, stats) {
   );
 }
 
+/**
+ * Decision 191: a mixed RadioGroup's or SegmentedControl's line under its
+ * options, "Multiple values", as React's group draws it: a field's helper
+ * line (kozmos-field-message), 14/20 in Colors/foreground/400. A "Mixed
+ * Text" layer last in `parent`, its words the Mixed Text property; outside
+ * Mixed it is removed. Unlike a mixed field's Mixed Text it stands for no
+ * placeholder, so it takes the helper's type, not the field's.
+ */
+async function syncMixedGroupLine(
+  parent,
+  { mixed, fonts, variableByName, stats },
+) {
+  let text = directChildNamed(parent, MIXED_TEXT_LAYER);
+  if (!mixed) {
+    if (text) text.remove();
+    return null;
+  }
+  if (text && text.type !== "TEXT") {
+    text.remove();
+    text = null;
+  }
+  if (!text) {
+    text = figma.createText();
+    text.name = MIXED_TEXT_LAYER;
+  }
+  await applyFieldTextTypography(text, fonts, "Input", variableByName, stats);
+  text.characters = MIXED_FIELD_TEXT;
+  text.fills = [
+    paintFromVariable(
+      "Colors/foreground/400",
+      "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+  text.textAlignVertical = "CENTER";
+  parent.appendChild(text);
+  setTextAutoResize(text, "WIDTH_AND_HEIGHT");
+  return text;
+}
+
+/** Mixed Text, the words of a mixed group's line, for a product to localise. */
+function configureMixedGroupTextProperty(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    MIXED_TEXT_LAYER,
+    MIXED_TEXT_PROPERTY,
+    MIXED_FIELD_TEXT,
+    stats,
+  );
+}
+
 function resizeComponentSetToContainChildren(componentSet, padding = 0) {
   if (!componentSet || !componentSet.children) return;
 
@@ -91767,6 +92248,20 @@ function toggleButtonConfig(variant, state) {
     };
   }
 
+  // Mixed (decision 190): a dashed edge in the theme fill on the muted fill,
+  // under the page's ink, in either variant.
+  if (state === "Mixed") {
+    return {
+      background: "Colors/background/100",
+      foreground: "Colors/foreground/0",
+      stroke: THEME_FILL.name,
+      dashed: true,
+      backgroundFallback: "#E3E4E8",
+      foregroundFallback: "#000000",
+      strokeFallback: THEME_FILL.fallback,
+    };
+  }
+
   // On, a toggle is a prominent fill: the theme fill and the theme
   // foreground, the same in both themes (decision 59).
   if (state === "Pressed") {
@@ -92176,8 +92671,51 @@ function radioConfig(checked, state) {
   };
 }
 
+// The mixed mark (decisions 188 to 190): React's Minus at 16, a line from 5
+// to 19 of its 24 across the middle, stroked 2/24 of its size with round
+// caps, in the given colour. Drawn once, in place, in `parent`, as "Mixed
+// Dash"; a Switch centres it in its track, a ToggleButton puts it before
+// its label.
+function syncMixedDash(parent, variableName, fallback, variableByName, stats) {
+  let dash = directChildNamed(parent, "Mixed Dash");
+  if (dash && dash.type !== "VECTOR") {
+    dash.remove();
+    dash = null;
+  }
+  if (!dash) {
+    dash = figma.createVector();
+    dash.name = "Mixed Dash";
+    parent.appendChild(dash);
+  }
+  dash.resize(16, 16);
+  dash.vectorNetwork = {
+    vertices: [
+      { x: 10 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
+      { x: 38 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
+    ],
+    segments: [
+      {
+        start: 0,
+        end: 1,
+        tangentStart: { x: 0, y: 0 },
+        tangentEnd: { x: 0, y: 0 },
+      },
+    ],
+  };
+  dash.fills = [];
+  dash.strokes = [
+    paintFromVariable(variableName, fallback, variableByName, stats),
+  ];
+  dash.strokeWeight = 4 / 3;
+  dash.strokeCap = "ROUND";
+  dash.strokeJoin = "ROUND";
+  dash.setSharedPluginData(RUN_NAMESPACE, "kind", "mixed-dash");
+  return dash;
+}
+
 function switchConfig(checked, state) {
-  const isChecked = checked === "Checked";
+  // Mixed is filled as Checked is (decision 189).
+  const isChecked = checked === "Checked" || checked === "Mixed";
   const isDisabled = state === "Disabled";
   const isError = state === "Error";
 

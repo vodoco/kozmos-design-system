@@ -15,6 +15,13 @@ public struct KozmosDateRangePicker: View {
     /// The earliest and latest days either end may take, as React's `min` and `max`.
     public let minimumDate: Date?
     public let maximumDate: Date?
+    /// The range stands for several ranges that differ (GAP-153, GAP-255):
+    /// both fields show the mixed label, and one reset is offered under them.
+    public let mixed: Bool
+    public let mixedLabel: String
+    public let onResetMixed: (() -> Void)?
+    public let resetMixedLabel: String
+    @AccessibilityFocusState private var startAccessibilityFocused: Bool
     @Environment(\.locale) private var locale
     @Environment(\.calendar) private var calendar
     @Environment(\.timeZone) private var timeZone
@@ -31,7 +38,11 @@ public struct KozmosDateRangePicker: View {
         status: KozmosInputStatus = .default,
         showsCalendarPreview: Bool = false,
         minimumDate: Date? = nil,
-        maximumDate: Date? = nil
+        maximumDate: Date? = nil,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._startDate = startDate
         self._endDate = endDate
@@ -45,6 +56,10 @@ public struct KozmosDateRangePicker: View {
         self.showsCalendarPreview = showsCalendarPreview
         self.minimumDate = minimumDate
         self.maximumDate = maximumDate
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
     }
 
     public var body: some View {
@@ -62,14 +77,26 @@ public struct KozmosDateRangePicker: View {
                     selection: $startDate, label: startLabel, helperText: nil, status: status,
                     disabled: disabled, readOnly: readOnly,
                     minimumDate: minimumDate, maximumDate: Self.earlier(endDate, maximumDate),
-                    components: .date, iconName: "calendar"
+                    components: .date, iconName: "calendar",
+                    mixed: mixed, mixedLabel: mixedLabel, focus: $startAccessibilityFocused
                 )
                 KozmosTemporalField(
                     selection: $endDate, label: endLabel, helperText: nil, status: status,
                     disabled: disabled, readOnly: readOnly,
                     minimumDate: Self.later(startDate, minimumDate), maximumDate: maximumDate,
-                    components: .date, iconName: "calendar"
+                    components: .date, iconName: "calendar",
+                    mixed: mixed, mixedLabel: mixedLabel
                 )
+            }
+
+            // One reset for the range: the two ends were edited together.
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel) {
+                    // VoiceOver goes to the start field, which says the
+                    // several values again.
+                    startAccessibilityFocused = true
+                    onResetMixed?()
+                }
             }
 
             if showsCalendarPreview {
@@ -89,7 +116,8 @@ public struct KozmosDateRangePicker: View {
     /// order: it was `en_US_POSIX` "MMM d, yyyy" with a fixed English "to"
     /// until 2026-10-21.
     private var rangePreview: some View {
-        Text(summary)
+        // Mixed, there is no one range to sum up.
+        Text(mixed ? mixedLabel : summary)
             .font(.caption.weight(.semibold))
             .foregroundColor(disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground0)
             .padding(KozmosDimensions.primitivesLayoutSpacing150)

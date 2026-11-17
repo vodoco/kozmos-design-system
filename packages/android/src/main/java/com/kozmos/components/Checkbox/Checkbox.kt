@@ -2,10 +2,12 @@ package com.kozmos.components.checkbox
 
 import com.kozmos.components.KozmosControlText
 import com.kozmos.components.KozmosInertAlpha
+import com.kozmos.components.fieldwrapper.KozmosMixedDash
 import com.kozmos.tokens.KozmosDimensions
 
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
@@ -107,20 +110,29 @@ fun KozmosCheckbox(
             )
             .padding(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
-        // Mixed draws Material's dash on the same fill as checked.
-        TriStateCheckbox(
-            state = state,
-            onClick = null, // Handled by Row clickable for better touch target
-            enabled = enabled,
-            colors = CheckboxDefaults.colors(
-                checkedColor = checkedColor,
-                uncheckedColor = uncheckedColor,
-                checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
-                disabledCheckedColor = checkedColor,
-                disabledUncheckedColor = uncheckedColor,
-                disabledIndeterminateColor = checkedColor
+        // Mixed is the same fill as checked, with the one mixed dash Switch
+        // and ToggleButton draw, React's `Minus` at 16, over it in place of
+        // Material's own, which is longer and thicker.
+        val checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+        val mixed = state == ToggleableState.Indeterminate
+        Box(contentAlignment = Alignment.Center) {
+            TriStateCheckbox(
+                state = state,
+                onClick = null, // Handled by Row clickable for better touch target
+                enabled = enabled,
+                colors = CheckboxDefaults.colors(
+                    checkedColor = checkedColor,
+                    uncheckedColor = uncheckedColor,
+                    checkmarkColor = if (mixed) Color.Transparent else checkmarkColor,
+                    disabledCheckedColor = checkedColor,
+                    disabledUncheckedColor = uncheckedColor,
+                    disabledIndeterminateColor = checkedColor
+                )
             )
-        )
+            if (mixed) {
+                KozmosMixedDash(color = checkmarkColor)
+            }
+        }
         
         if (label != null || description != null) {
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))

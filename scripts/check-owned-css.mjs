@@ -1640,8 +1640,10 @@ try {
             // A segmented item's label is a ReactNode and may be an icon beside
             // text. No platform had an opinion on this gap — iOS spaces the
             // track, Compose's options are plain strings — so it follows the
-            // control scale, as `Button` and `ToggleButton` do.
-            [`${id}-segmented`, 8, "[data-state='on']"],
+            // control scale, as `Button` and `ToggleButton` do. Since decision
+            // 201 (#569) the item is a one-column grid and its parts sit in one
+            // inner span, which holds the gap: the label is measured there.
+            [`${id}-segmented`, 8, "[data-state='on'] > span"],
           ]
         : []) {
         const host = within

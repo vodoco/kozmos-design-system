@@ -151,6 +151,8 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
         label="Some"
       />
       <Switch checked data-testid={id("switch")} label="Avoid stairs" />
+      {/* Decision 189: mixed, the track is the fill and its dash the ink. */}
+      <Switch data-testid={id("switch-mixed")} label="Step-free" mixed />
       <RadioGroup value="lift">
         <RadioGroupItem data-testid={id("radio")} label="Lift" value="lift" />
       </RadioGroup>
@@ -221,6 +223,10 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       </div>
       <ToggleButton aria-label="Bold" data-testid={id("toggle")} pressed>
         B
+      </ToggleButton>
+      {/* Decision 190: mixed, a dashed edge in the fill on the muted fill. */}
+      <ToggleButton aria-label="Italic" data-testid={id("toggle-mixed")} mixed>
+        I
       </ToggleButton>
       <div data-testid={id("manoeuvre")}>
         <ManoeuvreCard

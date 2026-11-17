@@ -36,8 +36,13 @@ class KozmosSegmentedControlConnect {
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Error" to "error"
+        "Error" to "error",
+        "Mixed" to "mixed"
     )
+
+    // Decision 191: no option chosen, and the "Multiple values" line. Mixed
+    // Text is mapped once the owner's plugin Update has put it in the
+    // library: the dry run reads the live file.
 
     @Composable
     fun ComponentExample() {
@@ -46,7 +51,8 @@ class KozmosSegmentedControlConnect {
             selectedIndex = activeIndex,
             onOptionSelected = {},
             size = size,
-            enabled = state != "disabled"
+            enabled = state != "disabled",
+            mixed = state == "mixed"
         )
     }
 }

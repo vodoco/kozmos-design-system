@@ -9,6 +9,15 @@ import SwiftUI
 /// The picker carries the field's name and its helper as its hint, as React's
 /// input takes its label and `aria-describedby`; the drawn label and helper
 /// are not said apart from it, so VoiceOver hears each once.
+///
+/// Mixed (GAP-153, GAP-255), the field stands for several values that
+/// differ: the picker's own value is not shown, the mixed label is drawn in
+/// its place in the placeholder's colour, and VoiceOver hears the field's
+/// name and the mixed label, once. The picker stays under the words, so a tap
+/// (or VoiceOver's double tap, at the words) still opens the system picker,
+/// and the visitor's choice writes the binding: the product then clears
+/// `mixed`. `onResetMixed` offers `resetMixedLabel` under the field once it
+/// is no longer mixed.
 struct KozmosTemporalField: View {
     @Binding var selection: Date
     let label: String
@@ -20,6 +29,14 @@ struct KozmosTemporalField: View {
     let maximumDate: Date?
     let components: DatePickerComponents
     let iconName: String
+    var mixed: Bool = false
+    var mixedLabel: String = KozmosMixedValue.label
+    var onResetMixed: (() -> Void)? = nil
+    var resetMixedLabel: String = KozmosMixedValue.resetLabel
+    /// VoiceOver's focus on the field, when the caller holds it (the range's
+    /// one reset sends it to the start field); else the field's own.
+    var focus: AccessibilityFocusState<Bool>.Binding? = nil
+    @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing75) {
@@ -32,8 +49,17 @@ struct KozmosTemporalField: View {
             KozmosTemporalFieldBox(
                 selection: $selection, label: label, hint: helperText, status: status, disabled: disabled,
                 readOnly: readOnly, minimumDate: minimumDate, maximumDate: maximumDate,
-                components: components, iconName: iconName
+                components: components, iconName: iconName,
+                mixed: mixed, mixedLabel: mixedLabel, focus: focus ?? $fieldAccessibilityFocused
             )
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel) {
+                    // The reset goes as the field turns mixed again: VoiceOver
+                    // goes to the field, which says its several values.
+                    fieldAccessibilityFocused = true
+                    onResetMixed?()
+                }
+            }
             if let helperText, !helperText.isEmpty {
                 Text(helperText)
                     .font(KozmosTypography.subheadline)
@@ -60,18 +86,26 @@ struct KozmosTemporalFieldBox: View {
     let maximumDate: Date?
     let components: DatePickerComponents
     let iconName: String
+    var mixed: Bool = false
+    var mixedLabel: String = KozmosMixedValue.label
+    var focus: AccessibilityFocusState<Bool>.Binding? = nil
 
     var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             // Kozmos's icon in the field's muted ink, as React's field draws it.
             KozmosIcon(iconName, size: .sm)
                 .environment(\.kozmosIconHostInk, disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400)
-            picker
-                .datePickerStyle(.compact)
-                .labelsHidden()
-                .accessibilityHint(hint ?? "")
-                .disabled(disabled || readOnly)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if mixed {
+                mixedPicker
+            } else {
+                picker
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
+                    .accessibilityHint(hint ?? "")
+                    .disabled(disabled || readOnly)
+                    .kozmosAccessibilityFocused(focus)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
@@ -81,6 +115,38 @@ struct KozmosTemporalFieldBox: View {
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
                 .stroke(KozmosTemporalFieldColors.border(status: status), lineWidth: 1)
         )
+    }
+
+    /// Mixed: the system picker, drawn all but clear and kept from
+    /// VoiceOver, under the mixed label in the placeholder's colour. A view
+    /// at 1.1% opacity still takes a tap (UIKit stops at 1%), so a tap on the
+    /// words opens the system picker. The words are the one element VoiceOver
+    /// reads, the field's name and the mixed label, laid over the picker's
+    /// own button: its double tap lands there and opens the picker too.
+    private var mixedPicker: some View {
+        picker
+            .datePickerStyle(.compact)
+            .labelsHidden()
+            .disabled(disabled || readOnly)
+            .opacity(0.011)
+            .accessibilityHidden(true)
+            .overlay(alignment: .leading) {
+                Text(mixedLabel)
+                    .font(KozmosTypography.subheadline)
+                    .foregroundColor(
+                        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400
+                    )
+                    .lineLimit(1)
+                    .fixedSize()
+                    .allowsHitTesting(false)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(label)
+                    .accessibilityValue(mixedLabel)
+                    .accessibilityHint(hint ?? "")
+                    .accessibilityAddTraits(.isButton)
+                    .kozmosAccessibilityFocused(focus)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// The system picker, bounded as React's `min` and `max` bound its input.
@@ -123,5 +189,12 @@ enum KozmosTemporalFieldColors {
         case .success: return KozmosColors.primitivesColorsEmotionalSuccess600
         case .default: return nil
         }
+    }
+}
+
+private extension View {
+    /// VoiceOver's focus, when the field is given a binding for it.
+    @ViewBuilder func kozmosAccessibilityFocused(_ focus: AccessibilityFocusState<Bool>.Binding?) -> some View {
+        if let focus { accessibilityFocused(focus) } else { self }
     }
 }

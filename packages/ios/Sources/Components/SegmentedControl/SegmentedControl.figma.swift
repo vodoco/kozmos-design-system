@@ -40,17 +40,23 @@ struct KozmosSegmentedControlConnect: FigmaConnect {
             "Default": "default",
             "Focus": "focus",
             "Disabled": "disabled",
-            "Error": "error"
+            "Error": "error",
+            "Mixed": "mixed"
         ]
     )
     var state: String = "default"
+
+    // Decision 191: no option chosen, and the "Multiple values" line. Mixed
+    // Text is mapped once the owner's plugin Update has put it in the
+    // library: the dry run reads the live file.
 
     var body: some View {
         KozmosSegmentedControl(
             selection: .constant(self.activeIndex),
             items: [self.item1Text, self.item2Text, self.item3Text],
             size: self.size,
-            disabled: self.state == "disabled"
+            disabled: self.state == "disabled",
+            mixed: self.state == "mixed"
         )
     }
 }

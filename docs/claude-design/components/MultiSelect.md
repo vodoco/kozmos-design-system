@@ -36,7 +36,7 @@ export function MultiSelectExample() {
 
 ## MultiSelect
 
-It forwards its ref to `HTMLDivElement`. Its props are `MultiSelectProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "children" | "defaultValue" | "onChange">`.
+It forwards its ref to `HTMLDivElement`. Its props are `MultiSelectProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "children" | "defaultValue" | "onChange">, MixedValueProps`.
 
 - `clearable`: `boolean`, optional, default `true`.
 - `defaultSearchValue`: `string`, optional, default `""`.
@@ -68,6 +68,22 @@ It forwards its ref to `HTMLDivElement`. Its props are `MultiSelectProps`, which
 - `status`: `InputStatus`, optional, default `"default"`.
 - `value`: `string[]`, optional.
 - `wrapperClassName`: `string`, optional.
+- `mixed`: `boolean`, optional, default `false`.
+
+  The field stands for several values that differ, and shows none.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Shown in the empty field, and said with it. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn under the field while it
+  is not `mixed`, and never while it is disabled or read-only.
+
+- `resetMixedLabel`: `string`, optional.
+
+  The reset's words. Default "Reset to multiple values".
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 

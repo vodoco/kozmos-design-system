@@ -186,6 +186,136 @@ fun FilterScreen(options: List<KozmosListboxOption>) {
   `}
 />
 
+## Mixed
+
+With several features selected, an array property whose values differ is one field for all of
+them (GAP-255, decision 188). `mixed` says the field stands for those values: it shows no chips,
+"Multiple values" (`mixedLabel`) in their place as the empty field's placeholder, which a screen
+reader says once with it, and opening it shows no option chosen. There is nothing to clear, and
+Backspace removes nothing. A choice is the edit: the field reports that one option, chosen from
+none, and the product clears `mixed`, so the field keeps its mixed state until something is chosen.
+`onResetMixed` draws "Reset to multiple values" (`resetMixedLabel`) under the field once it is
+no longer mixed, never while it is disabled or read-only; pressed, the typed query goes, the list
+closes, focus goes back to the field, and the product drops the edit and sets `mixed` again. An
+uncontrolled MultiSelect drops the choice it held as it turns mixed. SwiftUI's `KozmosMultiSelect`
+and Compose's take the same props, as Input, NumberInput, Select and Combobox do (GAP-153).
+
+A choice from a mixed field replaces every feature's choices with the one chosen, as a typed name
+replaces every feature's name in Input: the field has no way to add one option to each feature's own.
+
+In Figma, Mixed is a value of the State axis, as on Input and Combobox, so a mixed field that is also
+disabled, read only or in focus cannot be drawn. A Mixed variant has no Reset Mixed layer; Mixed Text
+and Reset Mixed Text hold the words, for a board in another language. MultiSelect's Mixed variants draw no chips whatever their Content, and Mixed with Open
+checks no option.
+
+<PlatformSnippets
+  react={`
+import { useState } from "react";
+import { MultiSelect } from "@kozmos-ds/react";
+
+const options = [
+  { value: "lift", label: "Lift" },
+  { value: "toilets", label: "Toilets" },
+  { value: "wifi", label: "Wi-Fi" },
+];
+
+// Each selected feature's facilities; where they differ, the field shows
+// "Multiple values" and no chips, and a choice is the edit for them all.
+export function FacilitiesAcrossSelection({ facilities }: { facilities: string[][] }) {
+  const [edit, setEdit] = useState<string[] | undefined>(undefined);
+  const differs = facilities.some((values) => values.join() !== facilities[0].join());
+  return (
+    <MultiSelect
+      label="Facilities"
+      options={options}
+      value={edit ?? (differs ? [] : facilities[0])}
+      mixed={differs && edit === undefined}
+      onValueChange={setEdit}
+      onResetMixed={differs ? () => setEdit(undefined) : undefined}
+    />
+  );
+}
+  `}
+  vue={`
+<script setup>
+import { KozmosMultiSelect } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+
+const props = defineProps({ facilities: Array })
+const options = [
+  { value: "lift", label: "Lift" },
+  { value: "toilets", label: "Toilets" },
+]
+const edit = ref(undefined)
+const differs = computed(() =>
+  props.facilities.some((values) => values.join() !== props.facilities[0].join()),
+)
+</script>
+
+<template>
+  <KozmosMultiSelect
+    label="Facilities"
+    :options="options"
+    :value="edit ?? (differs ? [] : facilities[0])"
+    :mixed="differs && edit === undefined"
+    @valueChange="(values) => (edit = values)"
+    @resetMixed="edit = undefined"
+  />
+</template>
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+struct FacilitiesAcrossSelection: View {
+    let facilities: [[String]]
+    let options: [KozmosListboxOption]
+    @State private var edit: [String]?
+    @State private var query = ""
+
+    var body: some View {
+        let differs = Set(facilities).count > 1
+        KozmosMultiSelect(
+            selectedValues: Binding(get: { edit ?? (differs ? [] : facilities[0]) }, set: { edit = $0 }),
+            searchValue: $query,
+            options: options,
+            label: "Facilities",
+            mixed: differs && edit == nil,
+            onResetMixed: differs ? { edit = nil } : nil
+        )
+    }
+}
+  `}
+  kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.listbox.KozmosListboxOption
+import com.kozmos.components.multiselect.KozmosMultiSelect
+
+// Each selected feature's facilities; where they differ, the field shows
+// "Multiple values" and no chips, and a choice is the edit for them all.
+@Composable
+fun FacilitiesAcrossSelection(facilities: List<List<String>>, options: List<KozmosListboxOption>) {
+    val differs = facilities.distinct().size > 1
+    var edit by remember(facilities) { mutableStateOf<List<String>?>(null) }
+    var query by remember { mutableStateOf("") }
+    KozmosMultiSelect(
+        selectedValues = edit ?: if (differs) emptyList() else facilities.first(),
+        onValueChange = { edit = it },
+        searchValue = query,
+        onSearchValueChange = { query = it },
+        options = options,
+        label = "Facilities",
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    )
+}
+  `}
+/>
+
 ## Accessibility
 
 - Each chip carries its own remove button with an accessible name naming the

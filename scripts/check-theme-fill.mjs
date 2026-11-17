@@ -106,6 +106,9 @@ const READS = [
   ["checkbox-mixed", "svg", "color", "ink"],
   ["switch", "", "backgroundColor", "fill"],
   ["switch", "span", "backgroundColor", "ink"],
+  // Decision 189: a mixed switch's track is the fill, its dash the ink.
+  ["switch-mixed", "", "backgroundColor", "fill"],
+  ["switch-mixed", "svg", "color", "ink"],
   ["radio", "svg", "fill", "fill"],
   ["chip", '[data-slot="chip"]', "backgroundColor", "fill"],
   ["chip", '[data-slot="chip"]', "color", "ink"],
@@ -164,6 +167,8 @@ const READS = [
   ["stepper", ".h-8.w-8", "color", "ink"],
   ["toggle", "", "backgroundColor", "fill"],
   ["toggle", "", "color", "ink"],
+  // Decision 190: a mixed toggle's dashed edge is the fill.
+  ["toggle-mixed", "", "borderTopColor", "fill"],
   ["manoeuvre", ".kozmos-manoeuvre-card", "backgroundColor", "fill"],
   ["manoeuvre", ".kozmos-manoeuvre-instruction", "color", "ink"],
   // The drag indicator is quieter than the instruction and still 3:1 on the

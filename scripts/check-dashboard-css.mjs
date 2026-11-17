@@ -486,7 +486,9 @@ try {
     // The hours' layout: wide, a day's name and its choice share a line;
     // in a 296 column (a 320 window's story) the choice goes under the name
     // and nothing runs past the column, times included. A choice wider than
-    // the column scrolls inside its own box, as SegmentedControl does.
+    // the column shrinks its options to their words (GAP-267, decision 201),
+    // and scrolls inside its own box only when the words alone are wider:
+    // English's three fit the 296 column; German's need 334.
     for (const id of ["hours", "hours-narrow", "hours-narrow-de"]) {
       const drawn = await page.getByTestId(id).evaluate((root) => {
         const edge = root.getBoundingClientRect();
@@ -519,6 +521,10 @@ try {
         });
         return {
           days: days.length,
+          // Choices that scroll their options inside their own box.
+          scrolling: choices.filter(
+            (choice) => choice.scrollWidth > choice.clientWidth + 0.5,
+          ).length,
           scrollWidth: root.scrollWidth,
           clientWidth: root.clientWidth,
           past: past.slice(0, 6),
@@ -526,6 +532,12 @@ try {
         };
       });
       assert.equal(drawn.days, 7, `${mode} ${id}: seven days`);
+      if (id !== "hours-narrow-de")
+        assert.equal(
+          drawn.scrolling,
+          0,
+          `${mode} ${id}: every day's Hours, Closed and Always open fit the column, none scrolling (GAP-267)`,
+        );
       assert.ok(
         drawn.scrollWidth <= drawn.clientWidth && drawn.past.length === 0,
         `${mode} ${id}: nothing past the column (scrollWidth ${drawn.scrollWidth} of ${drawn.clientWidth}; ${drawn.past.join(", ")})`,

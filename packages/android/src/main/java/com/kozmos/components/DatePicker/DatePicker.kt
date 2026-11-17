@@ -17,7 +17,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.kozmos.components.KozmosPickerField
 import com.kozmos.components.PickerConfirmButton
 import com.kozmos.components.PickerDismissButton
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.components.input.KozmosInputStatus
+import com.kozmos.components.pickerInitialValue
 import com.kozmos.components.toPickerDate
 import com.kozmos.components.toPickerMillis
 import java.time.LocalDate
@@ -32,6 +34,12 @@ import java.time.format.FormatStyle
  * under it, and status, disabled and read-only as KozmosInput's. Until
  * 2026-10-21 it was Material's OutlinedTextField, its label floating inside,
  * that opened the framework's DatePickerDialog in the Activity's theme.
+ *
+ * [mixed] (GAP-255, decision 188): the field stands for several dates that differ and shows
+ * [mixedLabel] in place of its own, said once as its state; the dialog opens
+ * with no date chosen, and a confirmed date is the edit. [onResetMixed]
+ * offers [resetMixedLabel] under the field once it is no longer mixed.
+ * [KozmosMixedValue] has the whole of it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +53,11 @@ fun KozmosDatePicker(
     status: KozmosInputStatus = KozmosInputStatus.Default,
     helperText: String? = null,
     enabled: Boolean = true,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
     val locale = LocalConfiguration.current.locales[0]
     var open by remember { mutableStateOf(false) }
@@ -61,11 +73,15 @@ fun KozmosDatePicker(
         status = status,
         helperText = helperText,
         enabled = enabled,
-        readOnly = readOnly
+        readOnly = readOnly,
+        mixed = mixed,
+        mixedLabel = mixedLabel,
+        onResetMixed = onResetMixed,
+        resetMixedLabel = resetMixedLabel
     )
 
     if (open) {
-        val state = rememberDatePickerState(initialSelectedDateMillis = date?.toPickerMillis())
+        val state = rememberDatePickerState(initialSelectedDateMillis = pickerInitialValue(date, mixed)?.toPickerMillis())
         DatePickerDialog(
             onDismissRequest = { open = false },
             confirmButton = {

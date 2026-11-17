@@ -8,10 +8,13 @@ import com.figma.code.connect.FigmaType
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1465")
 class KozmosSwitchConnect {
+    // Decision 189: Mixed is a value of the Checked axis, so a mixed switch
+    // can be disabled or in error too.
     @FigmaProperty(FigmaType.Enum, "Checked")
-    val checked: Boolean = Figma.mapping(
-        "Unchecked" to false,
-        "Checked" to true
+    val checked: String = Figma.mapping(
+        "Unchecked" to "unchecked",
+        "Checked" to "checked",
+        "Mixed" to "mixed"
     )
 
     @FigmaProperty(FigmaType.Text, "Label Text")
@@ -36,13 +39,14 @@ class KozmosSwitchConnect {
     @Composable
     fun ComponentExample() {
         KozmosSwitch(
-            checked = checked,
+            checked = checked == "checked",
             onCheckedChange = {},
             label = label,
             enabled = state != "disabled",
             error = state == "error",
             description = if (showDescription) description else null,
-            showStateLabel = showStateLabel
+            showStateLabel = showStateLabel,
+            mixed = checked == "mixed"
         )
     }
 }

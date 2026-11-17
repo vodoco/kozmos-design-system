@@ -47,3 +47,47 @@ struct KozmosMixedReset: View {
         .accessibilityAddTraits(.isButton)
     }
 }
+
+extension View {
+    /// Where VoiceOver goes back to after a reset: the control, held by
+    /// `focused`. Set only when a reset is offered, so a control without one
+    /// is the view it always was (an accessibility focus binding also keeps
+    /// `ImageRenderer` from drawing the view at all).
+    @ViewBuilder
+    func kozmosResetFocus(_ focused: AccessibilityFocusState<Bool>.Binding, offered: Bool) -> some View {
+        if offered {
+            self.accessibilityFocused(focused)
+        } else {
+            self
+        }
+    }
+}
+
+/// The mixed mark (decisions 188 to 190): React's `Minus` icon at 16, a line
+/// from 5 to 19 across the icon's 24, at its middle, stroked 2/24 of its
+/// size with round caps. A mixed Checkbox draws it for its tick, a mixed
+/// Switch in its track where the thumb was, a mixed ToggleButton before its
+/// label. It frames itself at 16.
+struct KozmosMixedDash: View {
+    let color: Color
+
+    var body: some View {
+        KozmosMixedDashShape()
+            .stroke(color, style: StrokeStyle(lineWidth: 4.0 / 3.0, lineCap: .round))
+            .frame(width: 16, height: 16)
+            .accessibilityHidden(true)
+    }
+}
+
+struct KozmosMixedDashShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 5 / 24, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * 19 / 24, y: rect.midY))
+        return path
+    }
+
+    /// A level line centred in its box reads the same either way.
+    @available(iOS 17.0, macOS 14.0, macCatalyst 17.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
+}

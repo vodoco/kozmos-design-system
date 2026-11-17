@@ -10,14 +10,20 @@ struct KozmosRadioConnect: FigmaConnect {
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436"
     var variant = ["Variant": "Default"]
 
+    // Decision 191: Mixed is an option of a mixed group, unchosen, with the
+    // group's "Multiple values" line under it.
     @FigmaEnum(
         "Checked",
         mapping: [
-            "Unchecked": false,
-            "Checked": true
+            "Unchecked": "unchecked",
+            "Checked": "checked",
+            "Mixed": "mixed"
         ]
     )
-    var checked: Bool = false
+    var checked: String = "unchecked"
+
+    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
+    // put it in the library: the dry run reads the live file.
 
     @FigmaString("Label Text")
     var label: String = "Option"
@@ -40,12 +46,12 @@ struct KozmosRadioConnect: FigmaConnect {
     var descriptionText: String = "Description"
 
     var body: some View {
-        KozmosRadioGroup {
+        KozmosRadioGroup(mixed: self.checked == "mixed") {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,
                 description: self.showDescription ? self.descriptionText : nil,
-                selection: .constant(self.checked ? "option" : ""),
+                selection: .constant(self.checked == "checked" ? "option" : ""),
                 disabled: self.state == "disabled",
                 error: self.state == "error"
             )
@@ -58,14 +64,20 @@ struct KozmosRadioCardConnect: FigmaConnect {
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436"
     var variant = ["Variant": "Card"]
 
+    // Decision 191: Mixed is an option of a mixed group, unchosen, with the
+    // group's "Multiple values" line under it.
     @FigmaEnum(
         "Checked",
         mapping: [
-            "Unchecked": false,
-            "Checked": true
+            "Unchecked": "unchecked",
+            "Checked": "checked",
+            "Mixed": "mixed"
         ]
     )
-    var checked: Bool = false
+    var checked: String = "unchecked"
+
+    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
+    // put it in the library: the dry run reads the live file.
 
     @FigmaString("Label Text")
     var label: String = "Satellite"
@@ -92,13 +104,13 @@ struct KozmosRadioCardConnect: FigmaConnect {
     var showMedia: Bool = true
 
     var body: some View {
-        KozmosRadioGroup {
+        KozmosRadioGroup(mixed: self.checked == "mixed") {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,
                 description: self.showDescription ? self.descriptionText : nil,
                 variant: .card,
-                selection: .constant(self.checked ? "option" : ""),
+                selection: .constant(self.checked == "checked" ? "option" : ""),
                 disabled: self.state == "disabled",
                 error: self.state == "error"
             ) {
@@ -115,14 +127,20 @@ struct KozmosRadioTileConnect: FigmaConnect {
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1436"
     var variant = ["Variant": "Tile"]
 
+    // Decision 191: Mixed is an option of a mixed group, unchosen, with the
+    // group's "Multiple values" line under it.
     @FigmaEnum(
         "Checked",
         mapping: [
-            "Unchecked": false,
-            "Checked": true
+            "Unchecked": "unchecked",
+            "Checked": "checked",
+            "Mixed": "mixed"
         ]
     )
-    var checked: Bool = false
+    var checked: String = "unchecked"
+
+    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
+    // put it in the library: the dry run reads the live file.
 
     @FigmaString("Label Text")
     var label: String = "Fade"
@@ -149,13 +167,13 @@ struct KozmosRadioTileConnect: FigmaConnect {
     var showMedia: Bool = true
 
     var body: some View {
-        KozmosRadioGroup {
+        KozmosRadioGroup(mixed: self.checked == "mixed") {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,
                 description: self.showDescription ? self.descriptionText : nil,
                 variant: .tile,
-                selection: .constant(self.checked ? "option" : ""),
+                selection: .constant(self.checked == "checked" ? "option" : ""),
                 disabled: self.state == "disabled",
                 error: self.state == "error"
             ) {

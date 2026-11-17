@@ -141,11 +141,17 @@ import type { Booleans, Takes } from "./react-adapter";
 /** Every React DOM event, and nothing of its own: most parts. */
 const D: Takes = { dom: true, own: [] };
 const inputTakes: Takes = { dom: true, own: ["onResetMixed"] };
-const checkboxTakes: Takes = { dom: true, own: ["onCheckedChange"] };
 const searchTakes: Takes = { dom: true, own: ["onClear"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
-const datePickerTakes: Takes = { dom: true, own: ["onOpenChange"] };
+const datePickerTakes: Takes = {
+  dom: true,
+  own: ["onOpenChange", "onResetMixed"],
+};
+const segmentedControlTakes: Takes = {
+  dom: true,
+  own: ["onResetMixed", "onValueChange"],
+};
 const categoryTileTakes: Takes = { dom: true, except: ["onClick"], own: [] };
 const tourStepTakes: Takes = {
   dom: true,
@@ -173,8 +179,8 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Label, D],
   [Input, inputTakes],
   [Textarea, D],
-  [Checkbox, checkboxTakes],
-  [Switch, checkboxTakes],
+  [Checkbox, { dom: true, own: ["onCheckedChange"] }],
+  [Switch, { dom: true, own: ["onCheckedChange", "onResetMixed"] }],
   [Card, D],
   [Slider, { dom: true, own: ["onValueChange", "onValueCommit"] }],
   [Search, searchTakes],
@@ -288,8 +294,8 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [TimePicker, datePickerTakes],
   [FloatingActionButton, D],
   [SplitButton, { dom: true, own: ["onMainClick"] }],
-  [ToggleButton, { dom: true, own: ["onPressedChange"] }],
-  [SegmentedControl, accordionTakes],
+  [ToggleButton, { dom: true, own: ["onPressedChange", "onResetMixed"] }],
+  [SegmentedControl, segmentedControlTakes],
   [Link, D],
   [IconButton, D],
   [Tabs, accordionTakes],
@@ -342,7 +348,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [NavigationAnnouncer, { dom: false, own: [] }],
-  [RadioGroup, accordionTakes],
+  [RadioGroup, segmentedControlTakes],
   [RadioGroupItem, D],
   [RouteSummary, { dom: true, own: ["onEndRoute", "onStartNavigation"] }],
   [
@@ -387,7 +393,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       except: ["onChange"],
-      own: ["onOpenChange", "onRangeChange", "onValueChange"],
+      own: ["onOpenChange", "onRangeChange", "onResetMixed", "onValueChange"],
     },
   ],
   [Listbox, { dom: true, except: ["onChange"], own: ["onValueChange"] }],
@@ -397,11 +403,11 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       except: ["onChange"],
-      own: ["onSearchValueChange", "onValueChange"],
+      own: ["onResetMixed", "onSearchValueChange", "onValueChange"],
     },
   ],
   [NavigationItem, D],
-  [NumberInput, { dom: true, own: ["onResetMixed", "onValueChange"] }],
+  [NumberInput, segmentedControlTakes],
   [
     POIDetailPanel,
     {
@@ -516,6 +522,7 @@ const datePickerBooleans = html(
     "defaultOpen",
     "disabled",
     "formNoValidate",
+    "mixed",
     "multiple",
     "open",
     "readOnly",
@@ -642,6 +649,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "checked",
         "disabled",
         "formNoValidate",
+        "mixed",
         "required",
         "showStateLabel",
       ],
@@ -770,13 +778,14 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       "defaultPressed",
       "disabled",
       "formNoValidate",
+      "mixed",
       "pressed",
     ]),
   ],
   [
     SegmentedControl,
     html(
-      ["asChild", "disabled", "fullWidth", "loop", "rovingFocus"],
+      ["asChild", "disabled", "fullWidth", "loop", "mixed", "rovingFocus"],
       [],
       ["error"],
     ),
@@ -817,7 +826,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [NavigationAnnouncer, { flags: ["isActive"], unions: [], texts: [] }],
   [
     RadioGroup,
-    html(["asChild", "disabled", "loop", "required"], [], ["error"]),
+    html(["asChild", "disabled", "loop", "mixed", "required"], [], ["error"]),
   ],
   [
     RadioGroupItem,
@@ -882,6 +891,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "defaultOpen",
         "disabled",
         "hideFieldLabels",
+        "mixed",
         "open",
         "readOnly",
         "required",
@@ -904,7 +914,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   ],
   [
     MultiSelect,
-    html(["clearable", "disabled", "readOnly", "required"], [], ["error"]),
+    html(
+      ["clearable", "disabled", "mixed", "readOnly", "required"],
+      [],
+      ["error"],
+    ),
   ],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
   [

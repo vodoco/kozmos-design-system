@@ -24,22 +24,26 @@ class KozmosToggleButtonConnect {
         "Large" to KozmosToggleButtonSize.Large
     )
 
+    // Decision 190: Mixed is the toggle of a multi-selection whose features
+    // differ.
     @FigmaProperty(FigmaType.Enum, "State")
-    val checked: Boolean = Figma.mapping(
-        "Default" to false,
-        "Pressed" to true,
-        "Disabled" to false,
-        "Focus" to false
+    val state: String = Figma.mapping(
+        "Default" to "default",
+        "Pressed" to "pressed",
+        "Disabled" to "disabled",
+        "Focus" to "focus",
+        "Mixed" to "mixed"
     )
 
     @Composable
     fun ComponentExample() {
         KozmosToggleButton(
-            checked = checked,
+            checked = state == "pressed",
             onCheckedChange = {},
             label = label,
             variant = variant,
-            size = size
+            size = size,
+            mixed = state == "mixed"
         )
     }
 }
