@@ -54,6 +54,35 @@ public enum KozmosTypography {
     public static var title2: Font { font(.title2) }
     public static var title3: Font { font(.title3) }
 
+    /// The display size (decision 203, GAP-272): 48pt at the default text
+    /// size, for a marketing-style headline such as a sign-in hero, from the
+    /// display type tokens. Text's `.display` style and Heading's
+    /// `size: .display` draw it, bold, growing with Dynamic Type along the
+    /// large title's curve as Heading 1 does.
+    public static let displaySize: CGFloat = KozmosDimensions.semanticsTypographyDisplaySize
+
+    /// The display size's line, 54pt at the default text size, as React's.
+    public static let displayLineHeight: CGFloat = KozmosDimensions.semanticsTypographyDisplayLineheight
+
+    /// The display size at the default text size, bold, for a caller drawing
+    /// its own `Text`. `KozmosText(style: .display)` also grows with the
+    /// reader's text size and sets its lines 54pt apart.
+    public static var display: Font { .system(size: displaySize, weight: .bold) }
+
+    /// What SwiftUI adds between lines of the bold display size to set them
+    /// `displayLineHeight` apart, as React's 48px headline sits on 54px lines:
+    /// 54 less SF Pro's own line at 48pt, 57.3pt, so less than nothing. It is
+    /// the same at every text size, so the lines still grow with the text.
+    static let displayOn54ptLineSpacing: CGFloat = {
+        #if canImport(UIKit)
+        let display = UIFont.systemFont(ofSize: displaySize, weight: .bold)
+        return displayLineHeight - (display.lineHeight + display.leading)
+        #else
+        let display = NSFont.systemFont(ofSize: displaySize, weight: .bold)
+        return displayLineHeight - (display.ascender - display.descender + display.leading)
+        #endif
+    }()
+
     /// What SwiftUI adds between lines of `caption2` to set them 14pt apart at
     /// the default text size, as React's 11px labels sit on 14px lines: 14
     /// less caption2's own line, 13.1pt of SF Pro at 11pt. From the next size

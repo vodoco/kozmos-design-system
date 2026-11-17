@@ -50,6 +50,14 @@ public enum KozmosHeadingLevel: Int, CaseIterable, Sendable {
     }
 }
 
+/// A size a heading takes apart from its rank, as React's `Heading size`.
+public enum KozmosHeadingSize: String, CaseIterable, Sendable {
+    /// The one display size, 48pt bold on 54pt lines (decision 203), for a
+    /// marketing-style headline such as a sign-in hero. The level stays the
+    /// heading's rank for VoiceOver; only its size changes.
+    case display
+}
+
 /// A ranked heading.
 ///
 /// Mirrors the React `Heading` API. Unlike `Text`, rank is not styling — it is
@@ -58,20 +66,31 @@ public enum KozmosHeadingLevel: Int, CaseIterable, Sendable {
 public struct KozmosHeading: View {
     private let text: String
     private let level: KozmosHeadingLevel
+    private let size: KozmosHeadingSize?
     /// The level's size at the reader's text size: React's at the default.
     /// It was a fixed `.system(size:)`, which Dynamic Type never touches,
     /// until 2026-10-21.
     @ScaledMetric private var fontSize: CGFloat
 
-    public init(_ text: String, level: KozmosHeadingLevel = .h1) {
+    /// - Parameter size: `.display` draws the heading at the display size,
+    ///   keeping `level` as its rank. Left out, the level's own size.
+    public init(_ text: String, level: KozmosHeadingLevel = .h1, size: KozmosHeadingSize? = nil) {
         self.text = text
         self.level = level
-        _fontSize = ScaledMetric(wrappedValue: level.fontSize, relativeTo: level.textStyle)
+        self.size = size
+        // The display size grows along the large title's curve, as h1 does.
+        _fontSize = size == .display
+            ? ScaledMetric(wrappedValue: KozmosTypography.displaySize, relativeTo: .largeTitle)
+            : ScaledMetric(wrappedValue: level.fontSize, relativeTo: level.textStyle)
     }
 
     public var body: some View {
         Text(text)
             .font(.system(size: fontSize, weight: .bold))
+            .transformEnvironment(\.lineSpacing) { spacing in
+                // The display size's lines 54pt apart, as React's.
+                if size == .display { spacing = KozmosTypography.displayOn54ptLineSpacing }
+            }
             .foregroundColor(KozmosColors.primitivesColorsForeground100)
             .accessibilityAddTraits(.isHeader)
             .accessibilityHeading(level.accessibilityHeadingLevel)
