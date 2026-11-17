@@ -7,6 +7,7 @@ A set of values, each under its label, with no field chrome (GAP-221, decision 1
 - **Import:** `import { DescriptionList, DescriptionListItem } from "@kozmos-ds/react";`
 - **Group:** Uncategorised
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/core-data-display-descriptionlist--docs>
 
 ## Example
 
