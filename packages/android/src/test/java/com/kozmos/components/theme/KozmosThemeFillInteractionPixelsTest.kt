@@ -57,7 +57,8 @@ import org.junit.Test
  *   both the fill and the page. The focus token alone is 1.11:1 from the fill;
  * - a quick tap in scrolling content arrives as a press and its release in one
  *   frame; the pressed fill is still drawn;
- * - a disabled or loading MapControlButton is drawn at half, as Button is;
+ * - a disabled or loading MapControlButton is drawn from the disabled pair,
+ *   as Button is (decision 197; it was drawn at half until then);
  * - a MapControlButton turned on from the keyboard keeps its focus colour, and
  *   a disabled or loading control ignores a press a shared source reports;
  * - every filled emotion, and both halves of a SplitButton, press to their own
@@ -79,11 +80,8 @@ class KozmosThemeFillInteractionPixelsTest {
     private fun theme600(dark: Boolean) = if (dark) 0xFF5887F3.toInt() else 0xFF1051E8.toInt()
     private fun page(dark: Boolean) = if (dark) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
     private fun mode(dark: Boolean) = if (dark) "dark" else "light"
-
-    private fun half(colour: Int, under: Int): Int {
-        fun channel(shift: Int) = ((colour shr shift and 0xFF) + (under shr shift and 0xFF) + 1) / 2
-        return (0xFF shl 24) or (channel(16) shl 16) or (channel(8) shl 8) or channel(0)
-    }
+    // The disabled pair (decision 197): background/100 and foreground/400.
+    private fun disabledFill(dark: Boolean) = if (dark) 0xFF17191C.toInt() else 0xFFE3E4E8.toInt()
 
     /** A source that holds [interactions] from the moment it is watched. */
     private class Held(private vararg val held: Interaction) : MutableInteractionSource {
@@ -224,36 +222,43 @@ class KozmosThemeFillInteractionPixelsTest {
     @Test fun aQuickTapOnASplitButtonIsDrawnPressed() = quickTap(3, otherHalfAtRest = true)
     @Test fun aQuickTapOnAMapControlButtonIsDrawnPressed() = quickTap(5)
 
-    // 4. A disabled or loading MapControlButton is drawn at half.
+    // 4. A disabled or loading MapControlButton is drawn from the disabled
+    // pair (decision 197), on or off, tinted or filled: its surface is the
+    // disabled fill. It was drawn at half until then; the words and the
+    // mark are read in KozmosButtonDisabledPairPixelsTest.
 
     @Test
-    fun aDisabledOrLoadingMapControlButtonIsDrawnAtHalf() {
+    fun aDisabledOrLoadingMapControlButtonIsDrawnOnTheDisabledFill() {
         val wrong = mutableListOf<String>()
         for (dark in listOf(false, true)) {
-            val cases: List<Triple<String, Int, @Composable () -> Unit>> = listOf(
-                Triple("a disabled filled MapControlButton", half(themeFill, grey), @Composable {
+            val cases: List<Pair<String, @Composable () -> Unit>> = listOf(
+                "a disabled filled MapControlButton" to @Composable {
                     KozmosMapControlButton(
                         label = "Focus", onClick = {}, icon = { Icon(Icons.Default.NearMe, contentDescription = null) },
                         emphasis = KozmosMapControlButtonEmphasis.Filled, pressed = true, enabled = false
                     )
-                }),
-                Triple("a loading filled MapControlButton", half(themeFill, grey), @Composable {
+                },
+                "a loading filled MapControlButton" to @Composable {
                     KozmosMapControlButton(
                         label = "Focus", onClick = {}, icon = { Icon(Icons.Default.NearMe, contentDescription = null) },
                         emphasis = KozmosMapControlButtonEmphasis.Filled, pressed = true, isLoading = true
                     )
-                }),
-                Triple("a disabled MapControlButton on the page's surface", half(page(dark), grey), @Composable {
+                },
+                "a disabled MapControlButton on the page's surface" to @Composable {
                     KozmosMapControlButton(
                         label = "Zoom in", onClick = {}, icon = { Icon(Icons.Default.Add, contentDescription = null) },
                         enabled = false
                     )
-                }),
+                },
             )
-            for ((name, expected, part) in cases) {
-                val at = draw(dark, part).count(expected, tolerance = 3)
-                println("Decision 59 Android, ${mode(dark)}: $name: $at pixels of ${DrawnPixels.hex(expected)}")
-                if (at < 100) wrong += "${mode(dark)}: $name is not drawn at half (${DrawnPixels.hex(expected)}, $at pixels)"
+            for ((name, part) in cases) {
+                val drawn = draw(dark, part)
+                val at = drawn.count(disabledFill(dark), tolerance = 3)
+                val fill = drawn.count(themeFill)
+                println("Decision 197 Android, ${mode(dark)}: $name: $at pixels of ${DrawnPixels.hex(disabledFill(dark))}, $fill of #135BEC")
+                if (at < 100 || fill * 100 > at) {
+                    wrong += "${mode(dark)}: $name draws $at pixels of the disabled fill ${DrawnPixels.hex(disabledFill(dark))} and $fill of the theme fill"
+                }
             }
         }
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
@@ -299,12 +304,14 @@ class KozmosThemeFillInteractionPixelsTest {
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
     }
 
+    // Disabled, a fill is the disabled fill (decision 197), whatever a
+    // shared source reports: no pressed fill, at full or at half.
     private fun ignoresASharedPress(name: String, part: @Composable (MutableInteractionSource) -> Unit) {
         val drawn = draw(false) { part(Held(PressInteraction.Press(Offset.Zero))) }
-        val idle = drawn.count(half(themeFill, grey), tolerance = 3)
-        val pressed = drawn.count(half(pressedFill, grey), tolerance = 3)
-        println("Decision 59 Android, light: $name with a shared press: $idle pixels of the fill at half, $pressed of the pressed fill at half")
-        assertTrue("$name with a shared press draws $idle pixels of the fill at half and $pressed of the pressed fill at half", idle >= 100 && pressed == 0)
+        val idle = drawn.count(disabledFill(false), tolerance = 3)
+        val pressed = drawn.count(pressedFill, tolerance = 3)
+        println("Decision 197 Android, light: $name with a shared press: $idle pixels of the disabled fill, $pressed of the pressed fill")
+        assertTrue("$name with a shared press draws $idle pixels of the disabled fill and $pressed of the pressed fill", idle >= 100 && pressed == 0)
     }
 
     @Test fun aDisabledButtonIgnoresASharedPress() = ignoresASharedPress("a disabled Button") { source ->

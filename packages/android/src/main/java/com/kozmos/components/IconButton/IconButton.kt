@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -27,12 +26,12 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import com.kozmos.components.KozmosFillStates
-import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.components.KozmosFillSurface
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import com.kozmos.components.surface.KozmosSurfaceDefaults
@@ -96,14 +95,15 @@ fun KozmosIconButton(
         else -> "$contentDescription$counterSeparator$said"
     }
     // The large size is the prototype's 48: Filters and the AI search beside a 44 field.
-    // Disabled or loading, it keeps its own colours and the whole of it is
-    // drawn at half, as React's `disabled:opacity-50` draws it, not in
-    // Material's grey (decision 59): a filled icon button stays the fill.
+    // Disabled or loading, it is drawn from the disabled pair (decision 197,
+    // GAP-218), as Button is, not at half and not in Material's grey: its
+    // icon and spinner in the disabled foreground; a filled variant on the
+    // disabled fill; an outline, ghost or link on no fill, the outline's ring
+    // in the foreground too; glass on its own glass.
     val inert = !enabled || isLoading
+    val disabledInk = KozmosThemeTokens.semanticsDisabledForeground
     val rootModifier = modifier.size(if (size == KozmosIconButtonSize.Lg) 48.dp else 44.dp)
-        .alpha(if (inert) KozmosInertAlpha else 1f)
-        // After the alpha, so it dims with the button as React's does, and
-        // outside the button's clip, which would cut it.
+        // Outside the button's clip, which would cut it.
         .then(if (counter != null) Modifier.iconButtonCounter(counter) else Modifier)
     val iconSize = when (size) {
         KozmosIconButtonSize.Sm -> 14.dp
@@ -141,9 +141,9 @@ fun KozmosIconButton(
                 shape = CircleShape,
                 colors = IconButtonDefaults.outlinedIconButtonColors(
                     contentColor = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle,
-                    disabledContentColor = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle
+                    disabledContentColor = disabledInk
                 ),
-                border = IconButtonDefaults.outlinedIconButtonBorder(enabled = true),
+                border = if (inert) BorderStroke(1.dp, disabledInk) else IconButtonDefaults.outlinedIconButtonBorder(enabled = true),
                 content = content
             )
         }
@@ -155,7 +155,7 @@ fun KozmosIconButton(
                 interactionSource = source,
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle,
-                    disabledContentColor = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle
+                    disabledContentColor = disabledInk
                 ),
                 content = content
             )
@@ -197,7 +197,7 @@ fun KozmosIconButton(
                         containerColor = glass,
                         contentColor = ink,
                         disabledContainerColor = glass,
-                        disabledContentColor = ink
+                        disabledContentColor = disabledInk
                     ),
                     content = content
                 )

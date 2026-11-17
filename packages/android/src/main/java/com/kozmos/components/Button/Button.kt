@@ -23,10 +23,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.kozmos.components.KozmosFillStates
-import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.components.KozmosFillButton
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
@@ -129,15 +127,20 @@ fun KozmosButton(
     // interactive size keeps its touch target at Android's 48dp, the 44
     // centred in it. The icon size stays the fixed 44 square.
     //
-    // Disabled or loading, the button keeps its own colours and the whole of
-    // it is drawn at half, as React's `disabled:opacity-50` draws it, not in
-    // Material's grey (decision 59): a filled button stays the fill.
+    // Disabled or loading, the button is drawn from the disabled pair
+    // (decision 197, GAP-218), as React's is, not at half and not in
+    // Material's grey: its label, icon and spinner in the disabled
+    // foreground; a filled variant, or any emotion's fill, on the disabled
+    // fill; an outline, ghost or link on no fill, the outline's edge in the
+    // foreground too; glass on its own glass. At half, a white label on the
+    // theme fill read 2.24:1 on a white card.
     val inert = !enabled || isLoading
+    val disabledInk = KozmosThemeTokens.semanticsDisabledForeground
     val rootModifier = if (size == KozmosButtonSize.Icon) {
         modifier.height(height).then(Modifier.width(44.dp))
     } else {
         modifier.minimumInteractiveComponentSize().heightIn(min = height)
-    }.alpha(if (inert) KozmosInertAlpha else 1f)
+    }
     
     val contentPadding = when (size) {
         KozmosButtonSize.Default -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing200, vertical = KozmosDimensions.primitivesLayoutSpacing100)
@@ -160,8 +163,8 @@ fun KozmosButton(
                 shape = shape,
                 interactionSource = source,
                 contentPadding = contentPadding,
-                border = BorderStroke(1.dp, outlineColor),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = outlineColor, disabledContentColor = outlineColor)
+                border = BorderStroke(1.dp, if (inert) disabledInk else outlineColor),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = outlineColor, disabledContentColor = disabledInk)
             ) {
                 ButtonContent(isLoading, content)
             }
@@ -176,7 +179,7 @@ fun KozmosButton(
                 shape = shape,
                 interactionSource = source,
                 contentPadding = contentPadding,
-                colors = ButtonDefaults.textButtonColors(contentColor = textColor, disabledContentColor = textColor)
+                colors = ButtonDefaults.textButtonColors(contentColor = textColor, disabledContentColor = disabledInk)
             ) {
                 ButtonContent(isLoading, content)
             }
@@ -197,7 +200,8 @@ fun KozmosButton(
                 // Drawn on Kozmos's own surface, not Material's Button: no
                 // ripple over the fill on any Material version (the pressed
                 // token is the press), React's ring for focus, and a quick
-                // tap still drawn pressed.
+                // tap still drawn pressed. Disabled or loading, the fill
+                // surface draws the disabled pair.
                 KozmosFillButton(
                     onClick = onClick,
                     modifier = rootModifier,
@@ -211,7 +215,9 @@ fun KozmosButton(
                 }
             } else {
                 // The glass variant is the glass surface, composed from the
-                // token, and keeps Material's ripple.
+                // token, and keeps Material's ripple. Disabled, it keeps the
+                // glass, an effect rather than a fill, and takes the
+                // disabled foreground.
                 val glass = KozmosSurfaceDefaults.tint(KozmosSurfaceStyle.Glass)
                 val ink = KozmosThemeTokens.primitivesColorsForeground100
                 Button(
@@ -225,7 +231,7 @@ fun KozmosButton(
                         containerColor = glass,
                         contentColor = ink,
                         disabledContainerColor = glass,
-                        disabledContentColor = ink
+                        disabledContentColor = disabledInk
                     ),
                     border = KozmosSurfaceDefaults.border(KozmosSurfaceStyle.Glass)
                 ) {
@@ -253,7 +259,8 @@ private fun RowScope.ButtonContent(
             // indeterminate indicator is also the one Paparazzi cannot render
             // against animation-core 1.6.0, so no golden has ever shown a
             // loading button. Cleared from semantics — the button is already
-            // disabled and named.
+            // disabled and named. In the content colour, so a loading button's
+            // is the disabled foreground (decision 197).
             KozmosSpinner(
                 modifier = Modifier.clearAndSetSemantics {},
                 size = KozmosSpinnerSize.Sm,

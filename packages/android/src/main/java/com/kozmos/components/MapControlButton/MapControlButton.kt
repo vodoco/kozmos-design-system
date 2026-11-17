@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.KozmosFillStates
 import com.kozmos.components.KozmosClickableSurface
-import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.components.motion.KozmosTransitions
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
@@ -209,6 +208,11 @@ internal fun accessibleLabel(label: String, stateLabel: String?, stateDescriptio
  * waits: React's Button disables itself while it loads, and so does this. The
  * name still says what is happening.
  *
+ * Disabled or loading, it is drawn from the disabled pair (decision 197,
+ * GAP-218), as a filled Button is, not at half: its surface is its fill, so
+ * the surface is the disabled fill, and the words, the mark and the spinner
+ * the disabled foreground, on or off, tinted or filled. Its lift stays.
+ *
  * [interactionSource] is the presses, focus and hover the control answers, as
  * Material's own parameter. [KozmosMapControlButtonEmphasis.Filled] answers
  * them with the theme fill's pressed, focus and hover tokens (decision 59).
@@ -283,7 +287,11 @@ fun KozmosMapControlButton(
     // once it turned on from the keyboard.
     val filled = appearance.surface == KozmosMapControlButtonAppearance.Surface.Filled
     val inert = !enabled || isLoading
+    // Disabled, the fill's look is the disabled pair (decision 197); a tinted
+    // control takes it too, since the ink alone would not read as disabled:
+    // an off toggle's words are already foreground/400.
     val look = KozmosFillStates.themed.lookFor(source, enabled = !inert)
+    val iconColor = if (inert) look.content else appearance.icon.color()
 
     KozmosClickableSurface(
         onClick = onClick,
@@ -304,8 +312,8 @@ fun KozmosMapControlButton(
         enabled = !inert,
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
         // The page's own surface, opaque, as the SDK's is. It was 90% of it.
-        color = if (filled) look.container else KozmosThemeTokens.primitivesColorsBackground0,
-        contentColor = if (filled) look.content else appearance.label.color(),
+        color = if (filled || inert) look.container else KozmosThemeTokens.primitivesColorsBackground0,
+        contentColor = if (filled || inert) look.content else appearance.label.color(),
         interactionSource = source,
         indication = if (filled) null else rememberRipple(),
         focusRing = filled && look.focusRing,
@@ -313,10 +321,7 @@ fun KozmosMapControlButton(
         role = null,
         // No edge in any state, and one lift: the words and the mark carry the
         // state.
-        shadowElevation = KozmosShadows.semanticsElevationMapControl,
-        // Disabled or waiting, the whole control, its lift too, is drawn at
-        // half, as Button is and React's is.
-        alpha = if (inert) KozmosInertAlpha else 1f
+        shadowElevation = KozmosShadows.semanticsElevationMapControl
     ) {
         Row(
             modifier = Modifier.padding(
@@ -327,7 +332,7 @@ fun KozmosMapControlButton(
             horizontalArrangement = Arrangement.Center
         ) {
             if (icon != null || isLoading) {
-                CompositionLocalProvider(LocalContentColor provides appearance.icon.color()) {
+                CompositionLocalProvider(LocalContentColor provides iconColor) {
                     Box(contentAlignment = Alignment.Center) {
                         // Kept in place, unseen, under the spinner, so a
                         // labelled control's text does not move while it waits.
@@ -342,7 +347,7 @@ fun KozmosMapControlButton(
                             KozmosSpinner(
                                 modifier = Modifier.clearAndSetSemantics {},
                                 size = KozmosSpinnerSize.Sm,
-                                color = appearance.icon.color()
+                                color = iconColor
                             )
                         }
                     }
