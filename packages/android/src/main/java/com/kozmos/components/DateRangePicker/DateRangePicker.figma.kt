@@ -38,8 +38,19 @@ class KozmosDateRangePickerConnect {
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Readonly" to "readonly"
+        "Readonly" to "readonly",
+        "Mixed" to "mixed"
     )
+
+    // GAP-255: its way back to the several values, once edited.
+    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
+    val resetMixed: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
+
+    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
+    val resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -70,7 +81,11 @@ class KozmosDateRangePickerConnect {
             enabled = state != "disabled",
             readOnly = state == "readonly",
             status = status,
-            expanded = expanded
+            expanded = expanded,
+            mixed = state == "mixed",
+            mixedLabel = mixedLabel,
+            onResetMixed = if (resetMixed) ({}) else null,
+            resetMixedLabel = resetMixedLabel
         )
     }
 }

@@ -27,8 +27,19 @@ class KozmosMultiSelectConnect {
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Readonly" to "readonly"
+        "Readonly" to "readonly",
+        "Mixed" to "mixed"
     )
+
+    // GAP-255: its way back to the several values, once edited.
+    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
+    val resetMixed: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
+
+    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
+    val resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -72,7 +83,11 @@ class KozmosMultiSelectConnect {
             readOnly = state == "readonly",
             status = status,
             helperText = if (showHelperText) helperText else null,
-            defaultExpanded = content == "open"
+            defaultExpanded = content == "open",
+            mixed = state == "mixed",
+            mixedLabel = mixedLabel,
+            onResetMixed = if (resetMixed) ({}) else null,
+            resetMixedLabel = resetMixedLabel
         )
     }
 }
