@@ -29,6 +29,7 @@ import com.kozmos.components.KozmosFillStates
 import com.kozmos.components.KozmosFillSurface
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.BorderStroke
@@ -95,16 +96,24 @@ fun KozmosIconButton(
         else -> "$contentDescription$counterSeparator$said"
     }
     // The large size is the prototype's 48: Filters and the AI search beside a 44 field.
-    // Disabled or loading, it is drawn from the disabled pair (decision 197,
-    // GAP-218), as Button is, not at half and not in Material's grey: its
-    // icon and spinner in the disabled foreground; a filled variant on the
-    // disabled fill; an outline, ghost or link on no fill, the outline's ring
-    // in the foreground too; glass on its own glass.
+    // Disabled, it is drawn from the disabled pair (decision 197, GAP-218),
+    // as Button is, not at half and not in Material's grey: its icon in the
+    // disabled foreground; a filled variant and a ghost on the disabled fill;
+    // an outline on no fill, its ring in the foreground too; a link on no
+    // fill; glass on its own glass; and its counter the pair inverted, the
+    // foreground's pill under the fill's digits (4.80:1 light, 6.51:1 dark).
+    // Loading is busy, not unavailable: it keeps its variant's own colours
+    // at full strength, the spinner in the icon's colour. Disabled and
+    // loading, it is drawn disabled.
     val inert = !enabled || isLoading
+    val disabled = !enabled
+    val busy = enabled && isLoading
     val disabledInk = KozmosThemeTokens.semanticsDisabledForeground
+    val disabledFill = KozmosThemeTokens.semanticsDisabledFill
+    val themedInk = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle
     val rootModifier = modifier.size(if (size == KozmosIconButtonSize.Lg) 48.dp else 44.dp)
         // Outside the button's clip, which would cut it.
-        .then(if (counter != null) Modifier.iconButtonCounter(counter) else Modifier)
+        .then(if (counter != null) Modifier.iconButtonCounter(counter, disabled) else Modifier)
     val iconSize = when (size) {
         KozmosIconButtonSize.Sm -> 14.dp
         KozmosIconButtonSize.Lg -> 20.dp
@@ -141,9 +150,9 @@ fun KozmosIconButton(
                 shape = CircleShape,
                 colors = IconButtonDefaults.outlinedIconButtonColors(
                     contentColor = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle,
-                    disabledContentColor = disabledInk
+                    disabledContentColor = if (disabled) disabledInk else themedInk
                 ),
-                border = if (inert) BorderStroke(1.dp, disabledInk) else IconButtonDefaults.outlinedIconButtonBorder(enabled = true),
+                border = if (disabled) BorderStroke(1.dp, disabledInk) else IconButtonDefaults.outlinedIconButtonBorder(enabled = true),
                 content = content
             )
         }
@@ -155,7 +164,9 @@ fun KozmosIconButton(
                 interactionSource = source,
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle,
-                    disabledContentColor = disabledInk
+                    // A disabled ghost on the disabled fill; a link on none.
+                    disabledContainerColor = if (disabled && variant == KozmosIconButtonVariant.Ghost) disabledFill else Color.Transparent,
+                    disabledContentColor = if (disabled) disabledInk else themedInk
                 ),
                 content = content
             )
@@ -179,7 +190,8 @@ fun KozmosIconButton(
                     enabled = enabled && !isLoading,
                     shape = CircleShape,
                     fill = fill,
-                    interactionSource = source
+                    interactionSource = source,
+                    busy = busy
                 ) {
                     Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { content() }
                 }
@@ -197,7 +209,7 @@ fun KozmosIconButton(
                         containerColor = glass,
                         contentColor = ink,
                         disabledContainerColor = glass,
-                        disabledContentColor = disabledInk
+                        disabledContentColor = if (disabled) disabledInk else ink
                     ),
                     content = content
                 )
@@ -211,14 +223,18 @@ fun KozmosIconButton(
  * Brand recipe at Sm (18 tall, at least 18 wide, 5 each side, 11 semibold in
  * tabular figures, a pill in the theme fill), drawn over the button with its
  * bottom edge on the centre line and its start edge 2 past it, at every size.
+ * On a [disabled] button it is the disabled pair inverted (decision 197): a
+ * pill of the disabled foreground under digits of the disabled fill.
  * Drawn, not composed, so it is no node of its own: it takes no tap and
  * TalkBack hears the count in the button's name instead.
  */
 @Composable
-private fun Modifier.iconButtonCounter(count: Int): Modifier {
+private fun Modifier.iconButtonCounter(count: Int, disabled: Boolean): Modifier {
     val measurer = rememberTextMeasurer()
-    val fill = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
-    val ink = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+    val fill = if (disabled) KozmosThemeTokens.semanticsDisabledForeground
+        else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+    val ink = if (disabled) KozmosThemeTokens.semanticsDisabledFill
+        else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
     val style = LocalTextStyle.current.merge(
         TextStyle(fontSize = 11.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
     )

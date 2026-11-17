@@ -9,8 +9,9 @@ import com.kozmos.components.button.KozmosButton
 
 // enabled = false takes no press, and TalkBack hears the button as disabled.
 // Every variant is drawn from the disabled pair, not at half: its words in
-// the disabled foreground, and a filled variant on the disabled fill. A
-// loading button (isLoading = true) is disabled, and drawn the same.
+// the disabled foreground, and a filled or ghost variant on the disabled
+// fill. A loading button (isLoading = true) takes no press either, but is
+// busy, not unavailable: it keeps its own colours, with a spinner.
 @Composable
 fun SubmitWhenReady(ready: Boolean, submit: () -> Unit) {
     KozmosButton(onClick = submit, enabled = ready) { Text("Submit") }

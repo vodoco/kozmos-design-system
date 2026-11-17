@@ -53,9 +53,10 @@ import org.junit.Test
  * - disabled, a checked Checkbox or Switch keeps its fill and its
  *   foreground, the whole control at half strength, as React draws
  *   `disabled:opacity-50`. Material drew its own grey;
- * - disabled or loading, a filled Button or IconButton is the disabled pair,
- *   the disabled fill under the disabled foreground (decision 197, GAP-218),
- *   as React draws it. It was the fill at half until then.
+ * - disabled, a filled Button or IconButton is the disabled pair, the
+ *   disabled fill under the disabled foreground (decision 197, GAP-218), as
+ *   React draws it; loading, busy rather than unavailable, it keeps its fill
+ *   at full strength. Both were the fill at half until then.
  *
  * The control's interaction source is held from the moment it is watched, as
  * a finger resting on it or focus resting in it. The colours are written out:
@@ -185,10 +186,13 @@ class KozmosThemeFillStatesPixelsTest {
     /** Disabled or waiting, each filled control as it is drawn. */
     private val inertButtons: List<Pair<String, @Composable () -> Unit>> = listOf(
         "a disabled Button" to { KozmosButton(onClick = {}, enabled = false) { Text("Go") } },
-        "a loading Button" to { KozmosButton(onClick = {}, isLoading = true) { Text("Go") } },
         "a disabled default IconButton" to {
             KozmosIconButton(icon = Icons.Default.Add, onClick = {}, contentDescription = "Add", variant = KozmosIconButtonVariant.Default, enabled = false)
         },
+    )
+
+    private val loadingButtons: List<Pair<String, @Composable () -> Unit>> = listOf(
+        "a loading Button" to { KozmosButton(onClick = {}, isLoading = true) { Text("Go") } },
         "a loading default IconButton" to {
             KozmosIconButton(icon = Icons.Default.Add, onClick = {}, contentDescription = "Add", variant = KozmosIconButtonVariant.Default, isLoading = true)
         },
@@ -226,13 +230,37 @@ class KozmosThemeFillStatesPixelsTest {
     }
 
     /**
-     * Decision 197: a disabled or loading filled Button or IconButton is the
+     * Decision 197, round two: loading is busy, not unavailable. A loading
+     * filled Button or IconButton keeps the theme fill at full strength,
+     * neither the disabled fill nor the fill at half.
+     */
+    @Test
+    fun aLoadingFilledButtonKeepsItsFillAtFullStrength() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val disabledFill = if (dark) 0xFF17191C.toInt() else 0xFFE3E4E8.toInt()
+            for ((name, part) in loadingButtons) {
+                val drawn = draw(dark, part)
+                val fill = drawn.count(themeFill, 3)
+                val pair = drawn.count(disabledFill, 3)
+                val fillAtHalf = drawn.count(half(themeFill, grey), 3)
+                println("Decision 197 Android, ${mode(dark)}: $name: $fill pixels of #135BEC, $pair of the disabled fill, $fillAtHalf of the fill at half")
+                if (fill < 100 || (pair + fillAtHalf) * 100 > fill) {
+                    wrong += "${mode(dark)}: $name draws $fill pixels of #135BEC, $pair of the disabled fill and $fillAtHalf of the fill at half"
+                }
+            }
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
+     * Decision 197: a disabled filled Button or IconButton is the
      * disabled fill, background/100, under the disabled foreground,
      * foreground/400, in both themes: neither the fill nor its white mark at
      * half.
      */
     @Test
-    fun aDisabledOrLoadingFilledButtonIsTheDisabledPair() {
+    fun aDisabledFilledButtonIsTheDisabledPair() {
         val wrong = mutableListOf<String>()
         for (dark in listOf(false, true)) {
             val disabledFill = if (dark) 0xFF17191C.toInt() else 0xFFE3E4E8.toInt()

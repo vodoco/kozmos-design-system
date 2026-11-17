@@ -21,10 +21,10 @@ import org.junit.Test
  * the API and had never been rendered — on a golden or, as far as anyone had
  * checked, a device. The button draws the system's own arc now: three quarters
  * of a circle from the top, round caps, stroke 2 in the icons' 24 box, at the
- * small size, in the button's own foreground. Loading, the button is drawn
- * from the disabled pair, the disabled fill under the disabled foreground,
- * as React's is (decision 197, GAP-218); it drew Material's grey until
- * 2026-10-07, and its own colours at half until decision 197, which
+ * small size, in the button's own foreground. Loading, the button is busy,
+ * not unavailable: it keeps its fill and its foreground at full strength, as
+ * React's does (decision 197, GAP-218, round two). It drew Material's grey
+ * until 2026-10-07, and its own colours at half until decision 197, which
  * re-records this golden in the Linux container.
  *
  * It sits apart from [KozmosButtonPaparazziTest] because of its tolerance, and

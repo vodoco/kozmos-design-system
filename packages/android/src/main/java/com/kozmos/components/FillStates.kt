@@ -80,18 +80,21 @@ internal data class KozmosFillStates(
      * [KozmosPressedAtLeastMillis] ([collectIsPressedForAMomentAsState]).
      * While not [enabled] it is the disabled pair (decision 197, GAP-218):
      * the disabled fill under the disabled foreground, whatever the fill and
-     * whatever a shared source reports.
+     * whatever a shared source reports. A control that is not enabled only
+     * because it is [busy] (loading, and not disabled) keeps its idle fill
+     * at full strength: busy, not unavailable (decision 197, round two).
      *
      * Collect it whether or not the fill is drawn: an interaction source does
      * not replay, so focus given before a control turned filled is lost to a
      * collector that starts after it.
      */
     @Composable
-    fun lookFor(interactionSource: InteractionSource, enabled: Boolean): KozmosFillLook {
+    fun lookFor(interactionSource: InteractionSource, enabled: Boolean, busy: Boolean = false): KozmosFillLook {
         val pressed by interactionSource.collectIsPressedForAMomentAsState()
         val focused by interactionSource.collectIsFocusedAsState()
         val hovered by interactionSource.collectIsHoveredAsState()
         return when {
+            !enabled && busy -> KozmosFillLook(container, content, focusRing = false)
             !enabled -> KozmosFillLook(
                 KozmosThemeTokens.semanticsDisabledFill,
                 KozmosThemeTokens.semanticsDisabledForeground,
@@ -419,9 +422,11 @@ internal fun KozmosFillSurface(
     role: Role? = Role.Button,
     shadowElevation: Dp = 0.dp,
     tonalElevation: Dp = 0.dp,
+    /** Not [enabled] only because it is loading: it keeps its idle fill. */
+    busy: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val look = fill.lookFor(interactionSource, enabled)
+    val look = fill.lookFor(interactionSource, enabled, busy)
     KozmosClickableSurface(
         onClick = onClick,
         modifier = modifier,
@@ -452,6 +457,8 @@ internal fun KozmosFillButton(
     fill: KozmosFillStates,
     interactionSource: MutableInteractionSource,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    /** Not [enabled] only because it is loading: it keeps its idle fill. */
+    busy: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
     KozmosFillSurface(
@@ -460,7 +467,8 @@ internal fun KozmosFillButton(
         enabled = enabled,
         shape = shape,
         fill = fill,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
+        busy = busy
     ) {
         ProvideTextStyle(value = MaterialTheme.typography.labelLarge) {
             Row(

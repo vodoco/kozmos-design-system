@@ -30,19 +30,28 @@ import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonPresentation
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.splitbutton.KozmosSplitButton
 import com.kozmos.components.themeprovider.KozmosMaterialTheme
+import androidx.compose.ui.graphics.toArgb
+import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosColorsDark
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 /**
- * Decision 197 (GAP-218): a disabled or loading Button-family part is drawn
- * from the disabled pair, Semantics.Disabled, not at half: its label, icon
- * and spinner in the pair's foreground (foreground/400: #5D626F light,
- * #A29D90 dark); a filled variant, any emotion's fill, a FloatingActionButton,
- * both halves of a SplitButton and every MapControlButton on the pair's fill
- * (background/100: #E3E4E8 light, #17191C dark); an outline, ghost or link on
- * no fill, the outline's edge in the foreground; glass on its own glass.
+ * Decision 197 (GAP-218): a disabled Button-family part is drawn from the
+ * disabled pair, Semantics.Disabled, not at half: its label and icon in the
+ * pair's foreground (foreground/400: #5D626F light, #A29D90 dark); a filled
+ * variant, any emotion's fill, a ghost (the owner, round two: so it never
+ * reads as an enabled grey ghost), a FloatingActionButton, both halves of a
+ * SplitButton and every MapControlButton on the pair's fill (background/100:
+ * #E3E4E8 light, #17191C dark); an outline or link on no fill, the outline's
+ * edge in the foreground; glass on its own glass. A disabled IconButton's
+ * counter is the pair inverted: the foreground's pill under the fill's digits.
+ *
+ * Loading is busy, not unavailable (round two): a loading part keeps its
+ * variant's own fill, edge and label at full strength, its spinner in the
+ * label's colour. Disabled and loading, it draws as disabled.
  *
  * Read off what is drawn, at twice the density on the map's mid grey, as the
  * theme-fill tests are; the colours are written out. Each case asks for at
@@ -61,6 +70,14 @@ class KozmosButtonDisabledPairPixelsTest {
     private fun ink(dark: Boolean) = if (dark) 0xFFA29D90.toInt() else 0xFF5D626F.toInt()
     private fun mode(dark: Boolean) = if (dark) "dark" else "light"
     private val themes = listOf(false, true)
+    private fun themeFill(dark: Boolean) =
+        (if (dark) KozmosColorsDark.componentsPrimaryButtonsThemedButtonBackgroundIdle else KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle).toArgb()
+    private fun onThemeFill(dark: Boolean) =
+        (if (dark) KozmosColorsDark.componentsPrimaryButtonsThemedButtonForegroundContentIdle else KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle).toArgb()
+    private fun outlineInk(dark: Boolean) =
+        (if (dark) KozmosColorsDark.componentsSecondaryButtonsThemedButtonForegroundContentIdle else KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle).toArgb()
+    private fun page(dark: Boolean) =
+        (if (dark) KozmosColorsDark.primitivesColorsBackground0 else KozmosColors.primitivesColorsBackground0).toArgb()
 
     private fun draw(dark: Boolean, content: @Composable () -> Unit): DrawnPixels =
         paparazzi.drawn(frames) {
@@ -164,29 +181,76 @@ class KozmosButtonDisabledPairPixelsTest {
     )
 
     @Test
-    fun aLoadingFilledButtonDrawsTheDisabledPair() = onTheFill(
-        filledVariants.map { v -> "a loading $v Button" to button(v, enabled = true, isLoading = true) } +
-            listOf("a loading Default Button, Danger" to button(KozmosButtonVariant.Default, KozmosButtonEmotion.Danger, enabled = true, isLoading = true))
-    )
-
-    @Test
-    fun aDisabledOrLoadingOutlineButtonDrawsItsEdgeAndLabelInTheForegroundOnNoFill() = onNoFill(
+    fun aDisabledOutlineButtonDrawsItsEdgeAndLabelInTheForegroundOnNoFill() = onNoFill(
         listOf(
             "a disabled Outline Button" to button(KozmosButtonVariant.Outline),
             "a disabled Outline Button, Danger" to button(KozmosButtonVariant.Outline, KozmosButtonEmotion.Danger),
-            "a loading Outline Button" to button(KozmosButtonVariant.Outline, enabled = true, isLoading = true),
         ),
         // The edge all the way round, as well as the label.
         inkAtLeast = 400
     )
 
     @Test
-    fun aDisabledOrLoadingGhostOrLinkButtonDrawsTheForegroundOnNoFill() = onNoFill(
+    fun aDisabledLinkButtonDrawsTheForegroundOnNoFill() = onNoFill(
+        listOf(
+            "a disabled Link Button" to button(KozmosButtonVariant.Link),
+            "a disabled Link Button, Success" to button(KozmosButtonVariant.Link, KozmosButtonEmotion.Success),
+        )
+    )
+
+    // Round two: a disabled ghost takes the fill, so it never reads as an
+    // enabled grey ghost.
+    @Test
+    fun aDisabledGhostButtonTakesTheDisabledFillBehindItsLabel() = onTheFill(
         listOf(
             "a disabled Ghost Button" to button(KozmosButtonVariant.Ghost),
             "a disabled Ghost Button, Success" to button(KozmosButtonVariant.Ghost, KozmosButtonEmotion.Success),
-            "a disabled Link Button" to button(KozmosButtonVariant.Link),
-            "a loading Ghost Button" to button(KozmosButtonVariant.Ghost, enabled = true, isLoading = true),
+            "a disabled Ghost Button, Neutral" to button(KozmosButtonVariant.Ghost, KozmosButtonEmotion.Neutral),
+        )
+    )
+
+    // Disabled and loading draws as disabled.
+    @Test
+    fun aDisabledAndLoadingButtonDrawsAsDisabled() {
+        onTheFill(
+            listOf(
+                "a disabled, loading Default Button" to button(KozmosButtonVariant.Default, isLoading = true),
+                "a disabled, loading Ghost Button" to button(KozmosButtonVariant.Ghost, isLoading = true),
+            )
+        )
+        onNoFill(listOf("a disabled, loading Outline Button" to button(KozmosButtonVariant.Outline, isLoading = true)), inkAtLeast = 400)
+    }
+
+    /**
+     * Loading is busy, not unavailable: each case keeps [ground] (at least
+     * 1,000 pixels) and draws [ink] (at least [inkAtLeast]), and neither of
+     * the disabled pair's colours, beyond a hundredth of them.
+     */
+    private fun keepsItsOwnColours(
+        cases: List<Triple<String, (Boolean) -> Pair<Int, Int>, @Composable () -> Unit>>,
+        inkAtLeast: Int = 40
+    ) {
+        val wrong = mutableListOf<String>()
+        for (dark in themes) for ((name, colours, part) in cases) {
+            val (groundColour, inkColour) = colours(dark)
+            val drawn = draw(dark, part)
+            val ground = drawn.count(groundColour)
+            val words = drawn.count(inkColour)
+            val pair = drawn.count(fill(dark)) + drawn.count(ink(dark))
+            println("Decision 197 Android, ${mode(dark)}: $name: $ground pixels of ${DrawnPixels.hex(groundColour)}, $words of ${DrawnPixels.hex(inkColour)}, $pair of the disabled pair")
+            if (ground < 1000) wrong += "${mode(dark)}: $name draws $ground pixels of its own ground ${DrawnPixels.hex(groundColour)}"
+            if (words < inkAtLeast) wrong += "${mode(dark)}: $name draws $words pixels of its own ink ${DrawnPixels.hex(inkColour)}"
+            if (pair * 100 > ground) wrong += "${mode(dark)}: $name draws $pair pixels of the disabled pair"
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    @Test
+    fun aLoadingButtonKeepsItsVariantsOwnColours() = keepsItsOwnColours(
+        listOf(
+            Triple("a loading Default Button", { d: Boolean -> themeFill(d) to onThemeFill(d) }, button(KozmosButtonVariant.Default, enabled = true, isLoading = true)),
+            // The outline's ground is the page's grey; its edge and label its ink.
+            Triple("a loading Outline Button", { d: Boolean -> outlineInk(d) to outlineInk(d) }, button(KozmosButtonVariant.Outline, enabled = true, isLoading = true)),
         )
     )
 
@@ -197,7 +261,6 @@ class KozmosButtonDisabledPairPixelsTest {
             val glass = draw(dark, button(KozmosButtonVariant.Glass, enabled = true)).ground()
             for ((name, part) in listOf(
                 "a disabled Glass Button" to button(KozmosButtonVariant.Glass),
-                "a loading Glass Button" to button(KozmosButtonVariant.Glass, enabled = true, isLoading = true),
             )) {
                 val drawn = draw(dark, part)
                 val ground = drawn.count(glass, tolerance = 1)
@@ -224,17 +287,24 @@ class KozmosButtonDisabledPairPixelsTest {
     }
 
     @Test
-    fun aDisabledOrLoadingFilledIconButtonDrawsTheDisabledPair() = onTheFill(
+    fun aDisabledFilledIconButtonDrawsTheDisabledPair() = onTheFill(
         listOf(KozmosIconButtonVariant.Default, KozmosIconButtonVariant.Destructive, KozmosIconButtonVariant.Secondary)
-            .map { v -> "a disabled $v IconButton" to iconButton(v) } +
-            listOf("a loading Default IconButton" to iconButton(KozmosIconButtonVariant.Default, enabled = true, isLoading = true)),
-        // A spinner's arc, or the icon alone.
+            .map { v -> "a disabled $v IconButton" to iconButton(v) },
         inkAtLeast = 20
     )
 
     @Test
-    fun aDisabledOutlineGhostOrLinkIconButtonDrawsTheForegroundOnNoFill() = onNoFill(
-        listOf(KozmosIconButtonVariant.Outline, KozmosIconButtonVariant.Ghost, KozmosIconButtonVariant.Link)
+    fun aDisabledGhostIconButtonTakesTheDisabledFill() = onTheFill(
+        listOf(
+            "a disabled Ghost IconButton" to iconButton(KozmosIconButtonVariant.Ghost),
+            "a disabled, loading Ghost IconButton" to iconButton(KozmosIconButtonVariant.Ghost, isLoading = true),
+        ),
+        inkAtLeast = 20
+    )
+
+    @Test
+    fun aDisabledOutlineOrLinkIconButtonDrawsTheForegroundOnNoFill() = onNoFill(
+        listOf(KozmosIconButtonVariant.Outline, KozmosIconButtonVariant.Link)
             .map { v -> "a disabled $v IconButton" to iconButton(v) },
         inkAtLeast = 20
     )
@@ -245,6 +315,40 @@ class KozmosButtonDisabledPairPixelsTest {
         // The ring all the way round, as well as the icon.
         inkAtLeast = 300
     )
+
+    @Test
+    fun aLoadingIconButtonKeepsItsVariantsOwnColours() = keepsItsOwnColours(
+        listOf(Triple("a loading Default IconButton", { d: Boolean -> themeFill(d) to onThemeFill(d) }, iconButton(KozmosIconButtonVariant.Default, enabled = true, isLoading = true))),
+        inkAtLeast = 20
+    )
+
+    /**
+     * A disabled IconButton's counter is the pair inverted: a pill of the
+     * foreground under digits of the fill (4.80:1 light, 6.51:1 dark). On
+     * an outline IconButton, over the page's grey, the fill is drawn only by
+     * the digits, and the theme fill, the enabled counter's, not at all.
+     */
+    @Test
+    fun aDisabledIconButtonsCounterIsThePairInverted() {
+        val wrong = mutableListOf<String>()
+        for (dark in themes) {
+            val ring = draw(dark, iconButton(KozmosIconButtonVariant.Outline)).count(ink(dark))
+            val drawn = draw(dark) {
+                KozmosIconButton(
+                    icon = Icons.Default.Add, onClick = {}, contentDescription = "Help",
+                    variant = KozmosIconButtonVariant.Outline, enabled = false, counter = 3
+                )
+            }
+            val pill = drawn.count(ink(dark)) - ring
+            val digits = drawn.count(fill(dark))
+            val brand = drawn.count(themeFill(dark))
+            println("Decision 197 Android, ${mode(dark)}: a disabled IconButton's counter: $pill pixels of the pill ${DrawnPixels.hex(ink(dark))}, $digits of the digits ${DrawnPixels.hex(fill(dark))}, $brand of the theme fill")
+            if (pill < 1000) wrong += "${mode(dark)}: a disabled IconButton's counter draws $pill pixels of the disabled foreground"
+            if (digits < 20) wrong += "${mode(dark)}: a disabled IconButton's counter draws $digits pixels of the disabled fill for its digits"
+            if (brand * 100 > pill) wrong += "${mode(dark)}: a disabled IconButton's counter still draws $brand pixels of the theme fill"
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
 
     @Test
     fun aDisabledGlassIconButtonKeepsItsGlassAndTakesTheForeground() {
@@ -331,14 +435,25 @@ class KozmosButtonDisabledPairPixelsTest {
     }
 
     @Test
-    fun aDisabledOrLoadingMapControlButtonDrawsTheDisabledPairOnOrOffTintedOrFilled() = onTheFill(
+    fun aDisabledMapControlButtonDrawsTheDisabledPairOnOrOffTintedOrFilled() = onTheFill(
         listOf(
             "a disabled MapControlButton, not a toggle" to mapControl(null),
             "a disabled MapControlButton, off" to mapControl(false),
             "a disabled MapControlButton, on" to mapControl(true),
             "a disabled filled MapControlButton, on" to mapControl(true, KozmosMapControlButtonEmphasis.Filled),
-            "a loading MapControlButton, on" to mapControl(true, enabled = true, isLoading = true),
-            "a loading filled MapControlButton, on" to mapControl(true, KozmosMapControlButtonEmphasis.Filled, enabled = true, isLoading = true),
+            "a disabled, loading MapControlButton, on" to mapControl(true, isLoading = true),
+        )
+    )
+
+    @Test
+    fun aLoadingMapControlButtonKeepsItsOwnSurface() = keepsItsOwnColours(
+        listOf(
+            // On the page's surface, the words navy (theme 1000) on.
+            Triple("a loading MapControlButton, on", { d: Boolean ->
+                page(d) to (if (d) KozmosColorsDark.primitivesColorsTheme1000 else KozmosColors.primitivesColorsTheme1000).toArgb()
+            }, mapControl(true, enabled = true, isLoading = true)),
+            Triple("a loading filled MapControlButton, on", { d: Boolean -> themeFill(d) to onThemeFill(d) },
+                mapControl(true, KozmosMapControlButtonEmphasis.Filled, enabled = true, isLoading = true)),
         )
     )
 }

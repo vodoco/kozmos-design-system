@@ -208,10 +208,12 @@ internal fun accessibleLabel(label: String, stateLabel: String?, stateDescriptio
  * waits: React's Button disables itself while it loads, and so does this. The
  * name still says what is happening.
  *
- * Disabled or loading, it is drawn from the disabled pair (decision 197,
- * GAP-218), as a filled Button is, not at half: its surface is its fill, so
- * the surface is the disabled fill, and the words, the mark and the spinner
- * the disabled foreground, on or off, tinted or filled. Its lift stays.
+ * Disabled, it is drawn from the disabled pair (decision 197, GAP-218), as a
+ * filled Button is, not at half: its surface is its fill, so the surface is
+ * the disabled fill, and the words, the mark and the spinner the disabled
+ * foreground, on or off, tinted or filled. Its lift stays. Loading is busy,
+ * not unavailable: it keeps its own surface and tones at full strength, the
+ * spinner in the mark's tone; disabled and loading, it is drawn disabled.
  *
  * [interactionSource] is the presses, focus and hover the control answers, as
  * Material's own parameter. [KozmosMapControlButtonEmphasis.Filled] answers
@@ -287,11 +289,13 @@ fun KozmosMapControlButton(
     // once it turned on from the keyboard.
     val filled = appearance.surface == KozmosMapControlButtonAppearance.Surface.Filled
     val inert = !enabled || isLoading
+    val disabled = !enabled
     // Disabled, the fill's look is the disabled pair (decision 197); a tinted
     // control takes it too, since the ink alone would not read as disabled:
-    // an off toggle's words are already foreground/400.
-    val look = KozmosFillStates.themed.lookFor(source, enabled = !inert)
-    val iconColor = if (inert) look.content else appearance.icon.color()
+    // an off toggle's words are already foreground/400. Loading alone, it is
+    // busy, and keeps its own look.
+    val look = KozmosFillStates.themed.lookFor(source, enabled = !inert, busy = enabled && isLoading)
+    val iconColor = if (disabled) look.content else appearance.icon.color()
 
     KozmosClickableSurface(
         onClick = onClick,
@@ -312,8 +316,8 @@ fun KozmosMapControlButton(
         enabled = !inert,
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
         // The page's own surface, opaque, as the SDK's is. It was 90% of it.
-        color = if (filled || inert) look.container else KozmosThemeTokens.primitivesColorsBackground0,
-        contentColor = if (filled || inert) look.content else appearance.label.color(),
+        color = if (filled || disabled) look.container else KozmosThemeTokens.primitivesColorsBackground0,
+        contentColor = if (filled || disabled) look.content else appearance.label.color(),
         interactionSource = source,
         indication = if (filled) null else rememberRipple(),
         focusRing = filled && look.focusRing,
