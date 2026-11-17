@@ -91,18 +91,11 @@
     min-inline-size: 0;
   }
 
-  /* The preview: Dialog over the whole window, less its usual 16 margin
-     each side, the image as large as it fits inside. Dialog sizes itself
-     with utilities, which weigh two classes inside style.css's @scope
-     (":scope .max-w-lg") and win a tie on proximity, so this weighs three. */
-  .kozmos-image-field-preview[role="dialog"][data-state] {
-    inline-size: calc(100vw - var(--primitives-layout-spacing-400) * 1px);
-    max-inline-size: none;
-    block-size: calc(100dvh - var(--primitives-layout-spacing-400) * 1px);
-    max-block-size: none;
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-  .kozmos-image-field-preview .kozmos-image-field-preview-image {
+  /* The preview: Dialog's full size (decision 202), the window less 16 each
+     side, its header keeping its height and the image taking the rest, as
+     large as it fits inside. Two classes, so the image's size outweighs the
+     scoped preflight's img rule. */
+  .kozmos-dialog-content .kozmos-image-field-preview-image {
     display: block;
     inline-size: 100%;
     block-size: 100%;

@@ -31,6 +31,40 @@
   .kozmos-dialog-close {
     @apply absolute end-6 top-[calc(1.5rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)];
   }
+  /* Full (decision 202, GAP-259): the window less 16 on each side, the
+     header keeping its height and the next child taking the rest, so media
+     inside fits the window. Two classes' weight, so it outweighs the rule
+     above where no @scope rule applies. */
+  .kozmos-dialog-content[data-size="full"] {
+    @apply h-[calc(100dvh-2rem)] max-w-none grid-rows-[auto_minmax(0,1fr)];
+  }
+  /* DialogHeader's media (decision 195, GAP-214): above the title, 16 over
+     it (the header's 8 and 8 more). Bled, it reaches the dialog's edges and
+     top corners past its 24 of padding, and the dialog's corner, which clips
+     what scrolls in it, rounds the media's top corners. The close stays in
+     the corner over it, on the outline button's own fill. */
+  .kozmos-dialog-content .kozmos-dialog-media {
+    display: block;
+    min-inline-size: 0;
+    margin-block-end: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-dialog-content .kozmos-dialog-media[data-bleed] {
+    margin-inline: calc(0px - var(--primitives-layout-spacing-300) * 1px);
+    margin-block-start: calc(0px - var(--primitives-layout-spacing-300) * 1px);
+    overflow: hidden;
+    /* Inside the dialog's 1 edge. */
+    border-start-start-radius: calc(
+      var(--semantics-radius-container) * 1px - 1px
+    );
+    border-start-end-radius: calc(
+      var(--semantics-radius-container) * 1px - 1px
+    );
+  }
+  .kozmos-dialog-media > :where(img, svg, video, picture) {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
 
   /* Drawer: at its edge of the window, its sections 16 apart. */
   .kozmos-drawer-content {
