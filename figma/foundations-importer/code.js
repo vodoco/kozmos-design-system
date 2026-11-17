@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "b606eb4ed21c";
+const PLUGIN_BUILD = "ee64ecaf809a";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -283,6 +283,20 @@ const THEME_FILL = {
 const THEME_FILL_FOREGROUND = {
   name: "Primary Buttons/themed/button/foreground/content/idle",
   fallback: "#FFFFFF",
+};
+// Decision 197 (GAP-218, 17 Nov 2026): a disabled Button is drawn from the
+// disabled pair, Semantics.Disabled in the Kozmos Semantics collection, not
+// at half opacity and not from the tiers' disabled tokens (#2E3138 under
+// #464A53, a charcoal nothing in code drew). Disabled/fill is background/100
+// (#E3E4E8 light, #17191C dark), under a filled variant only; Disabled/
+// foreground is foreground/400 (#5D626F light, #A29D90 dark), every variant's
+// label, icon, spinner and an outline's edge: 4.80:1 on the fill in light and
+// 6.51:1 in dark. Import Foundations writes both; until it has, a painter
+// draws the fallbacks.
+const DISABLED_FILL = { name: "Disabled/fill", fallback: "#E3E4E8" };
+const DISABLED_FOREGROUND = {
+  name: "Disabled/foreground",
+  fallback: "#5D626F",
 };
 const BUTTON_VARIANTS = [
   "Default",
@@ -1254,6 +1268,26 @@ const TABS_STATES = ["Default", "Focus", "Disabled"];
 // A variant drawn before the axis is Label.
 const TABS_CONTENT = ["Label", "Icon Over Label"];
 const TOOLTIP_SIDES = ["Top", "Right", "Bottom", "Left"];
+// Decision 192 (GAP-210, 17 Nov 2026): TooltipContent's tone. Default is the
+// popover surface, the Tooltip as it was; Inverse is a dark tip on a light
+// page and a light one on a dark page (Pointr Cloud's tooltip), its body, edge
+// and arrow Inverse/surface and its words Inverse/onSurface. A variant named
+// before the axis (Side=X) parses as Default, so Update renames it in place.
+const TOOLTIP_TONES = ["Default", "Inverse"];
+// Each tone's paint: body, edge and arrow, then words. Inverse's edge is its
+// surface, so it draws no line and keeps the Default's size.
+const TOOLTIP_TONE_PAINT = {
+  Default: {
+    surface: { name: "Surface/0", fallback: "#FFFFFF" },
+    edge: { name: "Border/Subtle", fallback: "#C7CAD1" },
+    words: { name: "Colors/foreground/0", fallback: "#000000" },
+  },
+  Inverse: {
+    surface: { name: "Inverse/surface", fallback: "#2E3138" },
+    edge: { name: "Inverse/surface", fallback: "#2E3138" },
+    words: { name: "Inverse/onSurface", fallback: "#FFFFFF" },
+  },
+};
 const BACKDROP_VISIBILITY = ["Visible", "Hidden"];
 // Whether the scrim lights a target (GAP-189): Cut-out leaves an example
 // control's place out of the dim and rings it in the focus colour, as
@@ -4255,6 +4289,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Side maps to TooltipContent.side in Code Connect.",
+      'Tone maps to TooltipContent.tone: Default is the popover surface, Inverse (tone="inverse", decision 192) the inverse surface under its own words, its arrow the same.',
       "Content Text maps to TooltipContent children.",
       "TooltipProvider and TooltipTrigger remain composition concerns in product code.",
       "Tip renders on the side facing the trigger.",
@@ -4262,6 +4297,7 @@ const COMPONENT_DOCS = [
     ],
     properties: [
       "Side: Top, Right, Bottom, Left",
+      "Tone: Default, Inverse",
       "Content Text",
       "Tip Size: 8",
       "Side Offset: 4",
@@ -19942,6 +19978,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Tooltip") {
     return {
       Side: TOOLTIP_SIDES,
+      Tone: TOOLTIP_TONES,
     };
   }
 
@@ -35944,20 +35981,26 @@ async function updateTabsComponent() {
   return stats;
 }
 
+const TOOLTIP_TONE_ROW_STEP = 80;
+
 async function buildTooltipComponent() {
   return buildSingleAxisComponent({
     componentName: "Tooltip",
     componentSetName: "Tooltip",
     axisName: "Side",
     values: TOOLTIP_SIDES,
+    axis2Name: "Tone",
+    axis2Values: TOOLTIP_TONES,
     x: 80,
     y: 5360,
     xStep: 220,
+    yStep: TOOLTIP_TONE_ROW_STEP,
     createVariant: createTooltipVariant,
     configureProperties: configureTooltipProperties,
     description: [
       "Kozmos Tooltip component set generated from React TooltipContent API.",
       "Side maps to TooltipContent.side.",
+      "Tone maps to TooltipContent.tone. Default is the popover surface, Surface/0 with a Border/Subtle edge; Inverse (decision 192) is Inverse/surface under Inverse/onSurface words, its edge and arrow the surface, the same size.",
       "Content Text maps to TooltipContent children.",
       "Tip renders on the side facing the trigger.",
       "TooltipProvider and TooltipTrigger remain composition concerns in product code.",
@@ -35971,7 +36014,10 @@ async function updateTooltipComponent() {
     componentSetName: "Tooltip",
     axisName: "Side",
     values: TOOLTIP_SIDES,
+    axis2Name: "Tone",
+    axis2Values: TOOLTIP_TONES,
     xStep: 220,
+    yStep: TOOLTIP_TONE_ROW_STEP,
     createVariant: createTooltipVariant,
     updateVariant: updateTooltipVariant,
     parseVariantName: parseTooltipVariantName,
@@ -35979,6 +36025,7 @@ async function updateTooltipComponent() {
     description: [
       "Kozmos Tooltip component set generated from React TooltipContent API.",
       "Side maps to TooltipContent.side.",
+      "Tone maps to TooltipContent.tone. Default is the popover surface, Surface/0 with a Border/Subtle edge; Inverse (decision 192) is Inverse/surface under Inverse/onSurface words, its edge and arrow the surface, the same size.",
       "Content Text maps to TooltipContent children.",
       "Tip renders on the side facing the trigger.",
       "TooltipProvider and TooltipTrigger remain composition concerns in product code.",
@@ -52088,11 +52135,17 @@ async function productSdkControlButton({
   iconName,
   label,
   filled,
+  disabled,
   fonts,
   variableByName,
   stats,
 }) {
   const labelled = typeof label === "string" && label.length > 0;
+  // A disabled filled control is a disabled default Button: decision 197's
+  // pair, Disabled/fill under Disabled/foreground, nothing dimmed.
+  const offFill = Boolean(filled && disabled);
+  const fillToken = offFill ? DISABLED_FILL : THEME_FILL;
+  const onFillToken = offFill ? DISABLED_FOREGROUND : THEME_FILL_FOREGROUND;
   const button = productSdkFrame(name, {
     direction: "horizontal",
     primarySizing: labelled ? "AUTO" : "FIXED",
@@ -52110,8 +52163,8 @@ async function productSdkControlButton({
   if (filled) {
     button.fills = [
       paintFromVariable(
-        THEME_FILL.name,
-        THEME_FILL.fallback,
+        fillToken.name,
+        fillToken.fallback,
         variableByName,
         stats,
       ),
@@ -52133,7 +52186,7 @@ async function productSdkControlButton({
   // curated set still shows a mark. Every glyph the library once typed
   // (×, ‹, ›, →, ☆, ✎, ◎, ⇅, +, −, ◈, ◌) has a curated icon now.
   const symbolToken = filled
-    ? THEME_FILL_FOREGROUND
+    ? onFillToken
     : { name: "Colors/foreground/0", fallback: "#000000" };
   const symbol = iconName
     ? await productSdkIconInstance({
@@ -52178,8 +52231,8 @@ async function productSdkControlButton({
       bold: false,
       fontSize: 14,
       lineHeight: 20,
-      colorToken: filled ? THEME_FILL_FOREGROUND.name : "Colors/foreground/0",
-      colorFallback: filled ? THEME_FILL_FOREGROUND.fallback : "#000000",
+      colorToken: filled ? onFillToken.name : "Colors/foreground/0",
+      colorFallback: filled ? onFillToken.fallback : "#000000",
       variableByName,
       stats,
       width: 96,
@@ -52655,10 +52708,15 @@ async function updateMapControlButtonVariant(
  * React writes this as `variant = pressed ? "default" : "ghost"` over a white
  * background with a ring, which is Outline in the library's vocabulary. Size
  * follows the presentation: Icon is the 44px square, Default hugs its label.
+ * Disabled (decision 197), a map control's surface is its fill, so it takes
+ * the disabled pair's fill under its foreground, on or off, with no edge
+ * (.kozmos-map-control:disabled): a filled Button's Disabled, which every
+ * filled variant draws the same.
  */
 function mapControlButtonNestedVariant(presentation, state) {
   return {
-    Variant: state === "Pressed" ? "Default" : "Outline",
+    Variant:
+      state === "Pressed" || state === "Disabled" ? "Default" : "Outline",
     Size: presentation === "Labelled" ? "Default" : "Icon",
     State: state === "Disabled" ? "Disabled" : "Default",
   };
@@ -52734,7 +52792,7 @@ const MAP_CONTROL_BUTTON_DESCRIPTION = [
   "Composed of a nested Button instance, the way React composes Button. The icon is a real Pointr Icon Library symbol swapped through the Button's own Icon property.",
   "The nested Button is exposed, so its Label Text and Icon are edited on this instance rather than duplicated here.",
   "Presentation maps to MapControlButton.presentation (icon-only, labelled), and picks the Button size: Icon or Default.",
-  "State maps to MapControlButton.pressed and .disabled: Pressed is aria-pressed, Disabled is the native attribute.",
+  "State maps to MapControlButton.pressed and .disabled: Pressed is aria-pressed, Disabled is the native attribute. Disabled is drawn from the disabled pair (decision 197): the Disabled/fill surface under Disabled/foreground words and mark, on or off, nothing dimmed.",
   "Pressed is for a mode that stays on - location tracking, wheelchair routing, 2D/3D - not the moment of a click.",
   "Label Text maps to MapControlButton.label, which is the accessible name in both presentations.",
   "stateLabel is appended to the accessible name and has no visual counterpart.",
@@ -55726,13 +55784,14 @@ async function updateRoutePreviewPanelVariant(
     iconName: "arrow-right",
     label: "Continue",
     // React's default Button, disabled until a route is ready: a disabled
-    // default Button is the default at 50 %, as the Button set draws it.
+    // default Button is the disabled pair (decision 197), as the Button set
+    // draws it, nothing dimmed.
     filled: true,
+    disabled: !ready,
     fonts,
     variableByName,
     stats,
   });
-  proceed.opacity = ready ? 1 : 0.5;
   appendWithSizing(actions, proceed, "FILL", "FIXED");
   appendWithSizing(component, actions, "FILL", "FIXED");
 }
@@ -57226,7 +57285,9 @@ async function updateImageFieldVariant(
     height: 320,
   });
   productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
-  // A disabled field is drawn at a plain 50%, as a disabled Button is.
+  // A disabled field is drawn at a plain 50%. React disables each part, and a
+  // disabled Button is the disabled pair since decision 197: the parts' own
+  // disabled looks are not drawn one by one here.
   component.opacity = disabled ? 0.5 : 1;
 
   const header = productSdkFrame("Header", {
@@ -57461,7 +57522,8 @@ async function rebuildImageFieldComponent() {
 // a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
 // 4 between items; a chosen tool is a pressed ToggleButton, the theme fill
 // under its ink; every other item is Cloud's grey ink (foreground 400), and a
-// disabled one is drawn at half strength, as every Kozmos button is. Dividers
+// disabled one is drawn at half strength (a disabled Button is the disabled
+// pair since decision 197; the toolbar's items are still at half). Dividers
 // are Border/Subtle, 1 × 32, 8 from the items each side (4 of margin and the
 // gap). Mode is one of Cloud's seven toolbars, with Cloud's items; Overflow
 // True draws it on a 320 map, the items that do not fit gone into More, as
@@ -61910,7 +61972,9 @@ async function updateSplitButtonVariant(
       stats,
     ),
   ];
-  divider.opacity = state === "Disabled" ? 0.24 : 0.32;
+  // The seam is as strong disabled as enabled: decision 197 dims nothing,
+  // and React's seam keeps its colour on a disabled SplitButton.
+  divider.opacity = 0.32;
   divider.strokes = [];
   setFixedChildSizing(divider);
 
@@ -62081,20 +62145,19 @@ async function updateFloatingActionButtonVariant(
     component.strokeWeight = 0;
   }
 
-  component.effects =
-    state === "Disabled"
-      ? []
-      : [
-          {
-            type: "DROP_SHADOW",
-            color: { r: 0, g: 0, b: 0, a: 0.18 },
-            offset: { x: 0, y: 8 },
-            radius: 16,
-            spread: -8,
-            visible: true,
-            blendMode: "NORMAL",
-          },
-        ];
+  // Disabled keeps its shadow, as React's shadow-lg stays on a disabled
+  // FloatingActionButton: decision 197 changes its paint, not its lift.
+  component.effects = [
+    {
+      type: "DROP_SHADOW",
+      color: { r: 0, g: 0, b: 0, a: 0.18 },
+      offset: { x: 0, y: 8 },
+      radius: 16,
+      spread: -8,
+      visible: true,
+      blendMode: "NORMAL",
+    },
+  ];
 
   bindFloatingActionButtonGeometryVariables(
     component,
@@ -65533,10 +65596,17 @@ async function updateTabsVariant(
   });
 }
 
-async function createTooltipVariant({ value, variableByName, fonts, stats }) {
+async function createTooltipVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateTooltipVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -65556,22 +65626,31 @@ function parseTooltipVariantName(name) {
     values[key] = value;
   }
 
-  if (TOOLTIP_SIDES.indexOf(values.Side) === -1) {
+  // A variant built before the Tone axis existed parses as Default, so
+  // Update renames it in place and the node ids Code Connect pins survive.
+  const tone = values.Tone || "Default";
+  if (
+    TOOLTIP_SIDES.indexOf(values.Side) === -1 ||
+    TOOLTIP_TONES.indexOf(tone) === -1
+  ) {
     return null;
   }
 
   return {
     value: values.Side,
+    second: tone,
   };
 }
 
 async function updateTooltipVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
   const side = value;
+  const tone = TOOLTIP_TONES.indexOf(second) === -1 ? "Default" : second;
+  const paint = TOOLTIP_TONE_PAINT[tone];
 
-  component.name = `Side=${side}`;
+  component.name = `Side=${side}, Tone=${tone}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "AUTO";
@@ -65585,20 +65664,32 @@ async function updateTooltipVariant(
   component.cornerRadius = KOZMOS_RADIUS.control;
   component.clipsContent = false;
   component.fills = [
-    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    paintFromVariable(
+      paint.surface.name,
+      paint.surface.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   component.strokes = [
-    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+    paintFromVariable(
+      paint.edge.name,
+      paint.edge.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   component.strokeWeight = 1;
   component.effects = [elevationEffect("overlay")];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Tooltip");
   component.setSharedPluginData(RUN_NAMESPACE, "side", side);
+  component.setSharedPluginData(RUN_NAMESPACE, "tone", tone);
 
   await syncTooltipVariantChildren({
     component,
     side,
+    paint,
     variableByName,
     fonts,
     stats,
@@ -66222,10 +66313,14 @@ async function tourStepText({
  * either side. HUG before the parent, as Card's actions do: the live file holds
  * those at their labels (Cancel 79, Save 65) with Button/width still bound.
  */
-async function tourStepButton({ name, variant, label, stats }) {
+async function tourStepButton({ name, variant, label, disabled, stats }) {
   const button = await createTourStepInstance({
     componentSetName: "Button",
-    variantProperties: { Variant: variant, Size: "Small", State: "Default" },
+    variantProperties: {
+      Variant: variant,
+      Size: "Small",
+      State: disabled ? "Disabled" : "Default",
+    },
     name,
     role: `tour-step-${name.toLowerCase().replace(/\s+/g, "-")}`,
     stats,
@@ -66829,14 +66924,15 @@ async function tourStepFooter(component, spec, inner, stats) {
     );
   }
   if (spec.next) {
+    // Drawn disabled as React draws it: the Button set's Disabled, the
+    // disabled pair (decision 197), nothing dimmed.
     const next = await tourStepButton({
       name: "Next",
       variant: "Default",
       label: spec.next,
+      disabled: spec.nextDisabled,
       stats,
     });
-    // Drawn disabled as React draws it: the Default button at plain 50 %.
-    if (spec.nextDisabled) next.opacity = 0.5;
     actions.appendChild(next);
   }
   footer.appendChild(actions);
@@ -74318,10 +74414,12 @@ async function syncTabsVariantChildren({
 async function syncTooltipVariantChildren({
   component,
   side,
+  paint,
   variableByName,
   fonts,
   stats,
 }) {
+  const tonePaint = paint || TOOLTIP_TONE_PAINT.Default;
   let text = directChildNamed(component, "Content Text");
   if (text && text.type !== "TEXT") {
     text.remove();
@@ -74336,7 +74434,12 @@ async function syncTooltipVariantChildren({
   await applyTooltipContentTypography(text, fonts, variableByName, stats);
   text.characters = tooltipContentText(side);
   text.fills = [
-    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+    paintFromVariable(
+      tonePaint.words.name,
+      tonePaint.words.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   text.textAlignHorizontal = "CENTER";
   text.textAlignVertical = "CENTER";
@@ -74346,12 +74449,19 @@ async function syncTooltipVariantChildren({
   await syncTooltipTip({
     component,
     side,
+    surface: tonePaint.surface,
     variableByName,
     stats,
   });
 }
 
-async function syncTooltipTip({ component, side, variableByName, stats }) {
+async function syncTooltipTip({
+  component,
+  side,
+  surface,
+  variableByName,
+  stats,
+}) {
   let tip = directChildNamed(component, "Tip");
   if (tip && tip.type !== "FRAME") {
     tip.remove();
@@ -74399,6 +74509,7 @@ async function syncTooltipTip({ component, side, variableByName, stats }) {
     side,
     width,
     height,
+    surface,
     variableByName,
     stats,
   });
@@ -74425,9 +74536,11 @@ async function syncTooltipTipFill({
   side,
   width,
   height,
+  surface,
   variableByName,
   stats,
 }) {
+  const arrow = surface || TOOLTIP_TONE_PAINT.Default.surface;
   let fill = directChildNamed(tip, "Tip Fill");
   if (fill && fill.type !== "VECTOR") {
     fill.remove();
@@ -74445,7 +74558,7 @@ async function syncTooltipTipFill({
   fill.resizeWithoutConstraints(width, height);
   await applyVectorNetwork(fill, tooltipTipVectorNetwork(side, width, height));
   fill.fills = [
-    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    paintFromVariable(arrow.name, arrow.fallback, variableByName, stats),
   ];
   fill.strokes = [];
   fill.strokeWeight = 0;
@@ -90435,45 +90548,58 @@ function tabsTriggerConfig(state, isActive) {
   };
 }
 
+/**
+ * A Button's paint in a state. Disabled is decision 197's disabled pair
+ * (DISABLED_FILL, DISABLED_FOREGROUND), as React's .kozmos-button:disabled
+ * draws it: every variant's label, icon and spinner take the foreground; a
+ * filled variant (default, destructive, secondary, subtle) takes the fill
+ * under it; an outline keeps the page under it and its edge takes the
+ * foreground; ghost and link change their words only; glass keeps its glass
+ * fill and bevel. Nothing is dimmed. A loading Button is disabled in React
+ * while it waits (Button.tsx: disabled={isLoading || disabled}), so Loading
+ * draws the same pair, its spinner in the foreground.
+ */
 function buttonConfig(variant, state) {
-  const tokenState = state === "Disabled" ? "disabled" : "idle";
+  if (state === "Disabled" || state === "Loading") {
+    return disabledButtonConfig(variant);
+  }
   const configs = {
     Default: {
-      background: `Primary Buttons/themed/button/background/${tokenState}`,
-      foreground: `Primary Buttons/themed/button/foreground/content/${tokenState}`,
-      backgroundFallback: state === "Disabled" ? "#2E3138" : "#135BEC",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#FFFFFF",
+      background: "Primary Buttons/themed/button/background/idle",
+      foreground: "Primary Buttons/themed/button/foreground/content/idle",
+      backgroundFallback: "#135BEC",
+      foregroundFallback: "#FFFFFF",
     },
     Destructive: {
-      background: `Primary Buttons/danger/button/background/${tokenState}`,
-      foreground: `Primary Buttons/danger/button/foreground/content/${tokenState}`,
-      backgroundFallback: state === "Disabled" ? "#2E3138" : "#B01736",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#FFFFFF",
+      background: "Primary Buttons/danger/button/background/idle",
+      foreground: "Primary Buttons/danger/button/foreground/content/idle",
+      backgroundFallback: "#B01736",
+      foregroundFallback: "#FFFFFF",
     },
     // The neutral emotion's Primary Buttons tokens and their ink, as the
     // code draws the secondary variant (decision 61): background/200 and
     // foreground/0 read the same in light, but the dark fill is #464A53.
     Secondary: {
-      background: `Primary Buttons/neutral/button/background/${tokenState}`,
-      foreground: `Primary Buttons/neutral/button/foreground/content/${tokenState}`,
-      backgroundFallback: state === "Disabled" ? "#2E3138" : "#C7CAD1",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#000000",
+      background: "Primary Buttons/neutral/button/background/idle",
+      foreground: "Primary Buttons/neutral/button/foreground/content/idle",
+      backgroundFallback: "#C7CAD1",
+      foregroundFallback: "#000000",
     },
     Outline: {
       background: "Surface/0",
-      foreground: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
-      stroke: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
+      foreground: "Secondary Buttons/themed/button/foreground/content/idle",
+      stroke: "Secondary Buttons/themed/button/foreground/content/idle",
       backgroundFallback: "#FFFFFF",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
-      strokeFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
+      foregroundFallback: "#0D44C2",
+      strokeFallback: "#0D44C2",
     },
     Ghost: {
-      foreground: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
+      foreground: "Secondary Buttons/themed/button/foreground/content/idle",
+      foregroundFallback: "#0D44C2",
     },
     Link: {
-      foreground: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
+      foreground: "Secondary Buttons/themed/button/foreground/content/idle",
+      foregroundFallback: "#0D44C2",
     },
     Glass: {
       background: "Colors/transparent/inverted/10",
@@ -90484,27 +90610,55 @@ function buttonConfig(variant, state) {
       strokeFallback: "#FFFFFF80",
     },
     // The subtle variant's own tier (GAP-200, decision 135): theme 0 under
-    // theme 600, the theme as text (decision 59). Disabled, it is the
-    // filled Buttons' disabled pair, the same in every tier, which the
-    // subtle tier does not repeat.
-    Subtle:
-      state === "Disabled"
-        ? {
-            background: "Primary Buttons/themed/button/background/disabled",
-            foreground:
-              "Primary Buttons/themed/button/foreground/content/disabled",
-            backgroundFallback: "#2E3138",
-            foregroundFallback: "#464A53",
-          }
-        : {
-            background: "Subtle Buttons/themed/button/background/idle",
-            foreground: "Subtle Buttons/themed/button/foreground/content/idle",
-            backgroundFallback: "#F1F5FE",
-            foregroundFallback: "#1051E8",
-          },
+    // theme 600, the theme as text (decision 59).
+    Subtle: {
+      background: "Subtle Buttons/themed/button/background/idle",
+      foreground: "Subtle Buttons/themed/button/foreground/content/idle",
+      backgroundFallback: "#F1F5FE",
+      foregroundFallback: "#1051E8",
+    },
   };
 
   return configs[variant] || configs.Default;
+}
+
+/** A disabled (or loading) Button of a variant: decision 197's pair. */
+function disabledButtonConfig(variant) {
+  const ink = {
+    foreground: DISABLED_FOREGROUND.name,
+    foregroundFallback: DISABLED_FOREGROUND.fallback,
+  };
+  if (variant === "Outline") {
+    return Object.assign(
+      {
+        background: "Surface/0",
+        backgroundFallback: "#FFFFFF",
+        stroke: DISABLED_FOREGROUND.name,
+        strokeFallback: DISABLED_FOREGROUND.fallback,
+      },
+      ink,
+    );
+  }
+  if (variant === "Ghost" || variant === "Link") return ink;
+  if (variant === "Glass") {
+    return Object.assign(
+      {
+        background: "Colors/transparent/inverted/10",
+        stroke: "Border/bevel/top",
+        backgroundFallback: "#FCFCFD1A",
+        strokeFallback: "#FFFFFF80",
+      },
+      ink,
+    );
+  }
+  // Default, Destructive, Secondary, Subtle, and any variant not named: filled.
+  return Object.assign(
+    {
+      background: DISABLED_FILL.name,
+      backgroundFallback: DISABLED_FILL.fallback,
+    },
+    ink,
+  );
 }
 
 function toggleButtonConfig(variant, state) {

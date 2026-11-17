@@ -3065,12 +3065,18 @@ section("TourStep (GAP-188, decision 136)");
       label.componentPropertyReferences = { characters: key };
       variant.appendChild(label);
     };
+    // The Default's Disabled too: Last step's Next (decision 197).
     const button = mockComponentSet(
       "Button",
-      ["Default", "Ghost", "Outline", "Link"].map((variant) => ({
-        properties: { Variant: variant, Size: "Small", State: "Default" },
-        build: (node) => labelled(node, variant, "Label Text#1:0"),
-      })),
+      ["Default", "Ghost", "Outline", "Link"]
+        .map((variant) => ({
+          properties: { Variant: variant, Size: "Small", State: "Default" },
+          build: (node) => labelled(node, variant, "Label Text#1:0"),
+        }))
+        .concat({
+          properties: { Variant: "Default", Size: "Small", State: "Disabled" },
+          build: (node) => labelled(node, "Default", "Label Text#1:0"),
+        }),
     );
     button.componentPropertyDefinitions = {
       "Label Text#1:0": { type: "TEXT", defaultValue: "Button" },
@@ -3464,9 +3470,11 @@ section("TourStep (GAP-188, decision 136)");
             "Back Variant=Ghost, Size=Small Back true 1",
             "Next Variant=Default, Size=Small Next true 1",
           ],
+          // Next disabled is the Button set's Disabled, undimmed
+          // (decision 197): its state is read below.
           "Last step": [
             "Back Variant=Ghost, Size=Small Back true 1",
-            "Next Variant=Default, Size=Small Next true 0.5",
+            "Next Variant=Default, Size=Small Next true 1",
           ],
           Warning: [
             "Back Variant=Ghost, Size=Small Back true 1",
@@ -3484,6 +3492,21 @@ section("TourStep (GAP-188, decision 136)");
               (welcome ? "SPACE_BETWEEN" : "MAX"),
           `${content}: ${labels.join("; ")}`,
         );
+        // Decision 197: Last step's Next is the Button set's Disabled, the
+        // disabled pair, not the Default dimmed; every other Next is Default.
+        const nextButton = footer
+          .findAll((node) => node.type === "INSTANCE")
+          .find((instance) => instance.name === "Next");
+        if (nextButton) {
+          const wantState =
+            content === "Last step" ? "State=Disabled" : "State=Default";
+          ok(
+            nextButton.mainComponent &&
+              nextButton.mainComponent.name.includes(wantState) &&
+              nextButton.opacity === 1,
+            `${content}: Next is the Button set's ${wantState}, undimmed (${nextButton.mainComponent && nextButton.mainComponent.name}, ${nextButton.opacity})`,
+          );
+        }
         // Every button is its words and 12 either side, and the row stays
         // inside the card: the dismiss link's box on the inner edge, the
         // actions ending on the other. Size=Small is a fixed 96 in the file:
@@ -4522,15 +4545,22 @@ section("Decision 59: the theme fill and what sits on it");
     );
   }
   // Until a route is ready, Continue is a disabled default Button: the
-  // default at 50 %, as the Button set draws a disabled one.
+  // disabled pair, undimmed, as the Button set draws a disabled one
+  // (decision 197).
   for (const value of ["Ready", "Calculating"]) {
     const preview = await painted("updateRoutePreviewPanelVariant", { value });
     const proceed = named(preview, "Continue Button");
+    const ready = value === "Ready";
+    const want = ready ? fill : "Disabled/fill #E3E4E8/#17191C";
+    const wantInk = ready ? ink : "Disabled/foreground #5D626F/#A29D90";
+    const marks = proceed ? onFill(proceed) : [];
     ok(
       proceed &&
-        reads(proceed.fills[0]) === fill &&
-        proceed.opacity === (value === "Ready" ? 1 : 0.5),
-      `RoutePreviewPanel ${value}: Continue is the theme fill at ${value === "Ready" ? "full strength" : "50 %"} (${proceed && reads(proceed.fills[0])} at ${proceed && proceed.opacity})`,
+        reads(proceed.fills[0]) === want &&
+        proceed.opacity === 1 &&
+        marks.length > 0 &&
+        marks.every((mark) => mark === wantInk),
+      `RoutePreviewPanel ${value}: Continue is ${ready ? "the theme fill" : "the disabled pair"} at full strength (${proceed && reads(proceed.fills[0])} at ${proceed && proceed.opacity}; ${marks.join(", ")})`,
     );
   }
   // Their siblings stay off the theme fill: an outline control on the
@@ -4812,8 +4842,10 @@ section("Decision 61: the secondary Button is the neutral fill");
   const fill = `${NEUTRAL}/background/idle #C7CAD1/#464A53`;
   const ink = `${NEUTRAL}/foreground/content/idle #000000/#FFFFFF`;
 
-  for (const state of ["Default", "Loading", "Disabled"]) {
-    const tokenState = state === "Disabled" ? "disabled" : "idle";
+  // Disabled and Loading are decision 197's disabled pair, every variant
+  // alike: "Decision 197" reads them.
+  for (const state of ["Default"]) {
+    const tokenState = "idle";
     const config = plugin.buttonConfig("Secondary", state);
     ok(
       config.background === `${NEUTRAL}/background/${tokenState}` &&
@@ -4863,10 +4895,13 @@ section("Decision 61: the secondary Button is the neutral fill");
     textStyle: null,
     stats: freshStats(),
   });
+  // A loading Button is disabled while it waits (decision 197): its ring
+  // is the disabled pair's foreground, not the neutral ink.
   const spinner = named(loading, "Loading Indicator");
   ok(
-    spinner && reads(spinner.strokes[0]) === ink,
-    `Button, Secondary, Loading: the ring the neutral ink (${spinner && reads(spinner.strokes[0])})`,
+    spinner &&
+      reads(spinner.strokes[0]) === "Disabled/foreground #5D626F/#A29D90",
+    `Button, Secondary, Loading: the ring the disabled foreground (${spinner && reads(spinner.strokes[0])})`,
   );
 }
 
@@ -9378,7 +9413,7 @@ section("Button subtle, CardHeader subtle and CardTitle size");
       !iconAxes?.Variant?.includes("Subtle"),
     `Button's Variant has Subtle; IconButton's does not (${JSON.stringify(buttonAxes?.Variant)}; ${JSON.stringify(iconAxes?.Variant)})`,
   );
-  for (const state of ["Default", "Loading"]) {
+  for (const state of ["Default"]) {
     const config = plugin.buttonConfig("Subtle", state);
     ok(
       config.background === `${SUBTLE}/background/idle` &&
@@ -9387,15 +9422,16 @@ section("Button subtle, CardHeader subtle and CardTitle size");
       `Button, Subtle, ${state}: the Subtle Buttons idle tokens (${config.background}, ${config.foreground})`,
     );
   }
-  // Disabled is the filled Buttons' disabled pair, the same in every tier.
-  const disabled = plugin.buttonConfig("Subtle", "Disabled");
-  ok(
-    disabled.background ===
-      "Primary Buttons/themed/button/background/disabled" &&
-      disabled.foreground ===
-        "Primary Buttons/themed/button/foreground/content/disabled",
-    `Button, Subtle, Disabled: the filled Buttons' disabled pair (${disabled.background}, ${disabled.foreground})`,
-  );
+  // Disabled, and Loading with it, is decision 197's disabled pair, the
+  // same for every filled variant.
+  for (const state of ["Disabled", "Loading"]) {
+    const disabled = plugin.buttonConfig("Subtle", state);
+    ok(
+      disabled.background === "Disabled/fill" &&
+        disabled.foreground === "Disabled/foreground",
+      `Button, Subtle, ${state}: the disabled pair (${disabled.background}, ${disabled.foreground})`,
+    );
+  }
   let subtle = null;
   try {
     subtle = await plugin.createButtonVariant({
@@ -19109,6 +19145,594 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       `Slider, Checkbox and Switch each keep one ${rowParts.map((r) => r[2]).join(", ")}: the one in the row, under its first node id (${notKept.slice(0, 3).join("; ")})`,
     );
   }
+}
+
+// --- Decision 197: the disabled Button family ---------------------------------
+
+// Decision 197 (GAP-218, 17 Nov 2026): a disabled Button is drawn from the
+// disabled pair, Semantics.Disabled, not at half opacity and not from the
+// tiers' charcoal disabled tokens (#2E3138 under #464A53, a look nothing in
+// code drew). Every variant's label, icon and spinner take Disabled/foreground;
+// a filled variant (Default, Destructive, Secondary, Subtle) takes
+// Disabled/fill under it; Outline keeps Surface/0 and its edge takes the
+// foreground; Ghost and Link change their words only; Glass keeps its glass
+// fill and bevel. A loading Button is disabled in React while it waits, so
+// State=Loading draws the same pair, its spinner in the foreground. The parts
+// that paint through buttonConfig (IconButton, SplitButton,
+// FloatingActionButton) and MapControlButton, whose disabled state nests a
+// Button, draw the same; nothing in a disabled variant is dimmed. Read in
+// Light and Dark through the payload's variables.
+section(
+  "Decision 197: the disabled Button family is drawn from the disabled pair",
+);
+{
+  const FILL = "Disabled/fill";
+  const INK = "Disabled/foreground";
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const context = plugin.createVariableContext(
+    tokens.collections,
+    tokens.variables,
+  );
+  const toHex = (color) =>
+    color
+      ? `#${[color.r, color.g, color.b]
+          .map((channel) =>
+            Math.round(channel * 255)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase(),
+          )
+          .join("")}`
+      : null;
+  const reads = (paint) =>
+    paint
+      ? `${boundVariableName(paint)} ${toHex(plugin.solidPaintToRgba(paint, context, "Light"))}/${toHex(plugin.solidPaintToRgba(paint, context, "Dark"))}`
+      : "no paint";
+  const fill = `${FILL} #E3E4E8/#17191C`;
+  const ink = `${INK} #5D626F/#A29D90`;
+  ok(
+    tokens.variableByName.has(FILL) && tokens.variableByName.has(INK),
+    `the payload carries Disabled/fill and Disabled/foreground for Import Foundations (${[FILL, INK].filter((name) => tokens.variableByName.has(name)).join(", ") || "neither"})`,
+  );
+
+  const FILLED = ["Default", "Destructive", "Secondary", "Subtle"];
+  // What a disabled variant stands on: the pair's fill under a filled one,
+  // the page under an outline, nothing under ghost or link, glass under glass.
+  const groundOf = (variant) =>
+    FILLED.includes(variant)
+      ? { fill, fallback: "#E3E4E8", stroke: null }
+      : variant === "Outline"
+        ? { fill: "Surface/0", stroke: ink }
+        : variant === "Glass"
+          ? {
+              fill: "Colors/transparent/inverted/10",
+              stroke: "Border/bevel/top",
+            }
+          : { fill: null, stroke: null };
+  const name = (paint) => (paint ? boundVariableName(paint) : null);
+  // Every way a painted node can differ from the rules, as words.
+  const differences = (node, variant, label) => {
+    const out = [];
+    if (!node) return [`${label}: not drawn`];
+    const ground = groundOf(variant);
+    const body = node.fills[0];
+    if (ground.fill === fill) {
+      if (reads(body) !== fill || hexOf(body) !== ground.fallback)
+        out.push(`${label} fill ${reads(body)} (${hexOf(body)})`);
+    } else if (ground.fill) {
+      if (name(body) !== ground.fill)
+        out.push(`${label} fill ${name(body)}, not ${ground.fill}`);
+    } else if (node.fills.length) {
+      out.push(`${label} gained a fill ${reads(body)}`);
+    }
+    const edge = node.strokes[0];
+    if (ground.stroke === ink) {
+      if (reads(edge) !== ink || hexOf(edge) !== "#5D626F")
+        out.push(`${label} edge ${reads(edge)}`);
+    } else if (ground.stroke) {
+      if (name(edge) !== ground.stroke)
+        out.push(`${label} edge ${name(edge)}, not ${ground.stroke}`);
+    } else if (node.strokes.length && node.strokeWeight > 0) {
+      out.push(`${label} gained an edge ${reads(edge)}`);
+    }
+    const dimmed = [node]
+      .concat(node.findAll(() => true))
+      .filter((child) => child.opacity < 1 && child.name !== "Divider");
+    if (dimmed.length)
+      out.push(
+        `${label} dims ${dimmed.map((child) => `${child.name} ${child.opacity}`).join(", ")}`,
+      );
+    for (const words of node.findAll(
+      (child) => child.type === "TEXT" && child.name === "Label Text",
+    )) {
+      if (reads(words.fills[0]) !== ink || hexOf(words.fills[0]) !== "#5D626F")
+        out.push(`${label} words ${reads(words.fills[0])}`);
+    }
+    const spinner = named(node, "Loading Indicator");
+    if (spinner && reads(spinner.strokes[0]) !== ink)
+      out.push(`${label} spinner ${reads(spinner.strokes[0])}`);
+    for (const icon of node.findAll(
+      (child) => child.type === "INSTANCE" && child.name === "Icon",
+    )) {
+      const token = icon.getSharedPluginData(
+        plugin.RUN_NAMESPACE,
+        "foreground-token",
+      );
+      const tinted = icon
+        .findAll(() => true)
+        .filter((layer) =>
+          [...(layer.fills || []), ...(layer.strokes || [])].some(
+            (paint) => paint.visible !== false && boundVariableName(paint),
+          ),
+        );
+      const wrong = tinted.filter(
+        (layer) =>
+          ![...(layer.fills || []), ...(layer.strokes || [])].every(
+            (paint) =>
+              paint.visible === false ||
+              !boundVariableName(paint) ||
+              boundVariableName(paint) === INK,
+          ),
+      );
+      if (token !== INK || !tinted.length || wrong.length)
+        out.push(
+          `${label} icon ${token} (${tinted.length} tinted, ${wrong.length} not in the foreground)`,
+        );
+    }
+    return out;
+  };
+
+  // Every config, both states: the pair, its fallbacks, Loading as Disabled.
+  const configs = [];
+  for (const variant of plugin.BUTTON_VARIANTS) {
+    const disabled = plugin.buttonConfig(variant, "Disabled");
+    const loading = plugin.buttonConfig(variant, "Loading");
+    const ground = groundOf(variant);
+    const fine =
+      disabled.foreground === INK &&
+      disabled.foregroundFallback === "#5D626F" &&
+      (ground.fill === fill
+        ? disabled.background === FILL &&
+          disabled.backgroundFallback === "#E3E4E8" &&
+          !disabled.stroke
+        : (disabled.background || null) === ground.fill) &&
+      (ground.stroke === ink
+        ? disabled.stroke === INK && disabled.strokeFallback === "#5D626F"
+        : (disabled.stroke || null) === ground.stroke) &&
+      JSON.stringify(loading) === JSON.stringify(disabled);
+    configs.push(
+      `${variant}${fine ? "" : ` ✗ ${disabled.background}/${disabled.foreground}/${disabled.stroke || "-"}${JSON.stringify(loading) === JSON.stringify(disabled) ? "" : ", Loading differs"}`}`,
+    );
+  }
+  ok(
+    configs.every((entry) => !entry.includes("✗")),
+    `buttonConfig: every variant's Disabled is the pair as the rules give it, and Loading the same (${configs.join("; ")})`,
+  );
+
+  // Button: drawn fresh and updated over an idle variant, as Build and
+  // Update do, at Default size.
+  const buttonIssues = [];
+  for (const variant of plugin.BUTTON_VARIANTS) {
+    for (const state of ["Disabled", "Loading"]) {
+      const args = {
+        variant,
+        size: "Default",
+        state,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        textStyle: null,
+        stats: freshStats(),
+      };
+      const fresh = await plugin.createButtonVariant(args);
+      buttonIssues.push(...differences(fresh, variant, `${variant}/${state}`));
+      const updated = await plugin.createButtonVariant(
+        Object.assign({}, args, { state: "Default" }),
+      );
+      await plugin.updateButtonVariant(updated, args);
+      buttonIssues.push(
+        ...differences(updated, variant, `${variant}/${state} updated`),
+      );
+      if (state === "Loading" && !named(fresh, "Loading Indicator"))
+        buttonIssues.push(`${variant}/Loading: no spinner`);
+    }
+  }
+  ok(
+    buttonIssues.length === 0,
+    `Button: every variant, Disabled and Loading, drawn and updated, from the disabled pair with nothing dimmed (${buttonIssues.slice(0, 6).join("; ")}${buttonIssues.length > 6 ? `; and ${buttonIssues.length - 6} more` : ""})`,
+  );
+
+  // IconButton: the variant, then its icon slot, as configureIconButtonSlot
+  // tints it.
+  const iconSet = new MockNode("COMPONENT_SET", "IconButton");
+  for (const variant of plugin.ICON_BUTTON_VARIANTS) {
+    for (const state of ["Disabled", "Loading"]) {
+      iconSet.appendChild(
+        await plugin.createIconButtonVariant({
+          variant,
+          size: "Default",
+          state,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+    }
+  }
+  const plus = figma.root.children
+    .find((page) => page.name === "Icons")
+    .children.find((icon) => icon.name.includes("plus"));
+  await plugin.configureIconButtonSlot(
+    iconSet,
+    plus,
+    tokens.variableByName,
+    Object.assign(freshStats(), { iconSlotsBound: 0 }),
+  );
+  const iconIssues = [];
+  for (const child of iconSet.children) {
+    const props = plugin.parseIconButtonVariantName(child.name);
+    iconIssues.push(...differences(child, props.variant, child.name));
+    if (props.state === "Disabled" && !named(child, "Icon"))
+      iconIssues.push(`${child.name}: no icon`);
+  }
+  ok(
+    iconIssues.length === 0,
+    `IconButton: every variant, Disabled and Loading, its icon and spinner in the foreground (${iconIssues.slice(0, 6).join("; ")}${iconIssues.length > 6 ? `; and ${iconIssues.length - 6} more` : ""})`,
+  );
+
+  // SplitButton: the ground and words as Button's; the chevron in the
+  // foreground; the seam as strong as it is enabled, as React's is.
+  const splitIssues = [];
+  for (const variant of plugin.SPLIT_BUTTON_VARIANTS) {
+    const draw = (state) =>
+      plugin.createSplitButtonVariant({
+        variant,
+        size: "Default",
+        state,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        textStyle: null,
+        stats: freshStats(),
+      });
+    const disabled = await draw("Disabled");
+    const idle = await draw("Default");
+    splitIssues.push(...differences(disabled, variant, `${variant}`));
+    const seam = named(disabled, "Divider");
+    const idleSeam = named(idle, "Divider");
+    if (
+      !seam ||
+      reads(seam.fills[0]) !== ink ||
+      seam.opacity !== idleSeam.opacity
+    )
+      splitIssues.push(
+        `${variant} seam ${seam && reads(seam.fills[0])} at ${seam && seam.opacity}, ${idleSeam.opacity} enabled`,
+      );
+  }
+  ok(
+    splitIssues.length === 0,
+    `SplitButton: every variant's Disabled from the pair, its chevron in the foreground and its seam undimmed (${splitIssues.slice(0, 6).join("; ")})`,
+  );
+
+  // FloatingActionButton: the pair, its icon in the foreground, and its
+  // shadow kept, as React's shadow-lg is.
+  const fabIssues = [];
+  for (const variant of plugin.FLOATING_ACTION_BUTTON_VARIANTS) {
+    const draw = (state) =>
+      plugin.createFloatingActionButtonVariant({
+        variant,
+        size: "Default",
+        state,
+        iconComponent: plus,
+        variableByName: tokens.variableByName,
+        stats: freshStats(),
+      });
+    const disabled = await draw("Disabled");
+    const idle = await draw("Default");
+    fabIssues.push(...differences(disabled, variant, `${variant}`));
+    if (!named(disabled, "Icon")) fabIssues.push(`${variant}: no icon`);
+    if (JSON.stringify(disabled.effects) !== JSON.stringify(idle.effects))
+      fabIssues.push(
+        `${variant}: ${disabled.effects.length} effects, ${idle.effects.length} enabled`,
+      );
+  }
+  ok(
+    fabIssues.length === 0,
+    `FloatingActionButton: every variant's Disabled from the pair, its icon in the foreground, its shadow kept (${fabIssues.slice(0, 6).join("; ")})`,
+  );
+
+  // MapControlButton: disabled, its surface is its fill, so it nests a filled
+  // Button's Disabled, the pair's fill under its foreground and no edge, on
+  // or off (React's .kozmos-map-control:disabled).
+  const mapIssues = [];
+  for (const presentation of plugin.MAP_CONTROL_BUTTON_PRESENTATIONS) {
+    const nested = plugin.mapControlButtonNestedVariant(
+      presentation,
+      "Disabled",
+    );
+    const config = plugin.buttonConfig(nested.Variant, nested.State);
+    if (
+      nested.State !== "Disabled" ||
+      config.background !== FILL ||
+      config.foreground !== INK ||
+      config.stroke
+    )
+      mapIssues.push(
+        `${presentation}: Button ${nested.Variant} ${nested.State} (${config.background}, ${config.foreground}, ${config.stroke || "no edge"})`,
+      );
+  }
+  ok(
+    mapIssues.length === 0,
+    `MapControlButton, Disabled: a filled Button's Disabled, the pair's fill and foreground, no edge (${mapIssues.join("; ")})`,
+  );
+}
+
+// --- Decision 192: Tooltip's Tone ----------------------------------------------
+
+// Decision 192 (GAP-210, 17 Nov 2026): TooltipContent's tone="inverse", a dark
+// tip on a light page and a light one on a dark page, Pointr Cloud's tooltip.
+// Tooltip gains Tone, Default and Inverse. Default is the Tooltip as it was,
+// drawn by the painter before the axis to the last node; Inverse is the same
+// size, its body, edge and arrow Inverse/surface and its words
+// Inverse/onSurface. The four variants in the file are named Side=X: Update
+// renames each Tone=Default in place, keeping the node ids Code Connect pins,
+// and adds the four Inverse.
+section("Decision 192: Tooltip's Tone, Default and Inverse");
+{
+  const SURFACE = "Inverse/surface";
+  const ON_SURFACE = "Inverse/onSurface";
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const context = plugin.createVariableContext(
+    tokens.collections,
+    tokens.variables,
+  );
+  const toHex = (color) =>
+    color
+      ? `#${[color.r, color.g, color.b]
+          .map((channel) =>
+            Math.round(channel * 255)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase(),
+          )
+          .join("")}`
+      : null;
+  const reads = (paint) =>
+    paint
+      ? `${boundVariableName(paint)} ${toHex(plugin.solidPaintToRgba(paint, context, "Light"))}/${toHex(plugin.solidPaintToRgba(paint, context, "Dark"))}`
+      : "no paint";
+  ok(
+    tokens.variableByName.has(SURFACE) && tokens.variableByName.has(ON_SURFACE),
+    `the payload carries Inverse/surface and Inverse/onSurface for Import Foundations`,
+  );
+
+  const tones = plugin.TOOLTIP_TONES || [];
+  const axes = plugin.expectedVariantAxesForComponentSetName("Tooltip") || {};
+  ok(
+    JSON.stringify(tones) === JSON.stringify(["Default", "Inverse"]) &&
+      JSON.stringify(axes.Side) === JSON.stringify(plugin.TOOLTIP_SIDES) &&
+      JSON.stringify(axes.Tone) === JSON.stringify(tones),
+    `the set declares Side and Tone, Default first (${Object.keys(axes).join(", ")}: ${tones.join(", ")})`,
+  );
+  const parsed = [
+    "Side=Top",
+    "Side=Left, Tone=Inverse",
+    "Side=Left, Tone=Loud",
+  ].map((name) => plugin.parseTooltipVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { value: "Top", second: "Default" },
+        { value: "Left", second: "Inverse" },
+        null,
+      ]),
+    `a variant from before the axis parses as Default, an unknown tone as none (${JSON.stringify(parsed)})`,
+  );
+
+  // Default, against the painter before the axis: every node, every field.
+  const OLD_COMMIT = "5930da6c09ce20f186772e9778080c6f49d4413c";
+  const shown = spawnSync(
+    "git",
+    ["show", `${OLD_COMMIT}:figma/foundations-importer/code.js`],
+    { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  );
+  ok(
+    shown.status === 0,
+    `the painter before Tone is read from ${OLD_COMMIT.slice(0, 9)} (${(shown.stderr || "").trim().split("\n")[0] || "ok"})`,
+  );
+  const paintWords = (paint) =>
+    paint
+      ? `${paint.type} ${boundVariableName(paint)} ${hexOf(paint)} ${paint.opacity ?? 1} ${paint.visible !== false}`
+      : "";
+  const describe = (node, root = node) =>
+    [
+      node === root ? "(root)" : node.name,
+      node.type,
+      node.x,
+      node.y,
+      node.width,
+      node.height,
+      node.opacity,
+      node.visible,
+      node.cornerRadius,
+      node.strokeWeight,
+      node.paddingLeft,
+      node.paddingTop,
+      node.itemSpacing,
+      node.layoutPositioning,
+      node.rotation,
+      node.characters,
+      node.fontSize,
+      JSON.stringify(node.effects),
+      JSON.stringify(node.constraints),
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(node.boundVariables || {}).map(([key, value]) => [
+            key,
+            value && value.id,
+          ]),
+        ),
+      ),
+      (node.fills || []).map(paintWords).join("+"),
+      (node.strokes || []).map(paintWords).join("+"),
+    ].join("|") +
+    "\n" +
+    node.children.map((child) => describe(child, root)).join("");
+  if (shown.status === 0) {
+    const oldPath = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), "figma-tooltip-before-tone-")),
+      "code.js",
+    );
+    fs.writeFileSync(oldPath, shown.stdout);
+    const before = loadPlugin({ pluginPath: oldPath, figma });
+    const changed = [];
+    for (const side of plugin.TOOLTIP_SIDES) {
+      const old = await before.createTooltipVariant({
+        value: side,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      const now = await plugin.createTooltipVariant({
+        value: side,
+        second: "Default",
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      // And Update over a variant the old painter drew, as the file's are.
+      const kept = await before.createTooltipVariant({
+        value: side,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      await plugin.updateTooltipVariant(kept, {
+        value: side,
+        second: "Default",
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      for (const [label, node] of [
+        ["drawn", now],
+        ["updated", kept],
+      ]) {
+        if (node.name !== `Side=${side}, Tone=Default`)
+          changed.push(`${side} ${label} named ${node.name}`);
+        else if (describe(node) !== describe(old))
+          changed.push(`${side} ${label}`);
+      }
+    }
+    ok(
+      changed.length === 0,
+      `Tone=Default draws every node exactly as the painter before the axis, drawn or updated over the old one, only its name gaining Tone (${changed.join("; ")})`,
+    );
+  }
+
+  const inverseIssues = [];
+  for (const side of plugin.TOOLTIP_SIDES) {
+    const draw = (second) =>
+      plugin.createTooltipVariant({
+        value: side,
+        second,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+    const inverse = await draw("Inverse");
+    const plain = await draw("Default");
+    const words = named(inverse, "Content Text");
+    const tip = named(inverse, "Tip");
+    const tipFill = tip && named(tip, "Tip Fill");
+    const surface = `${SURFACE} #2E3138/#D1CEC7`;
+    const onSurface = `${ON_SURFACE} #FFFFFF/#000000`;
+    const facts = [
+      [inverse.name === `Side=${side}, Tone=Inverse`, `named ${inverse.name}`],
+      [
+        reads(inverse.fills[0]) === surface &&
+          hexOf(inverse.fills[0]) === "#2E3138",
+        `body ${reads(inverse.fills[0])}`,
+      ],
+      [
+        inverse.strokes.length === 0 ||
+          (reads(inverse.strokes[0]) === surface &&
+            inverse.strokeWeight === plain.strokeWeight),
+        `edge ${reads(inverse.strokes[0])} ${inverse.strokeWeight}`,
+      ],
+      [
+        words &&
+          reads(words.fills[0]) === onSurface &&
+          hexOf(words.fills[0]) === "#FFFFFF",
+        `words ${words && reads(words.fills[0])}`,
+      ],
+      [
+        tipFill &&
+          reads(tipFill.fills[0]) === surface &&
+          hexOf(tipFill.fills[0]) === "#2E3138",
+        `arrow ${tipFill && reads(tipFill.fills[0])}`,
+      ],
+      [
+        inverse.width === plain.width &&
+          inverse.height === plain.height &&
+          tip &&
+          tip.x === named(plain, "Tip").x &&
+          tip.y === named(plain, "Tip").y &&
+          inverse.paddingLeft === plain.paddingLeft &&
+          inverse.paddingTop === plain.paddingTop &&
+          inverse.cornerRadius === plain.cornerRadius &&
+          JSON.stringify(inverse.effects) === JSON.stringify(plain.effects),
+        `${inverse.width}x${inverse.height} against ${plain.width}x${plain.height}`,
+      ],
+    ];
+    for (const [fine, words_] of facts)
+      if (!fine) inverseIssues.push(`${side}: ${words_}`);
+  }
+  ok(
+    inverseIssues.length === 0,
+    `Tone=Inverse: body, edge and arrow Inverse/surface (#2E3138 in Light, #D1CEC7 in Dark), words Inverse/onSurface (white, black), the Default's size and shadow (${inverseIssues.slice(0, 6).join("; ")})`,
+  );
+
+  // The four variants in the file, named before the axis.
+  const oldNames = plugin.TOOLTIP_SIDES.map((side) => `Side=${side}`);
+  const replay = await replayUpdate(
+    "Tooltip",
+    oldNames,
+    "updateTooltipComponent",
+  );
+  ok(
+    replay.result.updated === true &&
+      replay.result.componentSetId === replay.setId &&
+      replay.result.variantsUpdated === 4 &&
+      replay.result.variantsCreated === 4 &&
+      replay.liveSet.children.length === 8 &&
+      new Set(replay.names).size === 8,
+    `Update keeps the set and its 4 variants, and adds 4: 8 in all, each named once (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created)`,
+  );
+  ok(
+    replay.kept.every(
+      (variant, i) =>
+        variant && variant.name === `${oldNames[i]}, Tone=Default`,
+    ),
+    `each of the 4 keeps its node id and is renamed Tone=Default (${replay.kept.map((v) => (v ? v.name : "gone")).join("; ")})`,
+  );
+  const overlaps = overlapsIn(replay.liveSet);
+  const corner = topLeftOf(replay.liveSet);
+  ok(
+    overlaps.length === 0 && corner.name === "Side=Top, Tone=Default",
+    `the updated set has no two variants overlapping, and its top-left, Figma's default, is Top at Default (${corner.name}; ${overlaps.slice(0, 2).join("; ")})`,
+  );
+  const describes = (plugin.COMPONENT_DOCS || []).find(
+    (entry) => entry.componentSetName === "Tooltip",
+  );
+  ok(
+    describes &&
+      describes.properties.some((line) =>
+        /^Tone: Default, Inverse/.test(line),
+      ) &&
+      describes.api.some((line) =>
+        /Tone maps to TooltipContent\.tone/.test(line),
+      ),
+    `the Tooltip's documentation names Tone and what it maps to (${describes ? describes.properties.join(" | ") : "no entry"})`,
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------

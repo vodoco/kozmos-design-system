@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T06:30:45.135Z",
+  "generatedAt": "2026-11-17T19:46:00.314Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 745,
-    "variableTokens": 694,
+    "totalTokens": 749,
+    "variableTokens": 698,
     "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 525,
+      "color": 529,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -7783,6 +7783,102 @@
         "dark": {
           "kind": "alias",
           "path": "Primitives/Colors/background/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Disabled/fill",
+      "figmaName": "Disabled/fill",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-disabled-fill",
+      "syntax": {
+        "web": "var(--semantics-disabled-fill)",
+        "ios": "semanticsDisabledFill",
+        "android": "semanticsDisabledFill"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Disabled/foreground",
+      "figmaName": "Disabled/foreground",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-disabled-foreground",
+      "syntax": {
+        "web": "var(--semantics-disabled-foreground)",
+        "ios": "semanticsDisabledForeground",
+        "android": "semanticsDisabledForeground"
+      },
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/400"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/400"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Inverse/surface",
+      "figmaName": "Inverse/surface",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-inverse-surface",
+      "syntax": {
+        "web": "var(--semantics-inverse-surface)",
+        "ios": "semanticsInverseSurface",
+        "android": "semanticsInverseSurface"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Inverse/onSurface",
+      "figmaName": "Inverse/onSurface",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-inverse-on-surface",
+      "syntax": {
+        "web": "var(--semantics-inverse-on-surface)",
+        "ios": "semanticsInverseOnsurface",
+        "android": "semanticsInverseOnsurface"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/0"
         }
       }
     },
