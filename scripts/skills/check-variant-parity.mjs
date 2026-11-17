@@ -116,6 +116,10 @@ const INTENTIONAL = {
     figma:
       "Modelled as the row sets' Disclosure Start (on) and Disclosure End (off) booleans (GAP-277): a boolean can show a layer but not hide another, so a designer turns one off and the other on. A variant axis would double TreeItem's 216 variants for a layer's visibility.",
   },
+  "Tree.rowFill": {
+    figma:
+      "How the selected and hover fills are shaped (GAP-217, decision 196): an inset pill, or a band with no corners across the panel and its bleed. It is the row's own fill and radius, not a layer a boolean can show, and a variant axis would double TreeItem's 216 variants; a designer draws a band by setting a Selected row's radius to 0 and its width to the panel's. The SwiftUI and Compose gap stays in the report: Compose already draws its selected row as a band, SwiftUI as the inset pill.",
+  },
   "ThemeProvider.theme": {
     figma:
       "A React context provider, not a drawn component. Figma expresses the theme as a variable mode on the whole file, which is why the set is absent rather than missing an axis.",
