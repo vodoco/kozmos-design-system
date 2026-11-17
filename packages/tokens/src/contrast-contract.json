@@ -599,6 +599,11 @@
         "name": "Compose: a disabled IconButton's ink is the disabled foreground (decision 197)",
         "file": "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.kt",
         "contains": "val disabledInk = KozmosThemeTokens.semanticsDisabledForeground"
+      },
+      {
+        "name": "a disabled MapEditToolbar action, whose ink is already the disabled foreground, takes the disabled fill under it (decision 197)",
+        "file": "packages/styles/src/dashboard/map-edit-toolbar.css",
+        "contains": ".kozmos-map-edit-toolbar-item:where(:not([aria-pressed=\"true\"])):disabled { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); }"
       }
     ],
     "forbids": [
