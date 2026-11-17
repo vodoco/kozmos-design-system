@@ -2279,6 +2279,58 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var semanticsDisabledFill: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#17191C") : UIColor(hex: "#E3E4E8")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#17191C") : NSColor(hex: "#E3E4E8")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var semanticsDisabledForeground: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#a29d90") : UIColor(hex: "#5D626F")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#a29d90") : NSColor(hex: "#5D626F")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var semanticsInverseSurface: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#d1cec7") : UIColor(hex: "#2E3138")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#d1cec7") : NSColor(hex: "#2E3138")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var semanticsInverseOnsurface: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#000000") : UIColor(hex: "#FFFFFF")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#000000") : NSColor(hex: "#FFFFFF")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var semanticsDiffNew: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in

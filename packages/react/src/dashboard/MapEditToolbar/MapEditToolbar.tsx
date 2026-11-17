@@ -31,7 +31,8 @@ interface MapEditToolbarControl {
   icon: KozmosIconComponent;
   /**
    * Unavailable now. As every Kozmos button, a disabled item is skipped by
-   * the keyboard and the pointer, and drawn at half strength.
+   * the keyboard and the pointer, and drawn from the disabled pair: the
+   * disabled fill under the disabled foreground (decision 197).
    */
   disabled?: boolean;
   /**

@@ -353,6 +353,24 @@ for (const use of contract.hoverFillUses ?? []) {
       `${use.name}: ${use.file} no longer holds ${JSON.stringify(use.contains)}`,
     );
 }
+// Decision 197 (GAP-218): a disabled Button, and every part built on it, is
+// drawn from the disabled pair, not at half opacity. Each source must hold
+// the rule that draws it from the pair, on React, SwiftUI and Compose, and
+// none may keep the half-opacity look it replaced.
+for (const use of contract.disabledButtonLook?.uses ?? []) {
+  checked += 1;
+  if (!sourceHolds(use.file, use.contains))
+    failures.push(
+      `${use.name}: ${use.file} no longer holds ${JSON.stringify(use.contains)}`,
+    );
+}
+for (const forbid of contract.disabledButtonLook?.forbids ?? []) {
+  checked += 1;
+  if (sourceHolds(forbid.file, forbid.contains))
+    failures.push(
+      `${forbid.name}: ${forbid.file} still holds ${JSON.stringify(forbid.contains)}`,
+    );
+}
 // No hover or press falls back to the muted step (GAP-228, decision 173): a
 // class such as hover:bg-muted, hover:bg-muted/50 or active:bg-muted, or the
 // background/50 or /100 primitive behind a hover variant, anywhere in React's

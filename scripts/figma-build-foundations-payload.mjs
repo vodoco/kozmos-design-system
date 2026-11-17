@@ -257,6 +257,16 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The subtle Button's words are its marks too (GAP-200): its icon's
   // stroke and its loading ring.
   ["Components/Subtle Buttons/themed/button/foreground/content/idle", MARK],
+  // A disabled Button's foreground (decision 197) is its label, its icon's
+  // stroke and fill, its loading ring, an outline's edge and a SplitButton's
+  // seam; and a disabled IconButton's counter pill (a frame), whose digits
+  // are the fill.
+  ["Semantics/Disabled/foreground", ["FRAME_FILL", ...MARK]],
+  ["Semantics/Disabled/fill", ["TEXT_FILL"]],
+  // The inverse tooltip (decision 192): its edge is its surface, and its
+  // on-surface is its words.
+  ["Semantics/Inverse/surface", ["STROKE_COLOR"]],
+  ["Semantics/Inverse/onSurface", ["TEXT_FILL"]],
 ]);
 
 // The category tokens, all eight categories alike: an accent is the icon's

@@ -98,3 +98,92 @@ fun AddToLibrary(add: () -> Unit) {
 }
 `}
 />
+
+## Inverse tone
+
+`tone="inverse"` on TooltipContent draws the dark tooltip of Pointr Cloud's info icons and its
+guidance over the map (decision 192, GAP-210): the inverse surface, `Semantics.Inverse`, under its
+words, and the arrow in the surface's colour. In light it is foreground/200, #2E3138, under white,
+13.0:1, exactly Cloud's tooltip; in dark it turns over, #D1CEC7 under black, 13.4:1. The roles
+follow a client's theme. It is the same size as the default, whose border it keeps in the
+surface's colour. The default tone is unchanged: the popover surface with its border.
+
+<PlatformSnippets
+    react={`
+import {
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@kozmos-ds/react";
+export function Example() {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="outline">Adjust</Button>
+        </TooltipTrigger>
+        <TooltipContent tone="inverse">
+          Keep holding Shift for multi-selection
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosButton } from "@kozmos-ds/vue"
+// @kozmos-ds/vue cannot attach a tooltip yet, in either tone: it has no TooltipProvider, TooltipTrigger or TooltipContent.
+</script>
+
+<template>
+  <KozmosButton variant="outline">Adjust</KozmosButton>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// tone: .inverse draws the dark bubble, Semantics.Inverse: dark on a light
+// page and light on a dark one, the same size as the default bubble.
+struct SelectionHint: View {
+    let adjust: () -> Void
+
+    var body: some View {
+        KozmosButton("Adjust", variant: .outline, action: adjust)
+            .kozmosTooltip("Keep holding Shift for multi-selection", tone: .inverse)
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonVariant
+import com.kozmos.components.tooltip.KozmosTooltip
+import com.kozmos.components.tooltip.KozmosTooltipTone
+
+// The inverse tone is the dark tooltip: the inverse surface under the
+// inverse on-surface's words, in both themes, the same size as the default.
+@Composable
+fun ShiftToMultiSelect(adjust: () -> Unit) {
+    val interactions = remember { MutableInteractionSource() }
+    val pressed by interactions.collectIsPressedAsState()
+    KozmosTooltip(
+        tooltip = "Keep holding Shift for multi-selection",
+        visible = pressed,
+        tone = KozmosTooltipTone.Inverse
+    ) {
+        KozmosButton(onClick = adjust, variant = KozmosButtonVariant.Outline, interactionSource = interactions) {
+            Text("Adjust")
+        }
+    }
+}
+`}
+/>

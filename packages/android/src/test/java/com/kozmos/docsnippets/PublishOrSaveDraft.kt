@@ -8,8 +8,9 @@ import com.kozmos.components.splitbutton.KozmosSplitButton
 import com.kozmos.components.splitbutton.SplitContextMenuItem
 
 // The label is a String, and each menu item a SplitContextMenuItem: its
-// label and what it does. There is no disabled state, and TalkBack names the
-// menu half menuLabel, "More options" unless you pass your own.
+// label and what it does. enabled = false disables both halves, drawn from
+// the disabled pair (decision 197), and TalkBack names the menu half
+// menuLabel, "More options" unless you pass your own.
 @Composable
 fun PublishOrSaveDraft(publish: () -> Unit, saveDraft: () -> Unit) {
     KozmosSplitButton(

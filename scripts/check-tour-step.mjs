@@ -403,6 +403,10 @@ const measure = (page) =>
       classes: button.className,
       disabled: button.disabled,
       opacity: getComputedStyle(button).opacity,
+      background: getComputedStyle(button).backgroundColor,
+      color: getComputedStyle(button).color,
+      disabledFill: token("--semantics-disabled-fill"),
+      disabledInk: token("--semantics-disabled-foreground"),
       ...box(button),
     }));
     const close = q(".kozmos-tour-step-close");
@@ -1340,7 +1344,13 @@ await scenario(
     const m = await measure(page);
     const next = m.buttons.find((button) => button.label === "Next");
     assert.equal(next.disabled, true, "Next is there, disabled");
-    assert.equal(next.opacity, "0.5", "drawn at 50%");
+    // Decision 197 (GAP-218, the reason for it): the disabled pair at
+    // full strength, its label 4.80:1 on its fill, no longer at 50%.
+    assert.deepEqual(
+      [next.opacity, next.background, next.color],
+      ["1", next.disabledFill, next.disabledInk],
+      "Next is drawn from the disabled pair at full strength",
+    );
     assert.equal(
       await page.evaluate(
         () => document.activeElement === document.getElementById("step"),

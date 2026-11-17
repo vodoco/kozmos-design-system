@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 750,
-      "dark": 750
+      "light": 754,
+      "dark": 754
     },
     "light": [
       {
@@ -3332,6 +3332,54 @@
         "name": "Semantics/Hover/fill",
         "type": "color",
         "value": "{Primitives.Colors.background.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Disabled/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.background.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Disabled/foreground",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/surface",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/onSurface",
+        "type": "color",
+        "value": "{Primitives.Colors.background.0}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11214,6 +11262,54 @@
         "name": "Semantics/Hover/fill",
         "type": "color",
         "value": "{Primitives.Colors.background.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Disabled/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.background.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Disabled/foreground",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/surface",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/onSurface",
+        "type": "color",
+        "value": "{Primitives.Colors.background.0}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -20869,7 +20965,8 @@
           "side",
           "sideOffset",
           "tabIndex",
-          "title"
+          "title",
+          "tone"
         ],
         "variants": {}
       },

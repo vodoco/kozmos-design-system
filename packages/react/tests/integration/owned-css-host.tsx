@@ -51,6 +51,10 @@ import {
   AccordionTrigger,
   AccordionContent,
   Backdrop,
+  IconButton,
+  FloatingActionButton,
+  SplitButton,
+  AISearchButton,
 } from "@kozmos-ds/react";
 import type {
   POIPresentation,
@@ -409,6 +413,204 @@ function StateLooks({ id }: { id: string }) {
         </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+// Decision 197 (GAP-218): every disabled Button, and each part that takes
+// its props, drawn from the disabled pair; and decision 192 (GAP-210): the
+// tooltip's inverse tone beside the default. The tooltips open only while the
+// check holds them open, so they cover nothing another section hovers.
+function DisabledLooks({ id }: { id: string }) {
+  const [tipsOpen, setTipsOpen] = useState(false);
+  const mark = <span aria-hidden="true">+</span>;
+  return (
+    <div data-testid={`${id}-disabled-looks`}>
+      {(
+        [
+          "default",
+          "destructive",
+          "outline",
+          "secondary",
+          "ghost",
+          "link",
+          "glass",
+          "subtle",
+        ] as const
+      ).map((variant) => (
+        <Button
+          key={variant}
+          data-testid={`${id}-disabled-${variant}`}
+          variant={variant}
+          disabled
+        >
+          {variant}
+        </Button>
+      ))}
+      <Button
+        data-testid={`${id}-disabled-emotion-filled`}
+        emotion="success"
+        disabled
+      >
+        Filled success
+      </Button>
+      <Button
+        data-testid={`${id}-disabled-emotion-outline`}
+        variant="outline"
+        emotion="danger"
+        disabled
+      >
+        Outline danger
+      </Button>
+      <Button
+        data-testid={`${id}-disabled-emotion-text`}
+        variant="ghost"
+        emotion="danger"
+        disabled
+      >
+        Ghost danger
+      </Button>
+      <Button
+        data-testid={`${id}-disabled-emotion-subtle`}
+        variant="subtle"
+        emotion="danger"
+        disabled
+      >
+        Subtle danger
+      </Button>
+      <Button data-testid={`${id}-loading-default`} isLoading>
+        Loading
+      </Button>
+      <Button data-testid={`${id}-loading-outline`} variant="outline" isLoading>
+        Loading outline
+      </Button>
+      <Button data-testid={`${id}-disabled-loading`} isLoading disabled>
+        Disabled and loading
+      </Button>
+      <Button data-testid={`${id}-disabled-aria-default`} aria-disabled="true">
+        Unavailable
+      </Button>
+      <Button
+        data-testid={`${id}-disabled-aria-outline`}
+        variant="outline"
+        aria-disabled="true"
+      >
+        Unavailable outline
+      </Button>
+      <Button
+        data-testid={`${id}-disabled-aria-ghost`}
+        variant="ghost"
+        aria-disabled="true"
+      >
+        Unavailable ghost
+      </Button>
+      <IconButton
+        data-testid={`${id}-disabled-icon-counter`}
+        label="Messages"
+        variant="default"
+        counter={3}
+        disabled
+      >
+        {mark}
+      </IconButton>
+      <AISearchButton
+        data-testid={`${id}-disabled-ai-search`}
+        label="Assistant, disabled"
+        disabled
+      />
+      <IconButton
+        data-testid={`${id}-disabled-icon-button`}
+        label="Add"
+        variant="default"
+        disabled
+      >
+        {mark}
+      </IconButton>
+      <IconButton
+        data-testid={`${id}-disabled-icon-button-ghost`}
+        label="Add, ghost"
+        disabled
+      >
+        {mark}
+      </IconButton>
+      <IconButton
+        data-testid={`${id}-disabled-icon-button-outline`}
+        label="Add, outline"
+        variant="outline"
+        disabled
+      >
+        {mark}
+      </IconButton>
+      <FloatingActionButton
+        data-testid={`${id}-disabled-fab`}
+        aria-label="Create"
+        disabled
+      />
+      <SplitButton
+        data-testid={`${id}-disabled-split`}
+        disabled
+        menuItems={[{ label: "Draft", onClick: () => {} }]}
+      >
+        Publish
+      </SplitButton>
+      <MapControlButton
+        data-testid={`${id}-disabled-map-control-off`}
+        icon={mark}
+        label="Locate"
+        pressed={false}
+        disabled
+      />
+      <MapControlButton
+        data-testid={`${id}-disabled-map-control-on`}
+        icon={mark}
+        label="Locate"
+        pressed
+        disabled
+      />
+      <MapControlButton
+        data-testid={`${id}-disabled-map-control-aria`}
+        icon={mark}
+        label="Locate"
+        pressed={false}
+        aria-disabled="true"
+      />
+      <MapControlButton
+        data-testid={`${id}-disabled-map-control-filled`}
+        icon={mark}
+        label="Locate"
+        pressed
+        emphasis="filled"
+        disabled
+      />
+      <button
+        type="button"
+        data-testid={`${id}-tone-tips-toggle`}
+        onClick={() => setTipsOpen(!tipsOpen)}
+      >
+        Tips
+      </button>
+      <TooltipProvider delayDuration={0}>
+        <Tooltip open={tipsOpen}>
+          <TooltipTrigger data-testid={`${id}-tone-tip-default-trigger`}>
+            D
+          </TooltipTrigger>
+          <TooltipContent data-testid={`${id}-tone-tip-default`} side="bottom">
+            Default
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip open={tipsOpen}>
+          <TooltipTrigger data-testid={`${id}-tone-tip-inverse-trigger`}>
+            I
+          </TooltipTrigger>
+          <TooltipContent
+            data-testid={`${id}-tone-tip-inverse`}
+            side="bottom"
+            tone="inverse"
+          >
+            Inverse
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
   );
 }
 
@@ -789,6 +991,7 @@ function Controls({ id }: { id: string }) {
           },
         }}
       />
+      <DisabledLooks id={id} />
     </section>
   );
 }

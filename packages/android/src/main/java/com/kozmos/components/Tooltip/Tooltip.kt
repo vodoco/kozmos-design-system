@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalDensity
@@ -54,12 +56,53 @@ internal fun KozmosTooltipSide.physical(direction: LayoutDirection): KozmosToolt
     else -> this
 }
 
+/**
+ * How a tooltip reads (decision 192, GAP-210). Mirrors React's
+ * `TooltipContent` `tone`.
+ *
+ * [Default] is the page's surface, background/0, with a background/200 edge
+ * and foreground/0 words. [Inverse] is Pointr Cloud's dark info and guidance
+ * tooltip: the bubble and its tip the inverse surface (foreground/200) and
+ * the words the inverse on-surface (background/0), with its edge in the
+ * surface's own colour, so it is the same size. Both turn over in the dark.
+ */
+enum class KozmosTooltipTone {
+    Default,
+    Inverse
+}
+
+/** The bubble's colours for a tone: its surface and tip, its edge, its words. */
+private data class TooltipColors(val surface: Color, val edge: Color, val words: Color)
+
+@Composable
+@ReadOnlyComposable
+private fun KozmosTooltipTone.colors(): TooltipColors = when (this) {
+    KozmosTooltipTone.Default -> TooltipColors(
+        surface = KozmosThemeTokens.primitivesColorsBackground0,
+        edge = KozmosThemeTokens.primitivesColorsBackground200,
+        words = KozmosThemeTokens.primitivesColorsForeground0
+    )
+    KozmosTooltipTone.Inverse -> TooltipColors(
+        surface = KozmosThemeTokens.semanticsInverseSurface,
+        edge = KozmosThemeTokens.semanticsInverseSurface,
+        words = KozmosThemeTokens.semanticsInverseOnsurface
+    )
+}
+
+/**
+ * A short label over [content], shown while [visible], on [side] of it.
+ *
+ * @param tone [KozmosTooltipTone.Default], the page's surface, or
+ * [KozmosTooltipTone.Inverse], the dark tooltip (decision 192). After
+ * [visible], so a trailing [content] lambda still compiles.
+ */
 @Composable
 fun KozmosTooltip(
     tooltip: String,
     modifier: Modifier = Modifier,
     side: KozmosTooltipSide = KozmosTooltipSide.Top,
     visible: Boolean = false,
+    tone: KozmosTooltipTone = KozmosTooltipTone.Default,
     content: @Composable () -> Unit
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -71,7 +114,7 @@ fun KozmosTooltip(
             Popup(
                 popupPositionProvider = TooltipPositionProvider(side, offsetPx)
             ) {
-                TooltipBubble(text = tooltip, side = side)
+                TooltipBubble(text = tooltip, side = side, tone = tone)
             }
         }
     }
@@ -81,20 +124,22 @@ fun KozmosTooltip(
 internal fun TooltipBubble(
     text: String,
     side: KozmosTooltipSide,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tone: KozmosTooltipTone = KozmosTooltipTone.Default
 ) {
     val physical = side.physical(LocalLayoutDirection.current)
+    val colors = tone.colors()
     when (physical) {
         KozmosTooltipSide.Top -> {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-                TooltipSurface(text)
-                TooltipTip(physical)
+                TooltipSurface(text, colors)
+                TooltipTip(physical, colors.surface)
             }
         }
         KozmosTooltipSide.Bottom -> {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-                TooltipTip(physical)
-                TooltipSurface(text)
+                TooltipTip(physical, colors.surface)
+                TooltipSurface(text, colors)
             }
         }
         // A side tooltip sits on its trigger's physical side, and its tip,
@@ -104,30 +149,30 @@ internal fun TooltipBubble(
         // into the bubble. The text inside still reads right to left.
         KozmosTooltipSide.Right -> {
             Row(modifier = modifier, horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
-                TooltipTip(physical)
-                TooltipSurface(text)
+                TooltipTip(physical, colors.surface)
+                TooltipSurface(text, colors)
             }
         }
         // Left; Leading and Trailing are resolved to Left or Right above.
         else -> {
             Row(modifier = modifier, horizontalArrangement = Arrangement.Absolute.Left, verticalAlignment = Alignment.CenterVertically) {
-                TooltipSurface(text)
-                TooltipTip(physical)
+                TooltipSurface(text, colors)
+                TooltipTip(physical, colors.surface)
             }
         }
     }
 }
 
 @Composable
-private fun TooltipSurface(text: String) {
+private fun TooltipSurface(text: String, colors: TooltipColors) {
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
     Text(
         text = text,
-        color = KozmosThemeTokens.primitivesColorsForeground0,
+        color = colors.words,
         modifier = Modifier
             .shadow(elevation = KozmosShadows.semanticsElevationOverlay, shape = shape)
-            .background(KozmosThemeTokens.primitivesColorsBackground0, shape)
-            .border(1.dp, KozmosThemeTokens.primitivesColorsBackground200, shape)
+            .background(colors.surface, shape)
+            .border(1.dp, colors.edge, shape)
             .padding(
                 horizontal = KozmosDimensions.primitivesLayoutSpacing150,
                 vertical = KozmosDimensions.primitivesLayoutSpacing75
@@ -136,8 +181,7 @@ private fun TooltipSurface(text: String) {
 }
 
 @Composable
-private fun TooltipTip(side: KozmosTooltipSide) {
-    val color = KozmosThemeTokens.primitivesColorsBackground0
+private fun TooltipTip(side: KozmosTooltipSide, color: Color) {
     // Above its bubble, as React's arrow is drawn above the content's shadow:
     // where the tip came before the bubble (Right, Bottom), the bubble's
     // shadow fell over it, greying it (#E0E0E0 on a #FFFFFF bubble).

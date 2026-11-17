@@ -49,7 +49,10 @@ public struct KozmosButton: View {
     let leadingIconName: String?
     let action: () -> Void
     @Environment(\.kozmosButtonFillsCell) private var fillsCell
-    
+    /// False under a `.disabled` set round the button, as SwiftUI disables
+    /// any control: drawn as `isDisabled` is.
+    @Environment(\.isEnabled) private var isEnabled
+
     /// A labelled action. `leadingIconName` is a decorative KozmosIcon name; loading
     /// replaces it with the spinner. Existing label-only calls are unchanged.
     public init(
@@ -118,8 +121,10 @@ public struct KozmosButton: View {
             }
         }
         .disabled(isDisabled || isLoading)
-        // Loading, it is disabled, and drawn at half as a disabled part is.
-        .opacity(isDisabled || isLoading ? 0.5 : 1)
+        // Disabled, it is drawn from the disabled pair (decision 197), not at
+        // half: no opacity, here or in the style, which dims nothing.
+        // Loading, it takes no touch but keeps its variant's look: it is
+        // busy, not unavailable.
         .kozmosFillButtonStyle(fillEmotion, hoverShape: RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
     }
 
@@ -192,7 +197,23 @@ public struct KozmosButton: View {
         }
     }
     
+    /// Disabled, or disabled from outside: drawn from the disabled pair,
+    /// Semantics.Disabled (decision 197, GAP-218), as React's and Compose's
+    /// are. At half, a white label on the theme fill read 2.24:1 on a white
+    /// card. Loading alone is busy, not unavailable: the button takes no
+    /// touch but keeps its variant's fill, edge and words, the spinner in
+    /// the words' colour. Disabled and loading, it draws the pair.
+    var drawsDisabled: Bool { isDisabled || !isEnabled }
+
     private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        // A filled variant, an emotion's fill included, takes the pair's
+        // fill, and so does ghost, so it never reads as an enabled grey
+        // ghost. Outline keeps the page under it; link gains no fill (its
+        // enabled words are the theme's, so grey already differs); glass
+        // keeps the glass, which is its surface, not this fill.
+        if drawsDisabled {
+            return fillEmotion != nil || variant == .ghost ? KozmosColors.semanticsDisabledFill : backgroundColor
+        }
         guard let fillEmotion else { return backgroundColor }
         if variant == .subtle {
             return KozmosFillStates.subtleBackground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
@@ -205,6 +226,8 @@ public struct KozmosButton: View {
     /// and white in dark, as React and Compose do (decision 61; Olcay,
     /// 2026-10-08). It drew foreground/100, #17191C and #E8E6E3.
     private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        // Every variant and emotion: the words, the icon and the spinner.
+        if drawsDisabled { return KozmosColors.semanticsDisabledForeground }
         guard let fillEmotion else { return foregroundColor }
         if variant == .subtle {
             return KozmosFillStates.subtleForeground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
@@ -250,6 +273,8 @@ public struct KozmosButton: View {
     }
     
     private var borderColor: Color {
+        // The outline's edge takes the foreground too, so the shape stays.
+        if drawsDisabled, variant == .outline { return KozmosColors.semanticsDisabledForeground }
         if let emotion, let tier, variant == .outline {
             return Self.emotionForeground(tier, emotion)
         }

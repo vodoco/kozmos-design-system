@@ -266,11 +266,25 @@ const STATE_READS = [
   ["button-subtle", "", "focus", "color", "subtle-hover-ink"],
   ["link-subtle", "", "hover", "backgroundColor", "subtle-hover"],
   ["link-subtle", "", "hover", "color", "subtle-hover-ink"],
-  // An unavailable subtle Button keeps its rest fill and words.
-  ["button-subtle-unavailable", "", "hover", "backgroundColor", "tint"],
-  ["button-subtle-unavailable", "", "hover", "color", "600"],
-  ["button-subtle-unavailable", "", "pressed", "backgroundColor", "tint"],
-  ["button-subtle-unavailable", "", "pressed", "color", "600"],
+  // An unavailable (aria-disabled) subtle Button is the disabled pair,
+  // under the pointer and pressed too (decision 197, the owner's ruling of
+  // 17 Nov); it kept its rest fill and words.
+  [
+    "button-subtle-unavailable",
+    "",
+    "hover",
+    "backgroundColor",
+    "disabled-fill",
+  ],
+  ["button-subtle-unavailable", "", "hover", "color", "disabled-ink"],
+  [
+    "button-subtle-unavailable",
+    "",
+    "pressed",
+    "backgroundColor",
+    "disabled-fill",
+  ],
+  ["button-subtle-unavailable", "", "pressed", "color", "disabled-ink"],
   // Hovered fills: the hover token, opaque, in both themes.
   ["chip", '[data-slot="chip"]', "hover", "backgroundColor", "hover"],
   ["tag", "", "hover", "backgroundColor", "hover"],
@@ -291,11 +305,24 @@ const STATE_READS = [
     "backgroundColor",
     "lift-danger",
   ],
-  // An unavailable filled Button keeps its rest colour.
-  ["button-unavailable", "", "hover", "backgroundColor", "fill"],
-  ["button-unavailable", "", "pressed", "backgroundColor", "fill"],
-  ["button-secondary-unavailable", "", "hover", "backgroundColor", "neutral"],
-  ["button-secondary-unavailable", "", "pressed", "backgroundColor", "neutral"],
+  // An unavailable filled Button is the disabled pair, under the pointer
+  // and pressed too (decision 197, the owner's ruling of 17 Nov).
+  ["button-unavailable", "", "hover", "backgroundColor", "disabled-fill"],
+  ["button-unavailable", "", "pressed", "backgroundColor", "disabled-fill"],
+  [
+    "button-secondary-unavailable",
+    "",
+    "hover",
+    "backgroundColor",
+    "disabled-fill",
+  ],
+  [
+    "button-secondary-unavailable",
+    "",
+    "pressed",
+    "backgroundColor",
+    "disabled-fill",
+  ],
 ];
 
 // Radix's menu trigger opens its menu on pointerdown and prevents that
@@ -344,6 +371,11 @@ function expected(kind, theme) {
   if (kind === "subtle-pressed-ink") return THEME_800[theme];
   if (kind === "danger-tint") return DANGER_0[theme];
   if (kind === "danger-text") return DANGER_700[theme];
+  // Semantics.Disabled (decision 197): background/100 under foreground/400.
+  if (kind === "disabled-fill")
+    return theme === "dark" ? [23, 25, 28] : [227, 228, 232];
+  if (kind === "disabled-ink")
+    return theme === "dark" ? [162, 157, 144] : [93, 98, 111];
   throw new Error(`unknown expectation ${kind}`);
 }
 
@@ -372,6 +404,8 @@ const NAMES = {
   "subtle-pressed-ink": "subtle Button's pressed words, theme 800",
   "danger-tint": "destructive subtle Button's fill, danger 0",
   "danger-text": "destructive subtle Button's words, danger 700",
+  "disabled-fill": "disabled fill, background/100 (decision 197)",
+  "disabled-ink": "disabled foreground, foreground/400 (decision 197)",
 };
 
 /** The WCAG contrast ratio of two opaque sRGB colours, 0–255 channels. */

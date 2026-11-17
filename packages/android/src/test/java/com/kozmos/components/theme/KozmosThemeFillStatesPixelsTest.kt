@@ -50,9 +50,13 @@ import org.junit.Test
  *   focus token, #1051E8, in both themes. Material's white ripple lightened
  *   #135BEC to about #2F6FEE instead, so a press drew a paler blue than the
  *   tokens' darker one;
- * - disabled or loading, a filled control keeps its fill and its foreground,
- *   the whole control at half strength, as React draws `disabled:opacity-50`.
- *   Material drew its own grey.
+ * - disabled, a checked Checkbox or Switch keeps its fill and its
+ *   foreground, the whole control at half strength, as React draws
+ *   `disabled:opacity-50`. Material drew its own grey;
+ * - disabled, a filled Button or IconButton is the disabled pair, the
+ *   disabled fill under the disabled foreground (decision 197, GAP-218), as
+ *   React draws it; loading, busy rather than unavailable, it keeps its fill
+ *   at full strength. Both were the fill at half until then.
  *
  * The control's interaction source is held from the moment it is watched, as
  * a finger resting on it or focus resting in it. The colours are written out:
@@ -180,15 +184,21 @@ class KozmosThemeFillStatesPixelsTest {
     @Test fun aPressedMapControlButtonIsThePressedTokenInTheDark() = pressed(dark = true, index = 3)
 
     /** Disabled or waiting, each filled control as it is drawn. */
-    private val inert: List<Pair<String, @Composable () -> Unit>> = listOf(
+    private val inertButtons: List<Pair<String, @Composable () -> Unit>> = listOf(
         "a disabled Button" to { KozmosButton(onClick = {}, enabled = false) { Text("Go") } },
-        "a loading Button" to { KozmosButton(onClick = {}, isLoading = true) { Text("Go") } },
         "a disabled default IconButton" to {
             KozmosIconButton(icon = Icons.Default.Add, onClick = {}, contentDescription = "Add", variant = KozmosIconButtonVariant.Default, enabled = false)
         },
+    )
+
+    private val loadingButtons: List<Pair<String, @Composable () -> Unit>> = listOf(
+        "a loading Button" to { KozmosButton(onClick = {}, isLoading = true) { Text("Go") } },
         "a loading default IconButton" to {
             KozmosIconButton(icon = Icons.Default.Add, onClick = {}, contentDescription = "Add", variant = KozmosIconButtonVariant.Default, isLoading = true)
         },
+    )
+
+    private val inert: List<Pair<String, @Composable () -> Unit>> = listOf(
         "a checked disabled Checkbox" to { KozmosCheckbox(checked = true, onCheckedChange = {}, enabled = false) },
         "a checked disabled Switch" to { KozmosSwitch(checked = true, onCheckedChange = {}, enabled = false) },
     )
@@ -199,7 +209,7 @@ class KozmosThemeFillStatesPixelsTest {
      * the mark is not a half-white over a half-blue.
      */
     @Test
-    fun aDisabledOrLoadingFillIsTheFillAtHalf() {
+    fun aDisabledCheckboxOrSwitchFillIsTheFillAtHalf() {
         val fillAtHalf = half(themeFill, grey)
         val markAtHalf = half(0xFFFFFFFF.toInt(), grey)
         val wrong = mutableListOf<String>()
@@ -214,6 +224,59 @@ class KozmosThemeFillStatesPixelsTest {
                 )
                 if (fill < 100) wrong += "${mode(dark)}: $name draws only $fill pixels of the fill at half, ${DrawnPixels.hex(fillAtHalf)}"
                 if (mark < 3) wrong += "${mode(dark)}: $name draws no white mark at half, ${DrawnPixels.hex(markAtHalf)} ($mark pixels)"
+            }
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
+     * Decision 197, round two: loading is busy, not unavailable. A loading
+     * filled Button or IconButton keeps the theme fill at full strength,
+     * neither the disabled fill nor the fill at half.
+     */
+    @Test
+    fun aLoadingFilledButtonKeepsItsFillAtFullStrength() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val disabledFill = if (dark) 0xFF17191C.toInt() else 0xFFE3E4E8.toInt()
+            for ((name, part) in loadingButtons) {
+                val drawn = draw(dark, part)
+                val fill = drawn.count(themeFill, 3)
+                val pair = drawn.count(disabledFill, 3)
+                val fillAtHalf = drawn.count(half(themeFill, grey), 3)
+                println("Decision 197 Android, ${mode(dark)}: $name: $fill pixels of #135BEC, $pair of the disabled fill, $fillAtHalf of the fill at half")
+                if (fill < 100 || (pair + fillAtHalf) * 100 > fill) {
+                    wrong += "${mode(dark)}: $name draws $fill pixels of #135BEC, $pair of the disabled fill and $fillAtHalf of the fill at half"
+                }
+            }
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
+     * Decision 197: a disabled filled Button or IconButton is the
+     * disabled fill, background/100, under the disabled foreground,
+     * foreground/400, in both themes: neither the fill nor its white mark at
+     * half.
+     */
+    @Test
+    fun aDisabledFilledButtonIsTheDisabledPair() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val disabledFill = if (dark) 0xFF17191C.toInt() else 0xFFE3E4E8.toInt()
+            val disabledInk = if (dark) 0xFFA29D90.toInt() else 0xFF5D626F.toInt()
+            for ((name, part) in inertButtons) {
+                val drawn = draw(dark, part)
+                val fill = drawn.count(disabledFill, 3)
+                val mark = drawn.count(disabledInk, 3)
+                val fillAtHalf = drawn.count(half(themeFill, grey), 3)
+                println(
+                    "Decision 197 Android, ${mode(dark)}: $name: $fill pixels of ${DrawnPixels.hex(disabledFill)}, " +
+                        "$mark of ${DrawnPixels.hex(disabledInk)}, $fillAtHalf of the fill at half"
+                )
+                if (fill < 100) wrong += "${mode(dark)}: $name draws only $fill pixels of the disabled fill, ${DrawnPixels.hex(disabledFill)}"
+                if (mark < 3) wrong += "${mode(dark)}: $name draws no disabled foreground, ${DrawnPixels.hex(disabledInk)} ($mark pixels)"
+                if (fillAtHalf * 100 > fill) wrong += "${mode(dark)}: $name still draws $fillAtHalf pixels of the fill at half"
             }
         }
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())

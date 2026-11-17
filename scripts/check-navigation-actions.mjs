@@ -155,6 +155,16 @@ try {
                   clientWidth: child.clientWidth,
                   opacity: getComputedStyle(child).opacity,
                   disabled: child.getAttribute("aria-disabled"),
+                  color: getComputedStyle(child).color,
+                  // The disabled pair's foreground where the action is.
+                  pair: (() => {
+                    const probe = document.createElement("span");
+                    probe.style.color = "var(--semantics-disabled-foreground)";
+                    child.parentElement.append(probe);
+                    const colour = getComputedStyle(probe).color;
+                    probe.remove();
+                    return colour;
+                  })(),
                 };
               }),
             }));
@@ -182,12 +192,16 @@ try {
                 one.scrollWidth <= one.clientWidth + 1,
                 `${where}: a label overflows its button`,
               );
-              // aria-disabled reads unavailable, at the disabled button's 50%.
-              assert.equal(
-                one.opacity,
-                one.disabled === "true" ? "0.5" : "1",
-                `${where}: opacity`,
-              );
+              // aria-disabled reads unavailable from the disabled pair, at
+              // full strength, as a disabled Button does (decision 197, the
+              // owner's ruling of 17 Nov); no longer at half.
+              assert.equal(one.opacity, "1", `${where}: opacity`);
+              if (one.disabled === "true")
+                assert.equal(
+                  one.color,
+                  one.pair,
+                  `${where}: an unavailable step control is not the disabled foreground`,
+                );
             }
             assert.ok(
               Math.abs(first.width - second.width) <= 1,
@@ -228,12 +242,27 @@ try {
               ),
               `${label}: Previous lost focus at the first step`,
             );
+            // Unavailable and focused, it is the disabled pair at full
+            // strength, as a disabled Button (decision 197, the owner's
+            // ruling of 17 Nov); it was drawn at half.
             assert.deepEqual(
-              await previous.evaluate((node) => {
+              await previous.evaluate(async (node) => {
+                await Promise.all(
+                  node.getAnimations().map((animation) => animation.finished),
+                );
                 const style = getComputedStyle(node);
-                return [style.opacity, style.cursor];
+                const probe = document.createElement("span");
+                probe.style.color = "var(--semantics-disabled-foreground)";
+                node.parentElement.append(probe);
+                const pair = getComputedStyle(probe).color;
+                probe.remove();
+                return [
+                  style.opacity,
+                  style.cursor,
+                  style.color === pair ? true : `${style.color} not ${pair}`,
+                ];
               }),
-              ["0.5", "default"],
+              ["1", "default", true],
               `${label}: an aria-disabled action does not read unavailable`,
             );
             await page.keyboard.press("Enter");
