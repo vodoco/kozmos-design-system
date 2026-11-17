@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "8bcabd797d29";
+const PLUGIN_BUILD = "336c54e959a9";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -40165,7 +40165,9 @@ const VARIANT_LAYOUT_GAP = 40;
  * variant taller or wider than its step makes it cover the next one, and
  * nothing said so until `pnpm figma:verify` counted 40 such pairs on
  * 2026-11-17: Slider's variants stood 120 tall in the file, and ColorPicker's
- * open variants 794.
+ * open variants 794. Their height was a layer an Update left behind (see
+ * migratedLayerNamed), but whatever makes a variant outgrow its step, this
+ * keeps it from covering the next.
  *
  * This runs after a set's own layout, wherever a set is built, updated or the
  * page is reorganized, and reads the grid that layout drew: the variants that
@@ -71775,8 +71777,7 @@ async function updateProgressRingVariant(
   );
 
   const ellipse = (name) => {
-    let node =
-      directChildNamed(dial, name) || directChildNamed(component, name);
+    let node = migratedLayerNamed(dial, component, name);
     if (node && node.type !== "ELLIPSE") {
       node.remove();
       node = null;
@@ -71823,8 +71824,7 @@ async function updateProgressRingVariant(
   arc.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-arc");
 
   const text = async (parent, name) => {
-    let node =
-      directChildNamed(parent, name) || directChildNamed(component, name);
+    let node = migratedLayerNamed(parent, component, name);
     if (node && node.type !== "TEXT") {
       node.remove();
       node = null;
@@ -73397,9 +73397,7 @@ async function syncCardVariantChildren({
 
     // A variant drawn before the column holds its texts in the header: they
     // move into it, and keep their node ids.
-    let title =
-      directChildNamed(headerText, "Title Text") ||
-      directChildNamed(header, "Title Text");
+    let title = migratedLayerNamed(headerText, header, "Title Text");
     if (title && title.type !== "TEXT") {
       title.remove();
       title = null;
@@ -73427,9 +73425,11 @@ async function syncCardVariantChildren({
     title.resizeWithoutConstraints(312, 24);
     setTextAutoResize(title, "HEIGHT");
 
-    let description =
-      directChildNamed(headerText, "Description Text") ||
-      directChildNamed(header, "Description Text");
+    let description = migratedLayerNamed(
+      headerText,
+      header,
+      "Description Text",
+    );
     if (description && description.type !== "TEXT") {
       description.remove();
       description = null;
@@ -74584,9 +74584,7 @@ async function syncDialogVariantChildren({
     // layoutGrow is unavailable on older plugin runtimes.
   }
 
-  let title =
-    directChildNamed(headerContent, "Title Text") ||
-    directChildNamed(header, "Title Text");
+  let title = migratedLayerNamed(headerContent, header, "Title Text");
   if (title && title.type !== "TEXT") {
     title.remove();
     title = null;
@@ -74603,9 +74601,11 @@ async function syncDialogVariantChildren({
   title.resizeWithoutConstraints(420, 24);
   setTextAutoResize(title, "HEIGHT");
 
-  let description =
-    directChildNamed(headerContent, "Description Text") ||
-    directChildNamed(header, "Description Text");
+  let description = migratedLayerNamed(
+    headerContent,
+    header,
+    "Description Text",
+  );
   if (description && description.type !== "TEXT") {
     description.remove();
     description = null;
@@ -78176,12 +78176,14 @@ function setControlRowFrame(component, kind) {
 
 // A part of a control's row: in its Label Row now, or, in a variant drawn
 // before GAP-162, a direct child of the component. Found either way, it is
-// moved into the row rather than drawn again, so its node id survives.
+// moved into the row rather than drawn again, so its node id survives; found
+// in both, the one beside the row is the stale copy (migratedLayerNamed).
 function findControlRowPart(component, name) {
-  const direct = directChildNamed(component, name);
-  if (direct) return direct;
-  const row = directChildNamed(component, "Label Row");
-  return row ? directChildNamed(row, name) : null;
+  return migratedLayerNamed(
+    directChildNamed(component, "Label Row"),
+    component,
+    name,
+  );
 }
 
 function ensureControlRowFrame(parent, name) {
@@ -85635,9 +85637,7 @@ async function syncSliderVariantChildren({
   row.clipsContent = false;
   row.setSharedPluginData(RUN_NAMESPACE, "kind", "slider-row");
 
-  let root =
-    directChildNamed(row, "Slider Control") ||
-    directChildNamed(component, "Slider Control");
+  let root = migratedLayerNamed(row, component, "Slider Control");
   if (root && root.type !== "FRAME") {
     root.remove();
     root = null;
@@ -87390,6 +87390,38 @@ function directChildNamed(parent, name) {
   }
 
   return null;
+}
+
+/**
+ * A layer a painter draws in `parent` that an older build drew in
+ * `legacyParent`. Found in either place, it is reused, so its node id
+ * survives a move into the new place.
+ *
+ * Found in both, the one in the new place is kept and the other removed: it is
+ * the copy an older build drew again after a newer one had moved it. On
+ * 2026-11-17 every Slider variant drew two sliders that way: an Update with
+ * the 9-Nov build, which knew no Slider Row, drew a Slider Control beside the
+ * row, and today's Update kept the row's and never looked at the other again.
+ * Only a layer of the same name, type and importer kind is removed, so a
+ * designer's own layer is never touched.
+ */
+function migratedLayerNamed(parent, legacyParent, name) {
+  const current = parent ? directChildNamed(parent, name) : null;
+  const legacy =
+    legacyParent && legacyParent !== parent
+      ? directChildNamed(legacyParent, name)
+      : null;
+  if (current && legacy && legacy !== current) {
+    const kindOf = (node) =>
+      typeof node.getSharedPluginData === "function"
+        ? node.getSharedPluginData(RUN_NAMESPACE, "kind")
+        : "";
+    if (legacy.type === current.type && kindOf(legacy) === kindOf(current)) {
+      legacy.remove();
+    }
+    return current;
+  }
+  return current || legacy;
 }
 
 function collectDescendantTextCharactersByName(parent, names) {
