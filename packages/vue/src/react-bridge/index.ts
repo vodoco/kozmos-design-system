@@ -90,6 +90,8 @@ import {
   Rating,
   FileUpload as ReactFileUpload,
   ImageCropper,
+  DescriptionList,
+  DescriptionListItem,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -394,6 +396,11 @@ export const KozmosListItemStatus = createVueWrapper(ListItemStatus);
 // GAP-040: #control is the setting's control, @reset its Reset to default.
 export const KozmosSettingsRow = createVueWrapper(SettingsRow);
 export const KozmosTable = createVueWrapper(Table);
+// GAP-221, decision 199: a value under each label. An item's #action is
+// the part after its value (a Copy IconButton); its value is `value` (words,
+// or true and false for a yes and a no) or its default slot (tags).
+export const KozmosDescriptionList = createVueWrapper(DescriptionList);
+export const KozmosDescriptionListItem = createVueWrapper(DescriptionListItem);
 // Its selection is reported as the item; the model is the item's id. A
 // multiple tree's model is its selected ids (GAP-151).
 export const KozmosTree = createVueWrapper(Tree, {

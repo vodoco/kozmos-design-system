@@ -27,6 +27,95 @@ page's table runs edge to edge and existing tables do not change.
 
 <Controls of={TableStories.Framed} />
 
+## Highlighting a new row
+
+A row just added to Access Permissions, or to a new client's users, scrolls into view with a short tint so the eye finds
+it (GAP-276, decision 186). `TableRow`'s `highlight="new"` draws it: the informative surface
+(`--semantics-emotion-informative-surface`), held for three deliberate durations and faded over a fourth
+(`--semantics-motion-duration-deliberate`, 1.84 s in all), on the standard easing. The tint is drawn over the row's hover
+and selected fills while it lasts; after it, the row is as it was. It plays once, when the row is drawn with it or given
+it; take it away and give it again to play it again. Under reduced motion, the system's or the design config's, the
+tint shows and clears at the same time with no fade. The tint is for the eye: announce the new row in words where it
+matters, as a toast does.
+
+Vue's bridge has `KozmosTable` but no rows of its own, so it cannot give one a highlight yet. SwiftUI's
+`KozmosTableRow(highlight: .new)` and Compose's `KozmosTableRow(highlight = KozmosTableRowHighlight.New)` draw
+the same, with the same times, and clear with no fade under Reduce Motion or with the system's animations off.
+
+<PlatformSnippets
+    react={`
+import { Table, TableBody, TableCell, TableRow } from "@kozmos-ds/react";
+
+export function AccessList({ added }: { added?: string }) {
+  const people = ["Ada Lovelace", "Grace Hopper"];
+  return (
+    <Table>
+      <TableBody>
+        {people.map((name) => (
+          <TableRow key={name} highlight={name === added ? "new" : undefined}>
+            <TableCell>{name}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The row just added tints in the informative surface and fades back, so
+// the eye finds it. Under Reduce Motion it shows and clears with no fade.
+struct NewAccessRow: View {
+    struct Access: Identifiable {
+        let client: String
+        let role: String
+        var id: String { client }
+    }
+
+    let access = [Access(client: "Acme", role: "Editor"), Access(client: "Globex", role: "Viewer")]
+    let added = "Globex"
+
+    var body: some View {
+        KozmosTable(access) { row in
+            KozmosTableRow(highlight: row.client == added ? .new : nil) {
+                KozmosTableCell(row.client)
+                KozmosTableCell(row.role)
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.table.KozmosTable
+import com.kozmos.components.table.KozmosTableCell
+import com.kozmos.components.table.KozmosTableHeaderCell
+import com.kozmos.components.table.KozmosTableRow
+import com.kozmos.components.table.KozmosTableRowHighlight
+
+// The row just added tints in the informative surface, then fades.
+@Composable
+fun NewAccessRow(added: String?) {
+    val people = listOf("Ada Lovelace", "Grace Hopper")
+    KozmosTable(
+        header = {
+            KozmosTableRow {
+                KozmosTableHeaderCell(text = "Name")
+            }
+        }
+    ) {
+        people.forEach { name ->
+            KozmosTableRow(highlight = if (name == added) KozmosTableRowHighlight.New else null) {
+                KozmosTableCell(text = name)
+            }
+        }
+    }
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

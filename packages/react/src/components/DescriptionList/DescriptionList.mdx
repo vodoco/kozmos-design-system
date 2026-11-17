@@ -1,0 +1,163 @@
+import { Meta } from "@storybook/blocks";
+import { PlatformSnippets } from "../PlatformSnippets";
+import { DescriptionList, DescriptionListItem } from "./DescriptionList";
+import { Badge } from "../Badge";
+
+<Meta title="Core/Data display/DescriptionList" />
+
+# DescriptionList
+
+A set of values, each under its label, with no field chrome (GAP-221, decision 199): a record's read-only view. MAP-619
+opens a unit for a Read-Only user as its values, not as a form, because greyed, outlined fields read as disabled inputs.
+Each value is a muted 12/16 label over the value, 14/20 in the foreground, 4 apart, and items are 16 apart; a value can be
+words, tags, a yes or a no, or carry an action after it such as Copy.
+
+<div className="kozmos-reset" style={{ maxWidth: 480 }}>
+  <DescriptionList aria-label="Unit">
+    <DescriptionListItem label="Name" value="Bean & Leaf Café" />
+    <DescriptionListItem label="Categories">
+      <Badge variant="secondary">Café</Badge>
+      <Badge variant="secondary">Food</Badge>
+    </DescriptionListItem>
+    <DescriptionListItem label="Featured" value={true} />
+    <DescriptionListItem label="Hidden from visitors" value={false} />
+  </DescriptionList>
+</div>
+
+DescriptionList has no story yet: its first story is a new Visual Review baseline, recorded in the Playwright image.
+
+## Anatomy
+
+- **`DescriptionList`** is a `<dl>`. `layout="stack"`, the default, puts each item under the one before; `layout="row"`
+  puts them side by side, as many to a line as fit at 10rem or more each, 24 apart, wrapping onto the next line.
+- **`DescriptionListItem`** is a `<dt>`, its `label`, and a `<dd>`, its value: `value`, or its children where `value`
+  is not given.
+  - **Words:** a string or a number.
+  - **Tags:** Badges or Chips as children, wrapped 4 apart.
+  - **A yes or a no:** `value={true}` or `value={false}`, written as `yesLabel` and `noLabel` ("Yes" and "No"), never
+    a checkbox.
+  - **An action:** `action`, a part after the value on its line, such as an `IconButton` that copies it. The line keeps
+    its 20: a small button is drawn past it rather than making the item taller.
+
+## Accessibility
+
+Each item is a term and its definition, so a screen reader hears each label with its value, and a list of how many.
+Name the list with `aria-label` or `aria-labelledby` where a page has more than one. An action is part of the
+definition, read after the value; give an icon-only action a name (`aria-label="Copy FID"`). Nothing in it is a field:
+it has no textbox, nothing disabled and no read-only input, so nothing reads as an input a person cannot use.
+
+SwiftUI's `KozmosDescriptionList` and `KozmosDescriptionListItem` make each item one VoiceOver element, its label as the
+name and its value as the value, with the action an element of its own. Compose's merge each label and value into one
+TalkBack node, the action a node of its own.
+
+## Not MetaStrip
+
+MetaStrip draws a few facts about a place as tiles in a strip that scrolls sideways, the value over its label. A
+DescriptionList is a record's read-only view: the label over the value, as a form's field has it, any number of them,
+stacked or in rows.
+
+## Implementation
+
+<PlatformSnippets
+    react={`
+import { Badge, DescriptionList, DescriptionListItem, IconButton } from "@kozmos-ds/react";
+import { Copy01 } from "@kozmos-ds/icons";
+
+export function UnitDetails() {
+  return (
+    <DescriptionList aria-label="Unit">
+      <DescriptionListItem label="Name" value="Bean & Leaf Café" />
+      <DescriptionListItem label="Categories">
+        <Badge variant="secondary">Café</Badge>
+        <Badge variant="secondary">Food</Badge>
+      </DescriptionListItem>
+      <DescriptionListItem label="Featured" value={true} />
+      <DescriptionListItem
+        label="FID"
+        value="f-1042"
+        action={
+          <IconButton aria-label="Copy FID" size="sm" variant="ghost">
+            <Copy01 aria-hidden="true" />
+          </IconButton>
+        }
+      />
+    </DescriptionList>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosDescriptionList, KozmosDescriptionListItem } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosDescriptionList aria-label="Unit">
+    <KozmosDescriptionListItem label="Name" value="Bean & Leaf Café" />
+    <KozmosDescriptionListItem label="Featured" :value="true" />
+    <KozmosDescriptionListItem label="FID" value="f-1042">
+      <template #action><button type="button">Copy FID</button></template>
+    </KozmosDescriptionListItem>
+  </KozmosDescriptionList>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A unit's read-only view: each value under its label, with no field
+// chrome. VoiceOver hears each item as its label, then its value.
+struct UnitDetails: View {
+    let copyFID: () -> Void
+
+    var body: some View {
+        KozmosDescriptionList {
+            KozmosDescriptionListItem(label: "Name", value: "Bean & Leaf Café")
+            KozmosDescriptionListItem(label: "Categories") {
+                HStack {
+                    KozmosBadge("Café", variant: .secondary)
+                    KozmosBadge("Food", variant: .secondary)
+                }
+            }
+            KozmosDescriptionListItem(label: "Featured", isOn: true)
+            KozmosDescriptionListItem(label: "FID", value: "f-1042") {
+                KozmosIconButton(iconName: "doc.on.doc", action: copyFID)
+                    .accessibilityLabel("Copy FID")
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.runtime.Composable
+import com.kozmos.components.badge.KozmosBadge
+import com.kozmos.components.descriptionlist.KozmosDescriptionList
+import com.kozmos.components.descriptionlist.KozmosDescriptionListItem
+import com.kozmos.components.descriptionlist.KozmosDescriptionListLayout
+import com.kozmos.components.iconbutton.KozmosIconButton
+
+// A unit's values for a read-only user: each under its label, none a field.
+@Composable
+fun UnitDetails(onCopy: () -> Unit) {
+    KozmosDescriptionList(layout = KozmosDescriptionListLayout.Stack) {
+        KozmosDescriptionListItem(label = "Name", value = "Gate A12")
+        KozmosDescriptionListItem(label = "Category") {
+            KozmosBadge(text = "Transport")
+        }
+        KozmosDescriptionListItem(label = "Featured", checked = true)
+        KozmosDescriptionListItem(
+            label = "FID",
+            value = "0f3c-91a2",
+            action = {
+                KozmosIconButton(
+                    icon = Icons.Filled.ContentCopy,
+                    onClick = onCopy,
+                    contentDescription = "Copy FID"
+                )
+            }
+        )
+    }
+}
+`}
+/>

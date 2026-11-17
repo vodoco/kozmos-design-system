@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Minus,
   File01 as File,
   Folder,
 } from "@kozmos-ds/icons";
@@ -23,6 +24,18 @@ export type TreeMetaPlacement = "inline" | "below";
 export type TreeCheckRule = "exclusive" | "independent";
 /** Where a row's disclosure goes: before its name, or at its end (GAP-277). */
 export type TreeDisclosurePosition = "start" | "end";
+/**
+ * How a row's selected and hover fills are drawn (GAP-217, decision 196):
+ * `"inset"`, a pill with the control's corners inside the row, as a
+ * navigation tree has them; `"band"`, a band with no corners across the
+ * tree's full width, as the Dashboard's Map Content tree draws them.
+ */
+export type TreeRowFill = "inset" | "band";
+/**
+ * A checkable row's check (GAP-279): checked, not, or `"mixed"`, a parent
+ * some but not all of whose rows are checked.
+ */
+export type TreeItemChecked = boolean | "mixed";
 
 export interface TreeItemRenderContext {
   item: TreeItem;
@@ -32,6 +45,12 @@ export interface TreeItemRenderContext {
   selected: boolean;
   /** Whether a checkable tree's row is checked (GAP-277); false otherwise. */
   checked: boolean;
+  /**
+   * Whether a checkable row is mixed (GAP-279, decision 211): under
+   * `checkRule="independent"`, a parent some but not all of whose enabled
+   * rows are checked. A mixed row is not `checked`.
+   */
+  mixed: boolean;
   focused: boolean;
   disabled: boolean;
   toggle: (force?: boolean) => void;
@@ -92,6 +111,16 @@ export interface TreeProps extends Omit<
    * own edges.
    */
   bleed?: number | string;
+  /**
+   * How the selected and hover fills are drawn (GAP-217, decision 196):
+   * `"inset"` (the default), a pill with the control's corners inside the
+   * row, for a navigation tree; `"band"`, a band with no corners that runs
+   * the tree's full width, and its `bleed` past it, for a list of records
+   * such as the Dashboard's Map Content tree. Selected is the hover fill at
+   * full strength and hover is half of it (decision 173), as inset. Rows
+   * composed as children take it from here too.
+   */
+  rowFill?: TreeRowFill;
   indent?: number;
   activationMode?: TreeActivationMode;
   /**
@@ -123,7 +152,11 @@ export interface TreeProps extends Omit<
    * How a row's check and the checks above and below it go together:
    * `"exclusive"` (the default) clears a row's ancestors and descendants
    * when it is checked, so a client and its sites are never checked
-   * together; `"independent"` leaves every other row as it is.
+   * together; `"independent"` leaves every other row as it is, but a parent
+   * some but not all of whose enabled rows are checked is drawn mixed and
+   * is `aria-checked="mixed"` (GAP-279, decision 211). Checking a mixed
+   * parent checks it and all its enabled rows; clearing a checked parent
+   * clears them; checking a parent that is not mixed checks it alone.
    */
   checkRule?: TreeCheckRule;
   /**
@@ -193,6 +226,12 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
    * Tree's.
    */
   divided?: boolean;
+  /**
+   * As Tree's `rowFill`: `"band"` draws the selected and hover fills as a
+   * band with no corners across the row's full width and the Tree's `bleed`
+   * (GAP-217). Defaults to the Tree's, else `"inset"`.
+   */
+  rowFill?: TreeRowFill;
   /** Whether a row with children shows them: its `aria-expanded`. */
   expanded?: boolean;
   /**
@@ -207,9 +246,10 @@ export interface TreeItemRowProps extends React.HTMLAttributes<HTMLDivElement> {
    * A checkbox before the row's icon, and the row's `aria-checked`
    * (GAP-277): given, the row is a checkable tree's and has no
    * `aria-selected`. The box is drawn for the eye; the row is what a
-   * screen reader hears as checked.
+   * screen reader hears as checked. `"mixed"` draws Checkbox's mixed mark
+   * and is `aria-checked="mixed"` (GAP-279).
    */
-  checked?: boolean;
+  checked?: TreeItemChecked;
   /**
    * As Tree's `disclosurePosition`: `"end"` draws the disclosure at the
    * row's end. Defaults to the Tree's, else `"start"`.
@@ -254,6 +294,10 @@ const useTreeLayoutEffect =
 
 /** A Tree's `divided`, for the rows composed in it as children. */
 const TreeDividedContext = React.createContext(false);
+/** A Tree's `rowFill`, for the rows composed in it as children. */
+const TreeRowFillContext = React.createContext<TreeRowFill | undefined>(
+  undefined,
+);
 /**
  * The locale a Tree writes its counts in: its `locale`, else the page's
  * `lang` after mount; en-US on a server render, the first client render and
@@ -335,6 +379,7 @@ const sectionContext = (
   expanded: true,
   selected: false,
   checked: false,
+  mixed: false,
   focused: false,
   disabled: Boolean(item.disabled),
   toggle: () => undefined,
@@ -363,6 +408,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       density = "default",
       divided,
       bleed,
+      rowFill,
       defaultExpandedIds = [],
       expandedIds,
       indent = 20,
@@ -568,12 +614,30 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       [rangeIds, selectedSet, setSelectedSet],
     );
 
+    // GAP-279 (decision 211): under the independent rule, the parents some
+    // but not all of whose enabled rows are checked, open or not.
+    const mixedSet = React.useMemo(
+      () =>
+        checkable && checkRule === "independent"
+          ? collectMixedIds(data, selectedSet)
+          : EMPTY_IDS,
+      [checkable, checkRule, data, selectedSet],
+    );
+
     const toggleSelected = React.useCallback(
       (item: TreeItem) => {
         anchorId.current = item.id;
         const next = new Set(selectedSet);
-        if (next.has(item.id)) next.delete(item.id);
-        else {
+        if (checkable && checkRule === "independent" && mixedSet.has(item.id)) {
+          // A mixed parent: it and every enabled row under it, checked.
+          next.add(item.id);
+          for (const id of enabledDescendantIds(item)) next.add(id);
+        } else if (next.has(item.id)) {
+          next.delete(item.id);
+          // A checked parent, cleared with every enabled row under it.
+          if (checkable && checkRule === "independent")
+            for (const id of enabledDescendantIds(item)) next.delete(id);
+        } else {
           next.add(item.id);
           // GAP-277, exclusive: a row and the rows above or below it are
           // never checked together, drawn or not.
@@ -585,7 +649,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         }
         setSelectedSet(next);
       },
-      [checkable, checkRule, data, selectedSet, setSelectedSet],
+      [checkable, checkRule, data, mixedSet, selectedSet, setSelectedSet],
     );
 
     // ---- Virtualisation (GAP-151) ----------------------------------------
@@ -1027,6 +1091,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       locale: locale ?? pageLocale,
       divided,
       expandedSet,
+      mixedSet,
       focusedId,
       indent,
       itemRefs,
@@ -1114,44 +1179,48 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
         }
       >
         <TreeDividedContext.Provider value={!!divided}>
-          <TreeMetaPlacementContext.Provider value={metaPlacement}>
-            <TreeDisclosurePositionContext.Provider value={disclosurePosition}>
-              <TreeScrollerContext.Provider value={virtualized}>
-                <TreeLocaleContext.Provider value={locale ?? pageLocale}>
-                  {virtualized ? (
-                    // The scroller is inside the tree, so the product's width,
-                    // margin and height classes stay the tree's own. A scroller
-                    // clips what reaches past it: divided with a bleed, this one
-                    // reaches the bleed past the tree on each side, and keeps the
-                    // rows in place inside its padding, where each stroke meets
-                    // its edges with no sideways scroll.
-                    <div
-                      ref={setScrollerRef}
-                      data-tree-scroller=""
-                      className="relative min-h-0 flex-auto overflow-y-auto"
-                      style={
-                        divided && bleed !== undefined
-                          ? {
-                              marginInline:
-                                "calc(var(--kozmos-tree-bleed) * -1)",
-                              paddingInline: "var(--kozmos-tree-bleed)",
-                            }
-                          : undefined
-                      }
-                      onScroll={(event) => {
-                        setScrollTop(event.currentTarget.scrollTop);
-                        props.onScroll?.(event);
-                      }}
-                    >
-                      {content}
-                    </div>
-                  ) : (
-                    content
-                  )}
-                </TreeLocaleContext.Provider>
-              </TreeScrollerContext.Provider>
-            </TreeDisclosurePositionContext.Provider>
-          </TreeMetaPlacementContext.Provider>
+          <TreeRowFillContext.Provider value={rowFill}>
+            <TreeMetaPlacementContext.Provider value={metaPlacement}>
+              <TreeDisclosurePositionContext.Provider
+                value={disclosurePosition}
+              >
+                <TreeScrollerContext.Provider value={virtualized}>
+                  <TreeLocaleContext.Provider value={locale ?? pageLocale}>
+                    {virtualized ? (
+                      // The scroller is inside the tree, so the product's width,
+                      // margin and height classes stay the tree's own. A scroller
+                      // clips what reaches past it: divided with a bleed, this one
+                      // reaches the bleed past the tree on each side, and keeps the
+                      // rows in place inside its padding, where each stroke meets
+                      // its edges with no sideways scroll.
+                      <div
+                        ref={setScrollerRef}
+                        data-tree-scroller=""
+                        className="relative min-h-0 flex-auto overflow-y-auto"
+                        style={
+                          (divided || rowFill === "band") && bleed !== undefined
+                            ? {
+                                marginInline:
+                                  "calc(var(--kozmos-tree-bleed) * -1)",
+                                paddingInline: "var(--kozmos-tree-bleed)",
+                              }
+                            : undefined
+                        }
+                        onScroll={(event) => {
+                          setScrollTop(event.currentTarget.scrollTop);
+                          props.onScroll?.(event);
+                        }}
+                      >
+                        {content}
+                      </div>
+                    ) : (
+                      content
+                    )}
+                  </TreeLocaleContext.Provider>
+                </TreeScrollerContext.Provider>
+              </TreeDisclosurePositionContext.Provider>
+            </TreeMetaPlacementContext.Provider>
+          </TreeRowFillContext.Provider>
         </TreeDividedContext.Provider>
       </div>
     );
@@ -1167,6 +1236,8 @@ interface TreeNodeSharedProps {
   locale?: string;
   divided?: boolean;
   expandedSet: Set<string>;
+  /** A checkable, independent tree's mixed parents (GAP-279). */
+  mixedSet: Set<string>;
   focusedId?: string;
   indent: number;
   itemRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
@@ -1220,6 +1291,7 @@ const TreeNodeRow = ({
   density,
   divided,
   expandedSet,
+  mixedSet,
   focusedId,
   indent,
   itemRefs,
@@ -1239,6 +1311,7 @@ const TreeNodeRow = ({
   const hasChildren = Boolean(item.children?.length);
   const isOpen = expandedSet.has(item.id);
   const isSelected = selectedSet.has(item.id);
+  const isMixed = checkable && mixedSet.has(item.id);
   const isFocused = focusedId === item.id;
   const isDisabled = Boolean(item.disabled);
   const visible = visibleById.get(item.id);
@@ -1257,7 +1330,8 @@ const TreeNodeRow = ({
     hasChildren,
     expanded: isOpen,
     selected: isSelected,
-    checked: checkable && isSelected,
+    checked: checkable && isSelected && !isMixed,
+    mixed: isMixed,
     focused: isFocused,
     disabled: isDisabled,
     toggle,
@@ -1298,7 +1372,7 @@ const TreeNodeRow = ({
       aria-posinset={visible?.posInSet}
       data-tree-id={item.id}
       actions={actions}
-      checked={checkable ? isSelected : undefined}
+      checked={checkable ? (isMixed ? "mixed" : isSelected) : undefined}
       count={count}
       density={density}
       depth={depth}
@@ -1553,6 +1627,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
       name,
       onDisclosureClick,
       role = "treeitem",
+      rowFill: rowFillProp,
       selected = false,
       style,
       ...props
@@ -1567,7 +1642,10 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     // Divided, or in a tree that scrolls itself, the ring is drawn inside
     // the row, where nothing covers or clips it.
     const inScroller = React.useContext(TreeScrollerContext);
-    const ringInside = divided || inScroller;
+    // GAP-217: a band's fills run the row's full width, with no corners.
+    const treeRowFill = React.useContext(TreeRowFillContext);
+    const band = (rowFillProp ?? treeRowFill) === "band";
+    const ringInside = divided || inScroller || band;
     const treeMetaPlacement = React.useContext(TreeMetaPlacementContext);
     const hasMeta = meta !== undefined && meta !== null;
     // GAP-107: below, the meta has a line of its own, so the name keeps the
@@ -1584,6 +1662,8 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     const treeitem = role === "treeitem";
     // GAP-277: a check, and the disclosure at the start or the end.
     const checkableRow = checked !== undefined;
+    // GAP-279: a parent some but not all of whose rows are checked.
+    const mixed = checked === "mixed";
     const treeDisclosurePosition = React.useContext(
       TreeDisclosurePositionContext,
     );
@@ -1616,16 +1696,20 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
         aria-level={treeitem ? depth + 1 : undefined}
         aria-expanded={treeitem && hasChildren ? expanded : undefined}
         aria-selected={treeitem && !checkableRow ? selected : undefined}
-        aria-checked={treeitem && checkableRow ? checked : undefined}
+        aria-checked={
+          treeitem && checkableRow ? (mixed ? "mixed" : checked) : undefined
+        }
         aria-disabled={treeitem && disabled ? true : undefined}
         data-depth={depth}
         data-expanded={hasChildren ? expanded : undefined}
         data-selected={selected || undefined}
-        data-checked={checked || undefined}
+        data-checked={checked === true || undefined}
+        data-mixed={mixed || undefined}
         data-focus-visible={focusVisible || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          "group/treeitem flex w-full cursor-pointer items-center gap-2 rounded-control px-2 text-start outline-none transition-colors",
+          "group/treeitem flex w-full cursor-pointer items-center gap-2 px-2 text-start outline-none transition-colors",
+          !band && "rounded-control",
           density === "compact" ? "min-h-8 py-1" : "min-h-10 py-1.5",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           // Divided, the ring is drawn inside the row: outside it, the next
@@ -1634,7 +1718,12 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
           // Selected, the hover fill at full strength, under the pointer
           // too; the hover's half step is for the rows not selected
           // (decision 173).
-          selected ? "bg-hover-fill text-foreground" : "hover:bg-hover-fill/50",
+          // A band's fills are its box's, across the bleed (GAP-217).
+          band
+            ? selected && "text-foreground"
+            : selected
+              ? "bg-hover-fill text-foreground"
+              : "hover:bg-hover-fill/50",
           focusVisible &&
             (ringInside
               ? "ring-2 ring-inset ring-ring"
@@ -1651,15 +1740,22 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
           // control, and its aria-checked is what a screen reader hears.
           <span
             aria-hidden="true"
-            data-tree-check={checked ? "checked" : "unchecked"}
+            data-tree-check={
+              mixed ? "mixed" : checked ? "checked" : "unchecked"
+            }
             className={cn(
               "flex h-5 w-5 shrink-0 items-center justify-center rounded-marker border",
+              // Mixed is painted as checked, with Checkbox's dash (#566).
               checked
                 ? "border-theme-fill bg-theme-fill text-theme-fill-foreground"
                 : "border-input",
             )}
           >
-            {checked && <Check aria-hidden="true" className="h-4 w-4" />}
+            {mixed ? (
+              <Minus aria-hidden="true" className="h-4 w-4" />
+            ) : (
+              checked && <Check aria-hidden="true" className="h-4 w-4" />
+            )}
           </span>
         )}
         {icon !== null && (
@@ -1717,14 +1813,21 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     // to the panel's edges, while the row and its fills stay where they are.
     // The stroke is outside the row's height: a row and its stroke, as the
     // design draws a row and a separator.
-    return divided ? (
+    // A band (GAP-217) draws the selected and hover fills on the same box,
+    // so they reach the bleed too, with no corners.
+    return divided || band ? (
       <div
-        data-tree-divider=""
+        data-tree-divider={divided ? "" : undefined}
+        data-tree-band={band ? "" : undefined}
         className={cn(
-          "border-b border-border",
-          hasChildren &&
-            expanded &&
-            "bg-[var(--primitives-colors-background-50)]",
+          divided && "border-b border-border",
+          band && selected
+            ? "bg-hover-fill"
+            : divided &&
+                hasChildren &&
+                expanded &&
+                "bg-[var(--primitives-colors-background-50)]",
+          band && !selected && "transition-colors hover:bg-hover-fill/50",
         )}
         style={{
           marginInline: "calc(var(--kozmos-tree-bleed, 0px) * -1)",
@@ -1899,6 +2002,49 @@ const treeAncestorIds = (items: TreeItem[], id: string): string[] => {
     return undefined;
   };
   return walk(items, []) ?? [];
+};
+
+const EMPTY_IDS: Set<string> = new Set();
+
+/** The enabled rows under `item`, open or not, past any section (GAP-279). */
+const enabledDescendantIds = (item: TreeItem): string[] => {
+  const out: string[] = [];
+  const walk = (children: TreeItem[] | undefined) => {
+    for (const child of children ?? []) {
+      if (!child.section && !child.disabled) out.push(child.id);
+      walk(child.children);
+    }
+  };
+  walk(item.children);
+  return out;
+};
+
+/**
+ * The rows some but not all of whose enabled rows are checked, open or not,
+ * past any section (GAP-279, decision 211): a checkable tree's mixed
+ * parents under the independent rule.
+ */
+const collectMixedIds = (items: TreeItem[], checked: Set<string>) => {
+  const mixed = new Set<string>();
+  // The enabled rows under each item, and how many of them are checked.
+  const walk = (children: TreeItem[] | undefined): [number, number] => {
+    let total = 0;
+    let on = 0;
+    for (const child of children ?? []) {
+      const [below, belowOn] = walk(child.children);
+      if (!child.section && below > 0 && belowOn > 0 && belowOn < below)
+        mixed.add(child.id);
+      total += below;
+      on += belowOn;
+      if (!child.section && !child.disabled) {
+        total += 1;
+        if (checked.has(child.id)) on += 1;
+      }
+    }
+    return [total, on];
+  };
+  walk(items);
+  return mixed;
 };
 
 /** Every id under `item`, open or not. */

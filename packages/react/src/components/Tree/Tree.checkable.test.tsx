@@ -155,8 +155,10 @@ describe("Tree checkable (GAP-277)", () => {
         defaultSelectedIds={["acme-hq"]}
       />,
     );
-    fireEvent.click(row("Acme"));
-    expect(checkedNames()).toEqual(["Acme", "Acme HQ"]);
+    // A row that is not a mixed parent (GAP-279) checks alone, leaving the
+    // others' checks as they are.
+    fireEvent.click(row("Initech"));
+    expect(checkedNames()).toEqual(["Acme HQ", "Initech"]);
   });
 
   it("Space and Enter check or clear the focused row; arrows move; a disabled row never checks", () => {
