@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c9fde435ab08";
+const PLUGIN_BUILD = "ed58ef736491";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -355,7 +355,10 @@ const SEGMENTED_CONTROL_ACTIVE = ["One", "Two", "Three"];
 const SEGMENTED_CONTROL_STATES = ["Default", "Focus", "Disabled", "Error"];
 const COUNTER_TONES = ["Neutral", "Brand", "Destructive", "Inverse"];
 const COUNTER_SIZES = ["Small", "Default"];
-const CHECKBOX_CHECKED = ["Unchecked", "Checked"];
+// Decision 188: Indeterminate is React's `checked="indeterminate"`, painted
+// exactly like Checked with the dash (the minus icon) for the tick. Last, so
+// a set from before it keeps its order and Update adds the three it lacks.
+const CHECKBOX_CHECKED = ["Unchecked", "Checked", "Indeterminate"];
 const CHECKBOX_STATES = ["Default", "Disabled", "Error"];
 const RADIO_CHECKED = ["Unchecked", "Checked"];
 const RADIO_STATES = ["Default", "Disabled", "Error"];
@@ -36342,6 +36345,7 @@ async function buildCheckboxComponent() {
 
   const componentSet = figma.combineAsVariants(components, page);
   componentSet.name = "Checkbox";
+  layoutCheckboxVariants(componentSet);
   componentSet.x = 80;
   componentSet.y = 1740;
   componentSet.setSharedPluginData(RUN_NAMESPACE, "kind", "component-set");
@@ -36349,7 +36353,7 @@ async function buildCheckboxComponent() {
   componentSet.setSharedPluginData(RUN_NAMESPACE, "component", "Checkbox");
   applyComponentSetDescription(componentSet, "Checkbox", false, [
     "Kozmos Checkbox component set generated from React Checkbox API.",
-    "Checked maps to Checkbox.checked.",
+    'Checked maps to Checkbox.checked; Indeterminate is checked="indeterminate", the mixed state (decision 188).',
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Checkbox.label.",
     "Description Text and Show Description map to Checkbox.description (GAP-162).",
@@ -36378,7 +36382,7 @@ async function updateCheckboxComponent() {
     componentSetId: null,
     urlNodeId: null,
     variantsUpdated: 0,
-    variantsMissing: 0,
+    variantsCreated: 0,
     warnings: [],
   };
 
@@ -36404,7 +36408,7 @@ async function updateCheckboxComponent() {
   existing.setSharedPluginData(RUN_NAMESPACE, "component", "Checkbox");
   applyComponentSetDescription(existing, "Checkbox", true, [
     "Kozmos Checkbox component set generated from React Checkbox API.",
-    "Checked maps to Checkbox.checked.",
+    'Checked maps to Checkbox.checked; Indeterminate is checked="indeterminate", the mixed state (decision 188).',
     "State maps to disabled/error props in Code Connect.",
     "Label Text maps to Checkbox.label.",
     "Description Text and Show Description map to Checkbox.description (GAP-162).",
@@ -36434,15 +36438,25 @@ async function updateCheckboxComponent() {
     stats.variantsUpdated += 1;
   }
 
+  // The Indeterminate variants (decision 188) a set from before them lacks,
+  // added beside the six it keeps, whose node ids Code Connect pins.
   for (const checked of CHECKBOX_CHECKED) {
     for (const state of CHECKBOX_STATES) {
       const key = `${checked}/${state}`;
-      if (!seenKeys[key]) {
-        stats.variantsMissing += 1;
-        stats.warnings.push(`Missing Checkbox variant ${key}.`);
-      }
+      if (seenKeys[key]) continue;
+      const component = await createCheckboxVariant({
+        checked,
+        state,
+        variableByName,
+        fonts,
+        stats,
+      });
+      existing.appendChild(component);
+      seenKeys[key] = true;
+      stats.variantsCreated += 1;
     }
   }
+  layoutCheckboxVariants(existing);
 
   stats.updated = true;
   stats.componentSetId = existing.id;
@@ -68696,6 +68710,32 @@ async function createCheckboxVariant({
   return component;
 }
 
+// A row per Checked value, Unchecked, Checked then Indeterminate, each in
+// State order, 40 apart: the set's top-left, its default, stays
+// Checked=Unchecked, State=Default.
+function layoutCheckboxVariants(componentSet) {
+  if (!componentSet || !componentSet.children) return;
+  let y = 0;
+  for (const checked of CHECKBOX_CHECKED) {
+    let x = 0;
+    let rowHeight = 0;
+    for (const state of CHECKBOX_STATES) {
+      const child = componentSet.children.find((node) => {
+        if (node.type !== "COMPONENT") return false;
+        const props = parseCheckboxVariantName(node.name);
+        return props && props.checked === checked && props.state === state;
+      });
+      if (!child) continue;
+      child.x = x;
+      child.y = y;
+      x += child.width + 40;
+      rowHeight = Math.max(rowHeight, child.height);
+    }
+    if (rowHeight > 0) y += rowHeight + 40;
+  }
+  resizeComponentSetToContainChildren(componentSet);
+}
+
 function parseCheckboxVariantName(name) {
   const values = {};
   const parts = name.split(",");
@@ -77576,10 +77616,17 @@ async function syncCheckboxVariantChildren({
 
   removeGeneratedButtonChild(control, "Checkbox Mark Short", true);
   removeGeneratedButtonChild(control, "Checkbox Mark Long", true);
-  removeGeneratedButtonChild(control, "Checkbox Mark", checked !== "Checked");
+  removeGeneratedButtonChild(control, "Checkbox Mark", checked === "Unchecked");
 
-  if (checked === "Checked") {
-    await syncCheckboxMark(control, config, variableByName, stats);
+  // Checked draws the tick; Indeterminate React's dash, its minus icon.
+  if (checked !== "Unchecked") {
+    await syncCheckboxMark(
+      control,
+      config,
+      variableByName,
+      stats,
+      checked === "Indeterminate" ? "minus" : "check",
+    );
   }
 
   syncFocusRing(control, {
@@ -77629,21 +77676,41 @@ async function syncCheckboxVariantChildren({
   });
 }
 
-async function syncCheckboxMark(control, config, variableByName, stats) {
+async function syncCheckboxMark(
+  control,
+  config,
+  variableByName,
+  stats,
+  iconName = "check",
+) {
   let mark = directChildNamed(control, "Checkbox Mark");
-  if (mark && mark.type !== "INSTANCE") {
+  // A mark of another icon (a tick where the dash belongs) is drawn again.
+  if (
+    mark &&
+    (mark.type !== "INSTANCE" ||
+      (mark.getSharedPluginData(RUN_NAMESPACE, "mark-icon") || "check") !==
+        iconName)
+  ) {
     mark.remove();
     mark = null;
   }
 
   if (!mark) {
-    const iconComponent = await findKozmosIconSourceComponent("check");
+    const iconComponent = await findKozmosIconSourceComponent(iconName);
     if (iconComponent) {
       mark = iconComponent.createInstance();
       mark.name = "Checkbox Mark";
     } else {
-      mark = createFallbackCheckboxMark(config, variableByName, stats);
+      mark =
+        iconName === "minus"
+          ? createFallbackCheckboxDash(config, variableByName, stats)
+          : createFallbackCheckboxMark(config, variableByName, stats);
     }
+  }
+  try {
+    mark.setSharedPluginData(RUN_NAMESPACE, "mark-icon", iconName);
+  } catch (_error) {
+    // The audit metadata below reports a node that takes no plugin data.
   }
 
   mark.resize(16, 16);
@@ -77703,6 +77770,36 @@ function createFallbackCheckboxMark(config, variableByName, stats) {
     paintFromVariable(config.mark, config.markFallback, variableByName, stats),
   ];
   mark.strokeWeight = 2;
+  mark.strokeCap = "ROUND";
+  mark.strokeJoin = "ROUND";
+  return mark;
+}
+
+// React's Minus at 16: a line from 5 to 19 of its 24 across the middle,
+// stroked 2/24 of its size with round caps.
+function createFallbackCheckboxDash(config, variableByName, stats) {
+  const mark = figma.createVector();
+  mark.name = "Checkbox Mark";
+  mark.resize(16, 16);
+  mark.vectorNetwork = {
+    vertices: [
+      { x: 10 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
+      { x: 38 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
+    ],
+    segments: [
+      {
+        start: 0,
+        end: 1,
+        tangentStart: { x: 0, y: 0 },
+        tangentEnd: { x: 0, y: 0 },
+      },
+    ],
+  };
+  mark.fills = [];
+  mark.strokes = [
+    paintFromVariable(config.mark, config.markFallback, variableByName, stats),
+  ];
+  mark.strokeWeight = 4 / 3;
   mark.strokeCap = "ROUND";
   mark.strokeJoin = "ROUND";
   return mark;
@@ -90500,7 +90597,8 @@ function counterConfig(tone) {
 }
 
 function checkboxConfig(checked, state) {
-  const isChecked = checked === "Checked";
+  // Indeterminate is painted exactly like Checked (decision 188).
+  const isChecked = checked === "Checked" || checked === "Indeterminate";
   const isDisabled = state === "Disabled";
   const isError = state === "Error";
 
