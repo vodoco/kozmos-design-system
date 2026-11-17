@@ -32,10 +32,21 @@ struct KozmosDateRangePickerConnect: FigmaConnect {
             "Default": "default",
             "Focus": "focus",
             "Disabled": "disabled",
-            "Readonly": "readonly"
+            "Readonly": "readonly",
+            "Mixed": "mixed"
         ]
     )
     var state: String = "default"
+
+    // GAP-255: its way back to the several values, once edited.
+    @FigmaBoolean("Reset Mixed")
+    var resetMixed: Bool = false
+
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
+
+    @FigmaString("Reset Mixed Text")
+    var resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaEnum(
         "Status",
@@ -68,7 +79,11 @@ struct KozmosDateRangePickerConnect: FigmaConnect {
             disabled: self.state == "disabled",
             readOnly: self.state == "readonly",
             status: self.status,
-            showsCalendarPreview: self.showsCalendarPreview
+            showsCalendarPreview: self.showsCalendarPreview,
+            mixed: self.state == "mixed",
+            mixedLabel: self.mixedLabel,
+            onResetMixed: self.resetMixed ? {} : nil,
+            resetMixedLabel: self.resetMixedLabel
         )
     }
 }

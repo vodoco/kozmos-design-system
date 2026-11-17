@@ -8,10 +8,37 @@ struct KozmosDatePickerConnect: FigmaConnect {
     @FigmaString("Label Text")
     var label: String = "Date"
 
+    // GAP-255: State=Mixed, the field of a multi-selection whose values
+    // differ; Reset Mixed, its way back once edited.
+    @FigmaEnum(
+        "State",
+        mapping: [
+            "Default": false,
+            "Focus": false,
+            "Disabled": false,
+            "Readonly": false,
+            "Mixed": true
+        ]
+    )
+    var mixed: Bool = false
+
+    @FigmaBoolean("Reset Mixed")
+    var resetMixed: Bool = false
+
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
+
+    @FigmaString("Reset Mixed Text")
+    var resetMixedLabel: String = "Reset to multiple values"
+
     var body: some View {
         KozmosDatePicker(
             selection: .constant(Date()),
-            label: self.label
+            label: self.label,
+            mixed: self.mixed,
+            mixedLabel: self.mixedLabel,
+            onResetMixed: self.resetMixed ? {} : nil,
+            resetMixedLabel: self.resetMixedLabel
         )
     }
 }
