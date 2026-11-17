@@ -110,8 +110,8 @@ when Next is disabled). Escape and Close call `onClose`; a press on the dim
 or on the lit target does not. Closed with focus lost, PopoverContent gives
 focus back (GAP-190): to what had it as the step opened, the button that
 started the tour, or, once that is gone or a step opened with focus on the
-last one's Next, to the step's target; a virtual element or a rect has
-none.
+last one's Next, to the element the card is placed against, its
+`anchor` or else its target; a virtual element or a rect has none.
 
 With no `stepCount` it draws no position and no progress: with no Back and
 no Next it is a coachmark (GAP-157), a single hint beside a control.
@@ -130,6 +130,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `TourStepProps`, which ex
   dimmed. With none, or one that is not on the page (a ref to nothing, an
   element with no box), the whole page is dimmed and the card, with no
   arrow, places itself in the middle of the window.
+
+- `anchor`: `TourStepTarget`, optional.
+
+  Where the card is placed, apart from what it lights (decision 198,
+  GAP-220): an element, a ref, a virtual element or a rect, as `target`
+  takes. The card sits beside the anchor, its arrow pointing at it, while
+  Backdrop still lights `target`; where the card overlaps the lit area it
+  stays above the cut-out. A map's lit area with an editor laid over it is
+  one: the card sits beside the editor, on the lit map. Left out, or not on
+  the page, the card is placed by `target`, as before.
 
 - `tourLabel`: `React.ReactNode`, optional.
 
