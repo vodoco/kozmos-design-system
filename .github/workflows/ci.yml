@@ -1104,8 +1104,10 @@ jobs:
           path: ${{ runner.temp }}/kozmos-ios-poi-*/*.xcresult
           if-no-files-found: warn
 
-      - name: Parse SwiftUI Code Connect
-        run: pnpm figma:parse:ios:linked
+      # As Compose's: parse, then check that every snippet's component is a
+      # type the iOS sources declare.
+      - name: Parse SwiftUI Code Connect and Check Its Components
+        run: pnpm figma:native:check:ios
 
       - name: Verify SwiftUI Code Connect
         env:
@@ -1187,8 +1189,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Parse Compose Code Connect
-        run: pnpm figma:parse:android:linked
+      # Parsing proves only that the files are well formed. The check reads
+      # what the parser made of them: on 17 Nov 2026 twelve Compose icon notes
+      # showed `import com.kozmos.components.feedbackcard.ComponentExample` in
+      # Figma, a class nothing declares, and every step here passed.
+      - name: Parse Compose Code Connect and Check Its Imports
+        run: pnpm figma:native:check:android
 
       - name: Verify Compose Code Connect
         env:

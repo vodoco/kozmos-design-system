@@ -8,11 +8,13 @@
 // part's system symbol, and the rest say where they belong.
 package com.kozmos.components.icon
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.figma.code.connect.FigmaConnect
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2372-10273")
@@ -204,6 +206,7 @@ class KozmosIconLibraryCircleConnect {
     @Composable
     fun ComponentExample() {
         // circle: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -236,6 +239,7 @@ class KozmosIconLibraryCode02Connect {
     @Composable
     fun ComponentExample() {
         // code-02: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -284,6 +288,7 @@ class KozmosIconLibraryDividerConnect {
     @Composable
     fun ComponentExample() {
         // divider: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -292,6 +297,7 @@ class KozmosIconLibraryDotsHorizontalConnect {
     @Composable
     fun ComponentExample() {
         // dots-horizontal: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -396,6 +402,7 @@ class KozmosIconLibraryFlipForwardConnect {
     @Composable
     fun ComponentExample() {
         // flip-forward: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -572,6 +579,7 @@ class KozmosIconLibraryPencil01Connect {
     @Composable
     fun ComponentExample() {
         // pencil-01: A Card header's actions are the product's own (GAP-169): no Kozmos part draws pencil-01 here.
+        Spacer(Modifier)
     }
 }
 
@@ -580,6 +588,7 @@ class KozmosIconLibraryPentagonConnect {
     @Composable
     fun ComponentExample() {
         // pentagon: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -644,6 +653,7 @@ class KozmosIconLibraryRefreshCcw01Connect {
     @Composable
     fun ComponentExample() {
         // refresh-ccw-01: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -684,6 +694,7 @@ class KozmosIconLibraryRulerConnect {
     @Composable
     fun ComponentExample() {
         // ruler: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -708,6 +719,7 @@ class KozmosIconLibraryScissorsCut01Connect {
     @Composable
     fun ComponentExample() {
         // scissors-cut-01: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -820,6 +832,7 @@ class KozmosIconLibraryTransformConnect {
     @Composable
     fun ComponentExample() {
         // transform: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }
 
@@ -892,5 +905,6 @@ class KozmosIconLibraryXSquareConnect {
     @Composable
     fun ComponentExample() {
         // x-square: MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).
+        Spacer(Modifier)
     }
 }

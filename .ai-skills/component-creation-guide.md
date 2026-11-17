@@ -128,8 +128,14 @@ way CI does:
 
 ```bash
 pnpm figma:parse:linked
-pnpm figma:parse:native:linked
+pnpm figma:native:check:ios
+pnpm figma:native:check:android
 ```
+
+The two native checks parse the files, then check that each snippet names code that exists. A
+parse alone passes a snippet that names something nothing declares: Compose's parser takes a
+snippet's first call as its component, so a body with no call, a comment alone, shows an import
+of the enclosing function's name from another file.
 
 Publishing to the live Figma file (`pnpm figma:publish:linked`) happens on Olcay's word.
 
@@ -197,7 +203,8 @@ A native test proves nothing until it is seen by name in the run's results (`AGE
   - [ ] React .figma.tsx
   - [ ] iOS .figma.swift
   - [ ] Android .figma.kt
-  - [ ] Parse with `pnpm figma:parse:linked` and `pnpm figma:parse:native:linked`
+  - [ ] Parse and check with `pnpm figma:parse:linked`, `pnpm figma:native:check:ios` and
+        `pnpm figma:native:check:android`
   - [ ] Publish with `pnpm figma:publish:linked`, on Olcay's word
 
 ### Final Steps
