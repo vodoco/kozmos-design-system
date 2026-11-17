@@ -62,8 +62,8 @@ const isChecked = ref(false)
 import SwiftUI
 import Kozmos
 
-// The checkbox draws its label beside it, and the whole row toggles. It has
-// two states, checked and not: no indeterminate one.
+// The checkbox draws its label beside it, and the whole row toggles. A Bool
+// gives it two states, checked and not; "Mixed", below, adds the third.
 struct AcceptTerms: View {
     @Binding var accepted: Bool
 
@@ -76,8 +76,8 @@ struct AcceptTerms: View {
 import androidx.compose.runtime.Composable
 import com.kozmos.components.checkbox.KozmosCheckbox
 
-// The checkbox draws its label beside it, and the whole row toggles. It has
-// two states, checked and not: no indeterminate one.
+// The checkbox draws its label beside it, and the whole row toggles. A
+// Boolean gives it two states, checked and not; "Mixed", below, adds the third.
 @Composable
 fun AcceptTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
     KozmosCheckbox(
@@ -95,7 +95,7 @@ A `description` is drawn under the label and read as the checkbox's description 
 
 <Canvas of={CheckboxStories.WithDescription} />
 
-On SwiftUI the description is read after the name as the control's custom content, at high importance, spoken whether or not the reader turned on Speak Hints; its key, "Description", is looked up in your app's `Localizable` strings. The control says its state as its value, in `checkedLabel` and `uncheckedLabel` ("Checked", "Unchecked"; SwiftUI's checkbox takes a Bool, so it has no mixed state), and from iOS 17 it is a toggle. Compose reads the description after the label in the one node, and the checkbox says its state with its Checkbox role.
+On SwiftUI the description is read after the name as the control's custom content, at high importance, spoken whether or not the reader turned on Speak Hints; its key, "Description", is looked up in your app's `Localizable` strings. The control says its state as its value, in `checkedLabel` and `uncheckedLabel` ("Checked", "Unchecked", and `mixedLabel`, "Mixed", for a mixed one), and from iOS 17 it is a toggle. Compose reads the description after the label in the one node, and the checkbox says its state with its Checkbox role.
 
 <PlatformSnippets
     react={`
@@ -158,6 +158,148 @@ fun DeskBookingTerms(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
         label = "Share my desk booking",
         description = "Colleagues on your floor see where you sit"
     )
+}
+`}
+/>
+
+## Mixed
+
+`checked="indeterminate"` is the mixed state: a parent whose children are only partly checked. It is painted exactly like checked, the same edge and fill, with a dash where checked has its tick, and is read as mixed (`aria-checked="mixed"`). It stays mixed when disabled and in error. A click on a mixed checkbox checks it, and `onCheckedChange` is called with `true`; `checkbox_toggled` reports `checked: true`.
+
+SwiftUI takes a `Binding<KozmosCheckboxState>`, `.unchecked`, `.checked` or `.indeterminate`, beside the `Binding<Bool>` it always took; VoiceOver says a mixed checkbox's value as `mixedLabel`, "Mixed" unless you pass your app's word, and a tap sets the binding to `.checked`. Compose takes `state`, a `ToggleableState`, beside `checked`; TalkBack hears `ToggleableState.Indeterminate` as partly checked, and a click calls `onCheckedChange(true)`. Compose draws Material's dash on the checked fill.
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { Checkbox } from "@kozmos-ds/react";
+
+const floors = ["Ground floor", "First floor"];
+
+// "All floors" is mixed while only some floors are shown; a click shows them all.
+export function FloorFilter() {
+  const [shown, setShown] = useState(["Ground floor"]);
+  const all =
+    shown.length === floors.length
+      ? true
+      : shown.length === 0
+        ? false
+        : "indeterminate";
+  return (
+    <div className="flex flex-col">
+      <Checkbox
+        label="All floors"
+        checked={all}
+        onCheckedChange={(checked) => setShown(checked === true ? floors : [])}
+      />
+      {floors.map((floor) => (
+        <Checkbox
+          key={floor}
+          label={floor}
+          checked={shown.includes(floor)}
+          onCheckedChange={(checked) =>
+            setShown(
+              checked === true
+                ? [...shown, floor]
+                : shown.filter((other) => other !== floor),
+            )
+          }
+        />
+      ))}
+    </div>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosCheckbox } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+
+const floors = ["Ground floor", "First floor"]
+const shown = ref(["Ground floor"])
+// "All floors" is mixed while only some floors are shown; a click shows them all.
+const all = computed(() =>
+  shown.value.length === floors.length
+    ? true
+    : shown.value.length === 0
+      ? false
+      : "indeterminate"
+)
+</script>
+
+<template>
+  <KozmosCheckbox
+    label="All floors"
+    :checked="all"
+    @update:checked="(checked) => (shown = checked === true ? [...floors] : [])"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// "All floors" is mixed while only some floors are shown; a tap shows them all.
+struct FloorFilter: View {
+    let floors = ["Ground floor", "First floor"]
+    @State private var shown: Set<String> = ["Ground floor"]
+
+    private var all: Binding<KozmosCheckboxState> {
+        Binding(
+            get: { shown.isEmpty ? .unchecked : shown.count == floors.count ? .checked : .indeterminate },
+            set: { shown = $0 == .checked ? Set(floors) : [] }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            KozmosCheckbox(checked: all, label: "All floors")
+            ForEach(floors, id: \\.self) { floor in
+                KozmosCheckbox(
+                    checked: Binding(
+                        get: { shown.contains(floor) },
+                        set: { isOn in
+                            if isOn {
+                                shown.insert(floor)
+                            } else {
+                                shown.remove(floor)
+                            }
+                        }
+                    ),
+                    label: floor
+                )
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.state.ToggleableState
+import com.kozmos.components.checkbox.KozmosCheckbox
+
+// "All floors" is mixed while only some floors are shown; a click shows them all.
+@Composable
+fun FloorFilter(floors: List<String>, shown: Set<String>, onShownChange: (Set<String>) -> Unit) {
+    val all = when (shown.size) {
+        0 -> ToggleableState.Off
+        floors.size -> ToggleableState.On
+        else -> ToggleableState.Indeterminate
+    }
+    Column {
+        KozmosCheckbox(
+            state = all,
+            onCheckedChange = { checked -> onShownChange(if (checked) floors.toSet() else emptySet()) },
+            label = "All floors"
+        )
+        floors.forEach { floor ->
+            KozmosCheckbox(
+                checked = floor in shown,
+                onCheckedChange = { checked -> onShownChange(if (checked) shown + floor else shown - floor) },
+                label = floor
+            )
+        }
+    }
 }
 `}
 />
