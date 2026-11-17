@@ -362,6 +362,10 @@
   <string name="semantics_typography_family_system">ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji"</string>
   <string name="semantics_typography_family_brand">@string/primitives_typography_font_family_primary</string>
   <string name="semantics_typography_family_mono">ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace</string>
+  <dimen name="semantics_typography_display_size">48.00dp</dimen>
+  <dimen name="semantics_typography_display_line_height">54.00dp</dimen>
+  <string name="semantics_typography_display_weight">700</string>
+  <dimen name="semantics_typography_display_letter_spacing">0.00dp</dimen>
   <color name="semantics_diff_new">#ff2fbf71</color>
   <color name="semantics_diff_updated">#ff3b82f6</color>
   <color name="semantics_diff_deleted">#ffef4444</color>

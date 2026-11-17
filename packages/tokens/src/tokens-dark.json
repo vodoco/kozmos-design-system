@@ -2735,6 +2735,28 @@
           "$type": "fontFamilies",
           "$description": "Code, coordinates, IDs and anything that wants to align in columns."
         }
+      },
+      "Display": {
+        "Size": {
+          "$value": "3rem",
+          "$type": "dimension",
+          "$description": "Text and Heading's one display size (decision 203, GAP-272): 48 (3rem, so it follows the reader's text size), the type scale's font size 800, for a marketing-style headline such as a sign-in hero. Above Heading 1's 36; not a heading rank of its own."
+        },
+        "LineHeight": {
+          "$value": "3.375rem",
+          "$type": "dimension",
+          "$description": "54 under the display size's 48: Heading 1's own ratio, 40 over 36 (1.11), gives 53.3 at 48, and 54, the scale's line height 600, is its step nearest that."
+        },
+        "Weight": {
+          "$value": 700,
+          "$type": "fontWeights",
+          "$description": "Bold, as Heading 1 draws."
+        },
+        "LetterSpacing": {
+          "$value": "0rem",
+          "$type": "dimension",
+          "$description": "None, as Heading 1 draws: the platform font keeps its own tracking at the size."
+        }
       }
     },
     "Diff": {

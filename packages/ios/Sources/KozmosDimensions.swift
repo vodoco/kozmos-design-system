@@ -81,6 +81,9 @@ public struct KozmosDimensions {
     public static let semanticsRadiusContainer: CGFloat = 20
     public static let semanticsRadiusPanel: CGFloat = 24
     // semanticsRadiusPill is not emitted: a pill is a shape, not a length. Use Capsule().
+    public static let semanticsTypographyDisplaySize: CGFloat = 48
+    public static let semanticsTypographyDisplayLineheight: CGFloat = 54
+    public static let semanticsTypographyDisplayLetterspacing: CGFloat = 0
     public static let componentsHtmlElementsHeadingsH1LetterSpacing: CGFloat = -0.4000000059604645
     public static let componentsHtmlElementsHeadingsH1ParagraphSpacing: CGFloat = 28
     public static let componentsHtmlElementsHeadingsH2LetterSpacing: CGFloat = -0.4000000059604645
