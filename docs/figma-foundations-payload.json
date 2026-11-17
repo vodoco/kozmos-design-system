@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T06:30:45.135Z",
+  "generatedAt": "2026-11-17T18:34:33.007Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,12 +36,12 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 745,
-    "variableTokens": 694,
-    "styleOnlyTokens": 51,
+    "totalTokens": 749,
+    "variableTokens": 697,
+    "styleOnlyTokens": 52,
     "bySourceType": {
       "borderRadius": 8,
-      "dimension": 19,
+      "dimension": 22,
       "borderWidth": 4,
       "opacity": 7,
       "number": 60,
@@ -54,7 +54,7 @@
       "other": 23,
       "cubicBezier": 5,
       "fontFamilies": 7,
-      "fontWeights": 5,
+      "fontWeights": 6,
       "shadow": 8,
       "duration": 3
     },
@@ -7783,6 +7783,78 @@
         "dark": {
           "kind": "alias",
           "path": "Primitives/Colors/background/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/Size",
+      "figmaName": "Typography/Display/Size",
+      "collection": "Kozmos Semantics",
+      "sourceType": "dimension",
+      "figmaType": "FLOAT",
+      "cssVariable": "--semantics-typography-display-size",
+      "syntax": {
+        "web": "var(--semantics-typography-display-size)",
+        "ios": "semanticsTypographyDisplaySize",
+        "android": "semanticsTypographyDisplaySize"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "number",
+          "value": 48
+        },
+        "dark": {
+          "kind": "number",
+          "value": 48
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/LineHeight",
+      "figmaName": "Typography/Display/LineHeight",
+      "collection": "Kozmos Semantics",
+      "sourceType": "dimension",
+      "figmaType": "FLOAT",
+      "cssVariable": "--semantics-typography-display-line-height",
+      "syntax": {
+        "web": "var(--semantics-typography-display-line-height)",
+        "ios": "semanticsTypographyDisplayLineheight",
+        "android": "semanticsTypographyDisplayLineheight"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "number",
+          "value": 54
+        },
+        "dark": {
+          "kind": "number",
+          "value": 54
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/LetterSpacing",
+      "figmaName": "Typography/Display/LetterSpacing",
+      "collection": "Kozmos Semantics",
+      "sourceType": "dimension",
+      "figmaType": "FLOAT",
+      "cssVariable": "--semantics-typography-display-letter-spacing",
+      "syntax": {
+        "web": "var(--semantics-typography-display-letter-spacing)",
+        "ios": "semanticsTypographyDisplayLetterspacing",
+        "android": "semanticsTypographyDisplayLetterspacing"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "number",
+          "value": 0
+        },
+        "dark": {
+          "kind": "number",
+          "value": 0
         }
       }
     },
@@ -17673,6 +17745,30 @@
         "dark": {
           "kind": "raw",
           "value": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/Weight",
+      "figmaName": "Typography/Display/Weight",
+      "collection": "Kozmos Semantics",
+      "sourceType": "fontWeights",
+      "figmaType": null,
+      "cssVariable": "--semantics-typography-display-weight",
+      "syntax": {
+        "web": "var(--semantics-typography-display-weight)",
+        "ios": "semanticsTypographyDisplayWeight",
+        "android": "semanticsTypographyDisplayWeight"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": 700
+        },
+        "dark": {
+          "kind": "raw",
+          "value": 700
         }
       }
     },

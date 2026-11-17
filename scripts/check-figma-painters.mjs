@@ -235,6 +235,12 @@ const variableByName = mockVariables([
   "Colors/transparent/inverted/10",
   "Border/bevel/top",
   "Overlay/Scrim",
+  // Decisions 202 and 203: Dialog's full size and media, and the display size.
+  "Dialog/width/full",
+  "Dialog/height/full",
+  "Dialog/media/height",
+  "Text/font-size/display",
+  "Text/line-height/display",
 ]);
 
 const figma = createFigmaMock({ pages: pages() });
@@ -4354,8 +4360,7 @@ section("Decision 59: the theme fill and what sits on it");
     });
     const mixedBox = named(mixed, "Checkbox Control");
     const mixedMark = mixedBox && named(mixedBox, "Checkbox Mark");
-    const edge =
-      state === "Error" ? "Colors/emotional/danger/600" : FILL;
+    const edge = state === "Error" ? "Colors/emotional/danger/600" : FILL;
     ok(
       mixed.name === `Checked=Indeterminate, State=${state}` &&
         mixedBox &&
@@ -9249,9 +9254,7 @@ section("Rating");
     );
     const whole = (await paint("Stars", "4", "Readonly")).component;
     ok(
-      whole.children.every(
-        (cell) => glyphOf(cell).name !== "Star / half",
-      ),
+      whole.children.every((cell) => glyphOf(cell).name !== "Star / half"),
       "a whole score draws no half",
     );
   }
@@ -18055,8 +18058,7 @@ section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
       ) &&
       plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
         (entry) =>
-          entry.title === "Inputs" &&
-          entry.components.includes("ImageCropper"),
+          entry.title === "Inputs" && entry.components.includes("ImageCropper"),
       ),
     "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
   );
@@ -18702,6 +18704,182 @@ section("PropertyPicker: the subtle Button and its popup");
       plugin.expectedVariantAxesForComponentSetName("PropertyPicker"),
     ) === JSON.stringify({ State: ["Closed", "Open", "Suggested", "Empty"] }),
     "the set's one axis is State: Closed (its default), Open, Suggested, Empty",
+  );
+}
+
+section(
+  "Decisions 195, 202 and 203: Dialog's Media and Full, and the display size",
+);
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const paintDialog = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    let error = null;
+    try {
+      await plugin.updateDialogVariant(component, {
+        value,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    ok(
+      !error,
+      `Dialog ${value}: painted (${error ? error.message : "no error"})`,
+    );
+    return component;
+  };
+  ok(
+    JSON.stringify(plugin.expectedVariantAxesForComponentSetName("Dialog")) ===
+      JSON.stringify({
+        Content: ["Basic", "Form", "Footer", "Media", "Full"],
+      }),
+    `Dialog's Content axis keeps Basic, Form and Footer and adds Media and Full (${JSON.stringify(plugin.expectedVariantAxesForComponentSetName("Dialog"))})`,
+  );
+
+  // Decision 195: the media bled to the edges and top corners inside the 1
+  // edge, the title 16 under it, the close in the corner over it.
+  const media = await paintDialog("Media");
+  const band = media && named(media, "Dialog Media");
+  const header = media && named(media, "Dialog Header");
+  const close = media && named(media, "Dialog Close");
+  ok(
+    Boolean(
+      media &&
+      media.name === "Content=Media" &&
+      band &&
+      media.children[0] === band &&
+      band.layoutPositioning === "ABSOLUTE" &&
+      band.x === 1 &&
+      band.y === 1 &&
+      band.width === 510 &&
+      band.height === 160 &&
+      band.topLeftRadius === plugin.KOZMOS_RADIUS.container - 1 &&
+      band.topRightRadius === plugin.KOZMOS_RADIUS.container - 1 &&
+      band.bottomLeftRadius === 0 &&
+      boundVariableName(band.fills[0]) === "Colors/theme/0",
+    ),
+    `Media: a 510 by 160 band from the top edge, inside the 1 edge, its top corners 19, in theme 0 (${band && `${band.x},${band.y} ${band.width}×${band.height} r${band.topLeftRadius} ${band.layoutPositioning}`})`,
+  );
+  ok(
+    Boolean(media && media.paddingTop === 177 && media.paddingLeft === 24),
+    `Media: the title starts 16 under the band, the sides keep 24 (${media && `${media.paddingTop}, ${media.paddingLeft}`})`,
+  );
+  ok(
+    Boolean(
+      close &&
+      close.parent === media &&
+      close.layoutPositioning === "ABSOLUTE" &&
+      close.x === 512 - 24 - 32 &&
+      close.y === 24 &&
+      boundVariableName(close.fills[0]) === "Surface/0" &&
+      boundVariableName(close.strokes[0]) === "Border/Subtle" &&
+      header &&
+      !header.findOne((node) => node.name === "Dialog Close") &&
+      media.children.indexOf(close) > media.children.indexOf(band),
+    ),
+    `Media: the close in the dialog's corner, 24 in, on the surface with the subtle edge, above the band, not in the header (${close && `${close.parent && close.parent.name} ${close.x},${close.y}`})`,
+  );
+  const basic = await paintDialog("Basic");
+  ok(
+    Boolean(
+      basic &&
+      !named(basic, "Dialog Media") &&
+      named(basic, "Dialog Header").findOne(
+        (node) => node.name === "Dialog Close",
+      ) &&
+      basic.paddingTop === 24 &&
+      basic.width === 512,
+    ),
+    "Basic: no band, the close in the header's row as before, 512 wide",
+  );
+
+  // Decision 202: the window less 16 each side, the body the rest.
+  const full = await paintDialog("Full");
+  const body = full && named(full, "Dialog Body");
+  const preview = full && named(full, "Full Media");
+  ok(
+    Boolean(
+      full &&
+      full.name === "Content=Full" &&
+      full.width === 1248 &&
+      full.height === 768 &&
+      full.primaryAxisSizingMode === "FIXED" &&
+      full.boundVariables &&
+      full.boundVariables.width &&
+      body &&
+      body.layoutGrow === 1 &&
+      preview &&
+      preview.layoutGrow === 1 &&
+      boundVariableName(preview.fills[0]) === "Colors/theme/0",
+    ),
+    `Full: 1248 by 768, a 1280 by 800 window less 16 each side, its body and media taking the rest (${full && `${full.width}×${full.height} ${full.primaryAxisSizingMode}`}; body grow ${body && body.layoutGrow})`,
+  );
+
+  // Decision 203: the display size, 48 on 54, on Text's Size axis and as
+  // text styles, Heading's bold among them.
+  const metrics = plugin.textMetrics("Display");
+  ok(
+    metrics.fontSize === 48 &&
+      metrics.lineHeight === 54 &&
+      metrics.token === "display",
+    `Text Size=Display is 48 on 54 (${JSON.stringify(metrics)})`,
+  );
+  ok(
+    plugin
+      .expectedVariantAxesForComponentSetName("Text")
+      .Size.includes("Display") &&
+      plugin
+        .expectedVariantAxesForComponentSetName("Text")
+        .Size.slice(0, 8)
+        .join() === "XS,Small,Base,Large,XLarge,2XLarge,3XLarge,4XLarge",
+    "Text's Size axis keeps its eight values and adds Display",
+  );
+  const specs = plugin.kozmosTextStyleSpecs(FONTS);
+  const spec = (name) => specs.find((entry) => entry.name === name);
+  ok(
+    ["Normal", "Medium", "Semibold", "Bold"].every((weight) => {
+      const style = spec(`Text / Display / ${weight}`);
+      return style && style.fontSize === 48 && style.lineHeight === 54;
+    }),
+    "the text styles Text / Display / Normal, Medium, Semibold and Bold are 48 on 54",
+  );
+  const heading = spec("Heading / Display");
+  ok(
+    Boolean(
+      heading &&
+      heading.fontSize === 48 &&
+      heading.lineHeight === 54 &&
+      heading.fontName === (FONTS.bold || FONTS.medium || FONTS.regular),
+    ),
+    `the text style Heading / Display is bold 48 on 54 (${heading && JSON.stringify(heading.fontName)})`,
+  );
+  const text = figma.createComponent();
+  const stats = freshStats();
+  await plugin.updateTextVariant(text, {
+    size: "Display",
+    weight: "Bold",
+    tone: "Default",
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats,
+  });
+  const words = named(text, "Text");
+  ok(
+    Boolean(
+      text.name === "Size=Display, Weight=Bold, Tone=Default" &&
+      words &&
+      words.fontSize === 48 &&
+      words.lineHeight &&
+      words.lineHeight.value === 54 &&
+      words.boundVariables &&
+      words.boundVariables.fontSize &&
+      stats.warnings.length === 0,
+    ),
+    `Text Size=Display paints 48 on 54, its size bound to Text/font-size/display (${words && `${words.fontSize}/${words.lineHeight && words.lineHeight.value}`}; ${stats.warnings.join(" | ")})`,
   );
 }
 

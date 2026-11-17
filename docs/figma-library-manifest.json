@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 745,
-      "dark": 745
+      "light": 749,
+      "dark": 749
     },
     "light": [
       {
@@ -3388,6 +3388,34 @@
         "value": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace",
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/Size",
+        "type": "dimension",
+        "value": "3rem",
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LineHeight",
+        "type": "dimension",
+        "value": "3.375rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
+      },
+      {
+        "name": "Semantics/Typography/Display/Weight",
+        "type": "fontWeights",
+        "value": 700,
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LetterSpacing",
+        "type": "dimension",
+        "value": "0rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["GAP"]
       },
       {
         "name": "Semantics/Diff/New",
@@ -11232,6 +11260,34 @@
         "recommendedFigmaScopes": []
       },
       {
+        "name": "Semantics/Typography/Display/Size",
+        "type": "dimension",
+        "value": "3rem",
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LineHeight",
+        "type": "dimension",
+        "value": "3.375rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
+      },
+      {
+        "name": "Semantics/Typography/Display/Weight",
+        "type": "fontWeights",
+        "value": 700,
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LetterSpacing",
+        "type": "dimension",
+        "value": "0rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["GAP"]
+      },
+      {
         "name": "Semantics/Diff/New",
         "type": "color",
         "value": "#4FD98D",
@@ -17179,6 +17235,7 @@
           "portalContainer",
           "role",
           "side",
+          "size",
           "tabIndex",
           "title"
         ],
@@ -17624,7 +17681,7 @@
           "mappedProps": [],
           "unmappedProps": []
         },
-        "props": ["as", "children", "level"],
+        "props": ["as", "children", "level", "size"],
         "variants": {}
       },
       {
@@ -20471,7 +20528,17 @@
         "variants": {
           "align": ["center", "end", "justify", "left", "right", "start"],
           "color": ["default", "destructive", "muted", "primary", "white"],
-          "size": ["2xl", "3xl", "4xl", "base", "lg", "sm", "xl", "xs"],
+          "size": [
+            "2xl",
+            "3xl",
+            "4xl",
+            "base",
+            "display",
+            "lg",
+            "sm",
+            "xl",
+            "xs"
+          ],
           "truncate": ["true"],
           "weight": ["bold", "medium", "normal", "semibold"]
         }
@@ -20765,6 +20832,7 @@
         },
         "props": [
           "align",
+          "anchor",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
