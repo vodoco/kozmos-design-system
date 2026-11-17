@@ -4,6 +4,18 @@
   "description": "AA contrast pairs for public semantic tokens and Core runtime component aliases. Pairs are checked in both light and dark modes from generated CSS token output.",
   "runtimeAliases": [
     {
+      "name": "Tailwind inverse surface (decision 192)",
+      "file": "packages/styles/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "inverse", "DEFAULT"],
+      "value": "var(--semantics-inverse-surface)"
+    },
+    {
+      "name": "Tailwind inverse foreground (decision 192)",
+      "file": "packages/styles/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "inverse", "foreground"],
+      "value": "var(--semantics-inverse-on-surface)"
+    },
+    {
       "name": "Tailwind hover fill",
       "file": "packages/styles/tailwind.config.js",
       "path": ["theme", "extend", "colors", "hover-fill"],
@@ -95,6 +107,26 @@
     }
   ],
   "pins": [
+    {
+      "name": "a disabled Button's fill is background 100 in both themes (decision 197, GAP-218)",
+      "token": "semantics-disabled-fill",
+      "sameAs": "primitives-colors-background-100"
+    },
+    {
+      "name": "a disabled Button's label, icon and edge are foreground 400 in both themes (decision 197, GAP-218)",
+      "token": "semantics-disabled-foreground",
+      "sameAs": "primitives-colors-foreground-400"
+    },
+    {
+      "name": "the inverse surface is foreground 200, #2E3138 in light, Pointr Cloud's tooltip, and #D1CEC7 in dark (decision 192, GAP-210)",
+      "token": "semantics-inverse-surface",
+      "sameAs": "primitives-colors-foreground-200"
+    },
+    {
+      "name": "words on the inverse surface are background 0, white in light and black in dark (decision 192, GAP-210)",
+      "token": "semantics-inverse-on-surface",
+      "sameAs": "primitives-colors-background-0"
+    },
     {
       "name": "the hover fill is background 100 in light, the muted fill it always was (decision 173)",
       "token": "semantics-hover-fill",
@@ -221,6 +253,24 @@
     ]
   },
   "pairs": [
+    {
+      "name": "a disabled Button's label and icon on its fill, every filled variant (decision 197, GAP-218: at least 3:1)",
+      "background": "semantics-disabled-fill",
+      "foreground": "semantics-disabled-foreground",
+      "minimum": 3
+    },
+    {
+      "name": "a disabled outline, ghost or link Button's label and edge on the page it keeps (decision 197, GAP-218: at least 3:1)",
+      "background": "primitives-colors-background-0",
+      "foreground": "semantics-disabled-foreground",
+      "minimum": 3
+    },
+    {
+      "name": "an inverse tooltip's words on the inverse surface (decision 192, GAP-210)",
+      "background": "semantics-inverse-surface",
+      "foreground": "semantics-inverse-on-surface",
+      "minimum": 4.5
+    },
     {
       "name": "user-location dot against its ring (non-text)",
       "background": "semantics-map-marker-ring",
@@ -492,6 +542,103 @@
       "minimum": 3
     }
   ],
+  "disabledButtonLook": {
+    "description": "Decision 197 (GAP-218, 17 Nov 2026): a disabled Button, and IconButton, FloatingActionButton, MapControlButton and SplitButton, which take its props, is drawn from Semantics.Disabled, not at half opacity. Each use is a source that must hold the rule; each forbid is the half-opacity look it replaced.",
+    "uses": [
+      {
+        "name": "every disabled Button's label, icon and spinner take the disabled foreground, and the cursor stays the default (decision 197)",
+        "file": "packages/styles/src/styles/owned-components.css",
+        "contains": ".kozmos-button:disabled { cursor: default; color: var(--semantics-disabled-foreground); }"
+      },
+      {
+        "name": "a disabled filled Button (default, destructive, secondary, subtle, any emotion's fill) draws the disabled fill (decision 197)",
+        "file": "packages/styles/src/styles/owned-components.css",
+        "contains": ".kozmos-button-default:disabled, .kozmos-button-destructive:disabled, .kozmos-button-secondary:disabled, .kozmos-button-subtle:disabled, .kozmos-button-emotion-filled:disabled { background-color: var(--semantics-disabled-fill); }"
+      },
+      {
+        "name": "a disabled outline Button keeps the page under it and draws its edge in the disabled foreground (decision 197)",
+        "file": "packages/styles/src/styles/owned-components.css",
+        "contains": ".kozmos-button-outline:disabled, .kozmos-button-emotion-outline:disabled { border-color: var(--semantics-disabled-foreground); }"
+      },
+      {
+        "name": "a disabled map control draws the disabled fill under the disabled foreground, its mark too (decision 197)",
+        "file": "packages/styles/src/styles/owned-map-controls.css",
+        "contains": ".kozmos-map-control.kozmos-button-ghost:disabled { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); } .kozmos-map-control:disabled .kozmos-map-control-mark { color: var(--semantics-disabled-foreground); }"
+      },
+      {
+        "name": "SwiftUI: a disabled filled Button draws the disabled fill, and an outline, ghost, link or glass one keeps its ground (decision 197)",
+        "file": "packages/ios/Sources/Components/Button/Button.swift",
+        "contains": "if drawsDisabled { return fillEmotion == nil ? backgroundColor : KozmosColors.semanticsDisabledFill }"
+      },
+      {
+        "name": "SwiftUI: a disabled Button's label, icon and spinner take the disabled foreground (decision 197)",
+        "file": "packages/ios/Sources/Components/Button/Button.swift",
+        "contains": "if drawsDisabled { return KozmosColors.semanticsDisabledForeground }"
+      },
+      {
+        "name": "SwiftUI: a disabled IconButton draws the pair as Button does (decision 197)",
+        "file": "packages/ios/Sources/Components/IconButton/IconButton.swift",
+        "contains": "if drawsDisabled { return fillEmotion == nil ? backgroundColor : KozmosColors.semanticsDisabledFill }"
+      },
+      {
+        "name": "SwiftUI: a disabled or loading map control's surface is the disabled fill (decision 197)",
+        "file": "packages/ios/Sources/Components/MapControlButton/MapControlButton.swift",
+        "contains": "if drawsDisabled { return KozmosColors.semanticsDisabledFill }"
+      },
+      {
+        "name": "Compose: a disabled fill (Button, IconButton, MapControlButton, FloatingActionButton, SplitButton) is the disabled pair (decision 197)",
+        "file": "packages/android/src/main/java/com/kozmos/components/FillStates.kt",
+        "contains": "!enabled -> KozmosFillLook( KozmosThemeTokens.semanticsDisabledFill, KozmosThemeTokens.semanticsDisabledForeground,"
+      },
+      {
+        "name": "Compose: a disabled Button's label, icon and edge take the disabled foreground (decision 197)",
+        "file": "packages/android/src/main/java/com/kozmos/components/Button/Button.kt",
+        "contains": "val disabledInk = KozmosThemeTokens.semanticsDisabledForeground"
+      },
+      {
+        "name": "Compose: a disabled IconButton's ink is the disabled foreground (decision 197)",
+        "file": "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.kt",
+        "contains": "val disabledInk = KozmosThemeTokens.semanticsDisabledForeground"
+      }
+    ],
+    "forbids": [
+      {
+        "name": "a disabled Button is no longer drawn at half opacity (decision 197)",
+        "file": "packages/styles/src/styles/owned-components.css",
+        "contains": "focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98];"
+      },
+      {
+        "name": "SwiftUI: a disabled Button is no longer drawn at half (decision 197)",
+        "file": "packages/ios/Sources/Components/Button/Button.swift",
+        "contains": ".opacity(isDisabled || isLoading ? 0.5 : 1)"
+      },
+      {
+        "name": "SwiftUI: a disabled IconButton is no longer drawn at half (decision 197)",
+        "file": "packages/ios/Sources/Components/IconButton/IconButton.swift",
+        "contains": ".opacity(isDisabled || isLoading ? 0.5 : 1)"
+      },
+      {
+        "name": "SwiftUI: a disabled map control is no longer drawn at half (decision 197)",
+        "file": "packages/ios/Sources/Components/MapControlButton/MapControlButton.swift",
+        "contains": ".opacity(isDisabled || isLoading ? 0.5 : 1)"
+      },
+      {
+        "name": "Compose: a disabled Button is no longer drawn at half (decision 197)",
+        "file": "packages/android/src/main/java/com/kozmos/components/Button/Button.kt",
+        "contains": "KozmosInertAlpha"
+      },
+      {
+        "name": "Compose: a disabled IconButton is no longer drawn at half (decision 197)",
+        "file": "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.kt",
+        "contains": "KozmosInertAlpha"
+      },
+      {
+        "name": "Compose: a disabled map control is no longer drawn at half (decision 197)",
+        "file": "packages/android/src/main/java/com/kozmos/components/MapControlButton/MapControlButton.kt",
+        "contains": "KozmosInertAlpha"
+      }
+    ]
+  },
   "hoverFillUses": [
     {
       "name": "a highlighted option, under the pointer or the keyboard, takes the hover fill: Listbox, Combobox, MultiSelect, Select, TimePicker (decision 173)",

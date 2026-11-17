@@ -355,6 +355,10 @@
   <color name="semantics_scrollbar_thumb">@color/primitives_colors_foreground_500</color>
   <color name="semantics_scrollbar_thumb_hover">@color/primitives_colors_foreground_400</color>
   <color name="semantics_hover_fill">@color/primitives_colors_background_100</color>
+  <color name="semantics_disabled_fill">@color/primitives_colors_background_100</color>
+  <color name="semantics_disabled_foreground">@color/primitives_colors_foreground_400</color>
+  <color name="semantics_inverse_surface">@color/primitives_colors_foreground_200</color>
+  <color name="semantics_inverse_on_surface">@color/primitives_colors_background_0</color>
   <string name="semantics_elevation_raised">@string/shadow_sm</string>
   <string name="semantics_elevation_floating">@string/shadow_md</string>
   <string name="semantics_elevation_overlay">@string/shadow_lg</string>
