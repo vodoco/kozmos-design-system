@@ -155,6 +155,16 @@ try {
                   clientWidth: child.clientWidth,
                   opacity: getComputedStyle(child).opacity,
                   disabled: child.getAttribute("aria-disabled"),
+                  color: getComputedStyle(child).color,
+                  // The disabled pair's foreground where the action is.
+                  pair: (() => {
+                    const probe = document.createElement("span");
+                    probe.style.color = "var(--semantics-disabled-foreground)";
+                    child.parentElement.append(probe);
+                    const colour = getComputedStyle(probe).color;
+                    probe.remove();
+                    return colour;
+                  })(),
                 };
               }),
             }));
@@ -182,14 +192,16 @@ try {
                 one.scrollWidth <= one.clientWidth + 1,
                 `${where}: a label overflows its button`,
               );
-              // aria-disabled reads unavailable, at half: an aria-disabled step
-              // control keeps its own look (a disabled Button draws the
-              // disabled pair, decision 197).
-              assert.equal(
-                one.opacity,
-                one.disabled === "true" ? "0.5" : "1",
-                `${where}: opacity`,
-              );
+              // aria-disabled reads unavailable from the disabled pair, at
+              // full strength, as a disabled Button does (decision 197, the
+              // owner's ruling of 17 Nov); no longer at half.
+              assert.equal(one.opacity, "1", `${where}: opacity`);
+              if (one.disabled === "true")
+                assert.equal(
+                  one.color,
+                  one.pair,
+                  `${where}: an unavailable step control is not the disabled foreground`,
+                );
             }
             assert.ok(
               Math.abs(first.width - second.width) <= 1,

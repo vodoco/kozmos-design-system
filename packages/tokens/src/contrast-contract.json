@@ -546,29 +546,49 @@
     "description": "Decision 197 (GAP-218, 17 Nov 2026): a disabled Button, and IconButton, FloatingActionButton, MapControlButton and SplitButton, which take its props, is drawn from Semantics.Disabled, not at half opacity. Each use is a source that must hold the rule; each forbid is the half-opacity look it replaced.",
     "uses": [
       {
-        "name": "every disabled Button's label, icon and spinner take the disabled foreground, and the cursor stays the default (decision 197)",
+        "name": "every disabled or unavailable (aria-disabled) Button's label and icon take the disabled foreground, the cursor the default; a loading one is busy and keeps its colours (decision 197, the owner's rulings of 17 Nov)",
         "file": "packages/styles/src/styles/owned-components.css",
-        "contains": ".kozmos-button:disabled { cursor: default; color: var(--semantics-disabled-foreground); }"
+        "contains": ".kozmos-button:is(:disabled:not([data-loading]), [aria-disabled=\"true\"]) { cursor: default; color: var(--semantics-disabled-foreground); }"
       },
       {
-        "name": "a disabled filled Button (default, destructive, secondary, subtle, any emotion's fill) draws the disabled fill (decision 197)",
+        "name": "a disabled filled or ghost Button draws the disabled fill: an enabled ghost can already be grey (decision 197, the owner's ruling of 17 Nov)",
         "file": "packages/styles/src/styles/owned-components.css",
-        "contains": ".kozmos-button-default:disabled, .kozmos-button-destructive:disabled, .kozmos-button-secondary:disabled, .kozmos-button-subtle:disabled, .kozmos-button-emotion-filled:disabled { background-color: var(--semantics-disabled-fill); }"
+        "contains": ".kozmos-button-emotion-filled:is( :disabled:not([data-loading]), [aria-disabled=\"true\"] ), .kozmos-button-ghost:is( :disabled:not([data-loading]), [aria-disabled=\"true\"] ) { background-color: var(--semantics-disabled-fill); }"
       },
       {
         "name": "a disabled outline Button keeps the page under it and draws its edge in the disabled foreground (decision 197)",
         "file": "packages/styles/src/styles/owned-components.css",
-        "contains": ".kozmos-button-outline:disabled, .kozmos-button-emotion-outline:disabled { border-color: var(--semantics-disabled-foreground); }"
+        "contains": ".kozmos-button-emotion-outline:is( :disabled:not([data-loading]), [aria-disabled=\"true\"] ) { border-color: var(--semantics-disabled-foreground); background-color: var(--primitives-colors-background-0); }"
       },
       {
-        "name": "a disabled map control draws the disabled fill under the disabled foreground, its mark too (decision 197)",
+        "name": "a disabled IconButton's count is the pair turned over (decision 197, coordinator's ruling of 17 Nov)",
+        "file": "packages/styles/src/styles/owned-components.css",
+        "contains": ".kozmos-button:is(:disabled:not([data-loading]), [aria-disabled=\"true\"]) .kozmos-icon-button-counter { background-color: var(--semantics-disabled-foreground); color: var(--semantics-disabled-fill); }"
+      },
+      {
+        "name": "a loading Button is marked busy, so it keeps its colours, unless it is disabled too (the owner's ruling of 17 Nov)",
+        "file": "packages/react/src/components/Button/Button.tsx",
+        "contains": "data-loading={isLoading && !disabled ? \"\" : undefined}"
+      },
+      {
+        "name": "a disabled AISearchButton's disc and glyph are the pair, its ring undimmed (decision 197)",
+        "file": "packages/react/src/components/AISearchButton/AISearchButton.tsx",
+        "contains": "group-disabled:bg-[var(--semantics-disabled-fill)]"
+      },
+      {
+        "name": "a disabled or unavailable map control draws the disabled fill under the disabled foreground, its mark too; loading, it keeps its colours (decision 197)",
         "file": "packages/styles/src/styles/owned-map-controls.css",
-        "contains": ".kozmos-map-control.kozmos-button-ghost:disabled { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); } .kozmos-map-control:disabled .kozmos-map-control-mark { color: var(--semantics-disabled-foreground); }"
+        "contains": ".kozmos-map-control.kozmos-button-ghost:is( :disabled:not([data-loading]), [aria-disabled=\"true\"] ) { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); }"
       },
       {
-        "name": "SwiftUI: a disabled filled Button draws the disabled fill, and an outline, ghost, link or glass one keeps its ground (decision 197)",
+        "name": "a disabled MapEditToolbar action or tool, whose ink is already the disabled foreground, takes the disabled fill, at full strength (decision 197)",
+        "file": "packages/styles/src/dashboard/map-edit-toolbar.css",
+        "contains": ".kozmos-map-edit-toolbar-item:disabled { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); opacity: 1; }"
+      },
+      {
+        "name": "SwiftUI: a disabled filled or ghost Button draws the disabled fill, and an outline, link or glass one keeps its ground (decision 197)",
         "file": "packages/ios/Sources/Components/Button/Button.swift",
-        "contains": "if drawsDisabled { return fillEmotion == nil ? backgroundColor : KozmosColors.semanticsDisabledFill }"
+        "contains": "return fillEmotion != nil || variant == .ghost ? KozmosColors.semanticsDisabledFill : backgroundColor"
       },
       {
         "name": "SwiftUI: a disabled Button's label, icon and spinner take the disabled foreground (decision 197)",
@@ -576,9 +596,9 @@
         "contains": "if drawsDisabled { return KozmosColors.semanticsDisabledForeground }"
       },
       {
-        "name": "SwiftUI: a disabled IconButton draws the pair as Button does (decision 197)",
+        "name": "SwiftUI: a disabled filled or ghost IconButton draws the disabled fill, as Button does (decision 197)",
         "file": "packages/ios/Sources/Components/IconButton/IconButton.swift",
-        "contains": "if drawsDisabled { return fillEmotion == nil ? backgroundColor : KozmosColors.semanticsDisabledFill }"
+        "contains": "return fillEmotion != nil || variant == .ghost ? KozmosColors.semanticsDisabledFill : backgroundColor"
       },
       {
         "name": "SwiftUI: a disabled or loading map control's surface is the disabled fill (decision 197)",
@@ -601,9 +621,19 @@
         "contains": "val disabledInk = KozmosThemeTokens.semanticsDisabledForeground"
       },
       {
-        "name": "a disabled MapEditToolbar action, whose ink is already the disabled foreground, takes the disabled fill under it (decision 197)",
-        "file": "packages/styles/src/dashboard/map-edit-toolbar.css",
-        "contains": ".kozmos-map-edit-toolbar-item:where(:not([aria-pressed=\"true\"])):disabled { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); }"
+        "name": "SwiftUI: a loading Button keeps its colours; only a disabled one draws the pair (the owner's ruling of 17 Nov)",
+        "file": "packages/ios/Sources/Components/Button/Button.swift",
+        "contains": "var drawsDisabled: Bool { isDisabled || !isEnabled }"
+      },
+      {
+        "name": "SwiftUI: a disabled IconButton's count is the pair turned over (decision 197)",
+        "file": "packages/ios/Sources/Components/IconButton/IconButton.swift",
+        "contains": "fill: drawsDisabled ? KozmosInkedFill(fill: KozmosColors.semanticsDisabledForeground, ink: KozmosColors.semanticsDisabledFill) : nil)"
+      },
+      {
+        "name": "Compose: a part that is not enabled only because it is loading keeps its idle fill; busy, not unavailable (the owner's ruling of 17 Nov)",
+        "file": "packages/android/src/main/java/com/kozmos/components/FillStates.kt",
+        "contains": "!enabled && busy -> KozmosFillLook(container, content, focusRing = false)"
       }
     ],
     "forbids": [
@@ -641,6 +671,21 @@
         "name": "Compose: a disabled map control is no longer drawn at half (decision 197)",
         "file": "packages/android/src/main/java/com/kozmos/components/MapControlButton/MapControlButton.kt",
         "contains": "KozmosInertAlpha"
+      },
+      {
+        "name": "an unavailable RouteSummary action is no longer drawn at half (decision 197, the owner's ruling of 17 Nov)",
+        "file": "packages/styles/src/styles/owned-components.css",
+        "contains": ".kozmos-route-summary-actions > .kozmos-button[aria-disabled=\"true\"] { opacity: 0.5;"
+      },
+      {
+        "name": "an unavailable ImageCropper zoom is no longer drawn at half (decision 197)",
+        "file": "packages/styles/src/styles/owned-components.css",
+        "contains": ".kozmos-image-cropper-zoom > [aria-disabled=\"true\"] { opacity: 0.5;"
+      },
+      {
+        "name": "a disabled AISearchButton is no longer drawn at half (decision 197)",
+        "file": "packages/react/src/components/AISearchButton/AISearchButton.tsx",
+        "contains": "disabled:opacity-50"
       }
     ]
   },

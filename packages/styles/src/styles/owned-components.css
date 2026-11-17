@@ -326,7 +326,6 @@
     overflow-wrap: anywhere;
   }
   .kozmos-route-summary-actions > .kozmos-button[aria-disabled="true"] {
-    opacity: 0.5;
     cursor: default;
   }
   /* RouteSummary's destination and its location line break a long word
@@ -1683,66 +1682,81 @@
   .kozmos-button-emotion-filled:active {
     transition-duration: 0s;
   }
-  /* An unavailable filled Button (aria-disabled, as RouteSummary's Previous
-     and Next) keeps its rest colour under the pointer and a press, or it
-     would look as if it acted. It keeps focus, and its ring. */
-  .kozmos-button-default[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(
-      --components-primary-buttons-themed-button-background-idle
-    );
-  }
-  .kozmos-button-destructive[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(
-      --components-primary-buttons-danger-button-background-idle
-    );
-  }
-  .kozmos-button-secondary[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(
-      --components-primary-buttons-neutral-button-background-idle
-    );
-  }
-  /* The subtle tier's words step with its fill, so an unavailable one keeps
-     its rest words too. */
-  .kozmos-button-subtle[aria-disabled="true"]:is(:hover, :active),
-  .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
-    color: var(--kz-button-fg);
-    background-color: var(--kz-button-bg);
-  }
-  .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(--kz-button-bg);
-  }
   /* A disabled Button (decision 197, GAP-218) is drawn from the disabled
      pair, Semantics.Disabled, not at half opacity: at half, a white label
      on the theme fill read 2.24:1 on a white card, and the tour's disabled
-     Next could not be read. Every variant and emotion takes the pair's
-     foreground for its label, its icon (currentColor) and its spinner; what
-     changes is the ground. A filled variant (default, destructive,
-     secondary, subtle, or any emotion's fill) takes the pair's fill under
-     it: 4.80:1 in light and 6.51:1 in dark. An outline, ghost or link
-     Button never had a fill, and a disabled one gains none, or it would
-     weigh more disabled than enabled: it keeps the page under it, where the
-     foreground reads more, 6.10:1 and 7.76:1, and the outline's edge takes
-     the foreground too, so the shape stays. Glass is the surface it stands
-     on, an effect rather than a fill: it keeps the glass and takes the
-     foreground. These outweigh each variant's own rules by weight (a class
-     and :disabled), and a loading Button, disabled while it waits, draws
-     the same. The cursor stays the default; an aria-disabled Button
-     (RouteSummary's, ImageCropper's zoom) keeps its focus and its own look
-     below. */
-  .kozmos-button:disabled {
+     Next could not be read. So is an unavailable one, aria-disabled
+     (RouteSummary's Previous and Next, ImageCropper's zoom), which keeps
+     its focus and its ring (the owner, 17 Nov), as native RouteSummary's
+     disabled actions draw. Every variant and emotion takes the pair's
+     foreground for its label and its icon (currentColor); what changes is
+     the ground. A filled variant (default, destructive, secondary, subtle,
+     or any emotion's fill) takes the pair's fill under it: 4.80:1 in light
+     and 6.51:1 in dark. So does a ghost, icon-only too: an enabled ghost
+     can already be grey (Cloud's toolbar, a field's clear), and the fill
+     is what says it is unavailable. An outline Button keeps the page under
+     it and its edge takes the foreground, so the shape stays, 6.10:1 and
+     7.76:1. A link gains no fill, or it would stop reading as a link: an
+     enabled link is the theme's colour, and grey with no underline is
+     what differs. Glass is the surface it stands on, an effect rather than
+     a fill: it keeps the glass, and the foreground differs from its ink.
+     A loading Button is busy, not unavailable: it keeps its variant's
+     colours (data-loading); disabled and loading, it draws as disabled.
+     These weigh a class and the state, three, over each variant's hover,
+     focus and press, so an aria-disabled Button keeps the look under the
+     pointer. The cursor stays the default. IconButton's count turns over
+     to the pair, the foreground under the fill's digits. */
+  .kozmos-button:is(:disabled:not([data-loading]), [aria-disabled="true"]) {
     cursor: default;
     color: var(--semantics-disabled-foreground);
   }
-  .kozmos-button-default:disabled,
-  .kozmos-button-destructive:disabled,
-  .kozmos-button-secondary:disabled,
-  .kozmos-button-subtle:disabled,
-  .kozmos-button-emotion-filled:disabled {
+  .kozmos-button-default:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-destructive:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-secondary:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-subtle:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-emotion-filled:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-ghost:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ) {
     background-color: var(--semantics-disabled-fill);
   }
-  .kozmos-button-outline:disabled,
-  .kozmos-button-emotion-outline:disabled {
+  .kozmos-button-outline:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-emotion-outline:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ) {
     border-color: var(--semantics-disabled-foreground);
+    background-color: var(--primitives-colors-background-0);
+  }
+  .kozmos-button-link:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ) {
+    text-decoration-line: none;
+  }
+  .kozmos-button:is(:disabled:not([data-loading]), [aria-disabled="true"])
+    .kozmos-icon-button-counter {
+    background-color: var(--semantics-disabled-foreground);
+    color: var(--semantics-disabled-fill);
   }
   /* A named exception (decision 173, ruling c; contrast-contract.json's
      hoverFillExceptions): the outline and text treatments keep the muted
@@ -1886,12 +1900,10 @@
     flex: 1 1 auto;
     min-inline-size: 0;
   }
-  /* A zoom at its limit is unavailable, not disabled, so it keeps focus,
-     and it is drawn at half opacity, the look an aria-disabled control
-     keeps; a disabled Button is drawn from the disabled pair (decision
-     197). */
+  /* A zoom at its limit is unavailable, not disabled, so it keeps focus;
+     it is drawn from the disabled pair, as every unavailable Button is
+     (decision 197). */
   .kozmos-image-cropper-zoom > [aria-disabled="true"] {
-    opacity: 0.5;
     cursor: default;
   }
   /* PageHeader (GAP-036, decision 135): a band across the page, its content

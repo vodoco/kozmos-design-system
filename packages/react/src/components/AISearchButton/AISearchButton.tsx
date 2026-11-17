@@ -37,7 +37,7 @@ const AISearchButton = React.forwardRef<HTMLButtonElement, AISearchButtonProps>(
         // end of a row widened the page for part of every turn. Clipped to the
         // button it draws the same; the focus ring is a shadow and is not clipped.
         className={cn(
-          "kozmos-reset kozmos-ai-search relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-clip rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "kozmos-reset kozmos-ai-search group relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-clip rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed",
           className,
         )}
         {...props}
@@ -47,13 +47,16 @@ const AISearchButton = React.forwardRef<HTMLButtonElement, AISearchButtonProps>(
           edge is covered and never decides where the ring ends. */}
         <span
           aria-hidden="true"
-          className="absolute inset-[2px] rounded-pill bg-background"
+          className="absolute inset-[2px] rounded-pill bg-background group-disabled:bg-[var(--semantics-disabled-fill)]"
         />
         <span
           aria-hidden="true"
           className="kozmos-ai-search-ring absolute inset-0 rounded-pill"
         />
-        <Stars01 aria-hidden="true" className="relative h-4 w-4 text-primary" />
+        <Stars01
+          aria-hidden="true"
+          className="relative h-4 w-4 text-primary group-disabled:text-[color:var(--semantics-disabled-foreground)]"
+        />
       </button>
     </DensityScope>
   ),

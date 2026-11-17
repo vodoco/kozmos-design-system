@@ -1983,11 +1983,12 @@ try {
           const faded = [];
           for (let at = node; at; at = at.parentElement)
             if (getComputedStyle(at).opacity !== "1") faded.push(at.tagName);
-          const inks = [...node.querySelectorAll("svg, span")].map(
-            (child) => getComputedStyle(child).color,
-          );
+          const inks = [...node.querySelectorAll("svg, span")]
+            .filter((child) => !child.closest(".kozmos-icon-button-counter, .sr-only"))
+            .map((child) => getComputedStyle(child).color);
           return {
-            disabled: node.disabled,
+            disabled:
+              node.disabled || node.getAttribute("aria-disabled") === "true",
             background: s.backgroundColor,
             color: s.color,
             edge: s.borderTopWidth === "0px" ? null : s.borderTopColor,
@@ -2005,6 +2006,10 @@ try {
         ["emotion-filled", "filled"],
         ["emotion-subtle", "filled"],
         ["loading", "filled"],
+        ["aria-default", "filled"],
+        ["aria-outline", "outline"],
+        ["aria-ghost", "filled"],
+        ["map-control-aria", "filled"],
         ["icon-button", "filled"],
         ["fab", "filled"],
         ["map-control-off", "filled"],
@@ -2013,10 +2018,12 @@ try {
         ["outline", "outline"],
         ["emotion-outline", "outline"],
         ["icon-button-outline", "outline"],
-        ["ghost", "text"],
+        // A ghost takes the fill (the owner, 17 Nov): an enabled ghost can
+        // already be grey. A link keeps no fill.
+        ["ghost", "filled"],
+        ["emotion-text", "filled"],
+        ["icon-button-ghost", "filled"],
         ["link", "text"],
-        ["emotion-text", "text"],
-        ["icon-button-ghost", "text"],
         ["glass", "glass"],
       ];
       const lowest = [];
@@ -2110,6 +2117,88 @@ try {
           { disabled: true, background: fill, color: ink, opacity: "1" },
           `${mode}, ${theme}: a disabled SplitButton's half is not the disabled pair: ${JSON.stringify(half)}`,
         );
+      // The owner's rulings of 17 Nov. A loading Button is busy, not
+      // unavailable: it keeps its variant's colours at full strength, its
+      // spinner in its label's colour; disabled and loading, it is the
+      // pair (above, "loading"). An unavailable one (aria-disabled) keeps
+      // the pair under the pointer. A disabled IconButton's count turns
+      // over to the pair, and a disabled AISearchButton's disc and glyph
+      // are the pair at full strength, its ring undimmed.
+      const loadingLooks = [
+        [
+          "loading-default",
+          "--components-primary-buttons-themed-button-background-idle",
+          "--components-primary-buttons-themed-button-foreground-content-idle",
+          null,
+        ],
+        [
+          "loading-outline",
+          "--primitives-colors-background-0",
+          "--components-secondary-buttons-themed-button-foreground-content-idle",
+          "--components-secondary-buttons-themed-button-foreground-content-idle",
+        ],
+      ];
+      for (const [part, background, ink, edge] of loadingLooks) {
+        const testId = `${id}-${part}`;
+        const drawn = await drawnOf(testId);
+        const where = `${mode}, ${theme}: a ${part} Button`;
+        assert.deepEqual(
+          {
+            background: drawn.background,
+            color: drawn.color,
+            edge: edge ? drawn.edge : null,
+            faded: drawn.faded,
+            inks: [...new Set(drawn.inks)],
+          },
+          {
+            background: await value(looks, background),
+            color: await value(looks, ink),
+            edge: edge ? await value(looks, edge) : null,
+            faded: [],
+            inks: [await value(looks, ink)],
+          },
+          `${where} does not keep its variant's colours while it loads`,
+        );
+      }
+      for (const part of ["aria-default", "aria-ghost", "map-control-aria"]) {
+        await page.getByTestId(`${id}-disabled-${part}`).hover();
+        const hovered = await drawnOf(`${id}-disabled-${part}`);
+        assert.deepEqual(
+          [hovered.background, hovered.color],
+          [fill, ink],
+          `${mode}, ${theme}: an unavailable ${part} leaves the pair under the pointer`,
+        );
+      }
+      await page.mouse.move(1099, 1);
+      const counter = await page
+        .getByTestId(`${id}-disabled-icon-counter`)
+        .locator(".kozmos-icon-button-counter")
+        .evaluate((node) => ({
+          background: getComputedStyle(node).backgroundColor,
+          color: getComputedStyle(node).color,
+        }));
+      assert.deepEqual(
+        counter,
+        { background: ink, color: fill },
+        `${mode}, ${theme}: a disabled IconButton's count is not the pair turned over`,
+      );
+      if (mode === "full") {
+        const ai = await page
+          .getByTestId(`${id}-disabled-ai-search`)
+          .evaluate((node) => ({
+            opacity: getComputedStyle(node).opacity,
+            disc: getComputedStyle(node.children[0]).backgroundColor,
+            glyph: getComputedStyle(node.querySelector("svg")).color,
+          }));
+        assert.deepEqual(
+          ai,
+          { opacity: "1", disc: fill, glyph: ink },
+          `${mode}, ${theme}: a disabled AISearchButton is not the pair at full strength`,
+        );
+      }
+      console.log(
+        `PASS decision 197 rulings, ${theme}, ${mode}: a loading default and outline Button keep their colours, the spinner in the label's; unavailable Buttons and a map control keep the pair under the pointer; a disabled count is the pair turned over${mode === "full" ? "; a disabled AISearchButton's disc and glyph are the pair" : ""}`,
+      );
       console.log(
         `PASS decision 197, ${theme}, ${mode}: ${expectations.length} disabled Buttons and parts on them, and both SplitButton halves, draw the disabled pair (${fill} under ${ink}) at full opacity; filled variants on the fill, outline on the page with its edge, ghost, link and glass their ground; lowest label contrast ${Math.min(...lowest).toFixed(2)}:1`,
       );

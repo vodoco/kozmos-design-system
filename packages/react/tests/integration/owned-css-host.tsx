@@ -54,6 +54,7 @@ import {
   IconButton,
   FloatingActionButton,
   SplitButton,
+  AISearchButton,
 } from "@kozmos-ds/react";
 import type {
   POIPresentation,
@@ -476,9 +477,46 @@ function DisabledLooks({ id }: { id: string }) {
       >
         Subtle danger
       </Button>
-      <Button data-testid={`${id}-disabled-loading`} isLoading>
+      <Button data-testid={`${id}-loading-default`} isLoading>
         Loading
       </Button>
+      <Button data-testid={`${id}-loading-outline`} variant="outline" isLoading>
+        Loading outline
+      </Button>
+      <Button data-testid={`${id}-disabled-loading`} isLoading disabled>
+        Disabled and loading
+      </Button>
+      <Button data-testid={`${id}-disabled-aria-default`} aria-disabled="true">
+        Unavailable
+      </Button>
+      <Button
+        data-testid={`${id}-disabled-aria-outline`}
+        variant="outline"
+        aria-disabled="true"
+      >
+        Unavailable outline
+      </Button>
+      <Button
+        data-testid={`${id}-disabled-aria-ghost`}
+        variant="ghost"
+        aria-disabled="true"
+      >
+        Unavailable ghost
+      </Button>
+      <IconButton
+        data-testid={`${id}-disabled-icon-counter`}
+        label="Messages"
+        variant="default"
+        counter={3}
+        disabled
+      >
+        {mark}
+      </IconButton>
+      <AISearchButton
+        data-testid={`${id}-disabled-ai-search`}
+        label="Assistant, disabled"
+        disabled
+      />
       <IconButton
         data-testid={`${id}-disabled-icon-button`}
         label="Add"
@@ -527,6 +565,13 @@ function DisabledLooks({ id }: { id: string }) {
         label="Locate"
         pressed
         disabled
+      />
+      <MapControlButton
+        data-testid={`${id}-disabled-map-control-aria`}
+        icon={mark}
+        label="Locate"
+        pressed={false}
+        aria-disabled="true"
       />
       <MapControlButton
         data-testid={`${id}-disabled-map-control-filled`}
