@@ -57,6 +57,54 @@ describe("Tooltip", () => {
     expect(tip).toHaveAttribute("height", "4");
   });
 
+  it("draws the inverse tone and its arrow from the inverse roles, and leaves the default the popover (decision 192)", () => {
+    // The colours each role resolves to in light and dark are read in a
+    // browser by scripts/check-owned-css.mjs; here, which roles are drawn.
+    const { unmount } = render(
+      <TooltipProvider>
+        <Tooltip open>
+          <TooltipTrigger>Hover me</TooltipTrigger>
+          <TooltipContent tone="inverse">Inverse</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    const inverse = document.querySelector("[data-side]");
+    expect(inverse).toHaveAttribute("data-tone", "inverse");
+    expect(inverse).toHaveClass(
+      "border",
+      "border-inverse",
+      "bg-inverse",
+      "text-inverse-foreground",
+      "px-3",
+      "py-1.5",
+      "text-sm",
+    );
+    expect(inverse).not.toHaveClass("bg-popover", "text-popover-foreground");
+    expect(inverse?.querySelector("svg")).toHaveClass(
+      "-translate-y-px",
+      "fill-inverse",
+    );
+    expect(inverse?.querySelector("svg")).not.toHaveClass("fill-popover");
+    unmount();
+
+    render(
+      <TooltipProvider>
+        <Tooltip open>
+          <TooltipTrigger>Hover me</TooltipTrigger>
+          <TooltipContent>Default</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    const plain = document.querySelector("[data-side]");
+    expect(plain).not.toHaveAttribute("data-tone");
+    expect(plain).toHaveClass(
+      "border",
+      "bg-popover",
+      "text-popover-foreground",
+    );
+    expect(plain).not.toHaveClass("bg-inverse", "border-inverse");
+  });
+
   it("keeps a disabled trigger reachable by keyboard", () => {
     // The case the whole prop exists for. A disabled <button> emits no
     // pointer events and cannot take focus, so without the wrapper the

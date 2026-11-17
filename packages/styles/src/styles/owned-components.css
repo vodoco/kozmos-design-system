@@ -1533,7 +1533,7 @@
     @apply animate-pulse bg-[var(--primitives-colors-background-200)];
   }
   .kozmos-button {
-    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control bg-transparent text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control bg-transparent text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none active:scale-[0.98];
     cursor: pointer;
     text-transform: none;
     -webkit-appearance: button;
@@ -1553,9 +1553,6 @@
      host without @scope; the press still scales and the focus ring stays. */
   .kozmos-button-default {
     @apply bg-[var(--components-primary-buttons-themed-button-background-idle)] text-[var(--components-primary-buttons-themed-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-themed-button-background-hover)] focus-visible:bg-[var(--components-primary-buttons-themed-button-background-focus)] active:bg-[var(--components-primary-buttons-themed-button-background-pressed)];
-  }
-  .kozmos-button:disabled {
-    cursor: default;
   }
   .kozmos-button-destructive {
     @apply bg-[var(--components-primary-buttons-danger-button-background-idle)] text-[var(--components-primary-buttons-danger-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-danger-button-background-hover)] focus-visible:bg-[var(--components-primary-buttons-danger-button-background-focus)] active:bg-[var(--components-primary-buttons-danger-button-background-pressed)];
@@ -1714,6 +1711,39 @@
   .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
     background-color: var(--kz-button-bg);
   }
+  /* A disabled Button (decision 197, GAP-218) is drawn from the disabled
+     pair, Semantics.Disabled, not at half opacity: at half, a white label
+     on the theme fill read 2.24:1 on a white card, and the tour's disabled
+     Next could not be read. Every variant and emotion takes the pair's
+     foreground for its label, its icon (currentColor) and its spinner; what
+     changes is the ground. A filled variant (default, destructive,
+     secondary, subtle, or any emotion's fill) takes the pair's fill under
+     it: 4.80:1 in light and 6.51:1 in dark. An outline, ghost or link
+     Button never had a fill, and a disabled one gains none, or it would
+     weigh more disabled than enabled: it keeps the page under it, where the
+     foreground reads more, 6.10:1 and 7.76:1, and the outline's edge takes
+     the foreground too, so the shape stays. Glass is the surface it stands
+     on, an effect rather than a fill: it keeps the glass and takes the
+     foreground. These outweigh each variant's own rules by weight (a class
+     and :disabled), and a loading Button, disabled while it waits, draws
+     the same. The cursor stays the default; an aria-disabled Button
+     (RouteSummary's, ImageCropper's zoom) keeps its focus and its own look
+     below. */
+  .kozmos-button:disabled {
+    cursor: default;
+    color: var(--semantics-disabled-foreground);
+  }
+  .kozmos-button-default:disabled,
+  .kozmos-button-destructive:disabled,
+  .kozmos-button-secondary:disabled,
+  .kozmos-button-subtle:disabled,
+  .kozmos-button-emotion-filled:disabled {
+    background-color: var(--semantics-disabled-fill);
+  }
+  .kozmos-button-outline:disabled,
+  .kozmos-button-emotion-outline:disabled {
+    border-color: var(--semantics-disabled-foreground);
+  }
   /* A named exception (decision 173, ruling c; contrast-contract.json's
      hoverFillExceptions): the outline and text treatments keep the muted
      hover in both themes. On the hover fill's dark step (GAP-228) the themed
@@ -1856,8 +1886,10 @@
     flex: 1 1 auto;
     min-inline-size: 0;
   }
-  /* A zoom at its limit is unavailable, not disabled, so it keeps focus:
-     drawn as a disabled button is, at half opacity. */
+  /* A zoom at its limit is unavailable, not disabled, so it keeps focus,
+     and it is drawn at half opacity, the look an aria-disabled control
+     keeps; a disabled Button is drawn from the disabled pair (decision
+     197). */
   .kozmos-image-cropper-zoom > [aria-disabled="true"] {
     opacity: 0.5;
     cursor: default;

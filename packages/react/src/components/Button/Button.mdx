@@ -255,3 +255,75 @@ emotion = KozmosButtonEmotion.Danger
 ) { Text("Delete feature") }
 `}
 />
+
+## Disabled
+
+A disabled Button is drawn from the disabled pair, `Semantics.Disabled` (decision 197, GAP-218),
+not at half opacity: at half, a white label on the theme fill read 2.24:1 on a white card, and a
+tour's disabled Next could not be read. Every variant and emotion takes the pair's foreground,
+foreground/400, for its label, its icon and its spinner. A filled variant (default, destructive,
+secondary, subtle, or any emotion's fill) takes the pair's fill, background/100, under it: 4.80:1
+in light and 6.51:1 in dark. An outline, ghost or link Button never had a fill and gains none, or it
+would weigh more disabled than enabled: it keeps the page under it, where the foreground reads
+6.10:1 and 7.76:1, and the outline's edge takes the foreground too. Glass keeps its glass and takes
+the foreground. A loading Button is disabled while it waits and is drawn the same. IconButton,
+FloatingActionButton, MapControlButton and SplitButton take Button's props and are drawn the same;
+a disabled map control's surface takes the fill, as its surface is its fill.
+
+It still takes no press and is heard as disabled, and the cursor stays the default. A step control
+that is unavailable through `aria-disabled="true"`, as RouteSummary's are, keeps its focus and its
+own look.
+
+<Canvas>
+  <Story of={ButtonStories.Disabled} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { Button } from "@kozmos-ds/react";
+export function Example({ canContinue }: { canContinue: boolean }) {
+  return <Button disabled={!canContinue}>Next</Button>;
+}
+    `}
+    vue={`
+<script setup lang="ts">
+import { KozmosButton } from '@kozmos-ds/vue';
+defineProps<{ canContinue: boolean }>();
+</script>
+
+<template>
+  <KozmosButton :disabled="!canContinue">Next</KozmosButton>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Disabled, a Button is drawn from the disabled pair, not at half: the
+// pair's fill under its foreground on a filled variant, its foreground alone
+// on outline (its edge too), ghost, link and glass. It takes no touch, and
+// VoiceOver hears it dimmed. Loading disables it and draws the same.
+struct TourNextButton: View {
+    let canContinue: Bool
+    let next: () -> Void
+
+    var body: some View {
+        KozmosButton("Next", isDisabled: !canContinue, action: next)
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import com.kozmos.components.button.KozmosButton
+
+// enabled = false takes no press, and TalkBack hears the button as disabled.
+// Every variant is drawn from the disabled pair, not at half: its words in
+// the disabled foreground, and a filled variant on the disabled fill. A
+// loading button (isLoading = true) is disabled, and drawn the same.
+@Composable
+fun SubmitWhenReady(ready: Boolean, submit: () -> Unit) {
+    KozmosButton(onClick = submit, enabled = ready) { Text("Submit") }
+}
+`}
+/>

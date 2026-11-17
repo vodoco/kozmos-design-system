@@ -53,6 +53,19 @@ const TooltipTrigger = React.forwardRef<
 });
 TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName;
 
+// The surface each tone draws: the popover's, with its border, or the
+// inverse surface under its words, with the border in the surface's own
+// colour so the tooltip keeps its size (decision 192, GAP-210).
+const TOOLTIP_TONE_CLASSES = {
+  default: "border bg-popover px-3 py-1.5 text-sm text-popover-foreground",
+  inverse:
+    "border border-inverse bg-inverse px-3 py-1.5 text-sm text-inverse-foreground",
+} as const;
+const TOOLTIP_ARROW_CLASSES = {
+  default: "-translate-y-px fill-popover",
+  inverse: "-translate-y-px fill-inverse",
+} as const;
+
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
@@ -60,38 +73,64 @@ const TooltipContent = React.forwardRef<
     portalContainer?: React.ComponentPropsWithoutRef<
       typeof TooltipPrimitive.Portal
     >["container"];
+    /**
+     * The tooltip's surface, and its arrow's (decision 192, GAP-210).
+     * `default` is the popover surface with its border, light on a light
+     * page. `inverse` is the inverse surface: dark under white words on a
+     * light page (#2E3138, Pointr Cloud's tooltip, 13.0:1) and light under
+     * black words on a dark one (#D1CEC7, 13.4:1), from the
+     * `Semantics.Inverse` roles, so a client's theme carries it. The same
+     * size in both tones.
+     */
+    tone?: "default" | "inverse";
   }
->(({ className, sideOffset = 4, children, portalContainer, ...props }, ref) => {
-  const theme = React.useContext(ThemeProviderContext);
-  const content = (
-    <TooltipPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 overflow-visible rounded-control border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-overlay animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      {/* The tip, 8 by 4, overlaps the body by 1px, as Figma's Tooltip tip
+>(
+  (
+    {
+      className,
+      sideOffset = 4,
+      children,
+      portalContainer,
+      tone = "default",
+      ...props
+    },
+    ref,
+  ) => {
+    const theme = React.useContext(ThemeProviderContext);
+    const surface = tone === "inverse" ? "inverse" : "default";
+    const content = (
+      <TooltipPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        data-tone={surface === "inverse" ? "inverse" : undefined}
+        className={cn(
+          "z-50 overflow-visible rounded-control",
+          TOOLTIP_TONE_CLASSES[surface],
+          "shadow-overlay animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        {/* The tip, 8 by 4, overlaps the body by 1px, as Figma's Tooltip tip
           does: it covers the body's border where the two meet, so no line
           runs across the tail (site GAP-74). Radix turns the tip to each
           side, so "up" in its own frame is always into the body, and its
           box, which places the tooltip, keeps its size. */}
-      <TooltipPrimitive.Arrow
-        width={8}
-        height={4}
-        className="-translate-y-px fill-popover"
-      />
-    </TooltipPrimitive.Content>
-  );
-  return portalContainer === undefined && !theme ? (
-    content
-  ) : (
-    <TooltipPortal container={portalContainer}>{content}</TooltipPortal>
-  );
-});
+        <TooltipPrimitive.Arrow
+          width={8}
+          height={4}
+          className={TOOLTIP_ARROW_CLASSES[surface]}
+        />
+      </TooltipPrimitive.Content>
+    );
+    return portalContainer === undefined && !theme ? (
+      content
+    ) : (
+      <TooltipPortal container={portalContainer}>{content}</TooltipPortal>
+    );
+  },
+);
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };

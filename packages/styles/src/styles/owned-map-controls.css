@@ -75,6 +75,21 @@
     .kozmos-map-control-mark {
     color: var(--primitives-colors-theme-600);
   }
+  /* Disabled (decision 197, GAP-218), a map control is drawn from the
+     disabled pair as a filled Button is, not at half: its surface is its
+     fill, so the surface takes the pair's fill, and the words and the mark
+     its foreground, on or off. The ink alone would not do: an off toggle's
+     words are already foreground/400. A filled control (emphasis="filled",
+     on) is the Button's primary tier, and its own disabled rule draws it
+     the same. One class more than the surface and tone rules above, so it
+     outweighs them. */
+  .kozmos-map-control.kozmos-button-ghost:disabled {
+    background-color: var(--semantics-disabled-fill);
+    color: var(--semantics-disabled-foreground);
+  }
+  .kozmos-map-control:disabled .kozmos-map-control-mark {
+    color: var(--semantics-disabled-foreground);
+  }
 
   /* The mark: at least the SDK's 24 square, centred. A caller's wider mark,
      the floor tile's level, widens it. */

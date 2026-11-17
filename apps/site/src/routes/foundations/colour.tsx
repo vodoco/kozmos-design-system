@@ -78,6 +78,16 @@ const semanticGroups = [
     lead: "The fill under the pointer, a highlighted option and a selected Tree or Table row: background/100 in light, background/200 in dark, where background/100 is 1.19:1 on the black page (decision 173).",
   },
   {
+    prefix: "--semantics-disabled",
+    title: "Disabled",
+    lead: "A disabled Button, and every part on it: the fill a filled variant takes, background/100, and the foreground its label, icon and edge take, foreground/400, 4.80:1 in light and 6.51:1 in dark. No longer half opacity (decision 197).",
+  },
+  {
+    prefix: "--semantics-inverse",
+    title: "Inverse",
+    lead: "A surface turned over against the page, dark in light and light in dark, and the words on it, 13:1: the inverse tooltip (decision 192).",
+  },
+  {
     prefix: "--semantics-category",
     title: "Category",
     lead: "The taxonomy’s eight quick-access colours: an accent, a fill, and the ink that reads on the fill at 4.5:1.",

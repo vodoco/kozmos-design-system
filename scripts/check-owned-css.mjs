@@ -1810,10 +1810,23 @@ try {
           "--components-secondary-buttons-success-button-foreground-content-idle",
         ),
       );
-      assert.equal(
-        (await measure(page.getByTestId(`${id}-disabled-button`))).opacity,
-        "0.5",
-      );
+      // Decision 197: drawn from the disabled pair at full strength, no
+      // longer at half (the section on every variant reads the rest).
+      {
+        const disabled = await measure(page.getByTestId(`${id}-disabled-button`));
+        assert.deepEqual(
+          [disabled.opacity, disabled.backgroundColor, disabled.color],
+          [
+            "1",
+            await value(`${id}-disabled-button`, "--semantics-disabled-fill"),
+            await value(
+              `${id}-disabled-button`,
+              "--semantics-disabled-foreground",
+            ),
+          ],
+          `${mode}, ${id}: the disabled Button is not the disabled pair at full strength`,
+        );
+      }
       assert.equal(
         (
           await measure(
@@ -1947,6 +1960,257 @@ try {
       "1px",
       `${mode}: the solid surface has no edge`,
     );
+    // Decision 197 (GAP-218): a disabled Button is drawn from the disabled
+    // pair, not at half opacity, in every variant and emotion, and so is
+    // each part that takes its props: IconButton, FloatingActionButton,
+    // SplitButton and MapControlButton. A filled variant takes the pair's
+    // fill; outline, ghost, link and glass keep their ground and take its
+    // foreground, the outline's edge too. Owned, so it holds without @scope
+    // and under the host's hostile button rule. Every label reads 3:1 or more
+    // on what paints behind it.
+    for (const id of ["outer", "nested"]) {
+      const theme = id === "outer" ? "dark" : "light";
+      const looks = `${id}-disabled-looks`;
+      const fill = await value(looks, "--semantics-disabled-fill");
+      const ink = await value(looks, "--semantics-disabled-foreground");
+      const page0 = await value(looks, "--primitives-colors-background-0");
+      const drawnOf = (testId) =>
+        page.getByTestId(testId).evaluate((node) => {
+          const s = getComputedStyle(node);
+          const layers = [];
+          for (let at = node; at; at = at.parentElement)
+            layers.push(getComputedStyle(at).backgroundColor);
+          const faded = [];
+          for (let at = node; at; at = at.parentElement)
+            if (getComputedStyle(at).opacity !== "1") faded.push(at.tagName);
+          const inks = [...node.querySelectorAll("svg, span")].map(
+            (child) => getComputedStyle(child).color,
+          );
+          return {
+            disabled: node.disabled,
+            background: s.backgroundColor,
+            color: s.color,
+            edge: s.borderTopWidth === "0px" ? null : s.borderTopColor,
+            cursor: s.cursor,
+            layers,
+            faded,
+            inks,
+          };
+        });
+      const expectations = [
+        ["default", "filled"],
+        ["destructive", "filled"],
+        ["secondary", "filled"],
+        ["subtle", "filled"],
+        ["emotion-filled", "filled"],
+        ["emotion-subtle", "filled"],
+        ["loading", "filled"],
+        ["icon-button", "filled"],
+        ["fab", "filled"],
+        ["map-control-off", "filled"],
+        ["map-control-on", "filled"],
+        ["map-control-filled", "filled"],
+        ["outline", "outline"],
+        ["emotion-outline", "outline"],
+        ["icon-button-outline", "outline"],
+        ["ghost", "text"],
+        ["link", "text"],
+        ["emotion-text", "text"],
+        ["icon-button-ghost", "text"],
+        ["glass", "glass"],
+      ];
+      const lowest = [];
+      for (const [part, kind] of expectations) {
+        const testId = `${id}-disabled-${part}`;
+        const drawn = await drawnOf(testId);
+        const where = `${mode}, ${theme}: a disabled ${part}`;
+        assert.equal(drawn.disabled, true, `${where} is not disabled`);
+        assert.deepEqual(
+          drawn.faded,
+          [],
+          `${where} is faded by opacity on ${drawn.faded.join(", ")}`,
+        );
+        assert.equal(
+          drawn.cursor,
+          "default",
+          `${where}'s cursor is ${drawn.cursor}`,
+        );
+        assert.equal(
+          drawn.color,
+          ink,
+          `${where}'s label is ${drawn.color}, not the disabled foreground ${ink}`,
+        );
+        for (const child of drawn.inks)
+          assert.equal(
+            child,
+            ink,
+            `${where}'s icon, mark or spinner is ${child}, not the disabled foreground ${ink}`,
+          );
+        if (kind === "filled")
+          assert.equal(
+            drawn.background,
+            fill,
+            `${where} is filled ${drawn.background}, not the disabled fill ${fill}`,
+          );
+        else if (kind === "outline") {
+          assert.equal(
+            drawn.background,
+            page0,
+            `${where} gained a fill ${drawn.background}; it keeps the page ${page0}`,
+          );
+          assert.equal(
+            drawn.edge,
+            ink,
+            `${where}'s edge is ${drawn.edge}, not the disabled foreground ${ink}`,
+          );
+        } else if (kind === "text")
+          assert.equal(
+            drawn.background,
+            "rgba(0, 0, 0, 0)",
+            `${where} gained a fill ${drawn.background}`,
+          );
+        else
+          assert.notEqual(
+            drawn.background,
+            fill,
+            `${where} lost its glass for the disabled fill`,
+          );
+        // Over the theme's own page, background/0: the fixture's root
+        // paints none of its own, and the document under it is white.
+        const ratio = contrastRatio(
+          readColour(drawn.color),
+          paintedBehind([...drawn.layers, page0]),
+        );
+        lowest.push(ratio);
+        assert.ok(
+          ratio >= 3,
+          `${where}'s label reads ${ratio.toFixed(2)}:1 on what is behind it, under 3:1`,
+        );
+      }
+      // Both halves of the SplitButton.
+      const halves = await page
+        .getByTestId(`${id}-disabled-split`)
+        .locator("button")
+        .evaluateAll((buttons) =>
+          buttons.map((button) => ({
+            disabled: button.disabled,
+            background: getComputedStyle(button).backgroundColor,
+            color: getComputedStyle(button).color,
+            opacity: getComputedStyle(button).opacity,
+          })),
+        );
+      assert.equal(
+        halves.length,
+        2,
+        `${mode}, ${theme}: the SplitButton has ${halves.length} halves`,
+      );
+      for (const half of halves)
+        assert.deepEqual(
+          half,
+          { disabled: true, background: fill, color: ink, opacity: "1" },
+          `${mode}, ${theme}: a disabled SplitButton's half is not the disabled pair: ${JSON.stringify(half)}`,
+        );
+      console.log(
+        `PASS decision 197, ${theme}, ${mode}: ${expectations.length} disabled Buttons and parts on them, and both SplitButton halves, draw the disabled pair (${fill} under ${ink}) at full opacity; filled variants on the fill, outline on the page with its edge, ghost, link and glass their ground; lowest label contrast ${Math.min(...lowest).toFixed(2)}:1`,
+      );
+    }
+    // Decision 192 (GAP-210): TooltipContent's inverse tone draws its body,
+    // edge and arrow from the inverse surface and its words from the inverse
+    // on-surface, in each theme; the default stays the popover, unchanged,
+    // the same size. Scoped utilities, as the tooltip always was, so read
+    // with @scope.
+    if (mode === "full")
+      for (const id of ["outer", "nested"]) {
+        const theme = id === "outer" ? "dark" : "light";
+        const looks = `${id}-disabled-looks`;
+        await page.getByTestId(`${id}-tone-tips-toggle`).click();
+        const tipOf = (testId) =>
+          page.getByTestId(testId).evaluate(async (node) => {
+            await Promise.all(
+              node.getAnimations({ subtree: true }).map((a) => a.finished),
+            );
+            const s = getComputedStyle(node);
+            const arrow = node.querySelector("svg");
+            const box = node.getBoundingClientRect();
+            return {
+              background: s.backgroundColor,
+              color: s.color,
+              edge: s.borderTopColor,
+              edgeWidth: s.borderTopWidth,
+              arrow: getComputedStyle(arrow).fill,
+              height: box.height,
+              tone: node.getAttribute("data-tone"),
+            };
+          });
+        const inverse = await tipOf(`${id}-tone-tip-inverse`);
+        const plain = await tipOf(`${id}-tone-tip-default`);
+        const surface = await value(looks, "--semantics-inverse-surface");
+        const words = await value(looks, "--semantics-inverse-on-surface");
+        const popover = await value(looks, "--primitives-colors-background-0");
+        const popoverInk = await value(
+          looks,
+          "--primitives-colors-foreground-0",
+        );
+        assert.deepEqual(
+          {
+            background: inverse.background,
+            color: inverse.color,
+            edge: inverse.edge,
+            arrow: inverse.arrow,
+            tone: inverse.tone,
+          },
+          {
+            background: surface,
+            color: words,
+            edge: surface,
+            arrow: surface,
+            tone: "inverse",
+          },
+          `${theme}: the inverse tooltip is not the inverse surface under its words`,
+        );
+        assert.equal(
+          plain.background,
+          popover,
+          `${theme}: the default tooltip is ${plain.background}, not the popover`,
+        );
+        assert.equal(
+          plain.color,
+          popoverInk,
+          `${theme}: the default tooltip's words are ${plain.color}`,
+        );
+        assert.equal(
+          plain.arrow,
+          popover,
+          `${theme}: the default tooltip's arrow is ${plain.arrow}`,
+        );
+        assert.equal(
+          plain.tone,
+          null,
+          `${theme}: the default tooltip carries a tone`,
+        );
+        assert.equal(
+          inverse.edgeWidth,
+          plain.edgeWidth,
+          `${theme}: the inverse tooltip's edge is ${inverse.edgeWidth}, the default's ${plain.edgeWidth}`,
+        );
+        assert.equal(
+          inverse.height,
+          plain.height,
+          `${theme}: the inverse tooltip is ${inverse.height} tall, the default ${plain.height}`,
+        );
+        const ratio = contrastRatio(
+          readColour(inverse.color),
+          readColour(inverse.background),
+        );
+        assert.ok(
+          ratio >= 4.5,
+          `${theme}: the inverse tooltip reads ${ratio.toFixed(2)}:1`,
+        );
+        await page.getByTestId(`${id}-tone-tips-toggle`).click();
+        console.log(
+          `PASS decision 192, ${theme}: the inverse tooltip is ${surface} under ${words} (${ratio.toFixed(2)}:1), its edge and arrow the surface, the default's size; the default tooltip is the popover, ${popover} under ${popoverInk}`,
+        );
+      }
     // GAP-261: a part whose look is its state draws it as a tooltip's
     // trigger too. Radix's tooltip trigger writes its own data-state
     // (closed, delayed-open, instant-open) over the part's, so a look read

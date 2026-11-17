@@ -182,7 +182,9 @@ try {
                 one.scrollWidth <= one.clientWidth + 1,
                 `${where}: a label overflows its button`,
               );
-              // aria-disabled reads unavailable, at the disabled button's 50%.
+              // aria-disabled reads unavailable, at half: an aria-disabled step
+              // control keeps its own look (a disabled Button draws the
+              // disabled pair, decision 197).
               assert.equal(
                 one.opacity,
                 one.disabled === "true" ? "0.5" : "1",
