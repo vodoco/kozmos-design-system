@@ -71,8 +71,7 @@ final class KozmosMixedValueTests: XCTestCase {
         defer { _ = setAutomation(old) }
         let window = host(EditedName(edit: nil))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        let field = try XCTUnwrap(textFields(in: window).first)
+        let field = try await drawn("the field", in: window) { textFields(in: window).first }
         XCTAssertEqual(field.text, "")
         XCTAssertEqual(field.placeholder, "Multiple values")
         XCTAssertFalse(elements(in: window).contains { $0.accessibilityLabel == "Reset to multiple values" })
@@ -84,11 +83,12 @@ final class KozmosMixedValueTests: XCTestCase {
         for mixed in [true, false] {
             let window = host(KozmosNumberInput(value: .constant(4), label: "Height", mixed: mixed))
             defer { window.isHidden = true }
-            try await Task.sleep(nanoseconds: 300_000_000)
-            let steppers = elements(in: window).filter {
-                $0.accessibilityLabel == "Increase value" || $0.accessibilityLabel == "Decrease value"
+            let steppers = try await drawn("both steppers", in: window) { () -> [NSObject]? in
+                let found = elements(in: window).filter {
+                    $0.accessibilityLabel == "Increase value" || $0.accessibilityLabel == "Decrease value"
+                }
+                return found.count == 2 ? found : nil
             }
-            XCTAssertEqual(steppers.count, 2, describe(elements(in: window)))
             XCTAssertEqual(steppers.allSatisfy { $0.accessibilityTraits.contains(.notEnabled) }, mixed, "mixed=\(mixed)")
         }
     }
@@ -98,10 +98,10 @@ final class KozmosMixedValueTests: XCTestCase {
         defer { _ = setAutomation(old) }
         let window = host(KozmosSelectField(value: nil, placeholder: "Choose", mixed: true))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        let found = elements(in: window)
-        let field = try XCTUnwrap(found.first { ($0.accessibilityValue ?? "").contains("Multiple values") }, describe(found))
-        XCTAssertNotEqual(field.accessibilityLabel, "", describe(found))
+        let field = try await drawn("the mixed field", in: window) {
+            elements(in: window).first { ($0.accessibilityValue ?? "").contains("Multiple values") }
+        }
+        XCTAssertNotEqual(field.accessibilityLabel, "", describe(elements(in: window)))
     }
 
     // GAP-153 with GAP-154: the copy stays, disabled while mixed: nothing is
@@ -115,12 +115,15 @@ final class KozmosMixedValueTests: XCTestCase {
             mixed: true
         ))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        XCTAssertEqual(try XCTUnwrap(textFields(in: window).first).text, "")
-        let copy = try XCTUnwrap(elements(in: window).first { $0.accessibilityLabel == "Copy" }, describe(elements(in: window)))
+        // SwiftUI builds the field's UITextField and its buttons' elements
+        // apart: wait for each one read.
+        let field = try await drawn("the field", in: window) { textFields(in: window).first }
+        XCTAssertEqual(field.text, "")
+        let copy = try await drawn("the copy", in: window) { elements(in: window).first { $0.accessibilityLabel == "Copy" } }
         XCTAssertTrue(copy.accessibilityTraits.contains(.notEnabled), "the copy is disabled while mixed")
         _ = copy.accessibilityActivate()
-        try await Task.sleep(nanoseconds: 200_000_000)
+        // Nothing should happen, so there is nothing to wait for: a settle.
+        try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(written.texts, [], "nothing is copied")
     }
 
@@ -147,9 +150,9 @@ final class KozmosMixedValueTests: XCTestCase {
         let written = Written()
         let window = host(EditedHeight(written: written))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        let field = try XCTUnwrap(textFields(in: window).first)
+        let field = try await drawn("the field", in: window) { textFields(in: window).first }
         XCTAssertTrue(field.becomeFirstResponder())
+        // Nothing should be written, so there is nothing to wait for: a settle.
         try await Task.sleep(nanoseconds: 400_000_000)
         XCTAssertEqual(written.texts, [], "nothing is written over the several values")
         XCTAssertEqual(field.placeholder, "Multiple values")
@@ -160,9 +163,10 @@ final class KozmosMixedValueTests: XCTestCase {
         defer { _ = setAutomation(old) }
         let window = host(KozmosSelect(value: "POI", placeholder: "Choose", label: "Type", mixed: true) { Text("POI") })
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
+        let field = try await drawn("the mixed field", in: window) {
+            elements(in: window).first { ($0.accessibilityValue ?? "").contains("Multiple values") }
+        }
         let found = elements(in: window)
-        let field = try XCTUnwrap(found.first { ($0.accessibilityValue ?? "").contains("Multiple values") }, describe(found))
         XCTAssertEqual(field.accessibilityLabel, "Type")
         XCTAssertEqual(found.filter { ($0.accessibilityLabel ?? "") == "Type" }.count, 1, describe(found))
     }
@@ -199,10 +203,14 @@ final class KozmosMixedValueTests: XCTestCase {
         let written = Written()
         let window = host(TypedQuery(written: written))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 500_000_000)
-        let clear = try XCTUnwrap(elements(in: window).first { $0.accessibilityLabel == "Clear selection" }, describe(elements(in: window)))
+        // The clear shows once the view's task has typed its query.
+        let clear = try await drawn("the clear", in: window) {
+            elements(in: window).first { $0.accessibilityLabel == "Clear selection" }
+        }
         XCTAssertTrue(clear.accessibilityActivate())
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await until("the query empties") { written.texts.last == "" }
+        // No choice should be reported, so there is nothing to wait for: a settle.
+        try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(written.texts.last, "")
         XCTAssertEqual(written.values, [], "no empty choice is reported while mixed")
     }
@@ -267,7 +275,7 @@ final class KozmosMixedValueTests: XCTestCase {
         defer { window.isHidden = true }
         try await untilScripted(written)
         XCTAssertEqual(written.texts, [], "nothing empties the visitor's query")
-        let field = try XCTUnwrap(textFields(in: window).first)
+        let field = try await drawn("the field", in: window) { textFields(in: window).first }
         XCTAssertEqual(field.text, "B")
     }
 
@@ -276,11 +284,13 @@ final class KozmosMixedValueTests: XCTestCase {
         defer { _ = setAutomation(old) }
         let window = host(EditedName(edit: "Gate B2"))
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        let field = try XCTUnwrap(textFields(in: window).first)
+        // SwiftUI builds the field's UITextField and its buttons' elements
+        // apart: wait for each one read.
+        let field = try await drawn("the field", in: window) { textFields(in: window).first }
         XCTAssertEqual(field.text, "Gate B2")
-        let found = elements(in: window)
-        let reset = try XCTUnwrap(found.first { $0.accessibilityLabel == "Reset to multiple values" }, describe(found))
+        let reset = try await drawn("the reset", in: window) {
+            elements(in: window).first { $0.accessibilityLabel == "Reset to multiple values" }
+        }
         XCTAssertTrue(reset.accessibilityTraits.contains(.button))
     }
 
@@ -297,17 +307,17 @@ final class KozmosMixedValueTests: XCTestCase {
         for view in fields {
             let window = host(view)
             defer { window.isHidden = true }
-            try await Task.sleep(nanoseconds: 300_000_000)
-            let field = try XCTUnwrap(textFields(in: window).first)
+            let field = try await drawn("the field", in: window) { textFields(in: window).first }
             XCTAssertEqual(field.text, "")
             XCTAssertEqual(field.placeholder, "Multiple values")
         }
         // Select's field is one element whose value is the mixed label.
         let window = host(KozmosSelect(value: "POI", placeholder: "Type", mixed: true) { Text("POI") })
         defer { window.isHidden = true }
-        try await Task.sleep(nanoseconds: 300_000_000)
+        _ = try await drawn("the mixed field", in: window) {
+            elements(in: window).first { ($0.accessibilityValue ?? "").contains("Multiple values") || ($0.accessibilityLabel ?? "").contains("Multiple values") }
+        }
         let found = elements(in: window)
-        XCTAssertTrue(found.contains { ($0.accessibilityValue ?? "").contains("Multiple values") || ($0.accessibilityLabel ?? "").contains("Multiple values") }, describe(found))
         XCTAssertFalse(found.contains { ($0.accessibilityValue ?? "") == "POI" || ($0.accessibilityLabel ?? "") == "POI" }, describe(found))
     }
 
@@ -326,6 +336,29 @@ final class KozmosMixedValueTests: XCTestCase {
             try await Task.sleep(nanoseconds: 50_000_000)
         }
         try await Task.sleep(nanoseconds: 300_000_000)
+    }
+
+    /// Waits until `find` finds what a test reads, however long a busy
+    /// simulator takes to draw the view and build its accessibility tree: a
+    /// fixed wait read too early on a slow runner (main's CI, 16 Nov: the
+    /// Combobox's clear was not there yet). Polls every 50 ms for up to 10 s,
+    /// then fails naming what was on screen.
+    @MainActor private func drawn<T>(_ what: String, in window: UIWindow, _ find: () -> T?) async throws -> T {
+        let deadline = Date().addingTimeInterval(10)
+        while Date() <= deadline {
+            if let found = find() { return found }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        return try XCTUnwrap(find(), "\(what) was never drawn: \(describe(elements(in: window)))")
+    }
+
+    /// Waits until a change a test made shows, for up to 10 s.
+    @MainActor private func until(_ what: String, _ done: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(10)
+        while !done() {
+            if Date() > deadline { XCTFail("\(what) never happened"); return }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
     }
 
     @MainActor private func host<V: View>(_ view: V) -> UIWindow {

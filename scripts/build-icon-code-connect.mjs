@@ -66,16 +66,115 @@ if (both.length) {
   );
 }
 
+// The importer's UI glyphs (decision 121): drawn inside components, imported
+// onto the Icons page by Curated Icons, and never in the by-name registry. A
+// React product imports each as a component, as a wayfinding glyph; read from
+// the plugin, so a glyph it adds is known here without a copy of the list.
+const plugin = fs.readFileSync(
+  path.join(root, "figma/foundations-importer/code.js"),
+  "utf8",
+);
+const uiBlock = plugin.match(
+  /const IMPORTER_UI_ICON_DEFINITIONS = \[([\s\S]*?)\n\];/,
+);
+if (!uiBlock) {
+  throw new Error("code.js has no IMPORTER_UI_ICON_DEFINITIONS");
+}
+const pascal = (name) =>
+  name
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+const pointrExports = fs.readFileSync(
+  path.join(root, "packages/icons/src/pointr/icons.generated.ts"),
+  "utf8",
+);
+const uiGlyphs = new Map(
+  [...uiBlock[1].matchAll(/^ {4}name: "([^"]+)",$/gm)].map((m) => [
+    m[1],
+    pascal(m[1]),
+  ]),
+);
+for (const [name, component] of uiGlyphs) {
+  if (names.has(name) || wayfinding.has(name)) {
+    throw new Error(
+      `${name} is a UI glyph and also in the registry or navigation-glyphs.json, so the mapping is ambiguous`,
+    );
+  }
+  if (!pointrExports.includes(`export const ${component} =`)) {
+    throw new Error(`@kozmos-ds/icons exports no ${component} for ${name}`);
+  }
+}
+
+// SwiftUI and Compose draw no UI glyph by name: KozmosIcon would draw its
+// stand-in. A glyph a native part draws maps to the system symbol that part
+// draws, read from the file named here, so the two cannot drift (Olcay, 16 Nov
+// 2026); every other one says which native part, if any, it belongs to.
+// A UI glyph with no entry here is an error: someone decides, nothing guesses.
+const UI_GLYPH_NATIVES = {
+  "copy-01": {
+    swift: 'Image(systemName: "doc.on.doc")',
+    swiftFrom: "packages/ios/Sources/Components/Input/Input.swift",
+    kotlin: "Icon(Icons.Default.ContentCopy, contentDescription = null)",
+    kotlinImports: ["androidx.compose.material.icons.filled.ContentCopy"],
+    kotlinFrom:
+      "packages/android/src/main/java/com/kozmos/components/Input/Input.kt",
+  },
+  "star-01": {
+    swift: 'Image(systemName: "star")',
+    swiftFrom: "packages/ios/Sources/Components/Input/Input.figma.swift",
+    kotlin: "Icon(Icons.Default.Star, contentDescription = null)",
+    kotlinImports: ["androidx.compose.material.icons.filled.Star"],
+    kotlinFrom:
+      "packages/android/src/main/java/com/kozmos/components/Input/Input.figma.kt",
+  },
+  "pencil-01": {
+    none: "A Card header's actions are the product's own (GAP-169): no Kozmos part draws pencil-01 here.",
+  },
+};
+const DASHBOARD_ONLY =
+  "MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).";
+const uiNative = (name) => {
+  const entry = UI_GLYPH_NATIVES[name];
+  if (entry) return entry;
+  const description =
+    uiBlock[1]
+      .split(/\n {2}\{/)
+      .find((definition) => definition.includes(`name: "${name}",`)) ?? "";
+  if (description.includes("MapEditToolbar")) return { none: DASHBOARD_ONLY };
+  throw new Error(
+    `UI glyph ${name} has no native snippet: add it to UI_GLYPH_NATIVES`,
+  );
+};
+for (const name of uiGlyphs.keys()) {
+  const entry = uiNative(name);
+  for (const [symbol, from] of [
+    [entry.swift, entry.swiftFrom],
+    [entry.kotlin, entry.kotlinFrom],
+  ]) {
+    if (!symbol) continue;
+    // The symbol itself: a part may choose it in an expression
+    // (`copied ? "checkmark" : "doc.on.doc"`).
+    const used = symbol.match(/"[^"]+"|Icons\.Default\.\w+/)[0];
+    if (!fs.readFileSync(path.join(root, from), "utf8").includes(used)) {
+      throw new Error(`${name}: ${from} no longer draws ${used}`);
+    }
+  }
+}
+
 const icons = baseline.icons
   .map((icon) => ({ name: icon.name.replace(/^Icon \/ /, ""), id: icon.id }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
 const unknown = icons.filter(
-  (icon) => !names.has(icon.name) && !wayfinding.has(icon.name),
+  (icon) =>
+    !names.has(icon.name) &&
+    !wayfinding.has(icon.name) &&
+    !uiGlyphs.has(icon.name),
 );
 if (unknown.length) {
   throw new Error(
-    `Icons page has ${unknown.length} component(s) neither the registry nor navigation-glyphs.json names: ${unknown.map((i) => i.name).join(", ")}`,
+    `Icons page has ${unknown.length} component(s) neither the registry, navigation-glyphs.json nor the plugin's UI glyphs name: ${unknown.map((i) => i.name).join(", ")}`,
   );
 }
 // The names the registry holds before the Icons page draws them: the venue set
@@ -84,24 +183,7 @@ if (unknown.length) {
 // them they have none, and Dev Mode has no node to show one on. List only what
 // such an Update is still to draw, and empty this when its baseline lands: a
 // name here that the page draws is an error, so the list cannot go stale.
-const AWAITING_THE_ICONS_PAGE = new Set([
-  "accessibility",
-  "battery-charging-01",
-  "beaker-01",
-  "clapperboard",
-  "credit-card-01",
-  "crop-01",
-  "droplets-01",
-  "graduation-hat-01",
-  "luggage-01",
-  "medical-cross",
-  "package",
-  "passport",
-  "plane",
-  "scissors-01",
-  "ticket-01",
-  "utensils",
-]);
+const AWAITING_THE_ICONS_PAGE = new Set([]);
 const drawnAlready = [...AWAITING_THE_ICONS_PAGE].filter((n) =>
   icons.some((i) => i.name === n),
 );
@@ -134,19 +216,23 @@ if (undrawnGlyphs.length) {
 }
 
 const FILE = "Yj4O8p6Y9h2Sa9zJVoAiVY";
+// The component a glyph reaches React as: a wayfinding glyph's or a UI
+// glyph's; a registry icon has none and goes by its name.
+const componentOf = (icon) =>
+  wayfinding.get(icon.name) ?? uiGlyphs.get(icon.name);
 const example = (icon) =>
-  wayfinding.has(icon.name)
-    ? `<Icon icon={${wayfinding.get(icon.name)}} />`
+  componentOf(icon)
+    ? `<Icon icon={${componentOf(icon)}} />`
     : `<Icon name="${icon.name}" />`;
 // Code Connect writes the imports of the components an example draws, not of a
 // value passed in a prop, so a glyph's snippet names both imports itself:
 // without them a copied snippet does not compile.
 const imports = (icon) =>
-  wayfinding.has(icon.name)
+  componentOf(icon)
     ? `
     imports: [
       "import { Icon } from '@kozmos-ds/react';",
-      "import { ${wayfinding.get(icon.name)} } from '@kozmos-ds/icons';",
+      "import { ${componentOf(icon)} } from '@kozmos-ds/icons';",
     ],`
     : "";
 const body = icons
@@ -161,8 +247,8 @@ const body = icons
   )
   .join("\n\n");
 const glyphImports = icons
-  .filter((icon) => wayfinding.has(icon.name))
-  .map((icon) => wayfinding.get(icon.name))
+  .filter((icon) => componentOf(icon))
+  .map((icon) => componentOf(icon))
   .sort();
 
 const out = `// Generated by scripts/build-icon-code-connect.mjs. Do not edit by hand.
@@ -171,7 +257,8 @@ const out = `// Generated by scripts/build-icon-code-connect.mjs. Do not edit by
 // node id recorded in ${path.basename(baselinePath)}. A registry icon
 // reaches code through Icon's name prop, so the mapping survives a change of
 // which component the registry resolves that name to; a Pointr Maps - Express
-// wayfinding glyph, which the registry does not name, through its icon prop.
+// wayfinding glyph or a UI glyph (decision 121), which the registry does not
+// name, through its icon prop.
 import figma from "@figma/code-connect";
 ${
   glyphImports.length
@@ -186,11 +273,7 @@ ${body}
 // one example serves every icon. Each connection is its own type, named from
 // the icon: two names that spell the same type are an error, not a collision
 // the compiler reports later.
-const typeName = (name) =>
-  `KozmosIconLibrary${name
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("")}Connect`;
+const typeName = (name) => `KozmosIconLibrary${pascal(name)}Connect`;
 const typeNames = new Map();
 for (const icon of icons) {
   const type = typeName(icon.name);
@@ -214,8 +297,34 @@ const nativeHeader = (
 // node id recorded in ${path.basename(baselinePath)}, as React's
 // IconLibrary.figma.tsx maps them. ${comment}`;
 
-const swift = `${nativeHeader(`KozmosIcon takes every one of them by its
-// Kozmos name, a Pointr Maps - Express wayfinding glyph too.`)}
+const nativeNote = `KozmosIcon takes every one of them by its
+// Kozmos name, a Pointr Maps - Express wayfinding glyph too, except the
+// importer's UI glyphs (decision 121): one a native part draws maps to that
+// part's system symbol, and the rest say where they belong.`;
+const swiftBody = (icon) => {
+  if (!uiGlyphs.has(icon.name)) return `KozmosIcon("${icon.name}")`;
+  const entry = uiNative(icon.name);
+  // SwiftUI's Code Connect parser drops comments, so the note is the
+  // snippet's own words: help text on a view that draws nothing.
+  return entry.swift
+    ? entry.swift
+    : `EmptyView().help(${JSON.stringify(`${icon.name}: ${entry.none}`)})`;
+};
+const kotlinBody = (icon) => {
+  if (!uiGlyphs.has(icon.name)) return `KozmosIcon(name = "${icon.name}")`;
+  const entry = uiNative(icon.name);
+  return entry.kotlin ? entry.kotlin : `// ${icon.name}: ${entry.none}`;
+};
+const kotlinImports = [
+  ...new Set(
+    icons.flatMap((icon) =>
+      uiGlyphs.has(icon.name) ? (uiNative(icon.name).kotlinImports ?? []) : [],
+    ),
+  ),
+].sort();
+const kotlinDrawsSymbols = kotlinImports.length > 0;
+
+const swift = `${nativeHeader(nativeNote)}
 import SwiftUI
 import Figma
 
@@ -226,19 +335,29 @@ ${icons
     let figmaNodeUrl = "${nodeUrl(icon)}"
 
     var body: some View {
-        KozmosIcon("${icon.name}")
+        ${swiftBody(icon)}
     }
 }`,
   )
   .join("\n\n")}
 `;
 
-const kotlin = `${nativeHeader(`KozmosIcon takes every one of them by its
-// Kozmos name, a Pointr Maps - Express wayfinding glyph too.`)}
+const kotlin = `${nativeHeader(nativeNote)}
 package com.kozmos.components.icon
 
-import androidx.compose.runtime.Composable
-import com.figma.code.connect.FigmaConnect
+${[
+  ...(kotlinDrawsSymbols
+    ? [
+        "androidx.compose.material.icons.Icons",
+        ...kotlinImports,
+        "androidx.compose.material3.Icon",
+      ]
+    : []),
+  "androidx.compose.runtime.Composable",
+  "com.figma.code.connect.FigmaConnect",
+]
+  .map((name) => `import ${name}`)
+  .join("\n")}
 
 ${icons
   .map(
@@ -246,7 +365,7 @@ ${icons
 class ${typeName(icon.name)} {
     @Composable
     fun ComponentExample() {
-        KozmosIcon(name = "${icon.name}")
+        ${kotlinBody(icon)}
     }
 }`,
   )
