@@ -19036,6 +19036,415 @@ section("PropertyPicker: the subtle Button and its popup");
   );
 }
 
+// --- No variant covers another, in any set --------------------------------------
+
+// `pnpm figma:verify` counted 40 pairs of variants covering one another on
+// 2026-11-17, in Slider and ColorPicker, both just Updated: each set laid its
+// variants out on fixed steps (Slider's rows 112 apart, ColorPicker's formats
+// 720), and its variants had grown past them. Every set the importer builds is
+// built here through the panel's own message, then every set is updated by the
+// two Update All runs, and each set is read with figma:verify's own rule.
+//
+// Built afresh, the stand-in draws Slider at 70 and ColorPicker's open
+// variants at 634 to 660, short of the 120 and 794 the file has: the file's
+// variants held a layer an earlier Update left behind (the next section). So
+// before the Update every variant is given a layer the painters do not own,
+// 120 square. A painter keeps it, and a variant that hugs its content grows
+// by it, past its layout's step: what the file did to Slider and ColorPicker,
+// whatever the cause.
+section("No variant covers another, in any set, after Build and Update");
+{
+  const KEPT = 120;
+  const coverIcons = new MockNode("PAGE", "Icons");
+  const iconRegistry = fs.readFileSync(
+    path.join(ROOT, "packages/icons/src/registry.ts"),
+    "utf8",
+  );
+  for (const match of iconRegistry
+    .slice(
+      iconRegistry.indexOf("export const kozmosIconNames = ["),
+      iconRegistry.indexOf("] as const"),
+    )
+    .matchAll(/^\s+"([a-z0-9-]+)",$/gm)) {
+    coverIcons.appendChild(mockIconComponent(match[1]));
+  }
+  const coverComponents = new MockNode("PAGE", "Components");
+  const coverFigma = createFigmaMock({
+    pages: [coverComponents, coverIcons],
+  });
+  const coverPlugin = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: coverFigma,
+    append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  const sequence = [
+    ...(coverPlugin.CORE_UPDATE_SEQUENCE || []),
+    ...(coverPlugin.PRODUCT_SDK_UPDATE_SEQUENCE || []),
+  ].map(([name, update]) => ({
+    name,
+    builder: update.name.replace(/^update/, "build"),
+  }));
+
+  // The panel's message for each builder, as the dispatcher names it.
+  const source = fs.readFileSync(PLUGIN, "utf8");
+  const messageFor = new Map();
+  for (const [, type, fn] of source.matchAll(
+    /"(build-[a-z0-9-]+)": (build[A-Za-z0-9]+Component),/g,
+  )) {
+    messageFor.set(fn, type);
+  }
+  for (const [, type, fn] of source.matchAll(
+    /message\.type === "(build-[a-z0-9-]+)"\) \{\s*const result = await (build[A-Za-z0-9]+Component)\(\);/g,
+  )) {
+    messageFor.set(fn, type);
+  }
+  const unsent = sequence.filter((entry) => !messageFor.has(entry.builder));
+  ok(
+    sequence.length >= 100 && unsent.length === 0,
+    `every set in the two Update All runs has a Build message (${sequence.length} sets${
+      unsent.length
+        ? `; none for ${unsent.map((entry) => entry.name).join(", ")}`
+        : ""
+    })`,
+  );
+
+  // figma:verify's rule, over each variant's box as REST reports it.
+  const coversIn = (set) => {
+    for (const variant of set.children) {
+      variant.absoluteBoundingBox = {
+        x: set.x + variant.x,
+        y: set.y + variant.y,
+        width: variant.width,
+        height: variant.height,
+      };
+    }
+    return variantsThatOverlap(set.name, set);
+  };
+  const setNamed = (name) =>
+    coverPlugin.findComponentSetOnPage(coverComponents, name);
+  const coveredSets = () => {
+    const found = [];
+    for (const { name } of sequence) {
+      const set = setNamed(name);
+      if (!set) continue;
+      const covers = coversIn(set);
+      if (covers.length) {
+        found.push(`${name} ${covers.length} (${covers[0]})`);
+      }
+    }
+    return found;
+  };
+
+  await withAutoLayout(async () => {
+    for (const entry of sequence) {
+      const type = messageFor.get(entry.builder);
+      if (type) await coverPlugin.handlePluginMessage({ type });
+    }
+  });
+  const missing = sequence.filter((entry) => !setNamed(entry.name));
+  const afterBuild = coveredSets();
+  ok(
+    missing.length === 0 && afterBuild.length === 0,
+    `after Build, no two variants cover one another in any of the ${sequence.length - missing.length} sets${
+      missing.length
+        ? ` (not built: ${missing.map((entry) => entry.name).join(", ")})`
+        : ""
+    }${afterBuild.length ? `; covered in ${afterBuild.length}: ${afterBuild.join("; ")}` : ""}`,
+  );
+
+  const before = new Map();
+  for (const { name } of sequence) {
+    const set = setNamed(name);
+    if (!set) continue;
+    before.set(
+      name,
+      set.children.map((variant) => `${variant.id}=${variant.name}`).join("|"),
+    );
+    for (const variant of set.children) {
+      if (variant.type !== "COMPONENT") continue;
+      const kept = new MockNode("FRAME", "Kept Layer");
+      kept.resize(KEPT, KEPT);
+      variant.appendChild(kept);
+    }
+  }
+  const results = [];
+  await withAutoLayout(async () => {
+    for (const type of ["update-all-core", "update-all-product-sdk"]) {
+      coverFigma.ui.postMessage = (message) => {
+        if (message && message.type === "component-result") {
+          results.push(message.result);
+        }
+      };
+      await coverPlugin.handlePluginMessage({ type });
+    }
+  });
+  const failed = results.flatMap((result) => (result && result.failures) || []);
+  ok(
+    results.length === 2 && failed.length === 0,
+    `both Update All runs finish with no set failing (${failed.slice(0, 3).join("; ")})`,
+  );
+
+  // The kept layer has to reach the two sets the file showed it in, or this
+  // proves nothing about them.
+  const tallest = (name, keep = () => true) =>
+    Math.max(
+      0,
+      ...((setNamed(name) && setNamed(name).children) || [])
+        .filter((variant) => keep(variant.name))
+        .map((variant) => variant.height),
+    );
+  const slider = tallest("Slider");
+  const openPicker = tallest("ColorPicker", (name) =>
+    name.includes("Content=Open"),
+  );
+  ok(
+    slider > 112 && openPicker > 720,
+    `the kept layer grows Slider past its 112 step (${slider}) and ColorPicker's open variants past their 720 (${openPicker})`,
+  );
+
+  const afterUpdate = coveredSets();
+  ok(
+    afterUpdate.length === 0,
+    `after Update, with every variant grown by a ${KEPT} layer it keeps, no two variants cover one another in any of the ${before.size} sets${
+      afterUpdate.length
+        ? `; covered in ${afterUpdate.length}: ${afterUpdate.join("; ")}`
+        : ""
+    }`,
+  );
+
+  const changed = [...before.keys()].filter(
+    (name) =>
+      setNamed(name)
+        .children.map((variant) => `${variant.id}=${variant.name}`)
+        .join("|") !== before.get(name),
+  );
+  ok(
+    changed.length === 0,
+    `and Update keeps every variant's node id and name in all ${before.size} sets: only positions move${
+      changed.length ? ` (changed: ${changed.join(", ")})` : ""
+    }`,
+  );
+}
+
+// --- An Update across builds leaves no layer behind ------------------------------
+
+// On 2026-11-17 every Slider variant in the file drew two sliders, and stood
+// 120 tall where it should be 70: a Slider Control beside its Slider Row as
+// well as the one inside it. The set had been drawn by a build with the row,
+// then Updated with build fa86312e5dfd, which knew no row and drew a control
+// at the top, then Updated with today's, which kept the row's and left the
+// other. Checkbox's and Switch's Label Rows held two controls and two labels
+// the same way. ColorPicker's open variants grew with them: their Hue and
+// Opacity Sliders are Slider instances.
+//
+// The file's history, replayed: every set built by today's painter, updated
+// by fa86312e5dfd's, then by today's, and each variant's layers (name, type
+// and importer kind, down to the instances) compared with the same set built
+// and updated by today's painter alone. A set whose variants fa86312e5dfd
+// renames, because it predates one of its axes, is a different history and is
+// listed rather than compared.
+section("An Update across builds leaves no layer behind");
+{
+  const OLD_COMMIT = "bdbbd5f0078ac24eee3de82392023e4c79997148";
+  const OLD_BUILD = "fa86312e5dfd";
+  const shown = spawnSync(
+    "git",
+    ["show", `${OLD_COMMIT}:figma/foundations-importer/code.js`],
+    { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  );
+  const oldSource = shown.status === 0 ? shown.stdout : "";
+  ok(
+    oldSource.includes(`PLUGIN_BUILD = "${OLD_BUILD}"`),
+    `build ${OLD_BUILD} is read from ${OLD_COMMIT.slice(0, 9)} (needs the full history: ${(shown.stderr || "").trim().split("\n")[0] || "ok"})`,
+  );
+  if (oldSource) {
+    const oldPath = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), "figma-old-build-")),
+      "code.js",
+    );
+    fs.writeFileSync(oldPath, oldSource);
+    const stubs = `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`;
+    const registryText = fs.readFileSync(
+      path.join(ROOT, "packages/icons/src/registry.ts"),
+      "utf8",
+    );
+    const iconNames = [
+      ...registryText
+        .slice(
+          registryText.indexOf("export const kozmosIconNames = ["),
+          registryText.indexOf("] as const"),
+        )
+        .matchAll(/^\s+"([a-z0-9-]+)",$/gm),
+    ].map((match) => match[1]);
+    const world = () => {
+      const icons = new MockNode("PAGE", "Icons");
+      for (const name of iconNames) icons.appendChild(mockIconComponent(name));
+      const components = new MockNode("PAGE", "Components");
+      return {
+        components,
+        figma: createFigmaMock({ pages: [components, icons] }),
+      };
+    };
+    const replayed = world();
+    const fresh = world();
+    const today = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: replayed.figma,
+      append: stubs,
+    });
+    const before = loadPlugin({
+      pluginPath: oldPath,
+      figma: replayed.figma,
+      append: stubs,
+    });
+    const todayAlone = loadPlugin({
+      pluginPath: PLUGIN,
+      figma: fresh.figma,
+      append: stubs,
+    });
+    const sets = [
+      ...(today.CORE_UPDATE_SEQUENCE || []),
+      ...(today.PRODUCT_SDK_UPDATE_SEQUENCE || []),
+    ].map(([name, update]) => ({
+      name,
+      update: update.name,
+      build: update.name.replace(/^update/, "build"),
+    }));
+    const kind = (node) =>
+      typeof node.getSharedPluginData === "function"
+        ? node.getSharedPluginData("kozmos_ds_importer", "kind")
+        : "";
+    const layers = (node) =>
+      `${node.name}:${node.type}:${kind(node)}` +
+      (node.type !== "INSTANCE" && node.children && node.children.length
+        ? `(${node.children.map(layers).join(",")})`
+        : "");
+    const setIn = (plugin, page, name) =>
+      plugin.findComponentSetOnPage(page, name);
+    const namesOf = (set) =>
+      set ? set.children.map((variant) => variant.name).join("|") : "";
+
+    const renamed = [];
+    const firstIds = new Map();
+    const rowParts = [
+      ["Slider", "Slider Row", "Slider Control"],
+      ["Checkbox", "Label Row", "Checkbox Control"],
+      ["Switch", "Label Row", "Switch Track"],
+    ];
+    const rowPartIds = new Map();
+    await withAutoLayout(async () => {
+      for (const set of sets) {
+        await today[set.build]();
+        await todayAlone[set.build]();
+      }
+      for (const set of sets) {
+        const drawn = setIn(today, replayed.components, set.name);
+        firstIds.set(
+          set.name,
+          new Map(drawn.children.map((variant) => [variant.id, variant.name])),
+        );
+        for (const [setName, rowName, partName] of rowParts) {
+          if (setName !== set.name) continue;
+          for (const variant of drawn.children) {
+            const row = variant.children.find((c) => c.name === rowName);
+            const part =
+              row && row.children.find((child) => child.name === partName);
+            rowPartIds.set(`${setName}/${variant.id}`, part && part.id);
+          }
+        }
+        if (typeof before[set.update] !== "function") continue;
+        const names = namesOf(drawn);
+        await before[set.update]();
+        if (namesOf(drawn) !== names) renamed.push(set.name);
+      }
+    });
+
+    // The old painter has to have drawn what the file shows, or this replays
+    // nothing: a Slider Control beside the row as well as in it.
+    const sliderAfterOld = setIn(today, replayed.components, "Slider");
+    const doubled = sliderAfterOld
+      ? sliderAfterOld.children.filter(
+          (variant) =>
+            variant.children.filter((child) => child.name === "Slider Control")
+              .length === 1 &&
+            variant.children.some((child) => child.name === "Slider Row"),
+        ).length
+      : 0;
+    ok(
+      sliderAfterOld && doubled === sliderAfterOld.children.length,
+      `build ${OLD_BUILD} draws a Slider Control beside every Slider Row, as the file showed (${doubled} of ${sliderAfterOld ? sliderAfterOld.children.length : 0})`,
+    );
+
+    await withAutoLayout(async () => {
+      for (const set of sets) await today[set.update]();
+      for (const set of sets) await todayAlone[set.update]();
+    });
+
+    const compared = sets.filter((set) => !renamed.includes(set.name));
+    const stale = [];
+    const lostIds = [];
+    for (const set of compared) {
+      const got = setIn(today, replayed.components, set.name);
+      const want = setIn(todayAlone, fresh.components, set.name);
+      const wanted = new Map(
+        want.children.map((variant) => [variant.name, layers(variant)]),
+      );
+      const differing = got.children.filter(
+        (variant) => wanted.get(variant.name) !== layers(variant),
+      );
+      if (differing.length) {
+        stale.push(
+          `${set.name} ${differing.length} of ${got.children.length} (${differing[0].name}: ${layers(differing[0])})`,
+        );
+      }
+      const now = new Map(
+        got.children.map((variant) => [variant.id, variant.name]),
+      );
+      for (const [id, name] of firstIds.get(set.name)) {
+        if (now.get(id) !== name) lostIds.push(`${set.name} / ${name}`);
+      }
+    }
+    ok(
+      stale.length === 0,
+      `after Updates with ${OLD_BUILD} and then today's build, every variant of the ${compared.length} sets holds exactly the layers today's Build draws${
+        stale.length
+          ? `; stale layers in ${stale.length}: ${stale.join("; ")}`
+          : ""
+      }${renamed.length ? ` (not compared, ${OLD_BUILD} renames their variants: ${renamed.join(", ")})` : ""}`,
+    );
+    ok(
+      lostIds.length === 0,
+      `and every variant keeps the node id and name it was built with (${lostIds.slice(0, 3).join(", ")})`,
+    );
+
+    // The layer kept is the one in the row, under the node id today's Build
+    // gave it: the one instances and their overrides already point at.
+    const notKept = [];
+    for (const [setName, , partName] of rowParts) {
+      const set = setIn(today, replayed.components, setName);
+      for (const variant of set.children) {
+        const parts = variant.findAll((node) => node.name === partName);
+        if (
+          parts.length !== 1 ||
+          parts[0].id !== rowPartIds.get(`${setName}/${variant.id}`)
+        ) {
+          notKept.push(`${setName} / ${variant.name} (${parts.length})`);
+        }
+      }
+    }
+    ok(
+      notKept.length === 0,
+      `Slider, Checkbox and Switch each keep one ${rowParts.map((r) => r[2]).join(", ")}: the one in the row, under its first node id (${notKept.slice(0, 3).join("; ")})`,
+    );
+  }
+}
+
 // Decision 191: a mixed RadioGroup and SegmentedControl have nothing chosen,
 // and under the options a "Multiple values" line, as React's group draws it
 // (a field's helper line, 14/20 in foreground/400), its words the Mixed Text
