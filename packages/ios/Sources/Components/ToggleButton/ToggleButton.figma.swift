@@ -27,23 +27,27 @@ struct KozmosToggleButtonConnect: FigmaConnect {
     )
     var sizeName: String = "default"
 
+    // Decision 190: Mixed is the toggle of a multi-selection whose features
+    // differ.
     @FigmaEnum(
         "State",
         mapping: [
-            "Default": false,
-            "Pressed": true,
-            "Disabled": false,
-            "Focus": false
+            "Default": "default",
+            "Pressed": "pressed",
+            "Disabled": "disabled",
+            "Focus": "focus",
+            "Mixed": "mixed"
         ]
     )
-    var isOn: Bool = false
+    var state: String = "default"
 
     var body: some View {
         KozmosToggleButton(
-            isOn: .constant(self.isOn),
+            isOn: .constant(self.state == "pressed"),
             label: self.label,
             variant: self.variantName == "outline" ? .outline : .default,
-            size: self.sizeName == "sm" ? .sm : (self.sizeName == "lg" ? .lg : .default)
+            size: self.sizeName == "sm" ? .sm : (self.sizeName == "lg" ? .lg : .default),
+            mixed: self.state == "mixed"
         )
     }
 }
