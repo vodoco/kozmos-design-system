@@ -151,6 +151,40 @@ final class KozmosControlDescriptionAccessibilityTests: XCTestCase {
         }
     }
 
+    /// Decision 188: a mixed checkbox says it is mixed, as VoiceOver says a
+    /// mixed checkbox, in the caller's word when given one; it is still a
+    /// toggle; and activating it checks it, reported as checked, as Radix
+    /// reports a mixed box a click checks.
+    @MainActor func testAMixedCheckboxSaysMixedAndActivatingItChecksIt() async throws {
+        final class Events { var all: [KozmosAnalyticsEvent] = [] }
+        let events = Events()
+        struct Parents: View {
+            @State var floors: KozmosCheckboxState = .indeterminate
+            @State var gates: KozmosCheckboxState = .indeterminate
+            var body: some View {
+                VStack {
+                    KozmosCheckbox(checked: $floors, label: "All floors")
+                    KozmosCheckbox(checked: $gates, label: "Toutes les portes", mixedLabel: "Mixte")
+                }
+            }
+        }
+        try await inspect(Parents().environment(\.kozmosAnalytics) { events.all.append($0) }) { window in
+            let boxes = try self.named(["All floors", "Toutes les portes"], in: window)
+            XCTAssertEqual(boxes.map { $0.accessibilityValue ?? "" }, ["Mixed", "Mixte"], "the tree:\n\(self.describe(window))")
+            if #available(iOS 17, *) {
+                XCTAssertTrue(boxes[0].accessibilityTraits.contains(.toggleButton), "the mixed checkbox is no toggle")
+            }
+            XCTAssertTrue(boxes[0].accessibilityActivate())
+            try await Task.sleep(nanoseconds: 300_000_000)
+            XCTAssertEqual(try self.named(["All floors"], in: window)[0].accessibilityValue, "Checked")
+            XCTAssertEqual(events.all.map(\.eventName), ["checkbox_toggled"])
+            guard case .bool(let checked)? = events.all.first?.properties?["checked"] else {
+                return XCTFail("the event's properties are \(String(describing: events.all.first?.properties))")
+            }
+            XCTAssertTrue(checked, "a mixed box a tap checks is reported unchecked")
+        }
+    }
+
     /// GAP-158: a card with no title is never named by its description;
     /// a debug build is told, and an icon-only tile takes the caller's
     /// accessibilityLabel.
