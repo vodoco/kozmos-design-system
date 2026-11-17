@@ -64,6 +64,12 @@ interface Mount {
   tourLabel?: string;
   /** The title, for one too long for its line. */
   title?: string;
+  /**
+   * Decision 198 (GAP-220): the step lights a map and its card is placed
+   * against an editor laid over the map, apart from the target. "ref" anchors
+   * to the editor's element, "virtual" to a point on the map.
+   */
+  anchored?: "ref" | "virtual";
 }
 
 const STEPS = [
@@ -106,8 +112,24 @@ function Page({
   pagePopover = false,
   tourLabel,
   title,
+  anchored,
 }: Mount) {
   const site = React.useRef<HTMLButtonElement>(null);
+  const map = React.useRef<HTMLDivElement>(null);
+  const editor = React.useRef<HTMLDivElement>(null);
+  // A point on the map, 40 in from its start and 120 down: what a map
+  // would give for a drawing's corner.
+  const [point] = React.useState(() => ({
+    getBoundingClientRect: () => {
+      const box = map.current!.getBoundingClientRect();
+      return DOMRect.fromRect({
+        x: box.x + 240,
+        y: box.y + 120,
+        width: 0,
+        height: 0,
+      });
+    },
+  }));
   const nothing = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(openAtStart);
   const [at, setAt] = React.useState(0);
@@ -192,7 +214,56 @@ function Page({
           Open a site
         </Button>
       </div>
-      {welcome ? (
+      {anchored ? (
+        // The lit map, 560 by 400, and an editor laid over its start.
+        <div
+          ref={map}
+          id="map"
+          style={{
+            position: "absolute",
+            insetInlineStart: 40,
+            top: 200,
+            width: 560,
+            height: 400,
+            background: "#dfe7f3",
+          }}
+        >
+          <div
+            ref={editor}
+            id="editor"
+            style={{
+              position: "absolute",
+              insetInlineStart: 16,
+              top: 16,
+              width: 160,
+              height: 240,
+              background: "#ffffff",
+            }}
+          >
+            Editor
+          </div>
+        </div>
+      ) : null}
+      {anchored ? (
+        <TourStep
+          id="step"
+          open={open}
+          target={map}
+          anchor={anchored === "virtual" ? point : editor}
+          side="right"
+          align="center"
+          tourLabel="Draw a level"
+          step={1}
+          stepCount={2}
+          title="Draw the outline"
+          body="Click each corner of the level on the map."
+          onNext={() => setOpen(false)}
+          onClose={() => {
+            closes.current += 1;
+            setOpen(false);
+          }}
+        />
+      ) : welcome ? (
         <TourStep
           id="step"
           open={open}

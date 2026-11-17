@@ -31,6 +31,12 @@ It forwards its ref to `HTMLHeadingElement`. Its props are `HeadingProps`, which
 
 - `level`: `1 | 2 | 3 | 4 | 5 | 6 | null`, optional, default `1`.
 - `as`: `"h1" | "h2" | "h3" | "h4" | "h5" | "h6"`, optional.
+- `size`: `"display"`, optional.
+
+  `display` draws the heading at the one display size, 48 on 54 lines
+  (decision 203, GAP-272), for a marketing-style headline such as a sign-in
+  hero; `level` stays its rank. Left out, the level's own size.
+
 - `color`: `"default" | "muted" | "primary" | "destructive" | "white" | null`, optional.
 - `asChild`: `boolean`, optional.
 - `align`: `"end" | "left" | "right" | "start" | "center" | "justify" | null`, optional.

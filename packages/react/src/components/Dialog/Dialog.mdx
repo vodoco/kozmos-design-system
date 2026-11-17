@@ -27,6 +27,216 @@ See **Examples / Navigation journey** for five controlled failure states and act
 
 <Controls />
 
+## Media above the title
+
+`DialogHeader` takes `media`, an illustration or a photo above the title (decision 195, GAP-214), 16 over it. With `mediaBleed` it reaches the dialog's edges and top corners, past the dialog's 24 of padding, and the dialog's corner rounds it; the header is then the dialog's first child. The dialog's padding and its close stay as they are: the close keeps its corner, over the media, on the outline button's own fill. The media is decorative, hidden from assistive technology, unless `mediaLabel` names it, when it is read as one image. Analytics' "Interested in Analytics?" is one.
+
+SwiftUI takes the media through `.media(label:bleeds:_:)` on `KozmosDialog`, and Compose through `media`, a `KozmosDialogMedia(label, bleed) { … }`; both keep the close in the dialog's top corner, 24 in, on a surface of its own, and hide unnamed media from VoiceOver and TalkBack.
+
+<PlatformSnippets
+    react={`
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@kozmos-ds/react";
+
+// An illustration above the title, out to the dialog's edges and top corners.
+// Left unnamed it is decorative; mediaLabel names it as one image.
+export function AnalyticsInvite({ illustration }: { illustration: string }) {
+  return (
+    <Dialog defaultOpen>
+      <DialogContent>
+        <DialogHeader media={<img src={illustration} alt="" />} mediaBleed>
+          <DialogTitle>Interested in Analytics?</DialogTitle>
+          <DialogDescription>
+            See how people move through your buildings, floor by floor.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button>Contact sales</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosDialog } from "@kozmos-ds/vue/react-bridge"
+// @kozmos-ds/vue wraps the Dialog root only: it has no DialogContent or DialogHeader, so it cannot draw a dialog yet.
+</script>
+
+<template>
+  <KozmosDialog />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// An illustration above the title, out to the dialog's edges and top corners.
+// Left unnamed it is decorative; media(label:) names it as one image.
+struct AnalyticsInvite: View {
+    @State private var isPresented = true
+
+    var body: some View {
+        KozmosDialog(
+            isPresented: $isPresented,
+            title: "Interested in Analytics?",
+            description: "See how people move through your buildings, floor by floor.",
+            primaryActionTitle: "Contact sales",
+            onPrimaryAction: { isPresented = false }
+        )
+        .media(bleeds: true) {
+            Image("AnalyticsIllustration")
+                .resizable()
+                .scaledToFill()
+                .frame(height: 160)
+                .clipped()
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import com.kozmos.components.dialog.KozmosDialog
+import com.kozmos.components.dialog.KozmosDialogMedia
+
+// An illustration above the title, out to the dialog's edges and top corners.
+// Left unnamed it is decorative; a label names it as one image.
+@Composable
+fun AnalyticsInvite(illustration: Painter, onContactSales: () -> Unit, onDismiss: () -> Unit) {
+    KozmosDialog(
+        onDismissRequest = onDismiss,
+        title = "Interested in Analytics?",
+        description = "See how people move through your buildings, floor by floor.",
+        primaryActionText = "Contact sales",
+        onPrimaryAction = onContactSales,
+        media = KozmosDialogMedia(bleed = true) {
+            Image(
+                painter = illustration,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(160.dp)
+            )
+        }
+    )
+}
+`}
+
+/>
+
+## Full size
+
+`DialogContent size="full"` is the window less 16 on each side (decision 202, GAP-259), for media shown large: its first child, the header, keeps its height, the second takes the rest, and a footer after it keeps its own. Its close, focus and Escape are any Dialog's. ImageField's preview opens in it. SwiftUI's `KozmosDialog(size: .full)` and Compose's `KozmosDialog(size = KozmosDialogSize.Full)` are the same: the window less 16 on each side, the content taking what the header leaves.
+
+<PlatformSnippets
+    react={`
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@kozmos-ds/react";
+
+// The window less 16 on each side: the header keeps its height and the
+// image takes the rest, as large as it fits.
+export function ImagePreview({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size="full">
+        <DialogHeader>
+          <DialogTitle>Image 1</DialogTitle>
+          <DialogDescription>Main entrance</DialogDescription>
+        </DialogHeader>
+        <img src={src} alt="Main entrance" />
+      </DialogContent>
+    </Dialog>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosDialog } from "@kozmos-ds/vue/react-bridge"
+// @kozmos-ds/vue wraps the Dialog root only: it has no DialogContent or DialogHeader, so it cannot draw a dialog yet.
+</script>
+
+<template>
+  <KozmosDialog />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The window less 16 on each side: the words keep their height and the
+// image takes the rest, as large as it fits.
+struct ImagePreview: View {
+    @Binding var isPresented: Bool
+    let image: Image
+
+    var body: some View {
+        KozmosDialog(isPresented: $isPresented, size: .full) {
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                KozmosText("Image 1", style: .title3, weight: .semibold)
+                KozmosText("Main entrance", style: .subheadline, tone: .muted)
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityLabel("Main entrance")
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
+import com.kozmos.components.dialog.KozmosDialog
+import com.kozmos.components.dialog.KozmosDialogSize
+import com.kozmos.components.text.KozmosText
+import com.kozmos.components.text.KozmosTextStyle
+
+// The window less 16 on each side: the words keep their height and the
+// image takes the rest, as large as it fits.
+@Composable
+fun ImagePreview(image: Painter, onDismiss: () -> Unit) {
+    KozmosDialog(onDismissRequest = onDismiss, size = KozmosDialogSize.Full) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            KozmosText(text = "Image 1", style = KozmosTextStyle.Title3)
+            KozmosText(text = "Main entrance", style = KozmosTextStyle.Subheadline)
+            Image(
+                painter = image,
+                contentDescription = "Main entrance",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+`}
+
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

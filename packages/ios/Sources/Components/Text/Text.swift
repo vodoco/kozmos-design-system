@@ -5,6 +5,10 @@ import SwiftUI
 /// Mirrors `KozmosTypography`, so a caller picks a named step rather than
 /// reaching past the component for `.font(...)`.
 public enum KozmosTextStyle: String, CaseIterable, Sendable {
+    /// The one display size, 48pt bold (decision 203), for a
+    /// marketing-style headline such as a sign-in hero; above every heading
+    /// level. `KozmosText` grows it with Dynamic Type as Heading 1 grows.
+    case display
     case title2
     case title3
     case headline
@@ -16,6 +20,7 @@ public enum KozmosTextStyle: String, CaseIterable, Sendable {
 
     var font: Font {
         switch self {
+        case .display: return KozmosTypography.display
         case .title2: return KozmosTypography.title2
         case .title3: return KozmosTypography.title3
         case .headline: return KozmosTypography.headline
@@ -81,6 +86,9 @@ public struct KozmosText: View {
     let tone: KozmosTextTone
     let weight: Font.Weight?
     let lineLimit: Int?
+    /// The display size at the reader's text size: 48pt at the default, along
+    /// the large title's curve, as Heading 1's 36 grows.
+    @ScaledMetric(relativeTo: .largeTitle) private var displaySize = KozmosTypography.displaySize
 
     public init(
         _ text: String,
@@ -98,7 +106,11 @@ public struct KozmosText: View {
 
     @ViewBuilder
     public var body: some View {
-        let drawn = Text(text).font(style.font).fontWeight(weight)
+        // The display size is drawn at the reader's text size, bold unless a
+        // weight is given; every other style as before.
+        let drawn = style == .display
+            ? Text(text).font(.system(size: displaySize, weight: weight ?? .bold))
+            : Text(text).font(style.font).fontWeight(weight)
         if tone == .muted {
             // Muted words read the surface they sit on, as the parts' muted
             // lines do: on glass the foreground colour, so they read at 4.5:1

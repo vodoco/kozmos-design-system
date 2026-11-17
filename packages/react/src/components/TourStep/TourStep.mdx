@@ -109,6 +109,85 @@ wide (decision 139): the design's "This step can't be shown", and a tour's endin
 
 <Canvas of={TourStepStories.Ending} />
 
+## An anchor apart from the target
+
+`anchor` places the card apart from what it lights (decision 198, GAP-220): an element, a ref, a
+virtual element or a rect, as `target` takes. Backdrop still lights the `target`, and the card
+sits beside the `anchor` on its `side`, its arrow pointing at the anchor, 24 past its edge as
+it is past a lit target's. Where the card overlaps the lit area it stays above the cut-out, so a
+press there lands in the card. With the Map Content list collapsed, a map's lit area runs from the
+rail to the window's edge, with no room outside it: light the map, and anchor the card to the
+editor laid over it, so the card sits on the lit map beside the editor (MAP-64, A5's drawing
+step). An anchor that is not on the page (a ref to nothing, an element with no box) places the
+card by the target, as before. Closed with focus lost, focus goes back to the element the card is
+placed against: the anchor, else the target.
+
+<PlatformSnippets
+    react={`
+import * as React from "react";
+import { Box, Card, CardHeader, CardTitle, TourStep } from "@kozmos-ds/react";
+
+// Lights the map, and sits beside the editor laid over it.
+export function DrawingStep({ onNext }: { onNext: () => void }) {
+  const map = React.useRef<HTMLDivElement>(null);
+  const editor = React.useRef<HTMLDivElement>(null);
+  return (
+    <Box ref={map}>
+      <Card ref={editor}>
+        <CardHeader>
+          <CardTitle>Level editor</CardTitle>
+        </CardHeader>
+      </Card>
+      <TourStep
+        target={map}
+        anchor={editor}
+        side="right"
+        tourLabel="Draw a level"
+        step={5}
+        stepCount={7}
+        title="Draw the outline"
+        body="Click each corner of the level on the map."
+        onNext={onNext}
+      />
+    </Box>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosTourStep } from "@kozmos-ds/vue/react-bridge"
+
+const map = ref(null)
+const editor = ref(null)
+</script>
+
+<template>
+  <div ref="map">
+    <div ref="editor">Level editor</div>
+    <KozmosTourStep
+      :target="map"
+      :anchor="editor"
+      side="right"
+      tourLabel="Draw a level"
+      :step="5"
+      :stepCount="7"
+      title="Draw the outline"
+    />
+  </div>
+</template>
+    `}
+    swift={`
+// SwiftUI has no TourStep yet (decision 116): it ships on the web and in
+// Figma first, and comes to SwiftUI later.
+`}
+    kotlin={`
+// Compose has no TourStep yet (decision 116): it ships on the web and in
+// Figma first, and comes to Compose later.
+`}
+
+/>
+
 ## Content
 
 `children` takes any content after the instruction, in the card's own ink.

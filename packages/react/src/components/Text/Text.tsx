@@ -15,6 +15,12 @@ const textVariants = cva("kozmos-reset kozmos-text", {
       "2xl": "kozmos-text-2xl",
       "3xl": "kozmos-text-3xl",
       "4xl": "kozmos-text-4xl",
+      /**
+       * The one display size (decision 203, GAP-272): 48 on 54 lines, bold
+       * unless a weight is given, from the display type tokens, for a
+       * marketing-style headline such as a sign-in hero.
+       */
+      display: "kozmos-text-display",
     },
     weight: {
       normal: "kozmos-text-normal",
@@ -78,7 +84,16 @@ const Text = React.forwardRef<HTMLElement, TextProps>(
       <Comp
         {...props}
         className={cn(
-          textVariants({ size, weight, align, color, truncate, className }),
+          textVariants({
+            size,
+            // The display size carries its own weight, bold, unless one is
+            // given: no weight class, so the size's own decides.
+            weight: size === "display" && weight == null ? null : weight,
+            align,
+            color,
+            truncate,
+            className,
+          }),
         )}
         ref={ref as React.Ref<HTMLElement>}
       />

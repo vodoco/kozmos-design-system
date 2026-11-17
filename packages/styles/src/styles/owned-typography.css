@@ -24,6 +24,17 @@
   .kozmos-text-4xl {
     @apply text-4xl;
   }
+  /* The one display size (decision 203, GAP-272), from the display type
+     tokens: 48 on 54 lines, bold, no added tracking, for a marketing-style
+     headline. In rem, so it follows the reader's text size, as the scale's
+     other sizes and their lines do. Before the weights, so a weight given
+     beside it wins. */
+  .kozmos-text-display {
+    font-size: var(--semantics-typography-display-size);
+    line-height: var(--semantics-typography-display-line-height);
+    font-weight: var(--semantics-typography-display-weight);
+    letter-spacing: var(--semantics-typography-display-letter-spacing);
+  }
   .kozmos-text-normal {
     @apply font-normal;
   }

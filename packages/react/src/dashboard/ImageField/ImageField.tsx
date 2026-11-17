@@ -667,7 +667,7 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
           {openedImage && opened?.kind === "preview" ? (
             <DialogContent
               closeLabel={labels.close}
-              className="kozmos-image-field-preview"
+              size="full"
               onCloseAutoFocus={onCloseAutoFocus}
             >
               <DialogHeader>

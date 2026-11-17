@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "1cd98721a0c7";
+const PLUGIN_BUILD = "0cd2044983c5";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -55,6 +55,9 @@ const TEXT_SIZES = [
   "2XLarge",
   "3XLarge",
   "4XLarge",
+  // Decision 203 (GAP-272): the one display size, 48 on 54, React's
+  // Text size="display" and Heading size="display".
+  "Display",
 ];
 const TEXT_WEIGHTS = ["Normal", "Medium", "Semibold", "Bold"];
 const TEXT_TONES = ["Default", "Muted", "Primary", "Destructive"];
@@ -1307,7 +1310,12 @@ const PROPERTY_PICKER_SUGGESTED_ROWS = [
 const MAP_VIEW_CONTENT = ["Empty", "Overlay"];
 const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
-const DIALOG_CONTENT = ["Basic", "Form", "Footer"];
+// Media (decision 195, GAP-214): DialogHeader's media, bled to the edges and
+// top corners, the close in the corner over it. Full (decision 202, GAP-259):
+// DialogContent size="full", drawn in a 1280 by 800 window, less 16 each side.
+const DIALOG_CONTENT = ["Basic", "Form", "Footer", "Media", "Full"];
+// The media's height in the Media variant: an illustration's band.
+const DIALOG_MEDIA_HEIGHT = 160;
 const DRAWER_SIDES = ["Right", "Left", "Top", "Bottom"];
 // Where the drawer is drawn, as React's placement (GAP-198). Inline, a left or
 // right drawer floats in its region (decisions 139 and 148): 420 wide, as tall
@@ -8348,6 +8356,12 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["LINE_HEIGHT"],
   },
   { name: "Dialog/width/default", value: 512, scopes: ["WIDTH_HEIGHT"] },
+  // Decision 202: size="full", the window less 16 each side, drawn in a 1280
+  // by 800 window.
+  { name: "Dialog/width/full", value: 1248, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Dialog/height/full", value: 768, scopes: ["WIDTH_HEIGHT"] },
+  // Decision 195: the Media variant's illustration band.
+  { name: "Dialog/media/height", value: 160, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Dialog/padding",
     value: 24,
@@ -10639,6 +10653,19 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Text/line-height/3xl", value: 36, scopes: ["LINE_HEIGHT"] },
   { name: "Text/font-size/4xl", value: 36, scopes: ["FONT_SIZE"] },
   { name: "Text/line-height/4xl", value: 40, scopes: ["LINE_HEIGHT"] },
+  // Decision 203: the display size, Semantics/Typography/Display's 48 on 54.
+  {
+    name: "Text/font-size/display",
+    value: 48,
+    alias: "Typography/Display/Size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Text/line-height/display",
+    value: 54,
+    alias: "Typography/Display/LineHeight",
+    scopes: ["LINE_HEIGHT"],
+  },
   { name: "Link/width/default", value: 128, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Link/height/default",
@@ -26097,6 +26124,19 @@ function kozmosTextStyleSpecs(fonts) {
     });
   }
 
+  // Decision 203 (GAP-272): Heading size="display", the one display size at
+  // Heading's bold, 48 on 54, whatever the level it keeps as its rank.
+  const display = textMetrics("Display");
+  specs.push({
+    key: textStyleKeyForHeading("Display"),
+    name: `${TEXT_STYLE_GROUP_HEADING} / Display`,
+    fontName: fonts.bold || fonts.medium || fonts.regular,
+    fontSize: display.fontSize,
+    lineHeight: display.lineHeight,
+    description:
+      'Kozmos display heading typography style (decision 203): Heading size="display", 48 on 54, bold. The level stays the heading\'s rank in code; this style controls visual type only.',
+  });
+
   addComponentTextStyleSpecs(specs, fonts);
   return specs;
 }
@@ -36182,6 +36222,8 @@ async function buildDialogComponent() {
       "Description Text maps to DialogDescription children.",
       "Form content composes live Input instances.",
       "Footer actions compose live Button instances.",
+      "Media maps to DialogHeader media with mediaBleed (decision 195).",
+      'Full maps to DialogContent size="full" (decision 202).',
     ],
   });
 }
@@ -36204,6 +36246,8 @@ async function updateDialogComponent() {
       "Description Text maps to DialogDescription children.",
       "Form content composes live Input instances.",
       "Footer actions compose live Button instances.",
+      "Media maps to DialogHeader media with mediaBleed (decision 195).",
+      'Full maps to DialogContent size="full" (decision 202).',
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -65931,9 +65975,11 @@ async function updateDialogVariant(
   component,
   { value, variableByName, fonts, stats },
 ) {
+  const full = value === "Full";
   component.name = `Content=${value}`;
   component.layoutMode = "VERTICAL";
-  component.primaryAxisSizingMode = "AUTO";
+  // Full is the window's height less 32; the rest are their content's.
+  component.primaryAxisSizingMode = full ? "FIXED" : "AUTO";
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "MIN";
@@ -65942,7 +65988,12 @@ async function updateDialogVariant(
   component.paddingRight = 24;
   component.paddingTop = 24;
   component.paddingBottom = 24;
-  component.resizeWithoutConstraints(512, 100);
+  // Media's top padding holds the band and the 16 under it (177), so it is
+  // drawn taller than that from the start; it hugs its content after.
+  component.resizeWithoutConstraints(
+    full ? 1248 : 512,
+    full ? 768 : value === "Media" ? 240 : 100,
+  );
   component.cornerRadius = KOZMOS_RADIUS.container;
   component.clipsContent = false;
   component.fills = [
@@ -75219,7 +75270,12 @@ async function syncDialogVariantChildren({
   stats,
 }) {
   const hasFooter = value === "Form" || value === "Footer";
-  removeGeneratedButtonChild(component, "Dialog Close", true);
+  const withMedia = value === "Media";
+  const full = value === "Full";
+  // Over media the close sits in the dialog's corner, as React's does in
+  // every dialog; elsewhere it is in the header's row, beside the title.
+  removeGeneratedButtonChild(component, "Dialog Close", !withMedia);
+  await syncDialogMedia({ component, withMedia, variableByName, stats });
 
   let header = directChildNamed(component, "Dialog Header");
   if (header && header.type !== "FRAME") {
@@ -75335,8 +75391,9 @@ async function syncDialogVariantChildren({
   setLayoutSizingHorizontal(headerContent, "FILL");
   setLayoutSizingVertical(headerContent, "HUG");
 
+  removeGeneratedButtonChild(header, "Dialog Close", withMedia);
   const close = await syncInlineCloseButton({
-    parent: header,
+    parent: withMedia ? component : header,
     name: "Dialog Close",
     kind: "dialog-close",
     size: 32,
@@ -75369,13 +75426,19 @@ async function syncDialogVariantChildren({
   body.paddingRight = 0;
   body.paddingTop = 0;
   body.paddingBottom = 0;
-  body.resizeWithoutConstraints(464, value === "Form" ? 132 : 60);
+  body.resizeWithoutConstraints(full ? 1200 : 464, value === "Form" ? 132 : 60);
   body.fills = [];
   body.strokes = [];
   body.clipsContent = false;
   component.appendChild(body);
   setLayoutSizingHorizontal(body, "FILL");
   setVerticalStackChildSizing(body);
+  // Full: the body takes what the header leaves (React's minmax(0, 1fr)).
+  try {
+    body.layoutGrow = full ? 1 : 0;
+  } catch (_error) {
+    // layoutGrow is unavailable on older plugin runtimes.
+  }
 
   let bodyText = directChildNamed(body, "Body Text");
   if (bodyText && bodyText.type !== "TEXT") {
@@ -75397,6 +75460,34 @@ async function syncDialogVariantChildren({
   setLayoutSizingHorizontal(bodyText, "FILL");
   setLayoutSizingHorizontal(bodyText, "FILL");
   setLayoutSizingVertical(bodyText, "HUG");
+
+  // Full: the media shown large, filling the body under its words.
+  let preview = directChildNamed(body, "Full Media");
+  if (preview && (!full || preview.type !== "FRAME")) {
+    preview.remove();
+    preview = null;
+  }
+  if (full) {
+    if (!preview) {
+      preview = figma.createFrame();
+      preview.name = "Full Media";
+    }
+    preview.layoutMode = "NONE";
+    preview.resizeWithoutConstraints(1200, 480);
+    preview.cornerRadius = KOZMOS_RADIUS.control;
+    preview.fills = [
+      paintFromVariable("Colors/theme/0", "#EDF2FE", variableByName, stats),
+    ];
+    preview.strokes = [];
+    preview.clipsContent = true;
+    body.appendChild(preview);
+    setLayoutSizingHorizontal(preview, "FILL");
+    try {
+      preview.layoutGrow = 1;
+    } catch (_error) {
+      // layoutGrow is unavailable on older plugin runtimes.
+    }
+  }
 
   if (value === "Form") {
     removeGeneratedButtonChild(body, "Name Field", true);
@@ -75479,6 +75570,107 @@ async function syncDialogVariantChildren({
     variableByName,
     stats,
   );
+  if (full) {
+    // The window less 16 each side (decision 202), in place of 512 wide.
+    bindFloatVariable(
+      component,
+      "width",
+      "Dialog/width/full",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      component,
+      "height",
+      "Dialog/height/full",
+      variableByName,
+      stats,
+    );
+  }
+  if (withMedia) placeDialogMediaClose(component, close, variableByName, stats);
+}
+
+/**
+ * Decision 195 (GAP-214): the Media variant's band above the title, React's
+ * DialogHeader media with mediaBleed. Drawn out of the flow, from the
+ * dialog's top edge and sides inside its 1 edge, its top corners the
+ * dialog's less that edge; the dialog's top padding makes room for it and the
+ * 16 under it. Every other variant has none.
+ */
+async function syncDialogMedia({
+  component,
+  withMedia,
+  variableByName,
+  stats,
+}) {
+  let media = directChildNamed(component, "Dialog Media");
+  if (media && (!withMedia || media.type !== "FRAME")) {
+    media.remove();
+    media = null;
+  }
+  if (!withMedia) return null;
+  if (!media) {
+    media = figma.createFrame();
+    media.name = "Dialog Media";
+  }
+  media.layoutMode = "NONE";
+  media.fills = [
+    paintFromVariable("Colors/theme/0", "#EDF2FE", variableByName, stats),
+  ];
+  media.strokes = [];
+  media.clipsContent = true;
+  const inner = KOZMOS_RADIUS.container - 1;
+  media.topLeftRadius = inner;
+  media.topRightRadius = inner;
+  media.bottomLeftRadius = 0;
+  media.bottomRightRadius = 0;
+  component.insertChild(0, media);
+  try {
+    media.layoutPositioning = "ABSOLUTE";
+  } catch (_error) {
+    // Older Figma runtimes may not expose absolute positioning.
+  }
+  media.x = 1;
+  media.y = 1;
+  media.resizeWithoutConstraints(
+    (component.width || 512) - 2,
+    DIALOG_MEDIA_HEIGHT,
+  );
+  bindFloatVariable(
+    media,
+    "height",
+    "Dialog/media/height",
+    variableByName,
+    stats,
+  );
+  media.setSharedPluginData(RUN_NAMESPACE, "kind", "dialog-media");
+  return media;
+}
+
+/**
+ * The Media variant's close: in the dialog's corner, 24 in, over the media,
+ * on the surface with the subtle edge so it reads over any picture, as
+ * React's outline close does; and the dialog's top padding the media's band,
+ * its edge and the 16 under it.
+ */
+function placeDialogMediaClose(component, close, variableByName, stats) {
+  clearBoundVariable(component, "paddingTop", stats);
+  component.paddingTop = 1 + DIALOG_MEDIA_HEIGHT + 16;
+  if (!close) return;
+  try {
+    close.layoutPositioning = "ABSOLUTE";
+  } catch (_error) {
+    // Older Figma runtimes may not expose absolute positioning.
+  }
+  close.x = (component.width || 512) - 24 - (close.width || 32);
+  close.y = 24;
+  close.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  close.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  close.strokeWeight = 1;
 }
 
 async function syncBottomSheetVariantChildren({
@@ -78334,12 +78526,17 @@ function moveDirectChildrenIntoSlot(source, target, stats, context) {
 function dialogTitleText(value) {
   if (value === "Form") return "Edit profile";
   if (value === "Footer") return "Confirm changes";
+  if (value === "Media") return "Interested in Analytics?";
+  if (value === "Full") return "Image 1";
   return "Dialog title";
 }
 
 function dialogDescriptionText(value) {
   if (value === "Form") return "Make changes to your profile here.";
   if (value === "Footer") return "Review this decision before continuing.";
+  if (value === "Media")
+    return "See how people move through your buildings, floor by floor.";
+  if (value === "Full") return "Main entrance";
   return "Use dialogs for focused tasks that need a clear return path.";
 }
 
@@ -78348,6 +78545,10 @@ function dialogBodyText(value) {
     return "Update the fields below and save when you are done.";
   if (value === "Footer")
     return "This content explains the action, risk, or expected result.";
+  if (value === "Media")
+    return "The media above the title is an illustration; it is decorative unless it is named.";
+  if (value === "Full")
+    return "A full dialog fills the window less 16 each side; its body takes the rest.";
   return "Dialog body content can hold a short message, form summary, or composed product content.";
 }
 
@@ -91084,6 +91285,7 @@ function textMetrics(size) {
     "2XLarge": { fontSize: 24, lineHeight: 32, token: "2xl" },
     "3XLarge": { fontSize: 30, lineHeight: 36, token: "3xl" },
     "4XLarge": { fontSize: 36, lineHeight: 40, token: "4xl" },
+    Display: { fontSize: 48, lineHeight: 54, token: "display" },
   };
 
   return metrics[size] || metrics.Base;
@@ -91136,7 +91338,8 @@ function linkConfig(variant) {
 
 function textSampleForSize(size) {
   if (size === "XS" || size === "Small") return "Kozmos label";
-  if (size === "3XLarge" || size === "4XLarge") return "Kozmos";
+  if (size === "3XLarge" || size === "4XLarge" || size === "Display")
+    return "Kozmos";
   return "Kozmos text";
 }
 

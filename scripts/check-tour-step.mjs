@@ -57,6 +57,9 @@
  *   system's or the config's mark in the portal; forced colours draw the
  *   arrow in the system's text colour and keep the edges.
  * - Right to left and both densities.
+ * - An anchor apart from the target (decision 198, GAP-220): the card beside
+ *   an editor laid over the lit map, or beside a point on it, with the map
+ *   still lit, and above the cut-out where the two overlap.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-tour-step.mjs
@@ -2076,6 +2079,132 @@ await scenario(
       ),
       "start",
     );
+  },
+);
+
+// Decision 198 (GAP-220): an anchor apart from the target. The step lights
+// the map and its card sits beside the editor laid over it, on the lit map,
+// as A5's drawing step does with the Map Content list collapsed; and beside
+// a point on the map, a virtual element. Where the card overlaps the lit
+// area, it is above the cut-out: a press there lands in the card.
+async function anchoredPlacement(page) {
+  await placement(page);
+  return page.evaluate(() => {
+    const box = (node) => {
+      const r = node.getBoundingClientRect();
+      return {
+        left: r.left,
+        top: r.top,
+        right: r.right,
+        bottom: r.bottom,
+        width: r.width,
+        height: r.height,
+      };
+    };
+    const card = document.getElementById("step");
+    const ring = document.querySelector(
+      ".kozmos-tour-step-backdrop .kozmos-backdrop-ring",
+    );
+    const c = box(card);
+    const r = ring ? box(ring) : null;
+    // A point inside both the card and the lit map.
+    const x =
+      (Math.max(c.left, r?.left ?? 0) + Math.min(c.right, r?.right ?? 0)) / 2;
+    const y = c.top + c.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    return {
+      card: c,
+      ring: r,
+      map: box(document.getElementById("map")),
+      editor: box(document.getElementById("editor")),
+      arrow: box(card.querySelector(".kozmos-tour-step-arrow")),
+      lit: ring?.closest(".kozmos-backdrop")?.hasAttribute("data-lit") ?? false,
+      overlap: { x, y },
+      hitInCard: !!hit && card.contains(hit),
+      hit: hit ? `${hit.tagName}.${hit.className}` : null,
+    };
+  });
+}
+
+function assertLitMapUnderCard(at, label) {
+  // The cut-out lights the target, the map: 8 of padding and its 2 ring.
+  assert.ok(
+    at.ring && at.lit,
+    `${label}: the map is lit (${JSON.stringify(at)})`,
+  );
+  for (const [edge, sign] of [
+    ["left", -1],
+    ["top", -1],
+    ["right", 1],
+    ["bottom", 1],
+  ])
+    assert.ok(
+      Math.abs(at.ring[edge] - (at.map[edge] + sign * 10)) <= TOLERANCE,
+      `${label}: the cut-out's ${edge} rings the map, read ${at.ring[edge]} by the map's ${at.map[edge]}`,
+    );
+  // The card is on the lit map, and above the cut-out where it overlaps it.
+  assert.ok(
+    at.card.left < at.ring.right && at.card.right > at.ring.left,
+    `${label}: the card overlaps the lit map (${JSON.stringify(at.card)})`,
+  );
+  assert.ok(
+    at.hitInCard,
+    `${label}: a press where the card overlaps the lit map lands in the card, read ${at.hit} at ${JSON.stringify(at.overlap)}`,
+  );
+}
+
+await scenario(
+  "an anchor apart from the target: the card sits beside the editor, on the lit map (decision 198)",
+  { mount: { anchored: "ref" } },
+  async (page) => {
+    const at = await anchoredPlacement(page);
+    // Beside the anchor as beside a target: 24 past its edge (the cut-out's
+    // 10 and the 14 past the ring), centred on it, the arrow's tip 13 past it.
+    const gap = at.card.left - at.editor.right;
+    assert.ok(
+      Math.abs(gap - (10 + RING_GAP)) <= GAP_TOLERANCE,
+      `the card ${10 + RING_GAP} past the editor, read ${gap.toFixed(2)} (${JSON.stringify(at)})`,
+    );
+    const off =
+      at.card.top + at.card.height / 2 - (at.editor.top + at.editor.height / 2);
+    assert.ok(
+      Math.abs(off) <= TOLERANCE,
+      `centred on the editor, read ${off.toFixed(2)} off`,
+    );
+    const tip = at.arrow.left - at.editor.right;
+    assert.ok(
+      Math.abs(tip - (10 + ARROW_GAP)) <= GAP_TOLERANCE,
+      `the arrow's tip ${10 + ARROW_GAP} past the editor, read ${tip.toFixed(2)}`,
+    );
+    const arrowOff =
+      at.arrow.top +
+      at.arrow.height / 2 -
+      (at.editor.top + at.editor.height / 2);
+    assert.ok(
+      Math.abs(arrowOff) <= 1.5,
+      `the arrow points at the editor's middle, read ${arrowOff.toFixed(2)} off`,
+    );
+    assertLitMapUnderCard(at, "anchored to the editor");
+  },
+);
+
+await scenario(
+  "an anchor that is a point on the map: the card sits beside the point, the map stays lit (decision 198)",
+  { mount: { anchored: "virtual" } },
+  async (page) => {
+    const at = await anchoredPlacement(page);
+    const point = { x: at.map.left + 240, y: at.map.top + 120 };
+    const gap = at.card.left - point.x;
+    assert.ok(
+      Math.abs(gap - (10 + RING_GAP)) <= GAP_TOLERANCE,
+      `the card ${10 + RING_GAP} past the point, read ${gap.toFixed(2)} (${JSON.stringify(at)})`,
+    );
+    const off = at.card.top + at.card.height / 2 - point.y;
+    assert.ok(
+      Math.abs(off) <= TOLERANCE,
+      `centred on the point, read ${off.toFixed(2)} off`,
+    );
+    assertLitMapUnderCard(at, "anchored to a point");
   },
 );
 
