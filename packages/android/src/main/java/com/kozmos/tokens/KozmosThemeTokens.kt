@@ -1351,6 +1351,18 @@ object KozmosThemeTokens {
         )
 
     /**
+     * The glass edge's colour: white in both themes, drawn at
+     * Semantics.Effect.glass.border.opacity, so a glass surface's 1px edge is
+     * a light rim on any tint (ruling §5.13). It was white written into every
+     * platform, with no token (GAP-229, decision 208).
+     */
+    val semanticsEffectGlassBorderColor: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsEffectGlassBorderColor,
+            KozmosColorsDark.semanticsEffectGlassBorderColor
+        )
+
+    /**
      * The taxonomy's yellow quick-access colour.
      */
     val semanticsCategoryAccentYellow: Color

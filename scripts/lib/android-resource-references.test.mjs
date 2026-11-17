@@ -4,6 +4,7 @@ import {
   declaredIn,
   pixelDimensions,
   referencedIn,
+  unitlessLengths,
   unresolvedReferences,
 } from "./android-resource-references.mjs";
 
@@ -75,4 +76,29 @@ test("a dimen written in px is found, and dp, sp and references are not: the 9 N
     { name: "primitives_touch_min", value: "44px", line: 3 },
     { name: "b", value: "2px", line: 4 },
   ]);
+});
+
+test("a length written as an integer, a string or a float is found, and a dimen in dp or sp is not: decision 206", () => {
+  const found = unitlessLengths(
+    xml(`  <integer name="primitives_layout_spacing_200">16</integer>
+  <string name="primitives_typography_font_size_300">16</string>
+  <item name="semantics_effect_glass_blur" type="dimen" format="float">20</item>
+  <string name="components_html_elements_headings_h1_letter_spacing">-0.4</string>
+  <integer name="semantics_motion_slide_sm">4</integer>
+  <dimen name="primitives_layout_radius_200">16dp</dimen>
+  <dimen name="primitives_typography_line_height_200">22sp</dimen>
+  <dimen name="semantics_radius_control">@dimen/primitives_layout_radius_200</dimen>
+  <integer name="primitives_layer_10">10</integer>
+  <string name="primitives_typography_font_family_primary">Readex Pro</string>`),
+  );
+  assert.deepEqual(
+    found.map(({ name, tag, line }) => [name, tag, line]),
+    [
+      ["primitives_layout_spacing_200", "integer", 3],
+      ["primitives_typography_font_size_300", "string", 4],
+      ["semantics_effect_glass_blur", "item (float)", 5],
+      ["components_html_elements_headings_h1_letter_spacing", "string", 6],
+      ["semantics_motion_slide_sm", "integer", 7],
+    ],
+  );
 });

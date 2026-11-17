@@ -2,7 +2,10 @@
  * Every `@type/name` in the Android library's resources, and in the token
  * build's Android resources when they are built, names a resource of that
  * type, and no `<dimen>` is written in `px`, which Android reads as device
- * pixels where every Kozmos length is a CSS pixel, a dp.
+ * pixels where every Kozmos length is a CSS pixel, a dp, and every length
+ * token (spacing, sizing, radius, the motion slides, the glass blur and the
+ * type scale) is a `<dimen>` in dp, or sp for the type scale, never an
+ * `<integer>` or a unitless `<string>` (decision 206, GAP-237).
  *
  * The library's own build never links its resources, so it passes with a
  * reference to nothing, and the first to find out is an app built against
@@ -13,7 +16,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { pixelDimensions, unresolvedReferences } from "./lib/android-resource-references.mjs";
+import { pixelDimensions, unitlessLengths, unresolvedReferences } from "./lib/android-resource-references.mjs";
 
 const ROOT = process.cwd();
 const RES_DIRS = [
@@ -65,12 +68,19 @@ for (const { res, required } of RES_DIRS) {
     console.error(`  FAIL  ${file}:${line} dimen ${name} is ${value}: Android reads px as device pixels; write dp`);
   }
   failed += pixels.length;
-  if (!missing.length && !pixels.length)
-    console.log(`  ok    ${res}: ${count} file(s), every reference resolves, no dimen in px`);
+  const unitless = Object.values(files)
+    .flat()
+    .flatMap(({ file, xml }) => unitlessLengths(xml).map((found) => ({ file, ...found })));
+  for (const { file, line, name, tag, value } of unitless) {
+    console.error(`  FAIL  ${file}:${line} ${name} is a length written as <${tag}> ${value}: write a <dimen> in dp, or sp for the type scale (decision 206)`);
+  }
+  failed += unitless.length;
+  if (!missing.length && !pixels.length && !unitless.length)
+    console.log(`  ok    ${res}: ${count} file(s), every reference resolves, no dimen in px, every length a dimen in dp or sp`);
 }
 
 if (failed) {
   console.error(`\n${failed} Android resource problem(s)`);
   process.exit(1);
 }
-console.log(`\n${checked} Android resource file(s): every reference names a resource of its type, and no dimen is in px`);
+console.log(`\n${checked} Android resource file(s): every reference names a resource of its type, no dimen is in px, and every length is a dimen in dp or sp`);

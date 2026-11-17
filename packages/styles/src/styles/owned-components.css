@@ -697,8 +697,15 @@
         )
       )
       saturate(var(--semantics-effect-glass-saturation));
+    /* The glass edge's colour token, white in both themes, at the edge's
+       opacity (decision 208, GAP-229): it was white written in. */
     border: 1px solid
-      rgba(255, 255, 255, var(--semantics-effect-glass-border-opacity));
+      color-mix(
+        in srgb,
+        var(--semantics-effect-glass-border-color)
+          calc(var(--semantics-effect-glass-border-opacity) * 100%),
+        transparent
+      );
   }
   @media (prefers-reduced-transparency: reduce) {
     .kozmos-surface-glass {
@@ -1601,8 +1608,15 @@
         )
       )
       saturate(var(--semantics-effect-glass-saturation));
+    /* The glass edge's colour token, white in both themes, at the edge's
+       opacity (decision 208, GAP-229): it was white written in. */
     border: 1px solid
-      rgba(255, 255, 255, var(--semantics-effect-glass-border-opacity));
+      color-mix(
+        in srgb,
+        var(--semantics-effect-glass-border-color)
+          calc(var(--semantics-effect-glass-border-opacity) * 100%),
+        transparent
+      );
   }
   .kozmos-button-glass:hover {
     background-color: rgba(
@@ -1915,6 +1929,24 @@
   }
   .kozmos-page-header[data-size="lg"] .kozmos-page-header-info,
   .kozmos-page-header[data-size="lg"] .kozmos-page-header-actions {
+    block-size: 2.25rem;
+  }
+  /* The title's addon (decision 210), a status Tag beside the title: centred
+     on the title's line, as the info button is, and outside the h1. With an
+     addon the line wraps, so where it has no room the addon (and the info
+     button after it) goes under the title, at its start, rather than
+     squeezing the title into a column. */
+  .kozmos-page-header-title[data-addon] {
+    flex-wrap: wrap;
+  }
+  .kozmos-page-header-title-addon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    block-size: 2rem;
+    min-inline-size: 0;
+  }
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-title-addon {
     block-size: 2.25rem;
   }
   /* IconButton's counter (GAP-197): over the icon's top-end corner, its

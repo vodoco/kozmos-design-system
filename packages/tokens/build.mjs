@@ -102,10 +102,39 @@ StyleDictionary.registerTransform({
   transform: (token) => toCamelCase(token.path || [token.name]),
 });
 
+// The unit an Android length resource takes, by its name, or null for a
+// number that is not a length (decision 206, GAP-237). The same families as
+// LENGTH_NAME in scripts/lib/android-resource-references.mjs.
+function androidLengthUnit(name) {
+  if (/_(font_size|line_height|letter_spacing)(_|$)/.test(name)) return "sp";
+  if (
+    /^primitives_layout_(spacing|sizing|radius)_/.test(name) ||
+    /^semantics_motion_slide_/.test(name) ||
+    name === "semantics_effect_glass_blur" ||
+    /_paragraph_spacing(_|$)/.test(name)
+  )
+    return "dp";
+  return null;
+}
+
 // Fix for Android AAPT not allowing floats in <integer>
 function fixAndroidXML(filePath) {
   if (fs.existsSync(filePath)) {
     let content = fs.readFileSync(filePath, "utf8");
+    // The lengths are <dimen>s (decision 206, GAP-237): the layout spacing,
+    // sizing and radius primitives, the motion slides and the glass blur in
+    // dp, and the type scale's font sizes, line heights and letter spacing
+    // in sp, as Compose's text takes them, so they follow the reader's font
+    // scale; paragraph spacing, the room between paragraphs, in dp. They were
+    // <integer>s and unitless <string>s, which an XML layout cannot use as
+    // @dimen/. scripts/check-android-resource-references.mjs holds the units.
+    content = content.replace(
+      /<(integer|string) name="([^"]+)">(-?[0-9]+(?:\.[0-9]+)?)<\/\1>/g,
+      (match, tag, name, value) => {
+        const unit = androidLengthUnit(name);
+        return unit ? `<dimen name="${name}">${value}${unit}</dimen>` : match;
+      },
+    );
     // Replace <integer> with float value to <item type="dimen" format="float">
     content = content.replace(
       /<integer name="([^"]+)">([-0-9]+\.[0-9]+)<\/integer>/g,
@@ -136,8 +165,10 @@ function fixAndroidXML(filePath) {
     // Only Primitives.Layout's numbers are lengths (spacing and radius); a
     // dimension aliasing any other number (a layer, a column count) stays a
     // reference, which scripts/check-android-resource-references.mjs fails.
+    // Since decision 206 those numbers are dimens in dp themselves, so the
+    // reference would resolve; the value is still written in, as before.
     const integers = new Map(
-      [...content.matchAll(/<integer name="(primitives_layout_[^"]+)">(-?[0-9]+)<\/integer>/g)].map(
+      [...content.matchAll(/<dimen name="(primitives_layout_[^"]+)">(-?[0-9]+)dp<\/dimen>/g)].map(
         ([, name, value]) => [name, value],
       ),
     );
@@ -970,6 +1001,9 @@ function glassEffect(dictionary) {
       path[2] !== "glass"
     )
       continue;
+    // The edge's colour (GAP-229, decision 208) is a colour token, written
+    // with the theme's colours, not one of the effect's numbers.
+    if ((token.$type || token.type) === "color") continue;
     const key = path.slice(3).join(".");
     const light = Number(token.value ?? token.$value);
     const dark = Number(

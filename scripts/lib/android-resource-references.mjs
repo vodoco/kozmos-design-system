@@ -87,3 +87,38 @@ export function pixelDimensions(xml) {
   });
   return found;
 }
+
+/**
+ * The token names that are lengths: the layout spacing, sizing and radius
+ * primitives, the motion slides, the glass blur, and the type scale (font
+ * sizes, line heights, letter spacing and paragraph spacing, with the heading
+ * tokens under `components_html_elements_headings_*`).
+ */
+export const LENGTH_NAME =
+  /^(primitives_layout_(spacing|sizing|radius)_|semantics_motion_slide_|semantics_effect_glass_blur$|.*_(font_size|line_height|letter_spacing|paragraph_spacing)(_|$))/;
+
+/**
+ * Every length written as something other than a `<dimen>` with a unit: an
+ * `<integer>`, a `<string>`, or a float item, none of which an XML layout can
+ * use as `@dimen/`. The token build wrote the layout primitives, the motion
+ * slides and the glass blur as `<integer>` and the type scale as unitless
+ * `<string>`s until decision 206 (17 Nov 2026, GAP-237). A `<dimen>` must
+ * carry a unit or be a reference to another dimen.
+ */
+export function unitlessLengths(xml) {
+  const found = [];
+  xml.split("\n").forEach((text, index) => {
+    for (const [, tag, before, name, after, value] of text.matchAll(
+      /<(dimen|integer|string|item)\b([^>]*)\bname="([^"]+)"([^>]*)>([^<]*)</g,
+    )) {
+      if (!LENGTH_NAME.test(name)) continue;
+      const attrs = `${before} ${after}`;
+      const isDimen = tag === "dimen" || (tag === "item" && /\btype="dimen"/.test(attrs));
+      const trimmed = value.trim();
+      const hasUnit = /^-?[0-9.]+(dp|sp)$/.test(trimmed) || /^@dimen\//.test(trimmed);
+      if (isDimen && !/\bformat="float"/.test(attrs) && hasUnit) continue;
+      found.push({ name, tag: tag === "item" ? `item${/format="float"/.test(attrs) ? " (float)" : ""}` : tag, value: trimmed, line: index + 1 });
+    }
+  });
+  return found;
+}

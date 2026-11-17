@@ -18,11 +18,9 @@
  *   the theme set to a sentinel colour of its own (in-page.mjs,
  *   colourProvenance): a colour that does not move was written in, whatever
  *   token happens to hold its value, and one that reads another sentinel
- *   dark than light swaps to another role. One colour is allowed without a
- *   token, by name, and only when it is allowed in both themes: a glass
- *   surface's 1px edge, white at the glass border opacity token and
- *   following it (in-page.mjs, GLASS_EDGE: ruling §5.13, decision 167,
- *   GAP-229). It fails when no story draws it.
+ *   dark than light swaps to another role. No colour is allowed without a
+ *   token: a glass surface's 1px edge, allowed by name until then (decision
+ *   167), reads the glass edge's colour token since decision 208 (GAP-229).
  * - Each root carries the density asked for, or the one above it when it is
  *   nested (a provider inherits its density, and a DensityScope sets its
  *   own); each portal carries a provider's.
@@ -38,7 +36,6 @@
  *     node scripts/check-vue-themes.mjs
  */
 import {
-  colourAllowances,
   densityTokens,
   finish,
   launch,
@@ -77,10 +74,8 @@ const toPx = (value, rootFontSize) =>
 const browser = await launch();
 const failures = [];
 const allowed = new Map(SIZED_OVER_DENSITY.map((allowance) => [allowance, 0]));
-const allowances = colourAllowances();
 let followed = 0;
 let themed = 0;
-let allowedBoth = 0;
 try {
   const { context, page, errors } = await newStoryPage(browser, base);
   try {
@@ -108,10 +103,7 @@ try {
                 readColours: density === "touch",
               },
             );
-            if (painted) {
-              colours[theme] = painted.colours;
-              allowances.add(painted.allowances);
-            }
+            if (painted) colours[theme] = painted.colours;
             for (const element of outside)
               failures.push(
                 `${at}: ${element} is drawn outside every Kozmos root`,
@@ -227,21 +219,6 @@ try {
             );
             continue;
           }
-          // A colour an allowance names (in-page.mjs, GLASS_EDGE) is
-          // allowed only when it is allowed in both themes.
-          const allowance = light.allowance ?? dark.allowance;
-          if (allowance) {
-            if (light.allowance === dark.allowance) allowedBoth++;
-            else {
-              const [theme, other] = light.allowance
-                ? ["dark", dark]
-                : ["light", light];
-              failures.push(
-                `${id}: ${key} is allowed by ${allowance} in one theme only: it is ${other.text} ${theme}${other.refused ? ` (${other.refused})` : other.fromToken ? ", from a token" : ""}`,
-              );
-            }
-            continue;
-          }
           const written = [
             ["light", light],
             ["dark", dark],
@@ -249,7 +226,7 @@ try {
           if (written.length)
             for (const [theme, read] of written)
               failures.push(
-                `${id}: ${key} is ${read.text} ${theme}, and stays so when every colour token changes: it is written in, not a token's${read.refused ? ` (${read.refused})` : ""}`,
+                `${id}: ${key} is ${read.text} ${theme}, and stays so when every colour token changes: it is written in, not a token's`,
               );
           else if (light.sentinel !== dark.sentinel)
             failures.push(
@@ -277,11 +254,6 @@ for (const [allowance, count] of allowed)
 console.log(
   `${themed} colour(s) drawn light and dark from the same token, each moving with it`,
 );
-if (allowedBoth)
-  console.log(
-    `${allowedBoth} colour(s) drawn light and dark as an allowance names them`,
-  );
-allowances.report(failures);
 if (!followed)
   failures.push(
     "no story drew a control that follows the density: the density check measured nothing",
