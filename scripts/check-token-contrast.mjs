@@ -447,6 +447,40 @@ for (const exception of contract.hoverFillExceptions ?? []) {
     );
 }
 
+// Decision 173's exceptions by visibility, not contrast: a part whose resting
+// fill can be the hover fill itself, so a hover-fill hover would not show,
+// hovers on a tint of its own. Each is named here with the source that holds
+// it, and stays only while one of its surfaces is the hover fill in a theme.
+for (const exception of contract.hoverFillVisibilityExceptions ?? []) {
+  for (const { file, contains } of exception.sources) {
+    checked += 1;
+    if (!sourceHolds(file, contains))
+      failures.push(
+        `${exception.name}: ${file} no longer holds ${JSON.stringify(contains)}`,
+      );
+  }
+  let needed = false;
+  for (const mode of modes) {
+    const variables = exceptionVariables[mode];
+    const fill = colorFor(
+      variables,
+      "semantics-hover-fill",
+      mode,
+      exception.name,
+    );
+    for (const surface of exception.surfaces) {
+      const colour = colorFor(variables, surface, mode, exception.name);
+      checked += 1;
+      if (colour.toLowerCase() === fill.toLowerCase()) needed = true;
+    }
+  }
+  checked += 1;
+  if (!needed)
+    failures.push(
+      `${exception.name}: no surface is the hover fill in either theme; the exception is no longer needed`,
+    );
+}
+
 for (const mode of modes) {
   const variables = readCssVariables(mode);
 
