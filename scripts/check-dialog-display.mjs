@@ -16,6 +16,11 @@
  * - Text and Heading's display size (decision 203, GAP-272): 48 on 54 lines,
  *   bold, no added tracking, in rem (60 on 67.5 at a 20px root); a weight
  *   given beside it wins.
+ * - DialogTitle's spacing (GAP-275): 8 over a one-line title and none under
+ *   it, 36 tall at least, so its description sits 8 under the title's line
+ *   and starts where the close's 44 target ends. The title's box is
+ *   utilities, which a host without @scope drops, so this holds with style.css
+ *   as built.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   node scripts/check-dialog-display.mjs
@@ -348,6 +353,54 @@ for (const mode of ["full", "without-scope"]) {
       assert.equal(read.hidden, null, "and not hidden");
     },
   );
+
+  if (mode === "full")
+    await scenario(
+      "DialogTitle: a one-line title's description 8 under it, where the close's 44 ends",
+      { mode },
+      async (page) => {
+        await mount(page, "title");
+        const read = await page.evaluate(() => {
+          const dialog = document.querySelector('[role="dialog"]');
+          const title = dialog.querySelector("h2");
+          const description = dialog.querySelector(
+            '[data-testid="description"]',
+          );
+          const close = dialog.querySelector(".kozmos-dialog-close");
+          const s = getComputedStyle(title);
+          const t = title.getBoundingClientRect();
+          const c = close.getBoundingClientRect();
+          return {
+            // The bottom of the title's one line box: its top, its padding
+            // over the words and one line.
+            lineBottom:
+              t.top + parseFloat(s.paddingTop) + parseFloat(s.lineHeight),
+            lines: Math.round(
+              (t.height -
+                parseFloat(s.paddingTop) -
+                parseFloat(s.paddingBottom)) /
+                parseFloat(s.lineHeight),
+            ),
+            descriptionTop: description.getBoundingClientRect().top,
+            close: { bottom: c.bottom, width: c.width, height: c.height },
+          };
+        });
+        assert.equal(read.lines, 1, "the title is one line");
+        near(
+          read.descriptionTop - read.lineBottom,
+          8,
+          "the description 8 under the title's line",
+          1,
+        );
+        near(read.close.width, 44, "the close's 44 target, wide");
+        near(read.close.height, 44, "and tall");
+        near(
+          read.descriptionTop,
+          read.close.bottom,
+          "the description starts where the close's target ends",
+        );
+      },
+    );
 
   for (const root of [undefined, 20])
     await scenario(

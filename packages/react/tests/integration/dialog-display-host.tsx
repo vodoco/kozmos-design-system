@@ -18,9 +18,16 @@ import { ImageField, type ImageFieldImage } from "@kozmos-ds/react/dashboard";
  * Dialog with a header and an image (decision 202, GAP-259), ImageField's
  * preview, which now opens in it, a Dialog whose header carries media inside
  * its padding or bleeding to its edges (decision 195, GAP-214), and Text and
- * Heading at the display size (decision 203, GAP-272).
+ * Heading at the display size (decision 203, GAP-272), and a plain Dialog
+ * with a one-line title over a description (GAP-275).
  */
-type Case = "full" | "image-field" | "media" | "media-bleed" | "display";
+type Case =
+  | "full"
+  | "image-field"
+  | "media"
+  | "media-bleed"
+  | "display"
+  | "title";
 
 // A 4:3 picture, drawn in the page, so nothing is fetched.
 const picture = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -51,6 +58,19 @@ function Case({ name }: { name: Case }) {
       <div style={{ padding: 16, width: 480 }}>
         <ImageField label="Images" max={3} defaultValue={images} />
       </div>
+    );
+  if (name === "title")
+    return (
+      <Dialog open>
+        <DialogContent data-testid="dialog">
+          <DialogHeader data-testid="header">
+            <DialogTitle>Route unavailable</DialogTitle>
+            <DialogDescription data-testid="description">
+              Step-free access is closed on this floor.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     );
   if (name === "full")
     return (

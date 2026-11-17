@@ -198,7 +198,11 @@ const DialogTitle = React.forwardRef<
     ref={ref}
     className={cn(
       // Room for the close, the icon button's size, and 12 (decision 82).
-      "min-h-11 min-w-0 py-2 pe-[calc(var(--density-icon-control-size-md,2.75rem)_+_0.75rem)] text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]",
+      // GAP-275: 8 over the words, so the first line centres on the close,
+      // and none under them, so a description sits 8 under a one-line title;
+      // 36 tall at least, so the description starts where the close's 44
+      // target ends (24 + 44 = 68 = 24 + 36 + the header's 8).
+      "min-h-9 min-w-0 pt-2 pe-[calc(var(--density-icon-control-size-md,2.75rem)_+_0.75rem)] text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]",
       className,
     )}
     {...props}
