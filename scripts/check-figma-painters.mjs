@@ -9216,9 +9216,7 @@ section("Rating");
     );
     const whole = (await paint("Stars", "4", "Readonly")).component;
     ok(
-      whole.children.every(
-        (cell) => glyphOf(cell).name !== "Star / half",
-      ),
+      whole.children.every((cell) => glyphOf(cell).name !== "Star / half"),
       "a whole score draws no half",
     );
   }
@@ -16327,8 +16325,9 @@ section("GAP-158: Radio draws cards and tiles");
   ok(
     JSON.stringify(axes.Variant) ===
       JSON.stringify(["Default", "Card", "Tile"]) &&
+      // Decision 191: Mixed last, so a set from before it keeps its order.
       JSON.stringify(axes.Checked) ===
-        JSON.stringify(["Unchecked", "Checked"]) &&
+        JSON.stringify(["Unchecked", "Checked", "Mixed"]) &&
       JSON.stringify(axes.State) ===
         JSON.stringify(["Default", "Disabled", "Error"]),
     `Radio declares Checked, State and Variant, Default first (${JSON.stringify(axes)})`,
@@ -16338,9 +16337,9 @@ section("GAP-158: Radio draws cards and tiles");
       ? plugin.radioVariantCombinations()
       : [];
   ok(
-    combinations.length === 18 &&
-      new Set(combinations.map((c) => plugin.radioVariantKey(c))).size === 18,
-    `each Variant at each Checked and State: 18 variants (${combinations.length})`,
+    combinations.length === 27 &&
+      new Set(combinations.map((c) => plugin.radioVariantKey(c))).size === 27,
+    `each Variant at each Checked and State: 27 variants (${combinations.length})`,
   );
   const parsed = [
     "Checked=Checked, State=Default",
@@ -16476,10 +16475,10 @@ section("GAP-158: Radio draws cards and tiles");
     replay.result.updated === true &&
       replay.result.componentSetId === replay.setId &&
       replay.result.variantsUpdated === 6 &&
-      replay.result.variantsCreated === 12 &&
-      replay.liveSet.children.length === 18 &&
-      new Set(replay.names).size === 18,
-    `Update keeps the set and its 6 variants, and adds the 12 cards and tiles (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.liveSet.children.length} in all)`,
+      replay.result.variantsCreated === 21 &&
+      replay.liveSet.children.length === 27 &&
+      new Set(replay.names).size === 27,
+    `Update keeps the set and its 6 variants, and adds the 12 cards and tiles and the 9 Mixed (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.liveSet.children.length} in all)`,
   );
   ok(
     replay.kept.every(
@@ -16512,7 +16511,8 @@ section("GAP-158: Radio draws cards and tiles");
   ok(
     media &&
       definitions[media].defaultValue === true &&
-      drivenBy(media, "visible").length === 12 &&
+      // The 12 boxes, and the 6 Mixed cards' and tiles' (decision 191).
+      drivenBy(media, "visible").length === 18 &&
       drivenBy(media, "visible").every((node) => node.name === "Media"),
     `Show Media, on by default, shows each card's and tile's Media (${media}: ${drivenBy(media, "visible").length})`,
   );
@@ -16520,9 +16520,9 @@ section("GAP-158: Radio draws cards and tiles");
     shown &&
       words &&
       definitions[shown].defaultValue === false &&
-      drivenBy(words, "characters").length === 18 &&
-      drivenBy(shown, "visible").length === 24,
-    `Description Text writes all 18 descriptions, and Show Description, off, shows them: the 6 Default rows with their texts and the 12 boxes' texts (${drivenBy(words, "characters").length} texts, ${drivenBy(shown, "visible").length} layers)`,
+      drivenBy(words, "characters").length === 27 &&
+      drivenBy(shown, "visible").length === 36,
+    `Description Text writes all 27 descriptions, and Show Description, off, shows them: the 9 Default rows with their texts and the 18 boxes' texts (${drivenBy(words, "characters").length} texts, ${drivenBy(shown, "visible").length} layers)`,
   );
   ok(
     propertyNamed("Label Text", "TEXT") &&
@@ -18015,8 +18015,7 @@ section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
       ) &&
       plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
         (entry) =>
-          entry.title === "Inputs" &&
-          entry.components.includes("ImageCropper"),
+          entry.title === "Inputs" && entry.components.includes("ImageCropper"),
       ),
     "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
   );
@@ -18662,6 +18661,236 @@ section("PropertyPicker: the subtle Button and its popup");
       plugin.expectedVariantAxesForComponentSetName("PropertyPicker"),
     ) === JSON.stringify({ State: ["Closed", "Open", "Suggested", "Empty"] }),
     "the set's one axis is State: Closed (its default), Open, Suggested, Empty",
+  );
+}
+
+// Decision 191: a mixed RadioGroup and SegmentedControl have nothing chosen,
+// and under the options a "Multiple values" line, as React's group draws it
+// (a field's helper line, 14/20 in foreground/400), its words the Mixed Text
+// property. SegmentedControl's State=Mixed is a stack: its Track, painted
+// as every other variant's track with no segment filled, then the line.
+// Radio's Checked=Mixed is an option unchosen with the line last: a Default
+// row keeps its column and ends with it, a card or a tile is a stack of its
+// Radio Box and the line. Every other variant is drawn as it was, the track
+// or the box itself, with no line; an Update keeps the variants a set has
+// and adds the nine Mixed ones each set lacks.
+section("Decision 191: RadioGroup's and SegmentedControl's Mixed");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const draw = (painter, args) =>
+    withAutoLayout(async () => {
+      const component = figma.createComponent();
+      await plugin[painter](component, {
+        ...args,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      });
+      return component;
+    });
+  const line = (node) => node && named(node, "Mixed Text");
+  const isLine = (text) =>
+    Boolean(
+      text &&
+      text.type === "TEXT" &&
+      text.characters === "Multiple values" &&
+      text.fontSize === 14 &&
+      boundVariableName(text.fills[0]) === "Colors/foreground/400",
+    );
+  const below = (upper, lower) =>
+    upper.parent === lower.parent &&
+    upper.parent.children.indexOf(lower) > upper.parent.children.indexOf(upper);
+
+  const axes =
+    plugin.expectedVariantAxesForComponentSetName("SegmentedControl");
+  ok(
+    JSON.stringify(axes && axes.State) ===
+      JSON.stringify(["Default", "Focus", "Disabled", "Error", "Mixed"]),
+    `SegmentedControl: State ends with Mixed (${JSON.stringify(axes && axes.State)})`,
+  );
+  for (const size of ["Small", "Default", "Large"]) {
+    const mixed = await draw("updateSegmentedControlVariant", {
+      size,
+      active: "Two",
+      state: "Mixed",
+    });
+    const chosen = await draw("updateSegmentedControlVariant", {
+      size,
+      active: "Two",
+      state: "Default",
+    });
+    const track = named(mixed, "Track");
+    const segments = track
+      ? track.children.filter((node) => /^Segment \d$/.test(node.name))
+      : [];
+    ok(
+      mixed.name === `Size=${size}, Active=Two, State=Mixed` &&
+        mixed.layoutMode === "VERTICAL" &&
+        mixed.fills.length === 0 &&
+        mixed.strokes.length === 0 &&
+        mixed.children[0] === track &&
+        track.layoutMode === "HORIZONTAL" &&
+        boundVariableName(track.fills[0]) ===
+          boundVariableName(chosen.fills[0]) &&
+        boundVariableName(track.strokes[0]) ===
+          boundVariableName(chosen.strokes[0]) &&
+        track.height === chosen.height &&
+        track.width === chosen.width,
+      `SegmentedControl ${size}, Mixed: a stack whose Track is painted as State=Default's track (${mixed.children.map((c) => c.name).join(", ")}; ${track && `${track.width}x${track.height} ${boundVariableName(track.fills[0])}`} vs ${chosen.width}x${chosen.height})`,
+    );
+    ok(
+      segments.length === 3 &&
+        segments.every((segment) => segment.fills.length === 0) &&
+        chosen.children.some(
+          (segment) => /^Segment/.test(segment.name) && segment.fills.length,
+        ),
+      `SegmentedControl ${size}, Mixed: no segment is filled, whatever Active says, where Default fills its Active one (${segments.map((segment) => segment.fills.length).join(",")})`,
+    );
+    ok(
+      isLine(line(mixed)) &&
+        below(track, line(mixed)) &&
+        mixed.itemSpacing === 6 &&
+        !line(chosen) &&
+        !named(chosen, "Track") &&
+        chosen.layoutMode === "HORIZONTAL",
+      `SegmentedControl ${size}, Mixed: Multiple values under the Track, 6 below, in foreground/400 at 14; State=Default is still the track itself, with no line (${line(mixed) && `${line(mixed).characters} ${line(mixed).fontSize} ${boundVariableName(line(mixed).fills[0])}`})`,
+    );
+  }
+
+  // Radio: a Default option, a card and a tile.
+  const ring = (node) => named(node, "Radio Control");
+  for (const state of ["Default", "Error"]) {
+    const mixed = await draw("updateRadioVariant", {
+      variant: "Default",
+      checked: "Mixed",
+      state,
+    });
+    const open = await draw("updateRadioVariant", {
+      variant: "Default",
+      checked: "Unchecked",
+      state,
+    });
+    ok(
+      mixed.name === `Checked=Mixed, State=${state}, Variant=Default` &&
+        ring(mixed) &&
+        !named(mixed, "Radio Dot") &&
+        boundVariableName(ring(mixed).strokes[0]) ===
+          boundVariableName(ring(open).strokes[0]) &&
+        isLine(line(mixed)) &&
+        mixed.children[mixed.children.length - 1] === line(mixed) &&
+        !line(open),
+      `Radio ${state}, Mixed: the ring unchosen, as Unchecked's (${boundVariableName(ring(mixed).strokes[0])}), no dot, and Multiple values last; Unchecked has no line (${mixed.children.map((c) => c.name).join(", ")})`,
+    );
+  }
+  for (const variant of ["Card", "Tile"]) {
+    const mixed = await draw("updateRadioVariant", {
+      variant,
+      checked: "Mixed",
+      state: "Default",
+    });
+    const open = await draw("updateRadioVariant", {
+      variant,
+      checked: "Unchecked",
+      state: "Default",
+    });
+    const box = named(mixed, "Radio Box");
+    ok(
+      box &&
+        mixed.children[0] === box &&
+        mixed.strokes.length === 0 &&
+        mixed.fills.length === 0 &&
+        box.width === open.width &&
+        boundVariableName(box.strokes[0]) ===
+          boundVariableName(open.strokes[0]) &&
+        box.strokeWeight === open.strokeWeight &&
+        !named(box, "Radio Dot") &&
+        !named(box, "Check Badge") &&
+        isLine(line(mixed)) &&
+        below(box, line(mixed)) &&
+        !line(open) &&
+        !named(open, "Radio Box"),
+      `Radio ${variant}, Mixed: a stack of its Radio Box, unchosen as Unchecked's (${box && `${box.width} ${boundVariableName(box.strokes[0])} ${box.strokeWeight}`}), then Multiple values; Unchecked is still the box itself (${mixed.children.map((c) => c.name).join(", ")})`,
+    );
+  }
+
+  // Update: the sets as they are live, before Mixed.
+  const segmentedNames = [];
+  for (const size of ["Small", "Default", "Large"])
+    for (const active of ["One", "Two", "Three"])
+      for (const state of ["Default", "Focus", "Disabled", "Error"])
+        segmentedNames.push(`Size=${size}, Active=${active}, State=${state}`);
+  const segmented = await withAutoLayout(() =>
+    replayUpdate(
+      "SegmentedControl",
+      segmentedNames,
+      "updateSegmentedControlComponent",
+    ),
+  );
+  const mixedText = (set) => {
+    const definitions = set.componentPropertyDefinitions || {};
+    const key = Object.keys(definitions).find(
+      (name) =>
+        name.split("#")[0] === "Mixed Text" &&
+        definitions[name].type === "TEXT",
+    );
+    return {
+      key,
+      fallback: key && definitions[key].defaultValue,
+      drives: key
+        ? set.findAll(
+            (node) =>
+              node.componentPropertyReferences &&
+              node.componentPropertyReferences.characters === key,
+          )
+        : [],
+    };
+  };
+  const segmentedText = mixedText(segmented.liveSet);
+  ok(
+    segmented.result.variantsUpdated === 36 &&
+      segmented.result.variantsCreated === 9 &&
+      segmented.liveSet.children.length === 45 &&
+      segmented.kept.every(
+        (variant, i) => variant && variant.name === segmentedNames[i],
+      ) &&
+      ["Small", "Default", "Large"].every((size) =>
+        ["One", "Two", "Three"].every((active) =>
+          segmented.names.includes(
+            `Size=${size}, Active=${active}, State=Mixed`,
+          ),
+        ),
+      ) &&
+      overlapsIn(segmented.liveSet).length === 0,
+    `SegmentedControl: Update keeps its 36 variants and their ids, and adds the 9 Mixed, none overlapping (${segmented.result.variantsUpdated} updated, ${segmented.result.variantsCreated} created)`,
+  );
+  ok(
+    segmentedText.fallback === "Multiple values" &&
+      segmentedText.drives.length === 9 &&
+      segmentedText.drives.every((node) => node.name === "Mixed Text"),
+    `SegmentedControl: Mixed Text, "Multiple values", writes the 9 Mixed lines (${segmentedText.key}: ${segmentedText.drives.length})`,
+  );
+  const radioNames = [];
+  for (const variant of ["Default", "Card", "Tile"])
+    for (const checked of ["Unchecked", "Checked"])
+      for (const state of ["Default", "Disabled", "Error"])
+        radioNames.push(
+          `Checked=${checked}, State=${state}, Variant=${variant}`,
+        );
+  const radio = await withAutoLayout(() =>
+    replayUpdate("Radio", radioNames, "updateRadioComponent"),
+  );
+  const radioText = mixedText(radio.liveSet);
+  ok(
+    radio.result.variantsUpdated === 18 &&
+      radio.result.variantsCreated === 9 &&
+      radio.liveSet.children.length === 27 &&
+      radio.kept.every(
+        (variant, i) => variant && variant.name === radioNames[i],
+      ) &&
+      overlapsIn(radio.liveSet).length === 0 &&
+      radioText.fallback === "Multiple values" &&
+      radioText.drives.length === 9,
+    `Radio: Update keeps its 18 variants and their ids, adds the 9 Mixed, none overlapping, and Mixed Text writes their lines (${radio.result.variantsUpdated} updated, ${radio.result.variantsCreated} created, ${radioText.drives.length} lines)`,
   );
 }
 
