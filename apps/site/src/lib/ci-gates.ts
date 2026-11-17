@@ -58,7 +58,7 @@ export const ciGates: readonly Gate[] = [
   {
     title: "Code Connect parses on three platforms",
     detail:
-      "The React, SwiftUI and Compose mappings are parsed, and dry-run against the Figma file when the token is present.",
+      "The React, SwiftUI and Compose mappings are parsed, every SwiftUI and Compose snippet is checked to name code that exists, and they are dry-run against the Figma file when the token is present.",
     command: "pnpm figma:parse:linked",
   },
   {
@@ -82,13 +82,13 @@ export const ciGates: readonly Gate[] = [
   {
     title: "iOS: build, test and render",
     detail:
-      "The Swift package builds and its tests pass on macOS, the whole test target runs on an iOS simulator, render tests included, and the SwiftUI Code Connect parses. It runs on every push to main, and on a pull request that touches what it builds.",
+      "The Swift package builds and its tests pass on macOS, the whole test target runs on an iOS simulator, render tests included, and the SwiftUI Code Connect parses, with every snippet naming a declared type. It runs on every push to main, and on a pull request that touches what it builds.",
     command: "swift build && swift test",
   },
   {
     title: "Android: build and screenshot tests",
     detail:
-      "The Compose library builds, the Android playground app builds against it, which links the library's resources, its Paparazzi screenshots are compared, and the Compose Code Connect parses.",
+      "The Compose library builds, the Android playground app builds against it, which links the library's resources, its Paparazzi screenshots are compared, and the Compose Code Connect parses, with every Kozmos import a snippet shows declared.",
     command: "./gradlew verifyPaparazziDebug",
   },
 ];

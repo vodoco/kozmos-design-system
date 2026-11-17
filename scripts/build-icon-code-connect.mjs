@@ -313,8 +313,17 @@ const swiftBody = (icon) => {
 const kotlinBody = (icon) => {
   if (!uiGlyphs.has(icon.name)) return `KozmosIcon(name = "${icon.name}")`;
   const entry = uiNative(icon.name);
-  return entry.kotlin ? entry.kotlin : `// ${icon.name}: ${entry.none}`;
+  // Compose's parser keeps comments, but takes a snippet's first call as its
+  // component and imports it: with a comment alone it imported the function's
+  // own name from another file (`feedbackcard.ComponentExample`, 17 Nov 2026).
+  // So the note is followed by a view that draws nothing, as SwiftUI's is.
+  return entry.kotlin
+    ? entry.kotlin
+    : `// ${icon.name}: ${entry.none}\n        Spacer(Modifier)`;
 };
+const kotlinNotes = icons.some(
+  (icon) => uiGlyphs.has(icon.name) && !uiNative(icon.name).kotlin,
+);
 const kotlinImports = [
   ...new Set(
     icons.flatMap((icon) =>
@@ -346,6 +355,7 @@ const kotlin = `${nativeHeader(nativeNote)}
 package com.kozmos.components.icon
 
 ${[
+  ...(kotlinNotes ? ["androidx.compose.foundation.layout.Spacer"] : []),
   ...(kotlinDrawsSymbols
     ? [
         "androidx.compose.material.icons.Icons",
@@ -354,6 +364,7 @@ ${[
       ]
     : []),
   "androidx.compose.runtime.Composable",
+  ...(kotlinNotes ? ["androidx.compose.ui.Modifier"] : []),
   "com.figma.code.connect.FigmaConnect",
 ]
   .map((name) => `import ${name}`)
