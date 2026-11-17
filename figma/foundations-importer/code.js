@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "6869db604077";
+const PLUGIN_BUILD = "f63798ceb8e9";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -11115,1069 +11115,1069 @@ async function handlePluginMessage(message) {
       additionalComponentActionHandlers()[message.type];
     if (additionalComponentAction) {
       const result = await additionalComponentAction();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-text") {
       const result = await buildTextComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-text") {
       const result = await updateTextComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-text") {
       const result = await rebuildTextComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-heading") {
       const result = await buildHeadingComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-heading") {
       const result = await updateHeadingComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-heading") {
       const result = await rebuildHeadingComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-link") {
       const result = await buildLinkComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-link") {
       const result = await updateLinkComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-link") {
       const result = await rebuildLinkComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-label") {
       const result = await buildLabelComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-label") {
       const result = await updateLabelComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-label") {
       const result = await rebuildLabelComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-separator") {
       const result = await buildSeparatorComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-separator") {
       const result = await updateSeparatorComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-separator") {
       const result = await rebuildSeparatorComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-skeleton") {
       const result = await buildSkeletonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-skeleton") {
       const result = await updateSkeletonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-skeleton") {
       const result = await rebuildSkeletonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-box") {
       const result = await buildBoxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-box") {
       const result = await updateBoxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-box") {
       const result = await rebuildBoxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-stack") {
       const result = await buildStackComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-stack") {
       const result = await updateStackComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-stack") {
       const result = await rebuildStackComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-grid") {
       const result = await buildGridComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-grid") {
       const result = await updateGridComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-grid") {
       const result = await rebuildGridComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-container") {
       const result = await buildContainerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-container") {
       const result = await updateContainerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-container") {
       const result = await rebuildContainerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-breadcrumb") {
       const result = await buildBreadcrumbComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-breadcrumb") {
       const result = await updateBreadcrumbComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-breadcrumb") {
       const result = await rebuildBreadcrumbComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-pagination") {
       const result = await buildPaginationComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-pagination") {
       const result = await updatePaginationComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-pagination") {
       const result = await rebuildPaginationComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-accordion") {
       const result = await buildAccordionComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-accordion") {
       const result = await updateAccordionComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-accordion") {
       const result = await rebuildAccordionComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-button") {
       const result = await buildButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-button") {
       const result = await updateButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-button") {
       const result = await rebuildButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-icon-button") {
       const result = await buildIconButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-icon-button") {
       const result = await updateIconButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-icon-button") {
       const result = await rebuildIconButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-toggle-button") {
       const result = await buildToggleButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-toggle-button") {
       const result = await updateToggleButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-toggle-button") {
       const result = await rebuildToggleButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-split-button") {
       const result = await buildSplitButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-split-button") {
       const result = await updateSplitButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-split-button") {
       const result = await rebuildSplitButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-floating-action-button") {
       const result = await buildFloatingActionButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-floating-action-button") {
       const result = await updateFloatingActionButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-floating-action-button") {
       const result = await rebuildFloatingActionButtonComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-counter") {
       const result = await buildCounterComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-counter") {
       const result = await updateCounterComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-counter") {
       const result = await rebuildCounterComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-badge") {
       const result = await buildBadgeComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-badge") {
       const result = await updateBadgeComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-badge") {
       const result = await rebuildBadgeComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-chip") {
       const result = await buildChipComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-chip") {
       const result = await updateChipComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-chip") {
       const result = await rebuildChipComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-segmented-control") {
       const result = await buildSegmentedControlComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-segmented-control") {
       const result = await updateSegmentedControlComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-segmented-control") {
       const result = await rebuildSegmentedControlComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-card") {
       const result = await buildCardComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-card") {
       const result = await updateCardComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-card") {
       const result = await rebuildCardComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-list") {
       const result = await buildListComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-list") {
       const result = await updateListComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-list") {
       const result = await rebuildListComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-table") {
       const result = await buildTableComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-table") {
       const result = await updateTableComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-table") {
       const result = await rebuildTableComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-tabs") {
       const result = await buildTabsComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-tabs") {
       const result = await updateTabsComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-tabs") {
       const result = await rebuildTabsComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-tooltip") {
       const result = await buildTooltipComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-tooltip") {
       const result = await updateTooltipComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-tooltip") {
       const result = await rebuildTooltipComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-dialog") {
       const result = await buildDialogComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-dialog") {
       const result = await updateDialogComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-dialog") {
       const result = await rebuildDialogComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-drawer") {
       const result = await buildDrawerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-drawer") {
       const result = await updateDrawerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-drawer") {
       const result = await rebuildDrawerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-popover") {
       const result = await buildPopoverComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-popover") {
       const result = await updatePopoverComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-popover") {
       const result = await rebuildPopoverComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-menu") {
       const result = await buildMenuComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-menu") {
       const result = await updateMenuComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-menu") {
       const result = await rebuildMenuComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-checkbox") {
       const result = await buildCheckboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-checkbox") {
       const result = await updateCheckboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-checkbox") {
       const result = await rebuildCheckboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-radio") {
       const result = await buildRadioComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-radio") {
       const result = await updateRadioComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-radio") {
       const result = await rebuildRadioComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-switch") {
       const result = await buildSwitchComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-switch") {
       const result = await updateSwitchComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-switch") {
       const result = await rebuildSwitchComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-input") {
       const result = await buildInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-input") {
       const result = await updateInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-input") {
       const result = await rebuildInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-password-input") {
       const result = await buildPasswordInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-password-input") {
       const result = await updatePasswordInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-password-input") {
       const result = await rebuildPasswordInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-form-field") {
       const result = await buildFormFieldComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-form-field") {
       const result = await updateFormFieldComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-form-field") {
       const result = await rebuildFormFieldComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-number-input") {
       const result = await buildNumberInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-number-input") {
       const result = await updateNumberInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-number-input") {
       const result = await rebuildNumberInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-otp-input") {
       const result = await buildOTPInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-otp-input") {
       const result = await updateOTPInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-otp-input") {
       const result = await rebuildOTPInputComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-combobox") {
       const result = await buildComboboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-combobox") {
       const result = await updateComboboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-combobox") {
       const result = await rebuildComboboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-multi-select") {
       const result = await buildMultiSelectComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-multi-select") {
       const result = await updateMultiSelectComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-multi-select") {
       const result = await rebuildMultiSelectComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-listbox") {
       const result = await buildListboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-listbox") {
       const result = await updateListboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-listbox") {
       const result = await rebuildListboxComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-date-picker") {
       const result = await buildDatePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-date-picker") {
       const result = await updateDatePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-date-picker") {
       const result = await rebuildDatePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-date-range-picker") {
       const result = await buildDateRangePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-date-range-picker") {
       const result = await updateDateRangePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-date-range-picker") {
       const result = await rebuildDateRangePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-time-picker") {
       const result = await buildTimePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-time-picker") {
       const result = await updateTimePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-time-picker") {
       const result = await rebuildTimePickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-file-upload") {
       const result = await buildFileUploadComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-file-upload") {
       const result = await updateFileUploadComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-file-upload") {
       const result = await rebuildFileUploadComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-color-picker") {
       const result = await buildColorPickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-color-picker") {
       const result = await updateColorPickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-color-picker") {
       const result = await rebuildColorPickerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-textarea") {
       const result = await buildTextareaComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-textarea") {
       const result = await updateTextareaComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-textarea") {
       const result = await rebuildTextareaComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-search") {
       const result = await buildSearchComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-search") {
       const result = await updateSearchComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-search") {
       const result = await rebuildSearchComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-select") {
       const result = await buildSelectComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-select") {
       const result = await updateSelectComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-select") {
       const result = await rebuildSelectComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-slider") {
       const result = await buildSliderComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-slider") {
       const result = await updateSliderComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-slider") {
       const result = await rebuildSliderComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-rating") {
       const result = await buildRatingComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-rating") {
       const result = await updateRatingComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-rating") {
       const result = await rebuildRatingComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-stepper") {
       const result = await buildStepperComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-stepper") {
       const result = await updateStepperComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-stepper") {
       const result = await rebuildStepperComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-progress") {
       const result = await buildProgressComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-progress") {
       const result = await updateProgressComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-progress") {
       const result = await rebuildProgressComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-spinner") {
       const result = await buildSpinnerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-spinner") {
       const result = await updateSpinnerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-spinner") {
       const result = await rebuildSpinnerComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-avatar") {
       const result = await buildAvatarComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-avatar") {
       const result = await updateAvatarComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-avatar") {
       const result = await rebuildAvatarComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-alert") {
       const result = await buildAlertComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-alert") {
       const result = await updateAlertComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-alert") {
       const result = await rebuildAlertComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-empty-state") {
       const result = await buildEmptyStateComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-empty-state") {
       const result = await updateEmptyStateComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-empty-state") {
       const result = await rebuildEmptyStateComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-toast") {
       const result = await buildToastComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-toast") {
       const result = await updateToastComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "rebuild-toast") {
       const result = await rebuildToastComponent();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
@@ -12199,25 +12199,25 @@ async function handlePluginMessage(message) {
 
     if (message.type === "document-components") {
       const result = await documentComponentLibrary();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "reorganize-components") {
       const result = await reorganizeComponentsPage();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "build-surface-qa") {
       const result = await buildSurfaceQaPage();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "apply-text-styles") {
       const result = await applyTextStylesToComponentLibrary();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
@@ -12265,13 +12265,13 @@ async function handlePluginMessage(message) {
 
     if (message.type === "build-icons") {
       const result = await syncIconSourceLibrary();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
     if (message.type === "update-icons") {
       const result = await syncIconSourceLibrary();
-      postResultToUi({ type: "component-result", result });
+      await postComponentResult(result);
       return;
     }
 
@@ -12664,6 +12664,9 @@ async function runUpdateSequence(sequence, kindLabel) {
 
       try {
         const result = await entry[1]();
+        // After the set's own layout, before the page is placed once at the
+        // end: its variants spaced from their measured sizes.
+        if (result.updated) await spaceVariantsOfResultSet(result);
         // Only on a real update. A set that was not found returns a message and
         // updated:false, and stamping that as finished would make the next run
         // skip a set it never touched.
@@ -15672,6 +15675,10 @@ async function reorganizeComponentsPage() {
 
       if (node) {
         normalizeComponentSetNodeName(node, name, stats);
+        // A set's size is measured below: space its variants first, so a
+        // set drawn by an older layout is placed as it will stand.
+        stats.variantsSpaced =
+          (stats.variantsSpaced || 0) + spaceVariantsByMeasuredSize(node);
         nodes.push(node);
       } else {
         stats.skippedComponentSets.push(name);
@@ -40244,6 +40251,197 @@ function layoutStateStatusVariants(componentSet, config) {
 
   // A set that gained a row holds it (Select's Mixed, GAP-153).
   if (config.fitSet) resizeComponentSetToContainChildren(componentSet);
+}
+
+// The room between two variants that one would otherwise cover.
+const VARIANT_LAYOUT_GAP = 40;
+
+/**
+ * Space a set's variants from their measured sizes, so none covers another.
+ *
+ * Every set's layout places its variants on a grid of fixed steps: Slider's
+ * rows 112 apart, ColorPicker's formats 720 apart. A painter that draws a
+ * variant taller or wider than its step makes it cover the next one, and
+ * nothing said so until `pnpm figma:verify` counted 40 such pairs on
+ * 2026-11-17: Slider's variants stood 120 tall in the file, and ColorPicker's
+ * open variants 794. Their height was a layer an Update left behind (see
+ * migratedLayerNamed), but whatever makes a variant outgrow its step, this
+ * keeps it from covering the next.
+ *
+ * This runs after a set's own layout, wherever a set is built, updated or the
+ * page is reorganized, and reads the grid that layout drew: the variants that
+ * share a top edge are a row, those that share a left edge a column. Each row
+ * keeps its distance from the row before it while its variants fit; where a
+ * variant above, over the same span, reaches into it, the row starts
+ * VARIANT_LAYOUT_GAP below the lowest such variant, and every row after it
+ * moves with it. Then the columns, the same way, among variants that now share
+ * rows. A set whose variants fit is left exactly as its layout drew it.
+ *
+ * Only positions change, and the set's size where its variants outgrow it:
+ * node ids, names and variant properties stay, as Code Connect needs.
+ * Returns how many variants moved.
+ */
+function spaceVariantsByMeasuredSize(componentSet) {
+  if (
+    !componentSet ||
+    componentSet.type !== "COMPONENT_SET" ||
+    !componentSet.children
+  ) {
+    return 0;
+  }
+
+  const size = (value) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? Math.max(0, value)
+      : 0;
+  const boxes = [];
+  for (const child of componentSet.children) {
+    // Hidden variants too: they move with their row and column.
+    if (child.type !== "COMPONENT") continue;
+    const x = Number(child.x) || 0;
+    const y = Number(child.y) || 0;
+    boxes.push({
+      node: child,
+      x,
+      y,
+      width: size(child.width),
+      height: size(child.height),
+      newX: x,
+      newY: y,
+    });
+  }
+  if (boxes.length < 2) return 0;
+
+  const overlaps = (startA, lengthA, startB, lengthB) =>
+    startA < startB + lengthB - 0.01 && startB < startA + lengthA - 0.01;
+
+  // The variants that share a line (to a hundredth of a pixel), by where the
+  // line is, in order along the axis.
+  const linesAlong = (key) => {
+    const byLine = new Map();
+    for (const box of boxes) {
+      const rounded = Math.round(box[key] * 100) / 100;
+      if (!byLine.has(rounded))
+        byLine.set(rounded, { at: box[key], boxes: [] });
+      const line = byLine.get(rounded);
+      line.at = Math.min(line.at, box[key]);
+      line.boxes.push(box);
+    }
+    return Array.from(byLine.values()).sort((a, b) => a.at - b.at);
+  };
+
+  // Rows first. A variant constrains a later row only where the two share a
+  // horizontal span; column spacing below never brings two variants that did
+  // not share one together, since it only ever widens the distance between
+  // two columns.
+  let placed = [];
+  let previousLine = null;
+  let previousTop = null;
+  for (const { at: line, boxes: row } of linesAlong("y")) {
+    let top =
+      previousLine === null ? line : previousTop + (line - previousLine);
+    for (const box of row) {
+      for (const above of placed) {
+        if (!overlaps(box.x, box.width, above.x, above.width)) continue;
+        const bottom = above.newY + above.height;
+        if (bottom > top + 0.01) top = bottom + VARIANT_LAYOUT_GAP;
+      }
+    }
+    // A row that moves takes its variants with it, each by the same amount.
+    if (top - line > 0.01) for (const box of row) box.newY = box.y + top - line;
+    else top = line;
+    placed = placed.concat(row);
+    previousLine = line;
+    previousTop = top;
+  }
+
+  // Then columns, among variants that now share a vertical span.
+  placed = [];
+  previousLine = null;
+  let previousLeft = null;
+  for (const { at: line, boxes: column } of linesAlong("x")) {
+    let left =
+      previousLine === null ? line : previousLeft + (line - previousLine);
+    for (const box of column) {
+      for (const before of placed) {
+        if (!overlaps(box.newY, box.height, before.newY, before.height)) {
+          continue;
+        }
+        const right = before.newX + before.width;
+        if (right > left + 0.01) left = right + VARIANT_LAYOUT_GAP;
+      }
+    }
+    if (left - line > 0.01) {
+      for (const box of column) box.newX = box.x + left - line;
+    } else left = line;
+    placed = placed.concat(column);
+    previousLine = line;
+    previousLeft = left;
+  }
+
+  let moved = 0;
+  let oldRight = 0;
+  let oldBottom = 0;
+  let newRight = 0;
+  let newBottom = 0;
+  for (const box of boxes) {
+    oldRight = Math.max(oldRight, box.x + box.width);
+    oldBottom = Math.max(oldBottom, box.y + box.height);
+    newRight = Math.max(newRight, box.newX + box.width);
+    newBottom = Math.max(newBottom, box.newY + box.height);
+    if (box.newX === box.x && box.newY === box.y) continue;
+    box.node.x = box.newX;
+    box.node.y = box.newY;
+    moved += 1;
+  }
+
+  // The set grows by what its variants moved out, keeping the margin its
+  // layout gave it; it never shrinks here.
+  if (moved > 0) {
+    const width = size(componentSet.width);
+    const height = size(componentSet.height);
+    const grownWidth = Math.max(width, width + newRight - oldRight, newRight);
+    const grownHeight = Math.max(
+      height,
+      height + newBottom - oldBottom,
+      newBottom,
+    );
+    if (grownWidth > width || grownHeight > height) {
+      resizeNodeWithoutConstraints(componentSet, grownWidth, grownHeight);
+      componentSet.clipsContent = false;
+    }
+  }
+  return moved;
+}
+
+/**
+ * Space the variants of the set a component action built or updated, after
+ * its own layout (see spaceVariantsByMeasuredSize). A set that moved is placed
+ * on the page again, unless a bulk run will do that once at its end.
+ */
+async function spaceVariantsOfResultSet(result) {
+  if (!result || !result.componentSetId) return 0;
+  let set = null;
+  try {
+    set = await figma.getNodeByIdAsync(result.componentSetId);
+  } catch (_error) {
+    return 0;
+  }
+  if (!set || set.type !== "COMPONENT_SET") return 0;
+  const moved = spaceVariantsByMeasuredSize(set);
+  if (moved > 0) {
+    result.variantsSpaced = (result.variantsSpaced || 0) + moved;
+    if (!suppressAutoReorganize) {
+      result.layout = await reorganizeComponentsPage();
+    }
+  }
+  return moved;
+}
+
+/** A component action's result, its set's variants spaced first. */
+async function postComponentResult(result) {
+  await spaceVariantsOfResultSet(result);
+  postResultToUi({ type: "component-result", result });
 }
 
 function stateStatusComponentKey(state, status, type) {
@@ -72009,8 +72207,7 @@ async function updateProgressRingVariant(
   );
 
   const ellipse = (name) => {
-    let node =
-      directChildNamed(dial, name) || directChildNamed(component, name);
+    let node = migratedLayerNamed(dial, component, name);
     if (node && node.type !== "ELLIPSE") {
       node.remove();
       node = null;
@@ -72057,8 +72254,7 @@ async function updateProgressRingVariant(
   arc.setSharedPluginData(RUN_NAMESPACE, "kind", "progress-ring-arc");
 
   const text = async (parent, name) => {
-    let node =
-      directChildNamed(parent, name) || directChildNamed(component, name);
+    let node = migratedLayerNamed(parent, component, name);
     if (node && node.type !== "TEXT") {
       node.remove();
       node = null;
@@ -73631,9 +73827,7 @@ async function syncCardVariantChildren({
 
     // A variant drawn before the column holds its texts in the header: they
     // move into it, and keep their node ids.
-    let title =
-      directChildNamed(headerText, "Title Text") ||
-      directChildNamed(header, "Title Text");
+    let title = migratedLayerNamed(headerText, header, "Title Text");
     if (title && title.type !== "TEXT") {
       title.remove();
       title = null;
@@ -73661,9 +73855,11 @@ async function syncCardVariantChildren({
     title.resizeWithoutConstraints(312, 24);
     setTextAutoResize(title, "HEIGHT");
 
-    let description =
-      directChildNamed(headerText, "Description Text") ||
-      directChildNamed(header, "Description Text");
+    let description = migratedLayerNamed(
+      headerText,
+      header,
+      "Description Text",
+    );
     if (description && description.type !== "TEXT") {
       description.remove();
       description = null;
@@ -74818,9 +75014,7 @@ async function syncDialogVariantChildren({
     // layoutGrow is unavailable on older plugin runtimes.
   }
 
-  let title =
-    directChildNamed(headerContent, "Title Text") ||
-    directChildNamed(header, "Title Text");
+  let title = migratedLayerNamed(headerContent, header, "Title Text");
   if (title && title.type !== "TEXT") {
     title.remove();
     title = null;
@@ -74837,9 +75031,11 @@ async function syncDialogVariantChildren({
   title.resizeWithoutConstraints(420, 24);
   setTextAutoResize(title, "HEIGHT");
 
-  let description =
-    directChildNamed(headerContent, "Description Text") ||
-    directChildNamed(header, "Description Text");
+  let description = migratedLayerNamed(
+    headerContent,
+    header,
+    "Description Text",
+  );
   if (description && description.type !== "TEXT") {
     description.remove();
     description = null;
@@ -78467,12 +78663,14 @@ function setControlRowFrame(component, kind) {
 
 // A part of a control's row: in its Label Row now, or, in a variant drawn
 // before GAP-162, a direct child of the component. Found either way, it is
-// moved into the row rather than drawn again, so its node id survives.
+// moved into the row rather than drawn again, so its node id survives; found
+// in both, the one beside the row is the stale copy (migratedLayerNamed).
 function findControlRowPart(component, name) {
-  const direct = directChildNamed(component, name);
-  if (direct) return direct;
-  const row = directChildNamed(component, "Label Row");
-  return row ? directChildNamed(row, name) : null;
+  return migratedLayerNamed(
+    directChildNamed(component, "Label Row"),
+    component,
+    name,
+  );
 }
 
 function ensureControlRowFrame(parent, name) {
@@ -85926,9 +86124,7 @@ async function syncSliderVariantChildren({
   row.clipsContent = false;
   row.setSharedPluginData(RUN_NAMESPACE, "kind", "slider-row");
 
-  let root =
-    directChildNamed(row, "Slider Control") ||
-    directChildNamed(component, "Slider Control");
+  let root = migratedLayerNamed(row, component, "Slider Control");
   if (root && root.type !== "FRAME") {
     root.remove();
     root = null;
@@ -87681,6 +87877,38 @@ function directChildNamed(parent, name) {
   }
 
   return null;
+}
+
+/**
+ * A layer a painter draws in `parent` that an older build drew in
+ * `legacyParent`. Found in either place, it is reused, so its node id
+ * survives a move into the new place.
+ *
+ * Found in both, the one in the new place is kept and the other removed: it is
+ * the copy an older build drew again after a newer one had moved it. On
+ * 2026-11-17 every Slider variant drew two sliders that way: an Update with
+ * the 9-Nov build, which knew no Slider Row, drew a Slider Control beside the
+ * row, and today's Update kept the row's and never looked at the other again.
+ * Only a layer of the same name, type and importer kind is removed, so a
+ * designer's own layer is never touched.
+ */
+function migratedLayerNamed(parent, legacyParent, name) {
+  const current = parent ? directChildNamed(parent, name) : null;
+  const legacy =
+    legacyParent && legacyParent !== parent
+      ? directChildNamed(legacyParent, name)
+      : null;
+  if (current && legacy && legacy !== current) {
+    const kindOf = (node) =>
+      typeof node.getSharedPluginData === "function"
+        ? node.getSharedPluginData(RUN_NAMESPACE, "kind")
+        : "";
+    if (legacy.type === current.type && kindOf(legacy) === kindOf(current)) {
+      legacy.remove();
+    }
+    return current;
+  }
+  return current || legacy;
 }
 
 function collectDescendantTextCharactersByName(parent, names) {
