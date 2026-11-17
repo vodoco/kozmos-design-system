@@ -5,9 +5,9 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: React 0.15.2 on `latest` with `@kozmos-ds/styles` 0.15.2, icons 0.9.0, product-contracts 0.10.0 and
-tokens 0.8.1 (published 2026-11-07 from `c3da4baa2bae761ecc1aebd8e50ecbe94d40a92e`;
-[release evidence](release-process.md#0152)).
+Baseline: React 0.16.0 on `latest` with `@kozmos-ds/styles` 0.16.0, icons 0.10.0, tokens 0.9.0 and
+product-contracts 0.10.0 (published 2026-11-17 from `8afae665b7a8ae08c33b6bb89d7fbda63bf764f6`;
+[release evidence](release-process.md#0160)).
 This plan starts from release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02:
 React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0, with icons 0.5.0. Matching SwiftUI/Compose source is in the
 repository, not a native registry release. See [release evidence](release-process.md#080).
@@ -64,6 +64,14 @@ patch (decision 171). For the SDK: RouteLocationField says "No locations found" 
 #484), and FloorSelector's collapsible column closes at once when its floors are gone or the map shell has no room for it
 (#491). See
 [release evidence](release-process.md#0152).
+
+React 0.16.0 (2026-11-17, `8afae665`; styles 0.16.0, tokens 0.9.0, icons 0.10.0, product-contracts unchanged) is the
+minor decision 174 held until everything promised for it was in. For the SDK: the map shell's `status` slot and top
+corners (GAP-123), and the props decision 134 left to it, are on SwiftUI and Compose too; Notice is native on both,
+with the `success` tone and progress and done states (GAP-142's Notice half, GAP-159, GAP-160); a hover fill role that
+is visible in dark (decision 173); FloorSelector's closing column chooses nothing (GAP-233). Its Cloud parts, the
+Dashboard modules in `@kozmos-ds/react/dashboard` (decision 183), are never loaded by an SDK product, and the main
+entry and `style.css` hold none of their code. See [release evidence](release-process.md#0160).
 
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
