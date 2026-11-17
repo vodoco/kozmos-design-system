@@ -42,7 +42,9 @@ test("Compose: an import of a declared Kozmos name passes, and androidx imports 
 });
 
 test("Compose: a comment-only body's fallback import of the function's own name fails (17 Nov 2026)", () => {
-  const declared = new Set(["com.kozmos.components.feedbackcard.KozmosFeedbackCard"]);
+  const declared = new Set([
+    "com.kozmos.components.feedbackcard.KozmosFeedbackCard",
+  ]);
   const doc = composeDoc("ComponentExample", [
     "import com.kozmos.components.feedbackcard.ComponentExample",
   ]);
