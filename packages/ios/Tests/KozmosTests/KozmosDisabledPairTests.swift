@@ -12,8 +12,10 @@ import UIKit
 /// read 2.24:1 on a white card. Every variant and emotion takes the pair's
 /// foreground for its words, its mark and its spinner; a filled variant takes
 /// the pair's fill under them; an outline keeps its ground and its edge takes
-/// the foreground; ghost and link keep no fill; glass keeps the glass. A
-/// loading part is disabled and draws the same. IconButton,
+/// the foreground; ghost takes the disabled fill too, so it never reads as
+/// an enabled grey ghost; link keeps no fill; glass keeps the glass. A
+/// loading part is busy, not unavailable: it keeps its variant's colours,
+/// and only a part both disabled and loading draws the pair. IconButton,
 /// FloatingActionButton, SplitButton and MapControlButton follow it; a map
 /// control's surface is its fill.
 ///
@@ -179,9 +181,10 @@ final class KozmosDisabledPairTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
-    /// Outline keeps its ground and its edge takes the foreground; ghost and
-    /// link gain no fill; each draws its words in the disabled foreground.
-    @MainActor func testADisabledOutlineGhostOrLinkButtonKeepsItsGroundAndDrawsTheDisabledForegroundInLightAndDark() throws {
+    /// Outline keeps its ground and its edge takes the foreground; link gains
+    /// no fill (its enabled words are the theme's, so grey already differs);
+    /// each draws its words in the disabled foreground.
+    @MainActor func testADisabledOutlineOrLinkButtonKeepsItsGroundAndDrawsTheDisabledForegroundInLightAndDark() throws {
         let outline = KozmosColors.primitivesColorsForeground300
         let danger = KozmosColors.componentsSecondaryButtonsDangerButtonForegroundContentIdle
         var problems: [String] = []
@@ -190,12 +193,6 @@ final class KozmosDisabledPairTests: XCTestCase {
         }
         problems += try unfilledProblems("a disabled outline danger Button", edge: danger) {
             AnyView(KozmosButton("Delete", variant: .outline, emotion: .danger, isDisabled: $0, action: {}))
-        }
-        problems += try unfilledProblems("a disabled ghost Button") {
-            AnyView(KozmosButton("Skip", variant: .ghost, isDisabled: $0, action: {}))
-        }
-        problems += try unfilledProblems("a disabled ghost success Button") {
-            AnyView(KozmosButton("Skip", variant: .ghost, emotion: .success, isDisabled: $0, action: {}))
         }
         problems += try unfilledProblems("a disabled link Button") {
             AnyView(KozmosButton("Learn more", variant: .link, isDisabled: $0, action: {}))
@@ -229,41 +226,140 @@ final class KozmosDisabledPairTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
-    /// Loading, a Button is disabled and drawn as one: the same drawing as
-    /// disabled and loading, the disabled fill, and its spinner and words in
-    /// the disabled foreground.
-    @MainActor func testALoadingButtonIsDrawnFromTheDisabledPairInLightAndDark() throws {
+    /// A disabled ghost takes the disabled fill behind its words, so it never
+    /// reads as an enabled grey ghost: the ghost Button, an emotion's ghost,
+    /// and the icon-only ghost IconButton, in light and dark.
+    @MainActor func testADisabledGhostTakesTheDisabledFillInLightAndDark() throws {
+        var problems: [String] = []
+        problems += try filledProblems("a disabled ghost Button",
+                                       AnyView(KozmosButton("Skip", variant: .ghost, isDisabled: true, action: {})), patch: Self.leading)
+        problems += try filledProblems("a disabled ghost success Button",
+                                       AnyView(KozmosButton("Skip", variant: .ghost, emotion: .success, isDisabled: true, action: {})),
+                                       patch: Self.leading)
+        problems += try filledProblems("a disabled ghost danger Button",
+                                       AnyView(KozmosButton("Remove", variant: .ghost, emotion: .danger, isDisabled: true, action: {})),
+                                       patch: Self.leading)
+        problems += try filledProblems("a disabled ghost IconButton",
+                                       AnyView(KozmosIconButton(iconName: "plus", variant: .ghost, isDisabled: true, action: {})), patch: Self.top)
+        problems += try filledProblems("a ghost IconButton under .disabled",
+                                       AnyView(KozmosIconButton(iconName: "plus", variant: .ghost, action: {}).disabled(true)), patch: Self.top)
+        XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
+    }
+
+    /// What is wrong with a loading part: it is busy, not unavailable, so it
+    /// keeps its variant's own ground, at full strength, in `patch`, and its
+    /// spinner and words are its variant's label colour.
+    /// `bezelled`: a part SwiftUI gives no style of its own, which on a Mac is
+    /// AppKit's bordered button, whose bezel AppKit draws over the ground
+    /// while the button is disabled; its ground is read on the simulator.
+    @MainActor private func loadingProblems(_ name: String, ground: Color, ink: Color, bezelled: Bool = false, inkInset: CGFloat = 6,
+                                            patch: (CGRect) -> CGRect, _ view: AnyView) throws -> [String] {
         var problems: [String] = []
         for scheme in Self.schemes {
-            let loading = try draw(KozmosButton("Go", isLoading: true, action: {}), scheme)
-            let both = try draw(KozmosButton("Go", isDisabled: true, isLoading: true, action: {}), scheme)
-            if let difference = loading.largestDifference(from: both), difference > 2 {
-                problems.append("a loading Button, \(scheme): drawn \(difference) levels off a disabled and loading one")
+            let drawn = try draw(view, scheme)
+            let groundColour = try DrawnPixels.resolved(ground, in: scheme)
+            let inkColour = try DrawnPixels.resolved(ink, in: scheme)
+            let part = CGRect(origin: .zero, size: drawn.size).insetBy(dx: 16, dy: 16)
+            let region = patch(part)
+            let area = Int(region.width * drawn.scale) * Int(region.height * drawn.scale)
+            let matching = drawn.count(in: region, where: DrawnPixels.matches(groundColour, tolerance: 2))
+            #if !os(iOS)
+            let readsGround = !bezelled
+            #else
+            let readsGround = true
+            #endif
+            if readsGround, matching != area {
+                let p = drawn.pixel(at: CGPoint(x: region.midX, y: region.midY))
+                problems.append("\(name), \(scheme): its ground is \(Self.hex(p)), not its variant's \(Self.hex(groundColour)) (\(matching) of \(area))")
+            }
+            let point = Self.inkPoint(in: drawn, region: part.insetBy(dx: inkInset, dy: inkInset), awayFrom: groundColour)
+            let found = drawn.pixel(at: point)
+            if !Self.near(found, inkColour, within: 4) {
+                problems.append(String(format: "%@, %@: its ink is %@, not its variant's %@ (at %.1f,%.1f)",
+                                       name, "\(scheme)", Self.hex(found), Self.hex(inkColour), point.x, point.y))
             }
         }
-        problems += try filledProblems("a loading Button", AnyView(KozmosButton("Go", isLoading: true, action: {})), patch: Self.leading)
-        problems += try filledProblems("a loading subtle Button",
-                                       AnyView(KozmosButton("Go", variant: .subtle, isLoading: true, action: {})), patch: Self.leading)
-        problems += try unfilledProblems("a loading outline Button", edge: KozmosColors.primitivesColorsForeground300) {
-            AnyView(KozmosButton("Go", variant: .outline, isLoading: $0, action: {}))
+        return problems
+    }
+
+    /// Loading is busy, not unavailable: a loading Button, IconButton or map
+    /// control keeps its variant's fill, edge and words at full strength,
+    /// with the spinner in the words' colour.
+    @MainActor func testALoadingPartKeepsItsVariantsColoursInLightAndDark() throws {
+        let inset: (CGRect) -> CGRect = { CGRect(x: $0.minX + 3, y: $0.midY - 4, width: 4, height: 8) }
+        var problems: [String] = []
+        problems += try loadingProblems("a loading default Button",
+                                        ground: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+                                        ink: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+                                        patch: inset, AnyView(KozmosButton("Go", isLoading: true, action: {})))
+        problems += try loadingProblems("a loading outline Button", ground: KozmosColors.primitivesColorsBackground0,
+                                        ink: KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle, bezelled: true,
+                                        patch: { CGRect(x: $0.minX + 4, y: $0.midY - 4, width: 4, height: 8) },
+                                        AnyView(KozmosButton("Go", variant: .outline, isLoading: true, action: {})))
+        problems += try loadingProblems("a loading default IconButton",
+                                        ground: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+                                        ink: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+                                        inkInset: 12, patch: { CGRect(x: $0.midX - 5, y: $0.minY + 4, width: 10, height: 6) },
+                                        AnyView(KozmosIconButton(iconName: "plus", variant: .default, isLoading: true, action: {})))
+        problems += try loadingProblems("a loading map control", ground: KozmosColors.primitivesColorsBackground0,
+                                        ink: KozmosColors.primitivesColorsForeground100, patch: inset,
+                                        AnyView(KozmosMapControlButton(label: "Follow", systemImage: "location", isLoading: true, action: {})))
+        problems += try loadingProblems("a loading filled map control that is on",
+                                        ground: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+                                        ink: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle, patch: inset,
+                                        AnyView(KozmosMapControlButton(label: "Follow", systemImage: "location", emphasis: .filled,
+                                                                       pressed: true, isLoading: true, action: {})))
+        // The outline's edge, where the part draws it at rest, is its own.
+        for scheme in Self.schemes {
+            let rest = try draw(KozmosButton("Go", variant: .outline, action: {}), scheme)
+            let loading = try draw(KozmosButton("Go", variant: .outline, isLoading: true, action: {}), scheme)
+            let edge = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground300, in: scheme)
+            let step = 1 / rest.scale, y = rest.size.height / 2
+            if let x = stride(from: step / 2, to: rest.size.width / 2, by: step)
+                .first(where: { Self.near(rest.pixel(at: CGPoint(x: $0, y: y)), edge, within: 3) }) {
+                let now = loading.pixel(at: CGPoint(x: x, y: y))
+                if !Self.near(now, edge, within: 3) {
+                    problems.append("a loading outline Button's edge, \(scheme): \(Self.hex(now)), not its own \(Self.hex(edge))")
+                }
+            } else {
+                problems.append("an outline Button, \(scheme): no edge in \(Self.hex(edge)) at rest to read")
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
+    }
+
+    /// A part both disabled and loading is unavailable: it draws the pair.
+    @MainActor func testADisabledAndLoadingPartDrawsAsDisabledInLightAndDark() throws {
+        var problems: [String] = []
+        problems += try filledProblems("a disabled and loading Button",
+                                       AnyView(KozmosButton("Go", isDisabled: true, isLoading: true, action: {})), patch: Self.leading)
+        problems += try filledProblems("a disabled and loading subtle Button",
+                                       AnyView(KozmosButton("Go", variant: .subtle, isDisabled: true, isLoading: true, action: {})),
+                                       patch: Self.leading)
+        problems += try unfilledProblems("a disabled and loading outline Button", edge: KozmosColors.primitivesColorsForeground300) {
+            AnyView(KozmosButton("Go", variant: .outline, isDisabled: $0, isLoading: $0, action: {}))
+        }
+        problems += try filledProblems("a disabled and loading IconButton",
+                                       AnyView(KozmosIconButton(iconName: "plus", variant: .default, isDisabled: true, isLoading: true, action: {})),
+                                       patch: Self.top)
+        problems += try filledProblems("a disabled and loading map control",
+                                       AnyView(KozmosMapControlButton(label: "Follow", systemImage: "location", isDisabled: true,
+                                                                      isLoading: true, action: {}))) {
+            CGRect(x: $0.minX + 3, y: $0.midY - 4, width: 4, height: 8)
         }
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
     // MARK: The rest of the family
 
-    @MainActor func testADisabledOrLoadingIconButtonIsDrawnFromTheDisabledPairInLightAndDark() throws {
+    @MainActor func testADisabledIconButtonIsDrawnFromTheDisabledPairInLightAndDark() throws {
         var problems: [String] = []
         let filled: [(String, AnyView)] = [
             ("default", AnyView(KozmosIconButton(iconName: "plus", variant: .default, isDisabled: true, action: {}))),
             ("destructive", AnyView(KozmosIconButton(iconName: "trash", variant: .destructive, isDisabled: true, action: {}))),
             ("secondary", AnyView(KozmosIconButton(iconName: "plus", variant: .secondary, isDisabled: true, action: {}))),
-            ("loading default", AnyView(KozmosIconButton(iconName: "plus", variant: .default, isLoading: true, action: {}))),
         ]
         for (name, view) in filled { problems += try filledProblems("a disabled \(name) IconButton", view, patch: Self.top) }
-        problems += try unfilledProblems("a disabled ghost IconButton") {
-            AnyView(KozmosIconButton(iconName: "plus", variant: .ghost, isDisabled: $0, action: {}))
-        }
         problems += try unfilledProblems("a disabled link IconButton") {
             AnyView(KozmosIconButton(iconName: "plus", variant: .link, isDisabled: $0, action: {}))
         }
@@ -290,14 +386,13 @@ final class KozmosDisabledPairTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
-    /// A map control's surface is its fill: disabled or loading, it is the
+    /// A map control's surface is its fill: disabled, it is the
     /// disabled fill, and its mark and words the disabled foreground, tinted
     /// or filled, on, off or neither. An off toggle's words are already
     /// foreground/400, so the ink alone would not read as disabled.
-    @MainActor func testADisabledOrLoadingMapControlIsDrawnFromTheDisabledPairInLightAndDark() throws {
+    @MainActor func testADisabledMapControlIsDrawnFromTheDisabledPairInLightAndDark() throws {
         let controls: [(String, AnyView)] = [
             ("a disabled tinted control", AnyView(KozmosMapControlButton(label: "Zoom in", systemImage: "plus", isDisabled: true, action: {}))),
-            ("a loading tinted control", AnyView(KozmosMapControlButton(label: "Follow", systemImage: "location", isLoading: true, action: {}))),
             ("a disabled tinted toggle that is on", AnyView(KozmosMapControlButton(label: "Focus", systemImage: "location",
                                                                                    pressed: true, isDisabled: true, action: {}))),
             ("a disabled tinted toggle that is off", AnyView(KozmosMapControlButton(label: "Focus", systemImage: "location",
@@ -317,6 +412,40 @@ final class KozmosDisabledPairTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
     }
 
+    /// A disabled IconButton's counter is the pair inverted: its pill the
+    /// disabled foreground and its digits the disabled fill (4.80:1 light,
+    /// 6.51:1 dark), so it reads on the button's own disabled fill.
+    @MainActor func testADisabledIconButtonsCounterIsThePairInvertedInLightAndDark() throws {
+        var problems: [String] = []
+        for scheme in Self.schemes {
+            let drawn = try draw(KozmosIconButton(iconName: "plus", isDisabled: true, counter: 3, action: {}), scheme)
+            let fill = try DrawnPixels.resolved(KozmosColors.semanticsDisabledFill, in: scheme)
+            let ink = try DrawnPixels.resolved(KozmosColors.semanticsDisabledForeground, in: scheme)
+            // The pill sits over the button's top-trailing corner: found in
+            // the drawing's top-trailing quarter, clear of the button's own
+            // mark at its centre, and read inside its edges.
+            let quarter = CGRect(x: drawn.size.width / 2, y: 0, width: drawn.size.width / 2, height: drawn.size.height / 2 - 6)
+            guard let found = drawn.boundingBox(in: quarter, where: DrawnPixels.matches(ink, tolerance: 3)),
+                  found.width > 8, found.height > 6 else {
+                problems.append("\(scheme): no counter pill in the disabled foreground \(Self.hex(ink)) over the button's corner")
+                continue
+            }
+            let pill = found.insetBy(dx: 2, dy: 2)
+            let area = Int(pill.width * drawn.scale) * Int(pill.height * drawn.scale)
+            let pillPixels = drawn.count(in: pill, where: DrawnPixels.matches(ink, tolerance: 3))
+            if pillPixels * 3 < area {
+                problems.append("\(scheme): \(pillPixels) of \(area) pixels of the counter's pill are the disabled foreground \(Self.hex(ink)); it reads \(Self.hex(drawn.pixel(at: CGPoint(x: pill.minX + 1, y: pill.midY))))")
+            }
+            // The digit, in the pill's middle, clear of its rounded ends.
+            let middle = CGRect(x: found.midX - 3, y: found.minY + 2, width: 6, height: found.height - 2)
+            let digitPixels = drawn.count(in: middle, where: DrawnPixels.matches(fill, tolerance: 4))
+            if digitPixels < 6 {
+                problems.append("\(scheme): \(digitPixels) pixels of the counter's digit are the disabled fill \(Self.hex(fill))")
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, problems.joined(separator: "\n"))
+    }
+
     // MARK: Hosted: what UIKit draws
 
     #if os(iOS)
@@ -329,9 +458,9 @@ final class KozmosDisabledPairTests: XCTestCase {
         let parts: [(String, AnyView, Bool)] = [
             ("a disabled default Button", AnyView(KozmosButton("Next", isDisabled: true, action: {})), true),
             ("a disabled outline Button", AnyView(KozmosButton("Directions", variant: .outline, isDisabled: true, action: {})), false),
-            ("a disabled ghost Button", AnyView(KozmosButton("Skip", variant: .ghost, isDisabled: true, action: {})), false),
+            ("a disabled ghost Button", AnyView(KozmosButton("Skip", variant: .ghost, isDisabled: true, action: {})), true),
             ("a disabled link Button", AnyView(KozmosButton("Learn more", variant: .link, isDisabled: true, action: {})), false),
-            ("a disabled ghost IconButton", AnyView(KozmosIconButton(iconName: "plus", isDisabled: true, action: {})), false),
+            ("a disabled ghost IconButton", AnyView(KozmosIconButton(iconName: "plus", isDisabled: true, action: {})), true),
             ("a disabled FloatingActionButton", AnyView(KozmosFloatingActionButton(action: {}).disabled(true)), true),
         ]
         var problems: [String] = []

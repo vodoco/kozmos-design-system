@@ -121,9 +121,10 @@ public struct KozmosButton: View {
             }
         }
         .disabled(isDisabled || isLoading)
-        // Disabled, or loading, which disables it, it is drawn from the
-        // disabled pair (decision 197), not at half: no opacity, here or in
-        // the style, which dims nothing.
+        // Disabled, it is drawn from the disabled pair (decision 197), not at
+        // half: no opacity, here or in the style, which dims nothing.
+        // Loading, it takes no touch but keeps its variant's look: it is
+        // busy, not unavailable.
         .kozmosFillButtonStyle(fillEmotion, hoverShape: RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
     }
 
@@ -196,17 +197,23 @@ public struct KozmosButton: View {
         }
     }
     
-    /// Disabled, loading, or disabled from outside: drawn from the disabled
-    /// pair, Semantics.Disabled (decision 197, GAP-218), as React's and
-    /// Compose's are. At half, a white label on the theme fill read 2.24:1
-    /// on a white card.
-    var drawsDisabled: Bool { isDisabled || isLoading || !isEnabled }
+    /// Disabled, or disabled from outside: drawn from the disabled pair,
+    /// Semantics.Disabled (decision 197, GAP-218), as React's and Compose's
+    /// are. At half, a white label on the theme fill read 2.24:1 on a white
+    /// card. Loading alone is busy, not unavailable: the button takes no
+    /// touch but keeps its variant's fill, edge and words, the spinner in
+    /// the words' colour. Disabled and loading, it draws the pair.
+    var drawsDisabled: Bool { isDisabled || !isEnabled }
 
     private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
         // A filled variant, an emotion's fill included, takes the pair's
-        // fill. Outline, ghost and link never had a fill and gain none, and
-        // glass keeps the glass, which is its surface, not this fill.
-        if drawsDisabled { return fillEmotion == nil ? backgroundColor : KozmosColors.semanticsDisabledFill }
+        // fill, and so does ghost, so it never reads as an enabled grey
+        // ghost. Outline keeps the page under it; link gains no fill (its
+        // enabled words are the theme's, so grey already differs); glass
+        // keeps the glass, which is its surface, not this fill.
+        if drawsDisabled {
+            return fillEmotion != nil || variant == .ghost ? KozmosColors.semanticsDisabledFill : backgroundColor
+        }
         guard let fillEmotion else { return backgroundColor }
         if variant == .subtle {
             return KozmosFillStates.subtleBackground(fillEmotion, isPressed: isPressed, isFocused: isFocused)

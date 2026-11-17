@@ -99,8 +99,8 @@ public struct KozmosIconButton: View {
         // An empty value is no value: a button with no counter reads as it
         // did, and one whose count comes and goes keeps its identity.
         .accessibilityValue(Text(verbatim: counter.map(counterLabel) ?? ""))
-        // Disabled, or loading, which disables it, it is drawn from the
-        // disabled pair (decision 197), not at half.
+        // Disabled, it is drawn from the disabled pair (decision 197), not at
+        // half. Loading, it takes no touch but keeps its variant's look.
         .kozmosFillButtonStyle(fillEmotion, hoverShape: Circle())
     }
 
@@ -108,12 +108,15 @@ public struct KozmosIconButton: View {
 
     /// The counter (GAP-197), as React's `.kozmos-icon-button-counter`: its
     /// bottom edge on the button's centre line and its leading edge 2 past
-    /// it, at every size. It keeps its own colours on a disabled button, as
-    /// React's does since decision 197 drew the button from the disabled
-    /// pair rather than at half; it takes no tap and VoiceOver skips it.
+    /// it, at every size. On a disabled button it is the disabled pair
+    /// inverted (decision 197): its pill the disabled foreground and its
+    /// digits the disabled fill, 4.80:1 in light and 6.51:1 in dark. It
+    /// takes no tap and VoiceOver skips it.
     @ViewBuilder private var counterMark: some View {
         if let counter {
-            KozmosCounter(String(counter), tone: .brand, size: .sm)
+            KozmosCounter(String(counter), tone: .brand, size: .sm,
+                          fill: drawsDisabled ? KozmosInkedFill(fill: KozmosColors.semanticsDisabledForeground,
+                                                                ink: KozmosColors.semanticsDisabledFill) : nil)
                 .fixedSize()
                 // From the top-leading corner: half the button and 2 across,
                 // and down to where its 18 ends on the centre line. Leading
@@ -138,13 +141,18 @@ public struct KozmosIconButton: View {
         }
     }
 
-    /// Disabled, loading, or disabled from outside: drawn from the disabled
-    /// pair (decision 197, GAP-218), as Button is.
-    var drawsDisabled: Bool { isDisabled || isLoading || !isEnabled }
+    /// Disabled, or disabled from outside: drawn from the disabled pair
+    /// (decision 197, GAP-218), as Button is. Loading alone keeps the
+    /// variant's look; disabled and loading draws the pair.
+    var drawsDisabled: Bool { isDisabled || !isEnabled }
 
     private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
-        // A filled variant takes the pair's fill; the others gain none.
-        if drawsDisabled { return fillEmotion == nil ? backgroundColor : KozmosColors.semanticsDisabledFill }
+        // A filled variant takes the pair's fill, and so does ghost, the
+        // icon-only default, so it never reads as an enabled grey ghost.
+        // Outline, link and glass gain none.
+        if drawsDisabled {
+            return fillEmotion != nil || variant == .ghost ? KozmosColors.semanticsDisabledFill : backgroundColor
+        }
         guard let fillEmotion else { return backgroundColor }
         return KozmosFillStates.background(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }

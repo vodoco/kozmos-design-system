@@ -5,9 +5,10 @@ import SwiftUI
 import Kozmos
 
 // Disabled, a Button is drawn from the disabled pair, not at half: the
-// pair's fill under its foreground on a filled variant, its foreground alone
-// on outline (its edge too), ghost, link and glass. It takes no touch, and
-// VoiceOver hears it dimmed. Loading disables it and draws the same.
+// pair's fill under its foreground on a filled variant and on ghost, its
+// foreground alone on outline (its edge too), link and glass. It takes no
+// touch, and VoiceOver hears it dimmed. Loading is busy, not unavailable: it
+// takes no touch but keeps its variant's look.
 struct TourNextButton: View {
     let canContinue: Bool
     let next: () -> Void

@@ -234,13 +234,15 @@ public struct KozmosMapControlButton<Icon: View>: View {
         reveal.observe(value, enabled: enabled, duration: revealDuration, delay: revealDelay)
     }
 
-    /// Disabled or loading, the control is drawn from the disabled pair
-    /// (decision 197, GAP-218), as a filled Button is, not at half: its
-    /// surface is its fill, so the surface takes the pair's fill, and the
-    /// words and the mark its foreground, on or off, tinted or filled. The
-    /// ink alone would not do: an off toggle's words are already
-    /// foreground/400.
-    var drawsDisabled: Bool { isDisabled || isLoading || !isEnabled }
+    /// Disabled, the control is drawn from the disabled pair (decision 197,
+    /// GAP-218), as a filled Button is, not at half: its surface is its
+    /// fill, so the surface takes the pair's fill, and the words and the
+    /// mark its foreground, on or off, tinted or filled. The ink alone would
+    /// not do: an off toggle's words are already foreground/400. Loading
+    /// alone is busy, not unavailable: it takes no touch but keeps its
+    /// surface and tones, the spinner in the mark's. Disabled and loading,
+    /// it draws the pair.
+    var drawsDisabled: Bool { isDisabled || !isEnabled }
 
     private func color(_ tone: KozmosMapControlButtonAppearance.Tone) -> Color {
         if drawsDisabled { return KozmosColors.semanticsDisabledForeground }
@@ -354,10 +356,10 @@ public struct KozmosMapControlButton<Icon: View>: View {
         // the plain style's press.
         .modifier(KozmosMapControlButtonStyle(filled: emphasis == .filled, drawsFill: appearance.surface == .filled, shape: shape))
         .disabled(isDisabled || isLoading)
-        // Disabled, or loading, which disables it, the control is drawn from
-        // the disabled pair (`drawsDisabled`), not at half. Neither style
-        // dims a disabled control itself: the plain style would, and draw
-        // the pair at half.
+        // Disabled, the control is drawn from the disabled pair
+        // (`drawsDisabled`), not at half; loading, it keeps its look. Neither
+        // style dims a disabled control itself: the plain style would, and
+        // draw the pair at half.
         // Reduce Motion stops the control growing, not the reveal: the new
         // state is still said, and still said for as long.
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: shown == .labelled)

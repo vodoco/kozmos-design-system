@@ -55,15 +55,8 @@ final class KozmosButtonContentTests: XCTestCase {
             let icon = try await paint(KozmosButton("Go", leadingIconName: "navigation-pointer-01", action: {}), direction: direction)
             XCTAssertGreaterThan(icon.width, plain.width + 8)
             XCTAssertEqual(icon.height, 44, accuracy: 1)
-            // Loading, it is drawn from the disabled pair (decision 197): its
-            // fill is the disabled fill, not the theme's.
-            let fill = try DrawnPixels.resolved(KozmosColors.semanticsDisabledFill, in: .light)
-            let isDisabledFill = { (r: UInt8, g: UInt8, b: UInt8) in
-                abs(Int(r) - Int(fill.r)) <= 2 && abs(Int(g) - Int(fill.g)) <= 2 && abs(Int(b) - Int(fill.b)) <= 2
-            }
-            let loading = try await paint(KozmosButton("Go", isLoading: true, action: {}), direction: direction, where: isDisabledFill)
-            let loadingIcon = try await paint(KozmosButton("Go", isLoading: true, leadingIconName: "navigation-pointer-01", action: {}),
-                                              direction: direction, where: isDisabledFill)
+            let loading = try await paint(KozmosButton("Go", isLoading: true, action: {}), direction: direction)
+            let loadingIcon = try await paint(KozmosButton("Go", isLoading: true, leadingIconName: "navigation-pointer-01", action: {}), direction: direction)
             XCTAssertEqual(loading.width, loadingIcon.width, accuracy: 1)
         }
     }
