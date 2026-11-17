@@ -9216,9 +9216,7 @@ section("Rating");
     );
     const whole = (await paint("Stars", "4", "Readonly")).component;
     ok(
-      whole.children.every(
-        (cell) => glyphOf(cell).name !== "Star / half",
-      ),
+      whole.children.every((cell) => glyphOf(cell).name !== "Star / half"),
       "a whole score draws no half",
     );
   }
@@ -18015,8 +18013,7 @@ section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
       ) &&
       plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
         (entry) =>
-          entry.title === "Inputs" &&
-          entry.components.includes("ImageCropper"),
+          entry.title === "Inputs" && entry.components.includes("ImageCropper"),
       ),
     "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
   );
@@ -18662,6 +18659,200 @@ section("PropertyPicker: the subtle Button and its popup");
       plugin.expectedVariantAxesForComponentSetName("PropertyPicker"),
     ) === JSON.stringify({ State: ["Closed", "Open", "Suggested", "Empty"] }),
     "the set's one axis is State: Closed (its default), Open, Suggested, Empty",
+  );
+}
+
+// --- No variant covers another, in any set --------------------------------------
+
+// `pnpm figma:verify` counted 40 pairs of variants covering one another on
+// 2026-11-17, in Slider and ColorPicker, both just Updated: each set laid its
+// variants out on fixed steps (Slider's rows 112 apart, ColorPicker's formats
+// 720), and its variants had grown past them. Every set the importer builds is
+// built here through the panel's own message, then every set is updated by the
+// two Update All runs, and each set is read with figma:verify's own rule.
+//
+// The stand-in measures text by CHAR_ADVANCE and lays out auto layout as the
+// file does, but it draws Slider at 70 and ColorPicker's open variants at 634
+// to 660, short of the 120 and 794 the file has: what a live variant holds
+// beyond what today's painter draws is not here to measure. So before the
+// Update every variant is given a layer the painters do not own, 120 square,
+// as a file's variants carry layers from earlier builds. A painter keeps it,
+// and a variant that hugs its content grows by it, past its layout's step:
+// what the file did to Slider and ColorPicker.
+section("No variant covers another, in any set, after Build and Update");
+{
+  const KEPT = 120;
+  const coverIcons = new MockNode("PAGE", "Icons");
+  const iconRegistry = fs.readFileSync(
+    path.join(ROOT, "packages/icons/src/registry.ts"),
+    "utf8",
+  );
+  for (const match of iconRegistry
+    .slice(
+      iconRegistry.indexOf("export const kozmosIconNames = ["),
+      iconRegistry.indexOf("] as const"),
+    )
+    .matchAll(/^\s+"([a-z0-9-]+)",$/gm)) {
+    coverIcons.appendChild(mockIconComponent(match[1]));
+  }
+  const coverComponents = new MockNode("PAGE", "Components");
+  const coverFigma = createFigmaMock({
+    pages: [coverComponents, coverIcons],
+  });
+  const coverPlugin = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: coverFigma,
+    append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  const sequence = [
+    ...(coverPlugin.CORE_UPDATE_SEQUENCE || []),
+    ...(coverPlugin.PRODUCT_SDK_UPDATE_SEQUENCE || []),
+  ].map(([name, update]) => ({
+    name,
+    builder: update.name.replace(/^update/, "build"),
+  }));
+
+  // The panel's message for each builder, as the dispatcher names it.
+  const source = fs.readFileSync(PLUGIN, "utf8");
+  const messageFor = new Map();
+  for (const [, type, fn] of source.matchAll(
+    /"(build-[a-z0-9-]+)": (build[A-Za-z0-9]+Component),/g,
+  )) {
+    messageFor.set(fn, type);
+  }
+  for (const [, type, fn] of source.matchAll(
+    /message\.type === "(build-[a-z0-9-]+)"\) \{\s*const result = await (build[A-Za-z0-9]+Component)\(\);/g,
+  )) {
+    messageFor.set(fn, type);
+  }
+  const unsent = sequence.filter((entry) => !messageFor.has(entry.builder));
+  ok(
+    sequence.length >= 100 && unsent.length === 0,
+    `every set in the two Update All runs has a Build message (${sequence.length} sets${
+      unsent.length
+        ? `; none for ${unsent.map((entry) => entry.name).join(", ")}`
+        : ""
+    })`,
+  );
+
+  // figma:verify's rule, over each variant's box as REST reports it.
+  const coversIn = (set) => {
+    for (const variant of set.children) {
+      variant.absoluteBoundingBox = {
+        x: set.x + variant.x,
+        y: set.y + variant.y,
+        width: variant.width,
+        height: variant.height,
+      };
+    }
+    return variantsThatOverlap(set.name, set);
+  };
+  const setNamed = (name) =>
+    coverPlugin.findComponentSetOnPage(coverComponents, name);
+  const coveredSets = () => {
+    const found = [];
+    for (const { name } of sequence) {
+      const set = setNamed(name);
+      if (!set) continue;
+      const covers = coversIn(set);
+      if (covers.length) {
+        found.push(`${name} ${covers.length} (${covers[0]})`);
+      }
+    }
+    return found;
+  };
+
+  await withAutoLayout(async () => {
+    for (const entry of sequence) {
+      const type = messageFor.get(entry.builder);
+      if (type) await coverPlugin.handlePluginMessage({ type });
+    }
+  });
+  const missing = sequence.filter((entry) => !setNamed(entry.name));
+  const afterBuild = coveredSets();
+  ok(
+    missing.length === 0 && afterBuild.length === 0,
+    `after Build, no two variants cover one another in any of the ${sequence.length - missing.length} sets${
+      missing.length
+        ? ` (not built: ${missing.map((entry) => entry.name).join(", ")})`
+        : ""
+    }${afterBuild.length ? `; covered in ${afterBuild.length}: ${afterBuild.join("; ")}` : ""}`,
+  );
+
+  const before = new Map();
+  for (const { name } of sequence) {
+    const set = setNamed(name);
+    if (!set) continue;
+    before.set(
+      name,
+      set.children.map((variant) => `${variant.id}=${variant.name}`).join("|"),
+    );
+    for (const variant of set.children) {
+      if (variant.type !== "COMPONENT") continue;
+      const kept = new MockNode("FRAME", "Kept Layer");
+      kept.resize(KEPT, KEPT);
+      variant.appendChild(kept);
+    }
+  }
+  const results = [];
+  await withAutoLayout(async () => {
+    for (const type of ["update-all-core", "update-all-product-sdk"]) {
+      coverFigma.ui.postMessage = (message) => {
+        if (message && message.type === "component-result") {
+          results.push(message.result);
+        }
+      };
+      await coverPlugin.handlePluginMessage({ type });
+    }
+  });
+  const failed = results.flatMap((result) => (result && result.failures) || []);
+  ok(
+    results.length === 2 && failed.length === 0,
+    `both Update All runs finish with no set failing (${failed.slice(0, 3).join("; ")})`,
+  );
+
+  // The kept layer has to reach the two sets the file showed it in, or this
+  // proves nothing about them.
+  const tallest = (name, keep = () => true) =>
+    Math.max(
+      0,
+      ...((setNamed(name) && setNamed(name).children) || [])
+        .filter((variant) => keep(variant.name))
+        .map((variant) => variant.height),
+    );
+  const slider = tallest("Slider");
+  const openPicker = tallest("ColorPicker", (name) =>
+    name.includes("Content=Open"),
+  );
+  ok(
+    slider > 112 && openPicker > 720,
+    `the kept layer grows Slider past its 112 step (${slider}) and ColorPicker's open variants past their 720 (${openPicker})`,
+  );
+
+  const afterUpdate = coveredSets();
+  ok(
+    afterUpdate.length === 0,
+    `after Update, with every variant grown by a ${KEPT} layer it keeps, no two variants cover one another in any of the ${before.size} sets${
+      afterUpdate.length
+        ? `; covered in ${afterUpdate.length}: ${afterUpdate.join("; ")}`
+        : ""
+    }`,
+  );
+
+  const changed = [...before.keys()].filter(
+    (name) =>
+      setNamed(name)
+        .children.map((variant) => `${variant.id}=${variant.name}`)
+        .join("|") !== before.get(name),
+  );
+  ok(
+    changed.length === 0,
+    `and Update keeps every variant's node id and name in all ${before.size} sets: only positions move${
+      changed.length ? ` (changed: ${changed.join(", ")})` : ""
+    }`,
   );
 }
 
