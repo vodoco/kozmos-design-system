@@ -118,7 +118,7 @@ const INTENTIONAL = {
   },
   "Tree.rowFill": {
     figma:
-      "How the selected and hover fills are shaped (GAP-217, decision 196): an inset pill, or a band with no corners across the panel and its bleed. It is the row's own fill and radius, not a layer a boolean can show, and a variant axis would double TreeItem's 216 variants; a designer draws a band by setting a Selected row's radius to 0 and its width to the panel's. The SwiftUI and Compose gap stays in the report: Compose already draws its selected row as a band, SwiftUI as the inset pill.",
+      "Modelled as the row sets' RowFill axis, Inset and Band (GAP-217, decision 196): the Tree set is the container, its rows the designer's in the Content Slot, so the fill's shape is each row's. Sparse: Band only on Hover and Selected, where a fill shows.",
   },
   "ThemeProvider.theme": {
     figma:

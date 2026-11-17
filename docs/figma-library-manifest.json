@@ -11,7 +11,7 @@
   "figma": {
     "knownFileKeys": ["Yj4O8p6Y9h2Sa9zJVoAiVY"],
     "publishCommand": "pnpm figma:publish:dry",
-    "publishStatus": "blocked for all-component React publish until non-core node-id=TBD scaffolds are linked; use linked publish for Core",
+    "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
     "linkedPublishStatus": "ready for the current 116 Core React component-set mappings",
@@ -15718,8 +15718,8 @@
       "stories": 128,
       "tests": 129,
       "exported": 129,
-      "codeConnectFiles": 106,
-      "codeConnectScaffolds": 1,
+      "codeConnectFiles": 105,
+      "codeConnectScaffolds": 0,
       "codeConnectLinked": 105
     },
     "firstBatch": [
@@ -15748,7 +15748,6 @@
       "Counter",
       "DatePicker",
       "DateRangePicker",
-      "DescriptionList",
       "Dialog",
       "DirectionStep",
       "Drawer",
@@ -17156,14 +17155,14 @@
         "test": "packages/react/src/components/DescriptionList/DescriptionList.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": "packages/react/src/components/DescriptionList/DescriptionList.figma.tsx",
+          "file": null,
           "linked": false,
-          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
-          "needsNodeId": true,
-          "status": "scaffold",
-          "issues": ["node-id=TBD", "placeholder comment"],
-          "connectedComponents": ["DescriptionList"],
-          "mappedProps": ["aria-label", "layout"],
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
           "unmappedProps": []
         },
         "props": [

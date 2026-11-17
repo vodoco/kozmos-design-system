@@ -430,8 +430,10 @@ navigation tree. Rows composed as children take it from the Tree, and `TreeItemR
 | `"inset"` (default) | A pill with the control's corners, inside the row's inset  | A navigation tree           |
 | `"band"`            | A band with no corners, the tree's full width and `bleed`  | A list of records, Map Content |
 
-`rowFill` is React's and Vue's for now. Compose's `KozmosTree` already draws a selected row as a full-width band with no
-corners, and SwiftUI's draws the inset pill; neither takes `rowFill` yet.
+SwiftUI's `KozmosTree(rowFill: .band)` and Compose's `KozmosTree(rowFill = KozmosTreeRowFill.Band)` draw the same, and
+their default is the same inset pill on the control radius (16), inside the bleed. Until 0.17.0 Compose drew a selected
+row square and across the bleed; it now draws React's pill unless asked for the band. In Figma, the tree row sets'
+`RowFill` axis is Inset or Band (Band for the Hover and Selected states).
 
 <PlatformSnippets
     react={`

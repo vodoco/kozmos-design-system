@@ -160,8 +160,8 @@ TourStep
   - android: component/set absent
   - figma missing axes -> instructionTone (info, warning); side (top, right, bottom, left); align (start, center, end)
 Tree
-  - ios missing axes -> rowFill (inset, band); activationMode (select, toggle, select-toggle)
-  - android missing axes -> rowFill (inset, band); activationMode (select, toggle, select-toggle)
+  - ios missing axes -> activationMode (select, toggle, select-toggle)
+  - android missing axes -> activationMode (select, toggle, select-toggle)
 ```
 
 <!-- /generated:gaps -->

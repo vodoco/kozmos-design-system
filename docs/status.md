@@ -58,7 +58,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Counter              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | DatePicker           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | DateRangePicker      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
-| DescriptionList      | ✅         | ❌          | ✅         | ✅                      | ❌                        | ✅           | ✅           | ✅         | ✅                      | ❌                        | ✅             | ✅                          | ❌                            |
+| DescriptionList      | ✅         | ❌          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | Dialog               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Drawer               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | EmptyState           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -215,15 +215,15 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 - Web components: 137/137
 - Web stories: 136/137
 - Web tests: 137/137
-- Web Code Connect files: 114/132
-- Web Code Connect scaffolds: 1/132
+- Web Code Connect files: 113/132
+- Web Code Connect scaffolds: 0/132
 - Web Code Connect linked: 113/132
 - iOS components: 119/137
-- iOS Code Connect files: 106/132
-- iOS Code Connect scaffolds: 1/132
+- iOS Code Connect files: 105/132
+- iOS Code Connect scaffolds: 0/132
 - iOS Code Connect linked: 105/132
 - Android components: 120/137
-- Android Code Connect files: 106/132
-- Android Code Connect scaffolds: 1/132
+- Android Code Connect files: 105/132
+- Android Code Connect scaffolds: 0/132
 - Android Code Connect linked: 105/132
 - Code Connect not applicable: 5/137
