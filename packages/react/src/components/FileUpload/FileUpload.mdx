@@ -40,7 +40,7 @@ removed. The thumbnail is an object URL, revoked when the image changes or the p
 SwiftUI's and Compose's FileUpload hold one file. Picking one calls `onFileSelected`, and removing
 it calls `onFileRemoved` with the same file, where React calls `onFilesChange` with the files left.
 Their drop area says `browseLabel`, "Tap to upload file" by default, and their remove button is
-named `removeLabel`, "Remove"; a product that translates passes its own.
+named `removeLabel`, "Remove", where React's is "Remove file"; a product that translates passes its own.
 With `preview` set to image (`.image` in SwiftUI, `KozmosFileUploadPreview.Image` in Compose) they
 pick only images and show the chosen one as React does, with `changeLabel` and `previewAlt`.
 

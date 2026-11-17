@@ -433,7 +433,11 @@ keep the table's four columns and its statuses as they are.
 - **What:** `TabsList` is a fixed `inline-flex` row. Three file names overflow a
   320-pixel phone and push the whole page sideways.
 - **Now:** `src/site/ExamplePage.tsx` puts the list in a horizontal
-  `ScrollArea`.
+  `ScrollArea`. Kozmos 0.16.0 answers it (decision 182, product GAP-254,
+  #526): a `TabsList` wider than its space scrolls sideways inside its own
+  track, with no scroll bar and the selected tab kept in view, on React,
+  SwiftUI and Compose, and one that fits is unchanged. It stays _composed_
+  until the site drops its `ScrollArea` for the list's own scrolling.
 - **Lane:** Core.
 
 ## GAP-17 · `AdaptiveMapShell`'s panel is an `<aside>`

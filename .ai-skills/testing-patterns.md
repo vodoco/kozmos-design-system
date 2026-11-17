@@ -221,7 +221,23 @@ final class KozmosButtonAPITests: XCTestCase {
 
 `swift test` on macOS compiles the iOS-only tests out, so `node scripts/check-ios-poi.mjs` runs the
 whole target on the pinned simulator, as CI's iOS job does; read the test names back from its
-results ([AGENTS.md](../AGENTS.md)). The tests written before the code are kept in
+results ([AGENTS.md](../AGENTS.md)).
+
+The simulator's interaction tests send hardware keys, and two traps made them fail on CI's loaded runners:
+
+- **The keyboard switch eats a key's modifiers.** The hardware key that switches the simulator from the on-screen
+  keyboard to hardware-keyboard mode reaches the app without its modifiers. If the on-screen keyboard comes back
+  between two keys, the next key is spent on the switch again: in the Escape-in-a-presentation tests, End spent the
+  first switch, the keyboard came back, and Command-period arrived as a bare ".", so the search never heard Escape
+  (seven failures, 13 to 15 Nov). The fixture now keeps the on-screen keyboard down in those scenarios, as a hardware
+  keyboard does, and logs every key press and release and every move of the on-screen keyboard; a failure message
+  says what the app heard (#559). A test that sends a modified key keeps the on-screen keyboard down, and its failure
+  names the keys the app received.
+- **A fixed sleep is a guess.** Wait for the condition the test needs, with a deadline, not a fixed delay: the
+  Combobox turn-to-mixed tests now wait until their script has made its last change (#556), as the Vue bridge's
+  specs wait with `eventually` (#557).
+
+The tests written before the code are kept in
 [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
 
 ---
@@ -482,8 +498,9 @@ tests/contracts/*.spec.ts      # The POI card's consumer contract, with Pact
 | ------- | ---------- | ------------------------------------------------------------ |
 | 1.0.0   | 2026-02-07 | Initial testing patterns guide                               |
 | 1.1.0   | 2026-09-29 | The tests as they are; the planned suites move to a proposal |
+| 1.2.0   | 2026-11-16 | iOS: the keyboard switch eats modifiers; wait, don't sleep   |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-09-29
+**Last Updated:** 2026-11-16
