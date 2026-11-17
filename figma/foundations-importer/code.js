@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "ed58ef736491";
+const PLUGIN_BUILD = "6869db604077";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -244,6 +244,18 @@ const TREE_CHECKBOX_CHECKED = {
   name: "Checkbox Checked",
   kind: "tree-checkbox-checked",
   markName: "Checkbox Mark",
+};
+// GAP-279, decision 211 (owner, 17 Nov): a checkable tree's mixed parent, as
+// React's TreeItemRow `checked="mixed"` (a parent some but not all of whose
+// rows are checked, under checkRule="independent"). Mixed, a boolean off by
+// default, shows Checkbox Mixed inside the row's Checkbox, beside Checkbox
+// Checked: the theme fill with the minus for its mark, as Checkbox's
+// Indeterminate draws its dash (decision 188).
+const TREE_MIXED_PROPERTY_NAME = "Mixed";
+const TREE_CHECKBOX_MIXED = {
+  name: "Checkbox Mixed",
+  kind: "tree-checkbox-mixed",
+  markName: "Checkbox Mixed Mark",
 };
 const TREE_DISCLOSURE_END = {
   name: "Disclosure End",
@@ -1226,6 +1238,9 @@ const KBD_KEYS = ["Single", "Combination"];
 // 1, MAP-32's logo and the default, Landscape 16:9, a cover. Square comes
 // first, so the set's default is React's.
 const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
+// GAP-221, decision 199: React's DescriptionList `layout`: Stack, the items
+// one under another and the default, first; Row, side by side.
+const DESCRIPTION_LIST_LAYOUTS = ["Stack", "Row"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1718,6 +1733,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   TimePicker: 1380,
   FileUpload: 1420,
   ImageCropper: 560,
+  DescriptionList: 320,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1768,6 +1784,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "ListItem",
       "SettingsRow",
       "MetaStrip",
+      "DescriptionList",
       "Table",
       "TreeParentItem",
       "TreeChildItem",
@@ -3954,6 +3971,32 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    category: "Data Display",
+    summary:
+      "DescriptionList shows a record's values, each under its label, with no field chrome: a read-only view, such as MAP-619's unit for a Read-Only user (GAP-221, decision 199).",
+    usage: [
+      "Use for a record a person can read but not change, where greyed, outlined fields would read as disabled inputs.",
+      "Use Stack for a panel's column of values; Row for a few short values side by side.",
+      "Use MetaStrip for a few facts about a place as tiles in a strip; use a form's fields where the values can be edited.",
+    ],
+    api: [
+      'Layout maps to layout: Stack is "stack", Row is "row".',
+      "Each item is a DescriptionListItem: Label N Text its label, Value N Text its value. A value can be words, tags (Badges or Chips as children), true or false (written Yes or No), or carry an action after it.",
+      "Action shows the third item's trailing action, a copy IconButton: DescriptionListItem's action.",
+    ],
+    properties: [
+      "Layout: Stack, Row",
+      "Label 1 Text, Value 1 Text, Label 2 Text, Value 2 Text, Label 3 Text, Value 3 Text, Action",
+    ],
+    accessibility: [
+      "A <dl>: each item a <dt> and its <dd>, so a screen reader hears each label with its value.",
+      "SwiftUI makes each item one VoiceOver element, its label the name and its value the value; Compose merges each label and value into one TalkBack node. The action is an element of its own.",
+      "Nothing in it is a field: no textbox, nothing disabled, no read-only input.",
+    ],
+  },
+  {
     componentName: "Table",
     componentSetName: "Table",
     category: "Data Display",
@@ -4025,7 +4068,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
-      "Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
+      'Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -4062,7 +4105,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
-      "Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
+      'Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -4100,7 +4143,7 @@ const COMPONENT_DOCS = [
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
-      "Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
+      'Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -9743,6 +9786,38 @@ const COMPONENT_FLOAT_TOKENS = [
   // GAP-273: React's ImageCropper, a frame and its zoom row, gap-150 (12)
   // apart, the zoom row's parts gap-100 (8) apart, the frame on the control
   // radius. 320 wide as drawn; it fills its column in code.
+  // GAP-221: React's DescriptionList: items 16 apart stacked
+  // (Layout/spacing/200) or 24 side by side (Layout/spacing/300), each label
+  // 4 over its value (Layout/spacing/50), a Row's item 160 wide (its 10rem
+  // minimum), the trailing action's icon 16.
+  {
+    name: "DescriptionList/gap",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "DescriptionList/row/gap",
+    value: 24,
+    alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "DescriptionList/item/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "DescriptionList/item/min-width",
+    value: 160,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "DescriptionList/action/icon/size",
+    value: 16,
+    scopes: ["WIDTH_HEIGHT"],
+  },
   {
     name: "ImageCropper/width/default",
     value: 320,
@@ -12397,6 +12472,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
   ["ImageCropper", updateImageCropperComponent],
+  ["DescriptionList", updateDescriptionListComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -12670,6 +12746,9 @@ function additionalComponentActionHandlers() {
     "build-image-cropper": buildImageCropperComponent,
     "update-image-cropper": updateImageCropperComponent,
     "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-description-list": buildDescriptionListComponent,
+    "update-description-list": updateDescriptionListComponent,
+    "rebuild-description-list": rebuildDescriptionListComponent,
     "build-list-item": buildListItemComponent,
     "update-list-item": updateListItemComponent,
     "rebuild-list-item": rebuildListItemComponent,
@@ -20133,6 +20212,12 @@ function expectedVariantAxesForComponentSetName(name) {
       State: TIME_PICKER_STATES,
       Status: TIME_PICKER_STATUSES,
       Content: TIME_PICKER_CONTENT,
+    };
+  }
+
+  if (canonicalName === "DescriptionList") {
+    return {
+      Layout: DESCRIPTION_LIST_LAYOUTS,
     };
   }
 
@@ -43074,7 +43159,57 @@ async function createTreeCheckbox(row, variableByName, stats) {
   mark.y = 2;
   box.appendChild(checked);
   checked.visible = false;
+  box.appendChild(await createTreeCheckboxMixed(variableByName, stats));
   return box;
+}
+
+/**
+ * GAP-279: the Checkbox's mixed look, hidden until Mixed: the theme fill and
+ * edge on the marker radius with a 16 minus at 2,2, as Checkbox's
+ * Indeterminate draws its dash (decision 188).
+ */
+async function createTreeCheckboxMixed(variableByName, stats) {
+  const mixed = figma.createFrame();
+  mixed.name = TREE_CHECKBOX_MIXED.name;
+  mixed.layoutMode = "NONE";
+  mixed.resizeWithoutConstraints(20, 20);
+  mixed.x = 0;
+  mixed.y = 0;
+  mixed.cornerRadius = KOZMOS_RADIUS.marker;
+  mixed.clipsContent = false;
+  mixed.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  mixed.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  mixed.strokeWeight = 1;
+  mixed.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_CHECKBOX_MIXED.kind);
+  const mark = await createFixedIconInstance(
+    "minus",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    16,
+    "Tree/icon/size",
+  );
+  mark.name = TREE_CHECKBOX_MIXED.markName;
+  mixed.appendChild(mark);
+  mark.x = 2;
+  mark.y = 2;
+  mixed.visible = false;
+  return mixed;
 }
 
 /**
@@ -46152,7 +46287,8 @@ async function configureTreeItemProperties(
 
 /**
  * Checkable and Checked, booleans off by default, showing each row's
- * Checkbox and its checked fill; Disclosure Start, on, and Disclosure End,
+ * Checkbox and its checked fill; Mixed, off, its mixed fill and dash
+ * (GAP-279, decision 211); Disclosure Start, on, and Disclosure End,
  * off, showing the disclosure before the label and at the row's end
  * (GAP-277). With all four at their defaults an instance draws as it did
  * before any existed.
@@ -46168,6 +46304,12 @@ function configureTreeCheckableProperties(componentSet, stats) {
       TREE_CHECKED_PROPERTY_NAME,
       false,
       (node) => generatedKind(node) === TREE_CHECKBOX_CHECKED.kind,
+    ],
+    // GAP-279, decision 211: the mixed parent's dash.
+    [
+      TREE_MIXED_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX_MIXED.kind,
     ],
     // The start disclosure is a row's own child, as drawn before GAP-277.
     [
@@ -67034,6 +67176,254 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
     variableByName,
     stats,
   );
+}
+
+// --- DescriptionList --------------------------------------------------------------
+
+// GAP-221, decision 199: React's DescriptionList, as packages/styles' owned
+// CSS draws it: each item its label, 12/16 regular (Text / XS / Normal) in
+// Colors/foreground/400, over its value, 14/20 (Text / Small / Normal) in
+// Colors/foreground/0, 4 apart (DescriptionList/item/gap). Stack sets the
+// items one under another 16 apart (DescriptionList/gap), in a column 320
+// wide; Row side by side 24 apart (DescriptionList/row/gap), each 160 wide
+// (DescriptionList/item/min-width, React's 10rem). No fill, no stroke, no
+// field chrome. The third item, FID, carries its Action after the value on
+// the value's 20 line: the copy icon at 16 in Colors/foreground/400, standing
+// in for React's small IconButton, which is drawn past the line rather than
+// making the item taller. `Action` shows it.
+const DESCRIPTION_LIST_GEOMETRY = {
+  width: 320,
+  itemWidth: 160,
+  gap: 16,
+  rowGap: 24,
+  itemGap: 4,
+  actionGap: 8,
+  line: 20,
+};
+const DESCRIPTION_LIST_ITEMS = [
+  { label: "Name", value: "Gate A12" },
+  { label: "Featured", value: "Yes" },
+  { label: "FID", value: "f-1209", action: true },
+];
+const DESCRIPTION_LIST_ACTION_NAME = "Action";
+
+async function createDescriptionListVariant(args) {
+  const component = figma.createComponent();
+  await updateDescriptionListVariant(component, args);
+  return component;
+}
+
+function parseDescriptionListVariantName(name) {
+  return productSdkVariantValues(name, "Layout", DESCRIPTION_LIST_LAYOUTS);
+}
+
+async function updateDescriptionListVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = DESCRIPTION_LIST_GEOMETRY;
+  const row = value === "Row";
+  const count = DESCRIPTION_LIST_ITEMS.length;
+  const itemHeight = 16 + geometry.itemGap + geometry.line;
+  productSdkVariantRoot(component, "DescriptionList", "Layout=" + value, {
+    direction: row ? "horizontal" : "vertical",
+    primarySizing: "AUTO",
+    counterSizing: row ? "AUTO" : "FIXED",
+    spacing: row ? geometry.rowGap : geometry.gap,
+    width: row
+      ? count * geometry.itemWidth + (count - 1) * geometry.rowGap
+      : geometry.width,
+    height: row ? itemHeight : count * itemHeight + (count - 1) * geometry.gap,
+  });
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    row ? "DescriptionList/row/gap" : "DescriptionList/gap",
+    variableByName,
+    stats,
+  );
+
+  for (let index = 0; index < count; index += 1) {
+    const spec = DESCRIPTION_LIST_ITEMS[index];
+    const n = index + 1;
+    const itemWidth = row ? geometry.itemWidth : geometry.width;
+    const item = productSdkFrame("Item " + n, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: geometry.itemGap,
+      width: itemWidth,
+      height: itemHeight,
+    });
+    item.setSharedPluginData(RUN_NAMESPACE, "kind", "description-list-item");
+    bindFloatVariable(
+      item,
+      "itemSpacing",
+      "DescriptionList/item/gap",
+      variableByName,
+      stats,
+    );
+    if (row) {
+      bindFloatVariable(
+        item,
+        "width",
+        "DescriptionList/item/min-width",
+        variableByName,
+        stats,
+      );
+    }
+    appendWithSizing(component, item, row ? "FIXED" : "FILL", "HUG");
+
+    const label = await productSdkText({
+      name: "Label " + n,
+      characters: spec.label,
+      styleKey: textStyleKeyForText("XS", "Normal"),
+      fonts,
+      fontSize: 12,
+      lineHeight: 16,
+      colorToken: "Colors/foreground/400",
+      colorFallback: "#5D626F",
+      variableByName,
+      stats,
+      width: itemWidth,
+    });
+    appendWithSizing(item, label, "FILL", "HUG");
+
+    const valueText = await productSdkText({
+      name: "Value " + n,
+      characters: spec.value,
+      styleKey: textStyleKeyForText("Small", "Normal"),
+      fonts,
+      fontSize: 14,
+      lineHeight: 20,
+      colorToken: "Colors/foreground/0",
+      colorFallback: "#000000",
+      variableByName,
+      stats,
+      width: spec.action
+        ? itemWidth - geometry.line - geometry.actionGap
+        : itemWidth,
+    });
+
+    if (!spec.action) {
+      appendWithSizing(item, valueText, "FILL", "HUG");
+      continue;
+    }
+    const line = productSdkFrame("Value Row " + n, {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      counterAlign: "CENTER",
+      spacing: geometry.actionGap,
+      width: itemWidth,
+      height: geometry.line,
+    });
+    appendWithSizing(item, line, "FILL", "FIXED");
+    appendWithSizing(line, valueText, "FILL", "HUG");
+    const action = productSdkFrame(DESCRIPTION_LIST_ACTION_NAME, {
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      width: geometry.line,
+      height: geometry.line,
+    });
+    action.setSharedPluginData(
+      RUN_NAMESPACE,
+      "kind",
+      "description-list-action",
+    );
+    appendWithSizing(line, action, "FIXED", "FIXED");
+    const icon = await createFixedIconInstance(
+      "copy-01",
+      "Colors/foreground/400",
+      "#5D626F",
+      variableByName,
+      stats,
+      16,
+      "DescriptionList/action/icon/size",
+    );
+    if (icon) {
+      icon.name = "Copy Icon";
+      action.appendChild(icon);
+    }
+  }
+}
+
+function configureDescriptionListProperties(componentSet, stats) {
+  DESCRIPTION_LIST_ITEMS.forEach((spec, index) => {
+    const n = index + 1;
+    configureNamedTextProperty(
+      componentSet,
+      "Label " + n,
+      "Label " + n + " Text",
+      spec.label,
+      stats,
+    );
+    configureNamedTextProperty(
+      componentSet,
+      "Value " + n,
+      "Value " + n + " Text",
+      spec.value,
+      stats,
+    );
+  });
+  configureNamedBooleanProperty(
+    componentSet,
+    DESCRIPTION_LIST_ACTION_NAME,
+    "Action",
+    true,
+    stats,
+  );
+}
+
+const DESCRIPTION_LIST_DESCRIPTION = [
+  "Kozmos DescriptionList component set generated from React DescriptionList API (GAP-221, decision 199).",
+  'Layout maps to layout: Stack is "stack", Row is "row". Each item is a DescriptionListItem: Label N Text its label, Value N Text its value; Action is the third item\'s action.',
+  "A <dl>: each item a <dt> and its <dd>, heard as label and value. No field chrome.",
+];
+
+async function buildDescriptionListComponent() {
+  return buildSingleAxisComponent({
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    axisName: "Layout",
+    values: DESCRIPTION_LIST_LAYOUTS,
+    x: 80,
+    y: 21000,
+    xStep: 600,
+    createVariant: createDescriptionListVariant,
+    configureProperties: configureDescriptionListProperties,
+    autoReorganize: true,
+    description: DESCRIPTION_LIST_DESCRIPTION,
+  });
+}
+
+async function updateDescriptionListComponent() {
+  return updateSingleAxisComponent({
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    axisName: "Layout",
+    values: DESCRIPTION_LIST_LAYOUTS,
+    xStep: 600,
+    createVariant: createDescriptionListVariant,
+    updateVariant: updateDescriptionListVariant,
+    parseVariantName: parseDescriptionListVariantName,
+    configureProperties: configureDescriptionListProperties,
+    autoReorganize: true,
+    description: DESCRIPTION_LIST_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildDescriptionListComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    build: buildDescriptionListComponent,
+  });
 }
 
 // --- ImageCropper ----------------------------------------------------------------

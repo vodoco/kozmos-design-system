@@ -11,7 +11,7 @@
   "figma": {
     "knownFileKeys": ["Yj4O8p6Y9h2Sa9zJVoAiVY"],
     "publishCommand": "pnpm figma:publish:dry",
-    "publishStatus": "ready",
+    "publishStatus": "blocked for all-component React publish until non-core node-id=TBD scaffolds are linked; use linked publish for Core",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
     "linkedPublishStatus": "ready for the current 116 Core React component-set mappings",
@@ -15714,12 +15714,12 @@
   },
   "components": {
     "summary": {
-      "total": 128,
+      "total": 129,
       "stories": 128,
-      "tests": 128,
-      "exported": 128,
-      "codeConnectFiles": 105,
-      "codeConnectScaffolds": 0,
+      "tests": 129,
+      "exported": 129,
+      "codeConnectFiles": 106,
+      "codeConnectScaffolds": 1,
       "codeConnectLinked": 105
     },
     "firstBatch": [
@@ -15748,6 +15748,7 @@
       "Counter",
       "DatePicker",
       "DateRangePicker",
+      "DescriptionList",
       "Dialog",
       "DirectionStep",
       "Drawer",
@@ -17149,6 +17150,36 @@
         "variants": {}
       },
       {
+        "name": "DescriptionList",
+        "source": "packages/react/src/components/DescriptionList/DescriptionList.tsx",
+        "story": null,
+        "test": "packages/react/src/components/DescriptionList/DescriptionList.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": "packages/react/src/components/DescriptionList/DescriptionList.figma.tsx",
+          "linked": false,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=TBD",
+          "needsNodeId": true,
+          "status": "scaffold",
+          "issues": ["node-id=TBD", "placeholder comment"],
+          "connectedComponents": ["DescriptionList"],
+          "mappedProps": ["aria-label", "layout"],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "layout",
+          "role",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
         "name": "Dialog",
         "source": "packages/react/src/components/Dialog/Dialog.tsx",
         "story": "packages/react/src/components/Dialog/Dialog.stories.tsx",
@@ -18028,6 +18059,7 @@
           "children",
           "defaultValue",
           "disabled",
+          "embedded",
           "id",
           "multiple",
           "options",
@@ -20868,6 +20900,7 @@
           "renderIcon",
           "renderMeta",
           "role",
+          "rowFill",
           "scrollerRef",
           "selected",
           "selectedId",
