@@ -67,14 +67,41 @@ enum class KozmosFileUploadPreview {
     Image
 }
 
+/**
+ * What the visitor picks with, as React's FileUpload `variant` (GAP-274).
+ */
+enum class KozmosFileUploadVariant {
+    /** The drop area, the default. */
+    Dropzone,
+
+    /**
+     * A Button-sized trigger: the outline KozmosButton with the upload icon
+     * and the browse label ("Choose file" unless the product passes its own,
+     * such as "Add logo"), for a field with no room for a drop area. It opens
+     * the same picker, offering what the drop area offers, and shows what was
+     * chosen, or the image preview, as the drop area does.
+     */
+    Button
+}
+
+/** What the picker is asked for: images only with the image preview, as React's `accept`. */
+internal fun fileUploadPickerInput(preview: KozmosFileUploadPreview): String =
+    if (preview == KozmosFileUploadPreview.Image) "image/*" else "*/*"
+
+/** The words that open the picker: the product's own, or each form's own default. */
+internal fun fileUploadBrowseLabel(browseLabel: String?, variant: KozmosFileUploadVariant): String =
+    browseLabel ?: if (variant == KozmosFileUploadVariant.Button) "Choose file" else "Tap to upload file"
+
 @Composable
 fun KozmosFileUpload(
     modifier: Modifier = Modifier,
     /**
-     * The drop area's words. "Tap to upload file" by default, as React's
-     * `browseLabel`; a product that translates passes its own.
+     * The words that open the picker, as React's `browseLabel`: "Tap to
+     * upload file" on the drop area, "Choose file" on
+     * [KozmosFileUploadVariant.Button]; a product passes its own, such as
+     * "Add logo", or its translation.
      */
-    browseLabel: String = "Tap to upload file",
+    browseLabel: String? = null,
     /**
      * The remove button's spoken name. "Remove" by default; a product that
      * translates passes its own.
@@ -95,8 +122,15 @@ fun KozmosFileUpload(
      * trailing lambda is still [onFileSelected].
      */
     onFileRemoved: ((Uri) -> Unit)? = null,
+    /**
+     * [KozmosFileUploadVariant.Button] is the button form (GAP-274); the drop
+     * area is the default. Before [onFileSelected], so a trailing lambda is
+     * still [onFileSelected].
+     */
+    variant: KozmosFileUploadVariant = KozmosFileUploadVariant.Dropzone,
     onFileSelected: (Uri) -> Unit
 ) {
+    val words = fileUploadBrowseLabel(browseLabel, variant)
     var file by remember { mutableStateOf<Uri?>(null) }
     var fileName by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
@@ -135,7 +169,7 @@ fun KozmosFileUpload(
         fileName = null
         if (removed != null) onFileRemoved?.invoke(removed)
     }
-    val pickerInput = if (preview == KozmosFileUploadPreview.Image) "image/*" else "*/*"
+    val pickerInput = fileUploadPickerInput(preview)
 
     val shown = file
     if (preview == KozmosFileUploadPreview.Image && fileName != null && shown != null) {
@@ -205,6 +239,22 @@ fun KozmosFileUpload(
                 Icon(Icons.Default.Close, contentDescription = removeLabel)
             }
         }
+    } else if (variant == KozmosFileUploadVariant.Button) {
+        // In place of the drop area: the outline Button, opening the same
+        // picker for the same files (GAP-274).
+        KozmosButton(
+            onClick = { launcher.launch(pickerInput) },
+            modifier = modifier,
+            variant = KozmosButtonVariant.Outline
+        ) {
+            Icon(
+                Icons.Default.UploadFile,
+                contentDescription = null,
+                modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing200)
+            )
+            // The Button's own row spaces the icon 8 from the words.
+            Text(words)
+        }
     } else {
         Column(
             modifier = modifier
@@ -230,7 +280,7 @@ fun KozmosFileUpload(
             )
             Spacer(modifier = Modifier.height(KozmosDimensions.primitivesLayoutSpacing100))
             Text(
-                text = browseLabel,
+                text = words,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                 color = KozmosThemeTokens.primitivesColorsForeground400
             )
