@@ -8552,8 +8552,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"]',
-  "Figma FileUpload content axis includes DropZone alias and the image preview (GAP-270)",
+  'const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview", "Button"]',
+  "Figma FileUpload content axis includes DropZone alias, the image preview (GAP-270) and the button form (GAP-274)",
 );
 assertContains(
   files.figma,
@@ -9205,8 +9205,9 @@ assertOccurrenceCount(
   files.figma,
   source.figma,
   /normalizeInputFamilyChildSizing\(component\);/g,
-  // FileUpload's Content=Preview draws its own children (GAP-270).
-  18,
+  // FileUpload's Content=Preview draws its own children (GAP-270), and its
+  // Content=Button (GAP-274) normalizes its label, trigger and helper.
+  19,
   "input-family fill sizing normalization calls",
 );
 assertContains(

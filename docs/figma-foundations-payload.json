@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T06:30:45.135Z",
+  "generatedAt": "2026-11-17T19:22:49.623Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 745,
-    "variableTokens": 694,
+    "totalTokens": 746,
+    "variableTokens": 695,
     "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 525,
+      "color": 526,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -3698,7 +3698,12 @@
         "ios": "primitivesColorsBackground0",
         "android": "primitivesColorsBackground0"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "STROKE_COLOR",
+        "TEXT_FILL"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -7222,7 +7227,12 @@
         "ios": "semanticsEmotionNeutralOnsurface",
         "android": "semanticsEmotionNeutralOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7246,7 +7256,12 @@
         "ios": "semanticsEmotionNeutralText",
         "android": "semanticsEmotionNeutralText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7294,7 +7309,12 @@
         "ios": "semanticsEmotionThemedOnsurface",
         "android": "semanticsEmotionThemedOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7318,7 +7338,12 @@
         "ios": "semanticsEmotionThemedText",
         "android": "semanticsEmotionThemedText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7366,7 +7391,12 @@
         "ios": "semanticsEmotionSuccessOnsurface",
         "android": "semanticsEmotionSuccessOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7390,7 +7420,12 @@
         "ios": "semanticsEmotionSuccessText",
         "android": "semanticsEmotionSuccessText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7438,7 +7473,12 @@
         "ios": "semanticsEmotionDangerOnsurface",
         "android": "semanticsEmotionDangerOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7462,7 +7502,12 @@
         "ios": "semanticsEmotionDangerText",
         "android": "semanticsEmotionDangerText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7510,7 +7555,12 @@
         "ios": "semanticsEmotionAlertOnsurface",
         "android": "semanticsEmotionAlertOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7534,7 +7584,12 @@
         "ios": "semanticsEmotionAlertText",
         "android": "semanticsEmotionAlertText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7630,7 +7685,12 @@
         "ios": "semanticsEmotionInformativeOnsurface",
         "android": "semanticsEmotionInformativeOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7654,7 +7714,12 @@
         "ios": "semanticsEmotionInformativeText",
         "android": "semanticsEmotionInformativeText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -8311,6 +8376,30 @@
         "dark": {
           "kind": "number",
           "value": 0.20000000298023224
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Effect/glass/border/color",
+      "figmaName": "Effect/glass/border/color",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-effect-glass-border-color",
+      "syntax": {
+        "web": "var(--semantics-effect-glass-border-color)",
+        "ios": "semanticsEffectGlassBorderColor",
+        "android": "semanticsEffectGlassBorderColor"
+      },
+      "suggestedScopes": ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FFFFFF"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FFFFFF"
         }
       }
     },

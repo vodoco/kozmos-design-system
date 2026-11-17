@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "b606eb4ed21c";
+const PLUGIN_BUILD = "05cbef97df87";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -350,6 +350,41 @@ const CHIP_VARIANTS = ["Neutral", "Brand", "Destructive"];
 const CHIP_SIZES = ["Small", "Default", "Large"];
 const CHIP_STATES = ["Default", "Selected", "Disabled"];
 const CHIP_REMOVABLE = ["False", "True"];
+// Decision 200 (GAP-170): React's Chip `emotion`, Tag's six. None, the
+// variant's own drawing, comes first, so a variant drawn before the axis is
+// None and Update renames it, keeping its node id. An emotion decides the
+// colour whatever the variant, so it is drawn once, on the Neutral chip at
+// the Default size, at rest and selected, removable or not: 24 variants.
+const CHIP_EMOTIONS = [
+  "None",
+  "Themed",
+  "Neutral",
+  "Success",
+  "Danger",
+  "Informative",
+  "Alert",
+];
+const CHIP_EMOTION_STATES = ["Default", "Selected"];
+function chipVariantIsGenerated(props) {
+  if (!props.emotion || props.emotion === "None") return true;
+  return (
+    props.variant === "Neutral" &&
+    props.size === "Default" &&
+    CHIP_EMOTION_STATES.indexOf(props.state) !== -1
+  );
+}
+function chipVariantCombinations() {
+  const out = [];
+  for (const emotion of CHIP_EMOTIONS)
+    for (const variant of CHIP_VARIANTS)
+      for (const size of CHIP_SIZES)
+        for (const state of CHIP_STATES)
+          for (const removable of CHIP_REMOVABLE) {
+            const props = { variant, size, state, removable, emotion };
+            if (chipVariantIsGenerated(props)) out.push(props);
+          }
+  return out;
+}
 const SEGMENTED_CONTROL_SIZES = ["Small", "Default", "Large"];
 const SEGMENTED_CONTROL_ACTIVE = ["One", "Two", "Three"];
 const SEGMENTED_CONTROL_STATES = ["Default", "Focus", "Disabled", "Error"];
@@ -480,7 +515,10 @@ const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
 const FILE_UPLOAD_STATUSES = ["Default", "Error", "Warning", "Success"];
 // Preview: React's `preview="image"` holding its image, the thumbnail with
 // Change and Remove where the drop area was (GAP-270).
-const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"];
+// Button: React's `variant="button"` (GAP-274), an outline Button-sized
+// trigger, the upload icon and its words, in place of the drop area. Last,
+// so a set from before it keeps its order and Update adds the 16 it lacks.
+const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview", "Button"];
 // One status's columns, a content each, 440 apart.
 const FILE_UPLOAD_STATUS_STRIDE = FILE_UPLOAD_CONTENT.length * 440;
 const COLOR_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
@@ -496,8 +534,16 @@ const SELECT_STATUSES = ["Default", "Error"];
 // GAP-164 (decision 132): Open draws the trigger with its list under it, so a
 // row's count is visible in Figma. A variant drawn before the axis is Closed.
 const SELECT_CONTENT = ["Closed", "Open"];
+// Decision 151 (CLOUD-UI-009): SelectTrigger's `variant`, the bordered field
+// or the ghost trigger, no edge and no fill, as wide as its value: the map's
+// level control. A variant drawn before the axis is Default. Ghost is drawn
+// closed, at every State and Status: 8 variants.
+const SELECT_VARIANTS = ["Default", "Ghost"];
+// The state-status builders carry one more axis as `type`; Select's types
+// are its Content, and "Ghost", which is Content=Closed, Variant=Ghost.
+const SELECT_TYPES = ["Closed", "Open", "Ghost"];
 // An open list is neither disabled nor the trigger's focus-ring state, so
-// Open is drawn at State=Default only (#525 review): 6 Closed + 2 Open.
+// Open is drawn at State=Default only (#525 review): 8 Closed + 2 Open.
 function selectVariantIsGenerated(state, _status, content) {
   return content !== "Open" || state === "Default";
 }
@@ -674,6 +720,31 @@ function emptyStateIconSize(size) {
   return size === "Compact" ? 40 : 64;
 }
 const EMPTY_STATE_CONTENT = ["Basic", "Icon", "Action"];
+// Decision 194 (GAP-213): React's EmptyState `tone`, Tag's six emotions.
+// None, today's look, comes first, so a variant drawn before the axis is
+// None and Update renames it, keeping its node id. A tone is drawn at
+// Size=Default only: Compact sits in a slot that already draws its own box,
+// where a card would be a box in a box. The set's rows are its sizes, then
+// one a tone, each row's `second` "Default/<Tone>".
+const EMPTY_STATE_TONES = [
+  "None",
+  "Themed",
+  "Neutral",
+  "Success",
+  "Danger",
+  "Informative",
+  "Alert",
+];
+const EMPTY_STATE_ROWS = EMPTY_STATE_SIZES.concat(
+  EMPTY_STATE_TONES.slice(1).map((tone) => `Default/${tone}`),
+);
+function emptyStateRow(second) {
+  const [size, tone] = String(second || "Default").split("/");
+  return {
+    size: EMPTY_STATE_SIZES.indexOf(size) === -1 ? "Default" : size,
+    tone: EMPTY_STATE_TONES.indexOf(tone) === -1 ? "None" : tone,
+  };
+}
 // GAP-165: a list under the description, what to try ("No Map Content
 // Found"). A layer in every variant, shown by the List boolean, its three
 // items' words List Item 1 Text to List Item 3 Text.
@@ -2024,7 +2095,8 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Select",
-          variantName: "State=Default, Status=Default, Content=Closed",
+          variantName:
+            "State=Default, Status=Default, Content=Closed, Variant=Default",
           text: { "Placeholder Text": "Destination" },
         },
         {
@@ -3293,13 +3365,14 @@ const COMPONENT_DOCS = [
       "Size maps to PageHeader.size: Medium is Heading 3 (24/32), Large Heading 2 (30/36).",
       "Title Text maps to title; Description Text to description.",
       "Breadcrumb, Info and Actions show the breadcrumb, info and actions React is given.",
+      "Show Title Addon shows PageHeader.titleAddon, a Tag beside the title, outside its h1 (decision 210); Addon Text is its words.",
       "Its content takes Container's window inset and block inset, 32 above and 24 below (GAP-116).",
     ],
     properties: [
       "Tone: Subtle, Default",
       "Size: Medium, Large",
       "Title Text, Description Text",
-      "Breadcrumb, Info, Description, Actions",
+      "Breadcrumb, Info, Description, Actions, Show Title Addon, Addon Text",
     ],
     accessibility: [
       "In code the title is the page's one h1 at either size.",
@@ -3798,6 +3871,7 @@ const COMPONENT_DOCS = [
       "Size maps to Chip.size: sm, default, and lg.",
       "State maps to selected and disabled props in Code Connect.",
       "Removable maps to the presence of Chip.onRemove.",
+      "Emotion maps to Chip.emotion (decision 200): None is the variant's colour; the six are drawn on the Neutral Default chip at rest and selected. The variants read as emotions: neutral is Neutral, brand Themed, destructive Danger.",
       "Label Text maps to Chip children.",
     ],
     properties: [
@@ -3805,6 +3879,7 @@ const COMPONENT_DOCS = [
       "Size: Small, Default, Large",
       "State: Default, Selected, Disabled",
       "Removable: False, True",
+      "Emotion: None, Themed, Neutral, Success, Danger, Informative, Alert",
       "Label Text, Focus Visible",
     ],
     accessibility: [
@@ -4990,13 +5065,13 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
       "Status maps to default, error, warning, and success FieldWrapper validation tones.",
-      "Content maps to empty drop-zone and selected-file list anatomy examples.",
+      'Content maps to empty drop-zone and selected-file list anatomy examples; Button is FileUpload variant="button", an outline trigger in place of the drop area (GAP-274).',
       "Label Text, Browse Text, Drop Text, Description Text, File Name Text, File Meta Text, Helper Text, and Show Helper Text map to FileUpload props and examples.",
     ],
     properties: [
       "State: Default, Focus, Dragging, Disabled",
       "Status: Default, Error, Warning, Success",
-      "Content: Dropzone, Files",
+      "Content: Dropzone, Files, Preview, Button",
       "Label Text, Browse Text, Drop Text, Description Text, File Name Text, File Meta Text, Helper Text, Show Helper Text, Focus Visible",
     ],
     accessibility: [
@@ -5141,12 +5216,14 @@ const COMPONENT_DOCS = [
       "Option 1 Text through Option 3 Text map to SelectItem children.",
       "Option 1 Count through Option 3 Count map to SelectItem.count, drawn as the neutral Counter; Show Counts shows them. Every row keeps the check's 16 at its end, so the counts form one column.",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
+      "Variant maps to SelectTrigger.variant: Ghost draws no edge and no fill, as wide as its value, the map's level control (decision 151, CLOUD-UI-009).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Mixed",
       "Status: Default, Error",
       "Content: Closed, Open",
+      "Variant: Default, Ghost",
       "Placeholder Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
       "Option 1 Text, Option 2 Text, Option 3 Text",
       "Option 1 Count, Option 2 Count, Option 3 Count, Show Counts",
@@ -5369,9 +5446,11 @@ const COMPONENT_DOCS = [
       "Description Text maps to EmptyState.description.",
       "Action content composes a live Button instance in the Figma example.",
       "List maps to EmptyState.list (GAP-165): what to try, under the description, read in order; List Item 1 Text to List Item 3 Text are its items.",
+      "Tone maps to EmptyState.tone (decision 194): the emotion's surface edged in its text colour, its words in its ink, at Size=Default.",
     ],
     properties: [
       "Content: Basic, Icon, Action",
+      "Tone: None, Themed, Neutral, Success, Danger, Informative, Alert",
       "Title Text, Description Text, List, List Item 1 Text, List Item 2 Text, List Item 3 Text",
     ],
     accessibility: [
@@ -13629,8 +13708,15 @@ async function buildSettingsExampleTemplate({
   panel.appendChild(
     await createExampleInstance({
       componentSetName: "Select",
-      // The closed trigger; a file whose Select predates Content has only it.
+      // The closed field, not the ghost (decision 151); a file whose Select
+      // predates Variant, or Content, has only it.
       variantProperties: [
+        {
+          State: "Default",
+          Status: "Default",
+          Content: "Closed",
+          Variant: "Default",
+        },
         { State: "Default", Status: "Default", Content: "Closed" },
         { State: "Default", Status: "Default" },
       ],
@@ -19817,6 +19903,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Size: CHIP_SIZES,
       State: CHIP_STATES,
       Removable: CHIP_REMOVABLE,
+      Emotion: CHIP_EMOTIONS,
     };
   }
 
@@ -20192,6 +20279,7 @@ function expectedVariantAxesForComponentSetName(name) {
       State: SELECT_STATES,
       Status: SELECT_STATUSES,
       Content: SELECT_CONTENT,
+      Variant: SELECT_VARIANTS,
     };
   }
 
@@ -20258,6 +20346,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Content: EMPTY_STATE_CONTENT,
       Size: EMPTY_STATE_SIZES,
+      Tone: EMPTY_STATE_TONES,
     };
   }
 
@@ -35266,32 +35355,17 @@ async function buildChipComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  let index = 0;
-  for (const variant of CHIP_VARIANTS) {
-    for (const size of CHIP_SIZES) {
-      for (const state of CHIP_STATES) {
-        for (const removable of CHIP_REMOVABLE) {
-          const component = await createChipVariant({
-            variant,
-            size,
-            state,
-            removable,
-            variableByName,
-            fonts,
-            stats,
-          });
-          component.x = (index % 6) * 180;
-          component.y = Math.floor(index / 6) * 76;
-          page.appendChild(component);
-          components.push(component);
-          index += 1;
-        }
-      }
-    }
+  for (const props of chipVariantCombinations()) {
+    const component = await createChipVariant(
+      Object.assign({}, props, { variableByName, fonts, stats }),
+    );
+    page.appendChild(component);
+    components.push(component);
   }
 
   const componentSet = figma.combineAsVariants(components, page);
   componentSet.name = "Chip";
+  layoutChipVariants(componentSet);
   componentSet.x = 80;
   componentSet.y = 1600;
   componentSet.setSharedPluginData(RUN_NAMESPACE, "kind", "component-set");
@@ -35303,6 +35377,7 @@ async function buildChipComponent() {
     "Size maps to Chip.size.",
     "State maps to selected and disabled props in Code Connect.",
     "Removable maps to the presence of Chip.onRemove.",
+    "Emotion maps to Chip.emotion (decision 200): None is the variant's own colour; an emotion, on the Neutral Default chip at rest and selected, is its surface, ink and text-colour edge, or selected its text colour filled.",
     "Label Text maps to Chip children in Code Connect.",
     "Focus follows the React focus-visible ring.",
   ]);
@@ -35359,6 +35434,7 @@ async function updateChipComponent() {
     "Size maps to Chip.size.",
     "State maps to selected and disabled props in Code Connect.",
     "Removable maps to the presence of Chip.onRemove.",
+    "Emotion maps to Chip.emotion (decision 200): None is the variant's own colour; an emotion, on the Neutral Default chip at rest and selected, is its surface, ink and text-colour edge, or selected its text colour filled.",
     "Label Text maps to Chip children in Code Connect.",
     "Focus follows the React focus-visible ring.",
     "Updated in place to preserve the Code Connect node ID.",
@@ -35380,6 +35456,7 @@ async function updateChipComponent() {
       size: props.size,
       state: props.state,
       removable: props.removable,
+      emotion: props.emotion,
       variableByName,
       fonts,
       stats,
@@ -35387,29 +35464,18 @@ async function updateChipComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const variant of CHIP_VARIANTS) {
-    for (const size of CHIP_SIZES) {
-      for (const state of CHIP_STATES) {
-        for (const removable of CHIP_REMOVABLE) {
-          const props = { variant, size, state, removable };
-          const key = chipVariantKey(props);
-          if (seenKeys[key]) continue;
+  // The Emotion variants (decision 200) a set from before them lacks, added
+  // beside the 54 it keeps, whose node ids Code Connect pins.
+  for (const props of chipVariantCombinations()) {
+    const key = chipVariantKey(props);
+    if (seenKeys[key]) continue;
 
-          const component = await createChipVariant({
-            variant,
-            size,
-            state,
-            removable,
-            variableByName,
-            fonts,
-            stats,
-          });
-          existing.appendChild(component);
-          seenKeys[key] = true;
-          stats.variantsCreated += 1;
-        }
-      }
-    }
+    const component = await createChipVariant(
+      Object.assign({}, props, { variableByName, fonts, stats }),
+    );
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
 
   layoutChipVariants(existing);
@@ -39348,7 +39414,7 @@ async function buildFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove; Button is variant="button", an outline trigger in place of the drop area (GAP-274), its words Browse Text.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -39403,7 +39469,7 @@ async function updateFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove; Button is variant="button", an outline trigger in place of the drop area (GAP-274), its words Browse Text.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -39802,7 +39868,7 @@ async function buildSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
-    types: SELECT_CONTENT,
+    types: SELECT_TYPES,
     includeVariant: selectVariantIsGenerated,
     x: 80,
     y: 3280,
@@ -39817,6 +39883,7 @@ async function buildSelectComponent() {
       "Status maps to SelectTrigger.error in Code Connect.",
       "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
+      "Variant maps to SelectTrigger.variant: Ghost draws no edge and no fill, as wide as its value (decision 151, CLOUD-UI-009).",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -39830,7 +39897,7 @@ async function updateSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
-    types: SELECT_CONTENT,
+    types: SELECT_TYPES,
     includeVariant: selectVariantIsGenerated,
     xStep: 360,
     yStep: 96,
@@ -39846,6 +39913,7 @@ async function updateSelectComponent() {
       "Status maps to SelectTrigger.error in Code Connect.",
       "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
+      "Variant maps to SelectTrigger.variant: Ghost draws no edge and no fill, as wide as its value (decision 151, CLOUD-UI-009).",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -48536,7 +48604,7 @@ async function buildEmptyStateComponent() {
     axisName: "Content",
     values: EMPTY_STATE_CONTENT,
     axis2Name: "Size",
-    axis2Values: EMPTY_STATE_SIZES,
+    axis2Values: EMPTY_STATE_ROWS,
     yStep: 260,
     x: 80,
     y: 6740,
@@ -48550,6 +48618,7 @@ async function buildEmptyStateComponent() {
       "Description Text maps to EmptyState.description.",
       "Action examples compose a live Button instance.",
       "List shows a list under the description, EmptyState.list (GAP-165); List Item 1 Text to List Item 3 Text are its items.",
+      "Tone maps to EmptyState.tone (decision 194): None is no tone; a tone is the emotion's surface edged in its text colour, at Size=Default.",
     ],
   });
 }
@@ -48561,7 +48630,7 @@ async function updateEmptyStateComponent() {
     axisName: "Content",
     values: EMPTY_STATE_CONTENT,
     axis2Name: "Size",
-    axis2Values: EMPTY_STATE_SIZES,
+    axis2Values: EMPTY_STATE_ROWS,
     yStep: 260,
     xStep: 420,
     createVariant: createEmptyStateVariant,
@@ -48575,6 +48644,7 @@ async function updateEmptyStateComponent() {
       "Description Text maps to EmptyState.description.",
       "Action examples compose a live Button instance.",
       "List shows a list under the description, EmptyState.list (GAP-165); List Item 1 Text to List Item 3 Text are its items.",
+      "Tone maps to EmptyState.tone (decision 194): None is no tone; a tone is the emotion's surface edged in its text colour, at Size=Default.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -62160,6 +62230,7 @@ async function createChipVariant({
   size,
   state,
   removable,
+  emotion,
   variableByName,
   fonts,
   stats,
@@ -62170,6 +62241,7 @@ async function createChipVariant({
     size,
     state,
     removable,
+    emotion,
     variableByName,
     fonts,
     stats,
@@ -64749,16 +64821,21 @@ function parseChipVariantName(name) {
     return null;
   }
 
-  return {
+  // A variant drawn before the Emotion axis is None (decision 200).
+  const emotion = values.Emotion || "None";
+  if (CHIP_EMOTIONS.indexOf(emotion) === -1) return null;
+  const props = {
     variant: values.Variant,
     size: values.Size,
     state: values.State,
     removable: values.Removable,
+    emotion,
   };
+  return chipVariantIsGenerated(props) ? props : null;
 }
 
 function chipVariantKey(props) {
-  return `${props.variant}/${props.size}/${props.state}/${props.removable}`;
+  return `${props.variant}/${props.size}/${props.state}/${props.removable}/${props.emotion || "None"}`;
 }
 
 function layoutChipVariants(componentSet) {
@@ -64774,24 +64851,37 @@ function layoutChipVariants(componentSet) {
     const sizeIndex = CHIP_SIZES.indexOf(props.size);
     const stateIndex = CHIP_STATES.indexOf(props.state);
     const removableIndex = CHIP_REMOVABLE.indexOf(props.removable);
+    const emotionIndex = CHIP_EMOTIONS.indexOf(props.emotion || "None");
+    // The 54 None variants where they always were; each emotion's four
+    // (rest and selected, removable or not) a row of their own under them.
     const flatIndex =
-      ((variantIndex * CHIP_SIZES.length + sizeIndex) * CHIP_STATES.length +
-        stateIndex) *
-        CHIP_REMOVABLE.length +
-      removableIndex;
+      emotionIndex > 0
+        ? CHIP_VARIANTS.length *
+            CHIP_SIZES.length *
+            CHIP_STATES.length *
+            CHIP_REMOVABLE.length +
+          (emotionIndex - 1) * 6 +
+          CHIP_EMOTION_STATES.indexOf(props.state) * CHIP_REMOVABLE.length +
+          removableIndex
+        : ((variantIndex * CHIP_SIZES.length + sizeIndex) * CHIP_STATES.length +
+            stateIndex) *
+            CHIP_REMOVABLE.length +
+          removableIndex;
     child.x = (flatIndex % 6) * 180;
     child.y = Math.floor(flatIndex / 6) * 76;
   }
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function updateChipVariant(
   component,
-  { variant, size, state, removable, variableByName, fonts, stats },
+  { variant, size, state, removable, emotion, variableByName, fonts, stats },
 ) {
   const metrics = chipMetrics(size);
-  const config = chipConfig(variant, state);
+  const tone = CHIP_EMOTIONS.indexOf(emotion) === -1 ? "None" : emotion;
+  const config = chipConfig(variant, state, tone);
 
-  component.name = `Variant=${variant}, Size=${size}, State=${state}, Removable=${removable}`;
+  component.name = `Variant=${variant}, Size=${size}, State=${state}, Removable=${removable}, Emotion=${tone}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -67473,6 +67563,10 @@ async function rebuildImageCropperComponent() {
 // React draws each only when it is given.
 const PAGE_HEADER_ACTIONS_NAME = "Actions";
 const PAGE_HEADER_INFO_NAME = "Info";
+// Decision 210: React's PageHeader `titleAddon`, a node beside the title and
+// outside its h1, such as a status Tag. Drawn as ListItem's Title Addon is,
+// a Tag's pill, here in the alert emotion ("Changes Awaiting Publish").
+const PAGE_HEADER_TITLE_ADDON_NAME = "Title Addon";
 const PAGE_HEADER_BREADCRUMB_NAME = "Breadcrumb";
 
 function pageHeaderTitleMetrics(size) {
@@ -67675,6 +67769,45 @@ async function updatePageHeaderVariant(
   ];
   line.appendChild(title);
   setHugChildSizing(title);
+
+  // Decision 210: the title's addon, after the title and before the info
+  // button, centred on the title's line as the info button is. Off by
+  // default, as React draws none until it is given one.
+  const addon = pageHeaderLine(
+    PAGE_HEADER_TITLE_ADDON_NAME,
+    metrics.lineHeight,
+  );
+  line.appendChild(addon);
+  const tag = await createListItemTag({
+    name: "Addon Tag",
+    textName: "Addon Text",
+    characters: "Changes Awaiting Publish",
+    outline: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  tag.fills = [
+    paintFromVariable(
+      "Emotion/alert/surface",
+      "#FDF1D8",
+      variableByName,
+      stats,
+    ),
+  ];
+  const addonText = directChildNamed(tag, "Addon Text");
+  if (addonText)
+    addonText.fills = [
+      paintFromVariable(
+        "Emotion/alert/onSurface",
+        "#3D2902",
+        variableByName,
+        stats,
+      ),
+    ];
+  addon.appendChild(tag);
+  setHugChildSizing(tag);
+  addon.visible = false;
 
   const info = pageHeaderLine(PAGE_HEADER_INFO_NAME, metrics.lineHeight);
   line.appendChild(info);
@@ -67903,6 +68036,21 @@ function configurePageHeaderProperties(componentSet, stats) {
     false,
     stats,
   );
+  // Decision 210: the title's addon, off, and its words, as ListItem's.
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_TITLE_ADDON_NAME,
+    "Show Title Addon",
+    false,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Addon Text",
+    "Addon Text",
+    "Changes Awaiting Publish",
+    stats,
+  );
   configureNamedBooleanProperty(
     componentSet,
     "Description Text",
@@ -67924,6 +68072,7 @@ const PAGE_HEADER_DESCRIPTION = [
   "Tone maps to PageHeader.tone; Size to PageHeader.size (Medium md, Large lg).",
   "Title Text maps to title; Description Text to description.",
   "Breadcrumb, Info, Description and Actions show what React draws when it is given each.",
+  "Show Title Addon shows PageHeader.titleAddon beside the title, outside its h1 (decision 210); Addon Text is its Tag's words.",
 ];
 
 async function buildPageHeaderComponent() {
@@ -70407,7 +70556,7 @@ async function updateFileUploadVariant(
   component.paddingBottom = 0;
   component.resizeWithoutConstraints(
     384,
-    hasFiles ? 302 : isPreview ? 130 : 218,
+    hasFiles ? 302 : isPreview ? 130 : content === "Button" ? 96 : 218,
   );
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
@@ -70711,6 +70860,14 @@ function parseSelectVariantName(name) {
   const match = /(?:^|,)\s*Content=([^,]+)/.exec(name);
   const content = match ? match[1].trim() : "Closed";
   if (SELECT_CONTENT.indexOf(content) === -1) return null;
+  // A variant drawn before the Variant axis is Default (decision 151).
+  const variantMatch = /(?:^|,)\s*Variant=([^,]+)/.exec(name);
+  const variant = variantMatch ? variantMatch[1].trim() : "Default";
+  if (SELECT_VARIANTS.indexOf(variant) === -1) return null;
+  if (variant === "Ghost") {
+    if (content !== "Closed") return null;
+    return { state: props.state, status: props.status, type: "Ghost" };
+  }
   return { state: props.state, status: props.status, type: content };
 }
 
@@ -70719,10 +70876,11 @@ async function updateSelectVariant(
   { state, status, type, variableByName, fonts, stats },
 ) {
   const config = inputConfig(state, status);
-  const content = type || "Closed";
+  const ghost = type === "Ghost";
+  const content = ghost ? "Closed" : type || "Closed";
   const isOpen = content === "Open";
 
-  component.name = `State=${state}, Status=${status}, Content=${content}`;
+  component.name = `State=${state}, Status=${status}, Content=${content}, Variant=${ghost ? "Ghost" : "Default"}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -70749,6 +70907,7 @@ async function updateSelectVariant(
     state,
     status,
     content,
+    ghost,
     config,
     variableByName,
     fonts,
@@ -70769,7 +70928,11 @@ function layoutSelectVariants(componentSet) {
 
     const stateIndex = SELECT_STATES.indexOf(props.state);
     const statusIndex = SELECT_STATUSES.indexOf(props.status);
-    if (props.type === "Open") {
+    if (props.type === "Ghost") {
+      // Decision 151: the ghost triggers, past the Open column.
+      child.x = (SELECT_STATUSES.length * 2 + statusIndex) * 360;
+      child.y = stateIndex * 96;
+    } else if (props.type === "Open") {
       child.x = (SELECT_STATUSES.length + statusIndex) * 360;
       child.y = stateIndex * 240;
     } else {
@@ -72599,18 +72762,23 @@ function parseEmptyStateVariantName(name) {
   if (!base) return null;
   // A variant drawn before the Size axis carries no Size and is the full one,
   // so Update renames it rather than replacing it and its node id survives.
-  const second = variantAxisValue(name, "Size") || "Default";
-  if (EMPTY_STATE_SIZES.indexOf(second) === -1) return null;
-  return { value: base.value, second };
+  const size = variantAxisValue(name, "Size") || "Default";
+  if (EMPTY_STATE_SIZES.indexOf(size) === -1) return null;
+  // And one drawn before the Tone axis is None (decision 194).
+  const tone = variantAxisValue(name, "Tone") || "None";
+  if (EMPTY_STATE_TONES.indexOf(tone) === -1) return null;
+  if (tone === "None") return { value: base.value, second: size };
+  if (size !== "Default") return null;
+  return { value: base.value, second: `${size}/${tone}` };
 }
 
 async function updateEmptyStateVariant(
   component,
   { value, second, variableByName, fonts, stats },
 ) {
-  const size = EMPTY_STATE_SIZES.indexOf(second) === -1 ? "Default" : second;
+  const { size, tone } = emptyStateRow(second);
   const pad = emptyStatePadding(size);
-  component.name = `Content=${value}, Size=${size}`;
+  component.name = `Content=${value}, Size=${size}, Tone=${tone}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -72622,10 +72790,43 @@ async function updateEmptyStateVariant(
   component.paddingTop = pad;
   component.paddingBottom = pad;
   component.resizeWithoutConstraints(360, size === "Compact" ? 128 : 196);
-  component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  if (tone === "None") {
+    clearBoundVariable(component, "cornerRadius", stats);
+    component.cornerRadius = KOZMOS_RADIUS.none;
+    component.fills = [];
+    component.strokes = [];
+  } else {
+    // Decision 194: the emotion's surface, edged 1 inside in its text
+    // colour, at the container's radius, as React's rounded-container.
+    const key = tone.toLowerCase();
+    component.cornerRadius = KOZMOS_RADIUS.container;
+    bindFloatVariable(
+      component,
+      "cornerRadius",
+      "Radius/Container",
+      variableByName,
+      stats,
+    );
+    component.fills = [
+      paintFromVariable(
+        `Emotion/${key}/surface`,
+        "#FDF1D8",
+        variableByName,
+        stats,
+      ),
+    ];
+    component.strokes = [
+      paintFromVariable(
+        `Emotion/${key}/text`,
+        "#744D03",
+        variableByName,
+        stats,
+      ),
+    ];
+    component.strokeWeight = 1;
+    component.strokeAlign = "INSIDE";
+  }
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "EmptyState");
 
@@ -72633,6 +72834,7 @@ async function updateEmptyStateVariant(
     component,
     value,
     size,
+    tone,
     variableByName,
     fonts,
     stats,
@@ -83268,6 +83470,21 @@ async function syncFileUploadVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
+  if (content === "Button") {
+    await syncFileUploadButtonChildren({
+      component,
+      label,
+      state,
+      status,
+      config,
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
+
   if (isPreview) {
     await syncFileUploadPreviewChildren({
       component,
@@ -83524,6 +83741,148 @@ async function syncFileUploadVariantChildren({
   }
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Content=Button, React's `variant="button"` (GAP-274): in place of the drop
+ * area, an outline Button at the default size, 44 tall and as wide as its
+ * words, with the upload icon before "Choose file" (Browse Text, React's
+ * `browseLabel`; New Client passes "Add logo"). Drawn as the Preview's Change
+ * button is, so Browse Text stays a property of the set, which a Button
+ * instance's text could not be. React's button takes a drop as the area
+ * does: Dragging draws the theme 600 edge on the hover fill; a status takes
+ * the field's edge, and Focus the field's ring.
+ */
+async function syncFileUploadButtonChildren({
+  component,
+  label,
+  state,
+  status,
+  config,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const isDragging = state === "Dragging";
+  const outline = buttonConfig("Outline", disabled ? "Disabled" : "Default");
+  const edge = isDragging
+    ? ["Colors/theme/600", "#1051E8"]
+    : status !== "Default"
+      ? [config.fieldStroke, config.fieldStrokeFallback]
+      : [outline.stroke, outline.strokeFallback];
+  const fill = isDragging
+    ? ["Colors/background/100", "#E3E4E8"]
+    : [outline.background, outline.backgroundFallback];
+
+  const trigger = figma.createFrame();
+  trigger.name = "Browse Button";
+  trigger.layoutMode = "HORIZONTAL";
+  trigger.primaryAxisSizingMode = "AUTO";
+  trigger.counterAxisSizingMode = "FIXED";
+  trigger.primaryAxisAlignItems = "CENTER";
+  trigger.counterAxisAlignItems = "CENTER";
+  trigger.itemSpacing = 8;
+  trigger.paddingLeft = 16;
+  trigger.paddingRight = 16;
+  trigger.paddingTop = 0;
+  trigger.paddingBottom = 0;
+  trigger.resizeWithoutConstraints(140, 44);
+  trigger.cornerRadius = KOZMOS_RADIUS.control;
+  trigger.clipsContent = false;
+  trigger.setSharedPluginData(RUN_NAMESPACE, "role", "file-upload-trigger");
+  trigger.fills = [paintFromVariable(fill[0], fill[1], variableByName, stats)];
+  trigger.strokes = [
+    paintFromVariable(edge[0], edge[1], variableByName, stats),
+  ];
+  trigger.strokeWeight = 1;
+  for (const [field, token] of [
+    ["height", "Button/height/default"],
+    ["paddingLeft", "Button/padding/x/default"],
+    ["paddingRight", "Button/padding/x/default"],
+    ["itemSpacing", "Button/gap/default"],
+    ["cornerRadius", "Button/radius"],
+    ["strokeWeight", "Button/stroke/width"],
+  ])
+    bindFloatVariable(trigger, field, token, variableByName, stats);
+
+  const icon = await createFixedIconInstance(
+    "upload-01",
+    outline.foreground,
+    outline.foregroundFallback,
+    variableByName,
+    stats,
+    16,
+    "Button/icon/size",
+  );
+  trigger.appendChild(icon);
+
+  const browse = figma.createText();
+  browse.name = "Browse Text";
+  // Button's medium 14/20 label; the field label style is the same face and
+  // size, attached as the drop area's Browse Text is.
+  await applyFieldLabelTypography(
+    browse,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  browse.characters = preservedText["Browse Text"] || "Choose file";
+  browse.fills = [
+    paintFromVariable(
+      outline.foreground,
+      outline.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  browse.textAlignVertical = "CENTER";
+  trigger.appendChild(browse);
+  setHugChildSizing(browse);
+
+  syncFocusRing(trigger, {
+    enabled: !disabled,
+    width: 140,
+    height: 44,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+
+  const helper = figma.createText();
+  helper.name = "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  helper.characters =
+    preservedText["Helper Text"] || helperTextForInputStatus(status);
+  helper.visible = status !== "Default";
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  helper.resizeWithoutConstraints(384, 20);
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  helper.textAlignVertical = "CENTER";
+
+  component.appendChild(label);
+  component.appendChild(trigger);
+  component.appendChild(helper);
+  normalizeInputFamilyChildSizing(component);
+  setLayoutSizingHorizontal(trigger, "HUG");
 }
 
 /**
@@ -84560,8 +84919,15 @@ async function createColorPickerPaletteSelect({
 }) {
   const created = await createNestedComponentInstance({
     componentSetName: "Select",
-    // The closed trigger; a file whose Select predates Content has only it.
+    // The closed field, not the ghost (decision 151); a file whose Select
+    // predates Variant, or Content, has only it.
     variantProperties: [
+      {
+        State: disabled ? "Disabled" : "Default",
+        Status: "Default",
+        Content: "Closed",
+        Variant: "Default",
+      },
       {
         State: disabled ? "Disabled" : "Default",
         Status: "Default",
@@ -85394,6 +85760,7 @@ async function syncSelectVariantChildren({
   state,
   status,
   content,
+  ghost = false,
   config,
   variableByName,
   fonts,
@@ -85433,23 +85800,35 @@ async function syncSelectVariantChildren({
   trigger.paddingBottom = 0;
   trigger.resizeWithoutConstraints(320, 44);
   trigger.cornerRadius = KOZMOS_RADIUS.control;
-  trigger.setSharedPluginData(RUN_NAMESPACE, "kind", "input-field");
-  trigger.fills = [
-    paintFromVariable(
-      config.fieldFill,
-      config.fieldFillFallback,
-      variableByName,
-      stats,
-    ),
-  ];
-  trigger.strokes = [
-    paintFromVariable(
-      config.fieldStroke,
-      config.fieldStrokeFallback,
-      variableByName,
-      stats,
-    ),
-  ];
+  // The ghost trigger is no input-field: the field sizing would stretch it.
+  trigger.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    ghost ? "select-ghost-trigger" : "input-field",
+  );
+  trigger.fills = ghost
+    ? []
+    : [
+        paintFromVariable(
+          config.fieldFill,
+          config.fieldFillFallback,
+          variableByName,
+          stats,
+        ),
+      ];
+  // Decision 151: the ghost trigger has no edge, but an error keeps the
+  // field's red, as React's border-destructive wins over its transparent one.
+  trigger.strokes =
+    ghost && status !== "Error"
+      ? []
+      : [
+          paintFromVariable(
+            config.fieldStroke,
+            config.fieldStrokeFallback,
+            variableByName,
+            stats,
+          ),
+        ];
   trigger.strokeWeight = 1;
   // Out, as Input's field: the variants #521 (Mixed) and GAP-164 (Open)
   // added came out laid in beside the six drawn before (figma:verify, 15 Nov).
@@ -85542,7 +85921,7 @@ async function syncSelectVariantChildren({
   );
 
   component.appendChild(trigger);
-  setLayoutSizingHorizontal(trigger, "FILL");
+  setLayoutSizingHorizontal(trigger, ghost ? "HUG" : "FILL");
   await syncResetMixedText(component, trigger, {
     mixed: state === MIXED_FIELD_STATE,
     fonts,
@@ -85554,6 +85933,15 @@ async function syncSelectVariantChildren({
     setLayoutSizingHorizontal(listbox, "FILL");
   }
   normalizeInputFamilyChildSizing(component);
+  if (ghost) {
+    // As wide as its value and its chevron, 8 apart, from the start: the
+    // value hugs its words, and the trigger hugs both.
+    trigger.primaryAxisAlignItems = "MIN";
+    setTextAutoResize(placeholder, "WIDTH_AND_HEIGHT");
+    setLayoutSizingHorizontal(placeholder, "HUG");
+    trigger.primaryAxisSizingMode = "AUTO";
+    setLayoutSizingHorizontal(trigger, "HUG");
+  }
 }
 
 // GAP-164: Select's open list, so a row's count is visible in Figma. It is
@@ -86400,11 +86788,18 @@ async function syncEmptyStateVariantChildren({
   component,
   value,
   size,
+  tone = "None",
   variableByName,
   fonts,
   stats,
 }) {
   const iconBox = emptyStateIconSize(size);
+  // Decision 194: in a tone, the words are the emotion's onSurface and the
+  // icon its text on a disc of the page's colour.
+  const toned = tone && tone !== "None";
+  const key = toned ? tone.toLowerCase() : null;
+  const ink = (plain, fallback) =>
+    toned ? [`Emotion/${key}/onSurface`, "#3D2902"] : [plain, fallback];
   removeDirectChildren(component);
 
   const hasIcon = value !== "Basic";
@@ -86429,8 +86824,8 @@ async function syncEmptyStateVariantChildren({
     iconContainer.clipsContent = false;
     iconContainer.fills = [
       paintFromVariable(
-        "Colors/background/100",
-        "#F1F2F4",
+        toned ? "Colors/background/0" : "Colors/background/100",
+        toned ? "#FFFFFF" : "#F1F2F4",
         variableByName,
         stats,
       ),
@@ -86439,8 +86834,8 @@ async function syncEmptyStateVariantChildren({
 
     const icon = await createFixedIconInstance(
       "search-md",
-      "Colors/foreground/400",
-      "#5E6575",
+      toned ? `Emotion/${key}/text` : "Colors/foreground/400",
+      toned ? "#744D03" : "#5E6575",
       variableByName,
       stats,
       32,
@@ -86476,7 +86871,12 @@ async function syncEmptyStateVariantChildren({
   title.textAlignHorizontal = "CENTER";
   title.textAlignVertical = "CENTER";
   title.fills = [
-    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+    paintFromVariable(
+      ink("Colors/foreground/0", "#000000")[0],
+      ink("Colors/foreground/0", "#000000")[1],
+      variableByName,
+      stats,
+    ),
   ];
   setTextAutoResize(title, "HEIGHT");
   title.resizeWithoutConstraints(296, 20);
@@ -86494,8 +86894,8 @@ async function syncEmptyStateVariantChildren({
   description.textAlignVertical = "CENTER";
   description.fills = [
     paintFromVariable(
-      "Colors/foreground/400",
-      "#5E6575",
+      ink("Colors/foreground/400", "#5E6575")[0],
+      ink("Colors/foreground/400", "#5E6575")[1],
       variableByName,
       stats,
     ),
@@ -86512,6 +86912,7 @@ async function syncEmptyStateVariantChildren({
 
   await appendEmptyStateList(component, {
     size,
+    ink: ink("Colors/foreground/400", "#5E6575"),
     fonts,
     variableByName,
     stats,
@@ -86547,7 +86948,7 @@ async function syncEmptyStateVariantChildren({
  */
 async function appendEmptyStateList(
   component,
-  { fonts, variableByName, stats },
+  { ink = ["Colors/foreground/400", "#5E6575"], fonts, variableByName, stats },
 ) {
   const list = figma.createFrame();
   list.name = EMPTY_STATE_LIST_PROPERTY;
@@ -86613,14 +87014,7 @@ async function appendEmptyStateList(
     words.textAlignHorizontal = "LEFT";
 
     for (const node of [dot, words]) {
-      node.fills = [
-        paintFromVariable(
-          "Colors/foreground/400",
-          "#5E6575",
-          variableByName,
-          stats,
-        ),
-      ];
+      node.fills = [paintFromVariable(ink[0], ink[1], variableByName, stats)];
     }
 
     row.appendChild(bullet);
@@ -90601,7 +90995,33 @@ function badgeConfig(variant) {
   return configs[variant] || configs.Default;
 }
 
-function chipConfig(variant, state) {
+function chipConfig(variant, state, emotion = "None") {
+  // Decision 200: an emotion decides the colour whatever the variant. At
+  // rest its surface and ink, edged in its text colour; selected filled with
+  // its text colour, the page's colour as ink, which reads as the text does
+  // on the page (4.5:1 in both themes).
+  if (emotion && emotion !== "None" && state !== "Disabled") {
+    const key = emotion.toLowerCase();
+    const text = `Emotion/${key}/text`;
+    return state === "Selected"
+      ? {
+          background: text,
+          foreground: "Colors/background/0",
+          stroke: text,
+          backgroundFallback: "#744D03",
+          foregroundFallback: "#FFFFFF",
+          strokeFallback: "#744D03",
+        }
+      : {
+          background: `Emotion/${key}/surface`,
+          foreground: `Emotion/${key}/onSurface`,
+          stroke: text,
+          backgroundFallback: "#FDF1D8",
+          foregroundFallback: "#3D2902",
+          strokeFallback: "#744D03",
+        };
+  }
+
   if (state === "Disabled") {
     return {
       background: "Colors/background/100",

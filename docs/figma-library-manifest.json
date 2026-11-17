@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 745,
-      "dark": 745
+      "light": 746,
+      "dark": 746
     },
     "light": [
       {
@@ -3637,6 +3637,18 @@
         "value": 0.20000000298023224,
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Effect/glass/border/color",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
       },
       {
         "name": "Semantics/Effect/glass/refraction/opacity",
@@ -11481,6 +11493,18 @@
         "recommendedFigmaScopes": []
       },
       {
+        "name": "Semantics/Effect/glass/border/color",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
         "name": "Semantics/Effect/glass/refraction/opacity",
         "type": "number",
         "value": 0.4000000059604645,
@@ -16738,6 +16762,7 @@
           "aria-label",
           "children",
           "disabled",
+          "emotion",
           "icon",
           "id",
           "removeLabel",
@@ -17319,7 +17344,8 @@
           "role",
           "size",
           "tabIndex",
-          "title"
+          "title",
+          "tone"
         ],
         "variants": {}
       },
@@ -17482,6 +17508,7 @@
           "tabIndex",
           "title",
           "value",
+          "variant",
           "wrapperClassName"
         ],
         "variants": {}
@@ -18831,6 +18858,7 @@
           "size",
           "tabIndex",
           "title",
+          "titleAddon",
           "tone"
         ],
         "variants": {}
@@ -19930,6 +19958,7 @@
           "tabIndex",
           "title",
           "value",
+          "variant",
           "wrapperClassName"
         ],
         "variants": {}
