@@ -12,13 +12,20 @@ figma.connect(
         Focus: false,
         Disabled: true,
         Readonly: false,
+        Mixed: false,
       }),
       readOnly: figma.enum("State", {
         Default: false,
         Focus: false,
         Disabled: false,
         Readonly: true,
+        Mixed: false,
       }),
+      // GAP-255: a field of a multi-selection whose values differ. Reset
+      // Mixed, Mixed Text and Reset Mixed Text are mapped once the owner's
+      // plugin Update has put them in the library: the dry run reads the
+      // live file, which has none of them before it.
+      mixed: figma.enum("State", { Mixed: true }),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -49,6 +56,7 @@ figma.connect(
       }),
     },
     example: ({
+      mixed,
       defaultSearchValue,
       defaultValue,
       disabled,
@@ -75,6 +83,7 @@ figma.connect(
         placeholder={placeholder}
         readOnly={readOnly}
         status={status}
+        mixed={mixed}
       />
     ),
   },
@@ -94,13 +103,20 @@ figma.connect(
         Focus: false,
         Disabled: true,
         Readonly: false,
+        Mixed: false,
       }),
       readOnly: figma.enum("State", {
         Default: false,
         Focus: false,
         Disabled: false,
         Readonly: true,
+        Mixed: false,
       }),
+      // GAP-255: a field of a multi-selection whose values differ. Reset
+      // Mixed, Mixed Text and Reset Mixed Text are mapped once the owner's
+      // plugin Update has put them in the library: the dry run reads the
+      // live file, which has none of them before it.
+      mixed: figma.enum("State", { Mixed: true }),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -133,6 +149,7 @@ figma.connect(
       }),
     },
     example: ({
+      mixed,
       defaultSearchValue,
       defaultValue,
       disabled,
@@ -161,6 +178,7 @@ figma.connect(
         placeholder={placeholder}
         readOnly={readOnly}
         status={status}
+        mixed={mixed}
       />
     ),
   },

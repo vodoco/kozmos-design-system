@@ -4,15 +4,20 @@ import { Calendar, ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Calendar as MonthCalendar } from "../Calendar/Calendar";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
+import { useFieldRef, useMixedField } from "../FieldWrapper/mixedValue";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 import { Popover, PopoverContent, PopoverTrigger } from "../Popover/Popover";
-import { typeInto, useCanReplaceDatePicker } from "./date-picker-engine";
+import {
+  mixedTemporalValue,
+  typeInto,
+  useCanReplaceDatePicker,
+} from "./date-picker-engine";
 
-export interface DatePickerProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "type"
-> {
+export interface DatePickerProps
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">,
+    MixedValueProps {
   description?: React.ReactNode;
   error?: boolean | string;
   helperText?: string;
@@ -48,10 +53,10 @@ export interface DateRangeValue {
   start?: string;
 }
 
-export interface DateRangePickerProps extends Omit<
-  React.HTMLAttributes<HTMLDivElement>,
-  "defaultValue" | "onChange"
-> {
+export interface DateRangePickerProps
+  extends
+    Omit<React.HTMLAttributes<HTMLDivElement>, "defaultValue" | "onChange">,
+    MixedValueProps {
   defaultValue?: DateRangeValue;
   description?: React.ReactNode;
   disabled?: boolean;
@@ -146,14 +151,18 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
       isDateUnavailable,
       label,
       locale,
+      mixed = false,
+      mixedLabel = "Multiple values",
       nextMonthLabel,
       onChange,
       onKeyDown,
       onOpenChange,
+      onResetMixed,
       open: openProp,
       previousMonthLabel,
       readOnly,
       required,
+      resetMixedLabel,
       status = "default",
       today,
       wrapperClassName,
@@ -168,6 +177,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
     const descriptionId = React.useId();
     const errorId = React.useId();
     const helperId = React.useId();
+    const mixedId = React.useId();
     const inputId = id || defaultInputId;
     const hasError = !!error;
     const resolvedStatus: InputStatus = hasError ? "error" : status;
@@ -180,7 +190,10 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
       helperText,
     });
     const kozmos = useCanReplaceDatePicker();
-    const input = React.useRef<HTMLInputElement | null>(null);
+    // Mixed (GAP-255), the field holds no date: a controlled one is given
+    // "", an uncontrolled one is emptied as it turns mixed, and on reset.
+    const mixedField = useMixedField(mixed, props.value);
+    const input = mixedField.field;
     const content = React.useRef<HTMLDivElement>(null);
     const [uncontrolledOpen, setUncontrolledOpen] =
       React.useState(!!defaultOpen);
@@ -190,14 +203,13 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
       if (openProp === undefined) setUncontrolledOpen(next);
       onOpenChange?.(next);
     };
-    const setRef = (node: HTMLInputElement | null) => {
-      input.current = node;
-      if (typeof ref === "function") ref(node);
-      else if (ref) ref.current = node;
-    };
+    const setRef = useFieldRef(input, ref);
 
     const field = (
-      <div className="kozmos-reset kozmos-temporal-field">
+      <div
+        className="kozmos-reset kozmos-temporal-field"
+        data-mixed={mixed ? "" : undefined}
+      >
         <Calendar
           aria-hidden="true"
           className="kozmos-reset kozmos-temporal-icon"
@@ -206,7 +218,11 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
           ref={setRef}
           id={inputId}
           type="date"
-          aria-describedby={mergeAriaIds(ariaDescribedBy, describedBy)}
+          aria-describedby={mergeAriaIds(
+            ariaDescribedBy,
+            describedBy,
+            mixed ? mixedId : undefined,
+          )}
           aria-invalid={resolvedStatus === "error" ? true : ariaInvalid}
           className={cn(
             inputVariants({ status: resolvedStatus }),
@@ -241,7 +257,13 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
             }
           }}
           {...props}
+          {...mixedTemporalValue(mixed, props)}
         />
+        {mixed ? (
+          <span aria-hidden="true" className="kozmos-temporal-mixed">
+            {mixedLabel}
+          </span>
+        ) : null}
         {kozmos && (
           <PopoverTrigger asChild>
             <button
@@ -266,8 +288,11 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
         )}
       </div>
     );
-    const current =
-      input.current?.value ?? String(props.value ?? props.defaultValue ?? "");
+    // Mixed, the calendar opens on no day.
+    const current = mixed
+      ? ""
+      : (input.current?.value ??
+        String(props.value ?? props.defaultValue ?? ""));
 
     return (
       <FieldWrapper
@@ -282,6 +307,18 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
         label={label}
         required={required}
         status={resolvedStatus}
+        mixed={mixed}
+        mixedLabel={mixedLabel}
+        mixedId={mixedId}
+        onResetMixed={
+          onResetMixed && !locked
+            ? () => {
+                mixedField.clear();
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         {kozmos ? (
           // A modal dialog, as the WAI-ARIA date picker dialog is: focus goes
@@ -354,15 +391,19 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
       locale,
       max,
       min,
+      mixed = false,
+      mixedLabel = "Multiple values",
       months: monthsProp,
       nextMonthLabel,
       onOpenChange,
       onRangeChange,
+      onResetMixed,
       onValueChange,
       open: openProp,
       previousMonthLabel,
       readOnly,
       required,
+      resetMixedLabel,
       startLabel = "Start date",
       startName,
       startPlaceholder,
@@ -382,6 +423,7 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
     const helperId = React.useId();
     const startId = React.useId();
     const endId = React.useId();
+    const mixedId = React.useId();
     const labelIds = { start: React.useId(), end: React.useId() };
     const fieldId = id || defaultFieldId;
     const resolvedStatus: InputStatus = error ? "error" : status;
@@ -397,13 +439,23 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
       value?.start !== undefined || startValue !== undefined;
     const isEndControlled = value?.end !== undefined || endValue !== undefined;
     const [uncontrolledRange, setUncontrolledRange] =
-      React.useState<DateRangeValue>(
-        defaultValue || { end: endValue, start: startValue },
+      React.useState<DateRangeValue>(() =>
+        mixed ? {} : defaultValue || { end: endValue, start: startValue },
       );
-    const range = {
-      end: value?.end ?? endValue ?? uncontrolledRange.end ?? "",
-      start: value?.start ?? startValue ?? uncontrolledRange.start ?? "",
-    };
+    // Mixed (GAP-255), the range is the several features' own and shows
+    // neither end: a range it held is dropped as it turns mixed, never
+    // shown again when it stops being mixed.
+    const [wasMixed, setWasMixed] = React.useState(mixed);
+    if (wasMixed !== mixed) {
+      setWasMixed(mixed);
+      if (mixed) setUncontrolledRange({});
+    }
+    const range = mixed
+      ? { end: "", start: "" }
+      : {
+          end: value?.end ?? endValue ?? uncontrolledRange.end ?? "",
+          start: value?.start ?? startValue ?? uncontrolledRange.start ?? "",
+        };
 
     const setRange = (next: DateRangeValue) => {
       setUncontrolledRange((current) => ({
@@ -449,7 +501,10 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
         <input
           id={inputId}
           type="date"
-          aria-describedby={describedBy || undefined}
+          aria-describedby={mergeAriaIds(
+            describedBy,
+            mixed ? mixedId : undefined,
+          )}
           aria-invalid={resolvedStatus === "error" || undefined}
           className={cn(
             inputVariants({ status: resolvedStatus }),
@@ -458,6 +513,7 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
               "kozmos-date-input pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
           )}
           data-picker={kozmos ? "kozmos" : undefined}
+          data-mixed={mixed ? "" : undefined}
           disabled={disabled}
           max={
             end
@@ -502,12 +558,20 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
         />
       );
       const box = (
-        <div className="kozmos-reset kozmos-temporal-field">
+        <div
+          className="kozmos-reset kozmos-temporal-field"
+          data-mixed={mixed ? "" : undefined}
+        >
           <Calendar
             aria-hidden="true"
             className="kozmos-reset kozmos-temporal-icon"
           />
           {input}
+          {mixed ? (
+            <span aria-hidden="true" className="kozmos-temporal-mixed">
+              {mixedLabel}
+            </span>
+          ) : null}
           {kozmos && (
             <PopoverTrigger asChild>
               <button
@@ -588,6 +652,21 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
         label={label}
         required={required}
         status={resolvedStatus}
+        // One mixed state for the range: both ends are said with it, and
+        // the reset hands focus to the start.
+        inputId={startId}
+        mixed={mixed}
+        mixedLabel={mixedLabel}
+        mixedId={mixedId}
+        onResetMixed={
+          onResetMixed && !locked
+            ? () => {
+                setUncontrolledRange({});
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         {kozmos ? (
           <Popover open={open} onOpenChange={setOpen} modal>

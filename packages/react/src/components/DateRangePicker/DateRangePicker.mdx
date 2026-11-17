@@ -156,6 +156,118 @@ fun ReportFilters() {
   `}
 />
 
+## Mixed
+
+With several features selected, a range whose values differ is one field for all of them
+(GAP-255, decision 188). `mixed` is one state for the range: neither end shows a date of its own,
+both show "Multiple values" (`mixedLabel`) over their empty segments, as DatePicker does, and a
+screen reader hears it once with each, as its description. The calendar opens on no range. A typed
+or chosen end is the edit, reported with the other end empty, and the product clears `mixed`;
+`onResetMixed` draws one "Reset to multiple values" (`resetMixedLabel`) under the range once it is
+edited, never while it is disabled or read-only, and hands focus to the start. An uncontrolled range
+drops the dates it held as it turns mixed.
+
+SwiftUI's `KozmosDateRangePicker` and Compose's take the same props: both fields, and the range
+preview where it shows, say "Multiple values", and one reset sits under the range.
+
+In Figma, Mixed is a value of the State axis, as on Input and Combobox, so a mixed field that is also
+disabled, read only or in focus cannot be drawn. A Mixed variant has no Reset Mixed layer; Mixed Text
+and Reset Mixed Text hold the words, for a board in another language. Mixed draws Multiple values in both fields, and Mixed with Open a calendar with no range.
+
+<PlatformSnippets
+  react={`
+import { useState } from "react";
+import { DateRangePicker, type DateRangeValue } from "@kozmos-ds/react";
+
+// Each selected feature's closure; where they differ, both ends show
+// "Multiple values", and one reset under the range brings them back.
+export function ClosureAcrossSelection({ closures }: { closures: DateRangeValue[] }) {
+  const [edit, setEdit] = useState<DateRangeValue | undefined>(undefined);
+  const differs = closures.some(
+    (range) => range.start !== closures[0].start || range.end !== closures[0].end,
+  );
+  return (
+    <DateRangePicker
+      label="Closed"
+      value={edit ?? (differs ? { start: "", end: "" } : closures[0])}
+      mixed={differs && edit === undefined}
+      onValueChange={setEdit}
+      onResetMixed={differs ? () => setEdit(undefined) : undefined}
+    />
+  );
+}
+  `}
+  vue={`
+<script setup>
+import { KozmosDateRangePicker } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+
+const props = defineProps({ closures: Array })
+const edit = ref(undefined)
+const differs = computed(() =>
+  props.closures.some(
+    (range) => range.start !== props.closures[0].start || range.end !== props.closures[0].end,
+  ),
+)
+</script>
+
+<template>
+  <KozmosDateRangePicker
+    label="Closed"
+    :value="edit ?? (differs ? { start: '', end: '' } : closures[0])"
+    :mixed="differs && edit === undefined"
+    @valueChange="(range) => (edit = range)"
+    @resetMixed="edit = undefined"
+  />
+</template>
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+struct ClosureAcrossSelection: View {
+    let closures: [ClosedRange<Date>]
+    @State private var start: Date?
+    @State private var end: Date?
+
+    var body: some View {
+        let differs = Set(closures).count > 1
+        KozmosDateRangePicker(
+            startDate: Binding(get: { start ?? closures[0].lowerBound }, set: { start = $0 }),
+            endDate: Binding(get: { end ?? closures[0].upperBound }, set: { end = $0 }),
+            label: "Closed",
+            mixed: differs && start == nil && end == nil,
+            onResetMixed: differs ? { start = nil; end = nil } : nil
+        )
+    }
+}
+  `}
+  kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.daterangepicker.KozmosDateRangePicker
+import com.kozmos.components.daterangepicker.KozmosDateRangeValue
+
+// Each selected feature's season; where they differ, both ends show
+// "Multiple values", and one reset under the range brings them back.
+@Composable
+fun SeasonAcrossSelection(seasons: List<KozmosDateRangeValue>) {
+    val differs = seasons.distinct().size > 1
+    var edit by remember(seasons) { mutableStateOf<KozmosDateRangeValue?>(null) }
+    KozmosDateRangePicker(
+        value = edit ?: seasons.first(),
+        onValueChange = { edit = it },
+        label = "Season",
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    )
+}
+  `}
+/>
+
 ## Accessibility
 
 - Start and end are separate labelled fields, so each is announced on its own

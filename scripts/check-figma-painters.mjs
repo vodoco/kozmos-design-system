@@ -9338,9 +9338,7 @@ section("Rating");
     );
     const whole = (await paint("Stars", "4", "Readonly")).component;
     ok(
-      whole.children.every(
-        (cell) => glyphOf(cell).name !== "Star / half",
-      ),
+      whole.children.every((cell) => glyphOf(cell).name !== "Star / half"),
       "a whole score draws no half",
     );
   }
@@ -13807,6 +13805,219 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     }
   }
 
+  // GAP-255 (decision 188): MultiSelect, DatePicker, DateRangePicker and
+  // TimePicker take GAP-153's State=Mixed and Reset Mixed -----------------------
+  {
+    section(
+      "GAP-255: State=Mixed and Reset Mixed on MultiSelect, DatePicker, DateRangePicker and TimePicker",
+    );
+    const axesOf = (name) =>
+      JSON.stringify(
+        (controls.expectedVariantAxesForComponentSetName(name) || {}).State,
+      );
+    const sets = ["MultiSelect", "DatePicker", "DateRangePicker", "TimePicker"];
+    ok(
+      sets.every(
+        (name) =>
+          axesOf(name) ===
+          JSON.stringify(["Default", "Focus", "Disabled", "Readonly", "Mixed"]),
+      ),
+      `${sets.join(", ")} gain State=Mixed (GAP-255) (${sets.map(axesOf).join(" ")})`,
+    );
+    const paint = async (update, args) => {
+      const node = new MockNode("COMPONENT", "Field");
+      componentsPage.appendChild(node);
+      await attempt(() =>
+        controls[update](
+          node,
+          Object.assign(
+            {
+              variableByName: tokens.variableByName,
+              fonts: FONTS,
+              stats: freshStats(),
+            },
+            args,
+          ),
+        ),
+      );
+      return node;
+    };
+    // Each set's painter, the Content its closed field is drawn with, the
+    // layers Mixed Text stands in for, and the layer its reset sits under.
+    const cases = [
+      [
+        "MultiSelect",
+        "updateMultiSelectVariant",
+        "configureMultiSelectProperties",
+        "Empty",
+        ["Placeholder Text"],
+        "MultiSelect Field",
+      ],
+      [
+        "DatePicker",
+        "updateDatePickerVariant",
+        "configureDatePickerProperties",
+        "Closed",
+        ["Value Text"],
+        "DatePicker Field",
+      ],
+      [
+        "DateRangePicker",
+        "updateDateRangePickerVariant",
+        "configureDateRangePickerProperties",
+        "Closed",
+        ["Start Value Text", "End Value Text"],
+        "DateRangePicker Fields",
+      ],
+      [
+        "TimePicker",
+        "updateTimePickerVariant",
+        "configureTimePickerProperties",
+        "Closed",
+        ["Value Text"],
+        "TimePicker Field",
+      ],
+    ];
+    for (const [setName, update, configure, content, hidden, under] of cases) {
+      const mixed = await paint(update, {
+        state: "Mixed",
+        status: "Default",
+        content,
+      });
+      const plain = await paint(update, {
+        state: "Default",
+        status: "Default",
+        content,
+      });
+      const words = mixed.findAll((node) => node.name === "Mixed Text");
+      ok(
+        mixed.name.startsWith("State=Mixed, Status=Default") &&
+          words.length === hidden.length &&
+          hidden.every((name) => {
+            const value = named(mixed, name);
+            const text = words.find((node) => node.parent === value.parent);
+            return (
+              value.visible === false &&
+              text &&
+              text.characters === "Multiple values" &&
+              text.parent.children.indexOf(text) ===
+                text.parent.children.indexOf(value) + 1 &&
+              boundVariableName((text.fills || [])[0]) ===
+                "Colors/foreground/400"
+            );
+          }) &&
+          plain.findAll((node) => node.name === "Mixed Text").length === 0 &&
+          hidden.every((name) => named(plain, name).visible !== false),
+        `${setName}: Mixed draws Multiple values after ${hidden.join(" and ")}, in the placeholder's colour, and hides them; Default draws none (${words.map((node) => boundVariableName((node.fills || [])[0])).join(" ")})`,
+      );
+      const reset = named(plain, "Reset Mixed");
+      const before = reset && plain.children[plain.children.indexOf(reset) - 1];
+      ok(
+        !named(mixed, "Reset Mixed") &&
+          reset &&
+          reset.type === "TEXT" &&
+          reset.characters === "Reset to multiple values" &&
+          reset.visible === false &&
+          boundVariableName((reset.fills || [])[0]) === "Colors/theme/600" &&
+          before &&
+          before.name === under,
+        `${setName}: Reset Mixed, hidden, Reset to multiple values in theme 600, right under ${under}; State=Mixed draws none (${reset ? `after ${before && before.name}` : "none"})`,
+      );
+      const set = new MockNode("COMPONENT_SET", setName);
+      for (const state of ["Default", "Mixed"]) {
+        for (const variantContent of [content, "Open"]) {
+          set.appendChild(
+            await paint(update, {
+              state,
+              status: "Default",
+              content: variantContent,
+            }),
+          );
+        }
+      }
+      const stats = freshStats();
+      await attempt(() => controls[configure](set, stats));
+      const resetKey = propertyNamed(set, "Reset Mixed", "BOOLEAN");
+      const unbound = propertiesBoundToNoLayer(set).map(
+        (property) => property.split("#")[0],
+      );
+      ok(
+        resetKey &&
+          propertyNamed(set, "Reset Mixed Text", "TEXT") &&
+          propertyNamed(set, "Mixed Text", "TEXT") &&
+          set.children.every((variant) => {
+            const layer = named(variant, "Reset Mixed");
+            return variant.name.startsWith("State=Mixed")
+              ? !layer
+              : layer.componentPropertyReferences.visible === resetKey;
+          }) &&
+          unbound.length === 0,
+        `${setName}: Reset Mixed is bound on every variant but Mixed, and every property it declares is bound to a layer (unbound: ${unbound.join(", ") || "none"})`,
+      );
+    }
+    // Mixed and Open: nothing chosen in the list or the calendar.
+    const checked = (node, row) =>
+      node.findAll(
+        (child) =>
+          child.type === "INSTANCE" &&
+          row.test((child.parent && child.parent.name) || "") &&
+          child.mainComponent &&
+          /check/.test(child.mainComponent.name),
+      ).length;
+    const chosenDays = (node) =>
+      node.findAll((child) =>
+        /^(Selected|Range Start|Range End|Range) Day$/.test(child.name),
+      ).length;
+    const open = async (update, state) =>
+      paint(update, { state, status: "Default", content: "Open" });
+    const counts = {
+      multiSelect: [
+        checked(
+          await open("updateMultiSelectVariant", "Default"),
+          /^MultiSelect Option/,
+        ),
+        checked(
+          await open("updateMultiSelectVariant", "Mixed"),
+          /^MultiSelect Option/,
+        ),
+      ],
+      timePicker: [
+        checked(
+          await open("updateTimePickerVariant", "Default"),
+          /^TimePicker Option/,
+        ),
+        checked(
+          await open("updateTimePickerVariant", "Mixed"),
+          /^TimePicker Option/,
+        ),
+      ],
+      datePicker: [
+        chosenDays(await open("updateDatePickerVariant", "Default")),
+        chosenDays(await open("updateDatePickerVariant", "Mixed")),
+      ],
+      dateRangePicker: [
+        chosenDays(await open("updateDateRangePickerVariant", "Default")),
+        chosenDays(await open("updateDateRangePickerVariant", "Mixed")),
+      ],
+    };
+    ok(
+      Object.values(counts).every(([plain, mixed]) => plain > 0 && mixed === 0),
+      `Mixed and Open chooses nothing: no option checked in MultiSelect's or TimePicker's list, no day or range in the calendars (Default, Mixed: ${JSON.stringify(counts)})`,
+    );
+    {
+      const mixed = await paint("updateMultiSelectVariant", {
+        state: "Mixed",
+        status: "Default",
+        content: "Selected",
+      });
+      ok(
+        mixed.findAll((node) => /^MultiSelect Chip/.test(node.name)).length ===
+          0 && !named(mixed, "Filter Text"),
+        `MultiSelect Mixed draws no chips, whatever its Content`,
+      );
+    }
+  }
+
   // GAP-165: EmptyState's list ------------------------------------------------
   {
     const variant = async (value, second) => {
@@ -18174,8 +18385,7 @@ section("GAP-273: ImageCropper draws a frame in its ratio and a zoom row");
       ) &&
       plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
         (entry) =>
-          entry.title === "Inputs" &&
-          entry.components.includes("ImageCropper"),
+          entry.title === "Inputs" && entry.components.includes("ImageCropper"),
       ),
     "ImageCropper: one Ratio axis, in Update All Core and the Inputs section",
   );

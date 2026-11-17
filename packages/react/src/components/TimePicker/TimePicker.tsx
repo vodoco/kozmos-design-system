@@ -4,16 +4,17 @@ import { ChevronDown, ChevronUp, Clock } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { resolveLocale } from "../Calendar/calendar-dates";
-import { typeInto } from "../DatePicker/date-picker-engine";
-import { FieldWrapper } from "../FieldWrapper";
+import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
+import { useFieldRef, useMixedField } from "../FieldWrapper/mixedValue";
+import { mixedTemporalValue, typeInto } from "../DatePicker/date-picker-engine";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 import { Listbox } from "../Listbox/Listbox";
 import { Popover, PopoverContent, PopoverTrigger } from "../Popover/Popover";
 
-export interface TimePickerProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "type"
-> {
+export interface TimePickerProps
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">,
+    MixedValueProps {
   description?: React.ReactNode;
   error?: boolean | string;
   helperText?: string;
@@ -80,12 +81,16 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
       id,
       label,
       locale,
+      mixed = false,
+      mixedLabel = "Multiple values",
       onChange,
       onKeyDown,
       onOpenChange,
+      onResetMixed,
       open: openProp,
       readOnly,
       required,
+      resetMixedLabel,
       status = "default",
       wrapperClassName,
       "aria-describedby": ariaDescribedBy,
@@ -99,6 +104,7 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
     const descriptionId = React.useId();
     const errorId = React.useId();
     const helperId = React.useId();
+    const mixedId = React.useId();
     const inputId = id || defaultInputId;
     const resolvedStatus: InputStatus = error ? "error" : status;
     const describedBy = describedByIds({
@@ -109,7 +115,10 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
       helperId,
       helperText,
     });
-    const input = React.useRef<HTMLInputElement | null>(null);
+    // Mixed (GAP-255), the field holds no time: a controlled one is given
+    // "", an uncontrolled one is emptied as it turns mixed, and on reset.
+    const mixedField = useMixedField(mixed, props.value);
+    const input = mixedField.field;
     const list = React.useRef<HTMLDivElement>(null);
     const [uncontrolledOpen, setUncontrolledOpen] =
       React.useState(!!defaultOpen);
@@ -119,11 +128,7 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
       if (openProp === undefined) setUncontrolledOpen(next);
       onOpenChange?.(next);
     };
-    const setRef = (node: HTMLInputElement | null) => {
-      input.current = node;
-      if (typeof ref === "function") ref(node);
-      else if (ref) ref.current = node;
-    };
+    const setRef = useFieldRef(input, ref);
 
     // Every `step` seconds from `min` to `max` (the input's own), 30 minutes
     // apart when it asks for none, in the locale's clock.
@@ -147,9 +152,12 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
         });
       return times;
     }, [resolvedLocale, hourCycle, first, last, every]);
-    const current = String(
-      input.current?.value ?? props.value ?? props.defaultValue ?? "",
-    ).slice(0, 5);
+    // Mixed, the list opens on no time.
+    const current = mixed
+      ? ""
+      : String(
+          input.current?.value ?? props.value ?? props.defaultValue ?? "",
+        ).slice(0, 5);
 
     return (
       <FieldWrapper
@@ -164,10 +172,25 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
         label={label}
         required={required}
         status={resolvedStatus}
+        mixed={mixed}
+        mixedLabel={mixedLabel}
+        mixedId={mixedId}
+        onResetMixed={
+          onResetMixed && !locked
+            ? () => {
+                mixedField.clear();
+                onResetMixed();
+              }
+            : undefined
+        }
+        resetMixedLabel={resetMixedLabel}
       >
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverAnchor asChild>
-            <div className="kozmos-reset kozmos-temporal-field">
+            <div
+              className="kozmos-reset kozmos-temporal-field"
+              data-mixed={mixed ? "" : undefined}
+            >
               <Clock
                 aria-hidden="true"
                 className="kozmos-reset kozmos-temporal-icon"
@@ -176,7 +199,11 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
                 ref={setRef}
                 id={inputId}
                 type="time"
-                aria-describedby={mergeAriaIds(ariaDescribedBy, describedBy)}
+                aria-describedby={mergeAriaIds(
+                  ariaDescribedBy,
+                  describedBy,
+                  mixed ? mixedId : undefined,
+                )}
                 aria-invalid={resolvedStatus === "error" ? true : ariaInvalid}
                 className={cn(
                   inputVariants({ status: resolvedStatus }),
@@ -209,7 +236,13 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
                   }
                 }}
                 {...props}
+                {...mixedTemporalValue(mixed, props)}
               />
+              {mixed ? (
+                <span aria-hidden="true" className="kozmos-temporal-mixed">
+                  {mixedLabel}
+                </span>
+              ) : null}
               <PopoverTrigger asChild>
                 <button
                   type="button"

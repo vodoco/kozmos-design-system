@@ -142,7 +142,10 @@ const inputTakes: Takes = { dom: true, own: ["onResetMixed"] };
 const searchTakes: Takes = { dom: true, own: ["onClear"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
-const datePickerTakes: Takes = { dom: true, own: ["onOpenChange"] };
+const datePickerTakes: Takes = {
+  dom: true,
+  own: ["onOpenChange", "onResetMixed"],
+};
 const categoryTileTakes: Takes = { dom: true, except: ["onClick"], own: [] };
 const tourStepTakes: Takes = {
   dom: true,
@@ -382,7 +385,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       except: ["onChange"],
-      own: ["onOpenChange", "onRangeChange", "onValueChange"],
+      own: ["onOpenChange", "onRangeChange", "onResetMixed", "onValueChange"],
     },
   ],
   [Listbox, { dom: true, except: ["onChange"], own: ["onValueChange"] }],
@@ -392,7 +395,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       except: ["onChange"],
-      own: ["onSearchValueChange", "onValueChange"],
+      own: ["onResetMixed", "onSearchValueChange", "onValueChange"],
     },
   ],
   [NavigationItem, D],
@@ -511,6 +514,7 @@ const datePickerBooleans = html(
     "defaultOpen",
     "disabled",
     "formNoValidate",
+    "mixed",
     "multiple",
     "open",
     "readOnly",
@@ -877,6 +881,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "defaultOpen",
         "disabled",
         "hideFieldLabels",
+        "mixed",
         "open",
         "readOnly",
         "required",
@@ -899,7 +904,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   ],
   [
     MultiSelect,
-    html(["clearable", "disabled", "readOnly", "required"], [], ["error"]),
+    html(
+      ["clearable", "disabled", "mixed", "readOnly", "required"],
+      [],
+      ["error"],
+    ),
   ],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
   [

@@ -97,6 +97,113 @@ KozmosTimePicker(time = time, onTimeSelected = onTimeChange, label = "Arrival ti
 
 />
 
+## Mixed
+
+With several features selected, a time whose values differ is one field for all of them (GAP-255,
+decision 188). `mixed` says the field stands for those values: it holds no time of its own, and
+"Multiple values" (`mixedLabel`) is drawn where a text field draws its placeholder, in its colour.
+A time field draws no placeholder, so the words lie over its empty segments, which give way to them,
+and a screen reader hears them once, as the field's description; the drawn words are hidden from it.
+In focus, the segments come back to be typed in. The list opens on no time. A typed or chosen time
+is the edit, and the product clears `mixed`; `onResetMixed` draws "Reset to multiple values"
+(`resetMixedLabel`) under the field once it is edited, never while it is disabled or read-only, and
+hands focus back to the field. An uncontrolled field is emptied as it turns mixed, and on reset.
+
+On SwiftUI the system's compact picker stays, as decision 104 says, under the mixed label, and
+VoiceOver hears the field's name with "Multiple values" as its value. On Compose the field shows the
+label and TalkBack says it as the field's state; Material 3's time dialog cannot show no time, so it
+opens at 00:00, as it does for no time.
+
+In Figma, Mixed is a value of the State axis, as on Input and Combobox, so a mixed field that is also
+disabled, read only or in focus cannot be drawn. A Mixed variant has no Reset Mixed layer; Mixed Text
+and Reset Mixed Text hold the words, for a board in another language.
+
+<PlatformSnippets
+  react={`
+import { useState } from "react";
+import { TimePicker } from "@kozmos-ds/react";
+
+// Each selected feature's opening time; where they differ, the field shows
+// "Multiple values" and the list opens on no time.
+export function OpeningTimeAcrossSelection({ opens }: { opens: string[] }) {
+  const [edit, setEdit] = useState<string | undefined>(undefined);
+  const differs = opens.some((time) => time !== opens[0]);
+  return (
+    <TimePicker
+      label="Opens"
+      value={edit ?? (differs ? "" : opens[0])}
+      mixed={differs && edit === undefined}
+      onChange={(event) => setEdit(event.target.value)}
+      onResetMixed={differs ? () => setEdit(undefined) : undefined}
+    />
+  );
+}
+  `}
+  vue={`
+<script setup>
+import { KozmosTimePicker } from "@kozmos-ds/vue/react-bridge"
+import { computed, ref } from "vue"
+
+const props = defineProps({ opens: Array })
+const edit = ref(undefined)
+const differs = computed(() => props.opens.some((time) => time !== props.opens[0]))
+</script>
+
+<template>
+  <KozmosTimePicker
+    label="Opens"
+    :value="edit ?? (differs ? '' : opens[0])"
+    :mixed="differs && edit === undefined"
+    @change="(event) => (edit = event.target.value)"
+    @resetMixed="edit = undefined"
+  />
+</template>
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+struct OpeningTimeAcrossSelection: View {
+    let opens: [Date]
+    @State private var edit: Date?
+
+    var body: some View {
+        let differs = Set(opens).count > 1
+        KozmosTimePicker(
+            selection: Binding(get: { edit ?? opens[0] }, set: { edit = $0 }),
+            label: "Opens",
+            mixed: differs && edit == nil,
+            onResetMixed: differs ? { edit = nil } : nil
+        )
+    }
+}
+  `}
+  kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.timepicker.KozmosTimePicker
+import java.time.LocalTime
+
+// Each selected feature's opening time; where they differ, the field shows
+// "Multiple values" and the dialog opens on no time of theirs.
+@Composable
+fun OpeningTimeAcrossSelection(times: List<LocalTime>) {
+    val differs = times.distinct().size > 1
+    var edit by remember(times) { mutableStateOf<LocalTime?>(null) }
+    KozmosTimePicker(
+        time = edit ?: times.first(),
+        onTimeSelected = { edit = it },
+        label = "Opens at",
+        mixed = differs && edit == null,
+        onResetMixed = if (differs) ({ edit = null }) else null
+    )
+}
+  `}
+/>
+
 ## In Safari
 
 `className` lands on the field. A utility class passed there styles it in Chrome, Edge,

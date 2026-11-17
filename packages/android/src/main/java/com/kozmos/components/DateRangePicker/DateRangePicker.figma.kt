@@ -38,8 +38,12 @@ class KozmosDateRangePickerConnect {
         "Default" to "default",
         "Focus" to "focus",
         "Disabled" to "disabled",
-        "Readonly" to "readonly"
+        "Readonly" to "readonly",
+        "Mixed" to "mixed"
     )
+
+    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
+    // the owner's plugin Update has put them in the library.
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -70,7 +74,8 @@ class KozmosDateRangePickerConnect {
             enabled = state != "disabled",
             readOnly = state == "readonly",
             status = status,
-            expanded = expanded
+            expanded = expanded,
+            mixed = state == "mixed"
         )
     }
 }

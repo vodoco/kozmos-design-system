@@ -25,13 +25,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.KozmosPickerField
 import com.kozmos.components.PickerConfirmButton
 import com.kozmos.components.PickerDismissButton
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.pickerStatusColor
+import com.kozmos.components.pickerInitialValue
 import com.kozmos.components.toPickerDate
 import com.kozmos.components.toPickerMillis
 import com.kozmos.tokens.KozmosDimensions
@@ -45,6 +49,14 @@ data class KozmosDateRangeValue(
     val end: LocalDate? = null
 )
 
+/**
+ * [mixed] (GAP-255, decision 188): the range stands for several that differ,
+ * and both ends show [mixedLabel] in place of their dates, each said once as
+ * its state; the dialog opens with no range chosen, and a confirmed range is
+ * the edit. [onResetMixed] offers [resetMixedLabel] once, under the range,
+ * when it is no longer mixed; pressed, focus goes to the start field.
+ * [KozmosMixedValue] has the whole of it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KozmosDateRangePicker(
@@ -58,10 +70,15 @@ fun KozmosDateRangePicker(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     status: KozmosInputStatus = KozmosInputStatus.Default,
-    expanded: Boolean = false
+    expanded: Boolean = false,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
     val statusColor = pickerStatusColor(status)
     var open by remember { mutableStateOf(false) }
+    val startFocus = remember { FocusRequester() }
     // The app's locale's own short date, for a field half the row wide:
     // "5/25/26", "25.05.26". It was "MMM d, yyyy" in Locale.US.
     val dates = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)
@@ -104,7 +121,10 @@ fun KozmosDateRangePicker(
                 chevron = false,
                 status = status,
                 enabled = enabled,
-                readOnly = readOnly
+                readOnly = readOnly,
+                mixed = mixed,
+                mixedLabel = mixedLabel,
+                fieldFocus = startFocus
             )
             KozmosPickerField(
                 label = endLabel,
@@ -115,13 +135,25 @@ fun KozmosDateRangePicker(
                 chevron = false,
                 status = status,
                 enabled = enabled,
-                readOnly = readOnly
+                readOnly = readOnly,
+                mixed = mixed,
+                mixedLabel = mixedLabel
             )
+        }
+
+        // One reset for the range, under both ends: a range is one choice.
+        if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
+            KozmosMixedReset(label = resetMixedLabel, onClick = {
+                // Focus goes back to the range's start, as on the web.
+                startFocus.requestFocus()
+                onResetMixed?.invoke()
+            })
         }
 
         if (expanded) {
             DateRangePreview(
-                value = value,
+                value = if (mixed) KozmosDateRangeValue() else value,
+                mixedLabel = if (mixed) mixedLabel else null,
                 dates = dates,
                 startLabel = startLabel,
                 endLabel = endLabel,
@@ -140,8 +172,9 @@ fun KozmosDateRangePicker(
 
     if (open) {
         val state = rememberDateRangePickerState(
-            initialSelectedStartDateMillis = value.start?.toPickerMillis(),
-            initialSelectedEndDateMillis = value.end?.toPickerMillis()
+            // Mixed (GAP-255), no range is chosen.
+            initialSelectedStartDateMillis = pickerInitialValue(value.start, mixed)?.toPickerMillis(),
+            initialSelectedEndDateMillis = pickerInitialValue(value.end, mixed)?.toPickerMillis()
         )
         DatePickerDialog(
             onDismissRequest = { open = false },
@@ -173,6 +206,7 @@ internal fun KozmosDateRangePickerContent(state: DateRangePickerState, modifier:
 @Composable
 private fun DateRangePreview(
     value: KozmosDateRangeValue,
+    mixedLabel: String?,
     dates: DateTimeFormatter,
     startLabel: String,
     endLabel: String,
@@ -196,7 +230,7 @@ private fun DateRangePreview(
         // The range as a dash joins it, a missing date by its field's label:
         // it wrote a fixed English "Start", "to" and "End".
         Text(
-            text = "${value.start?.format(dates) ?: startLabel} – ${value.end?.format(dates) ?: endLabel}",
+            text = mixedLabel ?: "${value.start?.format(dates) ?: startLabel} – ${value.end?.format(dates) ?: endLabel}",
             style = MaterialTheme.typography.bodySmall,
             color = textColor
         )

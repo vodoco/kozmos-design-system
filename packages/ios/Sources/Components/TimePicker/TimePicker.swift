@@ -13,6 +13,12 @@ public struct KozmosTimePicker: View {
     let readOnly: Bool
     let minimumDate: Date?
     let maximumDate: Date?
+    /// The field stands for several values that differ (GAP-153, GAP-255).
+    /// `KozmosMixedValue` has the whole of it.
+    let mixed: Bool
+    let mixedLabel: String
+    let onResetMixed: (() -> Void)?
+    let resetMixedLabel: String
 
     /// `minimumDate` and `maximumDate` bound the picker, as React's `min` and
     /// `max`. The label is drawn above the field and names the picker for
@@ -25,7 +31,11 @@ public struct KozmosTimePicker: View {
         disabled: Bool = false,
         readOnly: Bool = false,
         minimumDate: Date? = nil,
-        maximumDate: Date? = nil
+        maximumDate: Date? = nil,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._selection = selection
         self.label = label
@@ -35,13 +45,18 @@ public struct KozmosTimePicker: View {
         self.readOnly = readOnly
         self.minimumDate = minimumDate
         self.maximumDate = maximumDate
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
     }
 
     public var body: some View {
         KozmosTemporalField(
             selection: $selection, label: label, helperText: helperText, status: status, disabled: disabled,
             readOnly: readOnly, minimumDate: minimumDate, maximumDate: maximumDate,
-            components: .hourAndMinute, iconName: "clock"
+            components: .hourAndMinute, iconName: "clock",
+            mixed: mixed, mixedLabel: mixedLabel, onResetMixed: onResetMixed, resetMixedLabel: resetMixedLabel
         )
     }
 }

@@ -32,6 +32,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
+import com.kozmos.components.fieldwrapper.kozmosUnsaidWhen
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.tokens.KozmosDimensions
@@ -51,6 +57,13 @@ import java.time.ZoneOffset
  *
  * For TalkBack it is one control, a button named by its label, that says the
  * value it shows; the label drawn above is not read a second time.
+ *
+ * [mixed] (GAP-153, GAP-255): the field stands for several values that
+ * differ, and shows none of its own: [mixedLabel] in its place in the
+ * placeholder's colour, which TalkBack says once, as the field's state, the
+ * drawn words unsaid. [onResetMixed] offers [resetMixedLabel] under the field
+ * once it is no longer mixed, never while it is disabled or read-only;
+ * pressed, focus goes back to the field. [KozmosMixedValue] has the whole of it.
  */
 @Composable
 internal fun KozmosPickerField(
@@ -63,7 +76,14 @@ internal fun KozmosPickerField(
     status: KozmosInputStatus = KozmosInputStatus.Default,
     helperText: String? = null,
     enabled: Boolean = true,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    // The field's own, or the caller's, as a range's one reset hands focus
+    // to its start field.
+    fieldFocus: FocusRequester = remember { FocusRequester() }
 ) {
     val statusColor = pickerStatusColor(status)
     val interaction = remember { MutableInteractionSource() }
@@ -103,6 +123,7 @@ internal fun KozmosPickerField(
                 .border(1.dp, edge, shape)
                 // Read-only, it shows its value and opens nothing, and is not
                 // a disabled button; disabled, it is.
+                .focusRequester(fieldFocus)
                 .then(
                     if (readOnly && enabled) {
                         Modifier
@@ -116,13 +137,26 @@ internal fun KozmosPickerField(
                         )
                     }
                 )
-                .semantics(mergeDescendants = true) { if (label != null) contentDescription = label }
+                .semantics(mergeDescendants = true) {
+                    if (label != null) contentDescription = label
+                    // Mixed, said as its state; the drawn words are not said again.
+                    if (mixed) stateDescription = mixedLabel
+                }
                 .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing150),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = mark, modifier = Modifier.size(18.dp))
-            if (value != null) {
+            if (mixed) {
+                Text(
+                    text = mixedLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    // The placeholder's colour, as a mixed Select's words.
+                    color = mark,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f).kozmosUnsaidWhen(true)
+                )
+            } else if (value != null) {
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
@@ -137,6 +171,13 @@ internal fun KozmosPickerField(
             if (chevron) {
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = mark, modifier = Modifier.size(16.dp))
             }
+        }
+        if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
+            KozmosMixedReset(label = resetMixedLabel, onClick = {
+                // Focus goes back to the field, as on the web.
+                fieldFocus.requestFocus()
+                onResetMixed?.invoke()
+            })
         }
         if (!helperText.isNullOrBlank()) {
             Text(
@@ -179,3 +220,9 @@ internal fun PickerDismissButton(onClick: () -> Unit) =
 internal fun LocalDate.toPickerMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
 internal fun Long.toPickerDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
+
+/**
+ * What a picker's dialog starts from: the field's value, or, mixed (GAP-255),
+ * nothing chosen, so no one feature's value is offered as the field's.
+ */
+internal fun <T> pickerInitialValue(value: T?, mixed: Boolean): T? = if (mixed) null else value

@@ -29,7 +29,7 @@ export function TimePickerExample() {
 
 ## TimePicker
 
-It forwards its ref to `HTMLInputElement`. Its props are `TimePickerProps`, which extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">`.
+It forwards its ref to `HTMLInputElement`. Its props are `TimePickerProps`, which extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">, MixedValueProps`.
 
 - `description`: `React.ReactNode`, optional.
 - `error`: `boolean | string`, optional.
@@ -56,6 +56,23 @@ It forwards its ref to `HTMLInputElement`. Its props are `TimePickerProps`, whic
 - `locale`: `string`, optional.
 
   The list's locale; the browser's still formats the typed time.
+
+- `mixed`: `boolean`, optional, default `false`.
+
+  The field stands for several values that differ, and shows none.
+
+- `mixedLabel`: `string`, optional, default `"Multiple values"`.
+
+  Shown in the empty field, and said with it. Default "Multiple values".
+
+- `onResetMixed`: `() => void`, optional.
+
+  Offer to go back to the several values: drawn under the field while it
+  is not `mixed`, and never while it is disabled or read-only.
+
+- `resetMixedLabel`: `string`, optional.
+
+  The reset's words. Default "Reset to multiple values".
 
 - `children`: `ReactNode`, optional.
 

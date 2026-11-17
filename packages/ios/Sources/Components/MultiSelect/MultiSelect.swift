@@ -14,8 +14,15 @@ public struct KozmosMultiSelect: View {
     public let errorMessage: String?
     public let emptyText: String
     public let clearable: Bool
+    /// The field stands for several values that differ (GAP-153, GAP-255).
+    /// `KozmosMixedValue` has the whole of it.
+    public let mixed: Bool
+    public let mixedLabel: String
+    public let onResetMixed: (() -> Void)?
+    public let resetMixedLabel: String
 
     @State private var internalOpen: Bool
+    @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
     /// Shown only while the field can be used: a disabled or read-only
     /// field shows no list, and closes it, as React's and Combobox's do.
     private var isOpen: Bool { internalOpen && !disabled && !readOnly }
@@ -34,7 +41,11 @@ public struct KozmosMultiSelect: View {
         errorMessage: String? = nil,
         emptyText: String = "No results found",
         clearable: Bool = true,
-        defaultOpen: Bool = false
+        defaultOpen: Bool = false,
+        mixed: Bool = false,
+        mixedLabel: String = KozmosMixedValue.label,
+        onResetMixed: (() -> Void)? = nil,
+        resetMixedLabel: String = KozmosMixedValue.resetLabel
     ) {
         self._selectedValues = selectedValues
         self._searchValue = searchValue
@@ -50,6 +61,10 @@ public struct KozmosMultiSelect: View {
         self.emptyText = emptyText
         self.clearable = clearable
         self._internalOpen = State(initialValue: defaultOpen)
+        self.mixed = mixed
+        self.mixedLabel = mixedLabel
+        self.onResetMixed = onResetMixed
+        self.resetMixedLabel = resetMixedLabel
     }
 
     public var body: some View {
@@ -76,7 +91,10 @@ public struct KozmosMultiSelect: View {
                 }
 
                 HStack(spacing: 0) {
-                    TextField(selectedValues.isEmpty ? placeholder : "", text: $searchValue)
+                    // Mixed (GAP-255), the mixed label is the empty field's
+                    // placeholder, which VoiceOver reads with it, once.
+                    TextField(mixed ? mixedLabel : (shownValues.isEmpty ? placeholder : ""), text: $searchValue)
+                        .accessibilityFocused($fieldAccessibilityFocused)
                         .disabled(disabled || readOnly)
                         .font(KozmosTypography.subheadline)
                         .foregroundColor(textColor)
@@ -98,7 +116,8 @@ public struct KozmosMultiSelect: View {
                     // 8pt end padding, so it runs to the field's end, as
                     // Combobox's does. The field is 48pt tall, where Figma and
                     // React draw 44: a parity gap of its own.
-                    if clearable && !selectedValues.isEmpty && !disabled && !readOnly {
+                    // Mixed, there is no choice to clear.
+                    if clearable && !shownValues.isEmpty && !disabled && !readOnly {
                         Button(action: clearSelection) {
                             Image(systemName: "xmark")
                                 .font(.subheadline.weight(.semibold))
@@ -152,7 +171,7 @@ public struct KozmosMultiSelect: View {
                 } else {
                     KozmosListbox(
                         options: filteredOptions,
-                        selectedValues: $selectedValues,
+                        selectedValues: listSelection,
                         multiple: true,
                         disabled: disabled || readOnly,
                         maxHeight: 256
@@ -161,6 +180,10 @@ public struct KozmosMultiSelect: View {
                         internalOpen = true
                     }
                 }
+            }
+
+            if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
+                KozmosMixedReset(label: resetMixedLabel, action: resetMixed)
             }
 
             if let supportingText = supportingText, !supportingText.isEmpty {
@@ -182,8 +205,27 @@ public struct KozmosMultiSelect: View {
         }
     }
 
+    /// The choices the field shows and the list checks: mixed, none.
+    var shownValues: [String] { mixed ? [] : selectedValues }
+
+    /// The list's selection. Mixed, it starts from none, so a choice writes
+    /// that option alone, never the values the field hid with it: the
+    /// product writes it over every feature's own, and clears `mixed`.
+    var listSelection: Binding<[String]> {
+        Binding(get: { shownValues }, set: { selectedValues = $0 })
+    }
+
+    /// Back to the several values: the query goes, the list closes, and
+    /// VoiceOver goes to the field, which says its several values.
+    private func resetMixed() {
+        searchValue = ""
+        internalOpen = false
+        fieldAccessibilityFocused = true
+        onResetMixed?()
+    }
+
     private var selectedOptions: [KozmosListboxOption] {
-        selectedValues.compactMap { value in options.first { $0.value == value } }
+        shownValues.compactMap { value in options.first { $0.value == value } }
     }
 
     private var filteredOptions: [KozmosListboxOption] {

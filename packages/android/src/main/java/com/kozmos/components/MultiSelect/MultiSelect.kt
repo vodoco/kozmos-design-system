@@ -25,13 +25,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
@@ -41,12 +46,25 @@ import com.kozmos.components.chip.ChipSize
 import com.kozmos.components.chip.KozmosChip
 import com.kozmos.components.chip.KozmosChipGroup
 import com.kozmos.components.combobox.selectionFieldColors
+import com.kozmos.components.fieldwrapper.KozmosMixedReset
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
+import com.kozmos.components.fieldwrapper.kozmosUnsaidWhen
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.listbox.KozmosListbox
 import com.kozmos.components.listbox.KozmosListboxOption
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
+/**
+ * [mixed] (GAP-255, decision 188): the field stands for several selections
+ * that differ, and shows none of its own: no chips, [mixedLabel] in the
+ * placeholder's place, said once as the field's state; its list checks no
+ * option and offers no clear, and a choice reports that option alone, the
+ * edit after which the product clears `mixed`. [onResetMixed] offers
+ * [resetMixedLabel] under the field once it is no longer mixed, never while
+ * it is disabled or read-only; pressed, focus goes back to the field.
+ * [KozmosMixedValue] has the whole of it.
+ */
 @Composable
 fun KozmosMultiSelect(
     selectedValues: List<String>,
@@ -67,7 +85,11 @@ fun KozmosMultiSelect(
     clearable: Boolean = true,
     expanded: Boolean? = null,
     defaultExpanded: Boolean = false,
-    onExpandedChange: ((Boolean) -> Unit)? = null
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
     // Shown only while the field can be used, as Combobox's list is: a
@@ -86,7 +108,12 @@ fun KozmosMultiSelect(
     val supportingText = errorMessage ?: helperText
     val colors = selectionFieldColors(effectiveStatus, enabled, readOnly)
     val fieldShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
-    val selectedOptions = selectedValues.mapNotNull { value ->
+    // Mixed (GAP-255), no option is the choice: no chips, none checked,
+    // nothing to clear, and a choice starts from none, so it is that option
+    // alone. The product clears `mixed` on that edit.
+    val shownValues = if (mixed) emptyList() else selectedValues
+    val fieldFocus = remember { FocusRequester() }
+    val selectedOptions = shownValues.mapNotNull { value ->
         options.firstOrNull { it.value == value }
     }
     val filteredOptions = options.filter { option ->
@@ -129,7 +156,7 @@ fun KozmosMultiSelect(
                             selected = true,
                             enabled = enabled && !readOnly,
                             onRemove = {
-                                onValueChange(selectedValues.filterNot { it == option.value })
+                                onValueChange(shownValues.filterNot { it == option.value })
                             }
                         )
                     }
@@ -149,12 +176,20 @@ fun KozmosMultiSelect(
                     textStyle = MaterialTheme.typography.bodyMedium.copy(color = colors.text),
                     cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
                     modifier = Modifier
+                        .focusRequester(fieldFocus)
+                        // Mixed with nothing typed, said as its state.
+                        .semantics { if (mixed && searchValue.isEmpty()) stateDescription = mixedLabel }
                         .weight(1f)
                         .fillMaxHeight(),
                     decorationBox = { innerTextField ->
                         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
-                            if (searchValue.isEmpty() && selectedValues.isEmpty()) {
-                                Text(text = placeholder, style = MaterialTheme.typography.bodyMedium, color = colors.placeholder)
+                            if (searchValue.isEmpty() && shownValues.isEmpty()) {
+                                Text(
+                                    text = if (mixed) mixedLabel else placeholder,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.placeholder,
+                                    modifier = Modifier.kozmosUnsaidWhen(mixed)
+                                )
                             }
                             innerTextField()
                         }
@@ -169,7 +204,7 @@ fun KozmosMultiSelect(
                 // padding, so it runs to the field's end. The field is 48dp
                 // tall, where React and Figma draw 44: a parity gap of its
                 // own, as #392 records it on iOS, left as it is here.
-                if (clearable && selectedValues.isNotEmpty() && enabled && !readOnly) {
+                if (clearable && shownValues.isNotEmpty() && enabled && !readOnly) {
                     IconButton(
                         onClick = {
                             onValueChange(emptyList())
@@ -222,7 +257,7 @@ fun KozmosMultiSelect(
             } else {
                 KozmosListbox(
                     options = filteredOptions,
-                    selectedValues = selectedValues,
+                    selectedValues = shownValues,
                     onSelectionChange = { nextValues, _ ->
                         if (enabled && !readOnly) {
                             onValueChange(nextValues)
@@ -233,6 +268,17 @@ fun KozmosMultiSelect(
                     enabled = enabled && !readOnly
                 )
             }
+        }
+
+        if (KozmosMixedValue.showsReset(mixed, onResetMixed, enabled, readOnly)) {
+            KozmosMixedReset(label = resetMixedLabel, onClick = {
+                // The query goes with the edit, and focus goes back to the
+                // field, as on the web.
+                onSearchValueChange("")
+                setExpanded(false)
+                fieldFocus.requestFocus()
+                onResetMixed?.invoke()
+            })
         }
 
         if (!supportingText.isNullOrBlank()) {

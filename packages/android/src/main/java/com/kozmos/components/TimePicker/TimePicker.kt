@@ -30,6 +30,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.kozmos.components.KozmosPickerField
 import com.kozmos.components.PickerConfirmButton
 import com.kozmos.components.PickerDismissButton
+import com.kozmos.components.pickerInitialValue
+import com.kozmos.components.fieldwrapper.KozmosMixedValue
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.tokens.KozmosDimensions
 import java.time.LocalTime
@@ -51,6 +53,13 @@ internal val LocalKozmosClockIs24Hour = staticCompositionLocalOf<Boolean?> { nul
  * Until 2026-10-21 it was Material's OutlinedTextField, its label floating
  * inside, that opened the framework's TimePickerDialog in the Activity's
  * theme.
+ *
+ * [mixed] (GAP-255, decision 188): the field stands for several times that differ and shows
+ * [mixedLabel] in place of its own, said once as its state; the dialog
+ * starts where it does for no time, and a confirmed time is the edit.
+ * [onResetMixed] offers [resetMixedLabel] under the field once it is no
+ * longer mixed.
+ * [KozmosMixedValue] has the whole of it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +73,11 @@ fun KozmosTimePicker(
     status: KozmosInputStatus = KozmosInputStatus.Default,
     helperText: String? = null,
     enabled: Boolean = true,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    mixed: Boolean = false,
+    mixedLabel: String = KozmosMixedValue.LABEL,
+    onResetMixed: (() -> Unit)? = null,
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
 ) {
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
@@ -85,13 +98,18 @@ fun KozmosTimePicker(
         status = status,
         helperText = helperText,
         enabled = enabled,
-        readOnly = readOnly
+        readOnly = readOnly,
+        mixed = mixed,
+        mixedLabel = mixedLabel,
+        onResetMixed = onResetMixed,
+        resetMixedLabel = resetMixedLabel
     )
 
     if (open) {
         val state = rememberTimePickerState(
-            initialHour = time?.hour ?: 0,
-            initialMinute = time?.minute ?: 0,
+            // Mixed (GAP-255), from where a field with no time starts.
+            initialHour = pickerInitialValue(time, mixed)?.hour ?: 0,
+            initialMinute = pickerInitialValue(time, mixed)?.minute ?: 0,
             is24Hour = is24Hour
         )
         // Material 3 has a time picker and no dialog for it: this is its
