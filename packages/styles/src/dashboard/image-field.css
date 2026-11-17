@@ -93,9 +93,10 @@
 
   /* The preview: Dialog's full size (decision 202), the window less 16 each
      side, its header keeping its height and the image taking the rest, as
-     large as it fits inside. Two classes, so the image's size outweighs the
-     scoped preflight's img rule. */
-  .kozmos-dialog-content .kozmos-image-field-preview-image {
+     large as it fits inside. A class and the dialog's role, so the image's
+     size outweighs the scoped preflight's img rule, and no Core class is
+     named here. */
+  [role="dialog"] .kozmos-image-field-preview-image {
     display: block;
     inline-size: 100%;
     block-size: 100%;
