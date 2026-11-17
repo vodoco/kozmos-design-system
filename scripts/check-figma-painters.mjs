@@ -8654,7 +8654,8 @@ section("One run at a time, and a long set says where it is");
       .map((message) => `${message.title} — ${message.detail}`);
     ok(
       progress.some((line) =>
-        /Updating TreeItem — variant 1 of 216$/.test(line),
+        // 216 Inset and 108 Band variants (GAP-217).
+        /Updating TreeItem — variant 1 of 324$/.test(line),
       ) &&
         progress.some((line) =>
           /Updating TreeItem — component properties$/.test(line),
@@ -12056,21 +12057,23 @@ section("Tree rows' Divided (GAP-201)");
         replay.result.updated === true &&
         replay.result.componentSetId === replay.setId &&
         replay.result.variantsUpdated === total &&
-        replay.result.variantsCreated === 0 &&
+        // GAP-217: and its Band variants, half as many.
+        replay.result.variantsCreated === total / 2 &&
         replay.result.variantsRemoved === 0 &&
         replay.kept.every(
-          (variant, i) => variant && variant.name === oldNames[i],
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         key &&
         defs[key].defaultValue === false,
-      `${setName}: Update keeps all ${total} variants, their node ids and names, adds none, and declares Divided off by default (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${key})`,
+      `${setName}: Update keeps all ${total} variants, their node ids and names, adds its Band ones, and declares Divided off by default (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${key})`,
     );
     ok(
       key &&
-        dividers.length === total &&
+        dividers.length === total * 1.5 &&
         surfaces.length === openRows &&
         surfaced.every((name) =>
-          /Expanded=True, .*State=(Idle|Focus)$/.test(name),
+          /Expanded=True, .*State=(Idle|Focus), RowFill=Inset$/.test(name),
         ) &&
         dividers
           .concat(surfaces)
@@ -12080,7 +12083,7 @@ section("Tree rows' Divided (GAP-201)");
               n.componentPropertyReferences &&
               n.componentPropertyReferences.visible === key,
           ),
-      `${setName}: a divider on each of its ${total} rows and a surface on its ${openRows} open Idle and Focus rows, every one hidden and shown by Divided (${dividers.length} dividers, ${surfaces.length} surfaces)`,
+      `${setName}: a divider on each of its ${total * 1.5} rows and a surface on its ${openRows} open Idle and Focus rows, every one hidden and shown by Divided (${dividers.length} dividers, ${surfaces.length} surfaces)`,
     );
   }
 }
@@ -17336,16 +17339,18 @@ section("GAP-107: the tree rows' Meta Below");
     const metas = replay.liveSet.findAll((n) => n.name === "Meta");
     ok(
       replay.result.variantsUpdated === total &&
-        replay.result.variantsCreated === 0 &&
+        // GAP-217: and its Band variants, half as many.
+        replay.result.variantsCreated === total / 2 &&
         replay.result.variantsRemoved === 0 &&
         replay.kept.every(
-          (variant, i) => variant && variant.name === oldNames[i],
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         below &&
         defs[below].defaultValue === false &&
         words &&
         defs[words].defaultValue === "Changes awaiting publish" &&
-        metas.length === total &&
+        metas.length === total * 1.5 &&
         metas.every(
           (n) =>
             n.visible === false &&
@@ -17905,21 +17910,23 @@ section("GAP-277: the tree rows' Checkable, Checked and Disclosure End");
     const ends = replay.liveSet.findAll((n) => n.name === "Disclosure End");
     ok(
       replay.result.variantsUpdated === total &&
-        replay.result.variantsCreated === 0 &&
+        // GAP-217: and its Band variants, half as many.
+        replay.result.variantsCreated === total / 2 &&
         replay.result.variantsRemoved === 0 &&
         replay.kept.every(
-          (variant, i) => variant && variant.name === oldNames[i],
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         ["Checkable", "Checked", "Disclosure Start", "Disclosure End"].every(
           (name) => key(name),
         ) &&
-        boxes.length === total &&
+        boxes.length === total * 1.5 &&
         boxes.every(
           (n) =>
             n.visible === false &&
             n.componentPropertyReferences.visible === key("Checkable"),
         ) &&
-        ends.length === total &&
+        ends.length === total * 1.5 &&
         ends.every(
           (n) =>
             n.visible === false &&
@@ -18100,18 +18107,192 @@ section("GAP-279: the tree rows' Mixed check");
     const mixed = replay.liveSet.findAll((n) => n.name === "Checkbox Mixed");
     ok(
       replay.result.variantsUpdated === 72 &&
-        replay.result.variantsCreated === 0 &&
+        // GAP-217: and its 36 Band variants.
+        replay.result.variantsCreated === 36 &&
         replay.kept.every(
-          (variant, i) => variant && variant.name === oldNames[i],
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         key &&
-        mixed.length === 72 &&
+        mixed.length === 108 &&
         mixed.every(
           (n) =>
             n.visible === false &&
             n.componentPropertyReferences.visible === key,
         ),
-      `TreeChildItem: Update keeps all 72 variants and their ids, and gives each a hidden Checkbox Mixed under Mixed (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${mixed.length} mixed)`,
+      `TreeChildItem: Update keeps all 72 variants and their ids, and gives each of the 108 a hidden Checkbox Mixed under Mixed (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${mixed.length} mixed)`,
+    );
+  }
+}
+
+// GAP-217, decision 196: React's Tree `rowFill`, "inset" (the default) or
+// "band". A RowFill axis on the three row sets, Inset first, so a variant
+// named before the axis existed parses as Inset and Update renames it in
+// place, keeping its node id. Sparse: Band only where a fill shows, the Hover
+// and Selected states, since an Idle or Focus band draws as its inset. A
+// Band row is the inset row's width with its fill's corners at 0, unbound
+// from Tree/item/radius; an Inset row is drawn as before.
+section("GAP-217: the tree rows' Row Fill");
+{
+  const fills = plugin.TREE_ROW_FILLS || [];
+  ok(
+    JSON.stringify(fills) === JSON.stringify(["Inset", "Band"]),
+    `RowFill is Inset, then Band (${fills.join(", ")})`,
+  );
+  for (const [setName, base] of [
+    ["TreeParentItem", 144],
+    ["TreeChildItem", 72],
+    ["TreeItem", 216],
+  ]) {
+    const axes = plugin.expectedVariantAxesForComponentSetName(setName) || {};
+    const config = plugin[
+      {
+        TreeParentItem: "treeParentItemComponentConfig",
+        TreeChildItem: "treeChildItemComponentConfig",
+        TreeItem: "treeItemComponentConfig",
+      }[setName]
+    ]();
+    const combos = config.combinations();
+    const bands = combos.filter((c) => c.rowFill === "Band");
+    const keys = new Set(combos.map((c) => config.keyForProps(c)));
+    ok(
+      JSON.stringify(axes.RowFill) === JSON.stringify(["Inset", "Band"]) &&
+        combos.length === base + base / 2 &&
+        keys.size === combos.length &&
+        bands.length === base / 2 &&
+        bands.every((c) => c.state === "Hover" || c.state === "Selected") &&
+        combos.filter((c) => c.rowFill === "Inset").length === base,
+      `${setName}: RowFill declared, ${base} Inset variants as before and ${base / 2} Band ones, Hover and Selected only (${axes.RowFill}, ${combos.length} in all, ${bands.length} Band)`,
+    );
+    ok(
+      (config.description || []).some((line) =>
+        /RowFill maps to rowFill/.test(line),
+      ),
+      `${setName}: its description says RowFill maps to rowFill`,
+    );
+  }
+
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        props,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const reachable =
+    typeof plugin.updateTreeChildItemVariant === "function" &&
+    typeof plugin.parseTreeChildItemVariantName === "function";
+  for (const [fn, parse, props] of reachable
+    ? [
+        [
+          "updateTreeChildItemVariant",
+          "parseTreeChildItemVariantName",
+          { content: "Count" },
+        ],
+        [
+          "updateTreeParentItemVariant",
+          "parseTreeParentItemVariantName",
+          { content: "Basic", expanded: "True" },
+        ],
+        [
+          "updateTreeItemVariant",
+          "parseTreeItemVariantName",
+          { type: "Child", content: "Basic", expanded: "False" },
+        ],
+      ]
+    : []) {
+    const common = Object.assign(
+      { depth: "1", density: "Default", state: "Selected" },
+      props,
+    );
+    const inset = await draw(fn, Object.assign({ rowFill: "Inset" }, common));
+    const band = await draw(fn, Object.assign({ rowFill: "Band" }, common));
+    const read = plugin[parse](band.name);
+    ok(
+      /, State=Selected, RowFill=Band$/.test(band.name) &&
+        /, State=Selected, RowFill=Inset$/.test(inset.name) &&
+        read &&
+        read.rowFill === "Band",
+      `${fn}: named with RowFill last, and reads back as itself (${band.name})`,
+    );
+    ok(
+      band.cornerRadius === 0 &&
+        !menusBound(band, "cornerRadius") &&
+        band.width === inset.width &&
+        band.height === inset.height &&
+        boundVariableName(band.fills[0]) === "Colors/background/100",
+      `${fn}: Band is the inset row's ${inset.width} × ${inset.height}, its fill's corners 0 and unbound (r${band.cornerRadius}, ${menusBound(band, "cornerRadius")}, ${band.width} × ${band.height})`,
+    );
+    ok(
+      inset.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        menusBound(inset, "cornerRadius") === "Tree/item/radius",
+      `${fn}: Inset keeps the control radius on Tree/item/radius, as before (r${inset.cornerRadius}, ${menusBound(inset, "cornerRadius")})`,
+    );
+  }
+  if (reachable) {
+    const old = "Content=Basic, Depth=0, Density=Default, State=Idle";
+    const read = plugin.parseTreeChildItemVariantName(old);
+    ok(
+      read &&
+        read.rowFill === "Inset" &&
+        plugin.parseTreeChildItemVariantName(
+          "Content=Basic, Depth=0, Density=Default, State=Idle, RowFill=Band",
+        ) === null,
+      `a name from before the axis reads as Inset, and an Idle Band is no variant (${read && read.rowFill})`,
+    );
+  }
+
+  // Update over TreeChildItem as the file has it: each of its 72 variants is
+  // renamed RowFill=Inset in place, keeping its id, and the 36 Band ones
+  // are added; nothing is removed.
+  if (reachable) {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "minus",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    const oldNames = [];
+    for (const content of ["Basic", "Count", "Actions"])
+      for (const depth of ["0", "1", "2"])
+        for (const density of ["Default", "Compact"])
+          for (const state of ["Idle", "Hover", "Selected", "Focus"])
+            oldNames.push(
+              `Content=${content}, Depth=${depth}, Density=${density}, State=${state}`,
+            );
+    const replay = await replayUpdate(
+      "TreeChildItem",
+      oldNames,
+      "updateTreeChildItemComponent",
+      [page],
+    );
+    const added = replay.names.filter((name) => / RowFill=Band$/.test(name));
+    ok(
+      replay.result.variantsUpdated === 72 &&
+        replay.result.variantsCreated === 36 &&
+        replay.result.variantsRemoved === 0 &&
+        replay.kept.every(
+          (variant, i) =>
+            variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
+        ) &&
+        added.length === 36 &&
+        added.every((name) => /State=(Hover|Selected), RowFill=Band$/.test(name)),
+      `TreeChildItem: Update renames its 72 variants RowFill=Inset in place, keeping their ids, and adds 36 Band ones (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${added.length} Band)`,
     );
   }
 }

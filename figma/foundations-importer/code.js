@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "f63798ceb8e9";
+const PLUGIN_BUILD = "cbb13c71a6ca";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -125,6 +125,23 @@ const TREE_EXPANDED = ["False", "True"];
 const TREE_DENSITIES = ["Default", "Compact"];
 const TREE_STATES = ["Idle", "Hover", "Selected", "Focus"];
 const TREE_ITEM_TYPES = ["Parent", "Child"];
+// GAP-217, decision 196: React's Tree `rowFill`, "inset" (the default) or
+// "band". Inset, first, is the row as drawn before the axis: the selected and
+// hover fill a pill on the control radius. Band is the same row with its
+// fill's corners at 0 (code runs it past the tree by Tree's bleed, which a
+// variant cannot draw). Sparse: Band only where a fill shows, the Hover and
+// Selected states; an Idle or Focus band draws as its inset. A variant named
+// before the axis existed parses as Inset, so Update renames it in place and
+// keeps its node id.
+const TREE_ROW_FILLS = ["Inset", "Band"];
+const TREE_BAND_STATES = ["Hover", "Selected"];
+function treeRowFillsForState(state) {
+  return TREE_BAND_STATES.indexOf(state) === -1 ? ["Inset"] : TREE_ROW_FILLS;
+}
+function parseTreeRowFill(value, state) {
+  const rowFill = value || "Inset";
+  return treeRowFillsForState(state).indexOf(rowFill) === -1 ? null : rowFill;
+}
 // Five row actions, because a Pointr Cloud listItem carries five — edit, lock,
 // eye, flag and overflow — and that is the densest actions case the product
 // has. The count is a property, not a variant axis. An axis applies to every
@@ -4065,8 +4082,9 @@ const COMPONENT_DOCS = [
       "Expanded maps to disclosure open or closed state.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
+      "RowFill maps to rowFill on Tree and TreeParentItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       'Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
@@ -4077,6 +4095,7 @@ const COMPONENT_DOCS = [
       "Depth: 0, 1, 2",
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
+      "RowFill: Inset, Band (Band for Hover and Selected)",
       "Label Text, Count Text",
       "Divided",
       "Meta Below, Meta Text",
@@ -4102,8 +4121,9 @@ const COMPONENT_DOCS = [
     api: [
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
+      "RowFill maps to rowFill on Tree and TreeChildItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       'Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
@@ -4113,6 +4133,7 @@ const COMPONENT_DOCS = [
       "Depth: 0, 1, 2",
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
+      "RowFill: Inset, Band (Band for Hover and Selected)",
       "Label Text, Count Text",
       "Divided",
       "Meta Below, Meta Text",
@@ -4140,8 +4161,9 @@ const COMPONENT_DOCS = [
       "Type maps to parent versus child row anatomy.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "RowFill maps to rowFill on Tree and TreeItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       'Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
@@ -4153,6 +4175,7 @@ const COMPONENT_DOCS = [
       "Depth: 0, 1, 2",
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
+      "RowFill: Inset, Band (Band for Hover and Selected)",
       "Label Text, Count Text",
       "Divided",
       "Meta Below, Meta Text",
@@ -19941,6 +19964,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Depth: TREE_ITEM_DEPTHS,
       Density: TREE_DENSITIES,
       State: TREE_STATES,
+      RowFill: TREE_ROW_FILLS,
     };
   }
 
@@ -19950,6 +19974,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Depth: TREE_ITEM_DEPTHS,
       Density: TREE_DENSITIES,
       State: TREE_STATES,
+      RowFill: TREE_ROW_FILLS,
     };
   }
 
@@ -19968,6 +19993,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Depth: TREE_ITEM_DEPTHS,
       Density: TREE_DENSITIES,
       State: TREE_STATES,
+      RowFill: TREE_ROW_FILLS,
     };
   }
 
@@ -41766,8 +41792,9 @@ function treeParentItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "RowFill maps to rowFill on Tree and TreeParentItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
       "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeParentItem with TreeChildItem to compose product-specific trees.",
     ],
   };
@@ -41794,8 +41821,9 @@ function treeChildItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "RowFill maps to rowFill on Tree and TreeChildItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
       "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeChildItem with TreeParentItem to compose product-specific trees.",
     ],
   };
@@ -41824,8 +41852,9 @@ function treeItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
+      "RowFill maps to rowFill on Tree and TreeItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
       "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Prefer TreeParentItem and TreeChildItem for new product trees; TreeItem stays as a switchable compatibility row.",
     ],
   };
@@ -42181,14 +42210,17 @@ function treeItemVariantCombinationsForType(type) {
       for (const depth of TREE_ITEM_DEPTHS) {
         for (const density of TREE_DENSITIES) {
           for (const state of TREE_STATES) {
-            combinations.push({
-              type,
-              content,
-              expanded,
-              depth,
-              density,
-              state,
-            });
+            for (const rowFill of treeRowFillsForState(state)) {
+              combinations.push({
+                type,
+                content,
+                expanded,
+                depth,
+                density,
+                state,
+                rowFill,
+              });
+            }
           }
         }
       }
@@ -42198,11 +42230,11 @@ function treeItemVariantCombinationsForType(type) {
 }
 
 function treeItemVariantKey(props) {
-  return `${props.type}/${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}`;
+  return `${props.type}/${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}/${props.rowFill || "Inset"}`;
 }
 
 function treeStandaloneItemVariantKey(props) {
-  return `${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}`;
+  return `${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}/${props.rowFill || "Inset"}`;
 }
 
 function parseTreeItemVariantName(name) {
@@ -42210,7 +42242,9 @@ function parseTreeItemVariantName(name) {
   const expanded = values.Expanded || "False";
   const type = normalizeTreeItemType(values.Type);
   const state = normalizeTreeState(values.State);
+  const rowFill = parseTreeRowFill(values.RowFill, state);
   if (
+    !rowFill ||
     TREE_ITEM_TYPES.indexOf(type) === -1 ||
     TREE_CONTENT.indexOf(values.Content) === -1 ||
     TREE_EXPANDED.indexOf(expanded) === -1 ||
@@ -42228,6 +42262,7 @@ function parseTreeItemVariantName(name) {
     depth: values.Depth,
     density: values.Density,
     state,
+    rowFill,
   };
 }
 
@@ -42247,8 +42282,10 @@ function parseTreeStandaloneItemVariantName(name, type) {
   const density = values.Density || "Default";
   const state = normalizeTreeState(values.State);
   const legacyType = values.Type ? normalizeTreeItemType(values.Type) : type;
+  const rowFill = parseTreeRowFill(values.RowFill, state);
 
   if (
+    !rowFill ||
     legacyType !== type ||
     TREE_CONTENT.indexOf(content) === -1 ||
     TREE_EXPANDED.indexOf(expanded) === -1 ||
@@ -42266,6 +42303,7 @@ function parseTreeStandaloneItemVariantName(name, type) {
     depth,
     density,
     state,
+    rowFill,
   };
 }
 
@@ -42509,6 +42547,12 @@ async function updateTreeItemVariant(
     variableByName,
     stats,
   );
+  // GAP-217: a Band row's fill has no corners, so its radius is 0 and bound
+  // to nothing; an Inset row keeps Tree/item/radius.
+  if (props.rowFill === "Band") {
+    clearBoundVariable(component, "cornerRadius", stats);
+    component.cornerRadius = 0;
+  }
 }
 
 function treeItemRow(props) {
@@ -42705,6 +42749,8 @@ async function syncTreeRowNode(
     `Depth=${String(row.depth)}`,
     `Density=${props.density}`,
     `State=${rowState}`,
+    // GAP-217: last, so a name from before it reads as Inset.
+    `RowFill=${props.rowFill || "Inset"}`,
   ].filter(Boolean);
 
   rowNode.name = asComponentVariant
@@ -46236,8 +46282,14 @@ function layoutTreeItemVariants(componentSet) {
     const depthIndex = TREE_ITEM_DEPTHS.indexOf(props.depth);
     const densityIndex = TREE_DENSITIES.indexOf(props.density);
     const stateIndex = TREE_STATES.indexOf(props.state);
+    // GAP-217: the Band variants in a block of their own, to the right.
+    const rowFillIndex = TREE_ROW_FILLS.indexOf(props.rowFill || "Inset");
 
-    child.x = (contentIndex * TREE_STATES.length + stateIndex) * 380;
+    child.x =
+      ((rowFillIndex * TREE_CONTENT.length + contentIndex) *
+        TREE_STATES.length +
+        stateIndex) *
+      380;
     child.y =
       (((typeIndex * TREE_ITEM_DEPTHS.length + depthIndex) *
         TREE_DENSITIES.length +
@@ -46274,8 +46326,14 @@ function layoutStandaloneTreeItemVariants(componentSet, parseVariantName) {
     const depthIndex = TREE_ITEM_DEPTHS.indexOf(props.depth);
     const densityIndex = TREE_DENSITIES.indexOf(props.density);
     const stateIndex = TREE_STATES.indexOf(props.state);
+    // GAP-217: the Band variants in a block of their own, to the right.
+    const rowFillIndex = TREE_ROW_FILLS.indexOf(props.rowFill || "Inset");
 
-    child.x = (contentIndex * TREE_STATES.length + stateIndex) * 380;
+    child.x =
+      ((rowFillIndex * TREE_CONTENT.length + contentIndex) *
+        TREE_STATES.length +
+        stateIndex) *
+      380;
     child.y =
       ((depthIndex * TREE_DENSITIES.length + densityIndex) *
         (props.type === "Parent" ? 2 : 1) +
