@@ -63,7 +63,7 @@ final class KozmosSpriteIconTests: XCTestCase {
     }
 
     #if os(iOS)
-    @MainActor func testItIsDecorativeUnlessLabelledAndKeepsItsBox() {
+    @MainActor func testItKeepsAnEmptyBoxOfItsSizeWhileNothingIsDrawn() {
         for size in KozmosSpriteIconSize.allCases {
             let host = UIHostingController(rootView: KozmosSpriteIcon(sprite: "https://cdn.test/none", name: "atm", size: size))
             let drawn = host.sizeThatFits(in: CGSize(width: 200, height: 200))
