@@ -19025,7 +19025,7 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
   }
   ok(
     ready &&
-      !/\/sprite\/\d+\.\d+\.\d+\//.test(plugin.SPRITE_ICON_DEFAULT_ATLAS) &&
+      /^https:\/\/mapscdn\.pointr\.tech\/sprite\/\d+\.\d+\.\d+\/light\/sprite$/.test(plugin.SPRITE_ICON_DEFAULT_ATLAS) &&
       JSON.stringify(plugin.expectedVariantAxesForComponentSetName("SpriteIcon")) ===
         JSON.stringify({ Size: ["16", "20", "24"] }) &&
       plugin.CORE_UPDATE_SEQUENCE.some(
@@ -19035,7 +19035,7 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
         (entry) => entry.title === "Media" && entry.components.includes("SpriteIcon"),
       ) &&
       plugin.COMPONENT_DOCS.some((entry) => entry.componentSetName === "SpriteIcon"),
-    "SpriteIcon: no version in its default atlas; a Size axis, in Update All Core, the Media section and the docs",
+    "SpriteIcon: its default atlas pinned to a maps release, not `latest`; a Size axis, in Update All Core, the Media section and the docs",
   );
 }
 

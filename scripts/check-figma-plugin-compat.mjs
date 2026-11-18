@@ -182,4 +182,42 @@ if (notPickable.length > 0 || notBuildable.length > 0) {
   process.exit(1);
 }
 
-console.log("Figma plugin compatibility ok");
+// Network access: Figma reads manifest.json's networkAccess.allowedDomains
+// as the only origins a plugin may fetch from, so it lists exactly the
+// origins the plugin reads at Build and Update (SpriteIcon's atlas, decision
+// 219), with a reason. Every https origin named in code.js or ui.html is one
+// it may fetch, except the few that are only words in it: the SVG namespace
+// and the Avatar set's placeholder Image URL, never fetched.
+const MANIFEST = path.join(ROOT, "figma/foundations-importer/manifest.json");
+const NEVER_FETCHED = new Set(["http://www.w3.org", "https://example.com"]);
+{
+  const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
+  const uiSource = fs.readFileSync(PLUGIN_UI, "utf8");
+  const named = new Set(
+    [...(code + "\n" + uiSource).matchAll(/\bhttps?:\/\/[A-Za-z0-9.-]+/g)]
+      .map((match) => match[0])
+      .filter((origin) => !NEVER_FETCHED.has(origin)),
+  );
+  const access = manifest.networkAccess;
+  const allowed = new Set((access && access.allowedDomains) || []);
+  const problems = [];
+  if (named.size > 0 && !access)
+    problems.push(`manifest.json declares no networkAccess, and the plugin names ${[...named].join(", ")}.`);
+  for (const origin of named)
+    if (!allowed.has(origin))
+      problems.push(`${origin} is named in the plugin but not in networkAccess.allowedDomains.`);
+  for (const origin of allowed)
+    if (!named.has(origin))
+      problems.push(`${origin} is allowed but the plugin names no URL there: list exactly the origins it reads.`);
+  if (access && !(typeof access.reasoning === "string" && access.reasoning.trim()))
+    problems.push("networkAccess has no reasoning: say what the plugin reads there.");
+  if (problems.length > 0) {
+    console.error("Figma plugin network access check failed:");
+    for (const problem of problems) console.error(`- ${problem}`);
+    process.exit(1);
+  }
+}
+
+console.log(
+  "Figma plugin compatibility ok (network access: exactly the origins the plugin names are allowed)",
+);

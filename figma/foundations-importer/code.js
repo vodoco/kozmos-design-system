@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "8ded02f1573e";
+const PLUGIN_BUILD = "689a480f3208";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -68656,14 +68656,17 @@ async function rebuildChipInputComponent() {
 // marker dot, never tinted, scaled into a 16, 20 or 24 box with its aspect
 // ratio kept. The importer draws the real cell: at Build and Update it reads
 // the atlas's @2x index and image from the set's Sprite and Cell Name
-// properties (by default Pointr's `latest` light atlas, the mutable alias,
-// and `desk`; Kozmos names no version), and fills a Cell rectangle with the
+// properties (by default Pointr's light atlas at the current maps release,
+// 10.17.0, and `desk`), and fills a Cell rectangle with the
 // atlas image cropped to the cell. Where the atlas cannot be read the box is
 // left empty and the run says why: nothing stands in for the cell. A
 // designer who changes the Cell Name runs Update to draw it; an instance's
 // own override changes the words, not the picture.
+// The current maps release, pinned: `latest` is a mutable alias, not a
+// release. Bump it with the maps release. Products pass their own pinned URL;
+// this is only the library's sample cell.
 const SPRITE_ICON_DEFAULT_ATLAS =
-  "https://mapscdn.pointr.tech/sprite/latest/light/sprite";
+  "https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite";
 const SPRITE_ICON_DEFAULT_CELL = "desk";
 // How the importer reads an atlas: the plugin's fetch for the index and
 // figma.createImageAsync for the image. An object, so the painters check can
