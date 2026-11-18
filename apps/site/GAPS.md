@@ -55,7 +55,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-13 | `SelectTrigger` has no label; `Textarea` no helper text          | Core                   | composed     |
 | GAP-14 | `CardTitle` is always an `h3`                                    | Core                   | composed     |
 | GAP-15 | No icon by name for a venue's everyday categories                | Product / SDK          | open         |
-| GAP-16 | `TabsList` neither wraps nor scrolls                             | Core                   | composed     |
+| GAP-16 | `TabsList` neither wraps nor scrolls                             | Core                   | fixed        |
 | GAP-17 | `AdaptiveMapShell`'s panel is an `<aside>`                       | Product / SDK          | open         |
 | GAP-18 | `POIDetailPanel` has no presentation for the shell's panel       | Product / SDK          | left visible |
 | GAP-19 | `Navbar` is always sticky                                        | Core                   | composed     |
@@ -432,12 +432,14 @@ keep the table's four columns and its statuses as they are.
 
 - **What:** `TabsList` is a fixed `inline-flex` row. Three file names overflow a
   320-pixel phone and push the whole page sideways.
-- **Now:** `src/site/ExamplePage.tsx` puts the list in a horizontal
-  `ScrollArea`. Kozmos 0.16.0 answers it (decision 182, product GAP-254,
+- **Fixed** in the design system in 0.16.0 (decision 182, product GAP-254,
   #526): a `TabsList` wider than its space scrolls sideways inside its own
   track, with no scroll bar and the selected tab kept in view, on React,
-  SwiftUI and Compose, and one that fits is unchanged. It stays _composed_
-  until the site drops its `ScrollArea` for the list's own scrolling.
+  SwiftUI and Compose, and one that fits is unchanged. The site dropped its
+  horizontal `ScrollArea` round the example pages' file tabs for it in
+  0.17.0; `tests/site.spec.ts` checks, at 320 pixels in every engine, that
+  the list scrolls in its own track with no scroller round it and the page
+  does not scroll sideways.
 - **Lane:** Core.
 
 ## GAP-17 · `AdaptiveMapShell`'s panel is an `<aside>`

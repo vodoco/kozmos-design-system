@@ -2778,6 +2778,38 @@ test.describe("design-system gaps, measured", () => {
     expect(background).toBe("rgb(255, 255, 255)");
   });
 
+  test("GAP-16 is fixed: at 320px an example's file tabs scroll in Tabs' own track, not a ScrollArea", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const list = page.getByRole("tablist", { name: "Source files" });
+    const read = await list.evaluate((element) => ({
+      // A scroller between the list and the page's body: the ScrollArea
+      // the site wrapped it in.
+      wrapped: (() => {
+        for (
+          let node = element.parentElement;
+          node && node !== document.body;
+          node = node.parentElement
+        )
+          if (/auto|scroll/.test(getComputedStyle(node).overflowX)) return true;
+        return false;
+      })(),
+      scrollable: element.hasAttribute("data-scrollable"),
+      sideways: element.scrollWidth - element.clientWidth,
+      page: document.documentElement.scrollWidth - window.innerWidth,
+      tabs: element.querySelectorAll('[role="tab"]').length,
+    }));
+    expect(read.tabs).toBeGreaterThan(2);
+    // Kozmos 0.16.0's own scrolling (decision 182): the list is its track.
+    expect(read.wrapped).toBe(false);
+    expect(read.scrollable).toBe(true);
+    expect(read.sideways).toBeGreaterThan(0);
+    expect(read.page).toBeLessThanOrEqual(0);
+  });
+
   test("GAP-41: at 320px the Navbar drops the header's tools to a second row", async ({
     page,
   }) => {
