@@ -1,6 +1,6 @@
 import React from "react";
 import { type VariantProps } from "class-variance-authority";
-import { Check, Copy01 } from "@kozmos-ds/icons";
+import { Check, Copy01, Pencil01 } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import {
@@ -29,6 +29,10 @@ export { inputVariants, type InputStatus };
  *   Featured star at a field's end. `icon` is the product's; pressed, it is
  *   drawn as a pressed ToggleButton is, the theme fill under the icon in the
  *   hover fill's shape, so the state is a shape and not a colour alone.
+ * - `edit` is a pencil that calls `onEdit` (GAP-212, decision 224): what
+ *   editing means is the product's, a dialog or making the field editable.
+ *   For a read-only value with an editor elsewhere, Map Personas' ID and Map
+ *   Style; read only does not disable it, only a disabled field does.
  */
 export type InputAction =
   | {
@@ -45,6 +49,12 @@ export type InputAction =
       icon: React.ReactNode;
       pressed: boolean;
       onPressedChange: (pressed: boolean) => void;
+    }
+  | {
+      kind: "edit";
+      /** The button's name. Default "Edit". */
+      label?: string;
+      onEdit: () => void;
     };
 
 export interface InputProps
@@ -64,13 +74,13 @@ export interface InputProps
    * about, not a keystroke the browser swallows.
    */
   count?: CharacterCount;
-  /** A copy or toggle button inside the field's end (GAP-154). */
+  /** A copy, toggle or edit button inside the field's end (GAP-154, GAP-212). */
   action?: InputAction;
 }
 
 /**
  * The button at the field's end: a copy, with the live region that says it
- * copied, or a pressed toggle.
+ * copied, a pressed toggle, or an edit.
  */
 function FieldAction({
   action,
@@ -86,17 +96,24 @@ function FieldAction({
     return () => clearTimeout(timer);
   }, [said]);
   const copy = action.kind === "copy";
+  const edit = action.kind === "edit";
   const icon = "kozmos-reset kozmos-field-action-icon";
   return (
     <>
       <button
         type="button"
-        aria-label={copy ? (action.label ?? "Copy") : action.label}
-        aria-pressed={copy ? undefined : action.pressed}
+        aria-label={
+          action.kind === "toggle"
+            ? action.label
+            : (action.label ?? (copy ? "Copy" : "Edit"))
+        }
+        aria-pressed={action.kind === "toggle" ? action.pressed : undefined}
         className="kozmos-reset kozmos-field-action kozmos-input-action"
         disabled={disabled}
         onClick={async (event) => {
-          if (!copy) return action.onPressedChange(!action.pressed);
+          if (action.kind === "edit") return action.onEdit();
+          if (action.kind === "toggle")
+            return action.onPressedChange(!action.pressed);
           const value = (
             event.currentTarget.previousElementSibling as HTMLInputElement
           ).value;
@@ -114,7 +131,9 @@ function FieldAction({
           action.onCopy?.(value);
         }}
       >
-        {!copy ? (
+        {edit ? (
+          <Pencil01 className={icon} aria-hidden="true" />
+        ) : !copy ? (
           action.icon
         ) : said ? (
           <Check className={icon} aria-hidden="true" />

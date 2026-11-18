@@ -92,6 +92,7 @@ import {
   ImageCropper,
   DescriptionList,
   DescriptionListItem,
+  CodeBlock,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -405,6 +406,9 @@ export const KozmosDescriptionList = createVueWrapper(DescriptionList);
 // GAP-150 (decision 219): one cell of a published sprite atlas, drawn as published.
 export const KozmosSpriteIcon = createVueWrapper(SpriteIcon);
 export const KozmosDescriptionListItem = createVueWrapper(DescriptionListItem);
+// GAP-216, decision 225: a read-only block of code; @copy is its onCopy,
+// with the code copied.
+export const KozmosCodeBlock = createVueWrapper(CodeBlock);
 // Its selection is reported as the item; the model is the item's id. A
 // multiple tree's model is its selected ids (GAP-151).
 export const KozmosTree = createVueWrapper(Tree, {

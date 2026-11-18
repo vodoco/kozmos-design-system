@@ -17044,6 +17044,42 @@
         "variants": {}
       },
       {
+        "name": "CodeBlock",
+        "source": "packages/react/src/components/CodeBlock/CodeBlock.tsx",
+        "story": "packages/react/src/components/CodeBlock/CodeBlock.stories.tsx",
+        "test": "packages/react/src/components/CodeBlock/CodeBlock.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "code",
+          "copiedLabel",
+          "copyable",
+          "copyLabel",
+          "id",
+          "label",
+          "maxHeight",
+          "role",
+          "tabIndex",
+          "title",
+          "wrap"
+        ],
+        "variants": {}
+      },
+      {
         "name": "ColorPicker",
         "source": "packages/react/src/components/ColorPicker/ColorPicker.tsx",
         "story": "packages/react/src/components/ColorPicker/ColorPicker.stories.tsx",

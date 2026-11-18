@@ -75,7 +75,11 @@ extension View {
 /// Glass is not the system's own (`glassEffect`, iOS 26): a hosted snapshot
 /// renders it black, so every surface on it would be invisible to the
 /// package's pixel tests and to CI's simulator step.
-public struct KozmosSurface<S: InsettableShape>: ViewModifier {
+///
+/// `kozmosSurface(_:style:)` applies it; `KozmosSurface(variant:) { … }` is
+/// the same surface placed as a view (GAP-207). It was named `KozmosSurface`
+/// until 0.17.0, when that name went to the view.
+public struct KozmosSurfaceModifier<S: InsettableShape>: ViewModifier {
     let shape: S
     let style: KozmosSurfaceStyle
     /// Tests set this; products leave it to the environment.
@@ -126,6 +130,55 @@ public struct KozmosSurface<S: InsettableShape>: ViewModifier {
 extension View {
     /// A surface in `shape`: solid by default, or the glass role.
     public func kozmosSurface<S: InsettableShape>(_ shape: S, style: KozmosSurfaceStyle = .solid) -> some View {
-        modifier(KozmosSurface(shape: shape, style: style))
+        modifier(KozmosSurfaceModifier(shape: shape, style: style))
+    }
+}
+
+/// A surface placed as a view (GAP-207, decision 70), as React's
+/// `<Surface variant>` is: `KozmosSurface(variant: .glass) { … }`. The same
+/// surface as `kozmosSurface(_:style:)`: solid by default, the background
+/// colour with the subtle border, or glass, solid when transparency is
+/// reduced; and what it holds reads it, so muted text on glass takes the
+/// foreground colour (decision 48). Its shape is the container radius unless
+/// a product gives its own, as React's Surface takes `rounded-container`.
+/// It adds no padding: the content's is the product's, as on the web.
+public struct KozmosSurface<S: InsettableShape, Content: View>: View {
+    let variant: KozmosSurfaceStyle
+    let shape: S
+    let content: Content
+    /// Tests set this; products leave it to the environment.
+    let reduceTransparency: Bool?
+
+    public init(variant: KozmosSurfaceStyle = .solid, shape: S, @ViewBuilder content: () -> Content) {
+        self.variant = variant
+        self.shape = shape
+        self.content = content()
+        self.reduceTransparency = nil
+    }
+
+    init(variant: KozmosSurfaceStyle, shape: S, reduceTransparency: Bool?, @ViewBuilder content: () -> Content) {
+        self.variant = variant
+        self.shape = shape
+        self.content = content()
+        self.reduceTransparency = reduceTransparency
+    }
+
+    public var body: some View {
+        content.modifier(KozmosSurfaceModifier(shape: shape, style: variant, reduceTransparency: reduceTransparency))
+    }
+}
+
+extension KozmosSurface where S == RoundedRectangle {
+    /// A surface on the container radius, `Semantics.Radius.container`.
+    public init(variant: KozmosSurfaceStyle = .solid, @ViewBuilder content: () -> Content) {
+        self.init(variant: variant, shape: KozmosSurface.containerShape, reduceTransparency: nil, content: content)
+    }
+
+    init(variant: KozmosSurfaceStyle, reduceTransparency: Bool?, @ViewBuilder content: () -> Content) {
+        self.init(variant: variant, shape: KozmosSurface.containerShape, reduceTransparency: reduceTransparency, content: content)
+    }
+
+    static var containerShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous)
     }
 }

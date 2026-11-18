@@ -380,6 +380,13 @@
       ]
     },
     {
+      "file": "packages/react/src/components/CodeBlock/CodeBlock.stories.tsx",
+      "id": "data-display-codeblock",
+      "title": "Core/Data display/CodeBlock",
+      "component": "CodeBlock",
+      "exports": ["Default", "Scroll"]
+    },
+    {
       "file": "packages/react/src/components/DescriptionList/DescriptionList.stories.tsx",
       "id": "data-display-descriptionlist",
       "title": "Core/Data display/DescriptionList",
@@ -529,6 +536,7 @@
         "WithError",
         "ValidationStates",
         "Actions",
+        "EditAction",
         "MixedValue"
       ]
     },

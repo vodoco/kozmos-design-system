@@ -817,6 +817,7 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSpriteIcon: {
     props: { sprite: "https://cdn.test/sprite", name: "atm", label: "ATM" },
   },
+  KozmosCodeBlock: { props: { label: "JSON", code: "{}" } },
   KozmosTree: { props: { data: [{ id: "1", name: "a.ts" }] } },
   KozmosTimeline: { slot: true },
   KozmosPopover: { slot: true },

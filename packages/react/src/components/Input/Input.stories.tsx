@@ -132,6 +132,38 @@ export const Actions: Story = {
   render: () => <ActionsExample />,
 };
 
+// GAP-212, decision 224: Pointr Cloud's Map Personas, a persona's ID and its
+// Map Style read-only, each with a pencil at the field's end that opens its
+// editor. What editing means is the product's: here it makes the field
+// editable.
+function EditActionExample() {
+  const [editing, setEditing] = useState(false);
+  return (
+    <div className="grid w-full max-w-sm gap-4">
+      <Input
+        label="ID"
+        readOnly
+        defaultValue="staff"
+        action={{ kind: "edit", label: "Edit ID", onEdit: () => {} }}
+      />
+      <Input
+        label="Map Style"
+        readOnly={!editing}
+        defaultValue="https://styles.example.com/persona/staff.json"
+        action={{
+          kind: "edit",
+          label: "Edit Map Style",
+          onEdit: () => setEditing(true),
+        }}
+      />
+    </div>
+  );
+}
+
+export const EditAction: Story = {
+  render: () => <EditActionExample />,
+};
+
 /**
  * GAP-153: a property of a multi-selection whose features differ. The field
  * shows "Multiple values" and is described with it until it is edited; then

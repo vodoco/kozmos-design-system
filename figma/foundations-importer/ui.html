@@ -1096,6 +1096,7 @@
                 <option value="settingsRow">SettingsRow</option>
                 <option value="metaStrip">MetaStrip</option>
                 <option value="descriptionList">DescriptionList</option>
+                <option value="codeBlock">CodeBlock</option>
                 <option value="personaMark">PersonaMark</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
@@ -1967,6 +1968,13 @@
           update: "update-description-list",
           rebuild: "rebuild-description-list",
           hint: "Build creates DescriptionList (GAP-221) after Curated Icons: three items, each a label over its value with no field chrome, the third with a copy Action, in Stack and Row Layout variants, with a text property for each label and value and an Action boolean. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        codeBlock: {
+          label: "CodeBlock",
+          build: "build-code-block",
+          update: "update-code-block",
+          rebuild: "rebuild-code-block",
+          hint: "Build creates CodeBlock (GAP-216) after Curated Icons: a read-only block of code in Fira Mono on the muted surface, in Wrap and Scroll Overflow variants, with a Code Text property and a Copy boolean that shows the copy and keeps the code clear of it. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         counter: {
           label: "Counter",

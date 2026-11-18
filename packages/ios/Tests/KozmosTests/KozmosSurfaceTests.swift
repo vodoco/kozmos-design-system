@@ -20,7 +20,7 @@ final class KozmosSurfaceTests: XCTestCase {
             Color.red
             Color.clear
                 .frame(width: 120, height: 60)
-                .modifier(KozmosSurface(shape: RoundedRectangle(cornerRadius: 12), style: style, reduceTransparency: reduceTransparency))
+                .modifier(KozmosSurfaceModifier(shape: RoundedRectangle(cornerRadius: 12), style: style, reduceTransparency: reduceTransparency))
         }
         return try await RenderedPixels.render(view, size: CGSize(width: 200, height: 120))
     }
