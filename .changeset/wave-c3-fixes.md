@@ -11,7 +11,7 @@ BottomNavigation takes `inset` (GAP-245): 8 between the bar's top line and its i
 
 POIDetailPanel takes `children`, the product's own content, drawn last in the body inside its padding and the card's scroll (GAP-131); it was dropped.
 
-AdaptiveMapShell follows the on-screen keyboard on the web (GAP-084): it reads `window.visualViewport` and keeps its sheet and controls above what the keyboard covers of it, the larger of that and `safeAreaInsets.bottom`; `followsKeyboard={false}` turns it off. Before its first measure it lays its panel out at its own width, out of sight, not at width 0, where WebKit could keep a grid row's height from that layout (GAP-265).
+AdaptiveMapShell follows the on-screen keyboard on the web (GAP-084): it reads `window.visualViewport` and keeps its sheet and controls above what the keyboard covers of it, the larger of that and `safeAreaInsets.bottom`; `followsKeyboard={false}` turns it off. Before its first measure it lays its panel out at its own width, transparent but focusable, not at width 0, where WebKit could keep a grid row's height from that layout (GAP-265).
 
 Live regions are mounted before their words (GAP-226): RoutePreviewPanel's status, error and notice, AdaptiveMapShell's map status and POIDetailPanel's action messages go into `status` and `alert` regions that are there, empty, before them; Spinner mounts its status empty and puts its label into it a moment later.
 

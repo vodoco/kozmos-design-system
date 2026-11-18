@@ -323,13 +323,18 @@ function measureAttribution(content: HTMLElement | null) {
 /** A box that scrolls is as tall as what it holds. */
 const fullHeight = (node: HTMLElement | null) =>
   Math.max(node?.offsetHeight ?? 0, node?.scrollHeight ?? 0);
-/** The panel's place before the shell has measured itself (GAP-265). */
+/**
+ * The panel's place before the shell has measured itself (GAP-265): the
+ * host's width, and transparent, not hidden, so a field in it can take
+ * focus as it mounts (visibility: hidden can be focused by nothing). The
+ * shell measures in a layout effect, before the first paint.
+ */
 const UNMEASURED_PANEL: React.CSSProperties = {
   position: "absolute",
   left: 0,
   top: 0,
   width: "100%",
-  visibility: "hidden",
+  opacity: 0,
 };
 
 const position = (rect: MapLayoutRect): React.CSSProperties => ({
@@ -1576,7 +1581,7 @@ const AdaptiveMapShell = React.forwardRef<
                   // Before the first measure there are no bounds: laid out at
                   // width 0, WebKit could keep a grid's auto row at the height
                   // that gave it once the panel widened (GAP-265, #543). It
-                  // is laid out at the host's width first, out of sight.
+                  // is laid out at the host's width first, transparent.
                   ...(measured.ready
                     ? position(layout.panelBounds ?? zero)
                     : UNMEASURED_PANEL),
