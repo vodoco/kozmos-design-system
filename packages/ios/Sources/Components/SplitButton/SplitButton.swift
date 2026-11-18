@@ -1,9 +1,20 @@
 import SwiftUI
 
+/// An entry in a split button's menu (GAP-168), as React's `menuItems`: an
+/// action, with an icon or disabled if need be, or a line between groups.
+public enum KozmosSplitButtonMenuItem {
+    /// An action. `icon` is drawn before its words, which are its name;
+    /// `disabled` greys it, and VoiceOver says it is dimmed.
+    case action(String, icon: Image? = nil, disabled: Bool = false, action: () -> Void)
+    /// A line between groups of actions.
+    case separator
+}
+
 public struct KozmosSplitButton: View {
     let label: String
     let mainAction: () -> Void
-    let menuItems: [(String, () -> Void)]
+    let items: [KozmosSplitButtonMenuItem]
+    let menuContent: AnyView?
     let menuLabel: String
     
     /// `menuLabel` is what VoiceOver calls the menu half, which shows only a
@@ -12,8 +23,41 @@ public struct KozmosSplitButton: View {
     public init(label: String, mainAction: @escaping () -> Void, menuItems: [(String, () -> Void)] = [], menuLabel: String = "More options") {
         self.label = label
         self.mainAction = mainAction
-        self.menuItems = menuItems
+        self.items = menuItems.map { .action($0.0, action: $0.1) }
+        self.menuContent = nil
         self.menuLabel = menuLabel
+    }
+
+    /// A split button whose menu takes full items (GAP-168): actions with
+    /// an icon or disabled, and separators.
+    public init(label: String, mainAction: @escaping () -> Void, items: [KozmosSplitButtonMenuItem], menuLabel: String = "More options") {
+        self.label = label
+        self.mainAction = mainAction
+        self.items = items
+        self.menuContent = nil
+        self.menuLabel = menuLabel
+    }
+
+    /// A split button whose menu also draws custom content after `items`
+    /// (GAP-168): what SwiftUI's `Menu` takes, such as `Button`, `Toggle`,
+    /// `Picker`, `Section` and `Divider`.
+    public init<MenuContent: View>(
+        label: String,
+        mainAction: @escaping () -> Void,
+        items: [KozmosSplitButtonMenuItem] = [],
+        menuLabel: String = "More options",
+        @ViewBuilder menuContent: () -> MenuContent
+    ) {
+        self.label = label
+        self.mainAction = mainAction
+        self.items = items
+        self.menuContent = AnyView(menuContent())
+        self.menuLabel = menuLabel
+    }
+
+    /// The menu's rows, as the menu half draws them inside SwiftUI's `Menu`.
+    var menuRows: KozmosSplitButtonMenuRows {
+        KozmosSplitButtonMenuRows(items: items, content: menuContent)
     }
     
     @Environment(\.layoutDirection) private var layoutDirection
@@ -62,11 +106,7 @@ public struct KozmosSplitButton: View {
             .clipShape(actionShape)
             
             Menu {
-                ForEach(menuItems.indices, id: \.self) { index in
-                    Button(action: menuItems[index].1) {
-                        Text(menuItems[index].0)
-                    }
-                }
+                menuRows
             } label: {
                 Image(systemName: "chevron.down")
                     .padding()
@@ -76,6 +116,35 @@ public struct KozmosSplitButton: View {
             .clipShape(menuShape)
             // The chevron's own name was all VoiceOver had for it.
             .accessibilityLabel(Text(verbatim: menuLabel))
+        }
+    }
+}
+
+/// A split button's menu rows (GAP-168): each action a `Button`, with its
+/// icon as a `Label`'s, disabled where it says, each separator a `Divider`,
+/// then the custom content. The system draws them inside `Menu`.
+struct KozmosSplitButtonMenuRows: View {
+    let items: [KozmosSplitButtonMenuItem]
+    let content: AnyView?
+
+    var body: some View {
+        ForEach(items.indices, id: \.self) { index in
+            switch items[index] {
+            case let .action(words, icon, disabled, action):
+                Button(action: action) {
+                    if let icon {
+                        Label { Text(words) } icon: { icon.accessibilityHidden(true) }
+                    } else {
+                        Text(words)
+                    }
+                }
+                .disabled(disabled)
+            case .separator:
+                Divider()
+            }
+        }
+        if let content {
+            content
         }
     }
 }

@@ -169,7 +169,7 @@ const tourStepTakes: Takes = {
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Box, D],
   [Stack, D],
-  [Grid, D],
+  [Grid, { dom: true, own: ["onRangeChange"] }],
   [Text, D],
   [Heading, D],
   [Container, D],
@@ -233,7 +233,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [ListItem, D],
   [ListItemStatus, D],
   [SettingsRow, D],
-  [Table, D],
+  [Table, { dom: true, own: ["onSelectedIdsChange"] }],
   [
     Tree,
     {
@@ -546,7 +546,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
 >([
   [Box, boxBooleans],
   [Stack, boxBooleans],
-  [Grid, boxBooleans],
+  [Grid, html(["asChild", "virtualized"])],
   [Text, textBooleans],
   [Heading, textBooleans],
   [Container, html(["asChild", "centered"])],
@@ -734,7 +734,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [ListItem, html(["selected"])],
   [ListItemStatus, H],
   [SettingsRow, settingsRowBooleans],
-  [Table, html(["framed"])],
+  [Table, html(["framed", "selectable"])],
   [Tree, html(["checkable", "divided", "virtualized"])],
   [Timeline, H],
   [

@@ -8,7 +8,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 # Table
 
 Styled semantic table parts for headers, body rows, cells, footers and captions.
-The wrapper supports horizontal overflow and keyboard scrolling; sorting, selection and data loading remain host responsibilities.
+The wrapper supports horizontal overflow and keyboard scrolling. Rows can be selected and headers sorted (below); the
+order of the rows and data loading remain the host's.
 
 <Canvas>
   <Story of={TableStories.Default} />
@@ -112,6 +113,298 @@ fun NewAccessRow(added: String?) {
         people.forEach { name ->
             KozmosTableRow(highlight = if (name == added) KozmosTableRowHighlight.New else null) {
                 KozmosTableCell(text = name)
+            }
+        }
+    }
+}
+`}
+/>
+
+## Selecting rows
+
+A `selectable` Table lets User Management select rows and act on them (GAP-171, decision 209). Give each body row a
+`rowId` and a `TableRowSelect` in its first cell, named for its row ("Select Ada Lovelace"), and the header a
+`TableSelectAll`. A row's checkbox selects it, by pointer or by Space; the header's selects every row, is mixed while
+some are (Checkbox's mixed state, decision 188), and, checked, clears them. A selected row draws
+`data-state="selected"`, on the hover fill with no divider under it (decision 207).
+
+The selection is the selected rows' ids: `selectedIds` with `onSelectedIdsChange`, or `defaultSelectedIds`. Selecting all
+adds the rows the table draws and clearing takes them out, so ids of rows on another page are kept. A polite status,
+read and never seen, says how many rows are selected: "No rows selected", "1 row selected", "3 rows selected", or a
+product's own words from `selectionAnnouncement(count, total)`. The header's and rows' names are `label`s, "Select all
+rows" and "Select row" by default.
+
+On SwiftUI, `KozmosTable(data, selection:)` draws each row's checkbox and a first row with the select-all box; the
+count is that box's value and is announced when it changes. On Compose, `KozmosTableRow(selected:, onSelectedChange:)`
+draws a row's checkbox and `KozmosTableSelectAllCell` the header's, with the count in a polite live region. Vue's
+bridge takes `v-model:selectedIds`; the rows are React's, given as `children` (GAP-016), until the context bridge
+(GAP-230) lets Vue compose them.
+
+<Canvas>
+  <Story of={TableStories.Selectable} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableRowSelect,
+  TableSelectAll,
+} from "@kozmos-ds/react";
+
+const users = [
+  { id: "ada", name: "Ada Lovelace" },
+  { id: "grace", name: "Grace Hopper" },
+];
+
+export function UserSelection() {
+  const [selected, setSelected] = useState<string[]>([]);
+  return (
+    <Table selectable selectedIds={selected} onSelectedIdsChange={setSelected}>
+      <TableHeader>
+        <TableRow>
+          <TableHead>
+            <TableSelectAll />
+          </TableHead>
+          <TableHead>Name</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {users.map((user) => (
+          <TableRow key={user.id} rowId={user.id}>
+            <TableCell>
+              <TableRowSelect label={"Select " + user.name} />
+            </TableCell>
+            <TableCell>{user.name}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosTable } from "@kozmos-ds/vue/react-bridge"
+
+// The selected rows' rowIds. The rows themselves are React's TableRow,
+// TableRowSelect and TableSelectAll, given as children (GAP-016), until the
+// context bridge (GAP-230) lets Vue compose them.
+const selected = ref([])
+</script>
+
+<template>
+  <KozmosTable selectable v-model:selectedIds="selected" aria-label="Users" />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A selectable table starts each row with a checkbox named for its row, and
+// draws a first row whose checkbox selects every row, mixed while some are.
+// selection holds the selected rows' ids; VoiceOver hears how many.
+struct UserSelection: View {
+    struct User: Identifiable {
+        let name: String
+        let role: String
+        var id: String { name }
+    }
+
+    let users = [User(name: "Ada Lovelace", role: "Admin"), User(name: "Grace Hopper", role: "Editor")]
+    @State private var selection: Set<String> = []
+
+    var body: some View {
+        KozmosTable(users, selection: $selection, rowSelectLabel: { "Select " + $0.name }) { user in
+            KozmosTableRow {
+                KozmosTableCell(user.name)
+                KozmosTableCell(user.role)
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.table.KozmosTable
+import com.kozmos.components.table.KozmosTableCell
+import com.kozmos.components.table.KozmosTableHeaderCell
+import com.kozmos.components.table.KozmosTableRow
+import com.kozmos.components.table.KozmosTableSelectAllCell
+
+// Each row's checkbox selects it; the header's selects every row, mixed
+// while some are, and TalkBack hears how many are selected.
+@Composable
+fun UserSelection() {
+    val users = listOf("Ada Lovelace", "Grace Hopper")
+    var selected by remember { mutableStateOf(setOf<String>()) }
+    KozmosTable(
+        header = {
+            KozmosTableRow {
+                KozmosTableSelectAllCell(
+                    selectedCount = users.count { it in selected },
+                    rowCount = users.size,
+                    onSelectAllChange = { all -> selected = if (all) users.toSet() else emptySet() }
+                )
+                KozmosTableHeaderCell(text = "Name")
+            }
+        }
+    ) {
+        users.forEach { name ->
+            KozmosTableRow(
+                selected = name in selected,
+                onSelectedChange = { on -> selected = if (on) selected + name else selected - name },
+                selectLabel = "Select " + name
+            ) {
+                KozmosTableCell(text = name)
+            }
+        }
+    }
+}
+`}
+/>
+
+## Sorting and numbers
+
+A header given `onSort` sorts its column (GAP-037, decision 209): its words become a button, with an arrow up for
+`sortDirection="ascending"`, down for `"descending"`, and both ways, dimmed, while it is sortable but not sorted
+(`"none"`, the default). The header cell says its order as `aria-sort`. Sorting the rows is the caller's: `onSort` asks,
+and the caller passes the new direction and the rows in their new order.
+
+`numeric` on a `TableHead` and its column's `TableCell`s aligns them to the end and draws tabular figures, so counts and
+percentages line up. A numeric header that sorts puts its arrow before its words, at the column's end.
+
+SwiftUI's and Compose's tables have no sortable header or numeric column: GAP-037 is for the web and Vue. Their tabs
+below order the rows themselves.
+
+<Canvas>
+  <Story of={TableStories.SortableNumeric} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  type TableSortDirection,
+} from "@kozmos-ds/react";
+
+const floors = [
+  { name: "Ground", pois: 1204 },
+  { name: "Roof", pois: 3 },
+];
+
+export function FloorCounts() {
+  const [direction, setDirection] = useState<TableSortDirection>("descending");
+  const rows = [...floors].sort((a, b) =>
+    direction === "ascending" ? a.pois - b.pois : b.pois - a.pois,
+  );
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Floor</TableHead>
+          <TableHead
+            numeric
+            sortDirection={direction}
+            onSort={() =>
+              setDirection(direction === "ascending" ? "descending" : "ascending")
+            }
+          >
+            POIs
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((floor) => (
+          <TableRow key={floor.name}>
+            <TableCell>{floor.name}</TableCell>
+            <TableCell numeric>{floor.pois.toLocaleString()}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosTable } from "@kozmos-ds/vue/react-bridge"
+
+// The headers and cells are React's TableHead (onSort, sortDirection,
+// numeric) and TableCell (numeric), given as children (GAP-016), until the
+// context bridge (GAP-230) lets Vue compose them.
+</script>
+
+<template>
+  <KozmosTable aria-label="Floors" />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// SwiftUI's table has no sortable header or numeric column (GAP-037 is for
+// the web and Vue): order the rows before you hand them over.
+struct FloorCounts: View {
+    struct Floor: Identifiable {
+        let name: String
+        let pois: Int
+        var id: String { name }
+    }
+
+    let floors = [Floor(name: "Roof", pois: 3), Floor(name: "Ground", pois: 1204)]
+
+    var body: some View {
+        KozmosTable(floors.sorted { $0.pois > $1.pois }) { floor in
+            KozmosTableRow {
+                KozmosTableCell(floor.name)
+                KozmosTableCell(floor.pois.formatted())
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.table.KozmosTable
+import com.kozmos.components.table.KozmosTableCell
+import com.kozmos.components.table.KozmosTableHeaderCell
+import com.kozmos.components.table.KozmosTableRow
+
+// Compose's table has no sortable header or numeric column (GAP-037 is for
+// the web and Vue): order the rows before you draw them.
+@Composable
+fun FloorCounts() {
+    val floors = listOf("Roof" to 3, "Ground" to 1204)
+    KozmosTable(
+        header = {
+            KozmosTableRow {
+                KozmosTableHeaderCell(text = "Floor")
+                KozmosTableHeaderCell(text = "POIs")
+            }
+        }
+    ) {
+        floors.sortedByDescending { it.second }.forEach { (name, pois) ->
+            KozmosTableRow {
+                KozmosTableCell(text = name)
+                KozmosTableCell(text = pois.toString())
             }
         }
     }

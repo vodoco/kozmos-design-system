@@ -24,6 +24,117 @@ on iOS too.
 
 <Controls />
 
+## Menu items
+
+The menu takes Menu's items (GAP-168, decision 209). Each of `menuItems` is an action, `{ label, onClick }`, with an
+`icon` drawn before its words and hidden from its name, or `disabled`, said disabled, drawn at half and skipped by the
+arrow keys; `{ type: "separator" }` draws a line between groups. `menuContent` is custom content after them, Menu's own
+parts: `MenuLabel`, `MenuItem`, `MenuCheckboxItem`, `MenuSeparator`. `SplitButtonProps` and the item types are exported
+from the package.
+
+SwiftUI's `KozmosSplitButton(label:mainAction:items:)` takes `.action(_:icon:disabled:action:)` and `.separator`, and a
+`menuContent` view builder for what the system's `Menu` holds. Compose's `menuItems` take `SplitContextMenuItem`'s
+`icon` and `enabled`, and `SplitContextMenuSeparator`; `menuContent` draws after them and is given the function that
+closes the menu. The `(title, action)` and `SplitContextMenuItem(label) { … }` items are as they were. In Figma, Menu Open
+shows the open menu under an enabled variant.
+
+<PlatformSnippets
+    react={`
+import { SplitButton, MenuItem } from "@kozmos-ds/react";
+import { Download01 } from "@kozmos-ds/icons";
+
+export function PublishTargets({ onPublish }: { onPublish: (target: string) => void }) {
+  return (
+    <SplitButton
+      onMainClick={() => onPublish("draft")}
+      menuItems={[
+        { label: "Publish to staging", icon: <Download01 />, onClick: () => onPublish("staging") },
+        { type: "separator" },
+        { label: "Publish to production", disabled: true },
+      ]}
+      menuContent={<MenuItem onSelect={() => onPublish("tonight")}>Publish tonight</MenuItem>}
+    >
+      Publish
+    </SplitButton>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosSplitButton } from "@kozmos-ds/vue/react-bridge"
+
+const items = [
+  { label: "Publish to staging", onClick: () => publish("staging") },
+  { type: "separator" },
+  { label: "Publish to production", disabled: true },
+]
+function publish(target) {
+  console.log(target)
+}
+</script>
+
+<template>
+  <KozmosSplitButton :menu-items="items" @main-click="publish('draft')">Publish</KozmosSplitButton>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Each item is an action, with an icon or disabled, or a separator; what the
+// view builder draws follows them, inside the system's Menu.
+struct PublishTargets: View {
+    let publish: (String) -> Void
+
+    var body: some View {
+        KozmosSplitButton(
+            label: "Publish",
+            mainAction: { publish("draft") },
+            items: [
+                .action("Publish to staging", icon: Image(systemName: "arrow.down.circle"), action: { publish("staging") }),
+                .separator,
+                .action("Publish to production", disabled: true, action: {}),
+            ]
+        ) {
+            Button("Publish tonight") { publish("tonight") }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import com.kozmos.components.splitbutton.KozmosSplitButton
+import com.kozmos.components.splitbutton.SplitContextMenuItem
+import com.kozmos.components.splitbutton.SplitContextMenuSeparator
+
+// An item takes an icon and enabled; a separator draws a line; menuContent
+// follows them and is given the function that closes the menu.
+@Composable
+fun PublishTargets(publish: (String) -> Unit) {
+    KozmosSplitButton(
+        label = "Publish",
+        onMainClick = { publish("draft") },
+        menuItems = listOf(
+            SplitContextMenuItem(
+                label = "Publish to staging",
+                icon = { Icon(Icons.Default.Download, contentDescription = null) }
+            ) { publish("staging") },
+            SplitContextMenuSeparator,
+            SplitContextMenuItem(label = "Publish to production", enabled = false) {}
+        ),
+        menuContent = { close ->
+            DropdownMenuItem(text = { Text("Publish tonight") }, onClick = { publish("tonight"); close() })
+        }
+    )
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "0e1b2f242c0d";
+const PLUGIN_BUILD = "705b9de97078";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -36059,7 +36059,8 @@ async function buildTableComponent() {
       "Kozmos Table component set generated from React Table API.",
       "Density maps to default and compact row spacing examples.",
       "Header and cell text properties map to TableHead and TableCell children.",
-      "Sorting, selection, pagination, and empty states remain separate composition concerns.",
+      "Selectable maps to Table selectable with TableSelectAll and TableRowSelect (GAP-171); Sortable to TableHead onSort and sortDirection; Numeric Column to TableHead and TableCell numeric (GAP-037).",
+      "Pagination and empty states remain separate composition concerns.",
     ],
   });
 }
@@ -36080,7 +36081,8 @@ async function updateTableComponent() {
       "Kozmos Table component set generated from React Table API.",
       "Density maps to default and compact row spacing examples.",
       "Header and cell text properties map to TableHead and TableCell children.",
-      "Sorting, selection, pagination, and empty states remain separate composition concerns.",
+      "Selectable maps to Table selectable with TableSelectAll and TableRowSelect (GAP-171); Sortable to TableHead onSort and sortDirection; Numeric Column to TableHead and TableCell numeric (GAP-037).",
+      "Pagination and empty states remain separate composition concerns.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -60612,6 +60614,15 @@ function configureToggleButtonProperties(componentSet, stats) {
   configureFocusVisibleProperty(componentSet, stats);
 }
 
+// Decision 209 (17 Nov 2026), GAP-168: SplitButton's menu takes Menu's
+// items. Menu Open, a boolean off by default, shows the open menu under the
+// button, at its end, as React's MenuContent align="end" with its 4 offset:
+// an item with an icon, a separator and a disabled item at half, as React's
+// SplitButton `menuItems` draw them.
+const SPLIT_BUTTON_MENU_PROPERTY_NAME = "Menu Open";
+const SPLIT_BUTTON_MENU = "Split Menu";
+const SPLIT_BUTTON_MENU_WIDTH = 224;
+
 function configureSplitButtonProperties(componentSet, stats) {
   configureNamedTextProperty(
     componentSet,
@@ -60621,6 +60632,80 @@ function configureSplitButtonProperties(componentSet, stats) {
     stats,
   );
   configureFocusVisibleProperty(componentSet, stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    SPLIT_BUTTON_MENU,
+    SPLIT_BUTTON_MENU_PROPERTY_NAME,
+    false,
+    stats,
+  );
+}
+
+/**
+ * The open menu (GAP-168): Menu's panel, its items Menu's rows. Redrawn on
+ * each Update; nothing pins it. Drawn on the enabled variants only.
+ */
+async function syncSplitButtonMenu(
+  component,
+  { metrics, variableByName, fonts, stats },
+) {
+  const old = directChildNamed(component, SPLIT_BUTTON_MENU);
+  if (old) old.remove();
+
+  const menu = figma.createFrame();
+  menu.name = SPLIT_BUTTON_MENU;
+  menu.layoutMode = "VERTICAL";
+  menu.primaryAxisSizingMode = "AUTO";
+  menu.counterAxisSizingMode = "FIXED";
+  menu.primaryAxisAlignItems = "MIN";
+  menu.counterAxisAlignItems = "MIN";
+  menu.itemSpacing = 0;
+  menu.paddingLeft = POPOVER_ROW_INSET;
+  menu.paddingRight = POPOVER_ROW_INSET;
+  menu.paddingTop = POPOVER_ROW_INSET;
+  menu.paddingBottom = POPOVER_ROW_INSET;
+  menu.resizeWithoutConstraints(SPLIT_BUTTON_MENU_WIDTH, 100);
+  menu.cornerRadius = KOZMOS_RADIUS.control;
+  menu.clipsContent = false;
+  menu.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  menu.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  menu.strokeWeight = 1;
+  menu.effects = [elevationEffect("overlay")];
+  menu.setSharedPluginData(RUN_NAMESPACE, "kind", "split-button-menu");
+
+  await syncMenuItemRow({
+    component: menu,
+    name: "Menu Item 1",
+    textName: "Item 1 Text",
+    text: "Publish to staging",
+    icon: "download-01",
+    variableByName,
+    fonts,
+    stats,
+  });
+  syncMenuSeparator({ component: menu, variableByName, stats });
+  const production = await syncMenuItemRow({
+    component: menu,
+    name: "Menu Item 2",
+    textName: "Item 2 Text",
+    text: "Publish to production",
+    variableByName,
+    fonts,
+    stats,
+  });
+  // React's data-[disabled]:opacity-50.
+  production.opacity = 0.5;
+
+  component.appendChild(menu);
+  menu.layoutPositioning = "ABSOLUTE";
+  menu.x = metrics.width - SPLIT_BUTTON_MENU_WIDTH;
+  menu.y = metrics.height + 4;
+  menu.visible = false;
+  return menu;
 }
 
 async function configureFloatingActionButtonProperties(
@@ -60756,7 +60841,44 @@ function configureListProperties(componentSet, stats) {
   }
 }
 
+// Decision 209 (17 Nov 2026), GAP-171 and GAP-037: Table's row selection,
+// sortable headers and numeric alignment, each a boolean off by default, so
+// a table drawn before them is unchanged. Selectable shows each row's
+// Select Cell, React's TableRowSelect and the header's TableSelectAll, with
+// the header's box mixed and the last row selected on the hover fill
+// (Selected Fill; the last row draws no divider, as decision 207 asks of a
+// selected row). Sortable shows Header 1's ascending arrow, React's
+// TableHead onSort with sortDirection="ascending". Numeric Column shows a
+// fourth column aligned to the end, React's TableHead and TableCell
+// `numeric`.
+const TABLE_SELECTABLE_PROPERTY_NAME = "Selectable";
+const TABLE_SORTABLE_PROPERTY_NAME = "Sortable";
+const TABLE_NUMERIC_PROPERTY_NAME = "Numeric Column";
+const TABLE_SELECT_CELL = "Select Cell";
+const TABLE_SELECTED_FILL = "Selected Fill";
+const TABLE_SORT_ICON = "Header 1 Sort Icon";
+const TABLE_NUMERIC_CELL = "Numeric Cell";
+const TABLE_NUMERIC_VALUES = ["POIs", "1,204", "86", "3"];
+
+function configureTableBooleanProperties(componentSet, stats) {
+  for (const [nodeName, propertyName] of [
+    [TABLE_SELECT_CELL, TABLE_SELECTABLE_PROPERTY_NAME],
+    [TABLE_SELECTED_FILL, TABLE_SELECTABLE_PROPERTY_NAME],
+    [TABLE_SORT_ICON, TABLE_SORTABLE_PROPERTY_NAME],
+    [TABLE_NUMERIC_CELL, TABLE_NUMERIC_PROPERTY_NAME],
+  ]) {
+    configureNamedBooleanProperty(
+      componentSet,
+      nodeName,
+      propertyName,
+      false,
+      stats,
+    );
+  }
+}
+
 function configureTableProperties(componentSet, stats) {
+  configureTableBooleanProperties(componentSet, stats);
   const headers = ["Name", "Status", "Updated"];
   for (let column = 1; column <= 3; column += 1) {
     const label = `Header ${column} Text`;
@@ -62527,6 +62649,20 @@ async function updateSplitButtonVariant(
     variableByName,
     stats,
   });
+
+  // A disabled SplitButton's menu never opens: its Disabled variants draw
+  // none.
+  if (state === "Disabled") {
+    const old = directChildNamed(component, SPLIT_BUTTON_MENU);
+    if (old) old.remove();
+  } else {
+    await syncSplitButtonMenu(component, {
+      metrics,
+      variableByName,
+      fonts,
+      stats,
+    });
+  }
 }
 
 async function createFloatingActionButtonVariant({
@@ -75157,6 +75293,62 @@ async function syncTableRow({
   );
   setLayoutSizingVertical(row, "FIXED");
 
+  // Decision 209: the last row is the selected one, on the hover fill under
+  // its cells, hidden until Selectable.
+  const lastRow = rowIndex === metrics.rowCount - 1;
+  if (!header && lastRow) {
+    const fill = figma.createRectangle();
+    fill.name = TABLE_SELECTED_FILL;
+    fill.resizeWithoutConstraints(metrics.width, metrics.rowHeight);
+    fill.fills = [
+      paintFromVariable(
+        "Colors/background/100",
+        "#E3E4E8",
+        variableByName,
+        stats,
+      ),
+    ];
+    fill.strokes = [];
+    fill.setSharedPluginData(RUN_NAMESPACE, "kind", "table-selected-fill");
+    row.appendChild(fill);
+    fill.layoutPositioning = "ABSOLUTE";
+    fill.x = 0;
+    fill.y = 0;
+    fill.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+    fill.visible = false;
+  }
+
+  // The row's checkbox, React's TableRowSelect (the header's TableSelectAll,
+  // mixed): the cell's 16 inset and Checkbox's 20 box, no end inset
+  // ([&:has([role=checkbox])]:pr-0), hidden until Selectable.
+  const selectCell = figma.createFrame();
+  selectCell.name = TABLE_SELECT_CELL;
+  selectCell.layoutMode = "HORIZONTAL";
+  selectCell.primaryAxisSizingMode = "FIXED";
+  selectCell.counterAxisSizingMode = "FIXED";
+  selectCell.primaryAxisAlignItems = "MIN";
+  selectCell.counterAxisAlignItems = "CENTER";
+  selectCell.itemSpacing = 0;
+  selectCell.paddingLeft = 16;
+  selectCell.paddingRight = 0;
+  selectCell.paddingTop = 0;
+  selectCell.paddingBottom = 0;
+  selectCell.resizeWithoutConstraints(36, metrics.rowHeight);
+  selectCell.fills = [];
+  selectCell.strokes = [];
+  selectCell.clipsContent = false;
+  selectCell.setSharedPluginData(RUN_NAMESPACE, "kind", "table-select-cell");
+  selectCell.appendChild(
+    await createTableSelectBox(
+      header ? "Mixed" : lastRow ? "Checked" : "Unchecked",
+      variableByName,
+      stats,
+    ),
+  );
+  row.appendChild(selectCell);
+  setFixedChildSizing(selectCell);
+  selectCell.visible = false;
+
   const rowCells = [];
   for (
     let columnIndex = 0;
@@ -75223,14 +75415,146 @@ async function syncTableRow({
     setLayoutSizingVertical(text, "HUG");
     cell.appendChild(text);
     setLayoutSizingHorizontal(text, "FILL");
+    // Decision 209 (GAP-037): Header 1 sorts, ascending; its arrow follows
+    // its words, 4 after them, hidden until Sortable.
+    if (header && columnIndex === 0) {
+      cell.itemSpacing = 4;
+      const sortIcon = await createFixedIconInstance(
+        "arrow-up",
+        "Colors/foreground/0",
+        "#000000",
+        variableByName,
+        stats,
+        16,
+        "Menu/icon/size",
+      );
+      sortIcon.name = TABLE_SORT_ICON;
+      sortIcon.setSharedPluginData(RUN_NAMESPACE, "kind", "table-sort-icon");
+      cell.appendChild(sortIcon);
+      setFixedChildSizing(sortIcon);
+      sortIcon.visible = false;
+    }
     row.appendChild(cell);
     setLayoutSizingHorizontal(cell, "FILL");
     rowCells.push(cell);
   }
 
+  // Decision 209 (GAP-037): a fourth column of numbers, aligned to the end,
+  // hidden until Numeric Column.
+  const numericCell = figma.createFrame();
+  numericCell.name = TABLE_NUMERIC_CELL;
+  numericCell.layoutMode = "HORIZONTAL";
+  numericCell.primaryAxisSizingMode = "FIXED";
+  numericCell.counterAxisSizingMode = "FIXED";
+  numericCell.primaryAxisAlignItems = "MAX";
+  numericCell.counterAxisAlignItems = "CENTER";
+  numericCell.itemSpacing = 0;
+  numericCell.paddingLeft = 16;
+  numericCell.paddingRight = 16;
+  numericCell.paddingTop = metrics.paddingY;
+  numericCell.paddingBottom = metrics.paddingY;
+  numericCell.resizeWithoutConstraints(
+    metrics.width / metrics.columnCount,
+    metrics.rowHeight,
+  );
+  numericCell.fills = [];
+  numericCell.strokes = [];
+  numericCell.clipsContent = false;
+  numericCell.setSharedPluginData(RUN_NAMESPACE, "kind", "table-numeric-cell");
+  const numericText = figma.createText();
+  numericText.name = header
+    ? "Header Numeric Text"
+    : `Row ${rowIndex} Numeric Text`;
+  if (header) {
+    await applyTableHeaderTypography(numericText, fonts, variableByName, stats);
+  } else {
+    await applyTableCellTypography(numericText, fonts, variableByName, stats);
+  }
+  numericText.characters = TABLE_NUMERIC_VALUES[rowIndex] || "0";
+  numericText.textAlignHorizontal = "RIGHT";
+  numericText.textAlignVertical = "CENTER";
+  numericText.fills = [
+    paintFromVariable(
+      header ? "Colors/foreground/400" : "Colors/foreground/0",
+      header ? "#5D626F" : "#000000",
+      variableByName,
+      stats,
+    ),
+  ];
+  numericText.resizeWithoutConstraints(
+    metrics.width / metrics.columnCount - 32,
+    metrics.textHeight,
+  );
+  setLayoutSizingVertical(numericText, "HUG");
+  numericCell.appendChild(numericText);
+  setLayoutSizingHorizontal(numericText, "FILL");
+  row.appendChild(numericCell);
+  setLayoutSizingHorizontal(numericCell, "FILL");
+  setLayoutSizingVertical(numericCell, "FIXED");
+  numericCell.visible = false;
+
   component.appendChild(row);
   setLayoutSizingHorizontal(row, "FILL");
   return { row, cells: rowCells };
+}
+
+/**
+ * Checkbox's box in a selectable table (decision 209, GAP-171): 20 square,
+ * radius marker; Unchecked a 1px Border/Input edge, Checked and Mixed the
+ * theme fill with its own edge and the check or Checkbox's dash in the theme
+ * foreground, as Checkbox draws them (decisions 59 and 188).
+ */
+async function createTableSelectBox(look, variableByName, stats) {
+  const box = figma.createFrame();
+  box.name = `Checkbox ${look}`;
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(20, 20);
+  box.cornerRadius = KOZMOS_RADIUS.marker;
+  box.clipsContent = false;
+  const filled = look !== "Unchecked";
+  box.fills = filled
+    ? [
+        paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  box.strokes = [
+    filled
+      ? paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        )
+      : paintFromVariable(
+          TREE_CHECKBOX.stroke,
+          TREE_CHECKBOX.strokeFallback,
+          variableByName,
+          stats,
+        ),
+  ];
+  box.strokeWeight = 1;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", "table-select-box");
+  if (filled) {
+    const mark = await createFixedIconInstance(
+      look === "Mixed" ? "minus" : "check",
+      THEME_FILL_FOREGROUND.name,
+      THEME_FILL_FOREGROUND.fallback,
+      variableByName,
+      stats,
+      16,
+      "Menu/icon/size",
+    );
+    mark.name = "Checkbox Mark";
+    box.appendChild(mark);
+    mark.x = 2;
+    mark.y = 2;
+  }
+  return box;
 }
 
 async function syncTabsVariantChildren({

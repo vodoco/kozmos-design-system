@@ -23,6 +23,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@kozmos-ds/react";
+import * as KozmosReact from "@kozmos-ds/react";
 import * as Bridge from "./index";
 import { bridgeOf, createVueWrapper, RADIX_MODELS } from "./react-adapter";
 import {
@@ -866,6 +867,40 @@ const PARTS: Part[] = [
     fromNothing: { next: ["3"], shows: ["b.ts"] },
     listener: "onSelectedIdsChange",
     alone: ["b.ts"],
+  },
+  {
+    // A selectable table's model is its selected rows' rowIds (GAP-171): a
+    // row's checkbox adds its row. The rows are React's, as children.
+    name: "KozmosTable",
+    model: "selectedIds",
+    props: {
+      selectable: true,
+      children: e(
+        KozmosReact.TableBody,
+        null,
+        ["ada", "grace"].map((id) =>
+          e(KozmosReact.TableRow, { key: id, rowId: id }, [
+            e(
+              KozmosReact.TableCell,
+              { key: "select" },
+              e(KozmosReact.TableRowSelect, { label: id }),
+            ),
+            e(KozmosReact.TableCell, { key: "name" }, id),
+          ]),
+        ),
+      ),
+    },
+    start: ["ada"],
+    before: ["ada"],
+    field: () => $('[role=checkbox][aria-label="grace"]'),
+    change: (box) => box.click(),
+    next: ["ada", "grace"],
+    shown: () => texts("tr[data-state=selected] td:last-child"),
+    shows: ["ada", "grace"],
+    nothing: [],
+    fromNothing: { next: ["grace"], shows: ["grace"] },
+    listener: "onSelectedIdsChange",
+    alone: ["grace"],
   },
   {
     // A phone-sized shell, so the sheet and its handle are drawn.

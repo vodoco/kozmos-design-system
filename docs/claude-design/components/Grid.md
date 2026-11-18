@@ -44,6 +44,43 @@ export function GridExample() {
 
 It forwards its ref to `HTMLDivElement`. Its props are `GridProps`, which extends `BoxProps, VariantProps<typeof gridVariants>`.
 
+- `virtualized`: `boolean`, optional.
+
+  Draws only the rows in view and `overscan` rows past each edge
+  (GAP-172), for hundreds of cards: the Grid scrolls itself, so give it
+  a height. Items are drawn in reading order, each a `listitem` said as
+  its place in the whole list (`aria-posinset` of `itemCount`), and a
+  focused item that scrolls out of the drawn rows hands focus to the
+  scroller, which Tab and the arrow keys reach. Needs `itemCount` and
+  `rowHeight`, and `renderItem` or children.
+
+- `itemCount`: `number`, optional.
+
+  How many items a `virtualized` Grid holds.
+
+- `rowHeight`: `number`, optional.
+
+  Each row's height in px, a `virtualized` Grid's: every row is as tall.
+
+- `renderItem`: `(index: number) => React.ReactNode`, optional.
+
+  A `virtualized` Grid's item at `index`, wrapped in a `listitem`. Without
+  it, children are drawn as the items from the range `onRangeChange`
+  reports, so a caller, Vue's slot among them, draws only those.
+
+- `minColumnWidth`: `number`, optional.
+
+  A `virtualized` Grid without `cols` fits as many columns of at least
+  this width, in px, as its width holds; with neither, one column.
+
+- `overscan`: `number`, optional.
+
+  Rows drawn past each edge of the view when `virtualized`: 2 by default.
+
+- `onRangeChange`: `(range: GridVirtualRange) => void`, optional.
+
+  Every change to the items a `virtualized` Grid draws.
+
 - `asChild`: `boolean`, optional.
 - `align`: `"end" | "start" | "center" | "baseline" | "stretch" | null`, optional.
 - `cols`: `"none" | 3 | 2 | 1 | 4 | 6 | 5 | 12 | null`, optional, default `'none'`.
@@ -56,3 +93,17 @@ It forwards its ref to `HTMLDivElement`. Its props are `GridProps`, which extend
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### GridVirtualRange
+
+From `@kozmos-ds/react`.
+
+```ts
+/** The items a virtualized Grid draws (GAP-172): `start` up to, not including, `end`. */
+interface GridVirtualRange {
+  start: number;
+  end: number;
+}
+```

@@ -37,7 +37,17 @@ export function SplitButtonExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `SplitButtonProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
 - `onMainClick`: `React.MouseEventHandler<HTMLButtonElement>`, optional.
-- `menuItems`: `{ label: string; onClick: () => void }[]`, optional, default `[]`.
+- `menuItems`: `SplitButtonMenuItem[]`, optional, default `[]`.
+
+  The menu's items, in order: actions, each with words and optionally an
+  icon or `disabled`, and `{ type: "separator" }` lines between groups
+  (GAP-168). `{ label, onClick }` items are as they were.
+
+- `menuContent`: `React.ReactNode`, optional.
+
+  Custom content, drawn after `menuItems`: Menu's own parts, such as
+  `MenuLabel`, `MenuItem`, `MenuCheckboxItem` and `MenuSeparator`.
+
 - `variant`: `ButtonProps["variant"]`, optional, default `"default"`.
 - `size`: `ButtonProps["size"]`, optional, default `"default"`.
 - `disabled`: `boolean`, optional.
@@ -50,6 +60,14 @@ It forwards its ref to `HTMLDivElement`. Its props are `SplitButtonProps`, which
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
+
+### SplitButtonMenuItem
+
+From `@kozmos-ds/react`.
+
+```ts
+type SplitButtonMenuItem = SplitButtonMenuAction | SplitButtonMenuSeparator;
+```
 
 ### ButtonProps
 
@@ -77,6 +95,41 @@ interface ButtonProps
    * `glass` takes no emotion.
    */
   emotion?: ButtonEmotion;
+}
+```
+
+### SplitButtonMenuAction
+
+From `@kozmos-ds/react`.
+
+```ts
+/** An action in a SplitButton's menu (GAP-168). */
+interface SplitButtonMenuAction {
+  type?: "item";
+  /** What the item says, and its name. */
+  label: React.ReactNode;
+  /** Runs when the item is chosen, by pointer, Enter or Space. */
+  onClick?: () => void;
+  /** An icon before the words, at 16, hidden from the item's name. */
+  icon?: React.ReactNode;
+  /** Said disabled, drawn at half and skipped by the arrow keys. */
+  disabled?: boolean;
+  /**
+   * The words type-ahead matches when `label` is not a string: Menu's
+   * `textValue`.
+   */
+  textValue?: string;
+}
+```
+
+### SplitButtonMenuSeparator
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A line between groups of items in a SplitButton's menu (GAP-168). */
+interface SplitButtonMenuSeparator {
+  type: "separator";
 }
 ```
 

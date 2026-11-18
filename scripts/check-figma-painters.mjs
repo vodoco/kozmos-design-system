@@ -21862,6 +21862,311 @@ section("Decision 207: no divider under a selected tree row");
   }
 }
 
+section(
+  "Decision 209: Table's Selectable, Sortable and Numeric Column, and SplitButton's Menu Open",
+);
+{
+  const tokens = menusTokens;
+  const kindOf = (node) =>
+    node && node.getSharedPluginData("kozmos_ds_importer", "kind");
+  const reachable =
+    typeof plugin.updateTableVariant === "function" &&
+    typeof plugin.createSplitButtonVariant === "function";
+  ok(reachable, "Table's and SplitButton's painters are reachable");
+
+  // Table: every row's hidden Select Cell first, the header's box mixed and
+  // the last row's checked on its hidden Selected Fill; Header 1's hidden
+  // ascending arrow; and every row's hidden Numeric Cell last, to the end.
+  for (const density of reachable ? ["Default", "Compact"] : []) {
+    const table = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin.updateTableVariant(table, {
+        value: density,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const rows = table.children;
+    const height = density === "Compact" ? 40 : 48;
+    const issues = [];
+    rows.forEach((row, index) => {
+      const flow = row.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const select = flow[0];
+      const numeric = flow[flow.length - 1];
+      const look =
+        index === 0 ? "Mixed" : index === 3 ? "Checked" : "Unchecked";
+      const box = select && select.children[0];
+      const mark = box && box.children[0];
+      if (
+        !select ||
+        select.name !== "Select Cell" ||
+        select.visible !== false ||
+        select.width !== 36 ||
+        select.paddingLeft !== 16 ||
+        select.paddingRight !== 0 ||
+        kindOf(select) !== "table-select-cell"
+      )
+        issues.push(
+          `${row.name}: no hidden 36 Select Cell first (${select && select.name})`,
+        );
+      if (
+        !box ||
+        box.name !== `Checkbox ${look}` ||
+        box.width !== 20 ||
+        box.cornerRadius !== 4 ||
+        boundVariableName(box.strokes[0]) !==
+          (look === "Unchecked"
+            ? "Border/Input"
+            : "Primary Buttons/themed/button/background/idle") ||
+        (look === "Unchecked"
+          ? box.fills.length !== 0 || mark
+          : boundVariableName(box.fills[0]) !==
+              "Primary Buttons/themed/button/background/idle" ||
+            !mark ||
+            mark.width !== 16 ||
+            mark.x !== 2 ||
+            mark.y !== 2)
+      )
+        issues.push(
+          `${row.name}: its box is not Checkbox's ${look} (${box && box.name})`,
+        );
+      const words = numeric && numeric.children[0];
+      if (
+        !numeric ||
+        numeric.name !== "Numeric Cell" ||
+        numeric.visible !== false ||
+        numeric.primaryAxisAlignItems !== "MAX" ||
+        !words ||
+        words.textAlignHorizontal !== "RIGHT" ||
+        words.characters !== ["POIs", "1,204", "86", "3"][index]
+      )
+        issues.push(
+          `${row.name}: no hidden Numeric Cell last, to the end (${numeric && numeric.name})`,
+        );
+      if (row.height !== height)
+        issues.push(`${row.name}: ${row.height} high, not ${height}`);
+      const fill = row.children.find((child) => child.name === "Selected Fill");
+      if (index === 3) {
+        if (
+          !fill ||
+          fill.visible !== false ||
+          fill.layoutPositioning !== "ABSOLUTE" ||
+          row.children.indexOf(fill) !== 0 ||
+          boundVariableName(fill.fills[0]) !== "Colors/background/100" ||
+          fill.width !== row.width ||
+          fill.height !== height ||
+          row.strokeBottomWeight !== 0
+        )
+          issues.push(
+            `${row.name}: no hidden hover fill under it, or a divider under it`,
+          );
+      } else if (fill) {
+        issues.push(
+          `${row.name}: a Selected Fill on a row that is not selected`,
+        );
+      }
+    });
+    const headerCell =
+      rows[0] && rows[0].children.find((c) => c.name === "Header 1 Cell");
+    const arrow =
+      headerCell &&
+      headerCell.children.find((c) => c.name === "Header 1 Sort Icon");
+    if (
+      !arrow ||
+      arrow.type !== "INSTANCE" ||
+      arrow.visible !== false ||
+      arrow.width !== 16 ||
+      headerCell.children.indexOf(arrow) !== 1 ||
+      kindOf(arrow) !== "table-sort-icon"
+    )
+      issues.push(
+        `Header 1: no hidden 16 arrow after its words (${arrow && arrow.type})`,
+      );
+    // Hidden, the three columns share the width as before.
+    const widths = (row) =>
+      row.children
+        .filter(
+          (c) => c.visible !== false && c.layoutPositioning !== "ABSOLUTE",
+        )
+        .map((c) => c.width);
+    const even = (list) => list.every((w) => Math.abs(w - list[0]) < 0.01);
+    const sum = (list) => list.reduce((a, b) => a + b, 0);
+    const hiddenWidths = rows[1] ? widths(rows[1]) : [];
+    const hiddenSum = sum(hiddenWidths);
+    if (hiddenWidths.length !== 3 || !even(hiddenWidths))
+      issues.push(
+        `hidden, a row's columns are ${hiddenWidths.map(Math.round).join()}, not three equal ones`,
+      );
+    ok(
+      rows.length === 4 && issues.length === 0,
+      `Table ${density}: Select Cell, Selected Fill, Header 1 Sort Icon and Numeric Cell drawn hidden, as decision 209 asks (${issues.slice(0, 4).join("; ") || "all as expected"})`,
+    );
+    if (rows[1]) {
+      await withAutoLayout(async () => {
+        for (const row of rows)
+          for (const child of row.children)
+            if (child.name === "Select Cell" || child.name === "Numeric Cell")
+              child.visible = true;
+        for (const row of rows)
+          row.resizeWithoutConstraints(row.width, row.height);
+      });
+      const shown = widths(rows[1]);
+      ok(
+        shown.length === 5 &&
+          shown[0] === 36 &&
+          even(shown.slice(1)) &&
+          Math.abs(sum(shown) - hiddenSum) < 0.01,
+        `Table ${density}: shown, the Select Cell is 36 and four equal columns share the rest of the row's ${Math.round(hiddenSum)} (${shown.map(Math.round).join()})`,
+      );
+    }
+  }
+
+  // The set's three booleans, each off and bound to its layers, after an
+  // Update that keeps both variants' node ids.
+  if (reachable) {
+    const replay = await replayUpdate(
+      "Table",
+      ["Density=Default", "Density=Compact"],
+      "updateTableComponent",
+      [
+        (() => {
+          const page = new MockNode("PAGE", "Icons");
+          for (const name of ["check", "minus", "arrow-up"])
+            page.appendChild(mockIconComponent(name));
+          return page;
+        })(),
+      ],
+    );
+    const definitions = replay.liveSet.componentPropertyDefinitions || {};
+    const key = (base) =>
+      Object.keys(definitions).find(
+        (k) => k.split("#")[0] === base && definitions[k].type === "BOOLEAN",
+      );
+    const bound = (base, layer) =>
+      replay.liveSet
+        .findAll((node) => node.name === layer)
+        .filter(
+          (node) =>
+            node.componentPropertyReferences &&
+            node.componentPropertyReferences.visible === key(base),
+        ).length;
+    const counts = [
+      ["Selectable", "Select Cell", 8],
+      ["Selectable", "Selected Fill", 2],
+      ["Sortable", "Header 1 Sort Icon", 2],
+      ["Numeric Column", "Numeric Cell", 8],
+    ].map(([base, layer, expected]) => [
+      base,
+      layer,
+      expected,
+      bound(base, layer),
+    ]);
+    ok(
+      replay.kept.every(Boolean) &&
+        ["Selectable", "Sortable", "Numeric Column"].every(
+          (base) => key(base) && definitions[key(base)].defaultValue === false,
+        ) &&
+        counts.every(([, , expected, got]) => expected === got) &&
+        propertiesBoundToNoLayer(replay.liveSet).length === 0,
+      `Table after Update: its variants keep their ids, and Selectable, Sortable and Numeric Column are off, each bound to its layers (${counts.map(([b, l, e, g]) => `${b}→${l} ${g}/${e}`).join(", ")}; unbound ${propertiesBoundToNoLayer(replay.liveSet).join(", ") || "none"})`,
+    );
+  }
+
+  // SplitButton: the open menu, hidden, under the button at its end, with
+  // an item and its icon, a separator and a disabled item at half; none on
+  // a Disabled variant, whose menu never opens.
+  const menuIssues = [];
+  for (const variant of reachable ? plugin.SPLIT_BUTTON_VARIANTS : []) {
+    for (const state of ["Default", "Disabled"]) {
+      const button = await withAutoLayout(() =>
+        plugin.createSplitButtonVariant({
+          variant,
+          size: "Default",
+          state,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          textStyle: null,
+          stats: freshStats(),
+        }),
+      );
+      const menu = button.children.find((c) => c.name === "Split Menu");
+      if (state === "Disabled") {
+        if (menu) menuIssues.push(`${variant} Disabled draws a menu`);
+        continue;
+      }
+      const names = menu ? menu.children.map((c) => c.name) : [];
+      const first = menu && menu.children[0];
+      const icon = first && first.children.find((c) => c.name === "Item Icon");
+      const second = menu && menu.children[2];
+      if (
+        !menu ||
+        menu.visible !== false ||
+        menu.layoutPositioning !== "ABSOLUTE" ||
+        menu.width !== 224 ||
+        menu.x !== button.width - 224 ||
+        menu.y !== button.height + 4 ||
+        boundVariableName(menu.fills[0]) !== "Surface/0" ||
+        kindOf(menu) !== "split-button-menu" ||
+        names.join() !== "Menu Item 1,Menu Separator,Menu Item 2" ||
+        !icon ||
+        icon.width !== 16 ||
+        first.opacity === 0.5 ||
+        !second ||
+        second.opacity !== 0.5
+      )
+        menuIssues.push(
+          `${variant}: ${menu ? `${menu.visible}, ${menu.layoutPositioning}, ${menu.x},${menu.y}, ${names.join("/")}` : "no menu"}`,
+        );
+    }
+  }
+  ok(
+    reachable && menuIssues.length === 0,
+    `SplitButton: every enabled variant draws its open menu hidden, under its end, an icon item, a separator and a disabled item at half; no Disabled variant draws one (${menuIssues.slice(0, 4).join("; ") || "all as expected"})`,
+  );
+  if (reachable) {
+    const names = [];
+    for (const variant of plugin.SPLIT_BUTTON_VARIANTS)
+      for (const size of plugin.SPLIT_BUTTON_SIZES)
+        for (const state of plugin.SPLIT_BUTTON_STATES)
+          names.push(`Variant=${variant}, Size=${size}, State=${state}`);
+    const replay = await replayUpdate(
+      "SplitButton",
+      names,
+      "updateSplitButtonComponent",
+      [
+        (() => {
+          const page = new MockNode("PAGE", "Icons");
+          for (const name of ["chevron-down", "download-01"])
+            page.appendChild(mockIconComponent(name));
+          return page;
+        })(),
+      ],
+    );
+    const definitions = replay.liveSet.componentPropertyDefinitions || {};
+    const open = Object.keys(definitions).find(
+      (k) =>
+        k.split("#")[0] === "Menu Open" && definitions[k].type === "BOOLEAN",
+    );
+    const menus = replay.liveSet.findAll((node) => node.name === "Split Menu");
+    const enabled = names.filter((name) => !/State=Disabled/.test(name)).length;
+    ok(
+      replay.kept.every(Boolean) &&
+        open &&
+        definitions[open].defaultValue === false &&
+        menus.length === enabled &&
+        menus.every(
+          (menu) =>
+            menu.componentPropertyReferences &&
+            menu.componentPropertyReferences.visible === open,
+        ),
+      `SplitButton after Update: every variant keeps its id, and Menu Open is off and shows the ${enabled} enabled variants' menus (${menus.length} menus, ${open || "no Menu Open"})`,
+    );
+  }
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(
