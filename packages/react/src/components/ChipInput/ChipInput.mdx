@@ -36,10 +36,9 @@ types. The POI editor's Keywords field is a ChipInput.
 ## Accessibility
 
 The text input is named by the label, and described by the helper text or the error. Each chip's remove is a button
-named by `removeLabel`, "Remove {entry}" by default, so a product in another language passes its own words
+named by `removeLabel`, `"Remove {entry}"` by default, so a product in another language passes its own words
 (`removeLabel={(entry) => entry + " kaldır"}`). Each change is said politely, in a status region that is on the page
-from the start: `addedLabel` ("{entry} added"), `removedLabel` ("{entry} removed") and `duplicateLabel` ("{entry} is
-already added"). The same words said twice in a row are still read twice.
+from the start: `addedLabel` (`"{entry} added"`), `removedLabel` (`"{entry} removed"`) and `duplicateLabel` (`"{entry} is already added"`). The same words said twice in a row are still read twice.
 
 SwiftUI's `KozmosChipInput` is a `UITextField` underneath, so Delete in the empty field removes the last entry from the
 on-screen keyboard as well as a hardware one; Return adds the text; each change is posted as a VoiceOver announcement.
