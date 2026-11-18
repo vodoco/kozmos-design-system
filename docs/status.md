@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 83         | 83/83 | 83/83     | 75/83   | 78/83 | 75/83   | 79/83   | 75/83       |
+| Core                   | 84         | 84/84 | 84/84     | 75/84   | 79/84 | 75/84   | 80/84   | 75/84       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -52,6 +52,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Checkbox             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Chip                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | ChipInput            | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
+| CodeBlock            | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | ColorPicker          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Combobox             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Container            | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -214,18 +215,18 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 ## Summary
 
-- Web components: 139/139
-- Web stories: 139/139
-- Web tests: 139/139
-- Web Code Connect files: 113/134
-- Web Code Connect scaffolds: 0/134
-- Web Code Connect linked: 113/134
-- iOS components: 121/139
-- iOS Code Connect files: 105/134
-- iOS Code Connect scaffolds: 0/134
-- iOS Code Connect linked: 105/134
-- Android components: 122/139
-- Android Code Connect files: 105/134
-- Android Code Connect scaffolds: 0/134
-- Android Code Connect linked: 105/134
-- Code Connect not applicable: 5/139
+- Web components: 140/140
+- Web stories: 140/140
+- Web tests: 140/140
+- Web Code Connect files: 113/135
+- Web Code Connect scaffolds: 0/135
+- Web Code Connect linked: 113/135
+- iOS components: 122/140
+- iOS Code Connect files: 105/135
+- iOS Code Connect scaffolds: 0/135
+- iOS Code Connect linked: 105/135
+- Android components: 123/140
+- Android Code Connect files: 105/135
+- Android Code Connect scaffolds: 0/135
+- Android Code Connect linked: 105/135
+- Code Connect not applicable: 5/140
