@@ -16,6 +16,15 @@ A vertically stacked set of interactive headings that each reveal a section of c
 
 <Controls />
 
+## Heading level
+
+Each trigger is a heading, an `h3` unless you say otherwise (GAP-248). Give the Accordion a
+`headingLevel`, 2 to 6, so its sections follow the page's own headings: `headingLevel={2}` under a
+page whose only heading is its `h1`, where an `h3` would skip a level and axe reports it. A
+trigger's own `headingLevel` wins over the Accordion's. The level changes what assistive
+technology hears, not how the trigger looks. Vue's bridged Accordion takes the same prop. SwiftUI's
+and Compose's triggers are not headings, so they have no level to set.
+
 ## Implementation
 
 <div className="subheading">Code</div>

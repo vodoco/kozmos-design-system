@@ -299,6 +299,54 @@ try {
           `PASS decision 50, ${theme}, ${mode}: Nearby is the success text colour ${success} on the card, the selected card, the grouped row and the selected grouped row${mode === "full" ? "; 5–10 min is the text colour" : ""}`,
         );
       }
+      // GAP-283: ListItemStatus's marks inside the provider, with or without
+      // @scope. Not started is a 1px ring in foreground/500, in progress a
+      // 2px ring in the primary colour round its dot, and done the theme
+      // fill. The base ring's rule had one class's weight, and the scoped
+      // preflight's border reset won the tie, so not started drew nothing
+      // (the Pointr UI library v3 run, 18 Nov).
+      {
+        const theme = id === "outer" ? "dark" : "light";
+        const marks = await page
+          .getByTestId(`${id}-list-status`)
+          .locator(".kozmos-list-item-status")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => {
+              const s = getComputedStyle(node);
+              const dot = node.querySelector(".kozmos-list-item-status-dot");
+              return {
+                status: node.getAttribute("data-status"),
+                edge: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`,
+                fill: s.backgroundColor,
+                dot: dot ? getComputedStyle(dot).backgroundColor : null,
+              };
+            }),
+          );
+        const muted = await value(
+          `${id}-list-status`,
+          "--primitives-colors-foreground-500",
+        );
+        const [notStarted, inProgress, done] = marks;
+        assert.equal(
+          notStarted?.edge,
+          `1px solid ${muted}`,
+          `${mode}, ${theme}: ListItemStatus todo (not started) draws no 1px foreground/500 ring (${JSON.stringify(notStarted)})`,
+        );
+        assert.equal(
+          inProgress?.edge,
+          `2px solid ${inProgress?.dot}`,
+          `${mode}, ${theme}: ListItemStatus inProgress draws no 2px primary ring round its dot (${JSON.stringify(inProgress)})`,
+        );
+        assert.ok(
+          done &&
+            !/^rgba\(0, 0, 0, 0\)$|transparent/.test(done.fill) &&
+            done.edge.endsWith(done.fill),
+          `${mode}, ${theme}: ListItemStatus done is not the theme fill (${JSON.stringify(done)})`,
+        );
+        console.log(
+          `PASS ListItemStatus, ${theme}, ${mode}: todo ${notStarted.edge}; inProgress ${inProgress.edge}; done ${done.fill}`,
+        );
+      }
       // The route rail's waypoint discs draw a 1px edge in background/400 in
       // route mode, as SwiftUI and Compose do, with or without @scope. The
       // owned rule had one class's weight, and the scoped preflight's border

@@ -153,6 +153,15 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
    */
   safeAreaInsets?: Partial<MapCollisionInsets>;
   /**
+   * Whether the shell keeps its sheet and its controls above the on-screen
+   * keyboard on the web (GAP-084). On by default: the keyboard overlays the
+   * page rather than resizing it, so the shell reads `window.visualViewport`
+   * and takes what the keyboard covers of it as a bottom exclusion, the
+   * larger of that and `safeAreaInsets.bottom`. A pinch zoom is not taken
+   * for a keyboard. Off, only `safeAreaInsets` say where the keyboard is.
+   */
+  followsKeyboard?: boolean;
+  /**
    * The device's own safe areas, which the chrome keeps out of and the map
    * runs under. Defaults to CSS `env(safe-area-inset-*)`, and the larger of
    * the two wins, so passing them can only ever add room.
@@ -314,6 +323,15 @@ function measureAttribution(content: HTMLElement | null) {
 /** A box that scrolls is as tall as what it holds. */
 const fullHeight = (node: HTMLElement | null) =>
   Math.max(node?.offsetHeight ?? 0, node?.scrollHeight ?? 0);
+/** The panel's place before the shell has measured itself (GAP-265). */
+const UNMEASURED_PANEL: React.CSSProperties = {
+  position: "absolute",
+  left: 0,
+  top: 0,
+  width: "100%",
+  visibility: "hidden",
+};
+
 const position = (rect: MapLayoutRect): React.CSSProperties => ({
   position: "absolute",
   left: rect.x,
@@ -377,6 +395,7 @@ const AdaptiveMapShell = React.forwardRef<
       panelHandleLabel = "Panel height",
       collisionInsets,
       safeAreaInsets,
+      followsKeyboard = true,
       deviceSafeAreaInsets,
       controlsPadCamera = false,
       usableRegions,
@@ -458,6 +477,36 @@ const AdaptiveMapShell = React.forwardRef<
       peekBottom: 0,
       safe: emptyInsets,
     });
+    // What the on-screen keyboard covers of the shell (GAP-084): on the web
+    // it overlays the page, shrinking the visual viewport and not the
+    // layout one, so the shell measures it and keeps out of it.
+    const [keyboardInset, setKeyboardInset] = React.useState(0);
+    React.useEffect(() => {
+      const viewport = followsKeyboard ? globalThis.visualViewport : null;
+      // A pinch zoom shrinks the visual viewport too; a keyboard does not
+      // change its scale.
+      const update = () =>
+        setKeyboardInset(
+          viewport && Math.abs(viewport.scale - 1) < 0.01
+            ? Math.max(
+                0,
+                Math.round(
+                  Math.min(
+                    root.current!.getBoundingClientRect().bottom,
+                    innerHeight,
+                  ) -
+                    viewport.offsetTop -
+                    viewport.height,
+                ),
+              )
+            : 0,
+        );
+      update();
+      const events = ["resize", "scroll"];
+      events.forEach((type) => viewport?.addEventListener(type, update));
+      return () =>
+        events.forEach((type) => viewport?.removeEventListener(type, update));
+    }, [followsKeyboard]);
     const [uncontrolledDetent, setUncontrolledDetent] = React.useState<
       PanelDetent | undefined
     >(defaultPanelDetent);
@@ -615,7 +664,14 @@ const AdaptiveMapShell = React.forwardRef<
     const chrome = eachSide((side) =>
       mergeSafeInset(measured.safe[side], deviceSafeAreaInsets?.[side]),
     );
-    const safe = eachSide((side) => mergeSafeInset(0, safeAreaInsets?.[side]));
+    const safe = eachSide((side) =>
+      mergeSafeInset(
+        0,
+        side === "bottom" && keyboardInset > 0
+          ? Math.max(safeAreaInsets?.bottom ?? 0, keyboardInset)
+          : safeAreaInsets?.[side],
+      ),
+    );
     // The sheet's detents, in the height the sheet can use — the shell less
     // its safe areas, as the layout resolves it. The content detent and the
     // peek anchor are measured a render late, as the chrome is.
@@ -1241,6 +1297,19 @@ const AdaptiveMapShell = React.forwardRef<
       stepDetent(step);
     };
 
+    const showsMapStatus = mapStatus !== "ready" && Boolean(mapStatusContent);
+    const mapStatusBox = (
+      <div
+        style={{
+          ...position(layout.mapBounds),
+          display: unavailable ? "none" : undefined,
+        }}
+        hidden={unavailable}
+        className="z-20 flex items-center justify-center overflow-auto bg-background/80 p-6 text-center backdrop-blur-sm"
+      >
+        {mapStatusContent}
+      </div>
+    );
     return (
       <MapShellPresentationContext.Provider value={layout.presentation}>
         {/* The SDK's touch geometry under any density (decision 89). */}
@@ -1288,22 +1357,20 @@ const AdaptiveMapShell = React.forwardRef<
             >
               {map}
             </section>
-            {mapStatus !== "ready" && mapStatusContent && (
-              <div
-                style={{
-                  ...position(layout.mapBounds),
-                  display: unavailable ? "none" : undefined,
-                }}
-                hidden={unavailable}
-                className="z-20 flex items-center justify-center overflow-auto bg-background/80 p-6 text-center backdrop-blur-sm"
-                role={mapStatus === "error" ? "alert" : "status"}
-                // Said as well as implied: an open popup hides every box not
-                // marked aria-live, with its Retry still focusable (GAP-193).
-                aria-live={mapStatus === "error" ? "assertive" : "polite"}
-              >
-                {mapStatusContent}
-              </div>
-            )}
+            {/* The map's status goes into a live region mounted, empty,
+                before it (GAP-226): one inserted with its words may not be
+                said. A status and an error each have their own, so an error
+                after loading is inserted into the alert region. The regions
+                are static boxes with nothing in them until then, so the
+                status box is placed as it was. Said as well as implied: an
+                open popup hides every box not marked aria-live, with its
+                Retry still focusable (GAP-193). */}
+            <div role="status" aria-live="polite">
+              {showsMapStatus && mapStatus !== "error" && mapStatusBox}
+            </div>
+            <div role="alert" aria-live="assertive">
+              {showsMapStatus && mapStatus === "error" && mapStatusBox}
+            </div>
             {topBar && (
               <div
                 ref={bar}
@@ -1506,7 +1573,13 @@ const AdaptiveMapShell = React.forwardRef<
                 aria-label={panelLabel}
                 hidden={panelHidden}
                 style={{
-                  ...position(layout.panelBounds ?? zero),
+                  // Before the first measure there are no bounds: laid out at
+                  // width 0, WebKit could keep a grid's auto row at the height
+                  // that gave it once the panel widened (GAP-265, #543). It
+                  // is laid out at the host's width first, out of sight.
+                  ...(measured.ready
+                    ? position(layout.panelBounds ?? zero)
+                    : UNMEASURED_PANEL),
                   ...(sidePanelCap === undefined
                     ? {}
                     : panelFills

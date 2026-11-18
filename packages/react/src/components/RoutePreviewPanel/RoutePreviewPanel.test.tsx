@@ -235,7 +235,9 @@ describe("RoutePreviewPanel", () => {
         statusContent="Calculating routes…"
       />,
     );
-    const status = screen.getByRole("status");
+    // The box in the status region (GAP-226), which holds the words.
+    const status = screen.getByText("Calculating routes…");
+    expect(status.closest('[role="status"]')).toBeTruthy();
     expect(status.classList.contains(muted)).toBe(true);
     expect(status.className).not.toMatch(/\btext-muted-foreground\b/);
   });
@@ -287,7 +289,11 @@ describe("RoutePreviewPanel", () => {
       />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent("Calculating routes…");
+    expect(
+      screen
+        .getAllByRole("status")
+        .some((node) => node.textContent === "Calculating routes…"),
+    ).toBe(true);
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   });
 });

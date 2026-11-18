@@ -7,7 +7,7 @@ import Kozmos
 // The toast draws itself at the bottom of the space it is given, so it goes
 // over the screen's content. It closes after 3 seconds (autoDismissAfter) or
 // at its close button, named by closeLabel, "Dismiss notification" unless you
-// pass your own.
+// pass your own. Its tone, success here, draws the tone's mark at its start.
 struct LocationSavedToast: View {
     @State private var isPresented = false
 
@@ -17,7 +17,8 @@ struct LocationSavedToast: View {
             KozmosToast(
                 isPresented: $isPresented,
                 title: "Location saved",
-                description: "Find it in your saved places."
+                description: "Find it in your saved places.",
+                tone: .success
             )
         }
     }

@@ -104,7 +104,11 @@ It forwards its ref to `HTMLElement`. Its props are `POIDetailPanelProps`, which
 - `tagsLabel`: `string`, optional, default `"Tags"`.
 - `presentation`: `"inline" | "sheet" | "panel"`, optional, default `"inline"`.
 - `titleLevel`: `2 | 3`, optional, default `2`.
-- `children`: `ReactNode`, optional.
+- `children`: `React.ReactNode`, optional.
+
+  The product's own content, drawn last in the body, inside its padding
+  and the card's scroll (GAP-131): a place's QR code on a desktop or
+  kiosk. It was dropped before.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 

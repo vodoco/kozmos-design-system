@@ -7,6 +7,14 @@ import type {
 import { describe, expect, it, vi } from "vitest";
 import { POIDetailPanel } from "./POIDetailPanel";
 
+// Every action keeps its live regions mounted, empty until it has a message
+// (GAP-226): the one region of a role that holds words.
+const saying = (role: "alert" | "status") => {
+  const held = screen.getAllByRole(role).filter((node) => node.textContent);
+  expect(held).toHaveLength(1);
+  return held[0];
+};
+
 // GAP-130: the product hands the visitor to its own app from the card's own
 // action row, with its own words and icon, rather than from an outline Button
 // drawn under the card.
@@ -177,11 +185,14 @@ describe("POIDetailPanel's host actions (GAP-130)", () => {
         }}
       />,
     );
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    expect(saying("alert")).toHaveTextContent(
       "Pointr Express is not installed.",
     );
     expect(
-      screen.getAllByRole("status").map((node) => node.textContent),
+      screen
+        .getAllByRole("status")
+        .map((node) => node.textContent)
+        .filter(Boolean),
     ).toEqual(["Link copied.", "Thanks for telling us."]);
   });
 });

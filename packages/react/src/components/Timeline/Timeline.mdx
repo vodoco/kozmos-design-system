@@ -15,6 +15,13 @@ Displays ordered events with composed time, title, and description primitives.
 
 <Controls />
 
+## The rail
+
+The rail runs from the first item's marker to the last one's and ends there (GAP-247): each item
+draws it down to the next, and the last item draws none, where it used to be the list's left border
+and ran on under the last marker as if a step followed. SwiftUI's and Compose's items draw it the
+same way, ending at the item marked `isLast`.
+
 ## Implementation
 
 <div className="subheading">Code</div>

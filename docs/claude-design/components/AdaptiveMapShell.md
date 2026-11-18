@@ -175,6 +175,15 @@ It forwards its ref to `HTMLDivElement`. Its props are `AdaptiveMapShellProps`, 
   keyboard. The device's own safe areas (CSS env()) are not these: the map
   runs under them and the chrome keeps them.
 
+- `followsKeyboard`: `boolean`, optional, default `true`.
+
+  Whether the shell keeps its sheet and its controls above the on-screen
+  keyboard on the web (GAP-084). On by default: the keyboard overlays the
+  page rather than resizing it, so the shell reads `window.visualViewport`
+  and takes what the keyboard covers of it as a bottom exclusion, the
+  larger of that and `safeAreaInsets.bottom`. A pinch zoom is not taken
+  for a keyboard. Off, only `safeAreaInsets` say where the keyboard is.
+
 - `deviceSafeAreaInsets`: `Partial<MapCollisionInsets>`, optional.
 
   The device's own safe areas, which the chrome keeps out of and the map

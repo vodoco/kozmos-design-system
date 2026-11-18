@@ -606,6 +606,13 @@
     justify-content: center;
     inline-size: 1.25rem;
     block-size: 1.25rem;
+  }
+  /* The ring, at a class and an attribute's weight (GAP-283): the scoped
+     preflight resets every element's border at one class's weight and wins
+     a tie with an owned rule, so at one class not started drew no ring
+     inside the provider. Each state's rule below has the same weight and
+     comes after it. */
+  .kozmos-list-item-status[data-status] {
     border: 1px solid var(--primitives-colors-foreground-500);
   }
   .kozmos-list-item-status[data-status="done"] {
@@ -2957,5 +2964,35 @@
     flex: none;
     align-items: center;
     height: 1.25rem;
+  }
+  /* Wave C3 (0.17.0). */
+  /* BottomNavigation's `inset` (GAP-245): 8 between the bar's top line and
+     its items, so a selected item's fill clears the line, as the boards
+     drew it with a padded layer round the bar. */
+  nav.kozmos-bottom-navigation[data-inset] {
+    padding-top: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  /* Timeline's rail (GAP-247), drawn per item from the item's marker to the
+     next item's, where the list's left border ran the full height of the
+     last item, under its dot, as if a step followed. The last item draws
+     none: the rail ends at its marker. The 1px line sits where the border
+     was, 25 left of the item (its 24 margin and the 1 the list keeps), and
+     runs on through the item's margin to the next, 40, or 24 compact. The
+     element in the selector outweighs the scoped preflight's ::before
+     reset. */
+  li[data-timeline-item]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: -2.5rem;
+    left: -25px;
+    border-left: 1px solid var(--semantics-border-subtle);
+    pointer-events: none;
+  }
+  ol[data-density="compact" i] > li[data-timeline-item]::before {
+    bottom: -1.5rem;
+  }
+  li[data-timeline-item]:last-child::before {
+    content: none;
   }
 }

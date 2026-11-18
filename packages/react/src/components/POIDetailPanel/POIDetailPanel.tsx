@@ -73,6 +73,12 @@ export interface POIDetailPanelProps extends Omit<
   tagsLabel?: string;
   presentation?: "inline" | "sheet" | "panel";
   titleLevel?: 2 | 3;
+  /**
+   * The product's own content, drawn last in the body, inside its padding
+   * and the card's scroll (GAP-131): a place's QR code on a desktop or
+   * kiosk. It was dropped before.
+   */
+  children?: React.ReactNode;
 }
 
 const actionIcons = {
@@ -83,18 +89,23 @@ const isToggle = (action: POIAction): action is "favourite" | "bookmark" =>
   action === "favourite" || action === "bookmark";
 
 function ActionMessage({ state }: { state?: POIActionState }) {
-  if (!state?.message) return null;
-  const role = state.messageTone === "error" ? "alert" : "status";
+  const message = state?.message;
+  const error = state?.messageTone === "error";
+  const words = <p className="kozmos-poi-action-message">{message}</p>;
+  // Each action keeps a status and an alert region mounted, empty, and its
+  // message goes into one (GAP-226): a region inserted with its words may
+  // not be said. The role's liveness said as well: an open popup hides
+  // every box not marked aria-live (GAP-193). Empty, they take no room: the
+  // card is a flex column with no gap.
   return (
-    // The role's liveness said as well: an open popup hides every box not
-    // marked aria-live (GAP-193).
-    <p
-      className="kozmos-poi-action-message"
-      role={role}
-      aria-live={impliedLive(role)}
-    >
-      {state.message}
-    </p>
+    <>
+      <div role="status" aria-live={impliedLive("status")}>
+        {message && !error && words}
+      </div>
+      <div role="alert" aria-live={impliedLive("alert")}>
+        {message && error && words}
+      </div>
+    </>
   );
 }
 
@@ -143,6 +154,7 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
       tagsLabel = "Tags",
       presentation = "inline",
       titleLevel = 2,
+      children,
       ...props
     },
     ref,
@@ -163,7 +175,9 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
       poi.accessRestrictions !== undefined &&
       poi.accessRestrictions !== "none" &&
       Boolean(poi.accessRestrictionsLabel);
+    const hasContent = React.Children.count(children) > 0;
     const hasBody =
+      hasContent ||
       hasRestriction ||
       poi.media.length > 0 ||
       Boolean(poi.services?.length) ||
@@ -415,6 +429,7 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
                   tagsLabel={tagsLabel}
                 />
               )}
+              {children}
             </div>
           )}
         </article>
