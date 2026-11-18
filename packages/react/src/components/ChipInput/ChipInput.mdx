@@ -1,0 +1,133 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import { PlatformSnippets } from "../PlatformSnippets";
+import * as ChipInputStories from "./ChipInput.stories";
+
+<Meta of={ChipInputStories} />
+
+# ChipInput
+
+A field that takes free text and holds each entry as a removable chip inside it (GAP-222, decision 216): a place's
+keywords, aliases, e-mail addresses. MultiSelect picks only from its `options`; ChipInput takes whatever the visitor
+types. The POI editor's Keywords field is a ChipInput.
+
+<Canvas of={ChipInputStories.Default} />
+
+## Anatomy
+
+- **The field** is MultiSelect's: the input tokens' box, at least the density's field height, with the chips and the
+  text wrapping inside it. It has no clear and no open button: nothing to list.
+- **Each entry** is a small selected `Chip` with its remove button, as MultiSelect's chosen options are.
+- **The text** follows the last chip, with the placeholder only while the field holds no entry.
+- **The label, helper text and error** are FieldWrapper's, as on every field.
+
+## Behaviour
+
+- **Enter** or a **comma** adds the typed text, trimmed, as an entry. Enter in an empty field is left to the form, so it
+  still submits.
+- **Text pasted** with commas or line breaks in it adds each part; the part after the last stays typed.
+- **Backspace** in the empty field removes the last entry. With text typed it deletes a letter, as in any field.
+- **Each chip's remove button** removes that entry, and the field keeps focus.
+- **An entry already in the field** is not added again: the text stays, so nothing typed is lost unseen, and the field
+  says so.
+- **Disabled or read-only**, nothing is added or removed.
+- **Controlled or not:** `value` and `onValueChange` for the entries, `inputValue` and `onInputValueChange` for the text;
+  `defaultValue` and `defaultInputValue` when the field holds its own.
+
+## Accessibility
+
+The text input is named by the label, and described by the helper text or the error. Each chip's remove is a button
+named by `removeLabel`, "Remove {entry}" by default, so a product in another language passes its own words
+(`removeLabel={(entry) => entry + " kaldır"}`). Each change is said politely, in a status region that is on the page
+from the start: `addedLabel` ("{entry} added"), `removedLabel` ("{entry} removed") and `duplicateLabel` ("{entry} is
+already added"). The same words said twice in a row are still read twice.
+
+SwiftUI's `KozmosChipInput` is a `UITextField` underneath, so Delete in the empty field removes the last entry from the
+on-screen keyboard as well as a hardware one; Return adds the text; each change is posted as a VoiceOver announcement.
+Compose's `KozmosChipInput` adds on the keyboard's Done and on Enter, removes on Backspace in the empty field where the
+keyboard sends it, names the field by its label for TalkBack, and says each change in a polite live region.
+
+## Not MultiSelect
+
+MultiSelect is for a closed set the product knows: categories, personas, levels. ChipInput is for words only the
+visitor knows. A field that suggests from a list but takes new words too is not built yet.
+
+## Implementation
+
+<PlatformSnippets
+    react={`
+import * as React from "react";
+import { ChipInput } from "@kozmos-ds/react";
+
+export function PlaceKeywords() {
+  const [keywords, setKeywords] = React.useState(["coffee", "breakfast"]);
+
+  return (
+    <ChipInput
+      label="Keywords"
+      placeholder="Add a keyword"
+      helperText="Press Enter or type a comma to add one."
+      value={keywords}
+      onValueChange={setKeywords}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosChipInput } from "@kozmos-ds/vue/react-bridge"
+
+const keywords = ref(["coffee", "breakfast"])
+</script>
+
+<template>
+  <KozmosChipInput
+    v-model="keywords"
+    label="Keywords"
+    placeholder="Add a keyword"
+    helper-text="Press Enter or type a comma to add one."
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A place's keywords: Return or a comma adds one, Delete in the empty
+// field removes the last, and each chip has its own remove.
+struct PlaceKeywords: View {
+    @State private var keywords = ["coffee", "breakfast"]
+
+    var body: some View {
+        KozmosChipInput(
+            values: $keywords,
+            label: "Keywords",
+            placeholder: "Add a keyword",
+            helperText: "Press Return or type a comma to add one."
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.chipinput.KozmosChipInput
+
+// A place's keywords: Done or a comma adds one, Backspace in the empty
+// field removes the last, and each chip has its own remove.
+@Composable
+fun PlaceKeywords() {
+    var keywords by remember { mutableStateOf(listOf("coffee", "breakfast")) }
+    KozmosChipInput(
+        values = keywords,
+        onValuesChange = { keywords = it },
+        label = "Keywords",
+        placeholder = "Add a keyword",
+        helperText = "Press Done or type a comma to add one."
+    )
+}
+`}
+/>

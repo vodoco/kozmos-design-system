@@ -534,6 +534,43 @@ const PARTS: Part[] = [
     alone: "Ba",
   },
   {
+    // GAP-222: an array, from onValueChange: a comma adds what was typed.
+    name: "KozmosChipInput",
+    props: { label: "Keywords" },
+    start: ["coffee"],
+    before: ["coffee"],
+    field: () => $("input"),
+    change: (input) => {
+      input.focus();
+      type(input, "tea,");
+    },
+    next: ["coffee", "tea"],
+    shown: () => texts('[data-slot="chip-label"]'),
+    shows: ["coffee", "tea"],
+    nothing: [],
+    fromNothing: { next: ["tea"], shows: ["tea"] },
+    listener: "onValueChange",
+    alone: ["tea"],
+  },
+  {
+    name: "KozmosChipInput",
+    model: "inputValue",
+    props: { label: "Keywords" },
+    start: "",
+    before: "",
+    field: () => $("input"),
+    change: (input) => {
+      input.focus();
+      type(input, "tea");
+    },
+    next: "tea",
+    shown: () => $<HTMLInputElement>("input")?.value,
+    shows: "tea",
+    nothing: "",
+    listener: "onInputValueChange",
+    alone: "tea",
+  },
+  {
     name: "KozmosDateRangePicker",
     props: { label: "Stay" },
     start: { start: "2026-11-01", end: "2026-11-05" },

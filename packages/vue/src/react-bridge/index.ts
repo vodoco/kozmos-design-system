@@ -130,6 +130,7 @@ import {
   Listbox,
   MapControlButton,
   MultiSelect,
+  ChipInput,
   NavigationItem,
   NumberInput,
   POIDetailPanel,
@@ -669,6 +670,12 @@ export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
     callback: "onSearchValueChange",
     empty: "",
   },
+});
+// GAP-222 (decision 216): the entries are the v-model, the typed text a
+// second one, as Combobox's inputValue.
+export const KozmosChipInput = createVueWrapper(ChipInput, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
+  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
 });
 // A cleared field is `null` to Vue and "" to React's input.
 export const KozmosNumberInput = createVueWrapper(NumberInput, {

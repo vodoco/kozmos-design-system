@@ -952,6 +952,10 @@ const IN_PLACE: Record<string, InPlace> = {
     click: (drawn) =>
       drawn.querySelector("[data-slot=chip-group]")?.parentElement,
   },
+  KozmosChipInput: {
+    props: { label: "Keywords" },
+    click: first("input"),
+  },
   KozmosNumberInput: {
     props: { "aria-label": "Guests" },
     click: first("input"),

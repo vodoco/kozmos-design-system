@@ -125,6 +125,7 @@ import {
   Listbox,
   MapControlButton,
   MultiSelect,
+  ChipInput,
   NavigationItem,
   NumberInput,
   POIDetailPanel,
@@ -406,6 +407,14 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       own: ["onResetMixed", "onSearchValueChange", "onValueChange"],
     },
   ],
+  [
+    ChipInput,
+    {
+      dom: true,
+      except: ["onChange"],
+      own: ["onInputValueChange", "onValueChange"],
+    },
+  ],
   [NavigationItem, D],
   [NumberInput, segmentedControlTakes],
   [
@@ -509,6 +518,11 @@ const html = (
 const H = html();
 const boxBooleans = html(["asChild"]);
 const textBooleans = html(["asChild", "truncate"]);
+const textareaBooleans = html(
+  ["disabled", "readOnly", "required"],
+  [],
+  ["error"],
+);
 const menuBooleans = {
   flags: ["defaultOpen", "modal", "open"],
   unions: [],
@@ -599,7 +613,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
-  [Textarea, html(["disabled", "readOnly", "required"], [], ["error"])],
+  [Textarea, textareaBooleans],
   [
     Checkbox,
     {
@@ -920,6 +934,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
+  [ChipInput, textareaBooleans],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
   [
     NumberInput,
