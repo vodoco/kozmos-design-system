@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 82         | 82/82 | 82/82     | 75/82   | 77/82 | 75/82   | 78/82   | 75/82       |
+| Core                   | 83         | 83/83 | 83/83     | 75/83   | 78/83 | 75/83   | 79/83   | 75/83       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -102,6 +102,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Slider               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Spinner              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | SplitButton          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| SpriteIcon           | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | Stack                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Stepper              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Surface              | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
@@ -213,18 +214,18 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 ## Summary
 
-- Web components: 138/138
-- Web stories: 138/138
-- Web tests: 138/138
-- Web Code Connect files: 113/133
-- Web Code Connect scaffolds: 0/133
-- Web Code Connect linked: 113/133
-- iOS components: 120/138
-- iOS Code Connect files: 105/133
-- iOS Code Connect scaffolds: 0/133
-- iOS Code Connect linked: 105/133
-- Android components: 121/138
-- Android Code Connect files: 105/133
-- Android Code Connect scaffolds: 0/133
-- Android Code Connect linked: 105/133
-- Code Connect not applicable: 5/138
+- Web components: 139/139
+- Web stories: 139/139
+- Web tests: 139/139
+- Web Code Connect files: 113/134
+- Web Code Connect scaffolds: 0/134
+- Web Code Connect linked: 113/134
+- iOS components: 121/139
+- iOS Code Connect files: 105/134
+- iOS Code Connect scaffolds: 0/134
+- iOS Code Connect linked: 105/134
+- Android components: 122/139
+- Android Code Connect files: 105/134
+- Android Code Connect scaffolds: 0/134
+- Android Code Connect linked: 105/134
+- Code Connect not applicable: 5/139
