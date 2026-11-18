@@ -6,7 +6,8 @@ import Kozmos
 
 // The label is a String, and each menu item a title and what it does; the
 // menu half is the system's Menu, named by menuLabel, "More options" unless
-// you pass your own. There is no disabled state.
+// you pass your own. SwiftUI's .disabled(true) disables both halves, drawn
+// from the disabled pair (decision 197).
 struct PublishOrSaveDraft: View {
     let publish: () -> Void
     let saveDraft: () -> Void

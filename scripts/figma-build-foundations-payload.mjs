@@ -194,19 +194,30 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The alert's on-fill is the number on the featured pin's amber
   // (decision 62), as it is the words on Turn Back's.
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],
-  // The themed emotion's ink is words on the themed surface as well.
-  ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL"]],
+  // The themed emotion's ink is words on the themed surface as well. Every
+  // emotion's ink is the words and the marks on its surface: a toned
+  // EmptyState's title, description and list (decision 194), an emotion
+  // Chip's label and its remove's stroke (decision 200), PageHeader's
+  // addon Tag (decision 210).
+  ["Semantics/Emotion/themed/onSurface", ["TEXT_FILL", "STROKE_COLOR"]],
+  ["Semantics/Emotion/neutral/onSurface", ["TEXT_FILL", "STROKE_COLOR"]],
+  ["Semantics/Emotion/success/onSurface", ["TEXT_FILL", "STROKE_COLOR"]],
+  ["Semantics/Emotion/danger/onSurface", ["TEXT_FILL", "STROKE_COLOR"]],
+  ["Semantics/Emotion/informative/onSurface", ["TEXT_FILL", "STROKE_COLOR"]],
+  ["Semantics/Emotion/alert/onSurface", ["TEXT_FILL", "STROKE_COLOR"]],
+  // A selected emotion Chip is filled with its tone's text colour (decision
+  // 200), so the text colour is a frame's fill as well.
   // A progress ring's arc is its tone's text colour, an ellipse's arc
   // filled (decision 131, owner 28 Oct: a status ring). A tone's text colour
   // is also its icon, a toast's (GAP-167) and a complete small ring's check,
   // an icon's stroke, so all six tones carry both scopes: a Map keeps a key's
   // last row, and a row with only the ring's would take the stroke back.
-  ["Semantics/Emotion/neutral/text", ["STROKE_COLOR", "SHAPE_FILL"]],
-  ["Semantics/Emotion/themed/text", ["STROKE_COLOR", "SHAPE_FILL"]],
-  ["Semantics/Emotion/success/text", ["STROKE_COLOR", "SHAPE_FILL"]],
-  ["Semantics/Emotion/danger/text", ["STROKE_COLOR", "SHAPE_FILL"]],
-  ["Semantics/Emotion/informative/text", ["STROKE_COLOR", "SHAPE_FILL"]],
-  ["Semantics/Emotion/alert/text", ["STROKE_COLOR", "SHAPE_FILL"]],
+  ["Semantics/Emotion/neutral/text", ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"]],
+  ["Semantics/Emotion/themed/text", ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"]],
+  ["Semantics/Emotion/success/text", ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"]],
+  ["Semantics/Emotion/danger/text", ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"]],
+  ["Semantics/Emotion/informative/text", ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"]],
+  ["Semantics/Emotion/alert/text", ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"]],
   // The accent (decision 68): its fill is the Featured badge, a featured
   // pin, and a featured card's edge; its ink the badge's words and the pin's
   // star.
@@ -214,7 +225,9 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Semantics/Accent/onFill", ["TEXT_FILL"]],
   // A halo or an edge in a surface colour: RouteProgressRail's location dot
   // and waypoints, the example map's markers.
-  ["Primitives/Colors/background/0", ["STROKE_COLOR"]],
+  // The page's colour is also the ink on a selected emotion Chip's text-colour
+  // fill (decision 200).
+  ["Primitives/Colors/background/0", ["STROKE_COLOR", "TEXT_FILL"]],
   ["Primitives/Colors/background/400", ["STROKE_COLOR"]],
   ["Semantics/Surface/0", ["STROKE_COLOR"]],
   // Rating's filled star is outlined in its own fill.
@@ -244,6 +257,16 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The subtle Button's words are its marks too (GAP-200): its icon's
   // stroke and its loading ring.
   ["Components/Subtle Buttons/themed/button/foreground/content/idle", MARK],
+  // A disabled Button's foreground (decision 197) is its label, its icon's
+  // stroke and fill, its loading ring, an outline's edge and a SplitButton's
+  // seam; and a disabled IconButton's counter pill (a frame), whose digits
+  // are the fill.
+  ["Semantics/Disabled/foreground", ["FRAME_FILL", ...MARK]],
+  ["Semantics/Disabled/fill", ["TEXT_FILL"]],
+  // The inverse tooltip (decision 192): its edge is its surface, and its
+  // on-surface is its words.
+  ["Semantics/Inverse/surface", ["STROKE_COLOR"]],
+  ["Semantics/Inverse/onSurface", ["TEXT_FILL"]],
 ]);
 
 // The category tokens, all eight categories alike: an accent is the icon's

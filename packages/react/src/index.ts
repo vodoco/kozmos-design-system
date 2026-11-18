@@ -14,6 +14,7 @@ export * from "./components/Icon/Icon";
 export * from "./components/Button/Button";
 export * from "./components/Counter/Counter";
 export * from "./components/MetaStrip/MetaStrip";
+export * from "./components/DescriptionList/DescriptionList";
 export * from "./components/Badge/Badge";
 export * from "./components/Label/Label";
 export * from "./components/Input/Input";

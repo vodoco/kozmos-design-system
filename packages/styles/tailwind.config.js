@@ -168,6 +168,13 @@ module.exports = {
         // disabled field) stays muted, as do the named exceptions in
         // contrast-contract.json's hoverFillExceptions.
         "hover-fill": "var(--semantics-hover-fill)",
+        // The inverse surface (decision 192, GAP-210): dark on a light page
+        // and light on a dark one, foreground/200 under background/0's words,
+        // 13.0:1 and 13.4:1. TooltipContent's tone="inverse" and its arrow.
+        inverse: {
+          DEFAULT: "var(--semantics-inverse-surface)",
+          foreground: "var(--semantics-inverse-on-surface)",
+        },
         accent: {
           DEFAULT: "var(--primitives-colors-theme-600)",
           foreground: "var(--primitives-colors-foreground-1000)",

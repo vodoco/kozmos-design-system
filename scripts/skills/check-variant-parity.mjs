@@ -116,6 +116,10 @@ const INTENTIONAL = {
     figma:
       "Modelled as the row sets' Disclosure Start (on) and Disclosure End (off) booleans (GAP-277): a boolean can show a layer but not hide another, so a designer turns one off and the other on. A variant axis would double TreeItem's 216 variants for a layer's visibility.",
   },
+  "Tree.rowFill": {
+    figma:
+      "Modelled as the row sets' RowFill axis, Inset and Band (GAP-217, decision 196): the Tree set is the container, its rows the designer's in the Content Slot, so the fill's shape is each row's. Sparse: Band only on Hover and Selected, where a fill shows.",
+  },
   "ThemeProvider.theme": {
     figma:
       "A React context provider, not a drawn component. Figma expresses the theme as a variable mode on the whole file, which is why the set is absent rather than missing an axis.",

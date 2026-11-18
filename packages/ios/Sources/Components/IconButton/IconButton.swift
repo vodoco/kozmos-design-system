@@ -25,7 +25,9 @@ public struct KozmosIconButton: View {
     let counter: Int?
     let counterLabel: (Int) -> String
     let action: () -> Void
-    
+    /// False under a `.disabled` set round the button: drawn as `isDisabled` is.
+    @Environment(\.isEnabled) private var isEnabled
+
     /// - Parameters:
     ///   - counter: A count at the button's top-end corner (GAP-197): the tours
     ///     left on a help button, unread notices. Drawn as `KozmosCounter` is,
@@ -97,8 +99,8 @@ public struct KozmosIconButton: View {
         // An empty value is no value: a button with no counter reads as it
         // did, and one whose count comes and goes keeps its identity.
         .accessibilityValue(Text(verbatim: counter.map(counterLabel) ?? ""))
-        // Loading, it is disabled, and drawn at half as a disabled part is.
-        .opacity(isDisabled || isLoading ? 0.5 : 1)
+        // Disabled, it is drawn from the disabled pair (decision 197), not at
+        // half. Loading, it takes no touch but keeps its variant's look.
         .kozmosFillButtonStyle(fillEmotion, hoverShape: Circle())
     }
 
@@ -106,11 +108,15 @@ public struct KozmosIconButton: View {
 
     /// The counter (GAP-197), as React's `.kozmos-icon-button-counter`: its
     /// bottom edge on the button's centre line and its leading edge 2 past
-    /// it, at every size. Inside the label, so it dims with a disabled button
-    /// as React's does, but it takes no tap and VoiceOver skips it.
+    /// it, at every size. On a disabled button it is the disabled pair
+    /// inverted (decision 197): its pill the disabled foreground and its
+    /// digits the disabled fill, 4.80:1 in light and 6.51:1 in dark. It
+    /// takes no tap and VoiceOver skips it.
     @ViewBuilder private var counterMark: some View {
         if let counter {
-            KozmosCounter(String(counter), tone: .brand, size: .sm)
+            KozmosCounter(String(counter), tone: .brand, size: .sm,
+                          fill: drawsDisabled ? KozmosInkedFill(fill: KozmosColors.semanticsDisabledForeground,
+                                                                ink: KozmosColors.semanticsDisabledFill) : nil)
                 .fixedSize()
                 // From the top-leading corner: half the button and 2 across,
                 // and down to where its 18 ends on the centre line. Leading
@@ -135,7 +141,18 @@ public struct KozmosIconButton: View {
         }
     }
 
+    /// Disabled, or disabled from outside: drawn from the disabled pair
+    /// (decision 197, GAP-218), as Button is. Loading alone keeps the
+    /// variant's look; disabled and loading draws the pair.
+    var drawsDisabled: Bool { isDisabled || !isEnabled }
+
     private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        // A filled variant takes the pair's fill, and so does ghost, the
+        // icon-only default, so it never reads as an enabled grey ghost.
+        // Outline, link and glass gain none.
+        if drawsDisabled {
+            return fillEmotion != nil || variant == .ghost ? KozmosColors.semanticsDisabledFill : backgroundColor
+        }
         guard let fillEmotion else { return backgroundColor }
         return KozmosFillStates.background(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
@@ -145,6 +162,7 @@ public struct KozmosIconButton: View {
     /// dark, as React and Compose do (decision 61; Olcay, 2026-10-08). It
     /// drew foreground/100, #17191C and #E8E6E3.
     private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        if drawsDisabled { return KozmosColors.semanticsDisabledForeground }
         guard let fillEmotion else { return foregroundColor }
         return KozmosFillStates.foreground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
@@ -181,6 +199,7 @@ public struct KozmosIconButton: View {
     }
 
     private var borderColor: Color {
+        if drawsDisabled, variant == .outline { return KozmosColors.semanticsDisabledForeground }
         switch variant {
         case .outline: return KozmosColors.primitivesColorsForeground300
         default: return Color.clear

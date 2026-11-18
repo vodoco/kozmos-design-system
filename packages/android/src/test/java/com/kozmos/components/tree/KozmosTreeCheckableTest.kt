@@ -80,10 +80,11 @@ class KozmosTreeCheckableTest {
         next = toggleTreeCheck("globex", clients, next, KozmosTreeCheckRule.Exclusive)
         assertEquals("past a section", setOf("acme-lab", "globex"), next)
         assertEquals("a second check clears the row", setOf("acme-lab"), toggleTreeCheck("globex", clients, next, KozmosTreeCheckRule.Exclusive))
+        // A mixed parent's check takes its sites (decision 211): KozmosTreeMixedTest.
         assertEquals(
             "independent leaves the others",
-            setOf("acme-hq", "acme"),
-            toggleTreeCheck("acme", clients, setOf("acme-hq"), KozmosTreeCheckRule.Independent)
+            setOf("acme-hq", "initech"),
+            toggleTreeCheck("initech", clients, setOf("acme-hq"), KozmosTreeCheckRule.Independent)
         )
     }
 

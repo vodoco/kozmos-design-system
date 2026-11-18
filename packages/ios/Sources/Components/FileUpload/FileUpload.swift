@@ -11,6 +11,16 @@ public enum KozmosFileUploadPreview: Equatable {
     case image
 }
 
+/// What the visitor picks with, as React's `variant` prop (GAP-274).
+public enum KozmosFileUploadVariant: Equatable, Sendable, CaseIterable {
+    /// The dashed drop area, as it always was.
+    case dropzone
+    /// A Button-sized trigger: the outline KozmosButton with the upload icon
+    /// and the browse label, for a field with no room for a drop area, such
+    /// as a client's logo beside its name.
+    case button
+}
+
 public struct KozmosFileUpload: View {
     @State private var isImporting = false
     @State private var file: URL?
@@ -18,6 +28,7 @@ public struct KozmosFileUpload: View {
     let allowedContentTypes: [UTType]
     let browseLabel: String
     let removeLabel: String
+    let variant: KozmosFileUploadVariant
     let preview: KozmosFileUploadPreview
     let changeLabel: String
     let previewAlt: String?
@@ -45,20 +56,29 @@ public struct KozmosFileUpload: View {
         allowedContentTypes: [UTType] = [.content],
         onFileSelected: ((URL) -> Void)? = nil,
         onFileRemoved: ((URL) -> Void)? = nil,
-        browseLabel: String = "Tap to upload file",
+        browseLabel: String? = nil,
         removeLabel: String = "Remove",
         preview: KozmosFileUploadPreview = .none,
         changeLabel: String = "Change",
-        previewAlt: String? = nil
+        previewAlt: String? = nil,
+        variant: KozmosFileUploadVariant = .dropzone
     ) {
         self.allowedContentTypes = allowedContentTypes
-        self.browseLabel = browseLabel
+        self.variant = variant
+        self.browseLabel = browseLabel ?? Self.defaultBrowseLabel(for: variant)
         self.removeLabel = removeLabel
         self.preview = preview
         self.changeLabel = changeLabel
         self.previewAlt = previewAlt
         self.onFileSelected = onFileSelected
         self.onFileRemoved = onFileRemoved
+    }
+
+    /// The words that open the importer when the product passes none: the
+    /// drop area's "Tap to upload file", and a button's "Choose file", as
+    /// React's.
+    static func defaultBrowseLabel(for variant: KozmosFileUploadVariant) -> String {
+        variant == .button ? "Choose file" : "Tap to upload file"
     }
 
     /// A part already holding `file`, for the tests: a picked file comes only
@@ -69,14 +89,16 @@ public struct KozmosFileUpload: View {
         removeLabel: String = "Remove",
         preview: KozmosFileUploadPreview = .none,
         changeLabel: String = "Change",
-        previewAlt: String? = nil
+        previewAlt: String? = nil,
+        variant: KozmosFileUploadVariant = .dropzone
     ) {
         self.init(
             onFileRemoved: onFileRemoved,
             removeLabel: removeLabel,
             preview: preview,
             changeLabel: changeLabel,
-            previewAlt: previewAlt
+            previewAlt: previewAlt,
+            variant: variant
         )
         self._file = State(initialValue: file)
     }
@@ -125,6 +147,17 @@ public struct KozmosFileUpload: View {
                 .padding()
                 .background(KozmosColors.primitivesColorsBackground100)
                 .cornerRadius(KozmosDimensions.semanticsRadiusControl)
+            } else if variant == .button {
+                // In place of the drop area, the outline Button at its default
+                // size, the upload icon and the browse label (GAP-274). It
+                // opens the same importer, of the same types, and what is
+                // chosen shows as the drop area's does.
+                HStack {
+                    KozmosButton(browseLabel, variant: .outline, leadingIconName: "upload-01") {
+                        isImporting = true
+                    }
+                    Spacer(minLength: 0)
+                }
             } else {
                 Button(action: { isImporting = true }) {
                     VStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {

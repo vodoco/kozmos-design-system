@@ -46,6 +46,11 @@ internal fun validPickerActions(actions: List<KozmosPickerAction>): List<KozmosP
     return actions.filter { it.id.isNotBlank() && counts[it.id] == 1 }
 }
 
+/**
+ * A list of options always in view, on a surface of its own with a 1dp edge.
+ * [embedded], for a list inside a Dialog, Popover or Card (GAP-271), draws no
+ * box of its own: the container's box is the list's.
+ */
 @Composable
 fun KozmosListbox(
     options: List<KozmosListboxOption>,
@@ -56,7 +61,8 @@ fun KozmosListbox(
     enabled: Boolean = true,
     maxHeight: androidx.compose.ui.unit.Dp = 256.dp,
     actions: List<KozmosPickerAction> = emptyList(),
-    emptyText: String? = null
+    emptyText: String? = null,
+    embedded: Boolean = false
 ) {
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
 
@@ -64,11 +70,18 @@ fun KozmosListbox(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(max = maxHeight)
-            .clip(shape)
-            .background(KozmosThemeTokens.primitivesColorsBackground0)
-            .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, shape)
+            // Embedded (GAP-271), inside a Dialog, Popover or Card, the list
+            // draws no box of its own: no surface, no edge, no inset; its rows
+            // are as they are.
+            .then(
+                if (embedded) Modifier
+                else Modifier
+                    .clip(shape)
+                    .background(KozmosThemeTokens.primitivesColorsBackground0)
+                    .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, shape)
+            )
             .verticalScroll(rememberScrollState())
-            .padding(KozmosDimensions.primitivesLayoutSpacing50),
+            .then(if (embedded) Modifier else Modifier.padding(KozmosDimensions.primitivesLayoutSpacing50)),
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
         if (options.isEmpty() && emptyText != null) {

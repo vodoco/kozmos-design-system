@@ -63,8 +63,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
   its buildings and levels, rather than a navigation tree. The stroke sits
   under the row, so a divided row is a pixel taller; the hover and
   selected fills keep their corners, inside the stroke and over the
-  surface, and the focus ring is drawn inside the row. Rows composed as
-  children take it from here too.
+  surface, and the focus ring is drawn inside the row. A selected row's
+  stroke is drawn in no colour (decision 207): its fill is the stroke's
+  own colour in dark. Rows composed as children take it from here too.
 
 - `bleed`: `number | string`, optional.
 
@@ -73,6 +74,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
   where they are: the panel's own inline padding, 16 in a
   `Container inset="panel"`. A number is pixels. 0 by default, the tree's
   own edges.
+
+- `rowFill`: `TreeRowFill`, optional.
+
+  How the selected and hover fills are drawn (GAP-217, decision 196):
+  `"inset"` (the default), a pill with the control's corners inside the
+  row, for a navigation tree; `"band"`, a band with no corners that runs
+  the tree's full width, and its `bleed` past it, for a list of records
+  such as the Dashboard's Map Content tree. Selected is the hover fill at
+  full strength and hover is half of it (decision 173), as inset. Rows
+  composed as children take it from here too.
 
 - `indent`: `number`, optional, default `20`.
 - `activationMode`: `TreeActivationMode`, optional, default `"select-toggle"`.
@@ -112,7 +123,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
   How a row's check and the checks above and below it go together:
   `"exclusive"` (the default) clears a row's ancestors and descendants
   when it is checked, so a client and its sites are never checked
-  together; `"independent"` leaves every other row as it is.
+  together; `"independent"` leaves every other row as it is, but a parent
+  some but not all of whose enabled rows are checked is drawn mixed and
+  is `aria-checked="mixed"` (GAP-279, decision 211). Checking a mixed
+  parent checks it and all its enabled rows; clearing a checked parent
+  clears them; checking a parent that is not mixed checks it alone.
 
 - `disclosurePosition`: `TreeDisclosurePosition`, optional.
 
@@ -181,12 +196,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, 
   Dims the row, and is its `aria-disabled`.
 
 - `name`: `React.ReactNode`, **required**.
-- `checked`: `boolean`, optional.
+- `checked`: `TreeItemChecked`, optional.
 
   A checkbox before the row's icon, and the row's `aria-checked`
   (GAP-277): given, the row is a checkable tree's and has no
   `aria-selected`. The box is drawn for the eye; the row is what a
-  screen reader hears as checked.
+  screen reader hears as checked. `"mixed"` draws Checkbox's mixed mark
+  and is `aria-checked="mixed"` (GAP-279).
 
 - `actions`: `React.ReactNode`, optional.
 - `actionsVisibility`: `"auto" | "always"`, optional.
@@ -201,6 +217,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, 
   As Tree's `divided`: a stroke under the row, and an open parent row on a
   surface, both reaching the Tree's `bleed` past it. Defaults to the
   Tree's.
+
+- `rowFill`: `TreeRowFill`, optional.
+
+  As Tree's `rowFill`: `"band"` draws the selected and hover fills as a
+  band with no corners across the row's full width and the Tree's `bleed`
+  (GAP-217). Defaults to the Tree's, else `"inset"`.
 
 - `metaPlacement`: `TreeMetaPlacement`, optional.
 
@@ -260,6 +282,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which
   surface, both reaching the Tree's `bleed` past it. Defaults to the
   Tree's.
 
+- `rowFill`: `TreeRowFill`, optional.
+
+  As Tree's `rowFill`: `"band"` draws the selected and hover fills as a
+  band with no corners across the row's full width and the Tree's `bleed`
+  (GAP-217). Defaults to the Tree's, else `"inset"`.
+
 - `expanded`: `boolean`, optional, default `false`.
 
   Whether a row with children shows them: its `aria-expanded`.
@@ -274,12 +302,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which
 
   Draws the disclosure, and gives the row `aria-expanded`.
 
-- `checked`: `boolean`, optional.
+- `checked`: `TreeItemChecked`, optional.
 
   A checkbox before the row's icon, and the row's `aria-checked`
   (GAP-277): given, the row is a checkable tree's and has no
   `aria-selected`. The box is drawn for the eye; the row is what a
-  screen reader hears as checked.
+  screen reader hears as checked. `"mixed"` draws Checkbox's mixed mark
+  and is `aria-checked="mixed"` (GAP-279).
 
 - `disclosurePosition`: `TreeDisclosurePosition`, optional.
 
@@ -312,12 +341,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
   Dims the row, and is its `aria-disabled`.
 
 - `name`: `React.ReactNode`, **required**.
-- `checked`: `boolean`, optional.
+- `checked`: `TreeItemChecked`, optional.
 
   A checkbox before the row's icon, and the row's `aria-checked`
   (GAP-277): given, the row is a checkable tree's and has no
   `aria-selected`. The box is drawn for the eye; the row is what a
-  screen reader hears as checked.
+  screen reader hears as checked. `"mixed"` draws Checkbox's mixed mark
+  and is `aria-checked="mixed"` (GAP-279).
 
 - `expanded`: `boolean`, optional.
 
@@ -336,6 +366,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
   As Tree's `divided`: a stroke under the row, and an open parent row on a
   surface, both reaching the Tree's `bleed` past it. Defaults to the
   Tree's.
+
+- `rowFill`: `TreeRowFill`, optional.
+
+  As Tree's `rowFill`: `"band"` draws the selected and hover fills as a
+  band with no corners across the row's full width and the Tree's `bleed`
+  (GAP-217). Defaults to the Tree's, else `"inset"`.
 
 - `metaPlacement`: `TreeMetaPlacement`, optional.
 
@@ -420,6 +456,20 @@ From `@kozmos-ds/react`.
 type TreeDensity = "default" | "compact";
 ```
 
+### TreeRowFill
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * How a row's selected and hover fills are drawn (GAP-217, decision 196):
+ * `"inset"`, a pill with the control's corners inside the row, as a
+ * navigation tree has them; `"band"`, a band with no corners across the
+ * tree's full width, as the Dashboard's Map Content tree draws them.
+ */
+type TreeRowFill = "inset" | "band";
+```
+
 ### TreeActivationMode
 
 From `@kozmos-ds/react`.
@@ -482,11 +532,29 @@ interface TreeItemRenderContext {
   selected: boolean;
   /** Whether a checkable tree's row is checked (GAP-277); false otherwise. */
   checked: boolean;
+  /**
+   * Whether a checkable row is mixed (GAP-279, decision 211): under
+   * `checkRule="independent"`, a parent some but not all of whose enabled
+   * rows are checked. A mixed row is not `checked`.
+   */
+  mixed: boolean;
   focused: boolean;
   disabled: boolean;
   toggle: (force?: boolean) => void;
   select: () => void;
 }
+```
+
+### TreeItemChecked
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * A checkable row's check (GAP-279): checked, not, or `"mixed"`, a parent
+ * some but not all of whose rows are checked.
+ */
+type TreeItemChecked = boolean | "mixed";
 ```
 
 ### TreeItemSlot

@@ -15,6 +15,9 @@ public enum KozmosChipSize {
 public struct KozmosChip<Icon: View>: View {
     public let text: String
     public let variant: KozmosChipVariant
+    /// What the chip means (GAP-170, decision 200): set, it decides the
+    /// colours whatever the variant, as on `KozmosTag`.
+    public let emotion: KozmosEmotion?
     public let size: KozmosChipSize
     public let selected: Bool
     public let disabled: Bool
@@ -28,6 +31,7 @@ public struct KozmosChip<Icon: View>: View {
     public init(
         text: String,
         variant: KozmosChipVariant = .neutral,
+        emotion: KozmosEmotion? = nil,
         size: KozmosChipSize = .default,
         selected: Bool = false,
         active: Bool? = nil,
@@ -39,6 +43,7 @@ public struct KozmosChip<Icon: View>: View {
     ) {
         self.text = text
         self.variant = variant
+        self.emotion = emotion
         self.size = size
         self.selected = active ?? selected
         self.disabled = disabled
@@ -200,7 +205,15 @@ public struct KozmosChip<Icon: View>: View {
         }
     }
 
+    // An emotion (GAP-170, decision 200) decides the colours whatever the
+    // variant. At rest: its surface, its ink and an edge in its text colour,
+    // Tag's quiet pair (4.5:1 in both themes). Selected: filled with its text
+    // colour, the words in the page's colour, the same pair as the text on
+    // the page, so 4.5:1 too. The variants map to emotions as neutral to
+    // neutral, brand to themed and destructive to danger, and keep their own
+    // drawing.
     private var backgroundColor: Color {
+        if let emotion { return selected ? emotion.text : emotion.surface }
         if selected {
             switch variant {
             case .destructive:
@@ -221,6 +234,7 @@ public struct KozmosChip<Icon: View>: View {
     }
 
     private var foregroundColor: Color {
+        if let emotion { return selected ? KozmosColors.primitivesColorsBackground0 : emotion.onSurface }
         if selected {
             switch variant {
             case .destructive:
@@ -241,6 +255,7 @@ public struct KozmosChip<Icon: View>: View {
     }
 
     private var borderColor: Color {
+        if let emotion { return emotion.text }
         if selected {
             switch variant {
             case .destructive:
@@ -338,6 +353,7 @@ public extension KozmosChip where Icon == EmptyView {
     init(
         text: String,
         variant: KozmosChipVariant = .neutral,
+        emotion: KozmosEmotion? = nil,
         size: KozmosChipSize = .default,
         selected: Bool = false,
         active: Bool? = nil,
@@ -348,6 +364,7 @@ public extension KozmosChip where Icon == EmptyView {
     ) {
         self.text = text
         self.variant = variant
+        self.emotion = emotion
         self.size = size
         self.selected = active ?? selected
         self.disabled = disabled

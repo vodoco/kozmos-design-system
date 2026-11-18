@@ -111,13 +111,20 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## DialogContent
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { closeLabel?: string; portalContainer?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"] }`.
+It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { closeLabel?: string; portalContainer?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"]; size?: DialogContentSize }`.
 
 - `closeLabel`: `string`, optional, default `"Close"`.
 
   Localized name of the persistent dismiss control.
 
 - `portalContainer`: `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"]`, optional.
+- `size`: `DialogContentSize`, optional, default `"default"`.
+
+  `default`: at most 512 wide and as tall as its content, 16 from the
+  window's edges. `full`: the window less 16 on each side (decision 202,
+  GAP-259), for media shown large; the first child (the header) keeps its
+  height, the second takes the rest, and a footer after it keeps its own.
+
 - `asChild`: `boolean`, optional.
 - `forceMount`: `true`, optional.
 
@@ -161,7 +168,24 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## DialogHeader
 
-Its props are `React.HTMLAttributes<HTMLDivElement>`.
+Its props are `DialogHeaderProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
+
+- `media`: `React.ReactNode`, optional.
+
+  An illustration or a photo above the title (decision 195, GAP-214), 16
+  over it. Decorative, hidden from assistive technology, unless
+  `mediaLabel` names it.
+
+- `mediaLabel`: `string`, optional.
+
+  The media's name, read as one image. Without it the media is decorative.
+
+- `mediaBleed`: `boolean`, optional, default `false`.
+
+  The media reaches the dialog's edges and top corners, past its padding,
+  clipped by the dialog's corner; the header must then be the dialog's
+  first child. The close button keeps its place in the corner, over the
+  media. Defaults to false: inside the padding.
 
 - `children`: `ReactNode`, optional.
 
@@ -196,3 +220,14 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `Omit<DialogPrimiti
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### DialogContentSize
+
+From `@kozmos-ds/react`.
+
+```ts
+/** How large a dialog is. */
+type DialogContentSize = "default" | "full";
+```

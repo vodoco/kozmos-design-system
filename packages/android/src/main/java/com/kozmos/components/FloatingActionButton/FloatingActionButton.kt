@@ -24,7 +24,9 @@ fun KozmosFloatingActionButton(
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Default.Add,
     // The presses, focus and hover it answers, as Material's own parameter.
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
+    // Last, so a call by position still compiles.
+    enabled: Boolean = true
 ) {
     val source = interactionSource ?: remember { MutableInteractionSource() }
     // The theme fill with the theme foreground on it, the same in both
@@ -36,7 +38,7 @@ fun KozmosFloatingActionButton(
     KozmosFillSurface(
         onClick = onClick,
         modifier = modifier,
-        enabled = true,
+        enabled = enabled,
         shape = FloatingActionButtonDefaults.shape,
         fill = KozmosFillStates.themed,
         interactionSource = source,

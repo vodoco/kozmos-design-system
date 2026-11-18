@@ -96,6 +96,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         }
         ref={ref}
         disabled={isLoading || disabled}
+        // Busy, not unavailable (decision 197, the owner's ruling of 17
+        // Nov): a loading Button keeps its variant's colours, and the
+        // disabled look is for one that is disabled, loading or not.
+        data-loading={isLoading && !disabled ? "" : undefined}
         onClick={handleClick}
         {...props}
       >

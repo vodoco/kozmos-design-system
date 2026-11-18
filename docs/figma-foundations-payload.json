@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T06:30:45.135Z",
+  "generatedAt": "2026-11-17T22:57:25.613Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,17 +36,17 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 745,
-    "variableTokens": 694,
-    "styleOnlyTokens": 51,
+    "totalTokens": 754,
+    "variableTokens": 702,
+    "styleOnlyTokens": 52,
     "bySourceType": {
       "borderRadius": 8,
-      "dimension": 19,
+      "dimension": 22,
       "borderWidth": 4,
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 525,
+      "color": 530,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -54,7 +54,7 @@
       "other": 23,
       "cubicBezier": 5,
       "fontFamilies": 7,
-      "fontWeights": 5,
+      "fontWeights": 6,
       "shadow": 8,
       "duration": 3
     },
@@ -3698,7 +3698,12 @@
         "ios": "primitivesColorsBackground0",
         "android": "primitivesColorsBackground0"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "STROKE_COLOR",
+        "TEXT_FILL"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -7222,7 +7227,12 @@
         "ios": "semanticsEmotionNeutralOnsurface",
         "android": "semanticsEmotionNeutralOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7246,7 +7256,12 @@
         "ios": "semanticsEmotionNeutralText",
         "android": "semanticsEmotionNeutralText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7294,7 +7309,12 @@
         "ios": "semanticsEmotionThemedOnsurface",
         "android": "semanticsEmotionThemedOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7318,7 +7338,12 @@
         "ios": "semanticsEmotionThemedText",
         "android": "semanticsEmotionThemedText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7366,7 +7391,12 @@
         "ios": "semanticsEmotionSuccessOnsurface",
         "android": "semanticsEmotionSuccessOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7390,7 +7420,12 @@
         "ios": "semanticsEmotionSuccessText",
         "android": "semanticsEmotionSuccessText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7438,7 +7473,12 @@
         "ios": "semanticsEmotionDangerOnsurface",
         "android": "semanticsEmotionDangerOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7462,7 +7502,12 @@
         "ios": "semanticsEmotionDangerText",
         "android": "semanticsEmotionDangerText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7510,7 +7555,12 @@
         "ios": "semanticsEmotionAlertOnsurface",
         "android": "semanticsEmotionAlertOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7534,7 +7584,12 @@
         "ios": "semanticsEmotionAlertText",
         "android": "semanticsEmotionAlertText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7630,7 +7685,12 @@
         "ios": "semanticsEmotionInformativeOnsurface",
         "android": "semanticsEmotionInformativeOnsurface"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7654,7 +7714,12 @@
         "ios": "semanticsEmotionInformativeText",
         "android": "semanticsEmotionInformativeText"
       },
-      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "STROKE_COLOR",
+        "SHAPE_FILL",
+        "FRAME_FILL"
+      ],
       "values": {
         "light": {
           "kind": "alias",
@@ -7783,6 +7848,179 @@
         "dark": {
           "kind": "alias",
           "path": "Primitives/Colors/background/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Disabled/fill",
+      "figmaName": "Disabled/fill",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-disabled-fill",
+      "syntax": {
+        "web": "var(--semantics-disabled-fill)",
+        "ios": "semanticsDisabledFill",
+        "android": "semanticsDisabledFill"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/100"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/100"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Disabled/foreground",
+      "figmaName": "Disabled/foreground",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-disabled-foreground",
+      "syntax": {
+        "web": "var(--semantics-disabled-foreground)",
+        "ios": "semanticsDisabledForeground",
+        "android": "semanticsDisabledForeground"
+      },
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "STROKE_COLOR"
+      ],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/400"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/400"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Inverse/surface",
+      "figmaName": "Inverse/surface",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-inverse-surface",
+      "syntax": {
+        "web": "var(--semantics-inverse-surface)",
+        "ios": "semanticsInverseSurface",
+        "android": "semanticsInverseSurface"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/200"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/200"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Inverse/onSurface",
+      "figmaName": "Inverse/onSurface",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-inverse-on-surface",
+      "syntax": {
+        "web": "var(--semantics-inverse-on-surface)",
+        "ios": "semanticsInverseOnsurface",
+        "android": "semanticsInverseOnsurface"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/background/0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/Size",
+      "figmaName": "Typography/Display/Size",
+      "collection": "Kozmos Semantics",
+      "sourceType": "dimension",
+      "figmaType": "FLOAT",
+      "cssVariable": "--semantics-typography-display-size",
+      "syntax": {
+        "web": "var(--semantics-typography-display-size)",
+        "ios": "semanticsTypographyDisplaySize",
+        "android": "semanticsTypographyDisplaySize"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "number",
+          "value": 48
+        },
+        "dark": {
+          "kind": "number",
+          "value": 48
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/LineHeight",
+      "figmaName": "Typography/Display/LineHeight",
+      "collection": "Kozmos Semantics",
+      "sourceType": "dimension",
+      "figmaType": "FLOAT",
+      "cssVariable": "--semantics-typography-display-line-height",
+      "syntax": {
+        "web": "var(--semantics-typography-display-line-height)",
+        "ios": "semanticsTypographyDisplayLineheight",
+        "android": "semanticsTypographyDisplayLineheight"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "number",
+          "value": 54
+        },
+        "dark": {
+          "kind": "number",
+          "value": 54
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/LetterSpacing",
+      "figmaName": "Typography/Display/LetterSpacing",
+      "collection": "Kozmos Semantics",
+      "sourceType": "dimension",
+      "figmaType": "FLOAT",
+      "cssVariable": "--semantics-typography-display-letter-spacing",
+      "syntax": {
+        "web": "var(--semantics-typography-display-letter-spacing)",
+        "ios": "semanticsTypographyDisplayLetterspacing",
+        "android": "semanticsTypographyDisplayLetterspacing"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "number",
+          "value": 0
+        },
+        "dark": {
+          "kind": "number",
+          "value": 0
         }
       }
     },
@@ -8311,6 +8549,30 @@
         "dark": {
           "kind": "number",
           "value": 0.20000000298023224
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Effect/glass/border/color",
+      "figmaName": "Effect/glass/border/color",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-effect-glass-border-color",
+      "syntax": {
+        "web": "var(--semantics-effect-glass-border-color)",
+        "ios": "semanticsEffectGlassBorderColor",
+        "android": "semanticsEffectGlassBorderColor"
+      },
+      "suggestedScopes": ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FFFFFF"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FFFFFF"
         }
       }
     },
@@ -17673,6 +17935,30 @@
         "dark": {
           "kind": "raw",
           "value": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Typography/Display/Weight",
+      "figmaName": "Typography/Display/Weight",
+      "collection": "Kozmos Semantics",
+      "sourceType": "fontWeights",
+      "figmaType": null,
+      "cssVariable": "--semantics-typography-display-weight",
+      "syntax": {
+        "web": "var(--semantics-typography-display-weight)",
+        "ios": "semanticsTypographyDisplayWeight",
+        "android": "semanticsTypographyDisplayWeight"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": 700
+        },
+        "dark": {
+          "kind": "raw",
+          "value": 700
         }
       }
     },

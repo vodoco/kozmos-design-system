@@ -250,3 +250,54 @@ describe("Select", () => {
     );
   });
 });
+
+// Decision 151, CLOUD-UI-009: the map's level control is a borderless Select.
+describe("SelectTrigger variant=ghost", () => {
+  const field = (variant?: "default" | "ghost") => (
+    <Select defaultValue="1">
+      <SelectTrigger aria-label="Level" variant={variant}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="1">Level 1</SelectItem>
+        <SelectItem value="2">Level 2</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
+  it("draws no edge and no fill at rest, hugs its value, and takes the hover fill", () => {
+    render(field("ghost"));
+    const trigger = screen.getByRole("combobox", { name: "Level" });
+    expect(trigger).toHaveAttribute("data-variant", "ghost");
+    expect(trigger).toHaveClass(
+      "border-transparent",
+      "bg-transparent",
+      "w-auto",
+      "hover:bg-hover-fill",
+      "data-[state=open]:bg-hover-fill",
+    );
+    expect(trigger).not.toHaveClass("border-input", "bg-background", "w-full");
+    expect(trigger).toHaveTextContent("Level 1");
+  });
+
+  it("is the bordered field by default, unchanged", () => {
+    render(field());
+    const trigger = screen.getByRole("combobox", { name: "Level" });
+    expect(trigger).not.toHaveAttribute("data-variant");
+    expect(trigger).toHaveClass("border-input", "bg-background", "w-full");
+    expect(trigger).not.toHaveClass("border-transparent");
+  });
+
+  it("keeps an error's red edge", () => {
+    render(
+      <Select>
+        <SelectTrigger aria-label="Level" variant="ghost" error>
+          <SelectValue placeholder="Level" />
+        </SelectTrigger>
+      </Select>,
+    );
+    const trigger = screen.getByRole("combobox", { name: "Level" });
+    expect(trigger).toHaveClass("border-destructive");
+    expect(trigger).not.toHaveClass("border-transparent");
+  });
+});

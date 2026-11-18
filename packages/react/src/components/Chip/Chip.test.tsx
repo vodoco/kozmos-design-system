@@ -257,3 +257,165 @@ describe("Chip", () => {
     });
   });
 });
+
+// GAP-170, decision 200: Tag's six emotions on Chip.
+describe("Chip emotion", () => {
+  const EMOTIONS = [
+    "themed",
+    "neutral",
+    "success",
+    "danger",
+    "informative",
+    "alert",
+  ] as const;
+  const chipOf = (label: string) =>
+    screen.getByText(label).closest('[data-slot="chip"]') as HTMLElement;
+
+  it.each(EMOTIONS)(
+    "%s at rest: the emotion's surface and ink, edged in its text colour, its tint deeper under the pointer",
+    (emotion) => {
+      render(
+        <Chip emotion={emotion} onClick={() => undefined}>
+          New
+        </Chip>,
+      );
+      const chip = chipOf("New");
+      expect(chip).toHaveAttribute("data-emotion", emotion);
+      expect(chip.style.getPropertyValue("--kz-emotion-surface")).toBe(
+        `var(--semantics-emotion-${emotion}-surface)`,
+      );
+      expect(chip).toHaveClass(
+        "border-[var(--kz-emotion-text)]",
+        "bg-[var(--kz-emotion-surface)]",
+        "text-[var(--kz-emotion-on-surface)]",
+        "hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]",
+      );
+      expect(chip).not.toHaveClass(
+        "bg-background",
+        "border-input",
+        "hover:bg-hover-fill",
+      );
+    },
+  );
+
+  it.each(EMOTIONS)(
+    "%s selected: filled with the emotion's text colour, the page's colour as ink",
+    (emotion) => {
+      render(
+        <Chip emotion={emotion} selected onClick={() => undefined}>
+          New
+        </Chip>,
+      );
+      const chip = chipOf("New");
+      expect(chip).toHaveClass(
+        "border-[var(--kz-emotion-text)]",
+        "bg-[var(--kz-emotion-text)]",
+        "text-background",
+      );
+      expect(chip).not.toHaveClass("bg-theme-fill", "bg-destructive");
+      expect(screen.getByRole("button", { name: "New" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    },
+  );
+
+  it("decides the colour whatever the variant", () => {
+    render(
+      <>
+        <Chip variant="destructive" emotion="success">
+          Ready
+        </Chip>
+        <Chip variant="brand" emotion="alert" selected>
+          Pending
+        </Chip>
+      </>,
+    );
+    expect(chipOf("Ready")).toHaveClass("bg-[var(--kz-emotion-surface)]");
+    expect(chipOf("Ready")).not.toHaveClass("bg-destructive/10");
+    expect(chipOf("Pending")).toHaveClass("bg-[var(--kz-emotion-text)]");
+  });
+
+  it("with no emotion, each variant draws as it did", () => {
+    render(
+      <>
+        <Chip>Plain</Chip>
+        <Chip variant="brand">Brand</Chip>
+        <Chip variant="destructive" selected>
+          Gone
+        </Chip>
+      </>,
+    );
+    expect(chipOf("Plain")).not.toHaveAttribute("data-emotion");
+    expect(chipOf("Plain")).not.toHaveAttribute("style");
+    expect(chipOf("Plain")).toHaveClass(
+      "border-input",
+      "bg-background",
+      "hover:bg-hover-fill",
+    );
+    expect(chipOf("Brand")).toHaveClass("bg-primary/10", "text-primary");
+    expect(chipOf("Gone")).toHaveClass("bg-destructive");
+  });
+});
+
+// GAP-251: the remove button's hover shows on a hovered chip. It takes the
+// hover fill (decision 173), and the chip goes back to its fill at rest while
+// its remove is hovered, so the two are not the same fill.
+describe("Chip remove hover", () => {
+  const removeOf = (name: string) => screen.getByRole("button", { name });
+  const chipOf = (button: HTMLElement) =>
+    button.closest('[data-slot="chip"]') as HTMLElement;
+
+  it("takes the hover fill, not ink at a tenth", () => {
+    render(<Chip onRemove={() => undefined}>Retail</Chip>);
+    const remove = removeOf("Remove Retail");
+    expect(remove).toHaveClass("hover:bg-hover-fill");
+    expect(remove).not.toHaveClass("hover:bg-foreground/10");
+  });
+
+  it.each([
+    [undefined, false, "has-[.kozmos-chip-remove:hover]:bg-background"],
+    ["brand", false, "has-[.kozmos-chip-remove:hover]:bg-primary/10"],
+    ["destructive", false, "has-[.kozmos-chip-remove:hover]:bg-destructive/10"],
+    [undefined, true, "has-[.kozmos-chip-remove:hover]:bg-theme-fill"],
+    ["destructive", true, "has-[.kozmos-chip-remove:hover]:bg-destructive"],
+  ] as const)(
+    "a %s chip (selected: %s) goes back to its fill at rest while its remove is hovered",
+    (variant, selected, rest) => {
+      render(
+        <Chip variant={variant} selected={selected} onRemove={() => undefined}>
+          Retail
+        </Chip>,
+      );
+      expect(chipOf(removeOf("Remove Retail"))).toHaveClass(rest);
+    },
+  );
+
+  it("an emotion chip goes back to its surface, or selected to its text fill, under which the remove turns to the page's colour", () => {
+    render(
+      <>
+        <Chip emotion="danger" onRemove={() => undefined}>
+          Marked for Deletion
+        </Chip>
+        <Chip emotion="informative" selected onRemove={() => undefined}>
+          New
+        </Chip>
+      </>,
+    );
+    const rest = removeOf("Remove Marked for Deletion");
+    expect(chipOf(rest)).toHaveClass(
+      "has-[.kozmos-chip-remove:hover]:bg-[var(--kz-emotion-surface)]",
+    );
+    expect(rest).toHaveClass(
+      "hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]",
+    );
+    const selected = removeOf("Remove New");
+    expect(chipOf(selected)).toHaveClass(
+      "has-[.kozmos-chip-remove:hover]:bg-[var(--kz-emotion-text)]",
+    );
+    expect(selected).toHaveClass(
+      "hover:bg-background",
+      "hover:text-[var(--kz-emotion-text)]",
+    );
+  });
+});

@@ -235,14 +235,15 @@ final class KozmosThemeFillPressTests: XCTestCase {
         }
     }
 
-    /// Loading, a part is disabled, and drawn at half as a disabled one is:
-    /// React's disabled:opacity-50, and Compose since decision 59. Button,
-    /// IconButton and MapControlButton drew a loading part at full strength.
-    /// Each is drawn on mid grey, so half of anything shows: a loading part
-    /// draws as the same part disabled and loading, and its fill (a Button's
-    /// leading padding, an IconButton's top, a map control's leading edge)
-    /// is not the fill at rest.
-    @MainActor func testALoadingPartIsDrawnAtHalfAsADisabledOneIs() throws {
+    /// Loading is busy, not unavailable (decision 197, as the owner ruled on
+    /// #576): a loading part keeps its fill at full strength, where it was
+    /// drawn at half once and from the disabled pair after that, and only a
+    /// part both disabled and loading takes the disabled pair. Each is drawn
+    /// on mid grey: a loading part's fill (a Button's leading padding, an
+    /// IconButton's top, a map control's leading edge) is its fill at rest,
+    /// and a disabled and loading one's is not. KozmosDisabledPairTests
+    /// reads the colours themselves.
+    @MainActor func testALoadingPartKeepsItsFillAndADisabledAndLoadingOneDoesNot() throws {
         let leading: (CGRect) -> CGPoint = { CGPoint(x: $0.minX + 6, y: $0.midY) }
         let top: (CGRect) -> CGPoint = { CGPoint(x: $0.midX, y: $0.minY + 6) }
         let parts: [(name: String, rest: AnyView, loading: AnyView, disabledLoading: AnyView, probe: (CGRect) -> CGPoint)] = [
@@ -265,12 +266,16 @@ final class KozmosThemeFillPressTests: XCTestCase {
                 let rest = try onGrey(item.rest, scheme)
                 let loading = try onGrey(item.loading, scheme)
                 let disabledLoading = try onGrey(item.disabledLoading, scheme)
-                XCTAssertLessThanOrEqual(try XCTUnwrap(loading.largestDifference(from: disabledLoading)), 2,
-                                         "\(item.name), \(scheme): loading is not drawn as the part disabled and loading is")
                 let atRest = rest.pixel(at: item.probe(part(rest)))
                 let whileLoading = loading.pixel(at: item.probe(part(loading)))
-                let moved = abs(Int(atRest.r) - Int(whileLoading.r)) + abs(Int(atRest.g) - Int(whileLoading.g)) + abs(Int(atRest.b) - Int(whileLoading.b))
-                XCTAssertGreaterThan(moved, 6, "\(item.name), \(scheme): loading draws its fill \(Self.hex(whileLoading)) as at rest, \(Self.hex(atRest))")
+                let whileUnavailable = disabledLoading.pixel(at: item.probe(part(disabledLoading)))
+                func moved(_ a: (r: UInt8, g: UInt8, b: UInt8, a: UInt8), _ b: (r: UInt8, g: UInt8, b: UInt8, a: UInt8)) -> Int {
+                    abs(Int(a.r) - Int(b.r)) + abs(Int(a.g) - Int(b.g)) + abs(Int(a.b) - Int(b.b))
+                }
+                XCTAssertLessThanOrEqual(moved(atRest, whileLoading), 6,
+                                         "\(item.name), \(scheme): loading draws its fill \(Self.hex(whileLoading)), not its fill at rest \(Self.hex(atRest))")
+                XCTAssertGreaterThan(moved(atRest, whileUnavailable), 6,
+                                     "\(item.name), \(scheme): disabled and loading draws its fill \(Self.hex(whileUnavailable)) as at rest")
             }
         }
     }

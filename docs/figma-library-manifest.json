@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 745,
-      "dark": 745
+      "light": 754,
+      "dark": 754
     },
     "light": [
       {
@@ -3341,6 +3341,54 @@
         ]
       },
       {
+        "name": "Semantics/Disabled/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.background.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Disabled/foreground",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/surface",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/onSurface",
+        "type": "color",
+        "value": "{Primitives.Colors.background.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
         "name": "Semantics/Elevation/Raised",
         "type": "shadow",
         "value": "{shadow.sm}",
@@ -3388,6 +3436,34 @@
         "value": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace",
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/Size",
+        "type": "dimension",
+        "value": "3rem",
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LineHeight",
+        "type": "dimension",
+        "value": "3.375rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
+      },
+      {
+        "name": "Semantics/Typography/Display/Weight",
+        "type": "fontWeights",
+        "value": 700,
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LetterSpacing",
+        "type": "dimension",
+        "value": "0rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["GAP"]
       },
       {
         "name": "Semantics/Diff/New",
@@ -3637,6 +3713,18 @@
         "value": 0.20000000298023224,
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Effect/glass/border/color",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
       },
       {
         "name": "Semantics/Effect/glass/refraction/opacity",
@@ -11183,6 +11271,54 @@
         ]
       },
       {
+        "name": "Semantics/Disabled/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.background.100}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Disabled/foreground",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.400}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/surface",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.200}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Inverse/onSurface",
+        "type": "color",
+        "value": "{Primitives.Colors.background.0}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
         "name": "Semantics/Elevation/Raised",
         "type": "shadow",
         "value": "{shadow.sm}",
@@ -11230,6 +11366,34 @@
         "value": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace",
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/Size",
+        "type": "dimension",
+        "value": "3rem",
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LineHeight",
+        "type": "dimension",
+        "value": "3.375rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
+      },
+      {
+        "name": "Semantics/Typography/Display/Weight",
+        "type": "fontWeights",
+        "value": 700,
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Typography/Display/LetterSpacing",
+        "type": "dimension",
+        "value": "0rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["GAP"]
       },
       {
         "name": "Semantics/Diff/New",
@@ -11479,6 +11643,18 @@
         "value": 0.20000000298023224,
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Effect/glass/border/color",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
       },
       {
         "name": "Semantics/Effect/glass/refraction/opacity",
@@ -15714,10 +15890,10 @@
   },
   "components": {
     "summary": {
-      "total": 128,
-      "stories": 128,
-      "tests": 128,
-      "exported": 128,
+      "total": 129,
+      "stories": 129,
+      "tests": 129,
+      "exported": 129,
       "codeConnectFiles": 105,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 105
@@ -16738,6 +16914,7 @@
           "aria-label",
           "children",
           "disabled",
+          "emotion",
           "icon",
           "id",
           "removeLabel",
@@ -17157,6 +17334,36 @@
         "variants": {}
       },
       {
+        "name": "DescriptionList",
+        "source": "packages/react/src/components/DescriptionList/DescriptionList.tsx",
+        "story": "packages/react/src/components/DescriptionList/DescriptionList.stories.tsx",
+        "test": "packages/react/src/components/DescriptionList/DescriptionList.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "layout",
+          "role",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
         "name": "Dialog",
         "source": "packages/react/src/components/Dialog/Dialog.tsx",
         "story": "packages/react/src/components/Dialog/Dialog.stories.tsx",
@@ -17187,6 +17394,7 @@
           "portalContainer",
           "role",
           "side",
+          "size",
           "tabIndex",
           "title"
         ],
@@ -17327,7 +17535,8 @@
           "role",
           "size",
           "tabIndex",
-          "title"
+          "title",
+          "tone"
         ],
         "variants": {}
       },
@@ -17490,6 +17699,7 @@
           "tabIndex",
           "title",
           "value",
+          "variant",
           "wrapperClassName"
         ],
         "variants": {}
@@ -17632,7 +17842,7 @@
           "mappedProps": [],
           "unmappedProps": []
         },
-        "props": ["as", "children", "level"],
+        "props": ["as", "children", "level", "size"],
         "variants": {}
       },
       {
@@ -18036,6 +18246,7 @@
           "children",
           "defaultValue",
           "disabled",
+          "embedded",
           "id",
           "multiple",
           "options",
@@ -18843,6 +19054,7 @@
           "size",
           "tabIndex",
           "title",
+          "titleAddon",
           "tone"
         ],
         "variants": {}
@@ -19952,6 +20164,7 @@
           "tabIndex",
           "title",
           "value",
+          "variant",
           "wrapperClassName"
         ],
         "variants": {}
@@ -20497,7 +20710,17 @@
         "variants": {
           "align": ["center", "end", "justify", "left", "right", "start"],
           "color": ["default", "destructive", "muted", "primary", "white"],
-          "size": ["2xl", "3xl", "4xl", "base", "lg", "sm", "xl", "xs"],
+          "size": [
+            "2xl",
+            "3xl",
+            "4xl",
+            "base",
+            "display",
+            "lg",
+            "sm",
+            "xl",
+            "xs"
+          ],
           "truncate": ["true"],
           "weight": ["bold", "medium", "normal", "semibold"]
         }
@@ -20774,7 +20997,8 @@
           "side",
           "sideOffset",
           "tabIndex",
-          "title"
+          "title",
+          "tone"
         ],
         "variants": {}
       },
@@ -20797,6 +21021,7 @@
         },
         "props": [
           "align",
+          "anchor",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
@@ -20900,6 +21125,7 @@
           "renderIcon",
           "renderMeta",
           "role",
+          "rowFill",
           "scrollerRef",
           "selected",
           "selectedId",

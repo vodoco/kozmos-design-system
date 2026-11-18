@@ -65,6 +65,16 @@ export interface TourStepProps extends Omit<
    */
   target?: TourStepTarget;
   /**
+   * Where the card is placed, apart from what it lights (decision 198,
+   * GAP-220): an element, a ref, a virtual element or a rect, as `target`
+   * takes. The card sits beside the anchor, its arrow pointing at it, while
+   * Backdrop still lights `target`; where the card overlaps the lit area it
+   * stays above the cut-out. A map's lit area with an editor laid over it is
+   * one: the card sits beside the editor, on the lit map. Left out, or not on
+   * the page, the card is placed by `target`, as before.
+   */
+  anchor?: TourStepTarget;
+  /**
    * The tour's name, the eyebrow's words before the position: "Edit a POI".
    * A closing step with no `stepCount` may carry its own state: "Edit a POI ·
    * completed".
@@ -271,8 +281,8 @@ function formatPosition(
  * or on the lit target does not. Closed with focus lost, PopoverContent gives
  * focus back (GAP-190): to what had it as the step opened, the button that
  * started the tour, or, once that is gone or a step opened with focus on the
- * last one's Next, to the step's target; a virtual element or a rect has
- * none.
+ * last one's Next, to the element the card is placed against, its
+ * `anchor` or else its target; a virtual element or a rect has none.
  *
  * With no `stepCount` it draws no position and no progress: with no Back and
  * no Next it is a coachmark (GAP-157), a single hint beside a control.
@@ -282,6 +292,7 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
     {
       open = true,
       target,
+      anchor: placeBy,
       tourLabel,
       step = 1,
       stepCount,
@@ -337,9 +348,16 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
     // target with no box, through a point in the middle of the window.
     const latest = React.useRef(target);
     latest.current = target;
+    const latestAnchor = React.useRef(placeBy);
+    latestAnchor.current = placeBy;
+    // What the card is placed by, read as it stands: the anchor when it is
+    // on the page, else the target (decision 198).
+    const placing = React.useCallback(() => {
+      const anchored = read(latestAnchor.current);
+      return boxOf(anchored) ? anchored : read(latest.current);
+    }, []);
     const [measured] = React.useState<Measurable>(() => ({
-      getBoundingClientRect: () =>
-        boxOf(read(latest.current)) ?? rect(0, 0, 0, 0),
+      getBoundingClientRect: () => boxOf(placing()) ?? rect(0, 0, 0, 0),
     }));
     const [middle] = React.useState<Measurable>(() => ({
       getBoundingClientRect: () => {
@@ -355,7 +373,7 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
     }));
     const resolve = React.useCallback((): Measurable => {
       if (typeof window === "undefined") return middle;
-      const source = read(latest.current);
+      const source = placing();
       if (!boxOf(source)) return middle;
       if (isElement(source)) {
         // One element draws it (itself, or the one child of a wrapper with
@@ -364,7 +382,7 @@ const TourStep = React.forwardRef<HTMLDivElement, TourStepProps>(
         if (drawn.length === 1) return drawn[0] as unknown as Measurable;
       }
       return measured;
-    }, [measured, middle]);
+    }, [measured, middle, placing]);
     const [anchor, setAnchor] = React.useState<Measurable>(middle);
     const anchorRef = React.useRef<Measurable>(anchor);
     anchorRef.current = anchor;

@@ -87,6 +87,39 @@ final class KozmosTreeDividedTests: XCTestCase {
         }
     }
 
+    /// Decision 207 (GAP-250): no stroke under a selected row, inset or
+    /// band. The selected fill is the stroke's own colour in dark, so it
+    /// could not be seen there; its point stays, so no row moves, and the
+    /// rows on either side keep theirs. Read in light, where the stroke and
+    /// the fill differ: three strokes, none under Ground floor, 90 between
+    /// the first two, two rows and their strokes.
+    @MainActor func testNoStrokeUnderASelectedRow() async throws {
+        let nodes = [
+            Node(id: "main", value: "Main building", children: [
+                Node(id: "ground", value: "Ground floor"), Node(id: "first", value: "First floor"),
+            ]),
+            Node(id: "park", value: "Car park"),
+        ]
+        for rowFill in [KozmosTreeRowFill.inset, .band] {
+            let view = KozmosTree(nodes: nodes, divided: true, bleed: 0, selection: .constant(["ground"]),
+                                  rowFill: rowFill, expanded: [[0]])
+                .padding(16)
+                .background(Color.white)
+                .environment(\.colorScheme, .light)
+            let pixels = try await RenderedPixels.render(view, size: size)
+            let attachment = XCTAttachment(image: pixels.image)
+            attachment.name = "gap-250-selected-\(rowFill)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            let rows = strokeRows(pixels, at: 200)
+            XCTAssertEqual(rows.count, 3, "\(rowFill): strokes at \(rows)")
+            if rows.count == 3 {
+                XCTAssertEqual(rows[1] - rows[0], 90, accuracy: 1, "\(rowFill): a stroke under the selected row: \(rows)")
+                XCTAssertEqual(rows[2] - rows[1], 45, accuracy: 1, "\(rowFill): \(rows)")
+            }
+        }
+    }
+
     /// The rows a divided tree draws: an open parent's children under it,
     /// a closed one's not, keyed by place so a product rebuilding its nodes
     /// keeps what is open. (VoiceOver's "Expanded" value is not read back

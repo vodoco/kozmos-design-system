@@ -8,6 +8,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.tokens.KozmosTypography
 
 /**
  * Heading rank, mirroring the React `Heading.level` prop.
@@ -25,6 +26,16 @@ enum class KozmosHeadingLevel(val level: Int, val fontSize: Int) {
     H6(6, 16)
 }
 
+/** A size a heading takes apart from its rank, as React's `Heading size`. */
+enum class KozmosHeadingSize {
+    /**
+     * The one display size, 48sp bold on 54sp lines (decision 203), for a
+     * marketing-style headline such as a sign-in hero. The level stays the
+     * heading's rank; only its size changes.
+     */
+    Display
+}
+
 /**
  * A ranked heading.
  *
@@ -36,13 +47,25 @@ enum class KozmosHeadingLevel(val level: Int, val fontSize: Int) {
 fun KozmosHeading(
     text: String,
     modifier: Modifier = Modifier,
-    level: KozmosHeadingLevel = KozmosHeadingLevel.H1
+    level: KozmosHeadingLevel = KozmosHeadingLevel.H1,
+    // Display draws the heading at the display size, keeping its level.
+    // Left out, the level's own size, as before.
+    size: KozmosHeadingSize? = null
 ) {
-    Text(
-        text = text,
-        modifier = modifier.semantics { heading() },
-        fontSize = level.fontSize.sp,
-        fontWeight = FontWeight.Bold,
-        color = KozmosThemeTokens.primitivesColorsForeground100
-    )
+    if (size == KozmosHeadingSize.Display) {
+        Text(
+            text = text,
+            modifier = modifier.semantics { heading() },
+            style = KozmosTypography.display,
+            color = KozmosThemeTokens.primitivesColorsForeground100
+        )
+    } else {
+        Text(
+            text = text,
+            modifier = modifier.semantics { heading() },
+            fontSize = level.fontSize.sp,
+            fontWeight = FontWeight.Bold,
+            color = KozmosThemeTokens.primitivesColorsForeground100
+        )
+    }
 }

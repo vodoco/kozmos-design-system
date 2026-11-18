@@ -1,0 +1,12 @@
+---
+"@kozmos-ds/tokens": minor
+"@kozmos-ds/styles": patch
+"@kozmos-ds/react": patch
+---
+
+The glass edge has a colour token, and the Android resources write every length as a `<dimen>` (decisions 208 and 206, GAP-229 and GAP-237).
+
+**Upgrade note (breaking, Android XML resources only):** `@kozmos-ds/tokens`' Android resources (`android/src/main/res/values/colors.xml` and `values-night/colors.xml`) now write the layout spacing, sizing and radius primitives (`primitives_layout_spacing_*`, `primitives_layout_sizing_*`, `primitives_layout_radius_*`), `semantics_motion_slide_sm`, `semantics_motion_slide_md` and `semantics_effect_glass_blur` as `<dimen>` in dp, where they were `<integer>`; and the type scale, with the `components_html_elements_headings_*` tokens, as `<dimen>`, where it was unitless `<string>` (and `<integer>` for `primitives_typography_paragraph_spacing_0` and `components_html_elements_headings_paragraphs_font_size`): font sizes, line heights and letter spacing in sp, so they follow the reader's font scale, and paragraph spacing in dp. An app that reads any of them as `@integer/` or `@string/` (`R.integer`, `R.string`, `getInteger`, `getString`) no longer builds or finds them: read them as `@dimen/` (`R.dimen`, `getDimension`) instead, which an XML layout can now use. The numbers are unchanged. Compose (`KozmosDimensions`) and SwiftUI read no XML and are unaffected, and nothing on the web changes. `pnpm tokens:android:refs:check` now fails on any length written as an `<integer>` or a unitless `<string>`.
+
+- **`Semantics.Effect.glass.border.color`**, new: the glass edge's colour, white (#FFFFFF) in both themes, beside `Semantics.Effect.glass.border.opacity`. It is `--semantics-effect-glass-border-color` in CSS, `SemanticsEffectGlassBorderColor` in the JavaScript module, `semanticsEffectGlassBorderColor` in the Swift and Kotlin palettes, and `semantics_effect_glass_border_color` in the Android resources; Figma's Effect/glass gains it at the foundations importer's next Update.
+- **Every glass edge reads it** at the edge's opacity: `.kozmos-surface-glass` and Button's glass variant on the web (`color-mix()` of the token with transparent at the opacity), where white was written in. Nothing is drawn differently: the edge is the same white at 0.2, pixel for pixel in Chromium and WebKit, though its computed value now reads `color(srgb 1 1 1 / 0.2)` where it read `rgba(255, 255, 255, 0.2)`.

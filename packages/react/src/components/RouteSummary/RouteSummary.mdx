@@ -103,7 +103,7 @@ The navigation layout takes `actions` after its progress: the journey's own acti
 The host draws the buttons and owns what they do:
 
 - Each Button says `type="button"`. Button has no default type, so inside a form one would submit it.
-- At the ends of the route, a step control is unavailable through `aria-disabled="true"` and a handler that does nothing, not `disabled`. A button disabled under the pointer drops the focus to the page; Previous on the first step keeps it. The row draws `aria-disabled` at the disabled button's 50%. SwiftUI and Compose disable the button, which keeps VoiceOver's and TalkBack's focus where it was.
+- At the ends of the route, a step control is unavailable through `aria-disabled="true"` and a handler that does nothing, not `disabled`. A button disabled under the pointer drops the focus to the page; Previous on the first step keeps it. The row draws `aria-disabled` from the disabled pair, as a disabled Button is drawn (decision 197). SwiftUI and Compose disable the button, which keeps VoiceOver's and TalkBack's focus where it was.
 - The new step is said by the host's `NavigationAnnouncer`, the one announcement owner. The summary says nothing itself.
 - Whether the last step disables Next or turns it into Finish, leading to arrival, is the product's choice; the row takes either.
 

@@ -17,6 +17,20 @@ public struct KozmosSplitButton: View {
     }
     
     @Environment(\.layoutDirection) private var layoutDirection
+    /// False under a `.disabled` set round it: both halves are drawn from
+    /// the disabled pair (decision 197), the pair's fill under its
+    /// foreground, not at half. The seam between them is unchanged.
+    @Environment(\.isEnabled) private var isEnabled
+
+    /// A half's fill: the theme fill, or the disabled pair's.
+    private func fill(isPressed: Bool, isFocused: Bool) -> Color {
+        isEnabled ? KozmosFillStates.background(.themed, isPressed: isPressed, isFocused: isFocused) : KozmosColors.semanticsDisabledFill
+    }
+
+    /// What sits on a half's fill.
+    private func ink(isPressed: Bool, isFocused: Bool) -> Color {
+        isEnabled ? KozmosFillStates.foreground(.themed, isPressed: isPressed, isFocused: isFocused) : KozmosColors.semanticsDisabledForeground
+    }
 
     /// The action half's shape: rounded at the leading end only, as React's
     /// half is `rounded-e-none`: the right end, right to left.
@@ -40,8 +54,8 @@ public struct KozmosSplitButton: View {
                 KozmosButtonInteractionReader { isPressed, isFocused in
                     Text(label)
                         .padding()
-                        .background(KozmosFillStates.background(.themed, isPressed: isPressed, isFocused: isFocused))
-                        .foregroundColor(KozmosFillStates.foreground(.themed, isPressed: isPressed, isFocused: isFocused))
+                        .background(fill(isPressed: isPressed, isFocused: isFocused))
+                        .foregroundColor(ink(isPressed: isPressed, isFocused: isFocused))
                 }
             }
             .buttonStyle(KozmosFillButtonStyle(hoverShape: actionShape))
@@ -56,8 +70,8 @@ public struct KozmosSplitButton: View {
             } label: {
                 Image(systemName: "chevron.down")
                     .padding()
-                    .background(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
-                    .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
+                    .background(fill(isPressed: false, isFocused: false))
+                    .foregroundColor(ink(isPressed: false, isFocused: false))
             }
             .clipShape(menuShape)
             // The chevron's own name was all VoiceOver had for it.

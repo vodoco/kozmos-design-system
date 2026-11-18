@@ -326,7 +326,6 @@
     overflow-wrap: anywhere;
   }
   .kozmos-route-summary-actions > .kozmos-button[aria-disabled="true"] {
-    opacity: 0.5;
     cursor: default;
   }
   /* RouteSummary's destination and its location line break a long word
@@ -697,8 +696,15 @@
         )
       )
       saturate(var(--semantics-effect-glass-saturation));
+    /* The glass edge's colour token, white in both themes, at the edge's
+       opacity (decision 208, GAP-229): it was white written in. */
     border: 1px solid
-      rgba(255, 255, 255, var(--semantics-effect-glass-border-opacity));
+      color-mix(
+        in srgb,
+        var(--semantics-effect-glass-border-color)
+          calc(var(--semantics-effect-glass-border-opacity) * 100%),
+        transparent
+      );
   }
   @media (prefers-reduced-transparency: reduce) {
     .kozmos-surface-glass {
@@ -1533,7 +1539,7 @@
     @apply animate-pulse bg-[var(--primitives-colors-background-200)];
   }
   .kozmos-button {
-    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control bg-transparent text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control bg-transparent text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none active:scale-[0.98];
     cursor: pointer;
     text-transform: none;
     -webkit-appearance: button;
@@ -1553,9 +1559,6 @@
      host without @scope; the press still scales and the focus ring stays. */
   .kozmos-button-default {
     @apply bg-[var(--components-primary-buttons-themed-button-background-idle)] text-[var(--components-primary-buttons-themed-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-themed-button-background-hover)] focus-visible:bg-[var(--components-primary-buttons-themed-button-background-focus)] active:bg-[var(--components-primary-buttons-themed-button-background-pressed)];
-  }
-  .kozmos-button:disabled {
-    cursor: default;
   }
   .kozmos-button-destructive {
     @apply bg-[var(--components-primary-buttons-danger-button-background-idle)] text-[var(--components-primary-buttons-danger-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-danger-button-background-hover)] focus-visible:bg-[var(--components-primary-buttons-danger-button-background-focus)] active:bg-[var(--components-primary-buttons-danger-button-background-pressed)];
@@ -1601,8 +1604,15 @@
         )
       )
       saturate(var(--semantics-effect-glass-saturation));
+    /* The glass edge's colour token, white in both themes, at the edge's
+       opacity (decision 208, GAP-229): it was white written in. */
     border: 1px solid
-      rgba(255, 255, 255, var(--semantics-effect-glass-border-opacity));
+      color-mix(
+        in srgb,
+        var(--semantics-effect-glass-border-color)
+          calc(var(--semantics-effect-glass-border-opacity) * 100%),
+        transparent
+      );
   }
   .kozmos-button-glass:hover {
     background-color: rgba(
@@ -1686,33 +1696,81 @@
   .kozmos-button-emotion-filled:active {
     transition-duration: 0s;
   }
-  /* An unavailable filled Button (aria-disabled, as RouteSummary's Previous
-     and Next) keeps its rest colour under the pointer and a press, or it
-     would look as if it acted. It keeps focus, and its ring. */
-  .kozmos-button-default[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(
-      --components-primary-buttons-themed-button-background-idle
-    );
+  /* A disabled Button (decision 197, GAP-218) is drawn from the disabled
+     pair, Semantics.Disabled, not at half opacity: at half, a white label
+     on the theme fill read 2.24:1 on a white card, and the tour's disabled
+     Next could not be read. So is an unavailable one, aria-disabled
+     (RouteSummary's Previous and Next, ImageCropper's zoom), which keeps
+     its focus and its ring (the owner, 17 Nov), as native RouteSummary's
+     disabled actions draw. Every variant and emotion takes the pair's
+     foreground for its label and its icon (currentColor); what changes is
+     the ground. A filled variant (default, destructive, secondary, subtle,
+     or any emotion's fill) takes the pair's fill under it: 4.80:1 in light
+     and 6.51:1 in dark. So does a ghost, icon-only too: an enabled ghost
+     can already be grey (Cloud's toolbar, a field's clear), and the fill
+     is what says it is unavailable. An outline Button keeps the page under
+     it and its edge takes the foreground, so the shape stays, 6.10:1 and
+     7.76:1. A link gains no fill, or it would stop reading as a link: an
+     enabled link is the theme's colour, and grey with no underline is
+     what differs. Glass is the surface it stands on, an effect rather than
+     a fill: it keeps the glass, and the foreground differs from its ink.
+     A loading Button is busy, not unavailable: it keeps its variant's
+     colours (data-loading); disabled and loading, it draws as disabled.
+     These weigh a class and the state, three, over each variant's hover,
+     focus and press, so an aria-disabled Button keeps the look under the
+     pointer. The cursor stays the default. IconButton's count turns over
+     to the pair, the foreground under the fill's digits. */
+  .kozmos-button:is(:disabled:not([data-loading]), [aria-disabled="true"]) {
+    cursor: default;
+    color: var(--semantics-disabled-foreground);
   }
-  .kozmos-button-destructive[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(
-      --components-primary-buttons-danger-button-background-idle
-    );
+  .kozmos-button-default:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-destructive:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-secondary:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-subtle:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-emotion-filled:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-ghost:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ) {
+    background-color: var(--semantics-disabled-fill);
   }
-  .kozmos-button-secondary[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(
-      --components-primary-buttons-neutral-button-background-idle
-    );
+  .kozmos-button-outline:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ),
+  .kozmos-button-emotion-outline:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ) {
+    border-color: var(--semantics-disabled-foreground);
+    background-color: var(--primitives-colors-background-0);
   }
-  /* The subtle tier's words step with its fill, so an unavailable one keeps
-     its rest words too. */
-  .kozmos-button-subtle[aria-disabled="true"]:is(:hover, :active),
-  .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
-    color: var(--kz-button-fg);
-    background-color: var(--kz-button-bg);
+  .kozmos-button-link:is(
+    :disabled:not([data-loading]),
+    [aria-disabled="true"]
+  ) {
+    text-decoration-line: none;
   }
-  .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
-    background-color: var(--kz-button-bg);
+  .kozmos-button:is(:disabled:not([data-loading]), [aria-disabled="true"])
+    .kozmos-icon-button-counter {
+    background-color: var(--semantics-disabled-foreground);
+    color: var(--semantics-disabled-fill);
   }
   /* A named exception (decision 173, ruling c; contrast-contract.json's
      hoverFillExceptions): the outline and text treatments keep the muted
@@ -1856,10 +1914,10 @@
     flex: 1 1 auto;
     min-inline-size: 0;
   }
-  /* A zoom at its limit is unavailable, not disabled, so it keeps focus:
-     drawn as a disabled button is, at half opacity. */
+  /* A zoom at its limit is unavailable, not disabled, so it keeps focus;
+     it is drawn from the disabled pair, as every unavailable Button is
+     (decision 197). */
   .kozmos-image-cropper-zoom > [aria-disabled="true"] {
-    opacity: 0.5;
     cursor: default;
   }
   /* PageHeader (GAP-036, decision 135): a band across the page, its content
@@ -1915,6 +1973,24 @@
   }
   .kozmos-page-header[data-size="lg"] .kozmos-page-header-info,
   .kozmos-page-header[data-size="lg"] .kozmos-page-header-actions {
+    block-size: 2.25rem;
+  }
+  /* The title's addon (decision 210), a status Tag beside the title: centred
+     on the title's line, as the info button is, and outside the h1. With an
+     addon the line wraps, so where it has no room the addon (and the info
+     button after it) goes under the title, at its start, rather than
+     squeezing the title into a column. */
+  .kozmos-page-header-title[data-addon] {
+    flex-wrap: wrap;
+  }
+  .kozmos-page-header-title-addon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    block-size: 2rem;
+    min-inline-size: 0;
+  }
+  .kozmos-page-header[data-size="lg"] .kozmos-page-header-title-addon {
     block-size: 2.25rem;
   }
   /* IconButton's counter (GAP-197): over the icon's top-end corner, its
@@ -2777,5 +2853,109 @@
       forced-color-adjust: none;
       fill: CanvasText;
     }
+  }
+}
+/* GAP-276: TableRow's highlight="new", a row just added. It shows on the
+   informative surface, holds three deliberate durations and fades over the
+   fourth (1.84 s in all), so the eye finds it. Under reduced motion, the
+   system's or the design config's, it shows and clears at the same time
+   with no fade: one step at the end. The animation's fill is the row's
+   while it runs, over its hover and selected fills; after it, the row's
+   own again (no forwards fill). */
+@kozmos-owned {
+  .kozmos-table-row-highlight {
+    animation: table-row-highlight
+      calc(var(--semantics-motion-duration-deliberate) * 4)
+      var(--semantics-motion-easing-standard) backwards;
+  }
+  @keyframes table-row-highlight {
+    0%,
+    75% {
+      background-color: var(--semantics-emotion-informative-surface);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-table-row-highlight {
+      animation-timing-function: steps(1, end);
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-table-row-highlight {
+    animation-timing-function: steps(1, end);
+  }
+}
+/* GAP-271: an embedded Listbox, inside a container that is the box (a
+   Dialog, a Popover, a Card): no border, surface, shadow or padding of its
+   own. Two classes, over .kozmos-listbox's one. The shadow is cleared as
+   Tailwind's shadow variable, so the focus ring, drawn with the same
+   box-shadow, still shows. */
+@kozmos-owned {
+  .kozmos-listbox.kozmos-listbox-embedded {
+    border-width: 0;
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+  }
+}
+/* GAP-221, decision 199: DescriptionList, a value under each label with no
+   field chrome. The label 12/16 in the muted foreground (foreground 400),
+   the value 14/20 in the foreground, layout spacing 50 (4) between them and
+   200 (16) between items. Stacked, one item under another; in a row, as
+   many side by side as fit, each at least 10rem, 300 (24) between them. An
+   action sits after the value on its line, which keeps the line's 20: a
+   small IconButton is drawn past it rather than making the item taller. */
+@kozmos-owned {
+  .kozmos-description-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(var(--primitives-layout-spacing-200) * 1px);
+    margin: 0;
+  }
+  .kozmos-description-list[data-layout="row"] {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+    column-gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  }
+  .kozmos-description-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    min-width: 0;
+  }
+  .kozmos-description-list-label {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 400;
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-description-list-value {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    min-width: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-description-list-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-description-list-action {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 1.25rem;
   }
 }

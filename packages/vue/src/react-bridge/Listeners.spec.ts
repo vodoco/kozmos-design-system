@@ -812,6 +812,8 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSettingsRow: { props: { label: "Analytics" } },
   // A table cannot hold the slot's box.
   KozmosTable: { click: first("table") },
+  KozmosDescriptionList: { slot: true },
+  KozmosDescriptionListItem: { props: { label: "FID", value: "f-1042" } },
   KozmosTree: { props: { data: [{ id: "1", name: "a.ts" }] } },
   KozmosTimeline: { slot: true },
   KozmosPopover: { slot: true },

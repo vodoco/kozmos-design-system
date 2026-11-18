@@ -48,7 +48,12 @@ class KozmosTreeDividedTest {
         TreeNode("park", "P")
     )
 
-    private fun draw(divided: Boolean = true, bleed: Int = 0): DrawnPixels = paparazzi.drawn(frames) {
+    private fun draw(
+        divided: Boolean = true,
+        bleed: Int = 0,
+        selectedIds: Set<String> = emptySet(),
+        rowFill: KozmosTreeRowFill = KozmosTreeRowFill.Inset
+    ): DrawnPixels = paparazzi.drawn(frames) {
         val base = LocalDensity.current
         CompositionLocalProvider(
             LocalKozmosUseDarkTokens provides false,
@@ -59,7 +64,10 @@ class KozmosTreeDividedTest {
             KozmosMaterialTheme {
                 Box(Modifier.fillMaxSize().onGloballyPositioned { canvas = it.size.width }) {
                     Box(Modifier.size(170.dp, 300.dp).background(Color.White).padding(16.dp)) {
-                        KozmosTree(data, divided = divided, bleed = bleed.dp, expandedIds = setOf("main"))
+                        KozmosTree(
+                            data, divided = divided, bleed = bleed.dp, selectedIds = selectedIds,
+                            onSelectedIdsChange = {}, expandedIds = setOf("main"), rowFill = rowFill
+                        )
                     }
                 }
             }
@@ -85,6 +93,25 @@ class KozmosTreeDividedTest {
         assertEquals("one under each of the four rows: $strokes", 4, strokes.size)
         val undivided = draw(divided = false).strokes(140f)
         assertTrue("an undivided tree draws strokes: $undivided", undivided.isEmpty())
+    }
+
+    /**
+     * Decision 207 (GAP-250): no stroke under a selected row, inset or band. The selected fill is the
+     * stroke's own colour in dark, so it could not be seen there; its dp stays, so no row moves, and the
+     * rows on either side keep theirs. Read in light, where the two differ: three strokes, none under L0,
+     * the first two two rows apart.
+     */
+    @Test fun noStrokeUnderASelectedInsetRow() = noStrokeUnderASelectedRow(KozmosTreeRowFill.Inset)
+
+    @Test fun noStrokeUnderASelectedBandRow() = noStrokeUnderASelectedRow(KozmosTreeRowFill.Band)
+
+    private fun noStrokeUnderASelectedRow(rowFill: KozmosTreeRowFill) {
+        val all = draw().strokes(140f)
+        val strokes = draw(selectedIds = setOf("ground"), rowFill = rowFill).strokes(140f)
+        assertEquals("$rowFill: three strokes, none under the selected row: $strokes", 3, strokes.size)
+        assertEquals("$rowFill: the first stroke moved: $strokes vs $all", all[0], strokes[0])
+        assertEquals("$rowFill: a stroke under the selected row: $strokes vs $all", all[2], strokes[1])
+        assertEquals("$rowFill: the last stroke moved: $strokes vs $all", all[3], strokes[2])
     }
 
     @Test fun anOpenParentSitsOnTheSurfaceAndAClosedRowDoesNot() {

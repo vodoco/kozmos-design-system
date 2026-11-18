@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "be68b0fc7bcd";
+const PLUGIN_BUILD = "0e1b2f242c0d";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -55,6 +55,9 @@ const TEXT_SIZES = [
   "2XLarge",
   "3XLarge",
   "4XLarge",
+  // Decision 203 (GAP-272): the one display size, 48 on 54, React's
+  // Text size="display" and Heading size="display".
+  "Display",
 ];
 const TEXT_WEIGHTS = ["Normal", "Medium", "Semibold", "Bold"];
 const TEXT_TONES = ["Default", "Muted", "Primary", "Destructive"];
@@ -125,6 +128,23 @@ const TREE_EXPANDED = ["False", "True"];
 const TREE_DENSITIES = ["Default", "Compact"];
 const TREE_STATES = ["Idle", "Hover", "Selected", "Focus"];
 const TREE_ITEM_TYPES = ["Parent", "Child"];
+// GAP-217, decision 196: React's Tree `rowFill`, "inset" (the default) or
+// "band". Inset, first, is the row as drawn before the axis: the selected and
+// hover fill a pill on the control radius. Band is the same row with its
+// fill's corners at 0 (code runs it past the tree by Tree's bleed, which a
+// variant cannot draw). Sparse: Band only where a fill shows, the Hover and
+// Selected states; an Idle or Focus band draws as its inset. A variant named
+// before the axis existed parses as Inset, so Update renames it in place and
+// keeps its node id.
+const TREE_ROW_FILLS = ["Inset", "Band"];
+const TREE_BAND_STATES = ["Hover", "Selected"];
+function treeRowFillsForState(state) {
+  return TREE_BAND_STATES.indexOf(state) === -1 ? ["Inset"] : TREE_ROW_FILLS;
+}
+function parseTreeRowFill(value, state) {
+  const rowFill = value || "Inset";
+  return treeRowFillsForState(state).indexOf(rowFill) === -1 ? null : rowFill;
+}
 // Five row actions, because a Pointr Cloud listItem carries five — edit, lock,
 // eye, flag and overflow — and that is the densest actions case the product
 // has. The count is a property, not a variant axis. An axis applies to every
@@ -245,6 +265,18 @@ const TREE_CHECKBOX_CHECKED = {
   kind: "tree-checkbox-checked",
   markName: "Checkbox Mark",
 };
+// GAP-279, decision 211 (owner, 17 Nov): a checkable tree's mixed parent, as
+// React's TreeItemRow `checked="mixed"` (a parent some but not all of whose
+// rows are checked, under checkRule="independent"). Mixed, a boolean off by
+// default, shows Checkbox Mixed inside the row's Checkbox, beside Checkbox
+// Checked: the theme fill with the minus for its mark, as Checkbox's
+// Indeterminate draws its dash (decision 188).
+const TREE_MIXED_PROPERTY_NAME = "Mixed";
+const TREE_CHECKBOX_MIXED = {
+  name: "Checkbox Mixed",
+  kind: "tree-checkbox-mixed",
+  markName: "Checkbox Mixed Mark",
+};
 const TREE_DISCLOSURE_END = {
   name: "Disclosure End",
   iconKind: "tree-disclosure-end-icon",
@@ -283,6 +315,20 @@ const THEME_FILL = {
 const THEME_FILL_FOREGROUND = {
   name: "Primary Buttons/themed/button/foreground/content/idle",
   fallback: "#FFFFFF",
+};
+// Decision 197 (GAP-218, 17 Nov 2026): a disabled Button is drawn from the
+// disabled pair, Semantics.Disabled in the Kozmos Semantics collection, not
+// at half opacity and not from the tiers' disabled tokens (#2E3138 under
+// #464A53, a charcoal nothing in code drew). Disabled/fill is background/100
+// (#E3E4E8 light, #17191C dark), under a filled variant only; Disabled/
+// foreground is foreground/400 (#5D626F light, #A29D90 dark), every variant's
+// label, icon, spinner and an outline's edge: 4.80:1 on the fill in light and
+// 6.51:1 in dark. Import Foundations writes both; until it has, a painter
+// draws the fallbacks.
+const DISABLED_FILL = { name: "Disabled/fill", fallback: "#E3E4E8" };
+const DISABLED_FOREGROUND = {
+  name: "Disabled/foreground",
+  fallback: "#5D626F",
 };
 const BUTTON_VARIANTS = [
   "Default",
@@ -359,6 +405,41 @@ const CHIP_VARIANTS = ["Neutral", "Brand", "Destructive"];
 const CHIP_SIZES = ["Small", "Default", "Large"];
 const CHIP_STATES = ["Default", "Selected", "Disabled"];
 const CHIP_REMOVABLE = ["False", "True"];
+// Decision 200 (GAP-170): React's Chip `emotion`, Tag's six. None, the
+// variant's own drawing, comes first, so a variant drawn before the axis is
+// None and Update renames it, keeping its node id. An emotion decides the
+// colour whatever the variant, so it is drawn once, on the Neutral chip at
+// the Default size, at rest and selected, removable or not: 24 variants.
+const CHIP_EMOTIONS = [
+  "None",
+  "Themed",
+  "Neutral",
+  "Success",
+  "Danger",
+  "Informative",
+  "Alert",
+];
+const CHIP_EMOTION_STATES = ["Default", "Selected"];
+function chipVariantIsGenerated(props) {
+  if (!props.emotion || props.emotion === "None") return true;
+  return (
+    props.variant === "Neutral" &&
+    props.size === "Default" &&
+    CHIP_EMOTION_STATES.indexOf(props.state) !== -1
+  );
+}
+function chipVariantCombinations() {
+  const out = [];
+  for (const emotion of CHIP_EMOTIONS)
+    for (const variant of CHIP_VARIANTS)
+      for (const size of CHIP_SIZES)
+        for (const state of CHIP_STATES)
+          for (const removable of CHIP_REMOVABLE) {
+            const props = { variant, size, state, removable, emotion };
+            if (chipVariantIsGenerated(props)) out.push(props);
+          }
+  return out;
+}
 const SEGMENTED_CONTROL_SIZES = ["Small", "Default", "Large"];
 const SEGMENTED_CONTROL_ACTIVE = ["One", "Two", "Three"];
 // Decision 191: State=Mixed is React's `mixed`, a control of a
@@ -534,7 +615,10 @@ const FILE_UPLOAD_STATES = ["Default", "Focus", "Dragging", "Disabled"];
 const FILE_UPLOAD_STATUSES = ["Default", "Error", "Warning", "Success"];
 // Preview: React's `preview="image"` holding its image, the thumbnail with
 // Change and Remove where the drop area was (GAP-270).
-const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"];
+// Button: React's `variant="button"` (GAP-274), an outline Button-sized
+// trigger, the upload icon and its words, in place of the drop area. Last,
+// so a set from before it keeps its order and Update adds the 16 it lacks.
+const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview", "Button"];
 // One status's columns, a content each, 440 apart.
 const FILE_UPLOAD_STATUS_STRIDE = FILE_UPLOAD_CONTENT.length * 440;
 const COLOR_PICKER_STATES = ["Default", "Focus", "Disabled", "Readonly"];
@@ -550,8 +634,16 @@ const SELECT_STATUSES = ["Default", "Error"];
 // GAP-164 (decision 132): Open draws the trigger with its list under it, so a
 // row's count is visible in Figma. A variant drawn before the axis is Closed.
 const SELECT_CONTENT = ["Closed", "Open"];
+// Decision 151 (CLOUD-UI-009): SelectTrigger's `variant`, the bordered field
+// or the ghost trigger, no edge and no fill, as wide as its value: the map's
+// level control. A variant drawn before the axis is Default. Ghost is drawn
+// closed, at every State and Status: 8 variants.
+const SELECT_VARIANTS = ["Default", "Ghost"];
+// The state-status builders carry one more axis as `type`; Select's types
+// are its Content, and "Ghost", which is Content=Closed, Variant=Ghost.
+const SELECT_TYPES = ["Closed", "Open", "Ghost"];
 // An open list is neither disabled nor the trigger's focus-ring state, so
-// Open is drawn at State=Default only (#525 review): 6 Closed + 2 Open.
+// Open is drawn at State=Default only (#525 review): 8 Closed + 2 Open.
 function selectVariantIsGenerated(state, _status, content) {
   return content !== "Open" || state === "Default";
 }
@@ -728,6 +820,31 @@ function emptyStateIconSize(size) {
   return size === "Compact" ? 40 : 64;
 }
 const EMPTY_STATE_CONTENT = ["Basic", "Icon", "Action"];
+// Decision 194 (GAP-213): React's EmptyState `tone`, Tag's six emotions.
+// None, today's look, comes first, so a variant drawn before the axis is
+// None and Update renames it, keeping its node id. A tone is drawn at
+// Size=Default only: Compact sits in a slot that already draws its own box,
+// where a card would be a box in a box. The set's rows are its sizes, then
+// one a tone, each row's `second` "Default/<Tone>".
+const EMPTY_STATE_TONES = [
+  "None",
+  "Themed",
+  "Neutral",
+  "Success",
+  "Danger",
+  "Informative",
+  "Alert",
+];
+const EMPTY_STATE_ROWS = EMPTY_STATE_SIZES.concat(
+  EMPTY_STATE_TONES.slice(1).map((tone) => `Default/${tone}`),
+);
+function emptyStateRow(second) {
+  const [size, tone] = String(second || "Default").split("/");
+  return {
+    size: EMPTY_STATE_SIZES.indexOf(size) === -1 ? "Default" : size,
+    tone: EMPTY_STATE_TONES.indexOf(tone) === -1 ? "None" : tone,
+  };
+}
 // GAP-165: a list under the description, what to try ("No Map Content
 // Found"). A layer in every variant, shown by the List boolean, its three
 // items' words List Item 1 Text to List Item 3 Text.
@@ -1261,7 +1378,12 @@ const PROPERTY_PICKER_SUGGESTED_ROWS = [
 const MAP_VIEW_CONTENT = ["Empty", "Overlay"];
 const PAGINATION_CONTENT = ["Basic", "Ellipsis", "Compact"];
 const PAGINATION_SIZES = ["Small", "Default"];
-const DIALOG_CONTENT = ["Basic", "Form", "Footer"];
+// Media (decision 195, GAP-214): DialogHeader's media, bled to the edges and
+// top corners, the close in the corner over it. Full (decision 202, GAP-259):
+// DialogContent size="full", drawn in a 1280 by 800 window, less 16 each side.
+const DIALOG_CONTENT = ["Basic", "Form", "Footer", "Media", "Full"];
+// The media's height in the Media variant: an illustration's band.
+const DIALOG_MEDIA_HEIGHT = 160;
 const DRAWER_SIDES = ["Right", "Left", "Top", "Bottom"];
 // Where the drawer is drawn, as React's placement (GAP-198). Inline, a left or
 // right drawer floats in its region (decisions 139 and 148): 420 wide, as tall
@@ -1280,6 +1402,9 @@ const KBD_KEYS = ["Single", "Combination"];
 // 1, MAP-32's logo and the default, Landscape 16:9, a cover. Square comes
 // first, so the set's default is React's.
 const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
+// GAP-221, decision 199: React's DescriptionList `layout`: Stack, the items
+// one under another and the default, first; Row, side by side.
+const DESCRIPTION_LIST_LAYOUTS = ["Stack", "Row"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1308,6 +1433,26 @@ const TABS_STATES = ["Default", "Focus", "Disabled"];
 // A variant drawn before the axis is Label.
 const TABS_CONTENT = ["Label", "Icon Over Label"];
 const TOOLTIP_SIDES = ["Top", "Right", "Bottom", "Left"];
+// Decision 192 (GAP-210, 17 Nov 2026): TooltipContent's tone. Default is the
+// popover surface, the Tooltip as it was; Inverse is a dark tip on a light
+// page and a light one on a dark page (Pointr Cloud's tooltip), its body, edge
+// and arrow Inverse/surface and its words Inverse/onSurface. A variant named
+// before the axis (Side=X) parses as Default, so Update renames it in place.
+const TOOLTIP_TONES = ["Default", "Inverse"];
+// Each tone's paint: body, edge and arrow, then words. Inverse's edge is its
+// surface, so it draws no line and keeps the Default's size.
+const TOOLTIP_TONE_PAINT = {
+  Default: {
+    surface: { name: "Surface/0", fallback: "#FFFFFF" },
+    edge: { name: "Border/Subtle", fallback: "#C7CAD1" },
+    words: { name: "Colors/foreground/0", fallback: "#000000" },
+  },
+  Inverse: {
+    surface: { name: "Inverse/surface", fallback: "#2E3138" },
+    edge: { name: "Inverse/surface", fallback: "#2E3138" },
+    words: { name: "Inverse/onSurface", fallback: "#FFFFFF" },
+  },
+};
 const BACKDROP_VISIBILITY = ["Visible", "Hidden"];
 // Whether the scrim lights a target (GAP-189): Cut-out leaves an example
 // control's place out of the dim and rings it in the focus colour, as
@@ -1772,6 +1917,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   TimePicker: 1380,
   FileUpload: 1420,
   ImageCropper: 560,
+  DescriptionList: 320,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1822,6 +1968,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "ListItem",
       "SettingsRow",
       "MetaStrip",
+      "DescriptionList",
       "Table",
       "TreeParentItem",
       "TreeChildItem",
@@ -2078,7 +2225,8 @@ const SURFACE_QA_COMPONENT_GROUPS = [
       [
         {
           componentSetName: "Select",
-          variantName: "State=Default, Status=Default, Content=Closed",
+          variantName:
+            "State=Default, Status=Default, Content=Closed, Variant=Default",
           text: { "Placeholder Text": "Destination" },
         },
         {
@@ -2296,7 +2444,7 @@ const COMPONENT_DOCS = [
     usage: [
       "Use beside the search field, 48 to its 44, as the prototype does.",
       "The ring turns in the product; keep it at rest in a static design.",
-      "Disabled dims the whole button; the ring keeps its colours.",
+      "Disabled is the disabled pair: the disc Disabled/fill and the icon Disabled/foreground; the ring keeps its colours.",
     ],
     api: [
       "State maps to disabled.",
@@ -2710,7 +2858,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Mode is one of Cloud's seven toolbars, drawn with Cloud's items; in code the items are MapEditToolbar.items, the product's: tools, actions and dividers.",
-      "A chosen tool (the theme fill) is MapEditToolbar.value; a disabled item, at half strength, is an item's disabled.",
+      "A chosen tool (the theme fill) is MapEditToolbar.value; a disabled item, Disabled/fill under Disabled/foreground (decision 197), is an item's disabled.",
       "Overflow True draws a 320 map, the items that do not fit behind More, from the end; in code the toolbar follows its width, and it is no prop.",
       "JSON's GeoJSON field is MapEditToolbar.field, a labelled Input.",
     ],
@@ -3347,13 +3495,14 @@ const COMPONENT_DOCS = [
       "Size maps to PageHeader.size: Medium is Heading 3 (24/32), Large Heading 2 (30/36).",
       "Title Text maps to title; Description Text to description.",
       "Breadcrumb, Info and Actions show the breadcrumb, info and actions React is given.",
+      "Show Title Addon shows PageHeader.titleAddon, a Tag beside the title, outside its h1 (decision 210); Addon Text is its words.",
       "Its content takes Container's window inset and block inset, 32 above and 24 below (GAP-116).",
     ],
     properties: [
       "Tone: Subtle, Default",
       "Size: Medium, Large",
       "Title Text, Description Text",
-      "Breadcrumb, Info, Description, Actions",
+      "Breadcrumb, Info, Description, Actions, Show Title Addon, Addon Text",
     ],
     accessibility: [
       "In code the title is the page's one h1 at either size.",
@@ -3852,6 +4001,7 @@ const COMPONENT_DOCS = [
       "Size maps to Chip.size: sm, default, and lg.",
       "State maps to selected and disabled props in Code Connect.",
       "Removable maps to the presence of Chip.onRemove.",
+      "Emotion maps to Chip.emotion (decision 200): None is the variant's colour; the six are drawn on the Neutral Default chip at rest and selected. The variants read as emotions: neutral is Neutral, brand Themed, destructive Danger.",
       "Label Text maps to Chip children.",
     ],
     properties: [
@@ -3859,6 +4009,7 @@ const COMPONENT_DOCS = [
       "Size: Small, Default, Large",
       "State: Default, Selected, Disabled",
       "Removable: False, True",
+      "Emotion: None, Themed, Neutral, Success, Danger, Informative, Alert",
       "Label Text, Focus Visible",
     ],
     accessibility: [
@@ -4009,6 +4160,32 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    category: "Data Display",
+    summary:
+      "DescriptionList shows a record's values, each under its label, with no field chrome: a read-only view, such as MAP-619's unit for a Read-Only user (GAP-221, decision 199).",
+    usage: [
+      "Use for a record a person can read but not change, where greyed, outlined fields would read as disabled inputs.",
+      "Use Stack for a panel's column of values; Row for a few short values side by side.",
+      "Use MetaStrip for a few facts about a place as tiles in a strip; use a form's fields where the values can be edited.",
+    ],
+    api: [
+      'Layout maps to layout: Stack is "stack", Row is "row".',
+      "Each item is a DescriptionListItem: Label N Text its label, Value N Text its value. A value can be words, tags (Badges or Chips as children), true or false (written Yes or No), or carry an action after it.",
+      "Action shows the third item's trailing action, a copy IconButton: DescriptionListItem's action.",
+    ],
+    properties: [
+      "Layout: Stack, Row",
+      "Label 1 Text, Value 1 Text, Label 2 Text, Value 2 Text, Label 3 Text, Value 3 Text, Action",
+    ],
+    accessibility: [
+      "A <dl>: each item a <dt> and its <dd>, so a screen reader hears each label with its value.",
+      "SwiftUI makes each item one VoiceOver element, its label the name and its value the value; Compose merges each label and value into one TalkBack node. The action is an element of its own.",
+      "Nothing in it is a field: no textbox, nothing disabled, no read-only input.",
+    ],
+  },
+  {
     componentName: "Table",
     componentSetName: "Table",
     category: "Data Display",
@@ -4077,10 +4254,11 @@ const COMPONENT_DOCS = [
       "Expanded maps to disclosure open or closed state.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
-      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "RowFill maps to rowFill on Tree and TreeParentItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
-      "Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
+      'Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -4089,6 +4267,7 @@ const COMPONENT_DOCS = [
       "Depth: 0, 1, 2",
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
+      "RowFill: Inset, Band (Band for Hover and Selected)",
       "Label Text, Count Text",
       "Divided",
       "Meta Below, Meta Text",
@@ -4114,10 +4293,11 @@ const COMPONENT_DOCS = [
     api: [
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
-      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "RowFill maps to rowFill on Tree and TreeChildItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, hidden while Divided is off.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
-      "Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
+      'Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Product code owns data, keyboard behavior, selection callbacks, and nested action handlers.",
     ],
     properties: [
@@ -4125,6 +4305,7 @@ const COMPONENT_DOCS = [
       "Depth: 0, 1, 2",
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
+      "RowFill: Inset, Band (Band for Hover and Selected)",
       "Label Text, Count Text",
       "Divided",
       "Meta Below, Meta Text",
@@ -4152,10 +4333,11 @@ const COMPONENT_DOCS = [
       "Type maps to parent versus child row anatomy.",
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
-      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "RowFill maps to rowFill on Tree and TreeItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
-      "Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox's 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Disclosure End maps to disclosurePosition=\"end\": turn Disclosure Start off and Disclosure End on to move the disclosure to the row's end, after its actions. At their defaults (off, off, on, off) the row is as it was.",
+      'Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
       "Tree composes this row anatomy as a generated example; product code owns actual data and keyboard behavior.",
     ],
     properties: [
@@ -4165,6 +4347,7 @@ const COMPONENT_DOCS = [
       "Depth: 0, 1, 2",
       "Density: Default, Compact",
       "State: Idle, Hover, Selected, Focus",
+      "RowFill: Inset, Band (Band for Hover and Selected)",
       "Label Text, Count Text",
       "Divided",
       "Meta Below, Meta Text",
@@ -4310,6 +4493,7 @@ const COMPONENT_DOCS = [
     ],
     api: [
       "Side maps to TooltipContent.side in Code Connect.",
+      'Tone maps to TooltipContent.tone: Default is the popover surface, Inverse (tone="inverse", decision 192) the inverse surface under its own words, its arrow the same.',
       "Content Text maps to TooltipContent children.",
       "TooltipProvider and TooltipTrigger remain composition concerns in product code.",
       "Tip renders on the side facing the trigger.",
@@ -4317,6 +4501,7 @@ const COMPONENT_DOCS = [
     ],
     properties: [
       "Side: Top, Right, Bottom, Left",
+      "Tone: Default, Inverse",
       "Content Text",
       "Tip Size: 8",
       "Side Offset: 4",
@@ -5050,13 +5235,13 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
       "Status maps to default, error, warning, and success FieldWrapper validation tones.",
-      "Content maps to empty drop-zone and selected-file list anatomy examples.",
+      'Content maps to empty drop-zone and selected-file list anatomy examples; Button is FileUpload variant="button", an outline trigger in place of the drop area (GAP-274).',
       "Label Text, Browse Text, Drop Text, Description Text, File Name Text, File Meta Text, Helper Text, and Show Helper Text map to FileUpload props and examples.",
     ],
     properties: [
       "State: Default, Focus, Dragging, Disabled",
       "Status: Default, Error, Warning, Success",
-      "Content: Dropzone, Files",
+      "Content: Dropzone, Files, Preview, Button",
       "Label Text, Browse Text, Drop Text, Description Text, File Name Text, File Meta Text, Helper Text, Show Helper Text, Focus Visible",
     ],
     accessibility: [
@@ -5201,12 +5386,14 @@ const COMPONENT_DOCS = [
       "Option 1 Text through Option 3 Text map to SelectItem children.",
       "Option 1 Count through Option 3 Count map to SelectItem.count, drawn as the neutral Counter; Show Counts shows them. Every row keeps the check's 16 at its end, so the counts form one column.",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
+      "Variant maps to SelectTrigger.variant: Ghost draws no edge and no fill, as wide as its value, the map's level control (decision 151, CLOUD-UI-009).",
       "Focus follows the React focus-visible ring.",
     ],
     properties: [
       "State: Default, Focus, Disabled, Mixed",
       "Status: Default, Error",
       "Content: Closed, Open",
+      "Variant: Default, Ghost",
       "Placeholder Text, Reset Mixed, Reset Mixed Text, Mixed Text, Focus Visible",
       "Option 1 Text, Option 2 Text, Option 3 Text",
       "Option 1 Count, Option 2 Count, Option 3 Count, Show Counts",
@@ -5429,9 +5616,11 @@ const COMPONENT_DOCS = [
       "Description Text maps to EmptyState.description.",
       "Action content composes a live Button instance in the Figma example.",
       "List maps to EmptyState.list (GAP-165): what to try, under the description, read in order; List Item 1 Text to List Item 3 Text are its items.",
+      "Tone maps to EmptyState.tone (decision 194): the emotion's surface edged in its text colour, its words in its ink, at Size=Default.",
     ],
     properties: [
       "Content: Basic, Icon, Action",
+      "Tone: None, Themed, Neutral, Success, Danger, Informative, Alert",
       "Title Text, Description Text, List, List Item 1 Text, List Item 2 Text, List Item 3 Text",
     ],
     accessibility: [
@@ -8263,6 +8452,12 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["LINE_HEIGHT"],
   },
   { name: "Dialog/width/default", value: 512, scopes: ["WIDTH_HEIGHT"] },
+  // Decision 202: size="full", the window less 16 each side, drawn in a 1280
+  // by 800 window.
+  { name: "Dialog/width/full", value: 1248, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Dialog/height/full", value: 768, scopes: ["WIDTH_HEIGHT"] },
+  // Decision 195: the Media variant's illustration band.
+  { name: "Dialog/media/height", value: 160, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Dialog/padding",
     value: 24,
@@ -9803,6 +9998,38 @@ const COMPONENT_FLOAT_TOKENS = [
   // GAP-273: React's ImageCropper, a frame and its zoom row, gap-150 (12)
   // apart, the zoom row's parts gap-100 (8) apart, the frame on the control
   // radius. 320 wide as drawn; it fills its column in code.
+  // GAP-221: React's DescriptionList: items 16 apart stacked
+  // (Layout/spacing/200) or 24 side by side (Layout/spacing/300), each label
+  // 4 over its value (Layout/spacing/50), a Row's item 160 wide (its 10rem
+  // minimum), the trailing action's icon 16.
+  {
+    name: "DescriptionList/gap",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "DescriptionList/row/gap",
+    value: 24,
+    alias: "Layout/spacing/300",
+    scopes: ["GAP"],
+  },
+  {
+    name: "DescriptionList/item/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "DescriptionList/item/min-width",
+    value: 160,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "DescriptionList/action/icon/size",
+    value: 16,
+    scopes: ["WIDTH_HEIGHT"],
+  },
   {
     name: "ImageCropper/width/default",
     value: 320,
@@ -10522,6 +10749,19 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Text/line-height/3xl", value: 36, scopes: ["LINE_HEIGHT"] },
   { name: "Text/font-size/4xl", value: 36, scopes: ["FONT_SIZE"] },
   { name: "Text/line-height/4xl", value: 40, scopes: ["LINE_HEIGHT"] },
+  // Decision 203: the display size, Semantics/Typography/Display's 48 on 54.
+  {
+    name: "Text/font-size/display",
+    value: 48,
+    alias: "Typography/Display/Size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "Text/line-height/display",
+    value: 54,
+    alias: "Typography/Display/LineHeight",
+    scopes: ["LINE_HEIGHT"],
+  },
   { name: "Link/width/default", value: 128, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Link/height/default",
@@ -12457,6 +12697,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
   ["ImageCropper", updateImageCropperComponent],
+  ["DescriptionList", updateDescriptionListComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -12733,6 +12974,9 @@ function additionalComponentActionHandlers() {
     "build-image-cropper": buildImageCropperComponent,
     "update-image-cropper": updateImageCropperComponent,
     "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-description-list": buildDescriptionListComponent,
+    "update-description-list": updateDescriptionListComponent,
+    "rebuild-description-list": rebuildDescriptionListComponent,
     "build-list-item": buildListItemComponent,
     "update-list-item": updateListItemComponent,
     "rebuild-list-item": rebuildListItemComponent,
@@ -13689,8 +13933,15 @@ async function buildSettingsExampleTemplate({
   panel.appendChild(
     await createExampleInstance({
       componentSetName: "Select",
-      // The closed trigger; a file whose Select predates Content has only it.
+      // The closed field, not the ghost (decision 151); a file whose Select
+      // predates Variant, or Content, has only it.
       variantProperties: [
+        {
+          State: "Default",
+          Status: "Default",
+          Content: "Closed",
+          Variant: "Default",
+        },
         { State: "Default", Status: "Default", Content: "Closed" },
         { State: "Default", Status: "Default" },
       ],
@@ -19877,6 +20128,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Size: CHIP_SIZES,
       State: CHIP_STATES,
       Removable: CHIP_REMOVABLE,
+      Emotion: CHIP_EMOTIONS,
     };
   }
 
@@ -19922,6 +20174,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Depth: TREE_ITEM_DEPTHS,
       Density: TREE_DENSITIES,
       State: TREE_STATES,
+      RowFill: TREE_ROW_FILLS,
     };
   }
 
@@ -19931,6 +20184,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Depth: TREE_ITEM_DEPTHS,
       Density: TREE_DENSITIES,
       State: TREE_STATES,
+      RowFill: TREE_ROW_FILLS,
     };
   }
 
@@ -19949,6 +20203,7 @@ function expectedVariantAxesForComponentSetName(name) {
       Depth: TREE_ITEM_DEPTHS,
       Density: TREE_DENSITIES,
       State: TREE_STATES,
+      RowFill: TREE_ROW_FILLS,
     };
   }
 
@@ -20002,6 +20257,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Tooltip") {
     return {
       Side: TOOLTIP_SIDES,
+      Tone: TOOLTIP_TONES,
     };
   }
 
@@ -20203,6 +20459,12 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "DescriptionList") {
+    return {
+      Layout: DESCRIPTION_LIST_LAYOUTS,
+    };
+  }
+
   if (canonicalName === "ImageCropper") {
     return {
       Ratio: IMAGE_CROPPER_RATIOS,
@@ -20252,6 +20514,7 @@ function expectedVariantAxesForComponentSetName(name) {
       State: SELECT_STATES,
       Status: SELECT_STATUSES,
       Content: SELECT_CONTENT,
+      Variant: SELECT_VARIANTS,
     };
   }
 
@@ -20318,6 +20581,7 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       Content: EMPTY_STATE_CONTENT,
       Size: EMPTY_STATE_SIZES,
+      Tone: EMPTY_STATE_TONES,
     };
   }
 
@@ -25956,6 +26220,19 @@ function kozmosTextStyleSpecs(fonts) {
         "Kozmos heading typography style. Heading level semantics are handled by code; this style controls visual type only.",
     });
   }
+
+  // Decision 203 (GAP-272): Heading size="display", the one display size at
+  // Heading's bold, 48 on 54, whatever the level it keeps as its rank.
+  const display = textMetrics("Display");
+  specs.push({
+    key: textStyleKeyForHeading("Display"),
+    name: `${TEXT_STYLE_GROUP_HEADING} / Display`,
+    fontName: fonts.bold || fonts.medium || fonts.regular,
+    fontSize: display.fontSize,
+    lineHeight: display.lineHeight,
+    description:
+      'Kozmos display heading typography style (decision 203): Heading size="display", 48 on 54, bold. The level stays the heading\'s rank in code; this style controls visual type only.',
+  });
 
   addComponentTextStyleSpecs(specs, fonts);
   return specs;
@@ -35326,32 +35603,17 @@ async function buildChipComponent() {
   const variableByName = await ensureComponentRuntimeVariables(stats);
   const components = [];
 
-  let index = 0;
-  for (const variant of CHIP_VARIANTS) {
-    for (const size of CHIP_SIZES) {
-      for (const state of CHIP_STATES) {
-        for (const removable of CHIP_REMOVABLE) {
-          const component = await createChipVariant({
-            variant,
-            size,
-            state,
-            removable,
-            variableByName,
-            fonts,
-            stats,
-          });
-          component.x = (index % 6) * 180;
-          component.y = Math.floor(index / 6) * 76;
-          page.appendChild(component);
-          components.push(component);
-          index += 1;
-        }
-      }
-    }
+  for (const props of chipVariantCombinations()) {
+    const component = await createChipVariant(
+      Object.assign({}, props, { variableByName, fonts, stats }),
+    );
+    page.appendChild(component);
+    components.push(component);
   }
 
   const componentSet = figma.combineAsVariants(components, page);
   componentSet.name = "Chip";
+  layoutChipVariants(componentSet);
   componentSet.x = 80;
   componentSet.y = 1600;
   componentSet.setSharedPluginData(RUN_NAMESPACE, "kind", "component-set");
@@ -35363,6 +35625,7 @@ async function buildChipComponent() {
     "Size maps to Chip.size.",
     "State maps to selected and disabled props in Code Connect.",
     "Removable maps to the presence of Chip.onRemove.",
+    "Emotion maps to Chip.emotion (decision 200): None is the variant's own colour; an emotion, on the Neutral Default chip at rest and selected, is its surface, ink and text-colour edge, or selected its text colour filled.",
     "Label Text maps to Chip children in Code Connect.",
     "Focus follows the React focus-visible ring.",
   ]);
@@ -35419,6 +35682,7 @@ async function updateChipComponent() {
     "Size maps to Chip.size.",
     "State maps to selected and disabled props in Code Connect.",
     "Removable maps to the presence of Chip.onRemove.",
+    "Emotion maps to Chip.emotion (decision 200): None is the variant's own colour; an emotion, on the Neutral Default chip at rest and selected, is its surface, ink and text-colour edge, or selected its text colour filled.",
     "Label Text maps to Chip children in Code Connect.",
     "Focus follows the React focus-visible ring.",
     "Updated in place to preserve the Code Connect node ID.",
@@ -35440,6 +35704,7 @@ async function updateChipComponent() {
       size: props.size,
       state: props.state,
       removable: props.removable,
+      emotion: props.emotion,
       variableByName,
       fonts,
       stats,
@@ -35447,29 +35712,18 @@ async function updateChipComponent() {
     stats.variantsUpdated += 1;
   }
 
-  for (const variant of CHIP_VARIANTS) {
-    for (const size of CHIP_SIZES) {
-      for (const state of CHIP_STATES) {
-        for (const removable of CHIP_REMOVABLE) {
-          const props = { variant, size, state, removable };
-          const key = chipVariantKey(props);
-          if (seenKeys[key]) continue;
+  // The Emotion variants (decision 200) a set from before them lacks, added
+  // beside the 54 it keeps, whose node ids Code Connect pins.
+  for (const props of chipVariantCombinations()) {
+    const key = chipVariantKey(props);
+    if (seenKeys[key]) continue;
 
-          const component = await createChipVariant({
-            variant,
-            size,
-            state,
-            removable,
-            variableByName,
-            fonts,
-            stats,
-          });
-          existing.appendChild(component);
-          seenKeys[key] = true;
-          stats.variantsCreated += 1;
-        }
-      }
-    }
+    const component = await createChipVariant(
+      Object.assign({}, props, { variableByName, fonts, stats }),
+    );
+    existing.appendChild(component);
+    seenKeys[key] = true;
+    stats.variantsCreated += 1;
   }
 
   layoutChipVariants(existing);
@@ -36006,20 +36260,26 @@ async function updateTabsComponent() {
   return stats;
 }
 
+const TOOLTIP_TONE_ROW_STEP = 80;
+
 async function buildTooltipComponent() {
   return buildSingleAxisComponent({
     componentName: "Tooltip",
     componentSetName: "Tooltip",
     axisName: "Side",
     values: TOOLTIP_SIDES,
+    axis2Name: "Tone",
+    axis2Values: TOOLTIP_TONES,
     x: 80,
     y: 5360,
     xStep: 220,
+    yStep: TOOLTIP_TONE_ROW_STEP,
     createVariant: createTooltipVariant,
     configureProperties: configureTooltipProperties,
     description: [
       "Kozmos Tooltip component set generated from React TooltipContent API.",
       "Side maps to TooltipContent.side.",
+      "Tone maps to TooltipContent.tone. Default is the popover surface, Surface/0 with a Border/Subtle edge; Inverse (decision 192) is Inverse/surface under Inverse/onSurface words, its edge and arrow the surface, the same size.",
       "Content Text maps to TooltipContent children.",
       "Tip renders on the side facing the trigger.",
       "TooltipProvider and TooltipTrigger remain composition concerns in product code.",
@@ -36033,7 +36293,10 @@ async function updateTooltipComponent() {
     componentSetName: "Tooltip",
     axisName: "Side",
     values: TOOLTIP_SIDES,
+    axis2Name: "Tone",
+    axis2Values: TOOLTIP_TONES,
     xStep: 220,
+    yStep: TOOLTIP_TONE_ROW_STEP,
     createVariant: createTooltipVariant,
     updateVariant: updateTooltipVariant,
     parseVariantName: parseTooltipVariantName,
@@ -36041,6 +36304,7 @@ async function updateTooltipComponent() {
     description: [
       "Kozmos Tooltip component set generated from React TooltipContent API.",
       "Side maps to TooltipContent.side.",
+      "Tone maps to TooltipContent.tone. Default is the popover surface, Surface/0 with a Border/Subtle edge; Inverse (decision 192) is Inverse/surface under Inverse/onSurface words, its edge and arrow the surface, the same size.",
       "Content Text maps to TooltipContent children.",
       "Tip renders on the side facing the trigger.",
       "TooltipProvider and TooltipTrigger remain composition concerns in product code.",
@@ -36067,6 +36331,8 @@ async function buildDialogComponent() {
       "Description Text maps to DialogDescription children.",
       "Form content composes live Input instances.",
       "Footer actions compose live Button instances.",
+      "Media maps to DialogHeader media with mediaBleed (decision 195).",
+      'Full maps to DialogContent size="full" (decision 202).',
     ],
   });
 }
@@ -36089,6 +36355,8 @@ async function updateDialogComponent() {
       "Description Text maps to DialogDescription children.",
       "Form content composes live Input instances.",
       "Footer actions compose live Button instances.",
+      "Media maps to DialogHeader media with mediaBleed (decision 195).",
+      'Full maps to DialogContent size="full" (decision 202).',
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -39432,7 +39700,7 @@ async function buildFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove; Button is variant="button", an outline trigger in place of the drop area (GAP-274), its words Browse Text.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -39487,7 +39755,7 @@ async function updateFileUploadComponent() {
     "Kozmos FileUpload component set generated from React FileUpload API.",
     "State maps to focus, dragActive, and disabled behavior in Code Connect examples.",
     "Status maps to FieldWrapper validation tone: default, error, warning, and success.",
-    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove.',
+    'Content maps to drop-zone and selected-file list anatomy examples; Preview is preview="image" holding its image, with Change and Remove; Button is variant="button", an outline trigger in place of the drop area (GAP-274), its words Browse Text.',
     "DropZone is represented by the Content=Dropzone variant because React exports DropZone as FileUpload.",
     "File rows use curated icon sources for file and remove affordances.",
     "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -39886,7 +40154,7 @@ async function buildSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
-    types: SELECT_CONTENT,
+    types: SELECT_TYPES,
     includeVariant: selectVariantIsGenerated,
     x: 80,
     y: 3280,
@@ -39901,6 +40169,7 @@ async function buildSelectComponent() {
       "Status maps to SelectTrigger.error in Code Connect.",
       "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
+      "Variant maps to SelectTrigger.variant: Ghost draws no edge and no fill, as wide as its value (decision 151, CLOUD-UI-009).",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -39914,7 +40183,7 @@ async function updateSelectComponent() {
     componentSetName: "Select",
     states: SELECT_STATES,
     statuses: SELECT_STATUSES,
-    types: SELECT_CONTENT,
+    types: SELECT_TYPES,
     includeVariant: selectVariantIsGenerated,
     xStep: 360,
     yStep: 96,
@@ -39930,6 +40199,7 @@ async function updateSelectComponent() {
       "Status maps to SelectTrigger.error in Code Connect.",
       "Content maps to the list: Closed is the trigger alone; Open draws SelectContent under it, at State=Default only (GAP-164).",
       "State=Mixed maps to Select.mixed (GAP-153); Reset Mixed shows Reset to multiple values, Select.onResetMixed.",
+      "Variant maps to SelectTrigger.variant: Ghost draws no edge and no fill, as wide as its value (decision 151, CLOUD-UI-009).",
       "Placeholder Text maps to SelectValue.placeholder.",
       "Option text properties map to SelectItem children; Option count properties to SelectItem.count, shown by Show Counts.",
       "Focus follows the React focus-visible ring; documented in metadata for v1.",
@@ -41765,8 +42035,9 @@ function treeParentItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
-      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "RowFill maps to rowFill on Tree and TreeParentItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeParentItem with TreeChildItem to compose product-specific trees.",
     ],
   };
@@ -41793,8 +42064,9 @@ function treeChildItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
-      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "RowFill maps to rowFill on Tree and TreeChildItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, hidden while Divided is off.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeChildItem with TreeParentItem to compose product-specific trees.",
     ],
   };
@@ -41823,8 +42095,9 @@ function treeItemComponentConfig() {
       "Depth maps to indentation examples for composed trees.",
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
-      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
-      "Hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
+      "RowFill maps to rowFill on Tree and TreeItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Prefer TreeParentItem and TreeChildItem for new product trees; TreeItem stays as a switchable compatibility row.",
     ],
   };
@@ -42180,14 +42453,17 @@ function treeItemVariantCombinationsForType(type) {
       for (const depth of TREE_ITEM_DEPTHS) {
         for (const density of TREE_DENSITIES) {
           for (const state of TREE_STATES) {
-            combinations.push({
-              type,
-              content,
-              expanded,
-              depth,
-              density,
-              state,
-            });
+            for (const rowFill of treeRowFillsForState(state)) {
+              combinations.push({
+                type,
+                content,
+                expanded,
+                depth,
+                density,
+                state,
+                rowFill,
+              });
+            }
           }
         }
       }
@@ -42197,11 +42473,11 @@ function treeItemVariantCombinationsForType(type) {
 }
 
 function treeItemVariantKey(props) {
-  return `${props.type}/${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}`;
+  return `${props.type}/${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}/${props.rowFill || "Inset"}`;
 }
 
 function treeStandaloneItemVariantKey(props) {
-  return `${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}`;
+  return `${props.content}/${props.expanded}/${props.depth}/${props.density}/${props.state}/${props.rowFill || "Inset"}`;
 }
 
 function parseTreeItemVariantName(name) {
@@ -42209,7 +42485,9 @@ function parseTreeItemVariantName(name) {
   const expanded = values.Expanded || "False";
   const type = normalizeTreeItemType(values.Type);
   const state = normalizeTreeState(values.State);
+  const rowFill = parseTreeRowFill(values.RowFill, state);
   if (
+    !rowFill ||
     TREE_ITEM_TYPES.indexOf(type) === -1 ||
     TREE_CONTENT.indexOf(values.Content) === -1 ||
     TREE_EXPANDED.indexOf(expanded) === -1 ||
@@ -42227,6 +42505,7 @@ function parseTreeItemVariantName(name) {
     depth: values.Depth,
     density: values.Density,
     state,
+    rowFill,
   };
 }
 
@@ -42246,8 +42525,10 @@ function parseTreeStandaloneItemVariantName(name, type) {
   const density = values.Density || "Default";
   const state = normalizeTreeState(values.State);
   const legacyType = values.Type ? normalizeTreeItemType(values.Type) : type;
+  const rowFill = parseTreeRowFill(values.RowFill, state);
 
   if (
+    !rowFill ||
     legacyType !== type ||
     TREE_CONTENT.indexOf(content) === -1 ||
     TREE_EXPANDED.indexOf(expanded) === -1 ||
@@ -42265,6 +42546,7 @@ function parseTreeStandaloneItemVariantName(name, type) {
     depth,
     density,
     state,
+    rowFill,
   };
 }
 
@@ -42508,6 +42790,12 @@ async function updateTreeItemVariant(
     variableByName,
     stats,
   );
+  // GAP-217: a Band row's fill has no corners, so its radius is 0 and bound
+  // to nothing; an Inset row keeps Tree/item/radius.
+  if (props.rowFill === "Band") {
+    clearBoundVariable(component, "cornerRadius", stats);
+    component.cornerRadius = 0;
+  }
 }
 
 function treeItemRow(props) {
@@ -42704,6 +42992,8 @@ async function syncTreeRowNode(
     `Depth=${String(row.depth)}`,
     `Density=${props.density}`,
     `State=${rowState}`,
+    // GAP-217: last, so a name from before it reads as Inset.
+    `RowFill=${props.rowFill || "Inset"}`,
   ].filter(Boolean);
 
   rowNode.name = asComponentVariant
@@ -42959,6 +43249,11 @@ function syncTreeDividedLayers(
     surface.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
     surface.visible = false;
   }
+
+  // Decision 207 (GAP-250): no divider under a selected row, inset or band.
+  // Its fill is Border/Subtle's own colour in dark, so code skips it; here a
+  // Selected row draws no Divider layer for Divided to show.
+  if (row.selected) return;
 
   const divider = figma.createRectangle();
   divider.name = TREE_DIVIDER.name;
@@ -43356,7 +43651,57 @@ async function createTreeCheckbox(row, variableByName, stats) {
   mark.y = 2;
   box.appendChild(checked);
   checked.visible = false;
+  box.appendChild(await createTreeCheckboxMixed(variableByName, stats));
   return box;
+}
+
+/**
+ * GAP-279: the Checkbox's mixed look, hidden until Mixed: the theme fill and
+ * edge on the marker radius with a 16 minus at 2,2, as Checkbox's
+ * Indeterminate draws its dash (decision 188).
+ */
+async function createTreeCheckboxMixed(variableByName, stats) {
+  const mixed = figma.createFrame();
+  mixed.name = TREE_CHECKBOX_MIXED.name;
+  mixed.layoutMode = "NONE";
+  mixed.resizeWithoutConstraints(20, 20);
+  mixed.x = 0;
+  mixed.y = 0;
+  mixed.cornerRadius = KOZMOS_RADIUS.marker;
+  mixed.clipsContent = false;
+  mixed.fills = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  mixed.strokes = [
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  mixed.strokeWeight = 1;
+  mixed.setSharedPluginData(RUN_NAMESPACE, "kind", TREE_CHECKBOX_MIXED.kind);
+  const mark = await createFixedIconInstance(
+    "minus",
+    THEME_FILL_FOREGROUND.name,
+    THEME_FILL_FOREGROUND.fallback,
+    variableByName,
+    stats,
+    16,
+    "Tree/icon/size",
+  );
+  mark.name = TREE_CHECKBOX_MIXED.markName;
+  mixed.appendChild(mark);
+  mark.x = 2;
+  mark.y = 2;
+  mixed.visible = false;
+  return mixed;
 }
 
 /**
@@ -46185,8 +46530,14 @@ function layoutTreeItemVariants(componentSet) {
     const depthIndex = TREE_ITEM_DEPTHS.indexOf(props.depth);
     const densityIndex = TREE_DENSITIES.indexOf(props.density);
     const stateIndex = TREE_STATES.indexOf(props.state);
+    // GAP-217: the Band variants in a block of their own, to the right.
+    const rowFillIndex = TREE_ROW_FILLS.indexOf(props.rowFill || "Inset");
 
-    child.x = (contentIndex * TREE_STATES.length + stateIndex) * 380;
+    child.x =
+      ((rowFillIndex * TREE_CONTENT.length + contentIndex) *
+        TREE_STATES.length +
+        stateIndex) *
+      380;
     child.y =
       (((typeIndex * TREE_ITEM_DEPTHS.length + depthIndex) *
         TREE_DENSITIES.length +
@@ -46223,8 +46574,14 @@ function layoutStandaloneTreeItemVariants(componentSet, parseVariantName) {
     const depthIndex = TREE_ITEM_DEPTHS.indexOf(props.depth);
     const densityIndex = TREE_DENSITIES.indexOf(props.density);
     const stateIndex = TREE_STATES.indexOf(props.state);
+    // GAP-217: the Band variants in a block of their own, to the right.
+    const rowFillIndex = TREE_ROW_FILLS.indexOf(props.rowFill || "Inset");
 
-    child.x = (contentIndex * TREE_STATES.length + stateIndex) * 380;
+    child.x =
+      ((rowFillIndex * TREE_CONTENT.length + contentIndex) *
+        TREE_STATES.length +
+        stateIndex) *
+      380;
     child.y =
       ((depthIndex * TREE_DENSITIES.length + densityIndex) *
         (props.type === "Parent" ? 2 : 1) +
@@ -46434,7 +46791,8 @@ async function configureTreeItemProperties(
 
 /**
  * Checkable and Checked, booleans off by default, showing each row's
- * Checkbox and its checked fill; Disclosure Start, on, and Disclosure End,
+ * Checkbox and its checked fill; Mixed, off, its mixed fill and dash
+ * (GAP-279, decision 211); Disclosure Start, on, and Disclosure End,
  * off, showing the disclosure before the label and at the row's end
  * (GAP-277). With all four at their defaults an instance draws as it did
  * before any existed.
@@ -46450,6 +46808,12 @@ function configureTreeCheckableProperties(componentSet, stats) {
       TREE_CHECKED_PROPERTY_NAME,
       false,
       (node) => generatedKind(node) === TREE_CHECKBOX_CHECKED.kind,
+    ],
+    // GAP-279, decision 211: the mixed parent's dash.
+    [
+      TREE_MIXED_PROPERTY_NAME,
+      false,
+      (node) => generatedKind(node) === TREE_CHECKBOX_MIXED.kind,
     ],
     // The start disclosure is a row's own child, as drawn before GAP-277.
     [
@@ -48624,7 +48988,7 @@ async function buildEmptyStateComponent() {
     axisName: "Content",
     values: EMPTY_STATE_CONTENT,
     axis2Name: "Size",
-    axis2Values: EMPTY_STATE_SIZES,
+    axis2Values: EMPTY_STATE_ROWS,
     yStep: 260,
     x: 80,
     y: 6740,
@@ -48638,6 +49002,7 @@ async function buildEmptyStateComponent() {
       "Description Text maps to EmptyState.description.",
       "Action examples compose a live Button instance.",
       "List shows a list under the description, EmptyState.list (GAP-165); List Item 1 Text to List Item 3 Text are its items.",
+      "Tone maps to EmptyState.tone (decision 194): None is no tone; a tone is the emotion's surface edged in its text colour, at Size=Default.",
     ],
   });
 }
@@ -48649,7 +49014,7 @@ async function updateEmptyStateComponent() {
     axisName: "Content",
     values: EMPTY_STATE_CONTENT,
     axis2Name: "Size",
-    axis2Values: EMPTY_STATE_SIZES,
+    axis2Values: EMPTY_STATE_ROWS,
     yStep: 260,
     xStep: 420,
     createVariant: createEmptyStateVariant,
@@ -48663,6 +49028,7 @@ async function updateEmptyStateComponent() {
       "Description Text maps to EmptyState.description.",
       "Action examples compose a live Button instance.",
       "List shows a list under the description, EmptyState.list (GAP-165); List Item 1 Text to List Item 3 Text are its items.",
+      "Tone maps to EmptyState.tone (decision 194): None is no tone; a tone is the emotion's surface edged in its text colour, at Size=Default.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -52176,11 +52542,25 @@ async function productSdkControlButton({
   iconName,
   label,
   filled,
+  disabled,
   fonts,
   variableByName,
   stats,
 }) {
   const labelled = typeof label === "string" && label.length > 0;
+  // A disabled filled control is a disabled default Button: decision 197's
+  // pair, Disabled/fill under Disabled/foreground, nothing dimmed. A disabled
+  // one off the fill is a disabled outline Button: the surface, its edge and
+  // marks Disabled/foreground (a caller that draws a ghost lays the fill).
+  const offFill = Boolean(filled && disabled);
+  const fillToken = offFill ? DISABLED_FILL : THEME_FILL;
+  const onFillToken = offFill ? DISABLED_FOREGROUND : THEME_FILL_FOREGROUND;
+  const surfaceInk = disabled
+    ? DISABLED_FOREGROUND
+    : { name: "Colors/foreground/0", fallback: "#000000" };
+  const surfaceEdge = disabled
+    ? DISABLED_FOREGROUND
+    : { name: "Border/Subtle", fallback: "#C7CAD1" };
   const button = productSdkFrame(name, {
     direction: "horizontal",
     primarySizing: labelled ? "AUTO" : "FIXED",
@@ -52198,8 +52578,8 @@ async function productSdkControlButton({
   if (filled) {
     button.fills = [
       paintFromVariable(
-        THEME_FILL.name,
-        THEME_FILL.fallback,
+        fillToken.name,
+        fillToken.fallback,
         variableByName,
         stats,
       ),
@@ -52211,7 +52591,12 @@ async function productSdkControlButton({
       paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
     ];
     button.strokes = [
-      paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+      paintFromVariable(
+        surfaceEdge.name,
+        surfaceEdge.fallback,
+        variableByName,
+        stats,
+      ),
     ];
     button.strokeWeight = 1;
   }
@@ -52220,9 +52605,7 @@ async function productSdkControlButton({
   // the file has it — the typed glyph otherwise, so a file without the
   // curated set still shows a mark. Every glyph the library once typed
   // (×, ‹, ›, →, ☆, ✎, ◎, ⇅, +, −, ◈, ◌) has a curated icon now.
-  const symbolToken = filled
-    ? THEME_FILL_FOREGROUND
-    : { name: "Colors/foreground/0", fallback: "#000000" };
+  const symbolToken = filled ? onFillToken : surfaceInk;
   const symbol = iconName
     ? await productSdkIconInstance({
         iconName,
@@ -52266,8 +52649,8 @@ async function productSdkControlButton({
       bold: false,
       fontSize: 14,
       lineHeight: 20,
-      colorToken: filled ? THEME_FILL_FOREGROUND.name : "Colors/foreground/0",
-      colorFallback: filled ? THEME_FILL_FOREGROUND.fallback : "#000000",
+      colorToken: filled ? onFillToken.name : surfaceInk.name,
+      colorFallback: filled ? onFillToken.fallback : surfaceInk.fallback,
       variableByName,
       stats,
       width: 96,
@@ -52743,10 +53126,15 @@ async function updateMapControlButtonVariant(
  * React writes this as `variant = pressed ? "default" : "ghost"` over a white
  * background with a ring, which is Outline in the library's vocabulary. Size
  * follows the presentation: Icon is the 44px square, Default hugs its label.
+ * Disabled (decision 197), a map control's surface is its fill, so it takes
+ * the disabled pair's fill under its foreground, on or off, with no edge
+ * (.kozmos-map-control:disabled): a filled Button's Disabled, which every
+ * filled variant draws the same.
  */
 function mapControlButtonNestedVariant(presentation, state) {
   return {
-    Variant: state === "Pressed" ? "Default" : "Outline",
+    Variant:
+      state === "Pressed" || state === "Disabled" ? "Default" : "Outline",
     Size: presentation === "Labelled" ? "Default" : "Icon",
     State: state === "Disabled" ? "Disabled" : "Default",
   };
@@ -52822,7 +53210,7 @@ const MAP_CONTROL_BUTTON_DESCRIPTION = [
   "Composed of a nested Button instance, the way React composes Button. The icon is a real Pointr Icon Library symbol swapped through the Button's own Icon property.",
   "The nested Button is exposed, so its Label Text and Icon are edited on this instance rather than duplicated here.",
   "Presentation maps to MapControlButton.presentation (icon-only, labelled), and picks the Button size: Icon or Default.",
-  "State maps to MapControlButton.pressed and .disabled: Pressed is aria-pressed, Disabled is the native attribute.",
+  "State maps to MapControlButton.pressed and .disabled: Pressed is aria-pressed, Disabled is the native attribute. Disabled is drawn from the disabled pair (decision 197): the Disabled/fill surface under Disabled/foreground words and mark, on or off, nothing dimmed.",
   "Pressed is for a mode that stays on - location tracking, wheelchair routing, 2D/3D - not the moment of a click.",
   "Label Text maps to MapControlButton.label, which is the accessible name in both presentations.",
   "stateLabel is appended to the accessible name and has no visual counterpart.",
@@ -53842,7 +54230,9 @@ async function updateAISearchButtonVariant(
   component.cornerRadius = KOZMOS_RADIUS.pill;
   component.fills = [];
   component.strokes = [];
-  component.opacity = disabled ? 0.5 : 1;
+  // Disabled is the disabled pair, not half (decision 197): the disc
+  // Disabled/fill, the glyph Disabled/foreground, the ring as it is.
+  component.opacity = 1;
   markControlSurface(component);
   bindSizeVariables(
     component,
@@ -53891,8 +54281,11 @@ async function updateAISearchButtonVariant(
   const disc = figma.createEllipse();
   disc.name = "Disc";
   disc.resize(AI_SEARCH_BUTTON_DISC_SIZE, AI_SEARCH_BUTTON_DISC_SIZE);
+  const discFill = disabled
+    ? DISABLED_FILL
+    : { name: "Colors/background/0", fallback: "#FFFFFF" };
   disc.fills = [
-    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+    paintFromVariable(discFill.name, discFill.fallback, variableByName, stats),
   ];
   disc.strokes = [];
   component.appendChild(disc);
@@ -53903,7 +54296,9 @@ async function updateAISearchButtonVariant(
 
   const icon = await productSdkIconInstance({
     iconName: AI_SEARCH_BUTTON_ICON,
-    token: { name: "Colors/theme/600", fallback: "#1051E8" },
+    token: disabled
+      ? DISABLED_FOREGROUND
+      : { name: "Colors/theme/600", fallback: "#1051E8" },
     size: AI_SEARCH_BUTTON_ICON_SIZE,
     sizeToken: "AISearchButton/icon/size",
     variableByName,
@@ -53940,7 +54335,7 @@ async function configureAISearchButtonProperties(componentSet, stats) {
 
 const AI_SEARCH_BUTTON_DESCRIPTION = [
   "Kozmos AISearchButton generated from the React AISearchButton API — the search row's AI search, the prototype's.",
-  "State maps to disabled; a disabled button is at 50 %.",
+  "State maps to disabled; a disabled button is the disabled pair (decision 197): the disc Disabled/fill and the icon Disabled/foreground, the ring as it is, nothing dimmed.",
   "A 48 circle: the ring is a band 2.5 wide around a 43 disc, a conic gradient of the six data colours (red, yellow, success, teal, blue, purple, red) that turns in the product — 3.6 s a turn, still under reduced motion — and rests here; the icon is 16 in the theme's colour.",
   "Icon swaps from the Icons page; label is what assistive technology hears and draws nothing.",
 ];
@@ -55814,13 +56209,14 @@ async function updateRoutePreviewPanelVariant(
     iconName: "arrow-right",
     label: "Continue",
     // React's default Button, disabled until a route is ready: a disabled
-    // default Button is the default at 50 %, as the Button set draws it.
+    // default Button is the disabled pair (decision 197), as the Button set
+    // draws it, nothing dimmed.
     filled: true,
+    disabled: !ready,
     fonts,
     variableByName,
     stats,
   });
-  proceed.opacity = ready ? 1 : 0.5;
   appendWithSizing(actions, proceed, "FILL", "FIXED");
   appendWithSizing(component, actions, "FILL", "FIXED");
 }
@@ -57272,9 +57668,13 @@ async function rebuildBrandLoaderComponent() {
 // zone (FileUpload, 112 as Cloud's) with its hint line; and the URL row, an
 // Input and an outline Add. The Core parts are slots, as FeedbackCard draws
 // its Rating and Textarea: they are Core's sets, not this one's. State is
-// what changes the drawing: Default; Full, the count at max and the drop zone
-// and the URL row off; Disabled, the whole field at 50%. The cropper and the
-// preview are dialogs React opens; the set does not draw them.
+// what changes the drawing: Default; Full, the count at max, the drop zone
+// and the URL field off (their slots at 50%) and Add a disabled Button;
+// Disabled, the Buttons React disables drawn disabled (decision 197: Frame
+// and Remove disabled ghosts, the pair's fill under its foreground, and Add
+// a disabled outline; Preview stays enabled) with the slots off as Full's,
+// nothing else dimmed. The
+// cropper and the preview are dialogs React opens; the set does not draw them.
 const IMAGE_FIELD_STATES = ["Default", "Full", "Disabled"];
 const IMAGE_FIELD_GEOMETRY = {
   width: 368,
@@ -57314,8 +57714,9 @@ async function updateImageFieldVariant(
     height: 320,
   });
   productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
-  // A disabled field is drawn at a plain 50%, as a disabled Button is.
-  component.opacity = disabled ? 0.5 : 1;
+  // React disables each part, not the field: each Button is drawn disabled
+  // below, the slots off, and the field itself is never dimmed.
+  component.opacity = 1;
 
   const header = productSdkFrame("Header", {
     direction: "horizontal",
@@ -57408,22 +57809,36 @@ async function updateImageFieldVariant(
   details.appendChild(actions);
   // Each glyph is the fallback only, drawn when Curated Icons has not run:
   // eye, crop-01 (the Pointr library's) and trash-01 are curated.
-  for (const [name, iconName, glyph] of [
-    ["Preview Button", "eye", "◉"],
-    ["Frame Button", "crop-01", "⌗"],
-    ["Remove Button", "trash-01", "×"],
+  // Preview stays enabled on a disabled field, as React's does: only Frame
+  // and Remove take disabled.
+  for (const [name, iconName, glyph, follows] of [
+    ["Preview Button", "eye", "◉", false],
+    ["Frame Button", "crop-01", "⌗", true],
+    ["Remove Button", "trash-01", "×", true],
   ]) {
+    const off = disabled && follows;
     const button = await productSdkControlButton({
       name,
       glyph,
       iconName,
       filled: false,
+      disabled: off,
       fonts,
       variableByName,
       stats,
     });
-    // React's ghost IconButton: no fill and no edge until hovered.
-    button.fills = [];
+    // React's ghost IconButton: no fill and no edge until hovered; disabled,
+    // a ghost on the pair's fill (decision 197).
+    button.fills = off
+      ? [
+          paintFromVariable(
+            DISABLED_FILL.name,
+            DISABLED_FILL.fallback,
+            variableByName,
+            stats,
+          ),
+        ]
+      : [];
     button.strokes = [];
     button.strokeWeight = 0;
     actions.appendChild(button);
@@ -57439,7 +57854,7 @@ async function updateImageFieldVariant(
     stats,
     muted: true,
   });
-  upload.opacity = full ? 0.5 : 1;
+  upload.opacity = full || disabled ? 0.5 : 1;
   appendWithSizing(component, upload, "FILL", "FIXED");
 
   const url = productSdkFrame("URL Row", {
@@ -57451,7 +57866,7 @@ async function updateImageFieldVariant(
     width: inner,
     height: geometry.field,
   });
-  url.opacity = full ? 0.5 : 1;
+  url.opacity = 1;
   appendWithSizing(component, url, "FILL", "HUG");
   const urlField = await productSdkSlot({
     name: "URL Slot",
@@ -57463,15 +57878,17 @@ async function updateImageFieldVariant(
     stats,
     muted: true,
   });
+  urlField.opacity = full || disabled ? 0.5 : 1;
   appendWithSizing(url, urlField, "FILL", "FIXED");
   // The curated plus, as every Button draws it; "+" only in a file without
-  // the curated icons.
+  // the curated icons. Full or disabled, a disabled outline Button.
   const add = await productSdkControlButton({
     name: "Add Button",
     glyph: "+",
     iconName: "plus",
     label: "Add",
     filled: false,
+    disabled: full || disabled,
     fonts,
     variableByName,
     stats,
@@ -57491,7 +57908,7 @@ function configureImageFieldProperties(componentSet, stats) {
 
 const IMAGE_FIELD_DESCRIPTION = [
   "Kozmos ImageField generated from the React ImageField API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183), CLOUD-UI-004's image part.",
-  "Label maps to label. State: Default; Full, the count at max with the drop zone and URL row off; Disabled maps to disabled, drawn at 50%.",
+  "Label maps to label. State: Default; Full, the count at max with the drop zone and URL field off and Add disabled; Disabled maps to disabled: Frame, Remove and Add disabled (decision 197, the disabled pair), Preview enabled, the slots off, the field itself undimmed.",
   "Each image: a thumbnail at aspectRatio, its alt text (an Input), Preview, Frame (the cropper) and Remove. The slots are Core's FileUpload, Input and Button.",
   "The cropper and the full-screen preview are Dialogs React opens; max, accept, maxSize and aspectRatio are set in code.",
 ];
@@ -57549,7 +57966,8 @@ async function rebuildImageFieldComponent() {
 // a 24 icon over an 11/14 label (MapEditToolbar / Label), 2 apart,
 // 4 between items; a chosen tool is a pressed ToggleButton, the theme fill
 // under its ink; every other item is Cloud's grey ink (foreground 400), and a
-// disabled one is drawn at half strength, as every Kozmos button is. Dividers
+// disabled one, tool or action, is the disabled pair (decision 197):
+// Disabled/fill under Disabled/foreground, nothing dimmed. Dividers
 // are Border/Subtle, 1 × 32, 8 from the items each side (4 of margin and the
 // gap). Mode is one of Cloud's seven toolbars, with Cloud's items; Overflow
 // True draws it on a 320 map, the items that do not fit gone into More, as
@@ -57730,9 +58148,14 @@ async function createMapEditToolbarItem(
 ) {
   const g = MAP_EDIT_TOOLBAR_GEOMETRY;
   const on = item.state === "On";
+  // Disabled, a tool or an action is the disabled pair, undimmed (decision
+  // 197; map-edit-toolbar.css): Disabled/fill under Disabled/foreground.
+  const off = item.state === "Disabled";
   const ink = on
     ? THEME_FILL_FOREGROUND
-    : { name: "Colors/foreground/400", fallback: "#5D626F" };
+    : off
+      ? DISABLED_FOREGROUND
+      : { name: "Colors/foreground/400", fallback: "#5D626F" };
   // React's item is min-inline-size 56, inline-size auto: it hugs its
   // label, 4 each side, and stops at 56, so "Straighten" is wider than 56.
   const frame = figma.createFrame();
@@ -57752,17 +58175,11 @@ async function createMapEditToolbarItem(
   frame.cornerRadius = g.itemRadius;
   frame.clipsContent = false;
   frame.strokes = [];
-  frame.fills = on
-    ? [
-        paintFromVariable(
-          THEME_FILL.name,
-          THEME_FILL.fallback,
-          variableByName,
-          stats,
-        ),
-      ]
+  const ground = on ? THEME_FILL : off ? DISABLED_FILL : null;
+  frame.fills = ground
+    ? [paintFromVariable(ground.name, ground.fallback, variableByName, stats)]
     : [];
-  frame.opacity = item.state === "Disabled" ? 0.5 : 1;
+  frame.opacity = 1;
   frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
   frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
   frame.setSharedPluginData(RUN_NAMESPACE, "itemState", item.state || "Off");
@@ -57939,7 +58356,7 @@ function configureMapEditToolbarProperties(_componentSet, _stats) {}
 const MAP_EDIT_TOOLBAR_DESCRIPTION = [
   "Kozmos MapEditToolbar generated from the React MapEditToolbar API (@kozmos-ds/react/dashboard), a Dashboard module (decision 183).",
   "Mode is one of Pointr Cloud's seven toolbars (CLOUD-UI-005), with Cloud's items; in code the items are MapEditToolbar.items, the product's.",
-  "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is at half strength. In code the chosen tool is MapEditToolbar.value.",
+  "A chosen tool is a pressed ToggleButton (the theme fill); a disabled item is the disabled pair, Disabled/fill under Disabled/foreground, nothing dimmed (decision 197). In code the chosen tool is MapEditToolbar.value.",
   "Overflow True draws a 320 map: what does not fit goes into More, from the end. In code it follows the width; it is no prop.",
   "The card is 60 tall, padding 6 and 8, corner 16; items 48 tall and at least 56 wide, hugging their labels, a 24 icon over an 11/14 label (decisions 139 and 151).",
 ];
@@ -61500,6 +61917,7 @@ async function updateIconButtonVariant(
 
   await syncIconButtonCounter(component, {
     size,
+    state,
     variableByName,
     fonts: fonts || (await loadButtonFonts(stats)),
     stats,
@@ -61553,9 +61971,19 @@ function iconButtonCounterPosition(size) {
  */
 async function syncIconButtonCounter(
   component,
-  { size, variableByName, fonts, stats },
+  { size, state, variableByName, fonts, stats },
 ) {
-  const config = counterConfig("Brand");
+  // A disabled IconButton's counter is the disabled pair turned over: the
+  // pill Disabled/foreground, its digits Disabled/fill (the owner, 17 Nov).
+  const config =
+    state === "Disabled"
+      ? {
+          background: DISABLED_FOREGROUND.name,
+          backgroundFallback: DISABLED_FOREGROUND.fallback,
+          foreground: DISABLED_FILL.name,
+          foregroundFallback: DISABLED_FILL.fallback,
+        }
+      : counterConfig("Brand");
   const metrics = counterMetrics("Small");
 
   let counter = directChildNamed(component, "Counter");
@@ -62029,7 +62457,9 @@ async function updateSplitButtonVariant(
       stats,
     ),
   ];
-  divider.opacity = state === "Disabled" ? 0.24 : 0.32;
+  // The seam is as strong disabled as enabled: decision 197 dims nothing,
+  // and React's seam keeps its colour on a disabled SplitButton.
+  divider.opacity = 0.32;
   divider.strokes = [];
   setFixedChildSizing(divider);
 
@@ -62200,20 +62630,19 @@ async function updateFloatingActionButtonVariant(
     component.strokeWeight = 0;
   }
 
-  component.effects =
-    state === "Disabled"
-      ? []
-      : [
-          {
-            type: "DROP_SHADOW",
-            color: { r: 0, g: 0, b: 0, a: 0.18 },
-            offset: { x: 0, y: 8 },
-            radius: 16,
-            spread: -8,
-            visible: true,
-            blendMode: "NORMAL",
-          },
-        ];
+  // Disabled keeps its shadow, as React's shadow-lg stays on a disabled
+  // FloatingActionButton: decision 197 changes its paint, not its lift.
+  component.effects = [
+    {
+      type: "DROP_SHADOW",
+      color: { r: 0, g: 0, b: 0, a: 0.18 },
+      offset: { x: 0, y: 8 },
+      radius: 16,
+      spread: -8,
+      visible: true,
+      blendMode: "NORMAL",
+    },
+  ];
 
   bindFloatingActionButtonGeometryVariables(
     component,
@@ -62279,6 +62708,7 @@ async function createChipVariant({
   size,
   state,
   removable,
+  emotion,
   variableByName,
   fonts,
   stats,
@@ -62289,6 +62719,7 @@ async function createChipVariant({
     size,
     state,
     removable,
+    emotion,
     variableByName,
     fonts,
     stats,
@@ -64868,16 +65299,21 @@ function parseChipVariantName(name) {
     return null;
   }
 
-  return {
+  // A variant drawn before the Emotion axis is None (decision 200).
+  const emotion = values.Emotion || "None";
+  if (CHIP_EMOTIONS.indexOf(emotion) === -1) return null;
+  const props = {
     variant: values.Variant,
     size: values.Size,
     state: values.State,
     removable: values.Removable,
+    emotion,
   };
+  return chipVariantIsGenerated(props) ? props : null;
 }
 
 function chipVariantKey(props) {
-  return `${props.variant}/${props.size}/${props.state}/${props.removable}`;
+  return `${props.variant}/${props.size}/${props.state}/${props.removable}/${props.emotion || "None"}`;
 }
 
 function layoutChipVariants(componentSet) {
@@ -64893,24 +65329,37 @@ function layoutChipVariants(componentSet) {
     const sizeIndex = CHIP_SIZES.indexOf(props.size);
     const stateIndex = CHIP_STATES.indexOf(props.state);
     const removableIndex = CHIP_REMOVABLE.indexOf(props.removable);
+    const emotionIndex = CHIP_EMOTIONS.indexOf(props.emotion || "None");
+    // The 54 None variants where they always were; each emotion's four
+    // (rest and selected, removable or not) a row of their own under them.
     const flatIndex =
-      ((variantIndex * CHIP_SIZES.length + sizeIndex) * CHIP_STATES.length +
-        stateIndex) *
-        CHIP_REMOVABLE.length +
-      removableIndex;
+      emotionIndex > 0
+        ? CHIP_VARIANTS.length *
+            CHIP_SIZES.length *
+            CHIP_STATES.length *
+            CHIP_REMOVABLE.length +
+          (emotionIndex - 1) * 6 +
+          CHIP_EMOTION_STATES.indexOf(props.state) * CHIP_REMOVABLE.length +
+          removableIndex
+        : ((variantIndex * CHIP_SIZES.length + sizeIndex) * CHIP_STATES.length +
+            stateIndex) *
+            CHIP_REMOVABLE.length +
+          removableIndex;
     child.x = (flatIndex % 6) * 180;
     child.y = Math.floor(flatIndex / 6) * 76;
   }
+  resizeComponentSetToContainChildren(componentSet);
 }
 
 async function updateChipVariant(
   component,
-  { variant, size, state, removable, variableByName, fonts, stats },
+  { variant, size, state, removable, emotion, variableByName, fonts, stats },
 ) {
   const metrics = chipMetrics(size);
-  const config = chipConfig(variant, state);
+  const tone = CHIP_EMOTIONS.indexOf(emotion) === -1 ? "None" : emotion;
+  const config = chipConfig(variant, state, tone);
 
-  component.name = `Variant=${variant}, Size=${size}, State=${state}, Removable=${removable}`;
+  component.name = `Variant=${variant}, Size=${size}, State=${state}, Removable=${removable}, Emotion=${tone}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -65697,10 +66146,17 @@ async function updateTabsVariant(
   });
 }
 
-async function createTooltipVariant({ value, variableByName, fonts, stats }) {
+async function createTooltipVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateTooltipVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -65720,22 +66176,31 @@ function parseTooltipVariantName(name) {
     values[key] = value;
   }
 
-  if (TOOLTIP_SIDES.indexOf(values.Side) === -1) {
+  // A variant built before the Tone axis existed parses as Default, so
+  // Update renames it in place and the node ids Code Connect pins survive.
+  const tone = values.Tone || "Default";
+  if (
+    TOOLTIP_SIDES.indexOf(values.Side) === -1 ||
+    TOOLTIP_TONES.indexOf(tone) === -1
+  ) {
     return null;
   }
 
   return {
     value: values.Side,
+    second: tone,
   };
 }
 
 async function updateTooltipVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
   const side = value;
+  const tone = TOOLTIP_TONES.indexOf(second) === -1 ? "Default" : second;
+  const paint = TOOLTIP_TONE_PAINT[tone];
 
-  component.name = `Side=${side}`;
+  component.name = `Side=${side}, Tone=${tone}`;
   component.layoutMode = "HORIZONTAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "AUTO";
@@ -65749,20 +66214,32 @@ async function updateTooltipVariant(
   component.cornerRadius = KOZMOS_RADIUS.control;
   component.clipsContent = false;
   component.fills = [
-    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    paintFromVariable(
+      paint.surface.name,
+      paint.surface.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   component.strokes = [
-    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+    paintFromVariable(
+      paint.edge.name,
+      paint.edge.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   component.strokeWeight = 1;
   component.effects = [elevationEffect("overlay")];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Tooltip");
   component.setSharedPluginData(RUN_NAMESPACE, "side", side);
+  component.setSharedPluginData(RUN_NAMESPACE, "tone", tone);
 
   await syncTooltipVariantChildren({
     component,
     side,
+    paint,
     variableByName,
     fonts,
     stats,
@@ -65805,9 +66282,11 @@ async function updateDialogVariant(
   component,
   { value, variableByName, fonts, stats },
 ) {
+  const full = value === "Full";
   component.name = `Content=${value}`;
   component.layoutMode = "VERTICAL";
-  component.primaryAxisSizingMode = "AUTO";
+  // Full is the window's height less 32; the rest are their content's.
+  component.primaryAxisSizingMode = full ? "FIXED" : "AUTO";
   component.counterAxisSizingMode = "FIXED";
   component.primaryAxisAlignItems = "MIN";
   component.counterAxisAlignItems = "MIN";
@@ -65816,7 +66295,12 @@ async function updateDialogVariant(
   component.paddingRight = 24;
   component.paddingTop = 24;
   component.paddingBottom = 24;
-  component.resizeWithoutConstraints(512, 100);
+  // Media's top padding holds the band and the 16 under it (177), so it is
+  // drawn taller than that from the start; it hugs its content after.
+  component.resizeWithoutConstraints(
+    full ? 1248 : 512,
+    full ? 768 : value === "Media" ? 240 : 100,
+  );
   component.cornerRadius = KOZMOS_RADIUS.container;
   component.clipsContent = false;
   component.fills = [
@@ -66386,10 +66870,14 @@ async function tourStepText({
  * either side. HUG before the parent, as Card's actions do: the live file holds
  * those at their labels (Cancel 79, Save 65) with Button/width still bound.
  */
-async function tourStepButton({ name, variant, label, stats }) {
+async function tourStepButton({ name, variant, label, disabled, stats }) {
   const button = await createTourStepInstance({
     componentSetName: "Button",
-    variantProperties: { Variant: variant, Size: "Small", State: "Default" },
+    variantProperties: {
+      Variant: variant,
+      Size: "Small",
+      State: disabled ? "Disabled" : "Default",
+    },
     name,
     role: `tour-step-${name.toLowerCase().replace(/\s+/g, "-")}`,
     stats,
@@ -66993,14 +67481,15 @@ async function tourStepFooter(component, spec, inner, stats) {
     );
   }
   if (spec.next) {
+    // Drawn disabled as React draws it: the Button set's Disabled, the
+    // disabled pair (decision 197), nothing dimmed.
     const next = await tourStepButton({
       name: "Next",
       variant: "Default",
       label: spec.next,
+      disabled: spec.nextDisabled,
       stats,
     });
-    // Drawn disabled as React draws it: the Default button at plain 50 %.
-    if (spec.nextDisabled) next.opacity = 0.5;
     actions.appendChild(next);
   }
   footer.appendChild(actions);
@@ -67398,6 +67887,254 @@ async function applyKbdTypography(text, fonts, variableByName, stats) {
   );
 }
 
+// --- DescriptionList --------------------------------------------------------------
+
+// GAP-221, decision 199: React's DescriptionList, as packages/styles' owned
+// CSS draws it: each item its label, 12/16 regular (Text / XS / Normal) in
+// Colors/foreground/400, over its value, 14/20 (Text / Small / Normal) in
+// Colors/foreground/0, 4 apart (DescriptionList/item/gap). Stack sets the
+// items one under another 16 apart (DescriptionList/gap), in a column 320
+// wide; Row side by side 24 apart (DescriptionList/row/gap), each 160 wide
+// (DescriptionList/item/min-width, React's 10rem). No fill, no stroke, no
+// field chrome. The third item, FID, carries its Action after the value on
+// the value's 20 line: the copy icon at 16 in Colors/foreground/400, standing
+// in for React's small IconButton, which is drawn past the line rather than
+// making the item taller. `Action` shows it.
+const DESCRIPTION_LIST_GEOMETRY = {
+  width: 320,
+  itemWidth: 160,
+  gap: 16,
+  rowGap: 24,
+  itemGap: 4,
+  actionGap: 8,
+  line: 20,
+};
+const DESCRIPTION_LIST_ITEMS = [
+  { label: "Name", value: "Gate A12" },
+  { label: "Featured", value: "Yes" },
+  { label: "FID", value: "f-1209", action: true },
+];
+const DESCRIPTION_LIST_ACTION_NAME = "Action";
+
+async function createDescriptionListVariant(args) {
+  const component = figma.createComponent();
+  await updateDescriptionListVariant(component, args);
+  return component;
+}
+
+function parseDescriptionListVariantName(name) {
+  return productSdkVariantValues(name, "Layout", DESCRIPTION_LIST_LAYOUTS);
+}
+
+async function updateDescriptionListVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = DESCRIPTION_LIST_GEOMETRY;
+  const row = value === "Row";
+  const count = DESCRIPTION_LIST_ITEMS.length;
+  const itemHeight = 16 + geometry.itemGap + geometry.line;
+  productSdkVariantRoot(component, "DescriptionList", "Layout=" + value, {
+    direction: row ? "horizontal" : "vertical",
+    primarySizing: "AUTO",
+    counterSizing: row ? "AUTO" : "FIXED",
+    spacing: row ? geometry.rowGap : geometry.gap,
+    width: row
+      ? count * geometry.itemWidth + (count - 1) * geometry.rowGap
+      : geometry.width,
+    height: row ? itemHeight : count * itemHeight + (count - 1) * geometry.gap,
+  });
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    row ? "DescriptionList/row/gap" : "DescriptionList/gap",
+    variableByName,
+    stats,
+  );
+
+  for (let index = 0; index < count; index += 1) {
+    const spec = DESCRIPTION_LIST_ITEMS[index];
+    const n = index + 1;
+    const itemWidth = row ? geometry.itemWidth : geometry.width;
+    const item = productSdkFrame("Item " + n, {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: geometry.itemGap,
+      width: itemWidth,
+      height: itemHeight,
+    });
+    item.setSharedPluginData(RUN_NAMESPACE, "kind", "description-list-item");
+    bindFloatVariable(
+      item,
+      "itemSpacing",
+      "DescriptionList/item/gap",
+      variableByName,
+      stats,
+    );
+    if (row) {
+      bindFloatVariable(
+        item,
+        "width",
+        "DescriptionList/item/min-width",
+        variableByName,
+        stats,
+      );
+    }
+    appendWithSizing(component, item, row ? "FIXED" : "FILL", "HUG");
+
+    const label = await productSdkText({
+      name: "Label " + n,
+      characters: spec.label,
+      styleKey: textStyleKeyForText("XS", "Normal"),
+      fonts,
+      fontSize: 12,
+      lineHeight: 16,
+      colorToken: "Colors/foreground/400",
+      colorFallback: "#5D626F",
+      variableByName,
+      stats,
+      width: itemWidth,
+    });
+    appendWithSizing(item, label, "FILL", "HUG");
+
+    const valueText = await productSdkText({
+      name: "Value " + n,
+      characters: spec.value,
+      styleKey: textStyleKeyForText("Small", "Normal"),
+      fonts,
+      fontSize: 14,
+      lineHeight: 20,
+      colorToken: "Colors/foreground/0",
+      colorFallback: "#000000",
+      variableByName,
+      stats,
+      width: spec.action
+        ? itemWidth - geometry.line - geometry.actionGap
+        : itemWidth,
+    });
+
+    if (!spec.action) {
+      appendWithSizing(item, valueText, "FILL", "HUG");
+      continue;
+    }
+    const line = productSdkFrame("Value Row " + n, {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      counterAlign: "CENTER",
+      spacing: geometry.actionGap,
+      width: itemWidth,
+      height: geometry.line,
+    });
+    appendWithSizing(item, line, "FILL", "FIXED");
+    appendWithSizing(line, valueText, "FILL", "HUG");
+    const action = productSdkFrame(DESCRIPTION_LIST_ACTION_NAME, {
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      width: geometry.line,
+      height: geometry.line,
+    });
+    action.setSharedPluginData(
+      RUN_NAMESPACE,
+      "kind",
+      "description-list-action",
+    );
+    appendWithSizing(line, action, "FIXED", "FIXED");
+    const icon = await createFixedIconInstance(
+      "copy-01",
+      "Colors/foreground/400",
+      "#5D626F",
+      variableByName,
+      stats,
+      16,
+      "DescriptionList/action/icon/size",
+    );
+    if (icon) {
+      icon.name = "Copy Icon";
+      action.appendChild(icon);
+    }
+  }
+}
+
+function configureDescriptionListProperties(componentSet, stats) {
+  DESCRIPTION_LIST_ITEMS.forEach((spec, index) => {
+    const n = index + 1;
+    configureNamedTextProperty(
+      componentSet,
+      "Label " + n,
+      "Label " + n + " Text",
+      spec.label,
+      stats,
+    );
+    configureNamedTextProperty(
+      componentSet,
+      "Value " + n,
+      "Value " + n + " Text",
+      spec.value,
+      stats,
+    );
+  });
+  configureNamedBooleanProperty(
+    componentSet,
+    DESCRIPTION_LIST_ACTION_NAME,
+    "Action",
+    true,
+    stats,
+  );
+}
+
+const DESCRIPTION_LIST_DESCRIPTION = [
+  "Kozmos DescriptionList component set generated from React DescriptionList API (GAP-221, decision 199).",
+  'Layout maps to layout: Stack is "stack", Row is "row". Each item is a DescriptionListItem: Label N Text its label, Value N Text its value; Action is the third item\'s action.',
+  "A <dl>: each item a <dt> and its <dd>, heard as label and value. No field chrome.",
+];
+
+async function buildDescriptionListComponent() {
+  return buildSingleAxisComponent({
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    axisName: "Layout",
+    values: DESCRIPTION_LIST_LAYOUTS,
+    x: 80,
+    y: 21000,
+    xStep: 600,
+    createVariant: createDescriptionListVariant,
+    configureProperties: configureDescriptionListProperties,
+    autoReorganize: true,
+    description: DESCRIPTION_LIST_DESCRIPTION,
+  });
+}
+
+async function updateDescriptionListComponent() {
+  return updateSingleAxisComponent({
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    axisName: "Layout",
+    values: DESCRIPTION_LIST_LAYOUTS,
+    xStep: 600,
+    createVariant: createDescriptionListVariant,
+    updateVariant: updateDescriptionListVariant,
+    parseVariantName: parseDescriptionListVariantName,
+    configureProperties: configureDescriptionListProperties,
+    autoReorganize: true,
+    description: DESCRIPTION_LIST_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildDescriptionListComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "DescriptionList",
+    componentSetName: "DescriptionList",
+    build: buildDescriptionListComponent,
+  });
+}
+
 // --- ImageCropper ----------------------------------------------------------------
 
 // GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
@@ -67637,6 +68374,10 @@ async function rebuildImageCropperComponent() {
 // React draws each only when it is given.
 const PAGE_HEADER_ACTIONS_NAME = "Actions";
 const PAGE_HEADER_INFO_NAME = "Info";
+// Decision 210: React's PageHeader `titleAddon`, a node beside the title and
+// outside its h1, such as a status Tag. Drawn as ListItem's Title Addon is,
+// a Tag's pill, here in the alert emotion ("Changes Awaiting Publish").
+const PAGE_HEADER_TITLE_ADDON_NAME = "Title Addon";
 const PAGE_HEADER_BREADCRUMB_NAME = "Breadcrumb";
 
 function pageHeaderTitleMetrics(size) {
@@ -67839,6 +68580,45 @@ async function updatePageHeaderVariant(
   ];
   line.appendChild(title);
   setHugChildSizing(title);
+
+  // Decision 210: the title's addon, after the title and before the info
+  // button, centred on the title's line as the info button is. Off by
+  // default, as React draws none until it is given one.
+  const addon = pageHeaderLine(
+    PAGE_HEADER_TITLE_ADDON_NAME,
+    metrics.lineHeight,
+  );
+  line.appendChild(addon);
+  const tag = await createListItemTag({
+    name: "Addon Tag",
+    textName: "Addon Text",
+    characters: "Changes Awaiting Publish",
+    outline: false,
+    fonts,
+    variableByName,
+    stats,
+  });
+  tag.fills = [
+    paintFromVariable(
+      "Emotion/alert/surface",
+      "#FDF1D8",
+      variableByName,
+      stats,
+    ),
+  ];
+  const addonText = directChildNamed(tag, "Addon Text");
+  if (addonText)
+    addonText.fills = [
+      paintFromVariable(
+        "Emotion/alert/onSurface",
+        "#3D2902",
+        variableByName,
+        stats,
+      ),
+    ];
+  addon.appendChild(tag);
+  setHugChildSizing(tag);
+  addon.visible = false;
 
   const info = pageHeaderLine(PAGE_HEADER_INFO_NAME, metrics.lineHeight);
   line.appendChild(info);
@@ -68067,6 +68847,21 @@ function configurePageHeaderProperties(componentSet, stats) {
     false,
     stats,
   );
+  // Decision 210: the title's addon, off, and its words, as ListItem's.
+  configureNamedBooleanProperty(
+    componentSet,
+    PAGE_HEADER_TITLE_ADDON_NAME,
+    "Show Title Addon",
+    false,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Addon Text",
+    "Addon Text",
+    "Changes Awaiting Publish",
+    stats,
+  );
   configureNamedBooleanProperty(
     componentSet,
     "Description Text",
@@ -68088,6 +68883,7 @@ const PAGE_HEADER_DESCRIPTION = [
   "Tone maps to PageHeader.tone; Size to PageHeader.size (Medium md, Large lg).",
   "Title Text maps to title; Description Text to description.",
   "Breadcrumb, Info, Description and Actions show what React draws when it is given each.",
+  "Show Title Addon shows PageHeader.titleAddon beside the title, outside its h1 (decision 210); Addon Text is its Tag's words.",
 ];
 
 async function buildPageHeaderComponent() {
@@ -70659,7 +71455,7 @@ async function updateFileUploadVariant(
   component.paddingBottom = 0;
   component.resizeWithoutConstraints(
     384,
-    hasFiles ? 302 : isPreview ? 130 : 218,
+    hasFiles ? 302 : isPreview ? 130 : content === "Button" ? 96 : 218,
   );
   component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
@@ -70963,6 +71759,14 @@ function parseSelectVariantName(name) {
   const match = /(?:^|,)\s*Content=([^,]+)/.exec(name);
   const content = match ? match[1].trim() : "Closed";
   if (SELECT_CONTENT.indexOf(content) === -1) return null;
+  // A variant drawn before the Variant axis is Default (decision 151).
+  const variantMatch = /(?:^|,)\s*Variant=([^,]+)/.exec(name);
+  const variant = variantMatch ? variantMatch[1].trim() : "Default";
+  if (SELECT_VARIANTS.indexOf(variant) === -1) return null;
+  if (variant === "Ghost") {
+    if (content !== "Closed") return null;
+    return { state: props.state, status: props.status, type: "Ghost" };
+  }
   return { state: props.state, status: props.status, type: content };
 }
 
@@ -70971,10 +71775,11 @@ async function updateSelectVariant(
   { state, status, type, variableByName, fonts, stats },
 ) {
   const config = inputConfig(state, status);
-  const content = type || "Closed";
+  const ghost = type === "Ghost";
+  const content = ghost ? "Closed" : type || "Closed";
   const isOpen = content === "Open";
 
-  component.name = `State=${state}, Status=${status}, Content=${content}`;
+  component.name = `State=${state}, Status=${status}, Content=${content}, Variant=${ghost ? "Ghost" : "Default"}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -71001,6 +71806,7 @@ async function updateSelectVariant(
     state,
     status,
     content,
+    ghost,
     config,
     variableByName,
     fonts,
@@ -71021,7 +71827,11 @@ function layoutSelectVariants(componentSet) {
 
     const stateIndex = SELECT_STATES.indexOf(props.state);
     const statusIndex = SELECT_STATUSES.indexOf(props.status);
-    if (props.type === "Open") {
+    if (props.type === "Ghost") {
+      // Decision 151: the ghost triggers, past the Open column.
+      child.x = (SELECT_STATUSES.length * 2 + statusIndex) * 360;
+      child.y = stateIndex * 96;
+    } else if (props.type === "Open") {
       child.x = (SELECT_STATUSES.length + statusIndex) * 360;
       child.y = stateIndex * 240;
     } else {
@@ -72851,18 +73661,23 @@ function parseEmptyStateVariantName(name) {
   if (!base) return null;
   // A variant drawn before the Size axis carries no Size and is the full one,
   // so Update renames it rather than replacing it and its node id survives.
-  const second = variantAxisValue(name, "Size") || "Default";
-  if (EMPTY_STATE_SIZES.indexOf(second) === -1) return null;
-  return { value: base.value, second };
+  const size = variantAxisValue(name, "Size") || "Default";
+  if (EMPTY_STATE_SIZES.indexOf(size) === -1) return null;
+  // And one drawn before the Tone axis is None (decision 194).
+  const tone = variantAxisValue(name, "Tone") || "None";
+  if (EMPTY_STATE_TONES.indexOf(tone) === -1) return null;
+  if (tone === "None") return { value: base.value, second: size };
+  if (size !== "Default") return null;
+  return { value: base.value, second: `${size}/${tone}` };
 }
 
 async function updateEmptyStateVariant(
   component,
   { value, second, variableByName, fonts, stats },
 ) {
-  const size = EMPTY_STATE_SIZES.indexOf(second) === -1 ? "Default" : second;
+  const { size, tone } = emptyStateRow(second);
   const pad = emptyStatePadding(size);
-  component.name = `Content=${value}, Size=${size}`;
+  component.name = `Content=${value}, Size=${size}, Tone=${tone}`;
   component.layoutMode = "VERTICAL";
   component.primaryAxisSizingMode = "AUTO";
   component.counterAxisSizingMode = "FIXED";
@@ -72874,10 +73689,43 @@ async function updateEmptyStateVariant(
   component.paddingTop = pad;
   component.paddingBottom = pad;
   component.resizeWithoutConstraints(360, size === "Compact" ? 128 : 196);
-  component.cornerRadius = KOZMOS_RADIUS.none;
   component.clipsContent = false;
-  component.fills = [];
-  component.strokes = [];
+  if (tone === "None") {
+    clearBoundVariable(component, "cornerRadius", stats);
+    component.cornerRadius = KOZMOS_RADIUS.none;
+    component.fills = [];
+    component.strokes = [];
+  } else {
+    // Decision 194: the emotion's surface, edged 1 inside in its text
+    // colour, at the container's radius, as React's rounded-container.
+    const key = tone.toLowerCase();
+    component.cornerRadius = KOZMOS_RADIUS.container;
+    bindFloatVariable(
+      component,
+      "cornerRadius",
+      "Radius/Container",
+      variableByName,
+      stats,
+    );
+    component.fills = [
+      paintFromVariable(
+        `Emotion/${key}/surface`,
+        "#FDF1D8",
+        variableByName,
+        stats,
+      ),
+    ];
+    component.strokes = [
+      paintFromVariable(
+        `Emotion/${key}/text`,
+        "#744D03",
+        variableByName,
+        stats,
+      ),
+    ];
+    component.strokeWeight = 1;
+    component.strokeAlign = "INSIDE";
+  }
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "EmptyState");
 
@@ -72885,6 +73733,7 @@ async function updateEmptyStateVariant(
     component,
     value,
     size,
+    tone,
     variableByName,
     fonts,
     stats,
@@ -74570,10 +75419,12 @@ async function syncTabsVariantChildren({
 async function syncTooltipVariantChildren({
   component,
   side,
+  paint,
   variableByName,
   fonts,
   stats,
 }) {
+  const tonePaint = paint || TOOLTIP_TONE_PAINT.Default;
   let text = directChildNamed(component, "Content Text");
   if (text && text.type !== "TEXT") {
     text.remove();
@@ -74588,7 +75439,12 @@ async function syncTooltipVariantChildren({
   await applyTooltipContentTypography(text, fonts, variableByName, stats);
   text.characters = tooltipContentText(side);
   text.fills = [
-    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+    paintFromVariable(
+      tonePaint.words.name,
+      tonePaint.words.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   text.textAlignHorizontal = "CENTER";
   text.textAlignVertical = "CENTER";
@@ -74598,12 +75454,19 @@ async function syncTooltipVariantChildren({
   await syncTooltipTip({
     component,
     side,
+    surface: tonePaint.surface,
     variableByName,
     stats,
   });
 }
 
-async function syncTooltipTip({ component, side, variableByName, stats }) {
+async function syncTooltipTip({
+  component,
+  side,
+  surface,
+  variableByName,
+  stats,
+}) {
   let tip = directChildNamed(component, "Tip");
   if (tip && tip.type !== "FRAME") {
     tip.remove();
@@ -74651,6 +75514,7 @@ async function syncTooltipTip({ component, side, variableByName, stats }) {
     side,
     width,
     height,
+    surface,
     variableByName,
     stats,
   });
@@ -74677,9 +75541,11 @@ async function syncTooltipTipFill({
   side,
   width,
   height,
+  surface,
   variableByName,
   stats,
 }) {
+  const arrow = surface || TOOLTIP_TONE_PAINT.Default.surface;
   let fill = directChildNamed(tip, "Tip Fill");
   if (fill && fill.type !== "VECTOR") {
     fill.remove();
@@ -74697,7 +75563,7 @@ async function syncTooltipTipFill({
   fill.resizeWithoutConstraints(width, height);
   await applyVectorNetwork(fill, tooltipTipVectorNetwork(side, width, height));
   fill.fills = [
-    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    paintFromVariable(arrow.name, arrow.fallback, variableByName, stats),
   ];
   fill.strokes = [];
   fill.strokeWeight = 0;
@@ -74821,7 +75687,12 @@ async function syncDialogVariantChildren({
   stats,
 }) {
   const hasFooter = value === "Form" || value === "Footer";
-  removeGeneratedButtonChild(component, "Dialog Close", true);
+  const withMedia = value === "Media";
+  const full = value === "Full";
+  // Over media the close sits in the dialog's corner, as React's does in
+  // every dialog; elsewhere it is in the header's row, beside the title.
+  removeGeneratedButtonChild(component, "Dialog Close", !withMedia);
+  await syncDialogMedia({ component, withMedia, variableByName, stats });
 
   let header = directChildNamed(component, "Dialog Header");
   if (header && header.type !== "FRAME") {
@@ -74937,8 +75808,9 @@ async function syncDialogVariantChildren({
   setLayoutSizingHorizontal(headerContent, "FILL");
   setLayoutSizingVertical(headerContent, "HUG");
 
+  removeGeneratedButtonChild(header, "Dialog Close", withMedia);
   const close = await syncInlineCloseButton({
-    parent: header,
+    parent: withMedia ? component : header,
     name: "Dialog Close",
     kind: "dialog-close",
     size: 32,
@@ -74971,13 +75843,19 @@ async function syncDialogVariantChildren({
   body.paddingRight = 0;
   body.paddingTop = 0;
   body.paddingBottom = 0;
-  body.resizeWithoutConstraints(464, value === "Form" ? 132 : 60);
+  body.resizeWithoutConstraints(full ? 1200 : 464, value === "Form" ? 132 : 60);
   body.fills = [];
   body.strokes = [];
   body.clipsContent = false;
   component.appendChild(body);
   setLayoutSizingHorizontal(body, "FILL");
   setVerticalStackChildSizing(body);
+  // Full: the body takes what the header leaves (React's minmax(0, 1fr)).
+  try {
+    body.layoutGrow = full ? 1 : 0;
+  } catch (_error) {
+    // layoutGrow is unavailable on older plugin runtimes.
+  }
 
   let bodyText = directChildNamed(body, "Body Text");
   if (bodyText && bodyText.type !== "TEXT") {
@@ -74999,6 +75877,34 @@ async function syncDialogVariantChildren({
   setLayoutSizingHorizontal(bodyText, "FILL");
   setLayoutSizingHorizontal(bodyText, "FILL");
   setLayoutSizingVertical(bodyText, "HUG");
+
+  // Full: the media shown large, filling the body under its words.
+  let preview = directChildNamed(body, "Full Media");
+  if (preview && (!full || preview.type !== "FRAME")) {
+    preview.remove();
+    preview = null;
+  }
+  if (full) {
+    if (!preview) {
+      preview = figma.createFrame();
+      preview.name = "Full Media";
+    }
+    preview.layoutMode = "NONE";
+    preview.resizeWithoutConstraints(1200, 480);
+    preview.cornerRadius = KOZMOS_RADIUS.control;
+    preview.fills = [
+      paintFromVariable("Colors/theme/0", "#EDF2FE", variableByName, stats),
+    ];
+    preview.strokes = [];
+    preview.clipsContent = true;
+    body.appendChild(preview);
+    setLayoutSizingHorizontal(preview, "FILL");
+    try {
+      preview.layoutGrow = 1;
+    } catch (_error) {
+      // layoutGrow is unavailable on older plugin runtimes.
+    }
+  }
 
   if (value === "Form") {
     removeGeneratedButtonChild(body, "Name Field", true);
@@ -75081,6 +75987,107 @@ async function syncDialogVariantChildren({
     variableByName,
     stats,
   );
+  if (full) {
+    // The window less 16 each side (decision 202), in place of 512 wide.
+    bindFloatVariable(
+      component,
+      "width",
+      "Dialog/width/full",
+      variableByName,
+      stats,
+    );
+    bindFloatVariable(
+      component,
+      "height",
+      "Dialog/height/full",
+      variableByName,
+      stats,
+    );
+  }
+  if (withMedia) placeDialogMediaClose(component, close, variableByName, stats);
+}
+
+/**
+ * Decision 195 (GAP-214): the Media variant's band above the title, React's
+ * DialogHeader media with mediaBleed. Drawn out of the flow, from the
+ * dialog's top edge and sides inside its 1 edge, its top corners the
+ * dialog's less that edge; the dialog's top padding makes room for it and the
+ * 16 under it. Every other variant has none.
+ */
+async function syncDialogMedia({
+  component,
+  withMedia,
+  variableByName,
+  stats,
+}) {
+  let media = directChildNamed(component, "Dialog Media");
+  if (media && (!withMedia || media.type !== "FRAME")) {
+    media.remove();
+    media = null;
+  }
+  if (!withMedia) return null;
+  if (!media) {
+    media = figma.createFrame();
+    media.name = "Dialog Media";
+  }
+  media.layoutMode = "NONE";
+  media.fills = [
+    paintFromVariable("Colors/theme/0", "#EDF2FE", variableByName, stats),
+  ];
+  media.strokes = [];
+  media.clipsContent = true;
+  const inner = KOZMOS_RADIUS.container - 1;
+  media.topLeftRadius = inner;
+  media.topRightRadius = inner;
+  media.bottomLeftRadius = 0;
+  media.bottomRightRadius = 0;
+  component.insertChild(0, media);
+  try {
+    media.layoutPositioning = "ABSOLUTE";
+  } catch (_error) {
+    // Older Figma runtimes may not expose absolute positioning.
+  }
+  media.x = 1;
+  media.y = 1;
+  media.resizeWithoutConstraints(
+    (component.width || 512) - 2,
+    DIALOG_MEDIA_HEIGHT,
+  );
+  bindFloatVariable(
+    media,
+    "height",
+    "Dialog/media/height",
+    variableByName,
+    stats,
+  );
+  media.setSharedPluginData(RUN_NAMESPACE, "kind", "dialog-media");
+  return media;
+}
+
+/**
+ * The Media variant's close: in the dialog's corner, 24 in, over the media,
+ * on the surface with the subtle edge so it reads over any picture, as
+ * React's outline close does; and the dialog's top padding the media's band,
+ * its edge and the 16 under it.
+ */
+function placeDialogMediaClose(component, close, variableByName, stats) {
+  clearBoundVariable(component, "paddingTop", stats);
+  component.paddingTop = 1 + DIALOG_MEDIA_HEIGHT + 16;
+  if (!close) return;
+  try {
+    close.layoutPositioning = "ABSOLUTE";
+  } catch (_error) {
+    // Older Figma runtimes may not expose absolute positioning.
+  }
+  close.x = (component.width || 512) - 24 - (close.width || 32);
+  close.y = 24;
+  close.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  close.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  close.strokeWeight = 1;
 }
 
 async function syncBottomSheetVariantChildren({
@@ -77936,12 +78943,17 @@ function moveDirectChildrenIntoSlot(source, target, stats, context) {
 function dialogTitleText(value) {
   if (value === "Form") return "Edit profile";
   if (value === "Footer") return "Confirm changes";
+  if (value === "Media") return "Interested in Analytics?";
+  if (value === "Full") return "Image 1";
   return "Dialog title";
 }
 
 function dialogDescriptionText(value) {
   if (value === "Form") return "Make changes to your profile here.";
   if (value === "Footer") return "Review this decision before continuing.";
+  if (value === "Media")
+    return "See how people move through your buildings, floor by floor.";
+  if (value === "Full") return "Main entrance";
   return "Use dialogs for focused tasks that need a clear return path.";
 }
 
@@ -77950,6 +78962,10 @@ function dialogBodyText(value) {
     return "Update the fields below and save when you are done.";
   if (value === "Footer")
     return "This content explains the action, risk, or expected result.";
+  if (value === "Media")
+    return "The media above the title is an illustration; it is decorative unless it is named.";
+  if (value === "Full")
+    return "A full dialog fills the window less 16 each side; its body takes the rest.";
   return "Dialog body content can hold a short message, form summary, or composed product content.";
 }
 
@@ -83697,6 +84713,21 @@ async function syncFileUploadVariantChildren({
   ];
   label.textAlignVertical = "CENTER";
 
+  if (content === "Button") {
+    await syncFileUploadButtonChildren({
+      component,
+      label,
+      state,
+      status,
+      config,
+      preservedText,
+      variableByName,
+      fonts,
+      stats,
+    });
+    return;
+  }
+
   if (isPreview) {
     await syncFileUploadPreviewChildren({
       component,
@@ -83953,6 +84984,148 @@ async function syncFileUploadVariantChildren({
   }
   component.appendChild(helper);
   normalizeInputFamilyChildSizing(component);
+}
+
+/**
+ * Content=Button, React's `variant="button"` (GAP-274): in place of the drop
+ * area, an outline Button at the default size, 44 tall and as wide as its
+ * words, with the upload icon before "Choose file" (Browse Text, React's
+ * `browseLabel`; New Client passes "Add logo"). Drawn as the Preview's Change
+ * button is, so Browse Text stays a property of the set, which a Button
+ * instance's text could not be. React's button takes a drop as the area
+ * does: Dragging draws the theme 600 edge on the hover fill; a status takes
+ * the field's edge, and Focus the field's ring.
+ */
+async function syncFileUploadButtonChildren({
+  component,
+  label,
+  state,
+  status,
+  config,
+  preservedText,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const disabled = state === "Disabled";
+  const isDragging = state === "Dragging";
+  const outline = buttonConfig("Outline", disabled ? "Disabled" : "Default");
+  const edge = isDragging
+    ? ["Colors/theme/600", "#1051E8"]
+    : status !== "Default"
+      ? [config.fieldStroke, config.fieldStrokeFallback]
+      : [outline.stroke, outline.strokeFallback];
+  const fill = isDragging
+    ? ["Colors/background/100", "#E3E4E8"]
+    : [outline.background, outline.backgroundFallback];
+
+  const trigger = figma.createFrame();
+  trigger.name = "Browse Button";
+  trigger.layoutMode = "HORIZONTAL";
+  trigger.primaryAxisSizingMode = "AUTO";
+  trigger.counterAxisSizingMode = "FIXED";
+  trigger.primaryAxisAlignItems = "CENTER";
+  trigger.counterAxisAlignItems = "CENTER";
+  trigger.itemSpacing = 8;
+  trigger.paddingLeft = 16;
+  trigger.paddingRight = 16;
+  trigger.paddingTop = 0;
+  trigger.paddingBottom = 0;
+  trigger.resizeWithoutConstraints(140, 44);
+  trigger.cornerRadius = KOZMOS_RADIUS.control;
+  trigger.clipsContent = false;
+  trigger.setSharedPluginData(RUN_NAMESPACE, "role", "file-upload-trigger");
+  trigger.fills = [paintFromVariable(fill[0], fill[1], variableByName, stats)];
+  trigger.strokes = [
+    paintFromVariable(edge[0], edge[1], variableByName, stats),
+  ];
+  trigger.strokeWeight = 1;
+  for (const [field, token] of [
+    ["height", "Button/height/default"],
+    ["paddingLeft", "Button/padding/x/default"],
+    ["paddingRight", "Button/padding/x/default"],
+    ["itemSpacing", "Button/gap/default"],
+    ["cornerRadius", "Button/radius"],
+    ["strokeWeight", "Button/stroke/width"],
+  ])
+    bindFloatVariable(trigger, field, token, variableByName, stats);
+
+  const icon = await createFixedIconInstance(
+    "upload-01",
+    outline.foreground,
+    outline.foregroundFallback,
+    variableByName,
+    stats,
+    16,
+    "Button/icon/size",
+  );
+  trigger.appendChild(icon);
+
+  const browse = figma.createText();
+  browse.name = "Browse Text";
+  // Button's medium 14/20 label; the field label style is the same face and
+  // size, attached as the drop area's Browse Text is.
+  await applyFieldLabelTypography(
+    browse,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  browse.characters = preservedText["Browse Text"] || "Choose file";
+  browse.fills = [
+    paintFromVariable(
+      outline.foreground,
+      outline.foregroundFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  browse.textAlignVertical = "CENTER";
+  trigger.appendChild(browse);
+  setHugChildSizing(browse);
+
+  syncFocusRing(trigger, {
+    enabled: !disabled,
+    width: 140,
+    height: 44,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+
+  const helper = figma.createText();
+  helper.name = "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "FileUpload",
+    variableByName,
+    stats,
+  );
+  helper.characters =
+    preservedText["Helper Text"] || helperTextForInputStatus(status);
+  helper.visible = status !== "Default";
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  helper.resizeWithoutConstraints(384, 20);
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  helper.textAlignVertical = "CENTER";
+
+  component.appendChild(label);
+  component.appendChild(trigger);
+  component.appendChild(helper);
+  normalizeInputFamilyChildSizing(component);
+  setLayoutSizingHorizontal(trigger, "HUG");
 }
 
 /**
@@ -84989,8 +86162,15 @@ async function createColorPickerPaletteSelect({
 }) {
   const created = await createNestedComponentInstance({
     componentSetName: "Select",
-    // The closed trigger; a file whose Select predates Content has only it.
+    // The closed field, not the ghost (decision 151); a file whose Select
+    // predates Variant, or Content, has only it.
     variantProperties: [
+      {
+        State: disabled ? "Disabled" : "Default",
+        Status: "Default",
+        Content: "Closed",
+        Variant: "Default",
+      },
       {
         State: disabled ? "Disabled" : "Default",
         Status: "Default",
@@ -85823,6 +87003,7 @@ async function syncSelectVariantChildren({
   state,
   status,
   content,
+  ghost = false,
   config,
   variableByName,
   fonts,
@@ -85862,23 +87043,35 @@ async function syncSelectVariantChildren({
   trigger.paddingBottom = 0;
   trigger.resizeWithoutConstraints(320, 44);
   trigger.cornerRadius = KOZMOS_RADIUS.control;
-  trigger.setSharedPluginData(RUN_NAMESPACE, "kind", "input-field");
-  trigger.fills = [
-    paintFromVariable(
-      config.fieldFill,
-      config.fieldFillFallback,
-      variableByName,
-      stats,
-    ),
-  ];
-  trigger.strokes = [
-    paintFromVariable(
-      config.fieldStroke,
-      config.fieldStrokeFallback,
-      variableByName,
-      stats,
-    ),
-  ];
+  // The ghost trigger is no input-field: the field sizing would stretch it.
+  trigger.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    ghost ? "select-ghost-trigger" : "input-field",
+  );
+  trigger.fills = ghost
+    ? []
+    : [
+        paintFromVariable(
+          config.fieldFill,
+          config.fieldFillFallback,
+          variableByName,
+          stats,
+        ),
+      ];
+  // Decision 151: the ghost trigger has no edge, but an error keeps the
+  // field's red, as React's border-destructive wins over its transparent one.
+  trigger.strokes =
+    ghost && status !== "Error"
+      ? []
+      : [
+          paintFromVariable(
+            config.fieldStroke,
+            config.fieldStrokeFallback,
+            variableByName,
+            stats,
+          ),
+        ];
   trigger.strokeWeight = 1;
   // Out, as Input's field: the variants #521 (Mixed) and GAP-164 (Open)
   // added came out laid in beside the six drawn before (figma:verify, 15 Nov).
@@ -85971,7 +87164,7 @@ async function syncSelectVariantChildren({
   );
 
   component.appendChild(trigger);
-  setLayoutSizingHorizontal(trigger, "FILL");
+  setLayoutSizingHorizontal(trigger, ghost ? "HUG" : "FILL");
   await syncResetMixedText(component, trigger, {
     mixed: state === MIXED_FIELD_STATE,
     fonts,
@@ -85983,6 +87176,15 @@ async function syncSelectVariantChildren({
     setLayoutSizingHorizontal(listbox, "FILL");
   }
   normalizeInputFamilyChildSizing(component);
+  if (ghost) {
+    // As wide as its value and its chevron, 8 apart, from the start: the
+    // value hugs its words, and the trigger hugs both.
+    trigger.primaryAxisAlignItems = "MIN";
+    setTextAutoResize(placeholder, "WIDTH_AND_HEIGHT");
+    setLayoutSizingHorizontal(placeholder, "HUG");
+    trigger.primaryAxisSizingMode = "AUTO";
+    setLayoutSizingHorizontal(trigger, "HUG");
+  }
 }
 
 // GAP-164: Select's open list, so a row's count is visible in Figma. It is
@@ -86829,11 +88031,18 @@ async function syncEmptyStateVariantChildren({
   component,
   value,
   size,
+  tone = "None",
   variableByName,
   fonts,
   stats,
 }) {
   const iconBox = emptyStateIconSize(size);
+  // Decision 194: in a tone, the words are the emotion's onSurface and the
+  // icon its text on a disc of the page's colour.
+  const toned = tone && tone !== "None";
+  const key = toned ? tone.toLowerCase() : null;
+  const ink = (plain, fallback) =>
+    toned ? [`Emotion/${key}/onSurface`, "#3D2902"] : [plain, fallback];
   removeDirectChildren(component);
 
   const hasIcon = value !== "Basic";
@@ -86858,8 +88067,8 @@ async function syncEmptyStateVariantChildren({
     iconContainer.clipsContent = false;
     iconContainer.fills = [
       paintFromVariable(
-        "Colors/background/100",
-        "#F1F2F4",
+        toned ? "Colors/background/0" : "Colors/background/100",
+        toned ? "#FFFFFF" : "#F1F2F4",
         variableByName,
         stats,
       ),
@@ -86868,8 +88077,8 @@ async function syncEmptyStateVariantChildren({
 
     const icon = await createFixedIconInstance(
       "search-md",
-      "Colors/foreground/400",
-      "#5E6575",
+      toned ? `Emotion/${key}/text` : "Colors/foreground/400",
+      toned ? "#744D03" : "#5E6575",
       variableByName,
       stats,
       32,
@@ -86905,7 +88114,12 @@ async function syncEmptyStateVariantChildren({
   title.textAlignHorizontal = "CENTER";
   title.textAlignVertical = "CENTER";
   title.fills = [
-    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+    paintFromVariable(
+      ink("Colors/foreground/0", "#000000")[0],
+      ink("Colors/foreground/0", "#000000")[1],
+      variableByName,
+      stats,
+    ),
   ];
   setTextAutoResize(title, "HEIGHT");
   title.resizeWithoutConstraints(296, 20);
@@ -86923,8 +88137,8 @@ async function syncEmptyStateVariantChildren({
   description.textAlignVertical = "CENTER";
   description.fills = [
     paintFromVariable(
-      "Colors/foreground/400",
-      "#5E6575",
+      ink("Colors/foreground/400", "#5E6575")[0],
+      ink("Colors/foreground/400", "#5E6575")[1],
       variableByName,
       stats,
     ),
@@ -86941,6 +88155,7 @@ async function syncEmptyStateVariantChildren({
 
   await appendEmptyStateList(component, {
     size,
+    ink: ink("Colors/foreground/400", "#5E6575"),
     fonts,
     variableByName,
     stats,
@@ -86976,7 +88191,7 @@ async function syncEmptyStateVariantChildren({
  */
 async function appendEmptyStateList(
   component,
-  { fonts, variableByName, stats },
+  { ink = ["Colors/foreground/400", "#5E6575"], fonts, variableByName, stats },
 ) {
   const list = figma.createFrame();
   list.name = EMPTY_STATE_LIST_PROPERTY;
@@ -87042,14 +88257,7 @@ async function appendEmptyStateList(
     words.textAlignHorizontal = "LEFT";
 
     for (const node of [dot, words]) {
-      node.fills = [
-        paintFromVariable(
-          "Colors/foreground/400",
-          "#5E6575",
-          variableByName,
-          stats,
-        ),
-      ];
+      node.fills = [paintFromVariable(ink[0], ink[1], variableByName, stats)];
     }
 
     row.appendChild(bullet);
@@ -90723,6 +91931,7 @@ function textMetrics(size) {
     "2XLarge": { fontSize: 24, lineHeight: 32, token: "2xl" },
     "3XLarge": { fontSize: 30, lineHeight: 36, token: "3xl" },
     "4XLarge": { fontSize: 36, lineHeight: 40, token: "4xl" },
+    Display: { fontSize: 48, lineHeight: 54, token: "display" },
   };
 
   return metrics[size] || metrics.Base;
@@ -90775,7 +91984,8 @@ function linkConfig(variant) {
 
 function textSampleForSize(size) {
   if (size === "XS" || size === "Small") return "Kozmos label";
-  if (size === "3XLarge" || size === "4XLarge") return "Kozmos";
+  if (size === "3XLarge" || size === "4XLarge" || size === "Display")
+    return "Kozmos";
   return "Kozmos text";
 }
 
@@ -90916,45 +92126,59 @@ function tabsTriggerConfig(state, isActive) {
   };
 }
 
+/**
+ * A Button's paint in a state. Disabled is decision 197's disabled pair
+ * (DISABLED_FILL, DISABLED_FOREGROUND), as React's .kozmos-button:disabled
+ * draws it: every variant's label, icon and spinner take the foreground; a
+ * filled variant (default, destructive, secondary, subtle) takes the fill
+ * under it; an outline keeps the page under it and its edge takes the
+ * foreground; ghost and link change their words only; glass keeps its glass
+ * fill and bevel. Nothing is dimmed. A ghost takes the fill too (the owner,
+ * 17 Nov), so a disabled ghost never reads as an enabled grey one. Loading is
+ * busy, not unavailable: it keeps the variant's own idle paint at full
+ * strength, its spinner in the label's colour (React's data-loading).
+ */
 function buttonConfig(variant, state) {
-  const tokenState = state === "Disabled" ? "disabled" : "idle";
+  if (state === "Disabled") {
+    return disabledButtonConfig(variant);
+  }
   const configs = {
     Default: {
-      background: `Primary Buttons/themed/button/background/${tokenState}`,
-      foreground: `Primary Buttons/themed/button/foreground/content/${tokenState}`,
-      backgroundFallback: state === "Disabled" ? "#2E3138" : "#135BEC",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#FFFFFF",
+      background: "Primary Buttons/themed/button/background/idle",
+      foreground: "Primary Buttons/themed/button/foreground/content/idle",
+      backgroundFallback: "#135BEC",
+      foregroundFallback: "#FFFFFF",
     },
     Destructive: {
-      background: `Primary Buttons/danger/button/background/${tokenState}`,
-      foreground: `Primary Buttons/danger/button/foreground/content/${tokenState}`,
-      backgroundFallback: state === "Disabled" ? "#2E3138" : "#B01736",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#FFFFFF",
+      background: "Primary Buttons/danger/button/background/idle",
+      foreground: "Primary Buttons/danger/button/foreground/content/idle",
+      backgroundFallback: "#B01736",
+      foregroundFallback: "#FFFFFF",
     },
     // The neutral emotion's Primary Buttons tokens and their ink, as the
     // code draws the secondary variant (decision 61): background/200 and
     // foreground/0 read the same in light, but the dark fill is #464A53.
     Secondary: {
-      background: `Primary Buttons/neutral/button/background/${tokenState}`,
-      foreground: `Primary Buttons/neutral/button/foreground/content/${tokenState}`,
-      backgroundFallback: state === "Disabled" ? "#2E3138" : "#C7CAD1",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#000000",
+      background: "Primary Buttons/neutral/button/background/idle",
+      foreground: "Primary Buttons/neutral/button/foreground/content/idle",
+      backgroundFallback: "#C7CAD1",
+      foregroundFallback: "#000000",
     },
     Outline: {
       background: "Surface/0",
-      foreground: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
-      stroke: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
+      foreground: "Secondary Buttons/themed/button/foreground/content/idle",
+      stroke: "Secondary Buttons/themed/button/foreground/content/idle",
       backgroundFallback: "#FFFFFF",
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
-      strokeFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
+      foregroundFallback: "#0D44C2",
+      strokeFallback: "#0D44C2",
     },
     Ghost: {
-      foreground: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
+      foreground: "Secondary Buttons/themed/button/foreground/content/idle",
+      foregroundFallback: "#0D44C2",
     },
     Link: {
-      foreground: `Secondary Buttons/themed/button/foreground/content/${tokenState}`,
-      foregroundFallback: state === "Disabled" ? "#464A53" : "#0D44C2",
+      foreground: "Secondary Buttons/themed/button/foreground/content/idle",
+      foregroundFallback: "#0D44C2",
     },
     Glass: {
       background: "Colors/transparent/inverted/10",
@@ -90965,27 +92189,56 @@ function buttonConfig(variant, state) {
       strokeFallback: "#FFFFFF80",
     },
     // The subtle variant's own tier (GAP-200, decision 135): theme 0 under
-    // theme 600, the theme as text (decision 59). Disabled, it is the
-    // filled Buttons' disabled pair, the same in every tier, which the
-    // subtle tier does not repeat.
-    Subtle:
-      state === "Disabled"
-        ? {
-            background: "Primary Buttons/themed/button/background/disabled",
-            foreground:
-              "Primary Buttons/themed/button/foreground/content/disabled",
-            backgroundFallback: "#2E3138",
-            foregroundFallback: "#464A53",
-          }
-        : {
-            background: "Subtle Buttons/themed/button/background/idle",
-            foreground: "Subtle Buttons/themed/button/foreground/content/idle",
-            backgroundFallback: "#F1F5FE",
-            foregroundFallback: "#1051E8",
-          },
+    // theme 600, the theme as text (decision 59).
+    Subtle: {
+      background: "Subtle Buttons/themed/button/background/idle",
+      foreground: "Subtle Buttons/themed/button/foreground/content/idle",
+      backgroundFallback: "#F1F5FE",
+      foregroundFallback: "#1051E8",
+    },
   };
 
   return configs[variant] || configs.Default;
+}
+
+/** A disabled (or loading) Button of a variant: decision 197's pair. */
+function disabledButtonConfig(variant) {
+  const ink = {
+    foreground: DISABLED_FOREGROUND.name,
+    foregroundFallback: DISABLED_FOREGROUND.fallback,
+  };
+  if (variant === "Outline") {
+    return Object.assign(
+      {
+        background: "Surface/0",
+        backgroundFallback: "#FFFFFF",
+        stroke: DISABLED_FOREGROUND.name,
+        strokeFallback: DISABLED_FOREGROUND.fallback,
+      },
+      ink,
+    );
+  }
+  if (variant === "Link") return ink;
+  if (variant === "Glass") {
+    return Object.assign(
+      {
+        background: "Colors/transparent/inverted/10",
+        stroke: "Border/bevel/top",
+        backgroundFallback: "#FCFCFD1A",
+        strokeFallback: "#FFFFFF80",
+      },
+      ink,
+    );
+  }
+  // Default, Destructive, Secondary, Subtle, Ghost, and any variant not
+  // named: on the fill.
+  return Object.assign(
+    {
+      background: DISABLED_FILL.name,
+      backgroundFallback: DISABLED_FILL.fallback,
+    },
+    ink,
+  );
 }
 
 function toggleButtonConfig(variant, state) {
@@ -91096,7 +92349,33 @@ function badgeConfig(variant) {
   return configs[variant] || configs.Default;
 }
 
-function chipConfig(variant, state) {
+function chipConfig(variant, state, emotion = "None") {
+  // Decision 200: an emotion decides the colour whatever the variant. At
+  // rest its surface and ink, edged in its text colour; selected filled with
+  // its text colour, the page's colour as ink, which reads as the text does
+  // on the page (4.5:1 in both themes).
+  if (emotion && emotion !== "None" && state !== "Disabled") {
+    const key = emotion.toLowerCase();
+    const text = `Emotion/${key}/text`;
+    return state === "Selected"
+      ? {
+          background: text,
+          foreground: "Colors/background/0",
+          stroke: text,
+          backgroundFallback: "#744D03",
+          foregroundFallback: "#FFFFFF",
+          strokeFallback: "#744D03",
+        }
+      : {
+          background: `Emotion/${key}/surface`,
+          foreground: `Emotion/${key}/onSurface`,
+          stroke: text,
+          backgroundFallback: "#FDF1D8",
+          foregroundFallback: "#3D2902",
+          strokeFallback: "#744D03",
+        };
+  }
+
   if (state === "Disabled") {
     return {
       background: "Colors/background/100",

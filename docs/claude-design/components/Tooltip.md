@@ -81,11 +81,21 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## TooltipContent
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<TooltipPrimitive.TooltipContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { portalContainer?: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Portal>["container"] }`.
+It forwards its ref to `HTMLDivElement`. Its props are `Omit<TooltipPrimitive.TooltipContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { portalContainer?: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Portal>["container"]; tone?: "default" | "inverse" }`.
 
 - `portalContainer`: `React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Portal>["container"]`, optional.
 
   Defaults to the owning ThemeProvider; without a provider, remains inline.
+
+- `tone`: `"default" | "inverse"`, optional, default `"default"`.
+
+  The tooltip's surface, and its arrow's (decision 192, GAP-210).
+  `default` is the popover surface with its border, light on a light
+  page. `inverse` is the inverse surface: dark under white words on a
+  light page (#2E3138, Pointr Cloud's tooltip, 13.0:1) and light under
+  black words on a dark one (#D1CEC7, 13.4:1), from the
+  `Semantics.Inverse` roles, so a client's theme carries it. The same
+  size in both tones.
 
 - `aria-label`: `string`, optional.
 

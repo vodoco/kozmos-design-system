@@ -2696,6 +2696,30 @@
         "$description": "The fill under the pointer: a row, an item or a ghost control a pointer is over, and the same fill pressed where the press has no token of its own. background/100 in light; background/200 in dark (#2E3138, 1.61:1 on the page and 1.35:1 on background/100), because background/100 there, #17191C, is 1.19:1 on the black page and barely seen (GAP-228, decision 173). A highlighted option and a selected Tree or Table row take it too, the selection at full strength. Fills at rest that are not an interaction — a placeholder, a track, today in a calendar, a disabled field — stay on muted, and two named exceptions keep muted where an ink would fall under AA on the dark step: Button's emotion outline and text hover, and a selected NavigationItem or BottomNavigation item."
       }
     },
+    "Disabled": {
+      "fill": {
+        "$value": "{Primitives.Colors.background.100}",
+        "$type": "color",
+        "$description": "A disabled Button's fill, and a disabled part's built on it (IconButton, FloatingActionButton, MapControlButton, SplitButton): background/100 in both themes, #E3E4E8 in light and #17191C in dark. Decision 197 (GAP-218, 17 Nov 2026): a disabled Button is drawn from this pair, not at half opacity, so its label stays readable: Disabled.foreground reads 4.80:1 on it in light and 6.51:1 in dark, over the decision's 3:1. A filled variant takes the fill; an outline, ghost, link or glass Button keeps its own ground and takes the foreground alone."
+      },
+      "foreground": {
+        "$value": "{Primitives.Colors.foreground.400}",
+        "$type": "color",
+        "$description": "A disabled Button's label, icon and edge: foreground/400 in both themes, #5D626F in light and #A29D90 in dark. On Disabled.fill it reads 4.80:1 in light and 6.51:1 in dark; on the page, where an outline, ghost or link Button keeps its ground, it reads more (decision 197, GAP-218). Grey, not the variant's colour, is what says the Button is unavailable."
+      }
+    },
+    "Inverse": {
+      "surface": {
+        "$value": "{Primitives.Colors.foreground.200}",
+        "$type": "color",
+        "$description": "The inverse surface, a dark tip on a light page and a light tip on a dark one: foreground/200, #2E3138 in light (Pointr Cloud's tooltip) and #D1CEC7 in dark. TooltipContent's tone=\"inverse\" and its arrow (decision 192, GAP-210); the default tooltip stays the popover surface. Inverse.onSurface reads 13.0:1 on it in light and 13.4:1 in dark."
+      },
+      "onSurface": {
+        "$value": "{Primitives.Colors.background.0}",
+        "$type": "color",
+        "$description": "Words on the inverse surface: background/0, white in light and black in dark, 13.0:1 and 13.4:1 on Inverse.surface (decision 192, GAP-210)."
+      }
+    },
     "Elevation": {
       "Raised": {
         "$value": "{shadow.sm}",
@@ -2734,6 +2758,28 @@
           "$value": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace",
           "$type": "fontFamilies",
           "$description": "Code, coordinates, IDs and anything that wants to align in columns."
+        }
+      },
+      "Display": {
+        "Size": {
+          "$value": "3rem",
+          "$type": "dimension",
+          "$description": "Text and Heading's one display size (decision 203, GAP-272): 48 (3rem, so it follows the reader's text size), the type scale's font size 800, for a marketing-style headline such as a sign-in hero. Above Heading 1's 36; not a heading rank of its own."
+        },
+        "LineHeight": {
+          "$value": "3.375rem",
+          "$type": "dimension",
+          "$description": "54 under the display size's 48: Heading 1's own ratio, 40 over 36 (1.11), gives 53.3 at 48, and 54, the scale's line height 600, is its step nearest that."
+        },
+        "Weight": {
+          "$value": 700,
+          "$type": "fontWeights",
+          "$description": "Bold, as Heading 1 draws."
+        },
+        "LetterSpacing": {
+          "$value": "0rem",
+          "$type": "dimension",
+          "$description": "None, as Heading 1 draws: the platform font keeps its own tracking at the size."
         }
       }
     },
@@ -2944,6 +2990,11 @@
               "com.figma.variableId": "VariableID:1440:2672",
               "com.figma.isOverride": true
             }
+          },
+          "color": {
+            "$type": "color",
+            "$value": "#FFFFFF",
+            "$description": "The glass edge's colour: white in both themes, drawn at Semantics.Effect.glass.border.opacity, so a glass surface's 1px edge is a light rim on any tint (ruling §5.13). It was white written into every platform, with no token (GAP-229, decision 208)."
           }
         },
         "refraction": {

@@ -40,7 +40,9 @@ fun KozmosSplitButton(
      * options" by default, as React's `menuLabel`; a product that translates
      * passes its own. Last, so a call by position still compiles.
      */
-    menuLabel: String = "More options"
+    menuLabel: String = "More options",
+    // Last, so a call by position still compiles.
+    enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
     // Both halves are a filled Button: the theme fill with the theme
@@ -60,7 +62,7 @@ fun KozmosSplitButton(
         KozmosFillButton(
             onClick = onMainClick,
             modifier = Modifier,
-            enabled = true,
+            enabled = enabled,
             shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusControl, bottomStart = KozmosDimensions.semanticsRadiusControl, topEnd = KozmosDimensions.semanticsRadiusNone, bottomEnd = KozmosDimensions.semanticsRadiusNone),
             fill = KozmosFillStates.themed,
             interactionSource = mainSource
@@ -71,7 +73,7 @@ fun KozmosSplitButton(
         KozmosFillButton(
             onClick = { expanded = true },
             modifier = Modifier,
-            enabled = true,
+            enabled = enabled,
             shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusNone, bottomStart = KozmosDimensions.semanticsRadiusNone, topEnd = KozmosDimensions.semanticsRadiusControl, bottomEnd = KozmosDimensions.semanticsRadiusControl),
             fill = KozmosFillStates.themed,
             interactionSource = menuSource

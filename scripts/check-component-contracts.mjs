@@ -4059,7 +4059,9 @@ assertNotContains(
 assertContains(
   files.reactHeading,
   source.reactHeading,
-  'size={level === null ? "base" : sizes[level]}',
+  // Decision 203: a display size given beside the level wins; otherwise the
+  // level's own.
+  'size={size ?? (level === null ? "base" : sizes[level])}',
   "React Heading level scale selection",
 );
 assertContains(
@@ -4832,7 +4834,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const DIALOG_CONTENT = ["Basic", "Form", "Footer"]',
+  // Decisions 195 and 202: Media (DialogHeader's media) and Full (size="full").
+  'const DIALOG_CONTENT = ["Basic", "Form", "Footer", "Media", "Full"]',
   "Dialog content axis",
 );
 assertContains(
@@ -8561,8 +8564,8 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview"]',
-  "Figma FileUpload content axis includes DropZone alias and the image preview (GAP-270)",
+  'const FILE_UPLOAD_CONTENT = ["Dropzone", "Files", "Preview", "Button"]',
+  "Figma FileUpload content axis includes DropZone alias, the image preview (GAP-270) and the button form (GAP-274)",
 );
 assertContains(
   files.figma,
@@ -9214,8 +9217,9 @@ assertOccurrenceCount(
   files.figma,
   source.figma,
   /normalizeInputFamilyChildSizing\(component\);/g,
-  // FileUpload's Content=Preview draws its own children (GAP-270).
-  18,
+  // FileUpload's Content=Preview draws its own children (GAP-270), and its
+  // Content=Button (GAP-274) normalizes its label, trigger and helper.
+  19,
   "input-family fill sizing normalization calls",
 );
 assertContains(

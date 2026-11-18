@@ -64,6 +64,43 @@ const values = {};
   }
 }
 
+// 1b. The edge's colour (GAP-229, decision 208): a colour token beside the
+// edge's opacity, white in both modes, which every platform's edge reads
+// with that opacity. Until then each platform wrote the white in.
+const EDGE_COLOUR = {
+  token: "Semantics.Effect.glass.border.color",
+  css: "--semantics-effect-glass-border-color",
+  swift: "KozmosColors.semanticsEffectGlassBorderColor",
+  kotlin: "KozmosThemeTokens.semanticsEffectGlassBorderColor",
+};
+{
+  for (const mode of ["light", "dark"]) {
+    const t = JSON.parse(read(`packages/tokens/src/tokens-${mode}.json`));
+    const token = lookup(t, EDGE_COLOUR.token);
+    if (!token || token.$type !== "color") fail(`${mode}: ${EDGE_COLOUR.token} is missing or not a colour`);
+    else if (String(token.$value).toLowerCase() !== "#ffffff") fail(`${mode}: ${EDGE_COLOUR.token} is ${token.$value}, not white (ruling §5.13)`);
+    else ok(`token: ${mode} ${EDGE_COLOUR.token} = ${token.$value}`);
+  }
+  const css = read("packages/styles/src/styles/owned-components.css");
+  for (const role of ["kozmos-surface-glass", "kozmos-button-glass"]) {
+    const block = new RegExp(`\\.${role}\\s*\\{([\\s\\S]*?)\\n\\s*\\}`).exec(css);
+    if (!block) continue;
+    if (!block[1].includes(`var(${EDGE_COLOUR.css})`)) fail(`web: .${role}'s edge does not read ${EDGE_COLOUR.css}`);
+    else if (/rgba?\(\s*255\s*,\s*255\s*,\s*255/.test(block[1])) fail(`web: .${role} still writes the edge's white in`);
+    else ok(`web: .${role}'s edge reads ${EDGE_COLOUR.css} at the edge's opacity`);
+  }
+  const natives = [
+    ["packages/ios/Sources/KozmosSurface.swift", `${EDGE_COLOUR.swift}.opacity(glass.borderOpacity)`, /Color\.white\.opacity\(glass\.borderOpacity\)/],
+    ["packages/android/src/main/java/com/kozmos/components/Surface/Surface.kt", `${EDGE_COLOUR.kotlin}.copy(alpha = KozmosEffects.semanticsEffectGlass.borderOpacity)`, /Color\.White\.copy\(alpha = KozmosEffects\.semanticsEffectGlass\.borderOpacity\)/],
+  ];
+  for (const [file, reads, written] of natives) {
+    const src = read(file);
+    if (!src.includes(reads)) fail(`native: ${file}'s glass edge does not read ${reads}`);
+    else if (written.test(src)) fail(`native: ${file} still writes the edge's white in`);
+    else ok(`native: ${path.basename(file)}'s glass edge reads the colour token at the edge's opacity`);
+  }
+}
+
 // 2. The web: the role reads the token's variables, not its own numbers.
 {
   const css = read("packages/styles/src/styles/owned-components.css");

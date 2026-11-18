@@ -53,6 +53,70 @@ nothing, such as an `if` that leaves its button out, takes no room and no gap.
   <Story of={PageHeaderStories.WithInfo} />
 </Canvas>
 
+## A title addon
+
+`titleAddon` sits beside the title, after it and before `info`: a node that goes with the title, such as a status
+`Tag` ("Changes Awaiting Publish"), as ListItem's `titleAddon` does (decision 210, owner, 17 Nov). It is outside
+the `h1`, so the heading is the title alone and a screen reader reads the addon after it, and it is centred on the
+title's line, as `info` is. Where the line has no room for the title and the addon, the addon, and the info button
+after it, wrap under the title, 8 below it at its start, rather than squeezing the title into a column. With no
+addon the title's line is unchanged. SwiftUI takes it as `.titleAddon { … }` on `KozmosPageHeader`, and Compose
+as `titleAddon`, a composable, on an overload of `KozmosPageHeader`; both keep the heading on the title alone and
+wrap the addon under the title the same way.
+
+<PlatformSnippets
+    react={`
+import { PageHeader, Tag } from "@kozmos-ds/react";
+
+export function MapContentHeader() {
+  return (
+    <PageHeader
+      title="Map Content"
+      titleAddon={<Tag emotion="alert">Changes Awaiting Publish</Tag>}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosPageHeader, KozmosTag } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosPageHeader title="Map Content">
+    <template #titleAddon><KozmosTag emotion="alert">Changes Awaiting Publish</KozmosTag></template>
+  </KozmosPageHeader>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct MapContentHeader: View {
+    var body: some View {
+        KozmosPageHeader("Map Content")
+            .titleAddon {
+                KozmosTag("Changes Awaiting Publish", emotion: .alert)
+            }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.KozmosEmotion
+import com.kozmos.components.pageheader.KozmosPageHeader
+import com.kozmos.components.tag.KozmosTag
+
+@Composable
+fun MapContentHeader() {
+    KozmosPageHeader(
+        title = "Map Content",
+        titleAddon = { KozmosTag(text = "Changes Awaiting Publish", emotion = KozmosEmotion.Alert) }
+    )
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

@@ -39,13 +39,14 @@ final class KozmosButtonContentTests: XCTestCase {
 
     @MainActor
     private func paint(_ button: KozmosButton, direction: LayoutDirection = .leftToRight,
-                       large: Bool = false, width: CGFloat = 200) async throws -> CGRect {
+                       large: Bool = false, width: CGFloat = 200,
+                       where matches: (UInt8, UInt8, UInt8) -> Bool = RenderedPixels.isTheme) async throws -> CGRect {
         let pixels = try await RenderedPixels.render(
             button.environment(\.layoutDirection, direction)
                 .environment(\.sizeCategory, large ? .accessibilityExtraExtraExtraLarge : .large),
             size: CGSize(width: width, height: 600))
         return try XCTUnwrap(pixels.boundingBox(
-            in: CGRect(x: 0, y: 0, width: width, height: 600), where: RenderedPixels.isTheme))
+            in: CGRect(x: 0, y: 0, width: width, height: 600), where: matches))
     }
 
     @MainActor func testDecorativeIconAddsSpaceAndLoadingReplacesIt() async throws {

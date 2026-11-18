@@ -367,7 +367,9 @@ describe("ImageField", () => {
     expect(
       within(dialog).getByRole("img", { name: "Main entrance" }),
     ).toHaveAttribute("src", "https://cdn.example/a.jpg");
-    expect(dialog).toHaveClass("kozmos-image-field-preview");
+    // Dialog's own full size (decision 202), with no class of its own.
+    expect(dialog).toHaveAttribute("data-size", "full");
+    expect(dialog).not.toHaveClass("kozmos-image-field-preview");
 
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

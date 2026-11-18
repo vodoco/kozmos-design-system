@@ -1278,6 +1278,58 @@ object KozmosThemeTokens {
             KozmosColorsDark.semanticsHoverFill
         )
 
+    /**
+     * A disabled Button's fill, and a disabled part's built on it (IconButton,
+     * FloatingActionButton, MapControlButton, SplitButton): background/100 in
+     * both themes, #E3E4E8 in light and #17191C in dark. Decision 197
+     * (GAP-218, 17 Nov 2026): a disabled Button is drawn from this pair, not
+     * at half opacity, so its label stays readable: Disabled.foreground reads
+     * 4.80:1 on it in light and 6.51:1 in dark, over the decision's 3:1. A
+     * filled variant takes the fill; an outline, ghost, link or glass Button
+     * keeps its own ground and takes the foreground alone.
+     */
+    val semanticsDisabledFill: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsDisabledFill,
+            KozmosColorsDark.semanticsDisabledFill
+        )
+
+    /**
+     * A disabled Button's label, icon and edge: foreground/400 in both themes,
+     * #5D626F in light and #A29D90 in dark. On Disabled.fill it reads 4.80:1
+     * in light and 6.51:1 in dark; on the page, where an outline, ghost or
+     * link Button keeps its ground, it reads more (decision 197, GAP-218).
+     * Grey, not the variant's colour, is what says the Button is unavailable.
+     */
+    val semanticsDisabledForeground: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsDisabledForeground,
+            KozmosColorsDark.semanticsDisabledForeground
+        )
+
+    /**
+     * The inverse surface, a dark tip on a light page and a light tip on a
+     * dark one: foreground/200, #2E3138 in light (Pointr Cloud's tooltip) and
+     * #D1CEC7 in dark. TooltipContent's tone="inverse" and its arrow (decision
+     * 192, GAP-210); the default tooltip stays the popover surface.
+     * Inverse.onSurface reads 13.0:1 on it in light and 13.4:1 in dark.
+     */
+    val semanticsInverseSurface: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsInverseSurface,
+            KozmosColorsDark.semanticsInverseSurface
+        )
+
+    /**
+     * Words on the inverse surface: background/0, white in light and black in
+     * dark, 13.0:1 and 13.4:1 on Inverse.surface (decision 192, GAP-210).
+     */
+    val semanticsInverseOnsurface: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsInverseOnsurface,
+            KozmosColorsDark.semanticsInverseOnsurface
+        )
+
     val semanticsDiffNew: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.semanticsDiffNew,
@@ -1348,6 +1400,18 @@ object KozmosThemeTokens {
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.semanticsOverlayDim,
             KozmosColorsDark.semanticsOverlayDim
+        )
+
+    /**
+     * The glass edge's colour: white in both themes, drawn at
+     * Semantics.Effect.glass.border.opacity, so a glass surface's 1px edge is
+     * a light rim on any tint (ruling §5.13). It was white written into every
+     * platform, with no token (GAP-229, decision 208).
+     */
+    val semanticsEffectGlassBorderColor: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsEffectGlassBorderColor,
+            KozmosColorsDark.semanticsEffectGlassBorderColor
         )
 
     /**

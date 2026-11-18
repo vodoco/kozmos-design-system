@@ -5,6 +5,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -50,6 +55,55 @@ import java.text.NumberFormat
  * keyboard: Material's menu anchor answers taps and TalkBack, not keys.
  */
 private val LocalKozmosSelectToggle = compositionLocalOf<(() -> Unit)?> { null }
+
+/**
+ * How [KozmosSelectTrigger] draws its closed field, as React's
+ * `SelectTrigger` `variant` (decision 151, CLOUD-UI-009).
+ */
+enum class KozmosSelectTriggerVariant {
+    /** The bordered field, 44 high and as wide as its room. */
+    Default,
+
+    /**
+     * No edge and no fill at rest, only the value and the chevron, as wide
+     * as they are: the map's level control, borderless in a card of its own
+     * under the building's name. The hover fill under a pointer; focused, the
+     * theme/600 edge, as the field's; in error, the field's red edge.
+     */
+    Ghost
+}
+
+/** What a trigger draws: its fill and edge, from its state. Internal so a test can read them. */
+internal data class KozmosSelectTriggerLook(val fill: Color, val edge: Color, val hugs: Boolean)
+
+@Composable
+internal fun selectTriggerLook(
+    variant: KozmosSelectTriggerVariant,
+    background: Color,
+    border: Color,
+    focused: Boolean,
+    hovered: Boolean,
+    enabled: Boolean,
+    error: Boolean
+): KozmosSelectTriggerLook {
+    val focusEdge = focused && enabled && !error
+    return when (variant) {
+        KozmosSelectTriggerVariant.Default -> KozmosSelectTriggerLook(
+            fill = background,
+            edge = if (focusEdge) KozmosThemeTokens.primitivesColorsTheme600 else border,
+            hugs = false
+        )
+        KozmosSelectTriggerVariant.Ghost -> KozmosSelectTriggerLook(
+            fill = if (hovered && enabled) KozmosThemeTokens.semanticsHoverFill else Color.Transparent,
+            edge = when {
+                error -> border
+                focusEdge -> KozmosThemeTokens.primitivesColorsTheme600
+                else -> Color.Transparent
+            },
+            hugs = true
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,7 +163,9 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** [KozmosSelectTriggerVariant.Ghost] is the borderless level control; see there. */
+    variant: KozmosSelectTriggerVariant = KozmosSelectTriggerVariant.Default
 ) {
     val colors = selectionFieldColors(
         status = if (error) KozmosInputStatus.Error else KozmosInputStatus.Default,
@@ -119,8 +175,9 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
     val toggle = LocalKozmosSelectToggle.current
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val hovered by interaction.collectIsHoveredAsState()
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
-    val edge = if (focused && enabled && !error) KozmosThemeTokens.primitivesColorsTheme600 else colors.border
+    val look = selectTriggerLook(variant, colors.background, colors.border, focused, hovered, enabled, error)
 
     val shown = if (mixed) null else value
     val showsReset = KozmosMixedValue.showsReset(mixed, onResetMixed, enabled)
@@ -133,10 +190,11 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
         modifier = modifier
             // Disabled, it is no anchor: Material's would still open on a tap.
             .then(if (enabled) Modifier.menuAnchor() else Modifier)
-            .fillMaxWidth()
+            .then(if (look.hugs) Modifier.width(IntrinsicSize.Max) else Modifier.fillMaxWidth())
             .height(44.dp)
-            .background(colors.background, shape)
-            .border(1.dp, edge, shape)
+            .background(look.fill, shape)
+            .border(1.dp, look.edge, shape)
+            .hoverable(interaction, enabled = enabled)
             .semantics(mergeDescendants = true) {
                 role = Role.DropdownList
                 if (!enabled) disabled()
@@ -159,7 +217,8 @@ fun ExposedDropdownMenuBoxScope.KozmosSelectTrigger(
             color = if (shown != null) colors.text else colors.placeholder,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
+            // A ghost is as wide as its words; the field gives them its room.
+            modifier = if (look.hugs) Modifier.weight(1f, fill = false) else Modifier.weight(1f)
         )
         Icon(
             imageVector = Icons.Default.KeyboardArrowDown,

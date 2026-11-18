@@ -84,11 +84,17 @@ object KozmosSurfaceDefaults {
     @Composable
     fun tint(style: KozmosSurfaceStyle): Color = tint(style, KozmosThemeTokens.primitivesColorsBackground0)
 
-    /** The edge: the subtle border, or for glass a light line at the token's border opacity. */
+    /**
+     * The edge: the subtle border, or for glass the glass edge's colour token,
+     * white in both themes, at the token's border opacity (decision 208).
+     */
     @Composable
     fun border(style: KozmosSurfaceStyle): BorderStroke = when (style) {
         KozmosSurfaceStyle.Solid -> BorderStroke(1.dp, KozmosThemeTokens.semanticsBorderSubtle)
-        KozmosSurfaceStyle.Glass -> BorderStroke(1.dp, Color.White.copy(alpha = KozmosEffects.semanticsEffectGlass.borderOpacity))
+        KozmosSurfaceStyle.Glass -> BorderStroke(
+            1.dp,
+            KozmosThemeTokens.semanticsEffectGlassBorderColor.copy(alpha = KozmosEffects.semanticsEffectGlass.borderOpacity),
+        )
     }
 }
 

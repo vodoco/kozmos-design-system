@@ -66,6 +66,105 @@ export function ContentTypeList() {
     `}
 />
 
+## Embedded
+
+A Listbox draws its own panel: a border, the popover surface, the overlay shadow and 12 of padding. Inside a container
+that is already the box, a Dialog, a Popover or a Card, that is a box inside a box, as Switch client had it (GAP-271,
+decision 186). `embedded` draws no panel of its own: no border, no surface, no shadow and no padding, so its rows sit
+at the container's own inset. The rows, their fills, the keyboard and the focus ring are as they are.
+
+SwiftUI's `KozmosListbox(embedded: true)` and Compose's `KozmosListbox(embedded = true)` draw the same.
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Listbox } from "@kozmos-ds/react";
+
+export function SwitchClient() {
+  const [client, setClient] = useState("acme");
+  return (
+    <Dialog open>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Switch client</DialogTitle>
+        </DialogHeader>
+        <Listbox
+          aria-label="Clients"
+          embedded
+          value={client}
+          onValueChange={(value) => setClient(value as string)}
+          options={[
+            { value: "acme", label: "Acme" },
+            { value: "globex", label: "Globex" },
+          ]}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosListbox } from "@kozmos-ds/vue/react-bridge"
+
+const client = ref("acme")
+const options = [
+  { value: "acme", label: "Acme" },
+  { value: "globex", label: "Globex" },
+]
+</script>
+
+<template>
+  <KozmosListbox v-model="client" aria-label="Clients" :options="options" embedded />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Inside a sheet, a popover or a card, the list draws no box of its own.
+struct SwitchClientList: View {
+    @State private var client = ["acme"]
+
+    var body: some View {
+        KozmosListbox(
+            options: [
+                KozmosListboxOption(value: "acme", label: "Acme"),
+                KozmosListboxOption(value: "globex", label: "Globex"),
+            ],
+            selectedValues: $client,
+            embedded: true
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.listbox.KozmosListbox
+import com.kozmos.components.listbox.KozmosListboxOption
+
+// Inside a dialog: the dialog's box is the list's, so it draws none.
+@Composable
+fun SwitchClientList() {
+    var client by remember { mutableStateOf(listOf("acme")) }
+    KozmosListbox(
+        options = listOf(
+            KozmosListboxOption(value = "acme", label = "Acme"),
+            KozmosListboxOption(value = "globex", label = "Globex")
+        ),
+        selectedValues = client,
+        onSelectionChange = { values, _ -> client = values },
+        embedded = true
+    )
+}
+`}
+/>
+
 ## Implementation
 
 import { PlatformSnippets } from "../PlatformSnippets";

@@ -19,6 +19,14 @@ export interface PageHeaderProps extends Omit<
   /** Above the title: the page's place, a Kozmos `Breadcrumb`. */
   breadcrumb?: React.ReactNode;
   /**
+   * Beside the title, after it and before `info`: a node that goes with the
+   * title, such as a status `Tag` ("Changes Awaiting Publish"), as
+   * ListItem's `titleAddon` is (decision 210). It is outside the `h1`, so
+   * the heading is the title alone, and it is centred on the title's line;
+   * where the line has no room it wraps under the title, at its start.
+   */
+  titleAddon?: React.ReactNode;
+  /**
    * Beside the title: a button that says more about the page, as an
    * `IconButton` with its own label, often opening a `Popover` or `Tooltip`.
    */
@@ -54,6 +62,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
     {
       className,
       title,
+      titleAddon,
       breadcrumb,
       info,
       description,
@@ -93,10 +102,21 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
         ) : null}
         <div className="kozmos-page-header-row">
           <div className="kozmos-page-header-text">
-            <div className="kozmos-page-header-title">
+            <div
+              className="kozmos-page-header-title"
+              data-addon={titleAddon ? "" : undefined}
+            >
               <Heading as="h1" level={size === "lg" ? 2 : 3}>
                 {title}
               </Heading>
+              {titleAddon ? (
+                <div
+                  data-slot="page-header-title-addon"
+                  className="kozmos-page-header-title-addon"
+                >
+                  {titleAddon}
+                </div>
+              ) : null}
               {info ? (
                 <div
                   data-slot="page-header-info"

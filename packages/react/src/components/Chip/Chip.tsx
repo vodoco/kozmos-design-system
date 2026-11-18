@@ -3,6 +3,7 @@ import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { emotionSurfaceProperties, type Emotion } from "../../utils/emotion";
 
 export const chipVariants = cva(
   // min-w-0 and max-w-full: a chip shrinks to its room, its label truncating,
@@ -46,6 +47,19 @@ export interface ChipProps
     VariantProps<typeof chipVariants> {
   active?: boolean;
   disabled?: boolean;
+  /**
+   * What the chip means (GAP-170, decision 200): one of Tag's six emotions.
+   * Set, it decides the colour whatever the `variant`: at rest the emotion's
+   * quiet surface and its ink, edged in the emotion's text colour; selected,
+   * filled with that text colour, with the page's colour as its ink. Both
+   * read 4.5:1 in both themes. Unset, the variant draws as it always has.
+   *
+   * The variants read as emotions: `neutral` is the neutral emotion, `brand`
+   * is `themed` and `destructive` is `danger`. They keep their own drawing,
+   * so nothing set today changes; a new chip that means something takes
+   * `emotion`.
+   */
+  emotion?: Emotion;
   icon?: React.ReactNode;
   onRemove?: () => void;
   removeLabel?: string;
@@ -74,6 +88,52 @@ function selectedChipClasses(variant: ChipProps["variant"]) {
   return "border-theme-fill bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)]";
 }
 
+/**
+ * An emotion chip at rest: its surface and ink, edged in its text colour.
+ * Under the pointer its tint deepens, the emotion's text mixed into its
+ * surface, as `brand` and `destructive` deepen theirs. Not the hover fill
+ * (decision 173): the neutral emotion's surface in dark IS the hover fill,
+ * background/200, so its hover would not show.
+ */
+// Written out whole, here and on the remove, for Tailwind to find.
+const EMOTION_CHIP_REST =
+  "border-[var(--kz-emotion-text)] bg-[var(--kz-emotion-surface)] text-[var(--kz-emotion-on-surface)] hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]";
+
+/**
+ * An emotion chip selected: filled with the emotion's text colour, which
+ * reads 4.5:1 on the page in both themes, so the page's colour reads 4.5:1
+ * on it. It holds its fill under the pointer, as a selected Tree row does.
+ */
+const EMOTION_CHIP_SELECTED =
+  "border-[var(--kz-emotion-text)] bg-[var(--kz-emotion-text)] text-background hover:bg-[var(--kz-emotion-text)]";
+
+/**
+ * Under the pointer the remove button takes the hover fill (decision 173),
+ * and the chip, hovered too, would be the same fill round it: the button's
+ * hover did not show (GAP-251). So while its remove is hovered, the chip
+ * goes back to its fill at rest, and the button's hover fill shows on it as
+ * any hover shows on the page, in both themes.
+ */
+function restWhileRemoveHovered(
+  variant: ChipProps["variant"],
+  emotion: Emotion | undefined,
+  selected: boolean,
+) {
+  if (emotion)
+    return selected
+      ? "has-[.kozmos-chip-remove:hover]:bg-[var(--kz-emotion-text)]"
+      : "has-[.kozmos-chip-remove:hover]:bg-[var(--kz-emotion-surface)]";
+  if (selected)
+    return variant === "destructive"
+      ? "has-[.kozmos-chip-remove:hover]:bg-destructive"
+      : "has-[.kozmos-chip-remove:hover]:bg-theme-fill";
+  if (variant === "brand")
+    return "has-[.kozmos-chip-remove:hover]:bg-primary/10";
+  if (variant === "destructive")
+    return "has-[.kozmos-chip-remove:hover]:bg-destructive/10";
+  return "has-[.kozmos-chip-remove:hover]:bg-background";
+}
+
 function chipLabel(children: React.ReactNode) {
   return typeof children === "string" || typeof children === "number"
     ? String(children)
@@ -87,6 +147,7 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
       children,
       className,
       disabled = false,
+      emotion,
       icon,
       onClick,
       onKeyDown,
@@ -94,6 +155,7 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
       removeLabel,
       selected,
       size,
+      style,
       value,
       variant,
       ...props
@@ -139,13 +201,22 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
         aria-disabled={disabled || undefined}
         className={cn(
           chipVariants({ variant, size }),
-          isSelected && selectedChipClasses(variant),
+          isSelected && !emotion && selectedChipClasses(variant),
+          emotion && (isSelected ? EMOTION_CHIP_SELECTED : EMOTION_CHIP_REST),
           isInteractive && !disabled && "cursor-pointer",
           disabled && "pointer-events-none opacity-50",
           onRemove && "pr-1",
+          onRemove &&
+            !isChoice &&
+            restWhileRemoveHovered(variant, emotion, isSelected),
           className,
         )}
         data-slot="chip"
+        data-emotion={emotion}
+        // The caller's own style wins, as on Tag: the emotion sets a default.
+        style={
+          emotion ? { ...emotionSurfaceProperties(emotion), ...style } : style
+        }
         {...props}
       >
         {isChoice ? (
@@ -209,15 +280,27 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
           <button
             aria-label={removeLabel ?? `Remove ${label}`}
             className={cn(
-              "kozmos-chip-remove ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              // A selected destructive chip is the danger fill, not the
-              // theme's: its own foreground at a quarter, 1.40:1 on the light
-              // theme's red and 1.63:1 on the dark's (white at a fifth read
-              // 1.28:1 and 1.27:1).
+              "kozmos-chip-remove ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-hover-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              // On a selected chip's fill the hover fill would be a pale
+              // disc under ink drawn for the fill. A selected destructive
+              // chip is the danger fill, not the theme's: its own foreground
+              // at a quarter, 1.40:1 on the light theme's red and 1.63:1 on
+              // the dark's (white at a fifth read 1.28:1 and 1.27:1). A
+              // selected emotion chip's remove turns to the page's colour
+              // with the emotion's text on it, the chip at rest inverted.
               isSelected &&
+                !emotion &&
                 (variant === "destructive"
                   ? "hover:bg-destructive-foreground/25"
                   : "hover:bg-theme-fill-foreground/20"),
+              isSelected &&
+                emotion &&
+                "hover:bg-background hover:text-[var(--kz-emotion-text)]",
+              // At rest, the chip's own deeper tint, on the surface the
+              // chip goes back to while its remove is hovered.
+              !isSelected &&
+                emotion &&
+                "hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]",
             )}
             disabled={disabled}
             onClick={(event) => {

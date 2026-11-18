@@ -83,6 +83,9 @@ object KozmosDimensions {
   val semanticsRadiusContainer = 20.dp
   val semanticsRadiusPanel = 24.dp
   // semanticsRadiusPill is not emitted: a pill is a shape, not a length. Use RoundedCornerShape(percent = 50).
+  val semanticsTypographyDisplaySize = 48.dp
+  val semanticsTypographyDisplayLineheight = 54.dp
+  val semanticsTypographyDisplayLetterspacing = 0.dp
   val componentsHtmlElementsHeadingsH1LetterSpacing = -0.4000000059604645.dp
   val componentsHtmlElementsHeadingsH1ParagraphSpacing = 28.dp
   val componentsHtmlElementsHeadingsH2LetterSpacing = -0.4000000059604645.dp

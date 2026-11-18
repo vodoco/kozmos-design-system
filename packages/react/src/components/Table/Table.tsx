@@ -72,19 +72,42 @@ const TableFooter = React.forwardRef<
 ));
 TableFooter.displayName = "TableFooter";
 
-const TableRow = React.forwardRef<
-  HTMLTableRowElement,
-  React.HTMLAttributes<HTMLTableRowElement>
->(({ className, ...props }, ref) => (
-  <tr
-    ref={ref}
-    className={cn(
-      "border-b transition-colors hover:bg-hover-fill/50 data-[state=selected]:bg-hover-fill",
-      className,
-    )}
-    {...props}
-  />
-));
+/**
+ * A row's passing highlight (GAP-276): `"new"`, a row just added, drawn on
+ * the informative surface that holds, then fades.
+ */
+export type TableRowHighlight = "new";
+
+export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  /**
+   * `"new"` tints a row just added in the informative surface
+   * (`--semantics-emotion-informative-surface`) so the eye finds it, then
+   * fades it (GAP-276): held three deliberate durations, faded over one
+   * (`--semantics-motion-duration-deliberate`, 1.84 s in all). Under reduced
+   * motion, the system's or the design config's, the tint shows and clears
+   * at the same time with no fade. It plays once, when the row is drawn
+   * with it or is given it; give it again, after taking it away, to play it
+   * again.
+   */
+  highlight?: TableRowHighlight;
+}
+
+const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
+  ({ className, highlight, ...props }, ref) => (
+    <tr
+      ref={ref}
+      data-highlight={highlight}
+      className={cn(
+        // Decision 207 (GAP-250): no divider under a selected row, whose
+        // fill is the divider's own colour in dark; its 1px stays, clear.
+        "border-b transition-colors hover:bg-hover-fill/50 data-[state=selected]:border-b-transparent data-[state=selected]:bg-hover-fill",
+        highlight && "kozmos-table-row-highlight",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 TableRow.displayName = "TableRow";
 
 const TableHead = React.forwardRef<

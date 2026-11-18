@@ -49,6 +49,7 @@ public struct KozmosPageHeader<Breadcrumb: View, Info: View, Actions: View>: Vie
     let breadcrumb: Breadcrumb
     let info: Info
     let actions: Actions
+    var titleAddonView: AnyView?
 
     public init(
         _ title: String,
@@ -69,6 +70,15 @@ public struct KozmosPageHeader<Breadcrumb: View, Info: View, Actions: View>: Vie
         self.info = info()
         self.actions = actions()
         _fontSize = ScaledMetric(wrappedValue: size.level.fontSize, relativeTo: size.level.textStyle)
+    }
+
+    /// Beside the title, before the info button: a status `KozmosTag`, as
+    /// `KozmosListItem`'s `titleAddon` (decision 210). It is not part of the
+    /// heading, and where the title's line has no room it wraps under it.
+    public func titleAddon<V: View>(@ViewBuilder _ content: () -> V) -> Self {
+        var copy = self
+        copy.titleAddonView = AnyView(content())
+        return copy
     }
 
     private var hasInfo: Bool { Info.self != EmptyView.self }
@@ -133,7 +143,20 @@ public struct KozmosPageHeader<Breadcrumb: View, Info: View, Actions: View>: Vie
             .alignmentGuide(.kozmosPageHeaderTitleLine) { dimensions in
                 (dimensions[.firstTextBaseline] + fontSize * 0.24) / 2
             }
-        if hasInfo {
+        if let titleAddonView {
+            // Title, addon, info: the addon and the info button centred on
+            // the title's first line, and the addon under the title where
+            // the line has no room for it, as React's wrapping title line.
+            KozmosPageHeaderTitleLine {
+                heading
+                titleAddonView
+                    .fixedSize()
+                    .accessibilityElement(children: .contain)
+                if hasInfo {
+                    info.fixedSize()
+                }
+            }
+        } else if hasInfo {
             HStack(alignment: .kozmosPageHeaderTitleLine, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 heading
                 info
@@ -231,6 +254,85 @@ struct KozmosPageHeaderRow: Layout {
                 proposal: ProposedViewSize(arrangement.actions)
             )
         }
+    }
+}
+
+/// A page header's title line with an addon (decision 210): the title, then
+/// the addon 8 after it, then any info button 8 after that, both centred on
+/// the title's first line and making the line no taller, where the title's
+/// own width and both fit; otherwise the title takes the line (with the info
+/// button still after it) and the addon goes under it, 8 below, at its start.
+/// The title's line is given on as `.kozmosPageHeaderTitleLine`, so the
+/// actions stay centred on it. Right to left SwiftUI mirrors the placements.
+struct KozmosPageHeaderTitleLine: Layout {
+    static let gap: CGFloat = KozmosDimensions.primitivesLayoutSpacing100
+
+    private struct Arrangement {
+        var titleWidth: CGFloat?
+        var addon: CGSize
+        var info: CGSize
+        var wraps: Bool
+    }
+
+    private func arrange(width: CGFloat?, subviews: Subviews) -> Arrangement {
+        let addon = subviews.count > 1 ? subviews[1].sizeThatFits(.unspecified) : .zero
+        let info = subviews.count > 2 ? subviews[2].sizeThatFits(.unspecified) : .zero
+        let infoRun = info.width > 0 ? Self.gap + info.width : 0
+        guard let width, let title = subviews.first else {
+            return Arrangement(titleWidth: nil, addon: addon, info: info, wraps: false)
+        }
+        let ideal = title.sizeThatFits(.unspecified).width
+        let addonRun = addon.width > 0 ? Self.gap + addon.width : 0
+        if ideal + addonRun + infoRun <= width {
+            return Arrangement(titleWidth: ideal, addon: addon, info: info, wraps: false)
+        }
+        return Arrangement(titleWidth: max(0, width - infoRun), addon: addon, info: info, wraps: true)
+    }
+
+    private func titleSize(_ arrangement: Arrangement, _ subviews: Subviews) -> CGSize {
+        subviews[0].sizeThatFits(ProposedViewSize(width: arrangement.titleWidth, height: nil))
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard !subviews.isEmpty else { return .zero }
+        let arrangement = arrange(width: proposal.width, subviews: subviews)
+        let title = titleSize(arrangement, subviews)
+        let infoRun = arrangement.info.width > 0 ? Self.gap + arrangement.info.width : 0
+        if arrangement.wraps {
+            return CGSize(width: proposal.width ?? max(title.width + infoRun, arrangement.addon.width),
+                          height: title.height + Self.gap + arrangement.addon.height)
+        }
+        let addonRun = arrangement.addon.width > 0 ? Self.gap + arrangement.addon.width : 0
+        return CGSize(width: proposal.width ?? title.width + addonRun + infoRun, height: title.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard !subviews.isEmpty else { return }
+        let arrangement = arrange(width: bounds.width, subviews: subviews)
+        let titleProposal = ProposedViewSize(width: arrangement.titleWidth, height: nil)
+        subviews[0].place(at: bounds.origin, anchor: .topLeading, proposal: titleProposal)
+        let title = subviews[0].sizeThatFits(titleProposal)
+        let line = bounds.minY + subviews[0].dimensions(in: titleProposal)[.kozmosPageHeaderTitleLine]
+        var x = bounds.minX + title.width + Self.gap
+        if subviews.count > 1 {
+            if arrangement.wraps {
+                subviews[1].place(at: CGPoint(x: bounds.minX, y: bounds.minY + title.height + Self.gap),
+                                  anchor: .topLeading, proposal: ProposedViewSize(arrangement.addon))
+            } else {
+                subviews[1].place(at: CGPoint(x: x, y: line), anchor: .leading, proposal: ProposedViewSize(arrangement.addon))
+                if arrangement.addon.width > 0 { x += arrangement.addon.width + Self.gap }
+            }
+        }
+        if subviews.count > 2 {
+            subviews[2].place(at: CGPoint(x: x, y: line), anchor: .leading, proposal: ProposedViewSize(arrangement.info))
+        }
+    }
+
+    func explicitAlignment(of guide: VerticalAlignment, in bounds: CGRect, proposal: ProposedViewSize,
+                           subviews: Subviews, cache: inout ()) -> CGFloat? {
+        guard guide == .kozmosPageHeaderTitleLine, let title = subviews.first else { return nil }
+        let arrangement = arrange(width: bounds.width, subviews: subviews)
+        return bounds.minY + title.dimensions(in: ProposedViewSize(width: arrangement.titleWidth, height: nil))[guide]
     }
 }
 

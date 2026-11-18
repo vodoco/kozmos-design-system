@@ -94,6 +94,18 @@
     background-color: var(--semantics-hover-fill);
     color: var(--primitives-colors-foreground-400);
   }
+  /* Disabled (decision 197), an action or a tool is drawn from the disabled
+     pair, chosen or not: its ink is already the pair's foreground, so the
+     pair's fill under it is what says it is unavailable, as on a map
+     control. No longer at half: a tool is a ToggleButton, whose own disabled
+     look is half, and this outweighs it. */
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item:disabled {
+    background-color: var(--semantics-disabled-fill);
+    color: var(--semantics-disabled-foreground);
+    opacity: 1;
+  }
   .kozmos-map-edit-toolbar-icon {
     flex: none;
     inline-size: calc(var(--primitives-layout-sizing-300) * 1px);
