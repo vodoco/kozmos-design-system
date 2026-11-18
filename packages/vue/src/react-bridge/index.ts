@@ -324,6 +324,8 @@ const textField = {
 // ----------------------------------------------------------------------
 export const KozmosBox = createVueWrapper(Box);
 export const KozmosStack = createVueWrapper(Stack);
+// Virtualized (GAP-172), @range-change reports the items in view, and the
+// default slot draws only those.
 export const KozmosGrid = createVueWrapper(Grid);
 export const KozmosText = createVueWrapper(Text);
 export const KozmosHeading = createVueWrapper(Heading);
@@ -398,7 +400,16 @@ export const KozmosListItem = createVueWrapper(ListItem);
 export const KozmosListItemStatus = createVueWrapper(ListItemStatus);
 // GAP-040: #control is the setting's control, @reset its Reset to default.
 export const KozmosSettingsRow = createVueWrapper(SettingsRow);
-export const KozmosTable = createVueWrapper(Table);
+// Its rows are React's, as `children` (GAP-016), in its one React root, so
+// its selection reaches them: v-model:selectedIds is the selected rows'
+// rowIds (GAP-171).
+export const KozmosTable = createVueWrapper(Table, {
+  selectedIds: {
+    prop: "selectedIds",
+    callback: "onSelectedIdsChange",
+    empty: [],
+  },
+});
 // GAP-221, decision 199: a value under each label. An item's #action is
 // the part after its value (a Copy IconButton); its value is `value` (words,
 // or true and false for a yes and a no) or its default slot (tags).

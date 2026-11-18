@@ -33,7 +33,7 @@ It forwards its ref to `HTMLElement`. Its props are `TextProps`, which extends `
 - `asChild`: `boolean`, optional, default `false`.
 - `color`: `"default" | "muted" | "primary" | "destructive" | "white" | null`, optional, default `"default"`.
 - `align`: `"end" | "left" | "right" | "start" | "center" | "justify" | null`, optional, default `"start"`.
-- `size`: `"sm" | "lg" | "display" | "xs" | "base" | "xl" | "2xl" | "3xl" | "4xl" | null`, optional, default `"base"`.
+- `size`: `"sm" | "lg" | "display" | "base" | "xs" | "xl" | "2xl" | "3xl" | "4xl" | null`, optional, default `"base"`.
 - `weight`: `"bold" | "normal" | "medium" | "semibold" | null`, optional, default `"normal"`.
 - `truncate`: `boolean | null`, optional.
 - `children`: `ReactNode`, optional.

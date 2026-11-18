@@ -488,7 +488,7 @@
       "id": "foundations-grid",
       "title": "Core/Layout/Grid",
       "component": "Grid",
-      "exports": ["Default"]
+      "exports": ["Default", "Virtualized"]
     },
     {
       "file": "packages/react/src/components/Heading/Heading.stories.tsx",
@@ -1264,7 +1264,7 @@
       "id": "data-display-table",
       "title": "Core/Data display/Table",
       "component": "Table",
-      "exports": ["Default", "Framed"]
+      "exports": ["Default", "Framed", "Selectable", "SortableNumeric"]
     },
     {
       "file": "packages/react/src/components/Tabs/Tabs.stories.tsx",

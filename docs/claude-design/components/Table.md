@@ -2,9 +2,9 @@
 
 # Table
 
-Styled semantic table parts for headers, body rows, cells, footers and captions. The wrapper supports horizontal overflow and keyboard scrolling; sorting, selection and data loading remain host responsibilities.
+Styled semantic table parts for headers, body rows, cells, footers and captions. The wrapper supports horizontal overflow and keyboard scrolling. Rows can be selected and headers sorted (below); the order of the rows and data loading remain the host's.
 
-- **Import:** `import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@kozmos-ds/react";`
+- **Import:** `import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow, TableRowSelect, TableSelectAll } from "@kozmos-ds/react";`
 - **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-table--docs>
@@ -70,6 +70,35 @@ It forwards its ref to `HTMLTableElement`. Its props are `TableProps`, which ext
   corners, and a caption sits inside the frame, at its foot. Off by
   default: a dense page's table runs edge to edge.
 
+- `selectable`: `boolean`, optional, default `false`.
+
+  Rows can be selected (GAP-171): each `TableRow` with a `rowId` is a
+  row of the selection, a `TableRowSelect` in it selects it, and a
+  `TableSelectAll` in the header selects them all, mixed while some are.
+  A selected row draws `data-state="selected"`, and a polite status says
+  how many are selected (`selectionAnnouncement`).
+
+- `selectedIds`: `string[]`, optional.
+
+  The selected rows' `rowId`s, controlled.
+
+- `defaultSelectedIds`: `string[]`, optional.
+
+  The rows selected at first, uncontrolled.
+
+- `onSelectedIdsChange`: `(ids: string[]) => void`, optional.
+
+  Every change to the selection, as the selected ids: a row's in the
+  order it was selected, and selecting all adds the rows not yet
+  selected after those that are. Ids of rows the table no longer draws
+  are kept, so a paged table keeps another page's selection.
+
+- `selectionAnnouncement`: `TableSelectionAnnouncement`, optional, default `defaultSelectionAnnouncement`.
+
+  What the status says when the selection changes: "No rows selected",
+  "1 row selected" and "3 rows selected" by default. A product that
+  translates passes its own, given the count and the rows drawn.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -100,7 +129,25 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## TableHead
 
-It forwards its ref to `HTMLTableCellElement`. Its props are `React.ThHTMLAttributes<HTMLTableCellElement>`.
+It forwards its ref to `HTMLTableCellElement`. Its props are `TableHeadProps`, which extends `React.ThHTMLAttributes<HTMLTableCellElement>`.
+
+- `numeric`: `boolean`, optional, default `false`.
+
+  The column holds numbers (GAP-037): the header and its cells align to
+  the end and draw tabular figures, so counts and percentages line up.
+  Give the column's `TableCell`s `numeric` too.
+
+- `onSort`: `() => void`, optional.
+
+  The header sorts its column (GAP-037): its words become a button that
+  runs this, with an arrow for `sortDirection`. Sorting the rows is the
+  caller's.
+
+- `sortDirection`: `TableSortDirection`, optional.
+
+  How the column is sorted, said on the header as `aria-sort` and drawn
+  as an arrow: up ascending, down descending, and both ways while it is
+  sortable but not sorted (`"none"`, the default with `onSort`).
 
 - `children`: `ReactNode`, optional.
 
@@ -121,13 +168,24 @@ It forwards its ref to `HTMLTableRowElement`. Its props are `TableRowProps`, whi
   with it or is given it; give it again, after taking it away, to play it
   again.
 
+- `rowId`: `string`, optional.
+
+  The row's id in a `selectable` Table's selection (GAP-171): a row with
+  one is counted by `TableSelectAll`, selected by the `TableRowSelect` in
+  it, and draws `data-state="selected"` while it is selected. A header
+  row has none.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableCell
 
-It forwards its ref to `HTMLTableCellElement`. Its props are `React.TdHTMLAttributes<HTMLTableCellElement>`.
+It forwards its ref to `HTMLTableCellElement`. Its props are `TableCellProps`, which extends `React.TdHTMLAttributes<HTMLTableCellElement>`.
+
+- `numeric`: `boolean`, optional, default `false`.
+
+  A number (GAP-037): aligned to the end, in tabular figures.
 
 - `children`: `ReactNode`, optional.
 
@@ -141,7 +199,58 @@ It forwards its ref to `HTMLTableCaptionElement`. Its props are `React.HTMLAttri
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
+## TableSelectAll
+
+The header's checkbox in a `selectable` Table (GAP-171): checked when
+every row is selected, mixed when some are, and a click on it selects
+them all, or, checked, clears them. Put it in a `TableHead`.
+
+It forwards its ref to `HTMLButtonElement`. Its props are `TableSelectAllProps`.
+
+- `label`: `string`, optional, default `"Select all rows"`.
+
+  Its name: "Select all rows" by default.
+
+- `className`: `string`, optional.
+- `disabled`: `boolean`, optional.
+
+## TableRowSelect
+
+A row's checkbox in a `selectable` Table (GAP-171), in a `TableCell` of a
+`TableRow` with a `rowId`: it selects the row, by pointer and by Space.
+
+It forwards its ref to `HTMLButtonElement`. Its props are `TableRowSelectProps`.
+
+- `label`: `string`, optional, default `"Select row"`.
+
+  Its name, which says the row: "Select Ada Lovelace". "Select row" by
+  default, which says nothing of which; pass the row's own words.
+
+- `className`: `string`, optional.
+- `disabled`: `boolean`, optional.
+
 ## Types these props take
+
+### TableSelectionAnnouncement
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * What a selectable table says, in a polite status, when its selection
+ * changes (GAP-171): `count` rows selected of the `total` rows it draws.
+ */
+type TableSelectionAnnouncement = (count: number, total: number) => string;
+```
+
+### TableSortDirection
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A sortable header's order (GAP-037), as `aria-sort` says it. */
+type TableSortDirection = "ascending" | "descending" | "none";
+```
 
 ### TableRowHighlight
 

@@ -37,3 +37,21 @@ export const Default: Story = {
     ),
   },
 };
+
+/**
+ * GAP-172 (decision 209): Home's hundreds of site cards. Only the rows in
+ * view and two past them are drawn, in reading order, each said as its place
+ * in the 300; the Grid scrolls itself, so it has a height.
+ */
+export const Virtualized: Story = {
+  args: {
+    virtualized: true,
+    cols: 3,
+    gap: 4,
+    itemCount: 300,
+    rowHeight: 72,
+    renderItem: (index: number) => <Item>Site {index + 1}</Item>,
+    "aria-label": "Sites",
+    style: { height: 320 },
+  },
+};
