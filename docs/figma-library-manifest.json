@@ -16995,6 +16995,7 @@
           "copyLabel",
           "id",
           "label",
+          "maxHeight",
           "role",
           "tabIndex",
           "title",
