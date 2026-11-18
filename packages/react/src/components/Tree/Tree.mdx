@@ -97,6 +97,9 @@ draws its buildings and levels, rather than a navigation tree.
 - **The fills keep their corners.** A hover or selected fill stays rounded, inside the tree, over the
   surface. The focus ring is drawn inside the row, so neither the next row nor the panel's edge cuts
   it.
+- **No stroke under a selected row** (decision 207, GAP-250), inset or band. The selected fill is the
+  stroke's own colour in dark, so a stroke there could not be seen; its 1px stays, drawn in no colour,
+  so no row moves when the selection does. SwiftUI, Compose and Figma's rows draw it the same way.
 - **Composed trees:** rows put in a divided `Tree` as children are divided too. `TreeItemRow`,
   `TreeParentItemRow` and `TreeChildItemRow` also take `divided` of their own, which wins.
 

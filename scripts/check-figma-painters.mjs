@@ -4439,7 +4439,8 @@ section("Decision 59: the theme fill and what sits on it");
     node.vectorNetwork.vertices[0].y === 8 &&
     node.vectorNetwork.vertices[1].y === 8 &&
     Math.abs(
-      node.vectorNetwork.vertices[1].x - node.vectorNetwork.vertices[0].x -
+      node.vectorNetwork.vertices[1].x -
+        node.vectorNetwork.vertices[0].x -
         28 / 3,
     ) < 1e-9 &&
     Math.abs(node.strokeWeight - 4 / 3) < 1e-9 &&
@@ -10551,7 +10552,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
               `State=${state}, Status=${status}, Content=Closed, Variant=${variant}`,
             );
       for (const status of ["Default", "Error"])
-        want.push(`State=Default, Status=${status}, Content=Open, Variant=Default`);
+        want.push(
+          `State=Default, Status=${status}, Content=Open, Variant=Default`,
+        );
       want.sort();
       ok(
         built.created === true &&
@@ -12086,14 +12089,19 @@ section("Tree rows' Divided (GAP-201)");
     const row = await draw(fn, Object.assign({}, open, props));
     const surfaces = row.children.filter((c) => c.name === "Divided Surface");
     const dividers = row.children.filter((c) => c.name === "Divider");
-    if (dividers.length !== 1 || surfaces.length !== (expectSurface ? 1 : 0))
+    // Decision 207: a Selected row draws none.
+    const expectDividers = props.state === "Selected" ? 0 : 1;
+    if (
+      dividers.length !== expectDividers ||
+      surfaces.length !== (expectSurface ? 1 : 0)
+    )
       wrong.push(
         `${row.name}: ${dividers.length} divider, ${surfaces.length} surface`,
       );
   }
   ok(
     wrong.length === 0,
-    `every row draws one divider, and only an open parent row that is Idle or Focus a surface (${wrong.join("; ") || "all as expected"})`,
+    `every row but a Selected one draws one divider, and only an open parent row that is Idle or Focus a surface (${wrong.join("; ") || "all as expected"})`,
   );
 
   // The set's property: Divided, off by default, drives both layers.
@@ -12124,9 +12132,11 @@ section("Tree rows' Divided (GAP-201)");
   ok(
     divided &&
       definitions[divided].defaultValue === false &&
-      driven.length === 3 &&
+      // The Idle row's divider and surface; the Selected row draws no
+      // divider (decision 207).
+      driven.length === 2 &&
       driven.every((node) => /^(Divider|Divided Surface)$/.test(node.name)),
-    `a Divided boolean, off by default, shows the two rows' dividers and the open row's surface, and nothing else (${divided}, ${driven.map((node) => node.name).join(", ")})`,
+    `a Divided boolean, off by default, shows the Idle row's divider and surface, and nothing else (${divided}, ${driven.map((node) => node.name).join(", ")})`,
   );
   set.remove();
 
@@ -12210,7 +12220,8 @@ section("Tree rows' Divided (GAP-201)");
     );
     ok(
       key &&
-        dividers.length === total * 1.5 &&
+        // Decision 207: no divider on the Selected rows, half of the 1.5 ×.
+        dividers.length === total &&
         surfaces.length === openRows &&
         surfaced.every((name) =>
           /Expanded=True, .*State=(Idle|Focus), RowFill=Inset$/.test(name),
@@ -12223,7 +12234,7 @@ section("Tree rows' Divided (GAP-201)");
               n.componentPropertyReferences &&
               n.componentPropertyReferences.visible === key,
           ),
-      `${setName}: a divider on each of its ${total * 1.5} rows and a surface on its ${openRows} open Idle and Focus rows, every one hidden and shown by Divided (${dividers.length} dividers, ${surfaces.length} surfaces)`,
+      `${setName}: a divider on each of its ${total} rows that are not Selected and a surface on its ${openRows} open Idle and Focus rows, every one hidden and shown by Divided (${dividers.length} dividers, ${surfaces.length} surfaces)`,
     );
   }
 }
@@ -17469,7 +17480,8 @@ section("GAP-107: the tree rows' Meta Below");
       "updateTreeParentItemVariant",
       { content: "Count", expanded: "True", state: "Idle" },
     ],
-    ["updateTreeChildItemVariant", { content: "Actions", state: "Selected" }],
+    // Hover, not Selected: a selected row draws no divider (decision 207).
+    ["updateTreeChildItemVariant", { content: "Actions", state: "Hover" }],
     [
       "updateTreeItemVariant",
       { type: "Child", content: "Basic", expanded: "False", state: "Focus" },
@@ -18531,13 +18543,14 @@ section("GAP-217: the tree rows' Row Fill");
     ["TreeItem", 216],
   ]) {
     const axes = plugin.expectedVariantAxesForComponentSetName(setName) || {};
-    const config = plugin[
-      {
-        TreeParentItem: "treeParentItemComponentConfig",
-        TreeChildItem: "treeChildItemComponentConfig",
-        TreeItem: "treeItemComponentConfig",
-      }[setName]
-    ]();
+    const config =
+      plugin[
+        {
+          TreeParentItem: "treeParentItemComponentConfig",
+          TreeChildItem: "treeChildItemComponentConfig",
+          TreeItem: "treeItemComponentConfig",
+        }[setName]
+      ]();
     const combos = config.combinations();
     const bands = combos.filter((c) => c.rowFill === "Band");
     const keys = new Set(combos.map((c) => config.keyForProps(c)));
@@ -18677,7 +18690,9 @@ section("GAP-217: the tree rows' Row Fill");
             variant && variant.name === `${oldNames[i]}, RowFill=Inset`,
         ) &&
         added.length === 36 &&
-        added.every((name) => /State=(Hover|Selected), RowFill=Band$/.test(name)),
+        added.every((name) =>
+          /State=(Hover|Selected), RowFill=Band$/.test(name),
+        ),
       `TreeChildItem: Update renames its 72 variants RowFill=Inset in place, keeping their ids, and adds 36 Band ones (${replay.result.variantsUpdated} updated, ${replay.result.variantsCreated} created, ${replay.result.variantsRemoved} removed, ${added.length} Band)`,
     );
   }
@@ -20322,7 +20337,8 @@ section(
       /^VariableID:/,
       "",
     );
-  const axes = (set) => plugin.expectedVariantAxesForComponentSetName(set) || {};
+  const axes = (set) =>
+    plugin.expectedVariantAxesForComponentSetName(set) || {};
   const attemptPaint = async (painter, ...args) => {
     const component = figma.createComponent();
     try {
@@ -20581,19 +20597,19 @@ section(
     for (const state of ["Default", "Focus", "Dragging", "Disabled"])
       for (const status of ["Default", "Error", "Warning", "Success"])
         for (const content of ["Dropzone", "Files", "Preview"])
-          oldNames.push(
-            `State=${state}, Status=${status}, Content=${content}`,
-          );
+          oldNames.push(`State=${state}, Status=${status}, Content=${content}`);
     const replay = await replayUpdate(
       "FileUpload",
       oldNames,
       "updateFileUploadComponent",
     );
     ok(
-      replay.kept.every((variant, i) => variant && variant.name === oldNames[i]) &&
+      replay.kept.every(
+        (variant, i) => variant && variant.name === oldNames[i],
+      ) &&
         replay.liveSet.children.length === 64 &&
-        replay.names.filter((name) => name.endsWith("Content=Button")).length ===
-          16 &&
+        replay.names.filter((name) => name.endsWith("Content=Button"))
+          .length === 16 &&
         overlapsIn(replay.liveSet).length === 0,
       `FileUpload: Update keeps its 48 variants, ids and names, and adds 16 Content=Button, none overlapping (${replay.liveSet.children.length}; overlaps ${overlapsIn(replay.liveSet).length})`,
     );
@@ -20639,8 +20655,7 @@ section(
           shown &&
           addon.componentPropertyReferences &&
           addon.componentPropertyReferences.visible === shown,
-      ) &&
-        defs[shown].defaultValue === false,
+      ) && defs[shown].defaultValue === false,
       `PageHeader: Show Title Addon, off, shows each variant's Title Addon, centred on the title's line (${shown})`,
     );
     const tag = addons[0] && addons[0].findOne((n) => n.name === "Addon Tag");
@@ -20700,7 +20715,7 @@ section(
         trigger.primaryAxisSizingMode === "AUTO" &&
         trigger.primaryAxisAlignItems === "MIN" &&
         trigger.layoutSizingHorizontal === "HUG",
-      `Select Variant=Ghost (${state}, ${status}): no fill and no edge (an error keeps its red), as wide as its value (${select.name}; fills ${(trigger && trigger.fills || []).length}; strokes ${edge.length}; ${trigger && trigger.layoutSizingHorizontal})`,
+      `Select Variant=Ghost (${state}, ${status}): no fill and no edge (an error keeps its red), as wide as its value (${select.name}; fills ${((trigger && trigger.fills) || []).length}; strokes ${edge.length}; ${trigger && trigger.layoutSizingHorizontal})`,
     );
   }
   {
@@ -20714,7 +20729,8 @@ section(
     });
     const trigger = named(plain, "Select Trigger");
     ok(
-      plain.name === "State=Default, Status=Default, Content=Closed, Variant=Default" &&
+      plain.name ===
+        "State=Default, Status=Default, Content=Closed, Variant=Default" &&
         trigger &&
         (trigger.fills || []).length === 1 &&
         (trigger.strokes || []).length === 1,
@@ -21726,7 +21742,125 @@ section("Decision 192: Tooltip's Tone, Default and Inverse");
   );
 }
 
+// --- Decision 207 (GAP-250): no divider under a selected tree row ---------------
+//
+// Since decision 173 a selected row draws the hover fill, which in dark is
+// Border/Subtle's own colour, so a divider under a selected row could not be
+// seen. Code now skips it, inset or band; here a Selected row draws no Divider
+// layer, so Divided shows none on it, while every other row keeps its one.
+section("Decision 207: no divider under a selected tree row");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await plugin[fn](component, {
+      props,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  const wrong = [];
+  let drawn = 0;
+  for (const [fn, props] of [
+    ["updateTreeParentItemVariant", { expanded: "True" }],
+    ["updateTreeParentItemVariant", { expanded: "False" }],
+    ["updateTreeChildItemVariant", { expanded: "False" }],
+    ["updateTreeItemVariant", { type: "Parent", expanded: "True" }],
+    ["updateTreeItemVariant", { type: "Child", expanded: "False" }],
+  ])
+    for (const density of ["Default", "Compact"])
+      for (const [rowFill, states] of [
+        ["Inset", ["Idle", "Hover", "Selected", "Focus"]],
+        ["Band", ["Hover", "Selected"]],
+      ])
+        for (const state of states) {
+          const row = await draw(
+            fn,
+            Object.assign(
+              { content: "Basic", depth: "1", density, state, rowFill },
+              props,
+            ),
+          );
+          drawn += 1;
+          const dividers = row.findAll((n) => n.name === "Divider").length;
+          const expected = state === "Selected" ? 0 : 1;
+          if (dividers !== expected)
+            wrong.push(`${row.name}: ${dividers} divider(s)`);
+        }
+  ok(
+    drawn === 60 && wrong.length === 0,
+    `of ${drawn} rows, each Selected one, Inset or Band, draws no divider and every other row one (${wrong.slice(0, 4).join("; ") || "all as expected"})`,
+  );
 
+  // Update over the three sets as the file holds them: a divider on each
+  // row but the Selected ones, half of the Inset and Band rows together.
+  const icons = () => {
+    const page = new MockNode("PAGE", "Icons");
+    for (const name of [
+      "check",
+      "minus",
+      "chevron-down",
+      "chevron-right",
+      "map-01",
+      "marker-pin-01",
+      "edit-01",
+      "lock-01",
+      "trash-01",
+      "download-01",
+      "settings-01",
+      "x-close",
+    ])
+      page.appendChild(mockIconComponent(name));
+    return [page];
+  };
+  const names = (setName) => {
+    const out = [];
+    const types = setName === "TreeItem" ? ["Parent", "Child"] : [null];
+    for (const type of types)
+      for (const content of ["Basic", "Count", "Actions"])
+        for (const expanded of setName === "TreeChildItem" || type === "Child"
+          ? ["False"]
+          : ["False", "True"])
+          for (const depth of ["0", "1", "2"])
+            for (const density of ["Default", "Compact"])
+              for (const state of ["Idle", "Hover", "Selected", "Focus"])
+                out.push(
+                  [
+                    type ? `Type=${type}` : null,
+                    `Content=${content}`,
+                    setName === "TreeChildItem" ? null : `Expanded=${expanded}`,
+                    `Depth=${depth}`,
+                    `Density=${density}`,
+                    `State=${state}`,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                );
+    return out;
+  };
+  for (const [setName, update, total] of [
+    ["TreeParentItem", "updateTreeParentItemComponent", 144],
+    ["TreeChildItem", "updateTreeChildItemComponent", 72],
+    ["TreeItem", "updateTreeItemComponent", 216],
+  ]) {
+    const replay = await replayUpdate(setName, names(setName), update, icons());
+    const variants = replay.liveSet.children || [];
+    const selected = variants.filter((v) => /State=Selected/.test(v.name));
+    const under = selected.filter(
+      (v) => v.findAll((n) => n.name === "Divider").length,
+    );
+    const dividers = replay.liveSet.findAll((n) => n.name === "Divider");
+    ok(
+      variants.length === total * 1.5 &&
+        selected.length === total / 2 &&
+        under.length === 0 &&
+        dividers.length === total,
+      `${setName}: after Update its ${selected.length} Selected rows draw no divider and the other ${total} one each (${dividers.length} dividers, ${under.length} under a selected row)`,
+    );
+  }
+}
 
 // --- Summary ---------------------------------------------------------------------
 

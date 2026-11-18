@@ -21,6 +21,9 @@ Compose draw a table (decision 159). The header and the rows are clipped inside 
 selected fills follow its corners, and a caption sits inside it, at its foot. It is off by default, so a dense
 page's table runs edge to edge and existing tables do not change.
 
+A selected row (`data-state="selected"`) draws no divider under it (decision 207, GAP-250): its fill is the
+divider's own colour in dark. The 1px stays, drawn in no colour, so no row moves when the selection does.
+
 <Canvas>
   <Story of={TableStories.Framed} />
 </Canvas>

@@ -70,6 +70,7 @@ Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is
 ### Changed
 
 - **The glass edge reads a colour token (GAP-229, decision 208):** `.kozmosSurface(.glass)`'s 1pt edge, and so every glass part's (the guidance cards, glass buttons), is `KozmosColors.semanticsEffectGlassBorderColor` at `KozmosEffects.semanticsEffectGlass.borderOpacity`, where it was `Color.white` written in. The token is white (#FFFFFF) in both themes, so nothing is drawn differently. `pnpm tokens:glass:check` holds the edge to the token.
+- **A divided `KozmosTree` draws no stroke under a selected row (decision 207, GAP-250):** inset or band. The selected fill is the stroke's own colour in dark (background/200), so the stroke could not be seen there. The row keeps its 1pt, drawn in no colour, so no row moves when the selection does. `KozmosTreeDividedTests.testNoStrokeUnderASelectedRow`.
 
 ### Fixed
 

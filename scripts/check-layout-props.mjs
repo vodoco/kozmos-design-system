@@ -1304,7 +1304,7 @@ for (const m of MATRIX) {
       const panel = await box(page, "#panel");
       const open = state.rows.find((r) => r.name.startsWith("Terminal A"));
       await read(
-        "tree divided: a selected open parent keeps its rounded fill inside the tree, over the surface, its stroke kept",
+        "tree divided: a selected open parent keeps its rounded fill inside the tree, over the surface, its stroke's 1px drawn in no colour (decision 207)",
         async () => {
           assert.equal(
             open.background,
@@ -1313,9 +1313,19 @@ for (const m of MATRIX) {
           );
           assert.equal(open.radius, "16px", "rounded");
           assert.equal(open.divider.background, state.tokens.surface);
-          assert.equal(
-            open.divider.borderBottom,
-            `1px solid ${state.tokens.border}`,
+          // Decision 207 (GAP-250): no stroke under a selected row, whose
+          // fill is the stroke's own colour in dark; the 1px stays, so no
+          // row moves, and the surface shows through it.
+          assert.equal(open.divider.borderBottom, "1px solid rgba(0, 0, 0, 0)");
+          const [under] = await pixels(shot, [
+            [
+              (open.box.left + open.box.right) / 2,
+              open.divider.box.bottom - 0.5,
+            ],
+          ]);
+          assert.ok(
+            distance(under, rgb(state.tokens.surface)) <= 2,
+            `no stroke under the selected row: rgb(${under.slice(0, 3)})`,
           );
           const middle = open.box.top + open.box.height / 2;
           const [fill, edge, corner] = await pixels(shot, [

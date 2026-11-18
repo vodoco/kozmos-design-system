@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "6e64f7f0aa39";
+const PLUGIN_BUILD = "0e1b2f242c0d";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -4255,7 +4255,7 @@ const COMPONENT_DOCS = [
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
       "RowFill maps to rowFill on Tree and TreeParentItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
-      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeParentItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       'Checkable maps to checkable on Tree and checked on TreeParentItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
@@ -4294,7 +4294,7 @@ const COMPONENT_DOCS = [
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible treatment.",
       "RowFill maps to rowFill on Tree and TreeChildItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
-      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, hidden while Divided is off.",
       "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeChildItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       'Checkable maps to checkable on Tree and checked on TreeChildItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
@@ -4334,7 +4334,7 @@ const COMPONENT_DOCS = [
       "Depth maps to indentation examples for nested hierarchy.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
       "RowFill maps to rowFill on Tree and TreeItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
-      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       'Meta Below maps to metaPlacement="below" on Tree and TreeItemRow, and Meta Text to the row\'s meta: a Meta line under the label in Text / XS (12/16) and Colors/foreground/400, and the row grows to take it (48, 44 compact). Off, metaPlacement is unset and the row has no meta; the Meta layer is hidden and the row is as it was.',
       'Checkable maps to checkable on Tree and checked on TreeItemRow (GAP-277): Checkbox\'s 20 box before the leading icon, a 1px Border/Input edge, radius 4; Checked shows its theme fill and check mark. Mixed maps to checked="mixed" (decision 211, GAP-279): a parent some but not all of whose rows are checked under checkRule="independent", the theme fill with Checkbox\'s dash; turn Checked off and Mixed on. Disclosure End maps to disclosurePosition="end": turn Disclosure Start off and Disclosure End on to move the disclosure to the row\'s end, after its actions. At their defaults (off, off, off, on, off) the row is as it was.',
@@ -42036,7 +42036,7 @@ function treeParentItemComponentConfig() {
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
       "RowFill maps to rowFill on Tree and TreeParentItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
-      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Divided maps to divided on Tree and TreeParentItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeParentItem with TreeChildItem to compose product-specific trees.",
     ],
@@ -42065,7 +42065,7 @@ function treeChildItemComponentConfig() {
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
       "RowFill maps to rowFill on Tree and TreeChildItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
-      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, hidden while Divided is off.",
+      "Divided maps to divided on Tree and TreeChildItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, hidden while Divided is off.",
       "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Use TreeChildItem with TreeParentItem to compose product-specific trees.",
     ],
@@ -42096,7 +42096,7 @@ function treeItemComponentConfig() {
       "Density maps to row height and vertical rhythm.",
       "State maps to idle, hover, selected, and focus-visible row treatment.",
       "RowFill maps to rowFill on Tree and TreeItemRow (GAP-217, decision 196): Inset, the default, draws the hover and selected fill as a pill on the control radius; Band draws it with no corners, as code's band, which Tree's bleed runs to a panel's edges. Band variants exist for Hover and Selected, where a fill shows.",
-      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the row's bottom, edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
+      "Divided maps to divided on Tree and TreeItemRow: a 1px Border/Subtle divider along the bottom of every row but a selected one (decision 207), edge to edge, and on an open Parent row that is neither selected nor hovered a Colors/background/50 surface behind it; both hidden while Divided is off.",
       "With RowFill Inset the hover and selected fills stay rounded, as in code. Code draws the divider under the row, a pixel below its height, and Tree's bleed takes it and the surface to a panel's edges; a boolean cannot, so here both sit within the row.",
       "Prefer TreeParentItem and TreeChildItem for new product trees; TreeItem stays as a switchable compatibility row.",
     ],
@@ -43249,6 +43249,11 @@ function syncTreeDividedLayers(
     surface.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
     surface.visible = false;
   }
+
+  // Decision 207 (GAP-250): no divider under a selected row, inset or band.
+  // Its fill is Border/Subtle's own colour in dark, so code skips it; here a
+  // Selected row draws no Divider layer for Divided to show.
+  if (row.selected) return;
 
   const divider = figma.createRectangle();
   divider.name = TREE_DIVIDER.name;

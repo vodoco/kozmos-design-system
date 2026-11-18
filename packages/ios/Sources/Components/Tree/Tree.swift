@@ -308,10 +308,12 @@ public struct KozmosTree: View {
         metaPlacement: KozmosTreeMetaPlacement = .inline,
         checkable: Bool = false,
         checkRule: KozmosTreeCheckRule = .exclusive,
+        rowFill: KozmosTreeRowFill = .inset,
         expanded: Set<[Int]>
     ) {
         self.init(nodes: nodes, density: density, divided: divided, bleed: bleed, selectionMode: selectionMode,
-                  selection: selection, metaPlacement: metaPlacement, checkable: checkable, checkRule: checkRule)
+                  selection: selection, metaPlacement: metaPlacement, checkable: checkable, checkRule: checkRule,
+                  rowFill: rowFill)
         self._expanded = State(initialValue: expanded)
     }
 
@@ -925,8 +927,11 @@ struct KozmosTreeDividedRow: View {
         // bleed with no corners (GAP-217).
         .background(outerFill)
         .padding(.bottom, divided ? 1 : 0)
+        // No stroke under a selected row (decision 207, GAP-250): its fill is
+        // the stroke's own colour in dark. The point stays, so no row moves
+        // when the selection does.
         .background(alignment: .bottom) {
-            if divided { KozmosColors.semanticsBorderSubtle.frame(height: 1) }
+            if divided && !selected { KozmosColors.semanticsBorderSubtle.frame(height: 1) }
         }
         .accessibilityValue(KozmosTreeChecks.spokenValue(checked: checked, isParent: isParent, open: open))
         .accessibilityAddTraits(selected ? .isSelected : [])

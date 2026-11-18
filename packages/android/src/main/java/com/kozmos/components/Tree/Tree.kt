@@ -1086,11 +1086,16 @@ private fun TreeRow(
         modifier = Modifier
             .fillMaxWidth()
             // Divided, an open parent sits on a surface of its own and a
-            // stroke runs under the row, outside its height (GAP-201).
+            // stroke runs under the row, outside its height (GAP-201). A
+            // selected row's stroke is drawn in no colour (decision 207,
+            // GAP-250): its fill is the stroke's own colour in dark, and the
+            // dp stays, so no row moves when the selection does.
             .then(
                 if (divided) Modifier
                     .background(fill)
-                    .kozmosTreeRowStroke(KozmosThemeTokens.semanticsBorderSubtle)
+                    .kozmosTreeRowStroke(
+                        if (selected) Color.Transparent else KozmosThemeTokens.semanticsBorderSubtle
+                    )
                     .padding(horizontal = bleed)
                 else if (band) Modifier.background(fill).padding(horizontal = bleed)
                 else Modifier.background(fill)

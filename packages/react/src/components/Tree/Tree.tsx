@@ -99,8 +99,9 @@ export interface TreeProps extends Omit<
    * its buildings and levels, rather than a navigation tree. The stroke sits
    * under the row, so a divided row is a pixel taller; the hover and
    * selected fills keep their corners, inside the stroke and over the
-   * surface, and the focus ring is drawn inside the row. Rows composed as
-   * children take it from here too.
+   * surface, and the focus ring is drawn inside the row. A selected row's
+   * stroke is drawn in no colour (decision 207): its fill is the stroke's
+   * own colour in dark. Rows composed as children take it from here too.
    */
   divided?: boolean;
   /**
@@ -1815,12 +1816,16 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
     // design draws a row and a separator.
     // A band (GAP-217) draws the selected and hover fills on the same box,
     // so they reach the bleed too, with no corners.
+    // Decision 207 (GAP-250): a selected row's stroke is drawn in no colour.
+    // The selected fill is the divider's own colour in dark, so it could not
+    // be seen there; its 1px stays, so no row moves when the selection does.
     return divided || band ? (
       <div
         data-tree-divider={divided ? "" : undefined}
         data-tree-band={band ? "" : undefined}
         className={cn(
-          divided && "border-b border-border",
+          divided && "border-b",
+          divided && (selected ? "border-transparent" : "border-border"),
           band && selected
             ? "bg-hover-fill"
             : divided &&

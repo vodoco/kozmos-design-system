@@ -98,7 +98,9 @@ const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       ref={ref}
       data-highlight={highlight}
       className={cn(
-        "border-b transition-colors hover:bg-hover-fill/50 data-[state=selected]:bg-hover-fill",
+        // Decision 207 (GAP-250): no divider under a selected row, whose
+        // fill is the divider's own colour in dark; its 1px stays, clear.
+        "border-b transition-colors hover:bg-hover-fill/50 data-[state=selected]:border-b-transparent data-[state=selected]:bg-hover-fill",
         highlight && "kozmos-table-row-highlight",
         className,
       )}
