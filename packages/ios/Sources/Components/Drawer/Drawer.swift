@@ -40,8 +40,84 @@ public enum KozmosDrawerPlacement: String, CaseIterable {
     case inline
 }
 
+/// A drawer's outline (GAP-252): the container's corner on the two corners
+/// that face the page, and square ones at the screen's edge, as Compose's
+/// `drawerShape` and React's `rounded-*-container` draw it. A left drawer is
+/// at the leading edge, so its page-facing corners are its trailing ones, on
+/// the left right to left. The corners are placed from the layout direction
+/// it is given and the shape is never mirrored: SwiftUI mirrors a shape only
+/// in an app that deploys to iOS 17 or later (as `KozmosEndRoundedRectangle`
+/// found), and `UnevenRoundedRectangle` is iOS 17.
+struct KozmosDrawerShape: InsettableShape {
+    var side: KozmosDrawerSide
+    var layoutDirection: LayoutDirection
+    var radius: CGFloat
+    /// An inline side drawer floats in its region, all four corners round.
+    var floats = false
+    var insetAmount: CGFloat = 0
+
+    func inset(by amount: CGFloat) -> KozmosDrawerShape {
+        var shape = self
+        shape.insetAmount += amount
+        return shape
+    }
+
+    /// Whether each corner, as drawn, is round.
+    var roundCorners: (topLeft: Bool, topRight: Bool, bottomLeft: Bool, bottomRight: Bool) {
+        if floats { return (true, true, true, true) }
+        let leading = side == .left
+        let rightToLeft = layoutDirection == .rightToLeft
+        switch side {
+        case .left, .right:
+            // A leading drawer faces the page with its trailing side.
+            let roundsRight = leading != rightToLeft
+            return (!roundsRight, roundsRight, !roundsRight, roundsRight)
+        case .top:
+            return (false, false, true, true)
+        case .bottom:
+            return (true, true, false, false)
+        }
+    }
+
+    func path(in outer: CGRect) -> Path {
+        let rect = outer.insetBy(dx: insetAmount, dy: insetAmount)
+        let r = max(0, min(radius - insetAmount, min(rect.width, rect.height) / 2))
+        let round = roundCorners
+        let tl = round.topLeft ? r : 0, tr = round.topRight ? r : 0
+        let bl = round.bottomLeft ? r : 0, br = round.bottomRight ? r : 0
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + tl, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - tr, y: rect.minY))
+        if tr > 0 {
+            path.addArc(center: CGPoint(x: rect.maxX - tr, y: rect.minY + tr), radius: tr,
+                        startAngle: .degrees(270), endAngle: .degrees(0), clockwise: false)
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - br))
+        if br > 0 {
+            path.addArc(center: CGPoint(x: rect.maxX - br, y: rect.maxY - br), radius: br,
+                        startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        }
+        path.addLine(to: CGPoint(x: rect.minX + bl, y: rect.maxY))
+        if bl > 0 {
+            path.addArc(center: CGPoint(x: rect.minX + bl, y: rect.maxY - bl), radius: bl,
+                        startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        }
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + tl))
+        if tl > 0 {
+            path.addArc(center: CGPoint(x: rect.minX + tl, y: rect.minY + tl), radius: tl,
+                        startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        }
+        path.closeSubpath()
+        return path
+    }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
+}
+
 public struct KozmosDrawer<Content: View>: View {
     @Binding private var isPresented: Bool
+    @Environment(\.layoutDirection) private var layoutDirection
     private let side: KozmosDrawerSide
     private let placement: KozmosDrawerPlacement
     private let label: String?
@@ -150,9 +226,12 @@ public struct KozmosDrawer<Content: View>: View {
     static var inlineEdge: CGFloat { KozmosDimensions.primitivesLayoutSpacing200 }
 
     private var inlineSurface: some View {
-        // A container's corner, 20, on every side, as the fixed drawer's
-        // (decision 156).
+        // A container's corner, 20 (decision 156): on every side of a
+        // floating side drawer; on the two that face the page of a top or
+        // bottom one, which stays at its edge (GAP-252).
         let radius = KozmosDimensions.semanticsRadiusContainer
+        let outline = KozmosDrawerShape(side: side, layoutDirection: layoutDirection, radius: radius,
+                                        floats: side.horizontal)
         // As tall as its content, and scrolling only past the region: the
         // first child that fits is drawn, so content that fits never scrolls.
         let surface = ViewThatFits(in: .vertical) {
@@ -160,9 +239,9 @@ public struct KozmosDrawer<Content: View>: View {
             ScrollView { drawerStack }
         }
         .background(KozmosColors.semanticsSurface0)
-        .clipShape(RoundedRectangle(cornerRadius: radius))
+        .clipShape(outline)
         .overlay(
-            RoundedRectangle(cornerRadius: radius)
+            outline
                 .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
         .kozmosElevation(KozmosShadows.semanticsElevationOverlay)
@@ -245,14 +324,20 @@ public struct KozmosDrawer<Content: View>: View {
             alignment: .topLeading
         )
         .background(KozmosColors.semanticsSurface0)
-        // A container's corner, 20, as React's rounded-container (decision 156).
-        .cornerRadius(KozmosDimensions.semanticsRadiusContainer)
+        // A container's corner, 20, as React's rounded-*-container (decision
+        // 156), on the two corners that face the page only (GAP-252).
+        .clipShape(fixedOutline)
         .overlay(
-            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer)
+            fixedOutline
                 .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
         .kozmosElevation(KozmosShadows.semanticsElevationOverlay)
         .edgesIgnoringSafeArea(side.horizontal ? .vertical : .horizontal)
+    }
+
+    private var fixedOutline: KozmosDrawerShape {
+        KozmosDrawerShape(side: side, layoutDirection: layoutDirection,
+                          radius: KozmosDimensions.semanticsRadiusContainer)
     }
 
     private var drawerHeader: some View {
