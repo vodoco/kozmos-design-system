@@ -346,6 +346,70 @@ try {
       `${mode} toolbar: an unchosen tool has no fill`,
     );
 
+    // Decision 217 (GAP-284): a disabled item with a reason is
+    // aria-disabled, not disabled, and drawn from the disabled pair as one
+    // without, a tool and an action alike, and still so under the pointer.
+    const reasons = page.getByTestId("toolbar-reasons");
+    const look = () =>
+      reasons.evaluate((box) => {
+        const colour = (value, property) => {
+          const probe = document.createElement("span");
+          probe.style[property] = value;
+          box.append(probe);
+          const resolved = getComputedStyle(probe)[property];
+          probe.remove();
+          return resolved;
+        };
+        const read = (id) => {
+          const node = box.querySelector(`[data-item="${id}"]`);
+          const style = getComputedStyle(node);
+          return {
+            disabled: node.disabled,
+            aria: node.getAttribute("aria-disabled"),
+            fill: style.backgroundColor,
+            ink: style.color,
+          };
+        };
+        return {
+          merge: read("merge"),
+          clear: read("clear"),
+          split: read("split"),
+          undo: read("undo"),
+          fill: colour("var(--semantics-disabled-fill)", "backgroundColor"),
+          ink: colour("var(--semantics-disabled-foreground)", "color"),
+        };
+      });
+    for (const state of ["at rest", "hovered"]) {
+      if (state === "hovered")
+        await reasons.locator('[data-item="merge"]').hover();
+      const drawn = await look();
+      for (const id of ["merge", "clear", "split", "undo"]) {
+        const reasoned = id === "merge" || id === "clear";
+        assert.equal(
+          drawn[id].disabled,
+          !reasoned,
+          `${mode} toolbar ${id}: ${reasoned ? "focusable" : "disabled"}`,
+        );
+        assert.equal(
+          drawn[id].aria,
+          reasoned ? "true" : null,
+          `${mode} toolbar ${id}: aria-disabled ${reasoned ? "set" : "unset"}`,
+        );
+        assert.equal(
+          drawn[id].fill,
+          drawn.fill,
+          `${mode} toolbar ${id} ${state}: the disabled fill (${drawn[id].fill})`,
+        );
+        assert.equal(
+          drawn[id].ink,
+          drawn.ink,
+          `${mode} toolbar ${id} ${state}: the disabled foreground (${drawn[id].ink})`,
+        );
+      }
+    }
+    await page.mouse.move(0, 0);
+    passed.push(`${mode} toolbar: disabled with a reason draws the disabled pair`);
+
     // The picker: its status region is rendered (not display: none) before
     // anything is typed, and draws the empty state once nothing matches.
     await page.locator(".kozmos-property-picker-trigger").click();

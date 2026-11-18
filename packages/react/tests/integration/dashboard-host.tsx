@@ -85,6 +85,46 @@ function Modules() {
           <MapEditToolbar label="Geometry tools" items={TOOLS} value="adjust" />
         </div>
       ))}
+      {/* Decision 217: disabled with and without a reason, a tool and an
+          action of each (check-dashboard-css reads their colours). */}
+      <div data-testid="toolbar-reasons" style={{ width: 760 }}>
+        <MapEditToolbar
+          label="Merge tools"
+          items={[
+            { type: "tool", id: "adjust", label: "Adjust", icon: Transform },
+            {
+              type: "tool",
+              id: "merge",
+              label: "Merge",
+              icon: Divider,
+              disabled: true,
+              disabledReason: "Select two areas to merge them",
+            },
+            {
+              type: "action",
+              id: "clear",
+              label: "Clear",
+              icon: XSquare,
+              disabled: true,
+              disabledReason: "Nothing to clear",
+            },
+            {
+              type: "tool",
+              id: "split",
+              label: "Split",
+              icon: Divider,
+              disabled: true,
+            },
+            {
+              type: "action",
+              id: "undo",
+              label: "Undo",
+              icon: FlipBackward,
+              disabled: true,
+            },
+          ]}
+        />
+      </div>
       <div style={{ width: 360 }}>
         <PropertyPicker
           data-testid="picker"

@@ -217,11 +217,34 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
  * names a state of the page with known findings of its own:
  * `knownViolations["<path>#<state>"]`.
  */
+/**
+ * Every revealed band drawn at full strength, read where axe reads it: its
+ * computed opacity, at the moment before the analysis. axe weighs a colour
+ * by its box's opacity, so a band still fading in reads as faint text. On
+ * 17 Nov (Site run 44194171237, #571's merge) WebKit read the home page's
+ * last band at about a fifth of its strength in dark, twice: #3D3D3D and
+ * #333334 for the same words on #070708, every node of that one band alike.
+ * `scrolled` and `hydrated` had both passed, 0.4s before axe began: they look
+ * once, for a band not yet shown and for a running animation, and a fade
+ * that starts after that look (the band's shown state committed late, in a
+ * React task after the observer's) is never waited for. This waits on the
+ * state itself, by polling, however late the fade began.
+ */
+async function revealsSettled(page: Page) {
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll<HTMLElement>(".site-reveal")].every(
+      (band) =>
+        band.dataset.shown === "true" && getComputedStyle(band).opacity === "1",
+    ),
+  );
+}
+
 async function axeViolations(page: Page, state?: string) {
   // From the top of the page: scrolled, whatever passes under the sticky
   // header counts as covered, and axe's target-size rule then fails the
   // links there, which a visitor simply scrolls back to.
   await page.evaluate(() => window.scrollTo(0, 0));
+  await revealsSettled(page);
   const results = await new AxeBuilder({ page })
     .withTags([
       "wcag2a",
@@ -776,6 +799,29 @@ for (const colorScheme of ["light", "dark"] as const) {
     }
   });
 }
+
+// The race of 17 Nov, made certain: the home page's last band starts its
+// fade only after `scrolled` and `hydrated` have looked, and fades slowly
+// enough to span the whole analysis. axe must read it at full strength.
+test.describe("a band that fades in after the page settled", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("is read by axe only once it has finished", async ({ page }) => {
+    await page.goto("/");
+    await hydrated(page);
+    await scrolled(page);
+    await page.evaluate(() => {
+      const bands = document.querySelectorAll<HTMLElement>(".site-reveal");
+      const band = bands[bands.length - 1];
+      band.style.transition = "none";
+      band.removeAttribute("data-shown");
+      void getComputedStyle(band).opacity; // the hidden style takes, at once
+      band.style.transition = "opacity 3s linear";
+      requestAnimationFrame(() => band.setAttribute("data-shown", "true"));
+    });
+    expect(await axeViolations(page)).toEqual([]);
+  });
+});
 
 // GAP-17's exclusion must still name the shell's panel when the panel's
 // opening tag grows. Past 300 characters axe cuts every attribute value in a

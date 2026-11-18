@@ -189,9 +189,21 @@ interface MapEditToolbarControl {
    */
   disabled?: boolean;
   /**
+   * Why a disabled item is unavailable ("Select two areas to merge them"),
+   * decision 217 (GAP-284). With it, the disabled item stays in the arrow-key
+   * order and under the pointer, says so with `aria-disabled` rather than
+   * `disabled`, does nothing when pressed, and shows the reason as its
+   * tooltip and accessible description. It is drawn from the disabled pair
+   * as any disabled item. Without it a disabled item is skipped and shows
+   * nothing. Read only with `disabled`; in the More menu it is a disabled
+   * entry, as any.
+   */
+  disabledReason?: string;
+  /**
    * More than the label says, shown on hover and keyboard focus ("Double
    * click to finish drawing"). Leave it unset where it would repeat the
-   * label: the label is always drawn. A disabled item shows none.
+   * label: the label is always drawn. A disabled item shows none; one with
+   * a `disabledReason` shows the reason instead.
    */
   tooltip?: string;
 }

@@ -63,6 +63,21 @@ The toolbar is one tab stop (`role="toolbar"`, named by `label`): Tab reaches th
   <Story of={MapEditToolbarStories.RightToLeft} />
 </Canvas>
 
+## Saying why an item is unavailable
+
+A disabled item can say why with `disabledReason` (decision 217): MAP-619's Merge waits for two areas to be selected. With a reason, the item is not removed from the keyboard's way: it stays in the arrow-key order and under the pointer, says it is unavailable with `aria-disabled="true"` rather than `disabled`, and does nothing when it is clicked or pressed with Enter or Space, so neither `onValueChange` nor `onAction` hears of it. Its reason is its tooltip, on hover and on keyboard focus, and its accessible description, in place of any `tooltip`. It is drawn as any disabled item, from the disabled pair (decision 197), under the pointer too. Without a reason, a disabled item is skipped and shows nothing, as before. In the More menu a disabled item is a disabled entry, reason or not.
+
+```tsx
+{
+  type: "tool",
+  id: "merge",
+  label: "Merge",
+  icon: Divider,
+  disabled: true,
+  disabledReason: "Select two areas to merge them",
+}
+```
+
 ## On a narrow map
 
 The toolbar spans the space it is given and centres its card in it. When the items do not fit, those that do not go, from the end, into a More menu: a tool there is a checkbox item, checked while chosen, and an action a menu item. Nothing runs off the screen.

@@ -129,17 +129,17 @@ test("a package.json counts only when a consumer-facing field changed", () => {
 });
 
 test("a shipped change needs a changeset naming its package", () => {
-  const changedFiles = ["packages/react/src/components/Chip/Chip.tsx"];
+  const changedFiles = ["packages/icons/src/index.ts"];
   assert.deepEqual(missingChangesets({ changedFiles, changesets: [] }), [
-    { name: "@kozmos-ds/react", files: changedFiles },
+    { name: "@kozmos-ds/icons", files: changedFiles },
   ]);
   assert.deepEqual(
-    missingChangesets({ changedFiles, changesets: [{ releases: [react] }] }),
+    missingChangesets({ changedFiles, changesets: [{ releases: [icons] }] }),
     [],
   );
   assert.deepEqual(
-    missingChangesets({ changedFiles, changesets: [{ releases: [icons] }] }),
-    [{ name: "@kozmos-ds/react", files: changedFiles }],
+    missingChangesets({ changedFiles, changesets: [{ releases: [react] }] }),
+    [{ name: "@kozmos-ds/icons", files: changedFiles }],
   );
 });
 
@@ -176,6 +176,72 @@ test("a Vue source the stylesheet scans needs a changeset for styles and for rea
   assert.deepEqual(
     missingChangesets({ changedFiles, changesets: [{ releases: [react] }] }),
     [{ name: "@kozmos-ds/styles", files: changedFiles }],
+  );
+});
+
+// The same scan reads React's parts, so a part's classes change the style.css
+// styles ships as well as react's copy of it. Until 0.17.0 such a change asked
+// for react's changeset alone, and styles' stylesheet stayed at its last
+// release.
+test("a React part the stylesheet scans needs a changeset for styles as well as react", () => {
+  const changedFiles = [
+    "packages/react/src/components/Button/Button.tsx",
+    "packages/react/src/lib/utils.ts",
+  ];
+  const styles = { name: "@kozmos-ds/styles", type: "patch" };
+  assert.deepEqual(missingChangesets({ changedFiles, changesets: [] }), [
+    { name: "@kozmos-ds/react", files: changedFiles },
+    { name: "@kozmos-ds/styles", files: changedFiles },
+  ]);
+  assert.deepEqual(
+    missingChangesets({ changedFiles, changesets: [{ releases: [react] }] }),
+    [{ name: "@kozmos-ds/styles", files: changedFiles }],
+  );
+  assert.deepEqual(
+    missingChangesets({
+      changedFiles,
+      changesets: [{ releases: [react, styles] }],
+    }),
+    [],
+  );
+});
+
+test("a React file the stylesheet does not scan, or react does not ship, asks nothing of styles", () => {
+  // The Dashboard modules draw from dashboard.css alone (decision 183).
+  assert.deepEqual(
+    missingChangesets({
+      changedFiles: ["packages/react/src/dashboard/MetricTile.tsx"],
+      changesets: [],
+    }).map((m) => m.name),
+    ["@kozmos-ds/react"],
+  );
+  assert.deepEqual(
+    missingChangesets({
+      changedFiles: [
+        "packages/react/src/components/Button/Button.test.tsx",
+        "packages/react/src/components/Button/Button.stories.tsx",
+        "packages/react/src/components/Button/Button.figma.tsx",
+        "packages/react/src/components/Button/Button.mdx",
+      ],
+      changesets: [],
+    }),
+    [],
+  );
+});
+
+test("the React files that count are the ones styles' Tailwind build scans", async () => {
+  const { STYLESHEET_SCANS } = await import("./changeset-required.mjs");
+  const config = (await import("../../packages/styles/tailwind.config.js"))
+    .default;
+  const reactGlobs = config.content.files.filter((glob) =>
+    glob.replace(/^!/, "").startsWith("../react/"),
+  );
+  assert.deepEqual(
+    STYLESHEET_SCANS.filter((scan) =>
+      scan.globs.some((glob) => glob.replace(/^!/, "").startsWith("../react/")),
+    ).flatMap((scan) => scan.globs),
+    reactGlobs,
+    "packages/styles/tailwind.config.js scans other React files: update STYLESHEET_SCANS in changeset-required.mjs to match",
   );
 });
 
@@ -250,7 +316,9 @@ test("the Vue files that count are exactly the ones styles' Tailwind build scans
   );
   assert.deepEqual(
     vueGlobs,
-    STYLESHEET_SCANS.map((scan) => scan.globs).flat(),
+    STYLESHEET_SCANS.filter((scan) =>
+      scan.globs.some((glob) => glob.replace(/^!/, "").startsWith("../vue/")),
+    ).flatMap((scan) => scan.globs),
     "packages/styles/tailwind.config.js scans other Vue files: update STYLESHEET_SCANS in changeset-required.mjs to match",
   );
 });
@@ -309,7 +377,12 @@ test("the check fails a branch that ships without a changeset, and passes once i
   const without = run();
   assert.equal(without.status, 1, without.stdout + without.stderr);
   assert.match(without.stderr, /@kozmos-ds\/react ships changes/);
-  commit(".changeset/a.md", '---\n"@kozmos-ds/react": patch\n---\n\nA.\n');
+  // A part's source is also what styles' stylesheet is built from.
+  assert.match(without.stderr, /@kozmos-ds\/styles ships changes/);
+  commit(
+    ".changeset/a.md",
+    '---\n"@kozmos-ds/react": patch\n"@kozmos-ds/styles": patch\n---\n\nA.\n',
+  );
   const withOne = run();
   assert.equal(withOne.status, 0, withOne.stdout + withOne.stderr);
 });

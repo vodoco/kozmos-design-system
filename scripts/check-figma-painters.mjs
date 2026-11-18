@@ -21862,6 +21862,165 @@ section("Decision 207: no divider under a selected tree row");
   }
 }
 
+// GAP-281 (0.17.0 wave C): Import Foundations writes a component colour that
+// is a primitive's value as an alias of that primitive, in Light and Dark, so
+// a change to a ramp reaches every Button state drawn from it in Figma as in
+// code. Until 0.17.0 the payload carried 198 Light and 214 Dark Button
+// colours as hex copies, and the Components collection held them as values.
+// This runs the plugin's own variable import against a stand-in variable API
+// and reads what it stored: each Kozmos Components colour whose value, in a
+// mode, is a Kozmos Primitives colour's value in that mode must hold an alias
+// there, and every colour must resolve to what the payload resolves it to.
+section(
+  "GAP-281: Import Foundations aliases each component colour that is a primitive's value",
+);
+{
+  const payload = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  );
+  const importFigma = createFigmaMock({ pages: [] });
+  const collections = [];
+  const variables = [];
+  importFigma.variables.getLocalVariableCollectionsAsync = async () =>
+    collections;
+  importFigma.variables.getLocalVariablesAsync = async () => variables;
+  importFigma.variables.getVariableByIdAsync = async (id) =>
+    variables.find((variable) => variable.id === id) || null;
+  delete importFigma.variables.createVariableAliasByIdAsync;
+  importFigma.variables.createVariableCollection = (name) => {
+    const collection = {
+      id: `VariableCollectionId:${name}`,
+      name,
+      modes: [{ modeId: `${name}:m1`, name: "Mode 1" }],
+      setSharedPluginData() {},
+      renameMode(id, next) {
+        const mode = this.modes.find((m) => m.modeId === id);
+        if (mode) mode.name = next;
+      },
+      addMode(next) {
+        const id = `${name}:m${this.modes.length + 1}`;
+        this.modes.push({ modeId: id, name: next });
+        return id;
+      },
+    };
+    collections.push(collection);
+    return collection;
+  };
+  importFigma.variables.createVariable = (name, collection, type) => {
+    const variable = {
+      id: `VariableID:${collection.name}/${name}`,
+      name,
+      resolvedType: type,
+      variableCollectionId: collection.id,
+      valuesByMode: {},
+      scopes: [],
+      setSharedPluginData() {},
+      setValueForMode(mode, value) {
+        this.valuesByMode[mode] = value;
+      },
+      setVariableCodeSyntax() {},
+    };
+    variables.push(variable);
+    return variable;
+  };
+  const importPlugin = loadPlugin({ pluginPath: PLUGIN, figma: importFigma });
+  const reachable = typeof importPlugin.ensureVariables === "function";
+  ok(reachable, "Import Foundations' variable import is reachable");
+  if (reachable) {
+    const stats = { ...freshStats(), skipped: [] };
+    await importPlugin.ensureVariables(payload, stats);
+
+    const byId = new Map(variables.map((variable) => [variable.id, variable]));
+    const collectionOf = new Map(
+      collections.map((collection) => [collection.id, collection]),
+    );
+    const modeId = (variable, mode) =>
+      collectionOf
+        .get(variable.variableCollectionId)
+        .modes.find((m) => m.name === mode).modeId;
+    // Figma resolves an alias in the target collection's mode of the same
+    // name: the plugin sets Dark on every Kozmos collection together.
+    const resolveStored = (variable, mode, depth = 0) => {
+      const value = variable.valuesByMode[modeId(variable, mode)];
+      if (value && value.type === "VARIABLE_ALIAS") {
+        const target = byId.get(value.id);
+        return target && depth < 10
+          ? resolveStored(target, mode, depth + 1)
+          : null;
+      }
+      return value || null;
+    };
+    const key = (color) =>
+      color
+        ? [color.r, color.g, color.b, color.a === undefined ? 1 : color.a]
+            .map((channel) => Math.round(channel * 255))
+            .join(",")
+        : "none";
+    const payloadByCanonical = new Map(
+      payload.variables.map((record) => [record.canonicalName, record]),
+    );
+    const resolvePayload = (record, mode, depth = 0) => {
+      const value = record.values[mode.toLowerCase()];
+      if (value.kind !== "alias") return importPlugin.parseColor(value.value);
+      const target = payloadByCanonical.get(value.path);
+      return target && depth < 10 ? resolvePayload(target, mode, depth + 1) : null;
+    };
+    const inCollection = (name) =>
+      variables.filter(
+        (variable) =>
+          collectionOf.get(variable.variableCollectionId).name === name &&
+          variable.resolvedType === "COLOR",
+      );
+    const primitiveColours = {};
+    for (const mode of ["Light", "Dark"]) {
+      primitiveColours[mode] = new Set(
+        inCollection("Kozmos Primitives").map((variable) =>
+          key(resolveStored(variable, mode)),
+        ),
+      );
+    }
+
+    const components = inCollection("Kozmos Components");
+    const copies = [];
+    const drifted = [];
+    let aliased = 0;
+    for (const variable of components) {
+      const record = payload.variables.find(
+        (item) =>
+          item.collection === "Kozmos Components" &&
+          item.figmaName === variable.name,
+      );
+      for (const mode of ["Light", "Dark"]) {
+        const stored = variable.valuesByMode[modeId(variable, mode)];
+        const resolved = key(resolveStored(variable, mode));
+        if (stored && stored.type === "VARIABLE_ALIAS") aliased += 1;
+        else if (primitiveColours[mode].has(resolved))
+          copies.push(`${variable.name} (${mode}) ${resolved}`);
+        if (record && resolved !== key(resolvePayload(record, mode)))
+          drifted.push(`${variable.name} (${mode})`);
+      }
+    }
+    ok(
+      components.length > 300 && copies.length === 0,
+      `every Components colour that is a Primitives colour is stored as an alias (${aliased} aliases across ${components.length} colours in two modes; ${copies.length} copies${copies.length ? `: ${copies.slice(0, 4).join("; ")}` : ""})`,
+    );
+    ok(
+      drifted.length === 0,
+      `every Components colour resolves to the payload's colour in Light and Dark (${drifted.length} differ${drifted.length ? `: ${drifted.slice(0, 4).join("; ")}` : ""})`,
+    );
+    ok(
+      stats.warnings.length === 0,
+      `the variable import warns of nothing (${stats.warnings.slice(0, 3).join("; ") || "no warnings"})`,
+    );
+    console.log(
+      `  ${components.length} Components colours imported: ${aliased} mode values stored as aliases, ${copies.length} copies of a primitive, ${drifted.length} resolving differently from the payload`,
+    );
+  }
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(

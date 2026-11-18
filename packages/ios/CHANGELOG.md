@@ -69,6 +69,7 @@ Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is
 
 ### Changed
 
+- **`KozmosLineSpacingTests` and `pnpm ios:line-spacing:check` (decision 203):** every `.lineSpacing` passes one of `KozmosTypography`'s spacings, and each is measured on the simulator: it takes away no more than its text style's leading, and SwiftUI moves two lines apart by all of it. SwiftUI ignores a negative spacing past the leading without a word. `KozmosColors.swift` writes twelve colours' dark white as `#ffffff`, the case of the primitive they now refer to (GAP-281); the colours are unchanged.
 - **The glass edge reads a colour token (GAP-229, decision 208):** `.kozmosSurface(.glass)`'s 1pt edge, and so every glass part's (the guidance cards, glass buttons), is `KozmosColors.semanticsEffectGlassBorderColor` at `KozmosEffects.semanticsEffectGlass.borderOpacity`, where it was `Color.white` written in. The token is white (#FFFFFF) in both themes, so nothing is drawn differently. `pnpm tokens:glass:check` holds the edge to the token.
 - **A divided `KozmosTree` draws no stroke under a selected row (decision 207, GAP-250):** inset or band. The selected fill is the stroke's own colour in dark (background/200), so the stroke could not be seen there. The row keeps its 1pt, drawn in no colour, so no row moves when the selection does. `KozmosTreeDividedTests.testNoStrokeUnderASelectedRow`.
 

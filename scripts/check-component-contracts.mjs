@@ -11473,23 +11473,29 @@ for (const [file, json, mode] of [
     "{Primitives.Colors.theme.500}",
     `${mode} themed primary button background is the theme fill, theme 500`,
   );
+  // White since GAP-281 (0.17.0) refers to the white of the foreground ramp,
+  // foreground 1000 in light and foreground 0 in dark, so the value read here
+  // is the one it resolves to.
   for (const state of ["idle", "hover", "pressed", "focus"]) {
-    assertJsonPathEquals(
-      file,
-      json,
-      [
-        "Components",
-        "Primary Buttons",
-        "themed",
-        "button",
-        "foreground",
-        "content",
-        state,
-        "$value",
-      ],
-      "#FFFFFF",
-      `${mode} themed primary button foreground (${state}) is the theme foreground, white`,
-    );
+    const written = getJsonPath(json, [
+      "Components",
+      "Primary Buttons",
+      "themed",
+      "button",
+      "foreground",
+      "content",
+      state,
+      "$value",
+    ]);
+    const alias = /^\{(.+)\}$/.exec(String(written))?.[1];
+    const resolved = alias
+      ? getJsonPath(json, [...alias.split("."), "$value"])
+      : written;
+    if (String(resolved).toUpperCase() !== "#FFFFFF") {
+      fail(
+        `${file}: expected ${mode} themed primary button foreground (${state}) is the theme foreground, white to be #FFFFFF, received ${String(written)}${alias ? ` (${String(resolved)})` : ""}`,
+      );
+    }
   }
 }
 // Decision 60 (Olcay, 2026-10-08): a filled emotion Button's states are
@@ -11644,10 +11650,11 @@ assertContains(
   /componentsPrimaryButtonsThemedButtonBackgroundIdle: Color \{\n[^}]*UIColor\(hex: "#135BEC"\) : UIColor\(hex: "#135BEC"\)/,
   "iOS themed primary button background is the theme fill, #135BEC in both themes (decision 59)",
 );
+// Any case: since GAP-281 the dark white is foreground 0's `#ffffff`.
 assertContains(
   files.iosColors,
   source.iosColors,
-  /componentsPrimaryButtonsThemedButtonForegroundContentIdle: Color \{\n[^}]*UIColor\(hex: "#FFFFFF"\) : UIColor\(hex: "#FFFFFF"\)/,
+  /componentsPrimaryButtonsThemedButtonForegroundContentIdle: Color \{\n[^}]*UIColor\(hex: "#FFFFFF"\) : UIColor\(hex: "#FFFFFF"\)/i,
   "iOS themed primary button foreground is the theme foreground, white in both themes (decision 59)",
 );
 assertContains(

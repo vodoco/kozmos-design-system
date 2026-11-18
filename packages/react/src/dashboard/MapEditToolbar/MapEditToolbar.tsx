@@ -36,9 +36,21 @@ interface MapEditToolbarControl {
    */
   disabled?: boolean;
   /**
+   * Why a disabled item is unavailable ("Select two areas to merge them"),
+   * decision 217 (GAP-284). With it, the disabled item stays in the arrow-key
+   * order and under the pointer, says so with `aria-disabled` rather than
+   * `disabled`, does nothing when pressed, and shows the reason as its
+   * tooltip and accessible description. It is drawn from the disabled pair
+   * as any disabled item. Without it a disabled item is skipped and shows
+   * nothing. Read only with `disabled`; in the More menu it is a disabled
+   * entry, as any.
+   */
+  disabledReason?: string;
+  /**
    * More than the label says, shown on hover and keyboard focus ("Double
    * click to finish drawing"). Leave it unset where it would repeat the
-   * label: the label is always drawn. A disabled item shows none.
+   * label: the label is always drawn. A disabled item shows none; one with
+   * a `disabledReason` shows the reason instead.
    */
   tooltip?: string;
 }
@@ -97,6 +109,10 @@ export interface MapEditToolbarProps extends Omit<
   /** The overflow menu's button's label. */
   moreLabel?: string;
 }
+
+// A disabled item with a reason (decision 217): focusable, inert, explained.
+const explained = (item: MapEditToolbarTool | MapEditToolbarAction) =>
+  Boolean(item.disabled && item.disabledReason);
 
 const isControl = (
   item: MapEditToolbarItem,
@@ -244,7 +260,9 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
     // --- Roving focus ---------------------------------------------------
     const MORE = "\u0000more";
     const stops = [
-      ...visible.filter(isControl).filter((item) => !item.disabled),
+      ...visible
+        .filter(isControl)
+        .filter((item) => !item.disabled || explained(item)),
     ].map((item) => item.id);
     if (overflowing) stops.push(MORE);
     const [focusId, setFocusId] = React.useState<string | null>(null);
@@ -298,7 +316,13 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
 
     const control = (item: MapEditToolbarTool | MapEditToolbarAction) => {
       const Glyph = item.icon;
-      const described = Boolean(item.tooltip) && !item.disabled;
+      const inert = explained(item);
+      const hint = inert
+        ? item.disabledReason
+        : item.disabled
+          ? undefined
+          : item.tooltip;
+      const described = Boolean(hint);
       const content = (
         <>
           <Glyph
@@ -314,7 +338,7 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
             // describes a trigger by its tooltip only while it is open.
             // Hidden, so no part of the name or the layout.
             <span id={`${hintId}-${item.id}`} hidden>
-              {item.tooltip}
+              {hint}
             </span>
           ) : null}
         </>
@@ -322,7 +346,9 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
       const shared = {
         ref: register(item.id),
         className: "kozmos-map-edit-toolbar-item",
-        disabled: item.disabled,
+        // With a reason it stays focusable: unavailable, said, not removed.
+        disabled: item.disabled && !inert,
+        "aria-disabled": inert ? ("true" as const) : undefined,
         tabIndex: tabStop === item.id ? 0 : -1,
         onFocus: () => setFocusId(item.id),
         "data-item": item.id,
@@ -333,7 +359,9 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
           <ToggleButton
             {...shared}
             pressed={value === item.id}
-            onPressedChange={(pressed) => choose(item.id, pressed)}
+            onPressedChange={(pressed) => {
+              if (!inert) choose(item.id, pressed);
+            }}
           >
             {content}
           </ToggleButton>
@@ -341,7 +369,9 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
           <Button
             {...shared}
             variant="ghost"
-            onClick={() => onAction?.(item.id)}
+            onClick={() => {
+              if (!inert) onAction?.(item.id);
+            }}
           >
             {content}
           </Button>
@@ -352,7 +382,7 @@ const MapEditToolbar = React.forwardRef<HTMLDivElement, MapEditToolbarProps>(
       return (
         <Tooltip>
           <TooltipTrigger asChild>{button}</TooltipTrigger>
-          <TooltipContent>{item.tooltip}</TooltipContent>
+          <TooltipContent>{hint}</TooltipContent>
         </Tooltip>
       );
     };

@@ -89,7 +89,7 @@
   .kozmos-map-edit-toolbar
     .kozmos-map-edit-toolbar-items
     .kozmos-map-edit-toolbar-item:where(
-      :not([aria-pressed="true"]):not(:disabled)
+      :not([aria-pressed="true"]):not(:disabled):not([aria-disabled="true"])
     ):hover {
     background-color: var(--semantics-hover-fill);
     color: var(--primitives-colors-foreground-400);
@@ -98,10 +98,12 @@
      pair, chosen or not: its ink is already the pair's foreground, so the
      pair's fill under it is what says it is unavailable, as on a map
      control. No longer at half: a tool is a ToggleButton, whose own disabled
-     look is half, and this outweighs it. */
+     look is half, and this outweighs it. One with a reason (decision 217)
+     is aria-disabled, focusable and hoverable, and drawn the same, its
+     hover and press included. */
   .kozmos-map-edit-toolbar
     .kozmos-map-edit-toolbar-items
-    .kozmos-map-edit-toolbar-item:disabled {
+    .kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled="true"]) {
     background-color: var(--semantics-disabled-fill);
     color: var(--semantics-disabled-foreground);
     opacity: 1;
