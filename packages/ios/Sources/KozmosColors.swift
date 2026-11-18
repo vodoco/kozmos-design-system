@@ -1772,6 +1772,19 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var primitivesColorsWhite: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var primitivesBorderBevelTop: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in
@@ -2815,11 +2828,11 @@ public class KozmosColors {
     public static var componentsPrimaryButtonsThemedButtonForegroundContentIdle: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#FFFFFF")
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
         })
         #elseif canImport(AppKit)
         return Color(NSColor(name: nil, dynamicProvider: { appearance in
-            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#FFFFFF")
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
         }))
         #else
         return Color.clear
@@ -2841,11 +2854,11 @@ public class KozmosColors {
     public static var componentsPrimaryButtonsThemedButtonForegroundContentHover: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#FFFFFF")
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
         })
         #elseif canImport(AppKit)
         return Color(NSColor(name: nil, dynamicProvider: { appearance in
-            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#FFFFFF")
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
         }))
         #else
         return Color.clear
@@ -2854,11 +2867,11 @@ public class KozmosColors {
     public static var componentsPrimaryButtonsThemedButtonForegroundContentPressed: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#FFFFFF")
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
         })
         #elseif canImport(AppKit)
         return Color(NSColor(name: nil, dynamicProvider: { appearance in
-            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#FFFFFF")
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
         }))
         #else
         return Color.clear
@@ -2867,11 +2880,11 @@ public class KozmosColors {
     public static var componentsPrimaryButtonsThemedButtonForegroundContentFocus: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in
-            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#ffffff") : UIColor(hex: "#FFFFFF")
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
         })
         #elseif canImport(AppKit)
         return Color(NSColor(name: nil, dynamicProvider: { appearance in
-            return appearance.name == .darkAqua ? NSColor(hex: "#ffffff") : NSColor(hex: "#FFFFFF")
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
         }))
         #else
         return Color.clear

@@ -11,6 +11,7 @@ import test from "node:test";
 import {
   choosePrimitive,
   findCopiedColours,
+  findExceptions,
   normalizeColour,
   preferredRamps,
 } from "./component-colour-references.mjs";
@@ -209,4 +210,115 @@ test("a primitive's own value, or a semantic one, is not a component copy", () =
   const light = tree("light", {});
   light.Semantics = { Surface: { 0: colour("#FFFFFF") } };
   assert.deepEqual(findCopiedColours({ light, dark: tree("dark", {}) }), []);
+});
+
+// Decision 223: white in both themes is the constant white.
+const withWhite = (theme, components) => {
+  const t = tree(theme, components);
+  t.Primitives.Colors.white = colour("#FFFFFF");
+  return t;
+};
+const themedWords = (light, dark) => ({
+  light: {
+    "Primary Buttons": {
+      themed: { button: { foreground: { content: { idle: colour(light) } } } },
+    },
+  },
+  dark: {
+    "Primary Buttons": {
+      themed: { button: { foreground: { content: { idle: colour(dark) } } } },
+    },
+  },
+});
+
+test("a colour white in both themes refers to the constant white, copy or ramp reference alike", () => {
+  const path =
+    "Components.Primary Buttons.themed.button.foreground.content.idle";
+  for (const [light, dark] of [
+    ["#FFFFFF", "#ffffff"],
+    ["{Primitives.Colors.foreground.1000}", "{Primitives.Colors.foreground.0}"],
+  ]) {
+    const words = themedWords(light, dark);
+    const copies = findCopiedColours({
+      light: withWhite("light", words.light),
+      dark: withWhite("dark", words.dark),
+    });
+    assert.deepEqual(
+      copies.map((copy) => `${copy.theme} ${copy.path} ${copy.choice}`),
+      [
+        `light ${path} Primitives.Colors.white`,
+        `dark ${path} Primitives.Colors.white`,
+      ],
+      `${light} / ${dark}`,
+    );
+  }
+  const done = themedWords(
+    "{Primitives.Colors.white}",
+    "{Primitives.Colors.white}",
+  );
+  assert.deepEqual(
+    findCopiedColours({
+      light: withWhite("light", done.light),
+      dark: withWhite("dark", done.dark),
+    }),
+    [],
+  );
+});
+
+test("white in one theme only keeps its role's ramp, not the constant white", () => {
+  const copies = findCopiedColours({
+    light: withWhite("light", {
+      "Primary Buttons": {
+        success: {
+          button: { foreground: { content: { idle: colour("#FFFFFF") } } },
+        },
+      },
+    }),
+    dark: withWhite("dark", {
+      "Primary Buttons": {
+        success: {
+          button: { foreground: { content: { idle: colour("#000000") } } },
+        },
+      },
+    }),
+  });
+  assert.deepEqual(
+    copies.map((copy) => `${copy.theme} ${copy.choice}`),
+    [
+      "light Primitives.Colors.foreground.1000",
+      "dark Primitives.Colors.foreground.1000",
+    ],
+  );
+});
+
+test("exceptions: a colour no primitive is, and a reference outside its role's ramps", () => {
+  const components = (fill, words) => ({
+    "Tertiary Buttons": {
+      neutral: {
+        button: {
+          background: { idle: colour(fill) },
+          foreground: { content: { pressed: colour(words) } },
+        },
+      },
+    },
+  });
+  assert.deepEqual(
+    findExceptions({
+      light: withWhite(
+        "light",
+        components("#5C6069", "{Primitives.Colors.background.700}"),
+      ),
+      dark: withWhite(
+        "dark",
+        components(
+          "{Primitives.Colors.background.0}",
+          "{Primitives.Colors.white}",
+        ),
+      ),
+    }).map((found) => `${found.theme} ${found.kind} ${found.path}`),
+    [
+      "light no-primitive Components.Tertiary Buttons.neutral.button.background.idle",
+      "light outside-role Components.Tertiary Buttons.neutral.button.foreground.content.pressed",
+    ],
+  );
 });

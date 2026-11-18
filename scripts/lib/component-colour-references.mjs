@@ -26,12 +26,26 @@
  *   2. Of those, the primitive that is also the token's value in the other
  *      theme, so one primitive serves both themes where one can.
  *
+ * Before both: a component colour that is white in both themes refers to
+ * `Primitives.Colors.white` (decision 223), the one primitive that is white in
+ * both, whether it was a copy or a reference to a ramp step. No ramp is white
+ * in both themes, so decision 59's "white in both themes" had to name
+ * foreground/1000 in light and foreground/0 in dark, and an override of either
+ * step changed a white that is meant never to change.
+ *
  * Where step 1 finds no primitive in the role's ramps, any primitive of the
- * value is taken and the choice is reported as outside its role's ramp; where
- * the two themes take different primitives, that is reported too. Both are
- * lists for a person to read, not failures. More than one primitive left after
- * both steps is a failure: the rule cannot choose, so a person must.
+ * value is taken and the choice is reported as outside its role's ramp. More
+ * than one primitive left after both steps is a failure: the rule cannot
+ * choose, so a person must.
+ *
+ * Exceptions (`findExceptions`): a component colour that is no primitive's
+ * value, or that refers to a primitive outside its role's ramps. Each is a
+ * failure unless the check's allow-list names it with its register row.
  */
+
+/** The primitive that is white in both themes (decision 223). */
+export const WHITE = "Primitives.Colors.white";
+const OPAQUE_WHITE = "#FFFFFFFF";
 
 /** Every token of a token tree, by its dotted path. */
 export function flattenTokens(tree, segments = [], out = new Map()) {
@@ -175,6 +189,12 @@ export function findCopiedColours({ light, dark }) {
     light: primitivesByColour(themes.light),
     dark: primitivesByColour(themes.dark),
   };
+  const whiteInBoth = ["light", "dark"].every(
+    (theme) =>
+      normalizeColour(
+        resolve(themes[theme], valueOf(themes[theme].get(WHITE))),
+      ) === OPAQUE_WHITE,
+  );
   const copies = [];
 
   for (const theme of ["light", "dark"]) {
@@ -186,16 +206,36 @@ export function findCopiedColours({ light, dark }) {
       if (!path.startsWith("Components.") || typeOf(token) !== "color")
         continue;
       const value = valueOf(token);
-      if (aliasOf(value)) continue;
-      const colour = normalizeColour(value);
+      const colour = normalizeColour(resolve(tokens, value));
       if (!colour) continue;
-      const candidates = primitives[theme].get(colour) ?? [];
-      if (!candidates.length) continue;
-
       const otherToken = otherTokens.get(path);
       const otherColour = otherToken
         ? normalizeColour(resolve(otherTokens, valueOf(otherToken)))
         : null;
+
+      // White in both themes: the constant white, copy or reference alike.
+      if (
+        whiteInBoth &&
+        colour === OPAQUE_WHITE &&
+        otherColour === OPAQUE_WHITE
+      ) {
+        if (aliasOf(value) !== WHITE)
+          copies.push({
+            theme,
+            path,
+            value,
+            candidates: [WHITE],
+            choice: WHITE,
+            remaining: [WHITE],
+            outsideRole: false,
+            whiteInBothThemes: true,
+          });
+        continue;
+      }
+
+      if (aliasOf(value)) continue;
+      const candidates = primitives[theme].get(colour) ?? [];
+      if (!candidates.length) continue;
       const other = otherColour
         ? (primitives[otherTheme].get(otherColour) ?? [])
         : [];
@@ -211,6 +251,41 @@ export function findCopiedColours({ light, dark }) {
   }
 
   return copies;
+}
+
+/**
+ * The component colours the rule cannot hold to a primitive of their role,
+ * in both themes: `{ theme, path, value, kind }`, where kind is
+ * "no-primitive" (a literal that is no primitive's value in its theme) or
+ * "outside-role" (a reference to a primitive outside the ramps its tone and
+ * role imply; the constant white is in every role).
+ */
+export function findExceptions({ light, dark }) {
+  const found = [];
+  for (const [theme, tree] of [
+    ["light", light],
+    ["dark", dark],
+  ]) {
+    const tokens = flattenTokens(tree);
+    const primitives = primitivesByColour(tokens);
+    for (const [path, token] of tokens) {
+      if (!path.startsWith("Components.") || typeOf(token) !== "color")
+        continue;
+      const value = valueOf(token);
+      const alias = aliasOf(value);
+      if (!alias) {
+        const colour = normalizeColour(value);
+        if (colour && !(primitives.get(colour) ?? []).length)
+          found.push({ theme, path, value, kind: "no-primitive" });
+        continue;
+      }
+      if (!alias.startsWith("Primitives.") || alias === WHITE) continue;
+      const ramps = preferredRamps(path);
+      if (ramps.length && !ramps.some((ramp) => inRamp(alias, ramp)))
+        found.push({ theme, path, value, kind: "outside-role" });
+    }
+  }
+  return found;
 }
 
 /** Set a token's value at a dotted path in a token tree, in place. */

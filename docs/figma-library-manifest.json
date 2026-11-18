@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 754,
-      "dark": 754
+      "light": 755,
+      "dark": 755
     },
     "light": [
       {
@@ -1959,6 +1959,18 @@
       },
       {
         "name": "Primitives/Colors/foreground/1000",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/white",
         "type": "color",
         "value": "#FFFFFF",
         "scopes": [],
@@ -4024,7 +4036,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/idle",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.1000}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4048,7 +4060,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/hover",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.1000}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4060,7 +4072,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/pressed",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.1000}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -4072,7 +4084,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/focus",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.1000}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -9900,6 +9912,18 @@
         ]
       },
       {
+        "name": "Primitives/Colors/white",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
         "name": "Primitives/Design Dictionary/concepts/emotions/alert",
         "type": "other",
         "value": "Alert",
@@ -11954,7 +11978,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/idle",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.0}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11978,7 +12002,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/hover",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.0}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -11990,7 +12014,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/pressed",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.0}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -12002,7 +12026,7 @@
       {
         "name": "Components/Primary Buttons/themed/button/foreground/content/focus",
         "type": "color",
-        "value": "{Primitives.Colors.foreground.0}",
+        "value": "{Primitives.Colors.white}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",

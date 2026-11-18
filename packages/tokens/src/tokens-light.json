@@ -1410,6 +1410,11 @@
             "com.figma.isOverride": true
           }
         }
+      },
+      "white": {
+        "$type": "color",
+        "$value": "#FFFFFF",
+        "$description": "Decision 223: white in both themes, never a ramp step. What decision 59 means by white: the themed Button's words and marks on the theme fill."
       }
     },
     "Design Dictionary": {
@@ -3222,7 +3227,7 @@
             "content": {
               "idle": {
                 "$type": "color",
-                "$value": "{Primitives.Colors.foreground.1000}",
+                "$value": "{Primitives.Colors.white}",
                 "$description": "Decision 59: the theme foreground, white in both themes, for text and marks on the theme fill: 5.62:1 on #135BEC, where black reads 3.74:1.",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1437:4302",
@@ -3239,7 +3244,7 @@
               },
               "hover": {
                 "$type": "color",
-                "$value": "{Primitives.Colors.foreground.1000}",
+                "$value": "{Primitives.Colors.white}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1437:4303",
                   "com.figma.isOverride": true
@@ -3247,7 +3252,7 @@
               },
               "pressed": {
                 "$type": "color",
-                "$value": "{Primitives.Colors.foreground.1000}",
+                "$value": "{Primitives.Colors.white}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1437:4304",
                   "com.figma.isOverride": true
@@ -3255,7 +3260,7 @@
               },
               "focus": {
                 "$type": "color",
-                "$value": "{Primitives.Colors.foreground.1000}",
+                "$value": "{Primitives.Colors.white}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1437:4305",
                   "com.figma.isOverride": true

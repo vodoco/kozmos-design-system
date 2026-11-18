@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T12:07:20.529Z",
+  "generatedAt": "2026-11-18T14:51:10.759Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 754,
-    "variableTokens": 702,
+    "totalTokens": 755,
+    "variableTokens": 703,
     "styleOnlyTokens": 52,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 530,
+      "color": 531,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -4279,6 +4279,35 @@
         "dark": {
           "kind": "raw",
           "value": "#000000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/white",
+      "figmaName": "Colors/white",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-white",
+      "syntax": {
+        "web": "var(--primitives-colors-white)",
+        "ios": "primitivesColorsWhite",
+        "android": "primitivesColorsWhite"
+      },
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FFFFFF"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FFFFFF"
         }
       }
     },
@@ -9192,11 +9221,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/1000"
+          "path": "Primitives/Colors/white"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/0"
+          "path": "Primitives/Colors/white"
         }
       }
     },
@@ -9240,11 +9269,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/1000"
+          "path": "Primitives/Colors/white"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/0"
+          "path": "Primitives/Colors/white"
         }
       }
     },
@@ -9264,11 +9293,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/1000"
+          "path": "Primitives/Colors/white"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/0"
+          "path": "Primitives/Colors/white"
         }
       }
     },
@@ -9288,11 +9317,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/1000"
+          "path": "Primitives/Colors/white"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/foreground/0"
+          "path": "Primitives/Colors/white"
         }
       }
     },

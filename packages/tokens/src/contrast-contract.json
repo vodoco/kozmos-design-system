@@ -581,9 +581,9 @@
         "contains": ".kozmos-map-control.kozmos-button-ghost:is( :disabled:not([data-loading]), [aria-disabled=\"true\"] ) { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); }"
       },
       {
-        "name": "a disabled MapEditToolbar action or tool, whose ink is already the disabled foreground, takes the disabled fill, at full strength (decision 197)",
+        "name": "a disabled MapEditToolbar action or tool, whose ink is already the disabled foreground, takes the disabled fill, at full strength (decision 197), and so does one with a disabled reason, aria-disabled (decision 217)",
         "file": "packages/styles/src/dashboard/map-edit-toolbar.css",
-        "contains": ".kozmos-map-edit-toolbar-item:disabled { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); opacity: 1; }"
+        "contains": ".kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled=\"true\"]) { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); opacity: 1; }"
       },
       {
         "name": "SwiftUI: a disabled filled or ghost Button draws the disabled fill, and an outline, link or glass one keeps its ground (decision 197)",

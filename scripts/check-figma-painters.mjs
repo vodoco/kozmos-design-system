@@ -22018,6 +22018,40 @@ section(
     console.log(
       `  ${components.length} Components colours imported: ${aliased} mode values stored as aliases, ${copies.length} copies of a primitive, ${drifted.length} resolving differently from the payload`,
     );
+
+    // Decision 223: the constant white is a Primitives variable, white in
+    // Light and Dark, and every Components colour white in both modes aliases
+    // it, not a ramp step that is white in one mode only.
+    const white = inCollection("Kozmos Primitives").find(
+      (variable) => variable.name === "Colors/white",
+    );
+    const opaqueWhite = "255,255,255,255";
+    ok(
+      white &&
+        key(resolveStored(white, "Light")) === opaqueWhite &&
+        key(resolveStored(white, "Dark")) === opaqueWhite &&
+        white.scopes.includes("TEXT_FILL"),
+      `Import Foundations creates Kozmos Primitives' Colors/white, white in Light and Dark (${white ? `${key(resolveStored(white, "Light"))} / ${key(resolveStored(white, "Dark"))}, scopes ${white.scopes.join(" ")}` : "missing"})`,
+    );
+    const bothWhite = components.filter(
+      (variable) =>
+        key(resolveStored(variable, "Light")) === opaqueWhite &&
+        key(resolveStored(variable, "Dark")) === opaqueWhite,
+    );
+    const elsewhere = bothWhite.filter(
+      (variable) =>
+        !white ||
+        ["Light", "Dark"].some(
+          (mode) => variable.valuesByMode[modeId(variable, mode)]?.id !== white.id,
+        ),
+    );
+    ok(
+      bothWhite.length > 0 && elsewhere.length === 0,
+      `every Components colour white in both modes aliases Colors/white (${bothWhite.length} white in both; ${elsewhere.length} elsewhere${elsewhere.length ? `: ${elsewhere.map((variable) => variable.name).slice(0, 4).join("; ")}` : ""})`,
+    );
+    console.log(
+      `  Colors/white ${white ? "created" : "missing"}; ${bothWhite.length - elsewhere.length} of ${bothWhite.length} Components colours white in both modes alias it`,
+    );
   }
 }
 

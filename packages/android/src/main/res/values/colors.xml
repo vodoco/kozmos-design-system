@@ -187,6 +187,7 @@
   <color name="primitives_colors_foreground_800">#ffc7cad1</color>
   <color name="primitives_colors_foreground_900">#ffe3e4e8</color>
   <color name="primitives_colors_foreground_1000">#ffffffff</color>
+  <color name="primitives_colors_white">#ffffffff</color>
   <string name="primitives_design_dictionary_concepts_emotions_alert">Alert</string>
   <string name="primitives_design_dictionary_concepts_emotions_danger">Danger</string>
   <string name="primitives_design_dictionary_concepts_emotions_neutral">Neutral</string>
@@ -423,11 +424,11 @@
   <color name="semantics_category_on_fill_navy">#ffffffff</color>
   <color name="semantics_category_on_fill_green">#ff17191c</color>
   <color name="semantics_category_on_fill_pink">#ffffffff</color>
-  <color name="components_primary_buttons_themed_button_foreground_content_idle">@color/primitives_colors_foreground_1000</color>
+  <color name="components_primary_buttons_themed_button_foreground_content_idle">@color/primitives_colors_white</color>
   <color name="components_primary_buttons_themed_button_foreground_content_disabled">@color/primitives_colors_foreground_300</color>
-  <color name="components_primary_buttons_themed_button_foreground_content_hover">@color/primitives_colors_foreground_1000</color>
-  <color name="components_primary_buttons_themed_button_foreground_content_pressed">@color/primitives_colors_foreground_1000</color>
-  <color name="components_primary_buttons_themed_button_foreground_content_focus">@color/primitives_colors_foreground_1000</color>
+  <color name="components_primary_buttons_themed_button_foreground_content_hover">@color/primitives_colors_white</color>
+  <color name="components_primary_buttons_themed_button_foreground_content_pressed">@color/primitives_colors_white</color>
+  <color name="components_primary_buttons_themed_button_foreground_content_focus">@color/primitives_colors_white</color>
   <color name="components_primary_buttons_themed_button_background_idle">@color/primitives_colors_theme_500</color>
   <color name="components_primary_buttons_themed_button_background_disabled">@color/primitives_colors_background_800</color>
   <color name="components_primary_buttons_themed_button_background_hover">@color/primitives_colors_theme_600</color>

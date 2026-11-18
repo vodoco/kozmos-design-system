@@ -229,6 +229,9 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // fill (decision 200).
   ["Primitives/Colors/background/0", ["STROKE_COLOR", "TEXT_FILL"]],
   ["Primitives/Colors/background/400", ["STROKE_COLOR"]],
+  // The constant white (decision 223) is what the themed Button's words and
+  // marks alias: a word, an icon's stroke, a mark on the theme fill.
+  ["Primitives/Colors/white", ["TEXT_FILL", "STROKE_COLOR"]],
   ["Semantics/Surface/0", ["STROKE_COLOR"]],
   // Rating's filled star is outlined in its own fill.
   ["Semantics/Data/Yellow", ["STROKE_COLOR"]],
