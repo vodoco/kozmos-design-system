@@ -2751,7 +2751,7 @@ assertContains(
   "Button icon width token at 44px",
 );
 // Badge on Chip's scale (decision 93, GAP-147): 28, 32 and 36, the icon
-// Badge 32 square, each aliasing Chip's height.
+// Badge 32 square: plain values, Chip's heights (declared after them).
 for (const [tokenName, expected] of [
   ["Badge/height/small", contract.components.badge.sizes.small.height],
   ["Badge/height/default", contract.components.badge.sizes.default.height],
