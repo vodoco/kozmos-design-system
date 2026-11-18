@@ -15891,7 +15891,7 @@
   "components": {
     "summary": {
       "total": 129,
-      "stories": 128,
+      "stories": 129,
       "tests": 129,
       "exported": 129,
       "codeConnectFiles": 105,
@@ -17336,7 +17336,7 @@
       {
         "name": "DescriptionList",
         "source": "packages/react/src/components/DescriptionList/DescriptionList.tsx",
-        "story": null,
+        "story": "packages/react/src/components/DescriptionList/DescriptionList.stories.tsx",
         "test": "packages/react/src/components/DescriptionList/DescriptionList.test.tsx",
         "exported": true,
         "codeConnect": {

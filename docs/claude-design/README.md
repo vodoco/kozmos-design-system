@@ -169,7 +169,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 
 ## The components
 
-### Core (82)
+### Core (83)
 
 - [Accordion](components/Accordion.md): A vertically stacked set of interactive headings that each reveal a section of content.
 - [ActionCard](components/ActionCard.md): Rich content inside an assistant turn — a `POIResultList`, a `POIResultCard`, a hand-off.
@@ -193,6 +193,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Counter](components/Counter.md): Displays a compact count for badges, filters, unread items, and status summaries.
 - [DatePicker](components/DatePicker.md): A date field: the browser's own, with its segmented typing in the reader's format, and a button at its end that opens Kozmos's calendar (decisions 104 and 105), drawn as Figma's Open variant (`438:2392`).
 - [DateRangePicker](components/DateRangePicker.md): The range adapts to its container width rather than the screen width: narrow modules stack the individually labelled fields.
+- [DescriptionList](components/DescriptionList.md): A set of values, each under its label, with no field chrome (GAP-221, decision 199): a record's read-only view.
 - [Dialog](components/Dialog.md): A window overlaid on existing content.
 - [Drawer](components/Drawer.md): Drawer presents contextual content from an edge of the viewport without committing to a dashboard, map, or CMS-specific layout.
 - [DynamicIsland](components/DynamicIsland.md): This React component is a visual activity capsule.
@@ -323,10 +324,6 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [SearchBar](components/SearchBar.md): A search row with a controlled query, clear action and an optional trailing control.
 - [UserLocationMarker](components/UserLocationMarker.md): Shows a map position and optional heading.
 - [WayfindingCard](components/WayfindingCard.md): Displays route-planning content with an optional close action.
-
-### Uncategorised (1)
-
-- [DescriptionList](components/DescriptionList.md): A set of values, each under its label, with no field chrome (GAP-221, decision 199): a record's read-only view.
 
 ## Everything else `@kozmos-ds/react` exports
 

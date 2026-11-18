@@ -5,21 +5,36 @@
 A set of values, each under its label, with no field chrome (GAP-221, decision 199): a record's read-only view. MAP-619 opens a unit for a Read-Only user as its values, not as a form, because greyed, outlined fields read as disabled inputs. Each value is a muted 12/16 label over the value, 14/20 in the foreground, 4 apart, and items are 16 apart; a value can be words, tags, a yes or a no, or carry an action after it such as Copy.
 
 - **Import:** `import { DescriptionList, DescriptionListItem } from "@kozmos-ds/react";`
-- **Group:** Uncategorised
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
-- **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/core-data-display-descriptionlist--docs>
+- **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-descriptionlist--docs>
 
 ## Example
 
-It has no stories, so this is the component with its required props.
+From its `Default` story.
 
 ```tsx
-import { DescriptionList, ThemeProvider } from "@kozmos-ds/react";
+import {
+  Badge,
+  DescriptionList,
+  DescriptionListItem,
+  ThemeProvider,
+} from "@kozmos-ds/react";
 
 export function DescriptionListExample() {
   return (
     <ThemeProvider defaultTheme="light">
-      <DescriptionList />
+      <div style={{ maxWidth: 480 }}>
+        <DescriptionList aria-label="Unit">
+          <DescriptionListItem label="Name" value="Bean & Leaf Café" />
+          <DescriptionListItem label="Categories">
+            <Badge variant="secondary">Café</Badge>
+            <Badge variant="secondary">Food</Badge>
+          </DescriptionListItem>
+          <DescriptionListItem label="Featured" value={true} />
+          <DescriptionListItem label="Hidden from visitors" value={false} />
+        </DescriptionList>
+      </div>
     </ThemeProvider>
   );
 }

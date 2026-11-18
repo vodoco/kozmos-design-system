@@ -63,8 +63,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
   its buildings and levels, rather than a navigation tree. The stroke sits
   under the row, so a divided row is a pixel taller; the hover and
   selected fills keep their corners, inside the stroke and over the
-  surface, and the focus ring is drawn inside the row. Rows composed as
-  children take it from here too.
+  surface, and the focus ring is drawn inside the row. A selected row's
+  stroke is drawn in no colour (decision 207): its fill is the stroke's
+  own colour in dark. Rows composed as children take it from here too.
 
 - `bleed`: `number | string`, optional.
 
