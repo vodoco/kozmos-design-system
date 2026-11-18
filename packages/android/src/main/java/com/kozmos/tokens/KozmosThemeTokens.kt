@@ -850,6 +850,16 @@ object KozmosThemeTokens {
             KozmosColorsDark.primitivesColorsForeground1000
         )
 
+    /**
+     * Decision 223: white in both themes, never a ramp step. What decision 59
+     * means by white: the themed Button's words and marks on the theme fill.
+     */
+    val primitivesColorsWhite: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsWhite,
+            KozmosColorsDark.primitivesColorsWhite
+        )
+
     val primitivesBorderBevelTop: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.primitivesBorderBevelTop,

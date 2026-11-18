@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "0e1b2f242c0d";
+const PLUGIN_BUILD = "ebc4c5776f85";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -58148,13 +58148,22 @@ async function createMapEditToolbarItem(
 ) {
   const g = MAP_EDIT_TOOLBAR_GEOMETRY;
   const on = item.state === "On";
-  // Disabled, a tool or an action is the disabled pair, undimmed (decision
-  // 197; map-edit-toolbar.css): Disabled/fill under Disabled/foreground.
   const off = item.state === "Disabled";
-  const ink = on
-    ? THEME_FILL_FOREGROUND
+  // Decision 226 (map-edit-toolbar.css): Pointr Cloud's live toolbar. No
+  // item has a fill at rest. Enabled, the label is the page's ink
+  // (foreground 0) over a grey icon (foreground 400); chosen, label and icon
+  // are the theme's ink on the surface (Emotion/themed/text); disabled,
+  // label and icon are foreground 500, undimmed, with no box, lighter than
+  // enabled and still 3:1: the toolbar is decision 197's exception to the
+  // disabled fill.
+  const labelInk = on
+    ? { name: "Emotion/themed/text", fallback: "#1051E8" }
     : off
-      ? DISABLED_FOREGROUND
+      ? { name: "Colors/foreground/500", fallback: "#747B8B" }
+      : { name: "Colors/foreground/0", fallback: "#000000" };
+  const ink =
+    on || off
+      ? labelInk
       : { name: "Colors/foreground/400", fallback: "#5D626F" };
   // React's item is min-inline-size 56, inline-size auto: it hugs its
   // label, 4 each side, and stops at 56, so "Straighten" is wider than 56.
@@ -58175,10 +58184,7 @@ async function createMapEditToolbarItem(
   frame.cornerRadius = g.itemRadius;
   frame.clipsContent = false;
   frame.strokes = [];
-  const ground = on ? THEME_FILL : off ? DISABLED_FILL : null;
-  frame.fills = ground
-    ? [paintFromVariable(ground.name, ground.fallback, variableByName, stats)]
-    : [];
+  frame.fills = [];
   frame.opacity = 1;
   frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
   frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
@@ -58231,8 +58237,8 @@ async function createMapEditToolbarItem(
     bold: true,
     fontSize: g.labelSize,
     lineHeight: g.labelLineHeight,
-    colorToken: ink.name,
-    colorFallback: ink.fallback,
+    colorToken: labelInk.name,
+    colorFallback: labelInk.fallback,
     variableByName,
     stats,
     width: g.itemWidth - 2 * g.itemPaddingX,

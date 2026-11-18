@@ -19380,12 +19380,21 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
         );
         const label = named(item, "Label Text");
         const icon = named(item, "Icon");
+        // Decision 226: Pointr Cloud's live toolbar. No fill in any state;
+        // enabled, the label foreground 0 over a foreground 400 icon;
+        // chosen, both the theme's ink on the surface; disabled, both
+        // foreground 500, 3:1 kept (decision 197's exception to the fill).
         const ink =
           state === "On"
-            ? "Primary Buttons/themed/button/foreground/content/idle"
+            ? "Emotion/themed/text"
             : state === "Disabled"
-              ? "Disabled/foreground"
-              : "Colors/foreground/400";
+              ? "Colors/foreground/500"
+              : "Colors/foreground/0";
+        const iconInk = state === "Off" ? "Colors/foreground/400" : ink;
+        const glyph = icon && icon.findOne((node) => node.type === "VECTOR");
+        const glyphInk =
+          glyph &&
+          boundVariableName((glyph.strokes && glyph.strokes[0]) || glyph.fills[0]);
         // React's item is min-inline-size 56 and inline-size auto: it hugs
         // its label, 4 each side, and stops at 56 (Straighten is wider). The
         // label never runs out of the item's content box.
@@ -19415,14 +19424,10 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
             label.fontSize === 11 &&
             label.lineHeight.value === 14 &&
             boundVariableName(label.fills[0]) === ink &&
-            (state === "On"
-              ? boundVariableName(item.fills[0]) ===
-                "Primary Buttons/themed/button/background/idle"
-              : state === "Disabled"
-                ? boundVariableName(item.fills[0]) === "Disabled/fill"
-                : item.fills.length === 0) &&
+            glyphInk === iconInk &&
+            item.fills.length === 0 &&
             item.opacity === 1,
-          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : state === "Disabled" ? "on Disabled/fill" : "no fill"} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+          `${at}: ${item.name} (${state}) is 48 tall, a 24 icon in ${iconInk} over an 11/14 label in ${ink}, with no fill (decision 226) (label ${label && boundVariableName(label.fills[0])}, icon ${glyphInk}, ${item.fills.length} fill(s), ${item.width}x${item.height}, ${item.opacity})`,
         );
       }
       card.remove();
@@ -21356,8 +21361,11 @@ section(
     [node].concat(node.findAll(() => true)).filter((child) => child.opacity < 1)
       .length === 0;
 
-  // MapEditToolbar: a disabled tool and a disabled action are the pair,
-  // nothing dimmed, as React's toolbar draws them (map-edit-toolbar.css).
+  // MapEditToolbar is decision 197's exception (decision 226): a disabled
+  // tool and a disabled action have no fill, and their words and icon are
+  // foreground 500, nothing dimmed, as Pointr Cloud and React's toolbar
+  // draw them (map-edit-toolbar.css).
+  const toolbarOff = "Colors/foreground/500 #747B8B/#8B8474";
   const toolbarIssues = [];
   for (const kind of ["tool", "action"]) {
     const item = await plugin.createMapEditToolbarItem(
@@ -21371,11 +21379,11 @@ section(
     const label = named(item, "Label Text");
     const marks = iconMarksOf(item);
     if (
-      reads(item.fills[0]) !== fill ||
+      item.fills.length !== 0 ||
       !label ||
-      reads(label.fills[0]) !== ink ||
+      reads(label.fills[0]) !== toolbarOff ||
       !marks.length ||
-      !marks.every((mark) => mark === ink) ||
+      !marks.every((mark) => mark === toolbarOff) ||
       !undimmed(item)
     )
       toolbarIssues.push(
@@ -21384,7 +21392,7 @@ section(
   }
   ok(
     toolbarIssues.length === 0,
-    `MapEditToolbar: a disabled tool and a disabled action are Disabled/fill under Disabled/foreground words and icon, undimmed (${toolbarIssues.join("; ")})`,
+    `MapEditToolbar: a disabled tool and a disabled action have no fill, their words and icon in foreground 500, undimmed (decision 226) (${toolbarIssues.join("; ")})`,
   );
 
   // ImageField, Disabled: no layer at half; Frame and Remove are disabled
@@ -21858,6 +21866,199 @@ section("Decision 207: no divider under a selected tree row");
         under.length === 0 &&
         dividers.length === total,
       `${setName}: after Update its ${selected.length} Selected rows draw no divider and the other ${total} one each (${dividers.length} dividers, ${under.length} under a selected row)`,
+    );
+  }
+}
+
+// GAP-281 (0.17.0 wave C): Import Foundations writes a component colour that
+// is a primitive's value as an alias of that primitive, in Light and Dark, so
+// a change to a ramp reaches every Button state drawn from it in Figma as in
+// code. Until 0.17.0 the payload carried 198 Light and 214 Dark Button
+// colours as hex copies, and the Components collection held them as values.
+// This runs the plugin's own variable import against a stand-in variable API
+// and reads what it stored: each Kozmos Components colour whose value, in a
+// mode, is a Kozmos Primitives colour's value in that mode must hold an alias
+// there, and every colour must resolve to what the payload resolves it to.
+section(
+  "GAP-281: Import Foundations aliases each component colour that is a primitive's value",
+);
+{
+  const payload = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  );
+  const importFigma = createFigmaMock({ pages: [] });
+  const collections = [];
+  const variables = [];
+  importFigma.variables.getLocalVariableCollectionsAsync = async () =>
+    collections;
+  importFigma.variables.getLocalVariablesAsync = async () => variables;
+  importFigma.variables.getVariableByIdAsync = async (id) =>
+    variables.find((variable) => variable.id === id) || null;
+  delete importFigma.variables.createVariableAliasByIdAsync;
+  importFigma.variables.createVariableCollection = (name) => {
+    const collection = {
+      id: `VariableCollectionId:${name}`,
+      name,
+      modes: [{ modeId: `${name}:m1`, name: "Mode 1" }],
+      setSharedPluginData() {},
+      renameMode(id, next) {
+        const mode = this.modes.find((m) => m.modeId === id);
+        if (mode) mode.name = next;
+      },
+      addMode(next) {
+        const id = `${name}:m${this.modes.length + 1}`;
+        this.modes.push({ modeId: id, name: next });
+        return id;
+      },
+    };
+    collections.push(collection);
+    return collection;
+  };
+  importFigma.variables.createVariable = (name, collection, type) => {
+    const variable = {
+      id: `VariableID:${collection.name}/${name}`,
+      name,
+      resolvedType: type,
+      variableCollectionId: collection.id,
+      valuesByMode: {},
+      scopes: [],
+      setSharedPluginData() {},
+      setValueForMode(mode, value) {
+        this.valuesByMode[mode] = value;
+      },
+      setVariableCodeSyntax() {},
+    };
+    variables.push(variable);
+    return variable;
+  };
+  const importPlugin = loadPlugin({ pluginPath: PLUGIN, figma: importFigma });
+  const reachable = typeof importPlugin.ensureVariables === "function";
+  ok(reachable, "Import Foundations' variable import is reachable");
+  if (reachable) {
+    const stats = { ...freshStats(), skipped: [] };
+    await importPlugin.ensureVariables(payload, stats);
+
+    const byId = new Map(variables.map((variable) => [variable.id, variable]));
+    const collectionOf = new Map(
+      collections.map((collection) => [collection.id, collection]),
+    );
+    const modeId = (variable, mode) =>
+      collectionOf
+        .get(variable.variableCollectionId)
+        .modes.find((m) => m.name === mode).modeId;
+    // Figma resolves an alias in the target collection's mode of the same
+    // name: the plugin sets Dark on every Kozmos collection together.
+    const resolveStored = (variable, mode, depth = 0) => {
+      const value = variable.valuesByMode[modeId(variable, mode)];
+      if (value && value.type === "VARIABLE_ALIAS") {
+        const target = byId.get(value.id);
+        return target && depth < 10
+          ? resolveStored(target, mode, depth + 1)
+          : null;
+      }
+      return value || null;
+    };
+    const key = (color) =>
+      color
+        ? [color.r, color.g, color.b, color.a === undefined ? 1 : color.a]
+            .map((channel) => Math.round(channel * 255))
+            .join(",")
+        : "none";
+    const payloadByCanonical = new Map(
+      payload.variables.map((record) => [record.canonicalName, record]),
+    );
+    const resolvePayload = (record, mode, depth = 0) => {
+      const value = record.values[mode.toLowerCase()];
+      if (value.kind !== "alias") return importPlugin.parseColor(value.value);
+      const target = payloadByCanonical.get(value.path);
+      return target && depth < 10 ? resolvePayload(target, mode, depth + 1) : null;
+    };
+    const inCollection = (name) =>
+      variables.filter(
+        (variable) =>
+          collectionOf.get(variable.variableCollectionId).name === name &&
+          variable.resolvedType === "COLOR",
+      );
+    const primitiveColours = {};
+    for (const mode of ["Light", "Dark"]) {
+      primitiveColours[mode] = new Set(
+        inCollection("Kozmos Primitives").map((variable) =>
+          key(resolveStored(variable, mode)),
+        ),
+      );
+    }
+
+    const components = inCollection("Kozmos Components");
+    const copies = [];
+    const drifted = [];
+    let aliased = 0;
+    for (const variable of components) {
+      const record = payload.variables.find(
+        (item) =>
+          item.collection === "Kozmos Components" &&
+          item.figmaName === variable.name,
+      );
+      for (const mode of ["Light", "Dark"]) {
+        const stored = variable.valuesByMode[modeId(variable, mode)];
+        const resolved = key(resolveStored(variable, mode));
+        if (stored && stored.type === "VARIABLE_ALIAS") aliased += 1;
+        else if (primitiveColours[mode].has(resolved))
+          copies.push(`${variable.name} (${mode}) ${resolved}`);
+        if (record && resolved !== key(resolvePayload(record, mode)))
+          drifted.push(`${variable.name} (${mode})`);
+      }
+    }
+    ok(
+      components.length > 300 && copies.length === 0,
+      `every Components colour that is a Primitives colour is stored as an alias (${aliased} aliases across ${components.length} colours in two modes; ${copies.length} copies${copies.length ? `: ${copies.slice(0, 4).join("; ")}` : ""})`,
+    );
+    ok(
+      drifted.length === 0,
+      `every Components colour resolves to the payload's colour in Light and Dark (${drifted.length} differ${drifted.length ? `: ${drifted.slice(0, 4).join("; ")}` : ""})`,
+    );
+    ok(
+      stats.warnings.length === 0,
+      `the variable import warns of nothing (${stats.warnings.slice(0, 3).join("; ") || "no warnings"})`,
+    );
+    console.log(
+      `  ${components.length} Components colours imported: ${aliased} mode values stored as aliases, ${copies.length} copies of a primitive, ${drifted.length} resolving differently from the payload`,
+    );
+
+    // Decision 223: the constant white is a Primitives variable, white in
+    // Light and Dark, and every Components colour white in both modes aliases
+    // it, not a ramp step that is white in one mode only.
+    const white = inCollection("Kozmos Primitives").find(
+      (variable) => variable.name === "Colors/white",
+    );
+    const opaqueWhite = "255,255,255,255";
+    ok(
+      white &&
+        key(resolveStored(white, "Light")) === opaqueWhite &&
+        key(resolveStored(white, "Dark")) === opaqueWhite &&
+        white.scopes.includes("TEXT_FILL"),
+      `Import Foundations creates Kozmos Primitives' Colors/white, white in Light and Dark (${white ? `${key(resolveStored(white, "Light"))} / ${key(resolveStored(white, "Dark"))}, scopes ${white.scopes.join(" ")}` : "missing"})`,
+    );
+    const bothWhite = components.filter(
+      (variable) =>
+        key(resolveStored(variable, "Light")) === opaqueWhite &&
+        key(resolveStored(variable, "Dark")) === opaqueWhite,
+    );
+    const elsewhere = bothWhite.filter(
+      (variable) =>
+        !white ||
+        ["Light", "Dark"].some(
+          (mode) => variable.valuesByMode[modeId(variable, mode)]?.id !== white.id,
+        ),
+    );
+    ok(
+      bothWhite.length > 0 && elsewhere.length === 0,
+      `every Components colour white in both modes aliases Colors/white (${bothWhite.length} white in both; ${elsewhere.length} elsewhere${elsewhere.length ? `: ${elsewhere.map((variable) => variable.name).slice(0, 4).join("; ")}` : ""})`,
+    );
+    console.log(
+      `  Colors/white ${white ? "created" : "missing"}; ${bothWhite.length - elsewhere.length} of ${bothWhite.length} Components colours white in both modes alias it`,
     );
   }
 }
