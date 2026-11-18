@@ -87,7 +87,11 @@ const MAX_TOTAL_GZIP_KB = 120;
 // 36 KB on 2026-11-09 (decision 175, Olcay's): main measured 31.79 KB on CI, and Button's subtle tier with
 // CardHeader's tone and CardTitle's size (#515) alone take it to 32.20 KB, before the rest of 0.16.0
 // (decision 174).
-const MAX_CSS_GZIP_KB = 36;
+// 40 KB on 2026-11-18 (decision 214, Olcay's) for 0.17.0 (decision 209): main measured 34.88 KB after wave A
+// (#571), and wave B (#577: the disabled pair, the inverse tooltip, DescriptionList, EmptyState's and Chip's
+// tones, Dialog's media and full size, the dividers under a selected row) takes it to 35.81, 0.19 under 36,
+// before wave C's fixes and wave D's Table, SplitButton and Grid. One raise for the release.
+const MAX_CSS_GZIP_KB = 40;
 const MIN_ESM_MODULES = 50;
 // @kozmos-ds/vue (Vue 3 Phase 0, P0.5), measured as React is: an app's
 // production build of every export at once, its dependencies (vue, reka-ui,
