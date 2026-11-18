@@ -1171,10 +1171,9 @@ struct KozmosTreeCheckBox: View {
                     .bold()
                     .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
             } else if state == .indeterminate {
-                KozmosCheckboxDash()
-                    .stroke(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
-                            style: StrokeStyle(lineWidth: 4.0 / 3.0, lineCap: .round))
-                    .frame(width: 16, height: 16)
+                // The one mixed dash Checkbox, Switch and ToggleButton draw
+                // (React's Minus at 16, 4/3 thick, round caps).
+                KozmosMixedDash(color: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
             }
         }
         .accessibilityHidden(true)
