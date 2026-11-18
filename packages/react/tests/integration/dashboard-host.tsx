@@ -66,6 +66,38 @@ const TOOLS: MapEditToolbarItem[] = [
   { type: "action", id: "reset", label: "Reset", icon: RefreshCcw01 },
 ];
 
+// One of each state: chosen, enabled tool and action, disabled with a
+// reason (decision 217), and disabled without one.
+const STATES: MapEditToolbarItem[] = [
+  { type: "tool", id: "adjust", label: "Adjust", icon: Transform },
+  { type: "tool", id: "point", label: "Point", icon: MarkerPin01 },
+  { type: "action", id: "redo", label: "Redo", icon: FlipForward },
+  {
+    type: "tool",
+    id: "merge",
+    label: "Merge",
+    icon: Divider,
+    disabled: true,
+    disabledReason: "Select two areas to merge them",
+  },
+  {
+    type: "action",
+    id: "clear",
+    label: "Clear",
+    icon: XSquare,
+    disabled: true,
+    disabledReason: "Nothing to clear",
+  },
+  { type: "tool", id: "split", label: "Split", icon: Divider, disabled: true },
+  {
+    type: "action",
+    id: "undo",
+    label: "Undo",
+    icon: FlipBackward,
+    disabled: true,
+  },
+];
+
 const ROWS: KeyValueRow[] = [
   { id: "a", name: "vendor", type: "text", value: "Acme" },
   { id: "b", name: "public", type: "boolean", value: true },
@@ -85,46 +117,17 @@ function Modules() {
           <MapEditToolbar label="Geometry tools" items={TOOLS} value="adjust" />
         </div>
       ))}
-      {/* Decision 217: disabled with and without a reason, a tool and an
-          action of each (check-dashboard-css reads their colours). */}
-      <div data-testid="toolbar-reasons" style={{ width: 760 }}>
-        <MapEditToolbar
-          label="Merge tools"
-          items={[
-            { type: "tool", id: "adjust", label: "Adjust", icon: Transform },
-            {
-              type: "tool",
-              id: "merge",
-              label: "Merge",
-              icon: Divider,
-              disabled: true,
-              disabledReason: "Select two areas to merge them",
-            },
-            {
-              type: "action",
-              id: "clear",
-              label: "Clear",
-              icon: XSquare,
-              disabled: true,
-              disabledReason: "Nothing to clear",
-            },
-            {
-              type: "tool",
-              id: "split",
-              label: "Split",
-              icon: Divider,
-              disabled: true,
-            },
-            {
-              type: "action",
-              id: "undo",
-              label: "Undo",
-              icon: FlipBackward,
-              disabled: true,
-            },
-          ]}
-        />
+      {/* Decision 226: every state of an item, in light and in dark
+          (check-dashboard-css reads their colours), with decision 217's
+          disabled reason beside the plain disabled. */}
+      <div data-testid="toolbar-states-light" style={{ width: 760 }}>
+        <MapEditToolbar label="Merge tools" items={STATES} value="adjust" />
       </div>
+      <ThemeProvider defaultTheme="dark">
+        <div data-testid="toolbar-states-dark" style={{ width: 760 }}>
+          <MapEditToolbar label="Merge tools" items={STATES} value="adjust" />
+        </div>
+      </ThemeProvider>
       <div style={{ width: 360 }}>
         <PropertyPicker
           data-testid="picker"

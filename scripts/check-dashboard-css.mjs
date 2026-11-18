@@ -12,8 +12,8 @@
  * overlay, the window covered and the page under it inert.
  *
  * MapEditToolbar (CLOUD-UI-005): on maps 640, 700 and 760 wide its items,
- * the dividers' inline margins counted, stay inside the card, and its chosen
- * tool draws ToggleButton's pressed theme fill. PropertyPicker
+ * the dividers' inline margins counted, stay inside the card; its items
+ * draw Cloud's four states (decision 226) in light and dark. PropertyPicker
  * (CLOUD-UI-003): its status region is in the page before it has words.
  * KeyValueList (CLOUD-UI-004): a row lays out the same inside a <form>,
  * where a Select adds a hidden native select to it, as outside one.
@@ -296,119 +296,132 @@ try {
       );
     }
 
-    // The chosen tool is a pressed ToggleButton: the theme fill under the
-    // theme's ink (decision 59), drawn by ToggleButton's own owned rules
-    // (GAP-262), and an unchosen tool has no fill. The toolbar keeps no copy.
-    const tools = await page.getByTestId("toolbar-760").evaluate((box) => {
-      const colour = (value, property) => {
-        const probe = document.createElement("span");
-        probe.style[property] = value;
-        box.append(probe);
-        const resolved = getComputedStyle(probe)[property];
-        probe.remove();
-        return resolved;
-      };
-      const pressed = box.querySelector(
-        '.kozmos-map-edit-toolbar-item[aria-pressed="true"]',
-      );
-      const off = box.querySelector(
-        '.kozmos-map-edit-toolbar-item[aria-pressed="false"]',
-      );
-      return {
-        id: pressed?.dataset.item,
-        fill: pressed && getComputedStyle(pressed).backgroundColor,
-        ink: pressed && getComputedStyle(pressed).color,
-        offFill: off && getComputedStyle(off).backgroundColor,
-        theme500: colour(
-          "var(--primitives-colors-theme-500)",
-          "backgroundColor",
-        ),
-        themeInk: colour(
-          "var(--components-primary-buttons-themed-button-foreground-content-idle)",
-          "color",
-        ),
-      };
-    });
-    assert.equal(tools.id, "adjust", `${mode} toolbar: the chosen tool shows`);
-    assert.equal(
-      tools.fill,
-      tools.theme500,
-      `${mode} toolbar: the chosen tool's fill is theme 500`,
-    );
-    assert.equal(
-      tools.ink,
-      tools.themeInk,
-      `${mode} toolbar: the chosen tool's ink is the theme fill's`,
-    );
-    assert.equal(
-      tools.offFill,
-      "rgba(0, 0, 0, 0)",
-      `${mode} toolbar: an unchosen tool has no fill`,
-    );
-
-    // Decision 217 (GAP-284): a disabled item with a reason is
-    // aria-disabled, not disabled, and drawn from the disabled pair as one
-    // without, a tool and an action alike, and still so under the pointer.
-    const reasons = page.getByTestId("toolbar-reasons");
-    const look = () =>
-      reasons.evaluate((box) => {
-        const colour = (value, property) => {
-          const probe = document.createElement("span");
-          probe.style[property] = value;
-          box.append(probe);
-          const resolved = getComputedStyle(probe)[property];
-          probe.remove();
-          return resolved;
-        };
-        const read = (id) => {
-          const node = box.querySelector(`[data-item="${id}"]`);
-          const style = getComputedStyle(node);
-          return {
-            disabled: node.disabled,
-            aria: node.getAttribute("aria-disabled"),
-            fill: style.backgroundColor,
-            ink: style.color,
+    // Decision 226: the four states as Pointr Cloud's live toolbar draws
+    // them, in light and in dark. Enabled (a tool not chosen, an action):
+    // no fill, the label in foreground 0, the icon in foreground 400.
+    // Chosen: no fill, label and icon in the theme's ink (the themed
+    // emotion's text). Hovered, enabled or chosen: the hover fill, the inks
+    // kept. Disabled, `disabled` or decision 217's `aria-disabled` with a
+    // reason: no fill, label and icon in foreground 600, full strength.
+    for (const theme of ["light", "dark"]) {
+      const box = page.getByTestId(`toolbar-states-${theme}`);
+      const read = (hovered) =>
+        box.evaluate((root, hovered) => {
+          const colour = (value, property) => {
+            const probe = document.createElement("span");
+            probe.style[property] = value;
+            root.append(probe);
+            const resolved = getComputedStyle(probe)[property];
+            probe.remove();
+            return resolved;
           };
-        };
-        return {
-          merge: read("merge"),
-          clear: read("clear"),
-          split: read("split"),
-          undo: read("undo"),
-          fill: colour("var(--semantics-disabled-fill)", "backgroundColor"),
-          ink: colour("var(--semantics-disabled-foreground)", "color"),
-        };
-      });
-    for (const state of ["at rest", "hovered"]) {
-      if (state === "hovered")
-        await reasons.locator('[data-item="merge"]').hover();
-      const drawn = await look();
+          const item = (id) => {
+            const node = root.querySelector(`[data-item="${id}"]`);
+            const style = getComputedStyle(node);
+            const icon = getComputedStyle(
+              node.querySelector(".kozmos-map-edit-toolbar-icon"),
+            );
+            return {
+              fill: style.backgroundColor,
+              label: style.color,
+              icon: icon.color,
+              opacity: style.opacity,
+              disabled: node.disabled,
+              aria: node.getAttribute("aria-disabled"),
+              hovered: node.matches(":hover"),
+            };
+          };
+          return {
+            items: Object.fromEntries(
+              [
+                "adjust",
+                "point",
+                "redo",
+                "merge",
+                "clear",
+                "split",
+                "undo",
+              ].map((id) => [id, item(id)]),
+            ),
+            none: "rgba(0, 0, 0, 0)",
+            hoverFill: colour("var(--semantics-hover-fill)", "backgroundColor"),
+            ink: colour("var(--primitives-colors-foreground-0)", "color"),
+            grey: colour("var(--primitives-colors-foreground-400)", "color"),
+            theme: colour("var(--semantics-emotion-themed-text)", "color"),
+            off: colour("var(--primitives-colors-foreground-600)", "color"),
+            hovered,
+          };
+        }, hovered);
+      const expect = (drawn, id, want, state) => {
+        for (const field of ["fill", "label", "icon"])
+          assert.equal(
+            drawn.items[id][field],
+            want[field],
+            `${mode} ${theme} toolbar ${id} ${state}: ${field} ${drawn.items[id][field]}, expected ${want[field]}`,
+          );
+      };
+      const atRest = await read(null);
+      const enabled = {
+        fill: atRest.none,
+        label: atRest.ink,
+        icon: atRest.grey,
+      };
+      const chosen = {
+        fill: atRest.none,
+        label: atRest.theme,
+        icon: atRest.theme,
+      };
+      const off = { fill: atRest.none, label: atRest.off, icon: atRest.off };
+      expect(atRest, "adjust", chosen, "chosen");
+      expect(atRest, "point", enabled, "enabled tool");
+      expect(atRest, "redo", enabled, "enabled action");
       for (const id of ["merge", "clear", "split", "undo"]) {
+        expect(atRest, id, off, "disabled");
+        assert.equal(
+          atRest.items[id].opacity,
+          "1",
+          `${mode} ${theme} toolbar ${id}: full strength`,
+        );
         const reasoned = id === "merge" || id === "clear";
         assert.equal(
-          drawn[id].disabled,
+          atRest.items[id].disabled,
           !reasoned,
-          `${mode} toolbar ${id}: ${reasoned ? "focusable" : "disabled"}`,
+          `${mode} ${theme} toolbar ${id}: ${reasoned ? "focusable" : "disabled"}`,
         );
         assert.equal(
-          drawn[id].aria,
+          atRest.items[id].aria,
           reasoned ? "true" : null,
-          `${mode} toolbar ${id}: aria-disabled ${reasoned ? "set" : "unset"}`,
-        );
-        assert.equal(
-          drawn[id].fill,
-          drawn.fill,
-          `${mode} toolbar ${id} ${state}: the disabled fill (${drawn[id].fill})`,
-        );
-        assert.equal(
-          drawn[id].ink,
-          drawn.ink,
-          `${mode} toolbar ${id} ${state}: the disabled foreground (${drawn[id].ink})`,
+          `${mode} ${theme} toolbar ${id}: aria-disabled`,
         );
       }
+      for (const [id, want] of [
+        ["point", { ...enabled, fill: atRest.hoverFill }],
+        ["redo", { ...enabled, fill: atRest.hoverFill }],
+        ["adjust", { ...chosen, fill: atRest.hoverFill }],
+        ["merge", off],
+      ]) {
+        const target = box.locator(`[data-item="${id}"]`);
+        await target.hover();
+        // The item eases its colours (transition-colors): read them settled.
+        await target.evaluate((node) =>
+          Promise.all(
+            node
+              .getAnimations({ subtree: true })
+              .map((animation) => animation.finished),
+          ),
+        );
+        const hovered = await read(id);
+        assert.ok(
+          hovered.items[id].hovered,
+          `${mode} ${theme} toolbar ${id} is under the pointer`,
+        );
+        expect(hovered, id, want, "hovered");
+      }
+      await page.mouse.move(0, 0);
     }
-    await page.mouse.move(0, 0);
-    passed.push(`${mode} toolbar: disabled with a reason draws the disabled pair`);
+    passed.push(
+      `${mode} toolbar: enabled, chosen, hovered and disabled (with and without a reason) as Cloud draws them, light and dark`,
+    );
 
     // The picker: its status region is rendered (not display: none) before
     // anything is typed, and draws the empty state once nothing matches.

@@ -170,6 +170,9 @@ const ADDED_SCOPES_BY_PATH = new Map([
   ["Primitives/Colors/foreground/400", ["FRAME_FILL", ...MARK]],
   ["Primitives/Colors/foreground/500", ["FRAME_FILL", ...MARK]],
   ["Primitives/Colors/foreground/1000", ["STROKE_COLOR"]],
+  // A disabled MapEditToolbar item's icon stroke as well as its words
+  // (decision 226).
+  ["Primitives/Colors/foreground/600", MARK],
   // The theme's 600 is a word, a mark, an edge or a focus ring on the
   // surface (decision 59).
   ["Primitives/Colors/theme/600", ["TEXT_FILL", "STROKE_COLOR"]],

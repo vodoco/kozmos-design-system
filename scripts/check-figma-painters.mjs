@@ -19380,12 +19380,21 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
         );
         const label = named(item, "Label Text");
         const icon = named(item, "Icon");
+        // Decision 226: Pointr Cloud's live toolbar. No fill in any state;
+        // enabled, the label foreground 0 over a foreground 400 icon;
+        // chosen, both the theme's ink on the surface; disabled, both
+        // foreground 600 (decision 197's exception).
         const ink =
           state === "On"
-            ? "Primary Buttons/themed/button/foreground/content/idle"
+            ? "Emotion/themed/text"
             : state === "Disabled"
-              ? "Disabled/foreground"
-              : "Colors/foreground/400";
+              ? "Colors/foreground/600"
+              : "Colors/foreground/0";
+        const iconInk = state === "Off" ? "Colors/foreground/400" : ink;
+        const glyph = icon && icon.findOne((node) => node.type === "VECTOR");
+        const glyphInk =
+          glyph &&
+          boundVariableName((glyph.strokes && glyph.strokes[0]) || glyph.fills[0]);
         // React's item is min-inline-size 56 and inline-size auto: it hugs
         // its label, 4 each side, and stops at 56 (Straighten is wider). The
         // label never runs out of the item's content box.
@@ -19415,14 +19424,10 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
             label.fontSize === 11 &&
             label.lineHeight.value === 14 &&
             boundVariableName(label.fills[0]) === ink &&
-            (state === "On"
-              ? boundVariableName(item.fills[0]) ===
-                "Primary Buttons/themed/button/background/idle"
-              : state === "Disabled"
-                ? boundVariableName(item.fills[0]) === "Disabled/fill"
-                : item.fills.length === 0) &&
+            glyphInk === iconInk &&
+            item.fills.length === 0 &&
             item.opacity === 1,
-          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : state === "Disabled" ? "on Disabled/fill" : "no fill"} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+          `${at}: ${item.name} (${state}) is 48 tall, a 24 icon in ${iconInk} over an 11/14 label in ${ink}, with no fill (decision 226) (label ${label && boundVariableName(label.fills[0])}, icon ${glyphInk}, ${item.fills.length} fill(s), ${item.width}x${item.height}, ${item.opacity})`,
         );
       }
       card.remove();
@@ -21356,8 +21361,11 @@ section(
     [node].concat(node.findAll(() => true)).filter((child) => child.opacity < 1)
       .length === 0;
 
-  // MapEditToolbar: a disabled tool and a disabled action are the pair,
-  // nothing dimmed, as React's toolbar draws them (map-edit-toolbar.css).
+  // MapEditToolbar is decision 197's exception (decision 226): a disabled
+  // tool and a disabled action have no fill, and their words and icon are
+  // foreground 600, nothing dimmed, as Pointr Cloud and React's toolbar
+  // draw them (map-edit-toolbar.css).
+  const toolbarOff = "Colors/foreground/600 #9095A2/#6F6A5D";
   const toolbarIssues = [];
   for (const kind of ["tool", "action"]) {
     const item = await plugin.createMapEditToolbarItem(
@@ -21371,11 +21379,11 @@ section(
     const label = named(item, "Label Text");
     const marks = iconMarksOf(item);
     if (
-      reads(item.fills[0]) !== fill ||
+      item.fills.length !== 0 ||
       !label ||
-      reads(label.fills[0]) !== ink ||
+      reads(label.fills[0]) !== toolbarOff ||
       !marks.length ||
-      !marks.every((mark) => mark === ink) ||
+      !marks.every((mark) => mark === toolbarOff) ||
       !undimmed(item)
     )
       toolbarIssues.push(
@@ -21384,7 +21392,7 @@ section(
   }
   ok(
     toolbarIssues.length === 0,
-    `MapEditToolbar: a disabled tool and a disabled action are Disabled/fill under Disabled/foreground words and icon, undimmed (${toolbarIssues.join("; ")})`,
+    `MapEditToolbar: a disabled tool and a disabled action have no fill, their words and icon in foreground 600, undimmed (decision 226) (${toolbarIssues.join("; ")})`,
   );
 
   // ImageField, Disabled: no layer at half; Frame and Remove are disabled

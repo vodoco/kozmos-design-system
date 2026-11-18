@@ -31,8 +31,9 @@ interface MapEditToolbarControl {
   icon: KozmosIconComponent;
   /**
    * Unavailable now. As every Kozmos button, a disabled item is skipped by
-   * the keyboard and the pointer, and drawn from the disabled pair: the
-   * disabled fill under the disabled foreground (decision 197).
+   * the keyboard and the pointer. It is drawn as Pointr Cloud draws it, its
+   * words and icon in foreground 600 with no fill: the toolbar is decision
+   * 197's exception to the disabled fill (decision 226).
    */
   disabled?: boolean;
   /**
@@ -40,8 +41,8 @@ interface MapEditToolbarControl {
    * decision 217 (GAP-284). With it, the disabled item stays in the arrow-key
    * order and under the pointer, says so with `aria-disabled` rather than
    * `disabled`, does nothing when pressed, and shows the reason as its
-   * tooltip and accessible description. It is drawn from the disabled pair
-   * as any disabled item. Without it a disabled item is skipped and shows
+   * tooltip and accessible description. It is drawn as any disabled item
+   * (decision 226). Without it a disabled item is skipped and shows
    * nothing. Read only with `disabled`; in the More menu it is a disabled
    * entry, as any.
    */

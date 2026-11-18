@@ -6,17 +6,15 @@
    and 48 tall, a 24 icon over an 11/14 label; dividers 32 tall with 8 each
    side. The card is Surface's solid fill without its edge, as every map
    control is drawn on the map (decision 40), so it is 60 tall, not 62.
-   Items keep their parts' own looks: a chosen tool is a pressed
-   ToggleButton (the theme fill), an action a ghost Button, both with their
-   focus ring and their half-strength disabled state; here they take the
-   toolbar's shape and the muted ink of Cloud's labels. An item's corner is
+   A tool is a ToggleButton and an action a ghost Button, each with its
+   focus ring; here they take the toolbar's shape and Cloud's colours
+   (decision 226, below), not their parts' pressed fill or disabled look. An item's corner is
    8, the card's 16 less its padding (docs/nested-radius.md). Three classes
    on every item rule: the parts draw with utilities, scoped, which weigh two
-   (`:scope .h-9`) and win a tie on proximity. The pressed tool's theme fill,
-   the focus ring and half strength when disabled are the parts' own, owned
-   by Button and ToggleButton (GAP-262), so they hold in a host without
-   @scope; the toolbar owns only what it changes, the hover fill and the
-   ink, and Separator's rule, which a host without @scope drops.
+   (`:scope .h-9`) and win a tie on proximity. The focus ring is the parts'
+   own, owned by Button and ToggleButton (GAP-262), so it holds in a host
+   without @scope; the toolbar owns what it changes, its fills and inks,
+   and Separator's rule, which a host without @scope drops.
    The frame spans the space the product gives it and centres the card; it
    takes no pointer, so the map under it still does. Logical sides
    throughout, so right to left mirrors. */
@@ -78,34 +76,62 @@
     line-height: calc(var(--primitives-typography-line-height-50) * 1px);
     white-space: nowrap;
   }
-  /* Off, and every action: no fill and Cloud's grey ink (foreground 400).
-     Hovered, the hover fill, the ink kept. */
+  /* Decision 226 (18 Nov): drawn as Pointr Cloud's live toolbar draws its
+     items, in four states, none of them filled at rest. The icon is a
+     currentColor stroke, so it takes its own colour from the icon rule.
+     - Enabled, a tool not chosen or an action: the label in the page's ink
+       (foreground 0: black in light, white in dark, 21:1 on the card), the
+       icon in Cloud's grey (foreground 400: 6.10:1 light, 7.76:1 dark).
+     - Chosen (aria-pressed): label and icon in the theme's ink on the
+       surface (the themed emotion's text, theme 600: 6.24:1 light, 6.18:1
+       dark), with no fill. This outweighs ToggleButton's pressed theme fill
+       and its themed hover, inside the toolbar only; its focus ring is
+       kept.
+     - Hovered, enabled or chosen: the hover fill (decision 173), the inks
+       kept.
+     - Disabled, `disabled` or `aria-disabled` with a reason (decision
+       217): no fill, label and icon in foreground 600 (2.997:1 on the white
+       card, 3.90:1 on the black one), at full strength. The toolbar is an
+       exception to decision 197's disabled fill: Cloud draws an unavailable
+       tool as lighter words, with no box. */
   .kozmos-map-edit-toolbar
     .kozmos-map-edit-toolbar-items
-    .kozmos-map-edit-toolbar-item:where(:not([aria-pressed="true"])) {
+    .kozmos-map-edit-toolbar-item {
     background-color: transparent;
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item
+    .kozmos-map-edit-toolbar-icon {
     color: var(--primitives-colors-foreground-400);
   }
   .kozmos-map-edit-toolbar
     .kozmos-map-edit-toolbar-items
-    .kozmos-map-edit-toolbar-item:where(
-      :not([aria-pressed="true"]):not(:disabled):not([aria-disabled="true"])
+    .kozmos-map-edit-toolbar-item[aria-pressed="true"],
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item[aria-pressed="true"]
+    .kozmos-map-edit-toolbar-icon {
+    background-color: transparent;
+    color: var(--semantics-emotion-themed-text);
+  }
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item:not(:disabled):not(
+      [aria-disabled="true"]
     ):hover {
     background-color: var(--semantics-hover-fill);
-    color: var(--primitives-colors-foreground-400);
   }
-  /* Disabled (decision 197), an action or a tool is drawn from the disabled
-     pair, chosen or not: its ink is already the pair's foreground, so the
-     pair's fill under it is what says it is unavailable, as on a map
-     control. No longer at half: a tool is a ToggleButton, whose own disabled
-     look is half, and this outweighs it. One with a reason (decision 217)
-     is aria-disabled, focusable and hoverable, and drawn the same, its
-     hover and press included. */
   .kozmos-map-edit-toolbar
     .kozmos-map-edit-toolbar-items
-    .kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled="true"]) {
-    background-color: var(--semantics-disabled-fill);
-    color: var(--semantics-disabled-foreground);
+    .kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled="true"]),
+  .kozmos-map-edit-toolbar
+    .kozmos-map-edit-toolbar-items
+    .kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled="true"])
+    .kozmos-map-edit-toolbar-icon {
+    background-color: transparent;
+    color: var(--primitives-colors-foreground-600);
     opacity: 1;
   }
   .kozmos-map-edit-toolbar-icon {
