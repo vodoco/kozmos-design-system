@@ -53,7 +53,10 @@ import { topLevelRetainers } from "./top-level-retainers.mjs";
 // alone from 7.85 to 8.03 KB on CI (7.79 to 7.97 here). That is the shell's real size now, not a
 // tree-shaking slip, and it has no cheap lossless trim: the module is layout logic, not data. The
 // guard still catches an export that pulls in more than it should.
-const MAX_EXPORT_GZIP_KB = 8.5;
+// Olcay approved 9 KB on 2026-11-18 (decision 220) for 0.17.0: AdaptiveMapShell measured 8.60 KB
+// after GAP-084's keyboard avoidance, GAP-226's live regions mounted before their words and
+// GAP-265's first layout (#582). The half-kilobyte step React's later budgets take.
+const MAX_EXPORT_GZIP_KB = 9;
 const MAX_BUTTON_GZIP_KB = 2;
 // Olcay approved 92 KB on 2026-10-21 (decision 114) for the web's own date and time panels
 // (decision 104): Calendar (#352), DatePicker's (#361), DateRangePicker's (#366) and
