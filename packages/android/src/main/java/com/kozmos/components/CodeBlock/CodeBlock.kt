@@ -5,11 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
@@ -36,6 +38,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
@@ -57,7 +60,9 @@ private const val CopiedMillis = 2000L
  * [code] in the mono family ([KozmosTypography.mono]), in the foreground on
  * the muted surface (background/100), on the control radius, 12 inside. Long
  * lines wrap (the default); with [wrap] off each line stays whole and the
- * block scrolls sideways. With [copyable], a copy at the top end copies the
+ * block scrolls sideways. With [maxHeight] the block is no taller than it
+ * and the code scrolls down inside it, so a long value never pushes the
+ * screen; unset (null), the block is as tall as its code. With [copyable], a copy at the top end copies the
  * code and says so in a polite live region, in the product's words
  * ([copyLabel], [copiedLabel]). No syntax colouring: the code is plain text,
  * selectable.
@@ -72,6 +77,7 @@ fun KozmosCodeBlock(
     label: String,
     modifier: Modifier = Modifier,
     wrap: Boolean = true,
+    maxHeight: Dp? = null,
     copyable: Boolean = false,
     copyLabel: String = "Copy",
     copiedLabel: String = "Copied",
@@ -93,7 +99,9 @@ fun KozmosCodeBlock(
         } else {
             KozmosCodeBlockDefaults.padding
         }
-        val scroller = if (wrap) Modifier else Modifier.horizontalScroll(rememberScrollState())
+        val sideways = if (wrap) Modifier else Modifier.horizontalScroll(rememberScrollState())
+        val down = if (maxHeight == null) Modifier else Modifier.heightIn(max = maxHeight).verticalScroll(rememberScrollState())
+        val scroller = down.then(sideways)
         Box(Modifier.fillMaxWidth().then(scroller)) {
             SelectionContainer {
                 Text(

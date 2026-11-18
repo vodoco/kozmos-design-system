@@ -19,6 +19,7 @@ public struct KozmosCodeBlock: View {
     let code: String
     let label: String
     let wrap: Bool
+    let maxHeight: CGFloat?
     let copyable: Bool
     let copyLabel: String
     let copiedLabel: String
@@ -38,6 +39,9 @@ public struct KozmosCodeBlock: View {
     ///   - code: shown as written, every space and line kept.
     ///   - label: the block's name to VoiceOver, "mergedUnit JSON".
     ///   - wrap: long lines wrap; `false` scrolls the block sideways.
+    ///   - maxHeight: the block's tallest, so a long value never pushes the
+    ///     page: past it the code scrolls inside the block. Unset (nil), the
+    ///     block is as tall as its code.
     ///   - copyable: a copy button at the top end.
     ///   - copyLabel: the copy's name, "Copy" by default.
     ///   - copiedLabel: what is announced once copied, "Copied" by default.
@@ -46,6 +50,7 @@ public struct KozmosCodeBlock: View {
         _ code: String,
         label: String,
         wrap: Bool = true,
+        maxHeight: CGFloat? = nil,
         copyable: Bool = false,
         copyLabel: String = "Copy",
         copiedLabel: String = "Copied",
@@ -54,6 +59,7 @@ public struct KozmosCodeBlock: View {
         self.code = code
         self.label = label
         self.wrap = wrap
+        self.maxHeight = maxHeight
         self.copyable = copyable
         self.copyLabel = copyLabel
         self.copiedLabel = copiedLabel
@@ -62,12 +68,21 @@ public struct KozmosCodeBlock: View {
 
     public var body: some View {
         ZStack(alignment: .topTrailing) {
-            if wrap {
-                codeText
-            } else {
-                ScrollView(.horizontal) {
-                    codeText.fixedSize(horizontal: true, vertical: false)
+            if let maxHeight {
+                // The code as it is when it fits the cap, in a scroll view
+                // when it does not, decided in one layout pass: a scroll view
+                // alone, or `.frame(maxHeight:)`, would take the whole cap for
+                // a short value (as ManoeuvreCard's itinerary).
+                KozmosCappedHeightLayout(cap: maxHeight) {
+                    ViewThatFits(in: .vertical) {
+                        unscrolled
+                        ScrollView(wrap ? .vertical : [.horizontal, .vertical]) {
+                            wrap ? AnyView(codeText) : AnyView(codeText.fixedSize(horizontal: true, vertical: false))
+                        }
+                    }
                 }
+            } else {
+                unscrolled
             }
             if copyable {
                 copyButton.padding(Self.copyInset)
@@ -81,6 +96,18 @@ public struct KozmosCodeBlock: View {
         .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(label)
+    }
+
+    /// The code at its own height: wrapped, or in a sideways scroll.
+    @ViewBuilder
+    private var unscrolled: some View {
+        if wrap {
+            codeText
+        } else {
+            ScrollView(.horizontal) {
+                codeText.fixedSize(horizontal: true, vertical: false)
+            }
+        }
     }
 
     private var codeText: some View {

@@ -63,6 +63,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `CodeBlockProps`, which e
   scrolls the block sideways; the scroller is then reachable from the
   keyboard, so its overflow can be read with the arrow keys.
 
+- `maxHeight`: `number | string`, optional.
+
+  The block's tallest, a number of pixels or any CSS length ("12rem"), so
+  a long value never pushes the page: past it the code scrolls inside the
+  block, and the scroller is reachable from the keyboard. Unset, the
+  block is as tall as its code.
+
 - `copyable`: `boolean`, optional, default `false`.
 
   A copy button at the block's top end. Off by default.

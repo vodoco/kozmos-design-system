@@ -53,6 +53,32 @@ describe("CodeBlock (GAP-216)", () => {
     expect(pre()).toHaveAttribute("tabindex", "0");
   });
 
+  // A long JSON value must not push the page: with maxHeight the block
+  // scrolls inside its frame, reachable from the keyboard.
+  it("caps its height with maxHeight and scrolls inside it, keyboard reachable", () => {
+    const { rerender } = render(
+      <CodeBlock label="mergedUnit JSON" code={JSON_VALUE} />,
+    );
+    const pre = () =>
+      screen
+        .getByRole("region", { name: "mergedUnit JSON" })
+        .querySelector("pre")!;
+    // Unset by default: no cap, and wrapped there is nothing to reach.
+    expect(pre().style.maxHeight).toBe("");
+    expect(pre()).not.toHaveAttribute("tabindex");
+
+    rerender(
+      <CodeBlock label="mergedUnit JSON" code={JSON_VALUE} maxHeight={240} />,
+    );
+    expect(pre().style.maxHeight).toBe("240px");
+    expect(pre()).toHaveAttribute("tabindex", "0");
+
+    rerender(
+      <CodeBlock label="mergedUnit JSON" code={JSON_VALUE} maxHeight="12rem" />,
+    );
+    expect(pre().style.maxHeight).toBe("12rem");
+  });
+
   it("draws no copy button unless asked", () => {
     render(<CodeBlock label="mergedUnit JSON" code={JSON_VALUE} />);
     expect(screen.queryByRole("button")).toBeNull();

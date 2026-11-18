@@ -20,6 +20,13 @@ export interface CodeBlockProps extends Omit<
    * keyboard, so its overflow can be read with the arrow keys.
    */
   wrap?: boolean;
+  /**
+   * The block's tallest, a number of pixels or any CSS length ("12rem"), so
+   * a long value never pushes the page: past it the code scrolls inside the
+   * block, and the scroller is reachable from the keyboard. Unset, the
+   * block is as tall as its code.
+   */
+  maxHeight?: number | string;
   /** A copy button at the block's top end. Off by default. */
   copyable?: boolean;
   /** The copy button's name. Default "Copy". */
@@ -45,6 +52,7 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
       code,
       label,
       wrap = true,
+      maxHeight,
       copyable = false,
       copyLabel = "Copy",
       copiedLabel = "Copied",
@@ -60,6 +68,7 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
       return () => clearTimeout(timer);
     }, [said]);
     const icon = "kozmos-reset kozmos-code-block-copy-icon";
+    const capped = maxHeight !== undefined && maxHeight !== null;
     return (
       <div
         ref={ref}
@@ -72,8 +81,10 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
       >
         <pre
           className="kozmos-code-block-pre"
-          // Scrolling sideways, the box is a stop on the keyboard's way.
-          tabIndex={wrap ? undefined : 0}
+          style={capped ? { maxHeight } : undefined}
+          // Scrolling sideways, or down past maxHeight, the box is a stop on
+          // the keyboard's way.
+          tabIndex={wrap && !capped ? undefined : 0}
         >
           <code>{code}</code>
         </pre>

@@ -12,18 +12,23 @@ export const LONG_CODE = `{
 export function CodeBlockFixture({
   wrap,
   copyable,
+  maxHeight,
+  code = LONG_CODE,
 }: {
   wrap?: boolean;
   copyable?: boolean;
+  maxHeight?: number;
+  code?: string;
 }) {
   return (
     <ThemeProvider theme="light">
       <div style={{ width: 240 }}>
         <CodeBlock
           label="mergedUnit JSON"
-          code={LONG_CODE}
+          code={code}
           wrap={wrap}
           copyable={copyable}
+          maxHeight={maxHeight}
         />
       </div>
     </ThemeProvider>

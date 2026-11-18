@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
@@ -74,6 +75,40 @@ class KozmosCodeBlockTest {
         val text = tree.unmerged.single { it.texts == listOf(long) }
         assertEquals("with wrap off the line broke", 1, text.textLayout?.lineCount)
         assertTrue("it does not scroll sideways", tree.unmerged.any { (it.horizontalScrollMax ?: 0f) > 0f })
+    }
+
+    private val tall = (0 until 40).joinToString("\n") { "  { \"fid\": \"f-$it\" }," }
+
+    /**
+     * With maxHeight a long value never pushes the page: the block is no
+     * taller than it, and the code scrolls inside it (wrapped, so the only
+     * scroller is the one down).
+     */
+    @Test fun maxHeightCapsALongValueAndScrollsInside() {
+        var density = 1f
+        val tree = paparazzi.readSettledSemantics {
+            density = LocalDensity.current.density
+            KozmosMaterialTheme {
+                Box(Modifier.width(320.dp)) { KozmosCodeBlock(code = tall, label = "JSON", maxHeight = 120.dp) }
+            }
+        }
+        val region = tree.unmerged.single { it.paneTitle == "JSON" }
+        assertEquals("the block is not capped at 120", 120f, region.frame.height / density, 1f)
+        assertTrue("nothing scrolls inside it", tree.unmerged.any { it.scrollBy != null })
+    }
+
+    /** Unset, the block is as tall as its code and nothing scrolls. */
+    @Test fun withoutMaxHeightTheBlockIsAsTallAsItsCode() {
+        var density = 1f
+        val tree = paparazzi.readSettledSemantics {
+            density = LocalDensity.current.density
+            KozmosMaterialTheme {
+                Box(Modifier.width(320.dp)) { KozmosCodeBlock(code = tall, label = "JSON") }
+            }
+        }
+        val region = tree.unmerged.single { it.paneTitle == "JSON" }
+        assertTrue("unset, the block is capped: ${region.frame}", region.frame.height / density > 600f)
+        assertTrue("unset, it scrolls", tree.unmerged.none { it.scrollBy != null })
     }
 
     /** Pressed in a live composition, as Input's copy is (KozmosInputActionTest). */

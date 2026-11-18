@@ -2,6 +2,12 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { CodeBlockFixture } from "./CodeBlock.fixture";
 
+// Forty lines of JSON, far taller than a 120 cap.
+const TALL_CODE = `[\n${Array.from(
+  { length: 40 },
+  (_, index) => `  { "fid": "f-${1000 + index}" },`,
+).join("\n")}\n]`;
+
 // GAP-216, decision 225: the code in the mono family, 14/20, on the muted
 // surface, on the control radius, 12 inside; wrapped by default, scrolling
 // sideways with wrap off; a copy at the top end, the code kept clear of it.
@@ -94,6 +100,49 @@ test.describe("CodeBlock (GAP-216)", () => {
         component.evaluate((host) => host.querySelector("pre")!.scrollLeft),
       )
       .toBeGreaterThan(0);
+  });
+
+  test("caps its height with maxHeight and scrolls inside it, reachable by Tab", async ({
+    mount,
+    page,
+  }) => {
+    const component = await mount(
+      <CodeBlockFixture code={TALL_CODE} maxHeight={120} copyable />,
+    );
+    const m = await component.evaluate((host) => {
+      const block = host.querySelector(".kozmos-code-block") as HTMLElement;
+      const pre = block.querySelector("pre") as HTMLElement;
+      const copy = block.querySelector("button")!;
+      return {
+        block: block.getBoundingClientRect().height,
+        pre: pre.getBoundingClientRect().height,
+        scrolls: pre.scrollHeight > pre.clientHeight,
+        overflowY: getComputedStyle(pre).overflowY,
+        copyTop:
+          copy.getBoundingClientRect().top - block.getBoundingClientRect().top,
+      };
+    });
+    expect(m.block).toBe(120);
+    expect(m.pre).toBe(120);
+    expect(m.scrolls).toBe(true);
+    expect(m.overflowY).toBe("auto");
+    // The copy stays at the block's top end, out of the scroll.
+    expect(m.copyTop).toBe(4);
+    await page.keyboard.press("Tab");
+    expect(
+      await page.evaluate(() => document.activeElement?.tagName ?? ""),
+    ).toBe("PRE");
+  });
+
+  test("is as tall as its code without maxHeight", async ({ mount }) => {
+    const component = await mount(<CodeBlockFixture code={TALL_CODE} />);
+    const height = await component.evaluate(
+      (host) =>
+        host.querySelector(".kozmos-code-block")!.getBoundingClientRect()
+          .height,
+    );
+    // 42 lines of 20 and the 12s above and below.
+    expect(height).toBe(42 * 20 + 24);
   });
 
   test("puts the copy at the top end and keeps the code clear of it", async ({

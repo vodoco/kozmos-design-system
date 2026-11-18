@@ -19,6 +19,7 @@ final class KozmosCodeBlockTests: XCTestCase {
         XCTAssertFalse(block.copyable, "a code block copies by default")
         XCTAssertEqual(block.copyLabel, "Copy")
         XCTAssertEqual(block.copiedLabel, "Copied")
+        XCTAssertNil(block.maxHeight, "a code block is capped by default")
         XCTAssertEqual(KozmosCodeBlock.padding, KozmosDimensions.primitivesLayoutSpacing150)
         XCTAssertEqual(KozmosCodeBlock.cornerRadius, KozmosDimensions.semanticsRadiusControl)
     }
@@ -85,6 +86,45 @@ final class KozmosCodeBlockTests: XCTestCase {
         XCTAssertGreaterThan(wrapped, scrolling * 2, "a wrapped long line did not break: \(wrapped) against \(scrolling)")
         // One line of 20 or so and the 12s above and below.
         XCTAssertLessThan(scrolling, 60, "with wrap off the line broke: \(scrolling)")
+    }
+
+    /// With `maxHeight` a long value never pushes the page: the block is no
+    /// taller than it and scrolls inside; a short value keeps its own height,
+    /// and unset the block is as tall as its code.
+    @MainActor func testMaxHeightCapsALongValueAndLeavesAShortOne() async throws {
+        let lines: [String] = (0..<40).map { (index: Int) -> String in "  { \"fid\": \"f-\(index)\" }," }
+        let tall = lines.joined(separator: "\n")
+        let size = CGSize(width: 320, height: 1400)
+        func height(_ code: String, maxHeight: CGFloat?) async throws -> CGFloat {
+            let view = KozmosCodeBlock(code, label: "JSON", maxHeight: maxHeight)
+                .frame(width: 320)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .background(Color.white)
+                .environment(\.colorScheme, .light)
+            let pixels = try await RenderedPixels.render(view, size: size)
+            let box = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: { r, g, b in
+                r < 250 && g < 250 && b < 250
+            }), "nothing drawn")
+            return box.height
+        }
+        let capped = try await height(tall, maxHeight: 120)
+        XCTAssertEqual(capped, 120, accuracy: 1.5, "the block is not capped at 120: \(capped)")
+        let uncapped = try await height(tall, maxHeight: nil)
+        XCTAssertGreaterThan(uncapped, 600, "unset, the block is not as tall as its code: \(uncapped)")
+        let short = try await height("{ }", maxHeight: 120)
+        XCTAssertLessThan(short, 60, "a short value takes the whole cap: \(short)")
+    }
+
+    /// Capped, the code is in a scroll view VoiceOver and the keyboard can
+    /// scroll: an element that scrolls, inside the named container.
+    @MainActor func testACappedBlockScrolls() async throws {
+        let lines: [String] = (0..<40).map { (index: Int) -> String in "line \(index)" }
+        let tall = lines.joined(separator: "\n")
+        try await inspectAccessibility(KozmosCodeBlock(tall, label: "JSON", maxHeight: 120).padding(16)) { window in
+            let scrollers = accessibilityNodes(window).compactMap { $0 as? UIScrollView }
+            XCTAssertTrue(scrollers.contains { $0.contentSize.height > $0.bounds.height + 1 },
+                          "no scroll view holds more than it shows:\n\(describeAccessibility(window))")
+        }
     }
     #endif
 }

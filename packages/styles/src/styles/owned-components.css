@@ -2964,8 +2964,9 @@
    the muted surface (background 100), on the control radius, layout
    spacing 150 (12) inside. Long lines wrap, breaking anywhere a line has no
    space; with wrap off each line stays whole and the block scrolls
-   sideways. A copy sits at the top end, the code kept clear of it. No
-   colouring. */
+   sideways. With a maxHeight (the pre's inline max-height) the code
+   scrolls inside the block. A copy sits at the top end, the code kept clear
+   of it. No colouring. */
 @kozmos-owned {
   .kozmos-code-block {
     position: relative;
@@ -2978,6 +2979,8 @@
     margin: 0;
     padding: calc(var(--primitives-layout-spacing-150) * 1px);
     overflow-x: auto;
+    /* Past a maxHeight the code scrolls inside the block. */
+    overflow-y: auto;
     border-radius: inherit;
     font-family: var(--semantics-typography-family-mono);
     font-size: 0.875rem;
