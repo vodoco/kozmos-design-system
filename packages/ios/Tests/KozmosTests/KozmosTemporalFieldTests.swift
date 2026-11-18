@@ -99,7 +99,10 @@ final class KozmosTemporalFieldTests: XCTestCase {
         }
     }
 
-    /// Disabled and read-only, the system picker takes no change.
+    /// Disabled and read-only, the field takes no change: disabled, the
+    /// system picker is disabled; read only (decision 222), there is no
+    /// picker at all, its value drawn read only, not a dimmed picker
+    /// (KozmosReadOnlyFieldHostedTests reads what it says).
     @MainActor func testDisabledAndReadOnlyFieldsTakeNoChange() async throws {
         for (disabled, readOnly) in [(true, false), (false, true)] {
             try await host(VStack {
@@ -107,7 +110,7 @@ final class KozmosTemporalFieldTests: XCTestCase {
                 KozmosTimePicker(selection: .constant(start), label: "Time", disabled: disabled, readOnly: readOnly)
             }) { window in
                 let pickers = self.datePickers(in: window)
-                XCTAssertEqual(pickers.count, 2)
+                XCTAssertEqual(pickers.count, readOnly ? 0 : 2, "read-only \(readOnly): system pickers drawn")
                 XCTAssertTrue(pickers.allSatisfy { !$0.isEnabled }, "disabled \(disabled), read-only \(readOnly): a picker takes changes")
             }
         }
