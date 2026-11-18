@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "0e1b2f242c0d";
+const PLUGIN_BUILD = "457785c53873";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -489,8 +489,15 @@ const INPUT_STATUSES = ["Default", "Error", "Warning", "Success"];
 // PasswordInput's reveal is. None is the field as it always was; Copy shows
 // copy-01, for a read-only value such as a feature's ID; Toggle and
 // TogglePressed are the Featured star at rest and pressed, its icon swappable
-// through Action Icon.
-const INPUT_ACTIONS = ["None", "Copy", "Toggle", "TogglePressed"];
+// through Action Icon. Edit (GAP-212, decision 224) shows pencil-01, the
+// pencil a product's editor opens from, for a read-only value such as Map
+// Personas' ID and Map Style; last, so a set from before it keeps its order
+// and Update adds the 20 it lacks.
+const INPUT_ACTIONS = ["None", "Copy", "Toggle", "TogglePressed", "Edit"];
+// The Action values whose bands lie above the Mixed rows (GAP-153). A value
+// added after them (Edit) takes a band under those rows, its own Mixed row
+// last, so no variant drawn before it moves.
+const INPUT_ACTIONS_ABOVE_MIXED = 4;
 // A field another part nests: at rest and with no action, named in full, so
 // a set whose first State=Default, Status=Default variant draws a copy or a
 // toggle is never the one picked. A set from before the Action axis has no
@@ -1405,6 +1412,10 @@ const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
 // GAP-221, decision 199: React's DescriptionList `layout`: Stack, the items
 // one under another and the default, first; Row, side by side.
 const DESCRIPTION_LIST_LAYOUTS = ["Stack", "Row"];
+// GAP-216, decision 225: React's CodeBlock `wrap`: Wrap, long lines broken
+// onto the lines under them, the default and first; Scroll, each line whole
+// and the block scrolling sideways.
+const CODE_BLOCK_OVERFLOWS = ["Wrap", "Scroll"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1918,6 +1929,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   FileUpload: 1420,
   ImageCropper: 560,
   DescriptionList: 320,
+  CodeBlock: 260,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1969,6 +1981,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "SettingsRow",
       "MetaStrip",
       "DescriptionList",
+      "CodeBlock",
       "Table",
       "TreeParentItem",
       "TreeChildItem",
@@ -4186,6 +4199,28 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    category: "Data Display",
+    summary:
+      "CodeBlock shows a block of code read-only, in the mono family on the muted surface, with an optional copy: MAP-619's merged unit's JSON (GAP-216, decision 225).",
+    usage: [
+      "Use for code or data a person reads and copies, never edits, such as a custom field's JSON value.",
+      "Use Wrap so long lines break onto the lines under them; Scroll where each line must stay whole.",
+      "Use a Textarea for a value a person edits.",
+    ],
+    api: [
+      "Overflow maps to wrap: Wrap is wrap (the default), Scroll is wrap={false}.",
+      "Code Text is code. Copy shows the copy, copyable; its name and words are copyLabel and copiedLabel.",
+      "No syntax colouring: the code is plain text.",
+    ],
+    properties: ["Overflow: Wrap, Scroll", "Code Text, Copy"],
+    accessibility: [
+      "A region named by label, holding a <pre> and its <code>; scrolling sideways, the <pre> is a stop on the keyboard's way.",
+      "The copy is a button named Copy by default, and it says Copied in a polite live region.",
+    ],
+  },
+  {
     componentName: "Table",
     componentSetName: "Table",
     category: "Data Display",
@@ -4877,7 +4912,7 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus, disabled, and readOnly props in Code Connect.",
       "Status maps to default, error, warning, and success validation tones.",
-      "Action maps to Input.action: None, a copy button (Copy), or a toggle at rest or pressed (Toggle, TogglePressed), at the field's end.",
+      "Action maps to Input.action: None, a copy button (Copy), a toggle at rest or pressed (Toggle, TogglePressed), or an edit pencil that calls onEdit (Edit, GAP-212), at the field's end.",
       "Action Icon is the toggle's icon, the Featured star by default.",
       "State=Mixed maps to Input.mixed (GAP-153): Multiple values in place of the field's own, for a multi-selection whose values differ.",
       "Reset Mixed shows Reset to multiple values under the field, Input.onResetMixed, for a field edited out of Mixed; State=Mixed has no reset to show. Reset Mixed Text and Mixed Text are the words, Input.resetMixedLabel and Input.mixedLabel.",
@@ -4887,7 +4922,7 @@ const COMPONENT_DOCS = [
     properties: [
       "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
-      "Action: None, Copy, Toggle, TogglePressed",
+      "Action: None, Copy, Toggle, TogglePressed, Edit",
       "Label Text, Placeholder Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Action Icon, Focus Visible",
     ],
     accessibility: [
@@ -10020,6 +10055,20 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/50",
     scopes: ["GAP"],
   },
+  // GAP-216: React's CodeBlock: 12 inside (Layout/spacing/150), the copy 4
+  // in from the block's top end (Layout/spacing/50).
+  {
+    name: "CodeBlock/padding",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "CodeBlock/copy/inset",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   {
     name: "DescriptionList/item/min-width",
     value: 160,
@@ -12698,6 +12747,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["FileUpload", updateFileUploadComponent],
   ["ImageCropper", updateImageCropperComponent],
   ["DescriptionList", updateDescriptionListComponent],
+  ["CodeBlock", updateCodeBlockComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -12977,6 +13027,9 @@ function additionalComponentActionHandlers() {
     "build-description-list": buildDescriptionListComponent,
     "update-description-list": updateDescriptionListComponent,
     "rebuild-description-list": rebuildDescriptionListComponent,
+    "build-code-block": buildCodeBlockComponent,
+    "update-code-block": updateCodeBlockComponent,
+    "rebuild-code-block": rebuildCodeBlockComponent,
     "build-list-item": buildListItemComponent,
     "update-list-item": updateListItemComponent,
     "rebuild-list-item": rebuildListItemComponent,
@@ -20462,6 +20515,12 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "DescriptionList") {
     return {
       Layout: DESCRIPTION_LIST_LAYOUTS,
+    };
+  }
+
+  if (canonicalName === "CodeBlock") {
+    return {
+      Overflow: CODE_BLOCK_OVERFLOWS,
     };
   }
 
@@ -68135,6 +68194,261 @@ async function rebuildDescriptionListComponent() {
   });
 }
 
+// --- CodeBlock --------------------------------------------------------------------
+
+// GAP-216, decision 225: React's CodeBlock, as packages/styles' owned CSS
+// draws it: the code 14/20 in Colors/foreground/0, in the mono family, on
+// the muted surface (Colors/background/100), on the control radius, 12
+// inside (CodeBlock/padding), 320 wide and as tall as its code. The mono
+// family is the Primitives one, Fira Mono (Typography/font/family/mono): the
+// web's stack names the platform's own monospaced faces, which a Figma file
+// cannot load, so the code is drawn in Fira Mono, or in the file's UI font,
+// with a warning, where Fira Mono cannot be loaded. Wrap breaks the long line
+// onto the lines under it; Scroll keeps it whole, clipped at the block's end
+// as the scroller clips it. The Copy, shown by Copy, is a 44 square 4 in
+// from the block's top end (CodeBlock/copy/inset), copy-01 at 16 in
+// Colors/foreground/400, and a 36 Copy Gutter beside the code, shown with
+// it, keeps the code clear of it: the code ends 48 from the block's end, as
+// React's padding-inline-end, and 12 without the copy. No colouring.
+const CODE_BLOCK_GEOMETRY = {
+  width: 320,
+  padding: 12,
+  line: 20,
+  copy: 44,
+  copyInset: 4,
+};
+const CODE_BLOCK_SAMPLE = [
+  "{",
+  '  "mergedUnit": {',
+  '    "fid": "f-1209",',
+  '    "sources": ["f-1042", "f-1043"],',
+  '    "mapStyleUrl": "https://styles.example.com/persona/staff.json"',
+  "  }",
+  "}",
+].join("\n");
+const CODE_BLOCK_MONO_FONT = { family: "Fira Mono", style: "Regular" };
+// A mono face's advance, 0.6 of its size: Fira Mono's 600 to the em.
+const CODE_BLOCK_ADVANCE = 0.6;
+
+/**
+ * How tall the block is asked to be: its padding and a 20 line for each of
+ * the code's lines, each long line counted as the lines it breaks onto at
+ * the width it is drawn in when `wrap`. The frame hugs its code after.
+ */
+function codeBlockHeight(code, wrap) {
+  const geometry = CODE_BLOCK_GEOMETRY;
+  const perLine = Math.max(
+    1,
+    Math.floor(
+      (geometry.width - geometry.padding * 2) / (14 * CODE_BLOCK_ADVANCE),
+    ),
+  );
+  let lines = 0;
+  for (const line of code.split("\n")) {
+    lines += wrap ? Math.max(1, Math.ceil(line.length / perLine)) : 1;
+  }
+  return lines * geometry.line + geometry.padding * 2;
+}
+
+async function createCodeBlockVariant(args) {
+  const component = figma.createComponent();
+  await updateCodeBlockVariant(component, args);
+  return component;
+}
+
+function parseCodeBlockVariantName(name) {
+  return productSdkVariantValues(name, "Overflow", CODE_BLOCK_OVERFLOWS);
+}
+
+/** Fira Mono, or the file's UI font with a warning where it cannot load. */
+async function loadCodeBlockFont(fonts, stats) {
+  try {
+    await figma.loadFontAsync(CODE_BLOCK_MONO_FONT);
+    return CODE_BLOCK_MONO_FONT;
+  } catch (error) {
+    pushUniqueWarning(
+      stats,
+      "code-block-mono-font",
+      `CodeBlock: ${CODE_BLOCK_MONO_FONT.family} ${CODE_BLOCK_MONO_FONT.style} could not be loaded (${messageFor(error)}), so the code is drawn in ${fontLabel(fonts.regular)}.`,
+    );
+    return fonts.regular;
+  }
+}
+
+async function updateCodeBlockVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = CODE_BLOCK_GEOMETRY;
+  const scroll = value === "Scroll";
+  productSdkVariantRoot(component, "CodeBlock", "Overflow=" + value, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    padding: geometry.padding,
+    width: geometry.width,
+    height: codeBlockHeight(CODE_BLOCK_SAMPLE, !scroll),
+    // Scrolling, the long line runs past the block's end and is clipped
+    // there, as the scroller clips it.
+    clip: true,
+  });
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  component.strokes = [];
+  for (const field of [
+    "paddingLeft",
+    "paddingRight",
+    "paddingTop",
+    "paddingBottom",
+  ]) {
+    bindFloatVariable(
+      component,
+      field,
+      "CodeBlock/padding",
+      variableByName,
+      stats,
+    );
+  }
+
+  const code = figma.createText();
+  code.name = "Code";
+  code.fontName = await loadCodeBlockFont(fonts, stats);
+  code.fontSize = 14;
+  code.lineHeight = { unit: "PIXELS", value: geometry.line };
+  code.characters = CODE_BLOCK_SAMPLE;
+  code.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  code.textAlignVertical = "TOP";
+  code.setSharedPluginData(RUN_NAMESPACE, "kind", "code-block-code");
+  if (scroll) {
+    code.textAutoResize = "WIDTH_AND_HEIGHT";
+    appendWithSizing(component, code, "HUG", "HUG");
+  } else {
+    code.textAutoResize = "HEIGHT";
+    code.resizeWithoutConstraints(
+      geometry.width - geometry.padding * 2,
+      geometry.line,
+    );
+    appendWithSizing(component, code, "FILL", "HUG");
+  }
+
+  // Shown with the copy: the copy's 44 and its 4, less the 12 the block
+  // keeps at its end already.
+  const gutter = productSdkFrame("Copy Gutter", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    width: geometry.copy + geometry.copyInset - geometry.padding,
+    height: geometry.line,
+  });
+  gutter.setSharedPluginData(RUN_NAMESPACE, "kind", "code-block-copy-gutter");
+  appendWithSizing(component, gutter, "FIXED", "FIXED");
+
+  const copy = productSdkFrame("Copy", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: geometry.copy,
+    height: geometry.copy,
+  });
+  copy.cornerRadius = KOZMOS_RADIUS.control;
+  copy.setSharedPluginData(RUN_NAMESPACE, "kind", "code-block-copy");
+  copy.setSharedPluginData(RUN_NAMESPACE, "aria-label", "Copy");
+  const icon = await createFixedIconInstance(
+    "copy-01",
+    "Colors/foreground/400",
+    "#5D626F",
+    variableByName,
+    stats,
+    16,
+  );
+  if (icon) {
+    icon.name = "Copy Icon";
+    copy.appendChild(icon);
+  }
+  component.appendChild(copy);
+  copy.layoutPositioning = "ABSOLUTE";
+  copy.x = geometry.width - geometry.copy - geometry.copyInset;
+  copy.y = geometry.copyInset;
+  copy.constraints = { horizontal: "MAX", vertical: "MIN" };
+}
+
+function configureCodeBlockProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Code",
+    "Code Text",
+    CODE_BLOCK_SAMPLE,
+    stats,
+  );
+  // One Copy shows the button and the gutter that keeps the code clear of it.
+  configureNamedBooleanProperty(componentSet, "Copy", "Copy", false, stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Copy Gutter",
+    "Copy",
+    false,
+    stats,
+  );
+}
+
+const CODE_BLOCK_DESCRIPTION = [
+  "Kozmos CodeBlock component set generated from React CodeBlock API (GAP-216, decision 225).",
+  "Overflow maps to wrap: Wrap is wrap (the default), Scroll is wrap={false}. Code Text is code; Copy is copyable.",
+  "A region named by label, holding a <pre> and its <code>. No syntax colouring.",
+];
+
+async function buildCodeBlockComponent() {
+  return buildSingleAxisComponent({
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    axisName: "Overflow",
+    values: CODE_BLOCK_OVERFLOWS,
+    x: 80,
+    y: 21400,
+    xStep: 400,
+    createVariant: createCodeBlockVariant,
+    configureProperties: configureCodeBlockProperties,
+    autoReorganize: true,
+    description: CODE_BLOCK_DESCRIPTION,
+  });
+}
+
+async function updateCodeBlockComponent() {
+  return updateSingleAxisComponent({
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    axisName: "Overflow",
+    values: CODE_BLOCK_OVERFLOWS,
+    xStep: 400,
+    createVariant: createCodeBlockVariant,
+    updateVariant: updateCodeBlockVariant,
+    parseVariantName: parseCodeBlockVariantName,
+    configureProperties: configureCodeBlockProperties,
+    autoReorganize: true,
+    description: CODE_BLOCK_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildCodeBlockComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    build: buildCodeBlockComponent,
+  });
+}
+
 // --- ImageCropper ----------------------------------------------------------------
 
 // GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
@@ -70332,12 +70646,22 @@ function layoutInputVariants(componentSet) {
     const statusIndex = INPUT_STATUSES.indexOf(props.status);
     const actionIndex = INPUT_ACTIONS.indexOf(props.action);
     child.x = statusIndex * 360;
+    const mixed = props.state === MIXED_FIELD_STATE;
+    if (actionIndex >= INPUT_ACTIONS_ABOVE_MIXED) {
+      // A band per later Action (Edit, GAP-212) under the Mixed rows, its
+      // states and then its own Mixed row, so nothing drawn before moves.
+      const top =
+        INPUT_ACTIONS_ABOVE_MIXED * INPUT_STATES.length +
+        INPUT_ACTIONS_ABOVE_MIXED +
+        (actionIndex - INPUT_ACTIONS_ABOVE_MIXED) * INPUT_FIELD_STATES.length;
+      child.y = (top + (mixed ? INPUT_STATES.length : stateIndex)) * 126;
+      continue;
+    }
     // The Mixed row (GAP-153) goes under every band, one row per Action, so
     // no variant drawn before it moves.
-    child.y =
-      props.state === MIXED_FIELD_STATE
-        ? (INPUT_ACTIONS.length * INPUT_STATES.length + actionIndex) * 126
-        : (actionIndex * INPUT_STATES.length + stateIndex) * 126;
+    child.y = mixed
+      ? (INPUT_ACTIONS_ABOVE_MIXED * INPUT_STATES.length + actionIndex) * 126
+      : (actionIndex * INPUT_STATES.length + stateIndex) * 126;
   }
 
   // The set holds the Action bands it gained.
@@ -80286,7 +80610,8 @@ async function syncInputVariantChildren({
  * (decision 139): a 32 disc of the theme fill under the icon, held to the
  * button's centre, and the icon in the fill's foreground, so pressed is a
  * shape and not a colour alone (WCAG 1.4.1). Copy is copy-01; the toggle is
- * star-01, which Action Icon swaps.
+ * star-01, which Action Icon swaps; Edit (GAP-212, decision 224) is
+ * pencil-01, a plain button in the field's muted foreground, as the copy.
  */
 async function syncInputAction(
   field,
@@ -80326,9 +80651,9 @@ async function syncInputAction(
   button.setSharedPluginData(
     RUN_NAMESPACE,
     "aria-label",
-    action === "Copy" ? "Copy" : "Featured",
+    action === "Copy" ? "Copy" : action === "Edit" ? "Edit" : "Featured",
   );
-  if (action !== "Copy") {
+  if (action === "Toggle" || action === "TogglePressed") {
     button.setSharedPluginData(
       RUN_NAMESPACE,
       "aria-pressed",
@@ -80380,7 +80705,9 @@ async function syncInputAction(
   const source =
     action === "Copy"
       ? await findImporterIconSource("copy-01", "Input", stats)
-      : await findImporterIconSource("star-01", "Input", stats);
+      : action === "Edit"
+        ? await findImporterIconSource("pencil-01", "Input", stats)
+        : await findImporterIconSource("star-01", "Input", stats);
   if (source) {
     const icon = createIconSlotInstance(
       source,
@@ -80390,7 +80717,12 @@ async function syncInputAction(
       stats,
       16,
     );
-    icon.name = action === "Copy" ? "Copy Icon" : "Action Icon";
+    icon.name =
+      action === "Copy"
+        ? "Copy Icon"
+        : action === "Edit"
+          ? "Edit Icon"
+          : "Action Icon";
     button.appendChild(icon);
   }
 

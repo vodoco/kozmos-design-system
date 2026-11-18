@@ -13341,12 +13341,12 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   ok(
     axes &&
       JSON.stringify(axes.Action) ===
-        JSON.stringify(["None", "Copy", "Toggle", "TogglePressed"]) &&
+        JSON.stringify(["None", "Copy", "Toggle", "TogglePressed", "Edit"]) &&
       JSON.stringify(axes.State) ===
         JSON.stringify(["Default", "Focus", "Disabled", "Readonly", "Mixed"]) &&
       JSON.stringify(axes.Status) ===
         JSON.stringify(["Default", "Error", "Warning", "Success"]),
-    `Input gains an Action axis: None, Copy, Toggle, TogglePressed, beside State (with Mixed, GAP-153) and Status: 80 variants (${JSON.stringify(axes && axes.Action)})`,
+    `Input gains an Action axis: None, Copy, Toggle, TogglePressed and Edit (GAP-212), beside State (with Mixed, GAP-153) and Status: 100 variants (${JSON.stringify(axes && axes.Action)})`,
   );
   ok(
     JSON.stringify(
@@ -13497,8 +13497,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
   {
     // Update over the 16 variants in the file before the Action axis: each
-    // keeps its node id and is renamed Action=None, and the other 64 are
-    // created: 48 Action bands, and the Mixed row of each (GAP-153).
+    // keeps its node id and is renamed Action=None, and the other 84 are
+    // created: 64 Action bands, and the Mixed row of each (GAP-153); Edit's
+    // band and its Mixed row (GAP-212) are the last 20.
     const livePage = new MockNode("PAGE", "Components");
     const liveSet = new MockNode("COMPONENT_SET", "Input");
     const ids = new Map();
@@ -13528,10 +13529,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       updated &&
         updated.componentSetId === setId &&
         updated.variantsUpdated === 16 &&
-        updated.variantsCreated === 64 &&
-        liveSet.children.length === 80 &&
-        new Set(names).size === 80,
-      `Update keeps the set and its 16 variants, and adds 64: 80 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
+        updated.variantsCreated === 84 &&
+        liveSet.children.length === 100 &&
+        new Set(names).size === 100,
+      `Update keeps the set and its 16 variants, and adds 84: 100 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
     );
     ok(
       [...ids].every(([name, id]) => {
@@ -13572,8 +13573,8 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         child.y + child.height > liveSet.height,
     );
     ok(
-      liveSet.children.length === 80 && outside.length === 0,
-      `and the set grows to hold all 80 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
+      liveSet.children.length === 100 && outside.length === 0,
+      `and the set grows to hold all 100 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
     );
     const reset = propertyNamed(liveSet, "Reset Mixed", "BOOLEAN");
     const resetBound = liveSet.children.filter((variant) => {
@@ -13601,10 +13602,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     ok(
       reset &&
         liveSet.componentPropertyDefinitions[reset].defaultValue === false &&
-        resetBound.length === 64 &&
-        mixedRows.length === 16 &&
+        resetBound.length === 80 &&
+        mixedRows.length === 20 &&
         mixedRows.every((variant) => !named(variant, "Reset Mixed")),
-      `Reset Mixed is a boolean, off, showing the Reset Mixed layer of every variant but the 16 Mixed ones, which have none, so mixed and its way back cannot be drawn together (GAP-153) (${reset}, ${resetBound.length} bound)`,
+      `Reset Mixed is a boolean, off, showing the Reset Mixed layer of every variant but the 20 Mixed ones, which have none, so mixed and its way back cannot be drawn together (GAP-153) (${reset}, ${resetBound.length} bound)`,
     );
     ok(
       resetWords &&
@@ -13617,6 +13618,121 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         wordsBound("Mixed Text", mixedWords) &&
         mixedRows.every((variant) => named(variant, "Mixed Text")),
       `Reset Mixed Text and Mixed Text are text properties a product localises, bound to every reset and every Mixed variant's words (${resetWords}, ${mixedWords})`,
+    );
+  }
+
+  // GAP-212, decision 224: Input's Edit action ---------------------------------
+  // Action=Edit is a pencil at the field's end, drawn as the copy is: the
+  // transparent 44 square inside the field's end, bound to its height,
+  // pencil-01 at 16 in the field's muted foreground, named Edit, never
+  // pressed, with no disc. Enabled on a read-only field as on any other; a
+  // disabled field's pencil is dimmed. Its band lies under the Mixed rows,
+  // its own Mixed row last, so no variant drawn before it moves.
+  section("GAP-212: Input's Edit action draws pencil-01 at the field's end");
+  {
+    const edit = async (state, status) => {
+      const node = new MockNode("COMPONENT", "Input");
+      componentsPage.appendChild(node);
+      await attempt(() =>
+        controls.updateInputVariant(node, {
+          state,
+          status,
+          action: "Edit",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      return node;
+    };
+    ok(
+      JSON.stringify(
+        controls.parseInputVariantName(
+          "State=Readonly, Status=Default, Action=Edit",
+        ),
+      ) ===
+        JSON.stringify({
+          state: "Readonly",
+          status: "Default",
+          action: "Edit",
+        }),
+      "Action=Edit parses as itself",
+    );
+    for (const [state, tint] of [
+      ["Readonly", "Colors/foreground/400"],
+      ["Default", "Colors/foreground/400"],
+      ["Disabled", "Colors/foreground/500"],
+    ]) {
+      const node = await edit(state, "Default");
+      const field = named(node, "Input Field");
+      const button = field && named(field, "Input Action");
+      const icon =
+        button && button.children.find((child) => child.type === "INSTANCE");
+      const strokes = icon
+        ? icon.findAll((child) => (child.strokes || []).length > 0)
+        : [];
+      ok(
+        node.name === `State=${state}, Status=Default, Action=Edit` &&
+          button &&
+          button.layoutPositioning === "ABSOLUTE" &&
+          button.x + button.width === field.width &&
+          button.width === 44 &&
+          button.height === field.height &&
+          boundFloat(button, "height") === "Input/field/height" &&
+          (button.fills || []).length === 0 &&
+          field.paddingRight === 48,
+        `${state}/Edit: the pencil's button is the transparent 44 square inside the field's end, the text kept 48 clear (${button ? `x ${button.x}+${button.width} of ${field.width}, padding ${field.paddingRight}` : "none"})`,
+      );
+      ok(
+        icon &&
+          icon.name === "Edit Icon" &&
+          icon.mainComponent === iconComponent("pencil-01") &&
+          icon.width === 16 &&
+          strokes.length > 0 &&
+          strokes.every(
+            (child) => boundVariableName(child.strokes[0]) === tint,
+          ),
+        `${state}/Edit: pencil-01 at 16 in ${tint}, named Edit Icon (${icon ? `${icon.name}, ${icon.mainComponent && icon.mainComponent.name}, ${strokes.map((child) => boundVariableName(child.strokes[0])).join(" ")}` : "no icon"})`,
+      );
+      ok(
+        button &&
+          !named(button, "Pressed Fill") &&
+          button.getSharedPluginData("kozmos_ds_importer", "aria-label") ===
+            "Edit" &&
+          button.getSharedPluginData("kozmos_ds_importer", "aria-pressed") ===
+            "",
+        `${state}/Edit: named Edit, never pressed, no disc (${button && `${button.getSharedPluginData("kozmos_ds_importer", "aria-label")}, pressed "${button.getSharedPluginData("kozmos_ds_importer", "aria-pressed")}"`})`,
+      );
+    }
+    // The set's layout: the four bands and their Mixed rows where they were,
+    // Edit's four rows and its Mixed row under them.
+    const set = new MockNode("COMPONENT_SET", "Input");
+    for (const name of [
+      "State=Default, Status=Default, Action=None",
+      "State=Mixed, Status=Success, Action=TogglePressed",
+      "State=Default, Status=Default, Action=Edit",
+      "State=Readonly, Status=Warning, Action=Edit",
+      "State=Mixed, Status=Default, Action=Edit",
+    ])
+      set.appendChild(new MockNode("COMPONENT", name));
+    controls.layoutInputVariants(set);
+    const at = (name) => {
+      const node = set.children.find((child) => child.name === name);
+      return node ? [node.x, node.y] : null;
+    };
+    ok(
+      JSON.stringify(at("State=Default, Status=Default, Action=None")) ===
+        JSON.stringify([0, 0]) &&
+        JSON.stringify(
+          at("State=Mixed, Status=Success, Action=TogglePressed"),
+        ) === JSON.stringify([3 * 360, 19 * 126]) &&
+        JSON.stringify(at("State=Default, Status=Default, Action=Edit")) ===
+          JSON.stringify([0, 20 * 126]) &&
+        JSON.stringify(at("State=Readonly, Status=Warning, Action=Edit")) ===
+          JSON.stringify([2 * 360, 23 * 126]) &&
+        JSON.stringify(at("State=Mixed, Status=Default, Action=Edit")) ===
+          JSON.stringify([0, 24 * 126]),
+      `Edit's band lies under the Mixed rows, its Mixed row last, and nothing before it moves (${JSON.stringify(set.children.map((child) => [child.name, child.x, child.y]))})`,
     );
   }
 
@@ -21860,6 +21976,186 @@ section("Decision 207: no divider under a selected tree row");
       `${setName}: after Update its ${selected.length} Selected rows draw no divider and the other ${total} one each (${dividers.length} dividers, ${under.length} under a selected row)`,
     );
   }
+}
+
+// --- CodeBlock (GAP-216) ------------------------------------------------------
+
+// GAP-216, decision 225: React's CodeBlock, a read-only block of code. 320
+// wide and as tall as its code, 12 inside (CodeBlock/padding), on the control
+// radius in Colors/background/100; the code 14/20 in Colors/foreground/0 in
+// Fira Mono, the Primitives mono family. Wrap breaks the long line; Scroll
+// keeps it whole, clipped at the block's end. The Copy, a 44 square 4 in
+// from the top end with copy-01 at 16 in Colors/foreground/400, and the 36
+// Copy Gutter that keeps the code 48 clear of the end are shown by one Copy
+// boolean, off as React's copyable is. One Overflow axis, Wrap first, in
+// Update All Core and the page's Data display section.
+section(
+  "GAP-216: CodeBlock draws code in the mono family on the muted surface",
+);
+{
+  const ready =
+    Array.isArray(plugin.CODE_BLOCK_OVERFLOWS) &&
+    typeof plugin.updateCodeBlockVariant === "function" &&
+    typeof plugin.parseCodeBlockVariantName === "function" &&
+    typeof plugin.configureCodeBlockProperties === "function";
+  ok(ready, "CodeBlock's painter and properties are reachable");
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateCodeBlockVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  const heights = {};
+  for (const value of ready ? ["Wrap", "Scroll"] : []) {
+    const { component, stats } = await paint(value);
+    variants.push(component);
+    const scroll = value === "Scroll";
+    ok(
+      component.name === `Overflow=${value}` &&
+        plugin.parseCodeBlockVariantName(component.name).value === value,
+      `${value}: named Overflow=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(["Code", "Copy Gutter", "Copy"]) &&
+        component.width === 320 &&
+        component.cornerRadius === 16 &&
+        boundVariableName(component.fills[0]) === "Colors/background/100" &&
+        component.strokes.length === 0 &&
+        component.clipsContent === true &&
+        ["paddingLeft", "paddingRight", "paddingTop", "paddingBottom"].every(
+          (field) =>
+            component[field] === 12 &&
+            menusBound(component, field) === "CodeBlock/padding",
+        ) &&
+        menusValueOf("CodeBlock/padding") === 12,
+      `${value}: the code, the gutter and the copy, 320 wide, 12 inside, on the control radius in background/100, clipping (${component.children.map((child) => child.name)}, ${component.width}, ${component.cornerRadius}, ${boundVariableName(component.fills[0])}, ${component.paddingLeft})`,
+    );
+    const code = named(component, "Code");
+    ok(
+      code &&
+        code.type === "TEXT" &&
+        code.fontName.family === "Fira Mono" &&
+        code.fontSize === 14 &&
+        code.lineHeight.value === 20 &&
+        boundVariableName(code.fills[0]) === "Colors/foreground/0" &&
+        code.characters.split("\n").length === 7 &&
+        code.textAutoResize === (scroll ? "WIDTH_AND_HEIGHT" : "HEIGHT"),
+      `${value}: the code is Fira Mono 14/20 in foreground 0, ${scroll ? "each line whole" : "wrapping"} (${code && `${code.fontName.family} ${code.fontSize}/${code.lineHeight.value}, ${boundVariableName(code.fills[0])}, ${code.textAutoResize}`})`,
+    );
+    heights[value] = component.height;
+    if (scroll) {
+      ok(
+        code && code.width > 320 - 24,
+        `Scroll: the long line runs past the block's end, clipped there (${code && code.width})`,
+      );
+    }
+    const gutter = named(component, "Copy Gutter");
+    const copy = named(component, "Copy");
+    const icon =
+      copy && copy.children.find((child) => child.type === "INSTANCE");
+    ok(
+      gutter &&
+        gutter.width === 36 &&
+        copy &&
+        copy.layoutPositioning === "ABSOLUTE" &&
+        copy.width === 44 &&
+        copy.height === 44 &&
+        copy.x === 320 - 48 &&
+        copy.y === 4 &&
+        copy.constraints.horizontal === "MAX" &&
+        icon &&
+        icon.width === 16 &&
+        icon
+          .findAll((child) => (child.strokes || []).length > 0)
+          .every(
+            (child) =>
+              boundVariableName(child.strokes[0]) === "Colors/foreground/400",
+          ),
+      `${value}: the copy is 44, 4 in from the top end, copy-01 at 16 in foreground 400, a 36 gutter beside the code (${gutter && gutter.width}, ${copy && `${copy.x},${copy.y} ${copy.width}x${copy.height}`}, ${icon && icon.width})`,
+    );
+    ok(
+      framesLargerThanAsked(component).length === 0,
+      `${value}: no frame larger than it was drawn (${framesLargerThanAsked(
+        component,
+      )
+        .map((node) => node.name)
+        .join(", ")})`,
+    );
+    ok(
+      stats.warnings.every((warning) =>
+        /is not on the Icons page|icon/i.test(warning),
+      ),
+      `${value}: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+    );
+  }
+  if (ready) {
+    ok(
+      heights.Wrap > heights.Scroll,
+      `Wrap breaks the long line onto another, so it is taller than Scroll (${heights.Wrap} against ${heights.Scroll})`,
+    );
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "CodeBlock";
+    plugin.configureCodeBlockProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const key = (name, type) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === type,
+      );
+    const copy = key("Copy", "BOOLEAN");
+    const shown = set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.visible === copy,
+    );
+    ok(
+      copy &&
+        defs[copy].defaultValue === false &&
+        shown.length === 4 &&
+        shown.every((node) => ["Copy", "Copy Gutter"].includes(node.name)),
+      `CodeBlock: Copy, off as React's copyable, shows each variant's Copy and its gutter and nothing else (${copy}, ${shown.map((node) => node.name)})`,
+    );
+    const codeText = key("Code Text", "TEXT");
+    ok(
+      codeText &&
+        set
+          .findAll((node) => node.name === "Code")
+          .every(
+            (node) =>
+              node.componentPropertyReferences &&
+              node.componentPropertyReferences.characters === codeText,
+          ),
+      `CodeBlock: Code Text edits the code in every variant (${codeText})`,
+    );
+    set.remove();
+  }
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("CodeBlock"),
+      ) === JSON.stringify({ Overflow: ["Wrap", "Scroll"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "CodeBlock" && update === plugin.updateCodeBlockComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Data display" &&
+          entry.components.includes("CodeBlock"),
+      ) &&
+      plugin.COMPONENT_DOCS.some(
+        (entry) => entry.componentSetName === "CodeBlock",
+      ),
+    "CodeBlock: one Overflow axis, in Update All Core, the Data display section and the docs",
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------
