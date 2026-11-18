@@ -40,6 +40,16 @@ and, with no `label`, the list (`"Choose time"` by default). `open` with `onOpen
 and `defaultOpen` opens it at first; Storybook's `Open` story draws it open. Disabled or read only,
 the button cannot open it.
 
+## The arrow keys
+
+With a `step` of whole minutes (`300` for 5), Up and Down Arrow in the field step the time by it,
+whichever part of the time is focused, on the step's grid from `min` and carrying into the hour:
+`08:00` back is `07:55`, `08:03` on is `08:05`. They stop at `min` and `max` when the field has one,
+and otherwise go round midnight (`23:55` on is `00:00`); an empty field starts at the first time going
+on, at the last going back. Each step is typed into the field, so `onChange` hears it. With no `step`,
+or one in seconds, the arrows are the browser's, which step the focused part by one. The typed time is
+always drawn in the browser's own clock: `locale` and `hourCycle` set only the list's.
+
 ## Implementation
 
 <div className="subheading">Code</div>

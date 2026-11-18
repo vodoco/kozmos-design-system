@@ -12,6 +12,8 @@ public struct KozmosCombobox: View {
     public let error: Bool
     public let helperText: String?
     public let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     public let emptyText: String
     public let clearable: Bool
     public let clearLabel: String
@@ -64,8 +66,10 @@ public struct KozmosCombobox: View {
         mixed: Bool = false,
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
-        resetMixedLabel: String = KozmosMixedValue.resetLabel
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._value = value
         self._inputValue = inputValue
         self.options = options
@@ -103,6 +107,8 @@ public struct KozmosCombobox: View {
                     .accessibilityFocused($inputAccessibilityFocused)
                     .accessibilityLabel(label ?? placeholder)
                     .disabled(disabled || readOnly)
+                    // Read only and in error, said on the field (GAP-235, GAP-236).
+                    .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                     .font(KozmosTypography.subheadline)
                     .foregroundColor(textColor)
                     .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)

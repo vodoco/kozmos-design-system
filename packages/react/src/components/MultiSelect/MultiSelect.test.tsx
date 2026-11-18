@@ -1060,3 +1060,29 @@ describe("MultiSelect's limit is said when the selection reaches it", () => {
     expect(limitStatus()).toBeEmptyDOMElement();
   });
 });
+
+describe("an option's media and trailing slot (decision 215, GAP-260, GAP-282)", () => {
+  it("draws each option's Avatar before its label and its trailing words at its end", async () => {
+    const user = userEvent.setup();
+    render(
+      <MultiSelect
+        label="Clients"
+        options={[
+          { value: "acme", label: "Acme Airport", media: { src: "/acme.png" } },
+          { value: "pointr", label: "Pointr Cloud", trailing: "3 sites" },
+        ]}
+      />,
+    );
+    await user.click(screen.getByRole("combobox", { name: "Clients" }));
+    const acme = screen.getByRole("option", { name: "Acme Airport" });
+    expect(acme.firstElementChild).toHaveClass("kozmos-option-media");
+    expect(acme.firstElementChild).toHaveAttribute("aria-hidden", "true");
+    const pointr = screen.getByRole("option", {
+      name: "Pointr Cloud",
+      description: "3 sites",
+    });
+    expect(pointr.querySelector(".kozmos-option-trailing")).toHaveTextContent(
+      "3 sites",
+    );
+  });
+});

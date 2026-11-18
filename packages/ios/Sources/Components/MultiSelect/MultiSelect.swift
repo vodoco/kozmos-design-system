@@ -12,6 +12,8 @@ public struct KozmosMultiSelect: View {
     public let error: Bool
     public let helperText: String?
     public let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     public let emptyText: String
     public let clearable: Bool
     /// The field stands for several values that differ (GAP-153, GAP-255).
@@ -45,8 +47,10 @@ public struct KozmosMultiSelect: View {
         mixed: Bool = false,
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
-        resetMixedLabel: String = KozmosMixedValue.resetLabel
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._selectedValues = selectedValues
         self._searchValue = searchValue
         self.options = options
@@ -96,6 +100,8 @@ public struct KozmosMultiSelect: View {
                     TextField(mixed ? mixedLabel : (shownValues.isEmpty ? placeholder : ""), text: $searchValue)
                         .accessibilityFocused($fieldAccessibilityFocused)
                         .disabled(disabled || readOnly)
+                        // Read only and in error, said on the field (GAP-235, GAP-236).
+                        .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                         .font(KozmosTypography.subheadline)
                         .foregroundColor(textColor)
                         .frame(height: 36)

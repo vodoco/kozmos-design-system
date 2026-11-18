@@ -1,5 +1,7 @@
 package com.kozmos.components.input
 
+import com.kozmos.components.fieldwrapper.kozmosFieldState
+import com.kozmos.components.fieldwrapper.KozmosFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -119,7 +121,9 @@ fun KozmosInput(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) {
     // Mixed (GAP-153), the field shows none of its own text; the visitor's
     // typing still reaches the product, which clears `mixed`.
@@ -177,8 +181,16 @@ fun KozmosInput(
             cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
             // Said as its state while mixed, set in one semantics block so the
             // field is the same node as it stops being mixed and keeps focus.
+            // Read only and in error, said on the field itself (GAP-235,
+            // GAP-236), as React's readOnly and aria-invalid.
             modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus).semantics {
-                if (mixed) stateDescription = mixedLabel
+                kozmosFieldState(
+                    readOnly = readOnly,
+                    readOnlyLabel = readOnlyLabel,
+                    inError = effectiveStatus == KozmosInputStatus.Error,
+                    errorMessage = errorMessage,
+                    stateParts = listOfNotNull(mixedLabel.takeIf { mixed })
+                )
             },
             decorationBox = { innerTextField ->
                 Row(

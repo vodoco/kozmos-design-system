@@ -27,16 +27,43 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.avatar.KozmosAvatar
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
+
+/**
+ * An option's leading Avatar (decision 215, GAP-282), as React's
+ * `ComboboxOption.media`: its image, or its initials when it has none or
+ * until it loads (by default the label's first letters).
+ */
+data class KozmosOptionMedia(val imageUrl: String? = null, val initials: String? = null)
+
+/** A label's initials: the first letter of its first two words, "PC" for "Pointr Cloud", as React's. */
+internal fun optionInitials(label: String): String =
+    label.trim().split(Regex("\\s+")).take(2)
+        .mapNotNull { word -> word.codePoints().findFirst().takeIf { it.isPresent }?.let { String(Character.toChars(it.asInt)) } }
+        .joinToString("").uppercase()
 
 data class KozmosListboxOption(
     val value: String,
     val label: String,
     val description: String? = null,
-    val disabled: Boolean = false
+    val disabled: Boolean = false,
+    /** A leading Avatar, drawn before the label (decision 215). Decoration: the label stays the option's name. */
+    val media: KozmosOptionMedia? = null,
+    /** What the option shows at its end, before the check (GAP-260): a property's type. Muted, and said after the label. */
+    val trailing: String? = null
 )
+
+/** A row's fill: background/100 chosen, the hover fill active (GAP-260), none otherwise. */
+@Composable
+internal fun listboxRowFill(selected: Boolean, active: Boolean): Color = when {
+    selected -> KozmosThemeTokens.primitivesColorsBackground100
+    active -> KozmosThemeTokens.semanticsHoverFill
+    else -> Color.Transparent
+}
 
 /** A picker command, never a selectable option or query value. IDs must be unique. */
 data class KozmosPickerAction(val id: String, val label: String, val disabled: Boolean = false, val onAction: () -> Unit)
@@ -62,7 +89,13 @@ fun KozmosListbox(
     maxHeight: androidx.compose.ui.unit.Dp = 256.dp,
     actions: List<KozmosPickerAction> = emptyList(),
     emptyText: String? = null,
-    embedded: Boolean = false
+    embedded: Boolean = false,
+    /**
+     * The active option's value (GAP-260), for a product that moves it, as a
+     * search field driving the list with a hardware keyboard does: drawn
+     * with the hover fill, as React's active row; a chosen row keeps its own.
+     */
+    activeValue: String? = null
 ) {
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
 
@@ -100,7 +133,7 @@ fun KozmosListbox(
                     // and below a line.
                     .heightIn(min = 44.dp)
                     .clip(rowShape)
-                    .background(if (selected) KozmosThemeTokens.primitivesColorsBackground100 else Color.Transparent)
+                    .background(listboxRowFill(selected, active = option.value == activeValue && !option.disabled))
                     .selectable(selected = selected, enabled = enabled && !option.disabled) {
                         val nextValues = if (multiple) {
                             if (selected) {
@@ -121,6 +154,14 @@ fun KozmosListbox(
                 // On the row's middle line, as React's `items-center`.
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                option.media?.let { media ->
+                    KozmosAvatar(
+                        imageUrl = media.imageUrl,
+                        fallbackText = media.initials ?: optionInitials(option.label),
+                        // Decoration: the label names the option.
+                        modifier = Modifier.clearAndSetSemantics { }
+                    )
+                }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = option.label,
@@ -147,6 +188,19 @@ fun KozmosListbox(
                             maxLines = 1
                         )
                     }
+                }
+
+                if (!option.trailing.isNullOrBlank()) {
+                    Text(
+                        text = option.trailing,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (option.disabled) {
+                            KozmosThemeTokens.primitivesColorsForeground500
+                        } else {
+                            KozmosThemeTokens.primitivesColorsForeground400
+                        },
+                        maxLines = 1
+                    )
                 }
 
                 if (selected) {

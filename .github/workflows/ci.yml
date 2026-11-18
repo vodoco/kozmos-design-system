@@ -576,7 +576,8 @@ jobs:
       # its panels (scripts/check-calendar.mjs), and DatePicker opening it
       # where the browser's own button can give way (check-date-picker.mjs),
       # and DateRangePicker its range (check-date-range-picker.mjs), and
-      # TimePicker's list of times (check-time-picker.mjs).
+      # TimePicker's list of times (check-time-picker.mjs), and OTPInput's
+      # overtyping (check-otp-input.mjs).
       - name: Verify Built Focus, Keyboard and Scrolling
         run: |
           pnpm test:react-interactions

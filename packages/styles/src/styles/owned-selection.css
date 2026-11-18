@@ -136,6 +136,16 @@
     @apply block h-4 w-4 shrink-0;
     color: var(--primitives-colors-theme-600);
   }
+  /* An option's leading Avatar (decision 215, GAP-282), at the Avatar's
+     own 40, before the label, its initials in the row's type; and what it
+     shows at its end (GAP-260), muted as the
+     description, before the check. Rows without them are unchanged. */
+  .kozmos-option-media {
+    flex-shrink: 0;
+  }
+  .kozmos-option-trailing {
+    @apply shrink-0 text-xs text-muted-foreground;
+  }
   /* Forced colours (Windows' high contrast) drop the rows' fills and the
      keyboard's ring, so the active row, under the pointer or the keyboard,
      draws an inset outline in the system's Highlight; inset, so nothing

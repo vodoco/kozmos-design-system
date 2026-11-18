@@ -17687,10 +17687,12 @@
           "error",
           "helperText",
           "id",
+          "inputRef",
           "label",
           "maxFiles",
           "maxSize",
           "multiple",
+          "notImageLabel",
           "preview",
           "previewAlt",
           "removeLabel",
@@ -17698,6 +17700,8 @@
           "status",
           "tabIndex",
           "title",
+          "tooLargeLabel",
+          "tooManyFilesLabel",
           "value",
           "variant",
           "wrapperClassName"
@@ -18240,6 +18244,7 @@
           "unmappedProps": []
         },
         "props": [
+          "activeValue",
           "aria-describedby",
           "aria-invalid",
           "aria-label",

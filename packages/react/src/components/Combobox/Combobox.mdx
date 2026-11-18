@@ -59,6 +59,12 @@ compatibility. Set `includeValueInAnalytics={false}` for sensitive values. Route
 does this automatically, so place IDs and search text are not sent in that event. Native
 Combobox does not emit automatic selection-value analytics.
 
+## Media and trailing words
+
+An option's leading `media`, an Avatar with its image or initials (decision 215), and its `trailing` words (GAP-260)
+are drawn in the list as Listbox draws them, on every platform: see Listbox's "Media, trailing words and an active
+option the product moves". The label stays the option's name, and is what a choice puts in the field.
+
 ## Groups
 
 Give options a `group` and they are listed under their groups (GAP-192), as MAP-64's
@@ -283,6 +289,11 @@ var query by remember { mutableStateOf("") }
 />
 
 ## Accessibility
+
+On SwiftUI and Compose the field itself says it is read only and says its error (GAP-235, GAP-236): Compose
+puts "Read only" in the field's state description (`readOnlyLabel`, for the product's own words) and the error
+message as the field's `error`; SwiftUI says "Read only", then the error message, as the field's accessibility hint
+(`readOnlyLabel` too). SwiftUI still draws a read-only field disabled, so VoiceOver also says it is dimmed.
 
 - The listbox is linked to the input, so the active option is announced as the
   user arrows through it.

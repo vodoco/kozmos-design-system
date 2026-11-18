@@ -1,5 +1,8 @@
 package com.kozmos.components.passwordinput
 
+import androidx.compose.ui.semantics.semantics
+import com.kozmos.components.fieldwrapper.kozmosFieldState
+import com.kozmos.components.fieldwrapper.KozmosFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +58,9 @@ fun KozmosPasswordInput(
     defaultVisible: Boolean = false,
     showToggle: Boolean = true,
     showPasswordLabel: String = "Show password",
-    hidePasswordLabel: String = "Hide password"
+    hidePasswordLabel: String = "Hide password",
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) {
     var internalVisible by rememberSaveable { mutableStateOf(defaultVisible) }
     val isVisible = visible ?: internalVisible
@@ -128,9 +133,19 @@ fun KozmosPasswordInput(
                 } else {
                     PasswordVisualTransformation()
                 },
+                // Read only and in error, said on the field itself (GAP-235,
+                // GAP-236).
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .semantics {
+                        kozmosFieldState(
+                            readOnly = readOnly,
+                            readOnlyLabel = readOnlyLabel,
+                            inError = effectiveStatus == KozmosInputStatus.Error,
+                            errorMessage = errorMessage
+                        )
+                    },
                 decorationBox = { innerTextField ->
                     Box(
                         modifier = Modifier

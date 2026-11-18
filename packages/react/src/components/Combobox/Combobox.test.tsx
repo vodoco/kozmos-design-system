@@ -957,3 +957,40 @@ describe("Combobox", () => {
     );
   });
 });
+
+describe("an option's media and trailing slot (decision 215, GAP-260, GAP-282)", () => {
+  it("draws each option's Avatar before its label and its trailing words at its end, the label still its name", async () => {
+    const user = userEvent.setup();
+    render(
+      <Combobox
+        label="Switch client"
+        options={[
+          {
+            value: "acme",
+            label: "Acme Airport",
+            media: { initials: "AA" },
+            trailing: "Live",
+          },
+          { value: "pointr", label: "Pointr Cloud", media: {} },
+        ]}
+      />,
+    );
+    await user.click(screen.getByRole("combobox", { name: "Switch client" }));
+    const pointr = screen.getByRole("option", { name: "Pointr Cloud" });
+    expect(pointr.firstElementChild).toHaveClass("kozmos-option-media");
+    expect(pointr.firstElementChild).toHaveAttribute("aria-hidden", "true");
+    expect(pointr.firstElementChild).toHaveTextContent("PC");
+    const acme = screen.getByRole("option", {
+      name: "Acme Airport",
+      description: "Live",
+    });
+    expect(within(acme).getByText("Live")).toHaveClass(
+      "kozmos-option-trailing",
+    );
+    // A choice types the label alone into the field.
+    await user.click(acme);
+    expect(screen.getByRole("combobox", { name: "Switch client" })).toHaveValue(
+      "Acme Airport",
+    );
+  });
+});

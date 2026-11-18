@@ -10,6 +10,8 @@ public struct KozmosNumberInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     let step: Double
     let min: Double?
     let max: Double?
@@ -52,8 +54,10 @@ public struct KozmosNumberInput: View {
         onResetMixed: (() -> Void)? = nil,
         resetMixedLabel: String = KozmosMixedValue.resetLabel,
         unit: String? = nil,
-        unitLabel: String? = nil
+        unitLabel: String? = nil,
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._value = value
         self.label = label
         self.placeholder = placeholder
@@ -121,6 +125,8 @@ public struct KozmosNumberInput: View {
                     }
                     .accessibilityFocused($fieldAccessibilityFocused)
                     .disabled(disabled || readOnly)
+                    // Read only and in error, said on the field (GAP-235, GAP-236).
+                    .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                     .multilineTextAlignment(showSteppers ? .center : .leading)
                     .foregroundColor(textColor)
                     .modifier(KozmosSpokenValue(hasUnit: hasUnit, value: spokenValue ?? ""))

@@ -10,6 +10,8 @@ public struct KozmosPasswordInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     let visible: Bool?
     let defaultVisible: Bool
     let showToggle: Bool
@@ -32,8 +34,10 @@ public struct KozmosPasswordInput: View {
         defaultVisible: Bool = false,
         showToggle: Bool = true,
         showPasswordLabel: String = "Show password",
-        hidePasswordLabel: String = "Hide password"
+        hidePasswordLabel: String = "Hide password",
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._text = text
         self.label = label
         self.placeholder = placeholder
@@ -68,6 +72,8 @@ public struct KozmosPasswordInput: View {
                     }
                 }
                 .disabled(disabled || readOnly)
+                // Read only and in error, said on the field (GAP-235, GAP-236).
+                .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                 .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
                 .padding(.trailing, showToggle ? 0 : KozmosDimensions.primitivesLayoutSpacing150)
                 .frame(height: 44, alignment: .center)

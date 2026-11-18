@@ -165,6 +165,116 @@ fun SwitchClientList() {
 `}
 />
 
+## Media, trailing words and an active option the product moves
+
+An option takes a leading `media` (decision 215, GAP-282): an Avatar, at the Avatar's own size, with the option's
+image (`src`, a client's logo) or its `initials` when it has none or until it loads, by default the label's first
+letters ("PC" for "Pointr Cloud"). It is decoration: the label stays the option's name. An option also takes
+`trailing` (GAP-260), drawn muted at its end before the check, such as a property's type; it is the option's
+description, so the option's name stays its label. Combobox and MultiSelect draw both in their lists, as Listbox does;
+rows without them are unchanged.
+
+`activeValue` with `onActiveValueChange` (GAP-260) hands the active option to the product, so a search field can drive
+the list as a combobox, focus staying in the field: the field's `aria-activedescendant` names the active option by
+`listboxOptionId(listboxId, options, value)`, the product moves `activeValue` on the field's arrow keys, and the list
+asks for a move by its own keys and the pointer. `null` is no active option. SwiftUI's `KozmosListbox(activeValue:)`
+and Compose's `KozmosListbox(activeValue =)` draw the product's active option with the hover fill, as React's; on SwiftUI
+an option's trailing words are its accessibility hint, on Compose they are said after its label.
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import { Listbox } from "@kozmos-ds/react";
+
+export function ClientList() {
+  const [client, setClient] = useState("acme");
+  return (
+    <Listbox
+      aria-label="Clients"
+      embedded
+      value={client}
+      onValueChange={(value) => setClient(value as string)}
+      options={[
+        { value: "acme", label: "Acme Airport", media: { src: "/logos/acme.png" }, trailing: "12 sites" },
+        { value: "globex", label: "Globex", media: {}, trailing: "3 sites" },
+      ]}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { ref } from "vue"
+import { KozmosListbox } from "@kozmos-ds/vue/react-bridge"
+
+const client = ref("acme")
+const options = [
+  { value: "acme", label: "Acme Airport", media: { src: "/logos/acme.png" }, trailing: "12 sites" },
+  { value: "globex", label: "Globex", media: {}, trailing: "3 sites" },
+]
+</script>
+
+<template>
+  <KozmosListbox v-model="client" aria-label="Clients" :options="options" embedded />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Each client by its logo, or its initials, and how many sites it has.
+struct ClientList: View {
+    @State private var client = ["acme"]
+
+    var body: some View {
+        KozmosListbox(
+            options: [
+                KozmosListboxOption(
+                    value: "acme",
+                    label: "Acme Airport",
+                    media: KozmosOptionMedia(imageURL: URL(string: "https://example.com/acme.png")),
+                    trailing: "12 sites"
+                ),
+                KozmosListboxOption(value: "globex", label: "Globex", media: KozmosOptionMedia(), trailing: "3 sites"),
+            ],
+            selectedValues: $client,
+            embedded: true
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.listbox.KozmosListbox
+import com.kozmos.components.listbox.KozmosListboxOption
+import com.kozmos.components.listbox.KozmosOptionMedia
+
+// Each client by its logo, or its initials, and how many sites it has.
+@Composable
+fun ClientList() {
+    var client by remember { mutableStateOf(listOf("acme")) }
+    KozmosListbox(
+        options = listOf(
+            KozmosListboxOption(
+                value = "acme",
+                label = "Acme Airport",
+                media = KozmosOptionMedia(imageUrl = "https://example.com/acme.png"),
+                trailing = "12 sites"
+            ),
+            KozmosListboxOption(value = "globex", label = "Globex", media = KozmosOptionMedia(), trailing = "3 sites")
+        ),
+        selectedValues = client,
+        onSelectionChange = { values, _ -> client = values },
+        embedded = true
+    )
+}
+`}
+/>
+
 ## Implementation
 
 import { PlatformSnippets } from "../PlatformSnippets";

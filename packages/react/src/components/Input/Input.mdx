@@ -14,6 +14,13 @@ Use inputs to get text data from the user. Common use cases include:
 - Search fields
 - Filtering data
 
+## Read only and errors on native
+
+On SwiftUI and Compose the field itself says it is read only and says its error (GAP-235, GAP-236): Compose
+puts "Read only" in the field's state description (`readOnlyLabel`, for the product's own words) and the error
+message as the field's `error`; SwiftUI says "Read only", then the error message, as the field's accessibility hint
+(`readOnlyLabel` too). SwiftUI still draws a read-only field disabled, so VoiceOver also says it is dimmed.
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';

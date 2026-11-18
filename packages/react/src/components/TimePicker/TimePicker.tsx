@@ -43,6 +43,37 @@ const toMinutes = (value: unknown) => {
   return match ? +match[1] * 60 + +match[2] : null;
 };
 const pad = (n: number) => String(n).padStart(2, "0");
+const DAY = 24 * 60;
+
+/**
+ * The time `every` minutes on or back from `time` (GAP-256), on the step's
+ * grid from `first`, carrying into the hour: 08:00 back by 5 is 07:55, 08:03
+ * on is 08:05. It stays between `first` and `last` when the field has a
+ * `min` or `max`, and otherwise goes round midnight: 23:55 on is 00:00. An
+ * empty field starts at the first time going on, at the last going back.
+ */
+function stepTime(
+  time: string,
+  every: number,
+  direction: 1 | -1,
+  first: number,
+  last: number,
+  bounded: boolean,
+) {
+  const now = toMinutes(time);
+  const lastOnGrid = first + Math.floor((last - first) / every) * every;
+  let minutes =
+    now === null
+      ? direction === 1
+        ? first
+        : lastOnGrid
+      : direction === 1
+        ? first + (Math.floor((now - first) / every) + 1) * every
+        : first + (Math.ceil((now - first) / every) - 1) * every;
+  if (bounded) minutes = Math.min(Math.max(minutes, first), lastOnGrid);
+  else minutes = ((minutes % DAY) + DAY) % DAY;
+  return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+}
 
 function describedByIds({
   description,
@@ -137,6 +168,9 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
     const every = step >= 60 ? Math.round(step / 60) : 30;
     const first = toMinutes(props.min) ?? 0;
     const last = toMinutes(props.max) ?? 24 * 60 - 1;
+    // The arrows' step, in minutes: a `step` of whole minutes only.
+    const arrowStep =
+      Number.isFinite(step) && step >= 60 && step % 60 === 0 ? step / 60 : null;
     const options = React.useMemo(() => {
       // The locale's own short time (09:30, 9:30 AM), in the clock asked for.
       const format = new Intl.DateTimeFormat(resolvedLocale, {
@@ -224,6 +258,35 @@ const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(
                 }}
                 onKeyDown={(event) => {
                   onKeyDown?.(event);
+                  // Up and Down Arrow step the time by `step`, whichever
+                  // part is focused, carrying into the hour (GAP-256): the
+                  // browser's own step one segment by one. Only a step of
+                  // whole minutes is Kozmos's; a field with none, or one in
+                  // seconds, keeps the browser's arrows.
+                  if (
+                    !locked &&
+                    !event.defaultPrevented &&
+                    arrowStep !== null &&
+                    (event.key === "ArrowUp" || event.key === "ArrowDown") &&
+                    !event.altKey &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.shiftKey
+                  ) {
+                    event.preventDefault();
+                    typeInto(
+                      event.currentTarget,
+                      stepTime(
+                        event.currentTarget.value,
+                        arrowStep,
+                        event.key === "ArrowUp" ? 1 : -1,
+                        first,
+                        last,
+                        props.min != null || props.max != null,
+                      ),
+                    );
+                    return;
+                  }
                   // Chromium opens its own picker on these.
                   if (
                     !locked &&

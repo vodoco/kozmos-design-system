@@ -56,6 +56,8 @@ public struct KozmosInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     let action: KozmosInputAction?
     /// The copy's check, while it shows: a count, so a second copy restarts it.
     @State private var copiedCount = 0
@@ -81,8 +83,10 @@ public struct KozmosInput: View {
         mixed: Bool = false,
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
-        resetMixedLabel: String = KozmosMixedValue.resetLabel
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._text = text
         self.label = label
         self.placeholder = placeholder
@@ -111,6 +115,8 @@ public struct KozmosInput: View {
                 TextField(mixed ? mixedLabel : placeholder, text: shownText)
                     .accessibilityFocused($fieldAccessibilityFocused)
                     .disabled(disabled || readOnly)
+                    // Read only and in error, said on the field (GAP-235, GAP-236).
+                    .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                     .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
                     .padding(.trailing, action == nil ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
                 if let action {

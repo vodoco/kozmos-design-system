@@ -1,5 +1,7 @@
 package com.kozmos.components.otpinput
 
+import com.kozmos.components.fieldwrapper.KozmosFieldState
+import com.kozmos.components.fieldwrapper.kozmosFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -77,7 +79,9 @@ fun KozmosOTPInput(
     helperText: String? = null,
     errorMessage: String? = null,
     digitCountLabel: (Int) -> String = { if (it == 1) "1 digit" else "$it digits" },
-    fieldLabel: String = "Verification code"
+    fieldLabel: String = "Verification code",
+    /** Said as a read-only field's state, after the digit count (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) {
     val cellCount = length.coerceAtLeast(1)
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
@@ -217,7 +221,15 @@ fun KozmosOTPInput(
                     .fillMaxWidth()
                     .semantics {
                         contentDescription = label ?: fieldLabel
-                        stateDescription = digitCountLabel(cellCount)
+                        // The digit count, then read only; in error, the
+                        // message on the field itself (GAP-235, GAP-236).
+                        kozmosFieldState(
+                            readOnly = readOnly,
+                            readOnlyLabel = readOnlyLabel,
+                            inError = effectiveStatus == KozmosInputStatus.Error,
+                            errorMessage = errorMessage,
+                            stateParts = listOf(digitCountLabel(cellCount))
+                        )
                         // Set text (TalkBack's, an accessibility service's)
                         // replaces the whole text, so its code is all of it,
                         // whatever the field held: the field's own reads as an

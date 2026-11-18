@@ -27,6 +27,10 @@ falsy test.
 Set `showSteppers={false}` where the range is wide enough that clicking is
 pointless, such as a year.
 
+A field that takes any decimal, `step="any"`, keeps working steppers: they step
+by 1 within `min` and `max`, keeping the value's own decimals (2.5 goes to 3.5),
+where the input's own `stepUp()` would refuse (GAP-257).
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';
@@ -203,6 +207,11 @@ fun WidthField(width: Double?, onWidthChange: (Double?) -> Unit) {
 />
 
 ## Accessibility
+
+On SwiftUI and Compose the field itself says it is read only and says its error (GAP-235, GAP-236): Compose
+puts "Read only" in the field's state description (`readOnlyLabel`, for the product's own words) and the error
+message as the field's `error`; SwiftUI says "Read only", then the error message, as the field's accessibility hint
+(`readOnlyLabel` too). SwiftUI still draws a read-only field disabled, so VoiceOver also says it is dimmed.
 
 - Steppers are real buttons with accessible names, reachable by keyboard.
 - Arrow keys step the value; the field stays usable without the buttons.

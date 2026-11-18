@@ -611,10 +611,11 @@ const ImageField = React.forwardRef<HTMLDivElement, ImageFieldProps>(
         <FileUpload
           aria-label={labels.upload}
           accept={accept}
-          // Always multiple, so FileUpload sets no count of its own: with
-          // one slot left it said "Select up to 1 file." in English, before
-          // the field's own tooMany in the product's words.
-          multiple
+          // The picker takes one file when one slot is left, and FileUpload
+          // counts nothing of its own (GAP-258): the field's own tooMany
+          // says it, in the product's words, for a drop of several.
+          multiple={left > 1}
+          maxFiles={Infinity}
           disabled={disabled || full}
           browseLabel={labels.browse}
           dropLabel={labels.drop}

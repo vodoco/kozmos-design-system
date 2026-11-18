@@ -496,6 +496,32 @@ const PARTS: Part[] = [
     alone: ["Banana"],
   },
   {
+    // The option a product moves (GAP-260): the list asks for the next one
+    // by its keys. Null is no active option, so Down Arrow reaches the first.
+    name: "KozmosListbox",
+    model: "activeValue",
+    props: { options: fruit, "aria-label": "Fruit" },
+    start: "apple",
+    before: "Apple",
+    field: () => $("[role=listbox]"),
+    change: (list: HTMLElement) => {
+      list.focus();
+      list.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+      );
+    },
+    next: "banana",
+    shown: () =>
+      document.getElementById(
+        $("[role=listbox]")?.getAttribute("aria-activedescendant") ?? "",
+      )?.textContent ?? null,
+    shows: "Banana",
+    nothing: null,
+    fromNothing: { next: "apple", shows: "Apple" },
+    listener: "onActiveValueChange",
+    alone: "Banana",
+  },
+  {
     // An array, from onValueChange: typing in its search never reaches it.
     name: "KozmosMultiSelect",
     props: { options: fruit, label: "Fruit" },

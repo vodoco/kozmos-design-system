@@ -1,5 +1,7 @@
 package com.kozmos.components.combobox
 
+import com.kozmos.components.fieldwrapper.KozmosFieldState
+import com.kozmos.components.fieldwrapper.kozmosFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -87,11 +89,14 @@ fun KozmosCombobox(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
     KozmosComboboxLabels(), modifier, label, placeholder, enabled, readOnly, status, error,
     helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange,
-    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel)
+    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel,
+    readOnlyLabel = readOnlyLabel)
 
 @Composable
 fun KozmosCombobox(
@@ -118,11 +123,14 @@ fun KozmosCombobox(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
     controlLabels, true, modifier, label, placeholder, enabled, readOnly, status, error,
     helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange,
-    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel)
+    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel,
+    readOnlyLabel = readOnlyLabel)
 
 /** Explicit host filtering without changing either existing positional/trailing-lambda overload. */
 @Composable
@@ -151,11 +159,14 @@ fun KozmosCombobox(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
     controlLabels, filterLocally, emptyList(), modifier, label, placeholder, enabled, readOnly, status, error,
     helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange,
-    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel)
+    mixed = mixed, mixedLabel = mixedLabel, onResetMixed = onResetMixed, resetMixedLabel = resetMixedLabel,
+    readOnlyLabel = readOnlyLabel)
 
 /** Commands are unfiltered, do not change query/selection, and request dismissal before activation. */
 @Composable
@@ -175,7 +186,9 @@ fun KozmosCombobox(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
     val isExpanded = (expanded ?: internalExpanded) && enabled && !readOnly
@@ -244,8 +257,16 @@ fun KozmosCombobox(
                     }
                     .semantics {
                         contentDescription = label ?: placeholder
-                        // Mixed with nothing typed, said as its state.
-                        if (mixed && inputValue.isEmpty()) stateDescription = mixedLabel
+                        // Mixed with nothing typed, said as its state; read
+                        // only and in error, said on the field itself
+                        // (GAP-235, GAP-236).
+                        kozmosFieldState(
+                            readOnly = readOnly,
+                            readOnlyLabel = readOnlyLabel,
+                            inError = effectiveStatus == KozmosInputStatus.Error,
+                            errorMessage = errorMessage,
+                            stateParts = listOfNotNull(mixedLabel.takeIf { mixed && inputValue.isEmpty() })
+                        )
                     }
                     .weight(1f)
                     .fillMaxHeight(),

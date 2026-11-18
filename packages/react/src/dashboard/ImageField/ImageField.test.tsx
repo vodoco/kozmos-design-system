@@ -165,6 +165,8 @@ describe("ImageField", () => {
         labels={{ tooMany: (left) => `Room for ${left}` }}
       />,
     );
+    // The picker takes one file (GAP-258).
+    expect(fileInput(container)).not.toHaveAttribute("multiple");
     fireEvent.drop(screen.getByRole("button", { name: "Upload an image" }), {
       dataTransfer: { files: [jpeg("1.jpg"), jpeg("2.jpg")] },
     });
