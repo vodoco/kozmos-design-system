@@ -2,6 +2,7 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, ref, type App, type Component } from "vue";
 import {
+  KozmosAvatar,
   KozmosCombobox,
   KozmosListbox,
   KozmosMultiSelect,
@@ -111,5 +112,13 @@ describe("an option's media and trailing words through the Vue wrappers", () => 
     );
     await until(() => activeLabel() === "Pointr Cloud");
     expect(asked).toEqual(["pointr"]);
+  });
+
+  it("KozmosAvatar takes size sm, 24 (decision 221), as option media draws it", async () => {
+    mount(KozmosAvatar, () => ({ size: "sm", fallback: "AA" }));
+    const avatar = await until(() => document.querySelector("[data-size]"));
+    expect(avatar.getAttribute("data-size")).toBe("sm");
+    expect(avatar.className).toContain("h-6");
+    expect(avatar.textContent).toBe("AA");
   });
 });

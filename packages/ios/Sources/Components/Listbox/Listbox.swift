@@ -133,11 +133,12 @@ public struct KozmosListbox: View {
                 }
                 ForEach(options) { option in
                     Button(action: { commit(option) }) {
-                        // With an Avatar the row's parts sit on its middle
-                        // line; without, as they always have.
+                        // With an Avatar, the sm one, 24 (decision 221), so
+                        // the row keeps its height, the row's parts sit on
+                        // its middle line; without, as they always have.
                         HStack(alignment: option.media == nil ? .top : .center, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                             if let media = option.media {
-                                KozmosAvatar(imageURL: media.imageURL, fallbackText: media.initials ?? KozmosOptionMedia.initials(of: option.label))
+                                KozmosAvatar(imageURL: media.imageURL, fallbackText: media.initials ?? KozmosOptionMedia.initials(of: option.label), size: .sm)
                                     .accessibilityHidden(true)
                             }
                             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {

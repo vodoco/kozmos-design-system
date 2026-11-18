@@ -24,3 +24,47 @@ public enum KozmosFieldState {
             .joined(separator: ". ")
     }
 }
+
+/// A read-only field's value (decision 222, GAP-235), drawn in place of the
+/// field's text field: at full strength, never dimmed, selectable and
+/// copyable, and one VoiceOver element that says the field's name, its
+/// value and "Read only", never "dimmed". SwiftUI's text field has no
+/// read-only mode, and `.disabled` dims it and keeps its value from being
+/// selected. A secure value is drawn as dots and cannot be copied.
+struct KozmosReadOnlyValue: View {
+    let text: String
+    let placeholder: String
+    let textColor: Color
+    let placeholderColor: Color
+    let alignment: Alignment
+    let accessibilityName: String
+    let hint: String
+    var secure: Bool = false
+
+    /// What is drawn: the value, its dots when secure, or the placeholder.
+    var shown: String {
+        if text.isEmpty { return placeholder }
+        return secure ? String(repeating: "\u{2022}", count: text.count) : text
+    }
+
+    /// What VoiceOver says as the value: the text, never a secret.
+    var spokenValue: String { secure ? "" : text }
+
+    var body: some View {
+        Group {
+            if secure || text.isEmpty {
+                Text(verbatim: shown)
+            } else {
+                Text(verbatim: shown).textSelection(.enabled)
+            }
+        }
+        .foregroundColor(text.isEmpty ? placeholderColor : textColor)
+        .lineLimit(1)
+        .truncationMode(.tail)
+        .frame(maxWidth: .infinity, alignment: alignment)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: accessibilityName))
+        .accessibilityValue(Text(verbatim: spokenValue))
+        .accessibilityHint(Text(verbatim: hint))
+    }
+}

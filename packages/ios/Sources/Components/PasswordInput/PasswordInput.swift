@@ -65,13 +65,26 @@ public struct KozmosPasswordInput: View {
 
             HStack(spacing: 0) {
                 Group {
-                    if isVisible {
+                    // Read only (decision 222): drawn read only, not
+                    // disabled; hidden, its dots, never copied.
+                    if readOnly && !disabled {
+                        KozmosReadOnlyValue(
+                            text: text,
+                            placeholder: placeholder,
+                            textColor: textColor,
+                            placeholderColor: KozmosColors.primitivesColorsForeground400,
+                            alignment: .leading,
+                            accessibilityName: label ?? placeholder,
+                            hint: KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage),
+                            secure: !isVisible
+                        )
+                    } else if isVisible {
                         TextField(placeholder, text: $text)
                     } else {
                         SecureField(placeholder, text: $text)
                     }
                 }
-                .disabled(disabled || readOnly)
+                .disabled(disabled)
                 // Read only and in error, said on the field (GAP-235, GAP-236).
                 .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                 .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)

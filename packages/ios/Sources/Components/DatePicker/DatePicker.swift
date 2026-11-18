@@ -10,6 +10,7 @@ public struct KozmosDatePicker: View {
     let status: KozmosInputStatus
     let disabled: Bool
     let readOnly: Bool
+    let readOnlyLabel: String
     let minimumDate: Date?
     let maximumDate: Date?
     /// The field stands for several values that differ (GAP-153, GAP-255).
@@ -34,8 +35,11 @@ public struct KozmosDatePicker: View {
         mixed: Bool = false,
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
-        resetMixedLabel: String = KozmosMixedValue.resetLabel
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        /// Said on a read-only field (decision 222, GAP-235).
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._selection = selection
         self.label = label
         self.helperText = helperText
@@ -55,7 +59,8 @@ public struct KozmosDatePicker: View {
             selection: $selection, label: label, helperText: helperText, status: status, disabled: disabled,
             readOnly: readOnly, minimumDate: minimumDate, maximumDate: maximumDate,
             components: .date, iconName: "calendar",
-            mixed: mixed, mixedLabel: mixedLabel, onResetMixed: onResetMixed, resetMixedLabel: resetMixedLabel
+            mixed: mixed, mixedLabel: mixedLabel, onResetMixed: onResetMixed, resetMixedLabel: resetMixedLabel,
+            readOnlyLabel: readOnlyLabel
         )
     }
 }

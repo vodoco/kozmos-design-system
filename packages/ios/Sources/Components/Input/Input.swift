@@ -112,11 +112,27 @@ public struct KozmosInput: View {
             }
 
             HStack(spacing: 0) {
-                TextField(mixed ? mixedLabel : placeholder, text: shownText)
+                Group {
+                    // Read only (decision 222): drawn read only, not
+                    // disabled: full strength, selectable, said read only.
+                    if readOnly && !disabled {
+                        KozmosReadOnlyValue(
+                            text: mixed ? "" : text,
+                            placeholder: mixed ? mixedLabel : placeholder,
+                            textColor: textColor,
+                            placeholderColor: KozmosColors.primitivesColorsForeground400,
+                            alignment: .leading,
+                            accessibilityName: label ?? placeholder,
+                            hint: fieldHint
+                        )
+                    } else {
+                        TextField(mixed ? mixedLabel : placeholder, text: shownText)
+                            .disabled(disabled || readOnly)
+                            // Read only and in error, said on the field (GAP-235, GAP-236).
+                            .accessibilityHint(fieldHint)
+                    }
+                }
                     .accessibilityFocused($fieldAccessibilityFocused)
-                    .disabled(disabled || readOnly)
-                    // Read only and in error, said on the field (GAP-235, GAP-236).
-                    .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                     .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
                     .padding(.trailing, action == nil ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
                 if let action {
@@ -235,6 +251,11 @@ public struct KozmosInput: View {
         if pressed { return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle }
         if disabled || (mixed && isCopy) { return KozmosColors.primitivesColorsForeground500 }
         return KozmosColors.primitivesColorsForeground400
+    }
+
+    /// "Read only", then the error message (GAP-235, GAP-236).
+    var fieldHint: String {
+        KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage)
     }
 
     private var effectiveStatus: KozmosInputStatus {

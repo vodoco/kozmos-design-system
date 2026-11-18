@@ -51,3 +51,33 @@ final class KozmosListboxOptionSlotsTests: XCTestCase {
         XCTAssertEqual(KozmosListbox(options: options).rowFill(for: options[0]), .none)
     }
 }
+
+/// Decision 221: an option's media is the Avatar's sm, 24, so a row with a
+/// logo keeps the list's row height (44), as React's and Compose's do. The
+/// list is drawn whole and its height compared with one of plain rows.
+final class KozmosListboxOptionMediaHeightTests: XCTestCase {
+    @MainActor private func height(_ options: [KozmosListboxOption]) -> CGFloat {
+        let renderer = ImageRenderer(content: KozmosListbox(options: options, embedded: true).frame(width: 320))
+        renderer.scale = 1
+        return renderer.cgImage.map { CGFloat($0.height) } ?? 0
+    }
+
+    @MainActor func testARowWithMediaIsAsTallAsOneWithout() {
+        let plain = [
+            KozmosListboxOption(value: "a", label: "Acme Airport"),
+            KozmosListboxOption(value: "b", label: "Pointr Cloud"),
+        ]
+        let withMedia = [
+            KozmosListboxOption(value: "a", label: "Acme Airport", media: KozmosOptionMedia(initials: "AA")),
+            KozmosListboxOption(value: "b", label: "Pointr Cloud", media: KozmosOptionMedia()),
+        ]
+        let without = height(plain)
+        XCTAssertGreaterThan(without, 0, "the list drew nothing")
+        XCTAssertEqual(height(withMedia), without)
+    }
+
+    func testTheSmAvatarIs24() {
+        XCTAssertEqual(KozmosAvatarSize.sm.dimension, 24)
+        XCTAssertEqual(KozmosAvatarSize.default.dimension, 40)
+    }
+}

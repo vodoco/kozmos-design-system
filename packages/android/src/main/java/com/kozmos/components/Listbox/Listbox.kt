@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.avatar.KozmosAvatar
+import com.kozmos.components.avatar.KozmosAvatarSize
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -158,6 +159,8 @@ fun KozmosListbox(
                     KozmosAvatar(
                         imageUrl = media.imageUrl,
                         fallbackText = media.initials ?: optionInitials(option.label),
+                        // The sm one, 24 (decision 221): the row keeps its height.
+                        size = KozmosAvatarSize.Sm,
                         // Decoration: the label names the option.
                         modifier = Modifier.clearAndSetSemantics { }
                     )

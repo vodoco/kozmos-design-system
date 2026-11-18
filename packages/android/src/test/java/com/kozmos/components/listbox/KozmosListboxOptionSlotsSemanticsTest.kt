@@ -31,4 +31,32 @@ class KozmosListboxOptionSlotsSemanticsTest {
         val said = read.merged.flatMap { it.texts + listOfNotNull(it.description) }
         assertEquals("the initials are not said", false, said.contains("AA") || said.contains("PC"))
     }
+
+    /**
+     * Decision 221: an option's media is the Avatar's sm, 24, so a row with a
+     * logo keeps the list's row height, as React's and SwiftUI's do. Each
+     * row's height, read from its bounds.
+     */
+    @Test fun aRowWithMediaIsAsTallAsOneWithout() {
+        val read = paparazzi.readSemantics {
+            KozmosMaterialTheme {
+                KozmosListbox(
+                    options = listOf(
+                        KozmosListboxOption("plain", "Plain"),
+                        KozmosListboxOption("acme", "Acme Airport", media = KozmosOptionMedia(initials = "AA")),
+                        KozmosListboxOption("pointr", "Pointr Cloud", media = KozmosOptionMedia())
+                    ),
+                    embedded = true
+                )
+            }
+        }
+        val heights = read.merged.filter { it.click != null }.map { it.bounds.height }
+        assertEquals(3, heights.size)
+        assertEquals("every row as tall as the plain one: $heights", 1, heights.distinct().size)
+    }
+
+    @Test fun theSmAvatarIs24() {
+        assertEquals(24f, com.kozmos.components.avatar.KozmosAvatarSize.Sm.dimension.value)
+        assertEquals(40f, com.kozmos.components.avatar.KozmosAvatarSize.Default.dimension.value)
+    }
 }

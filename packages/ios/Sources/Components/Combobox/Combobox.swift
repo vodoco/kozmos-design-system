@@ -102,20 +102,38 @@ public struct KozmosCombobox: View {
             }
 
             HStack(spacing: 0) {
-                TextField(mixed ? mixedLabel : placeholder, text: editableInput)
-                    .focused($inputFocused)
+                // Read only (decision 222): drawn read only, not disabled:
+                // its value at full strength, selectable, said read only.
+                if readOnly && !disabled {
+                    KozmosReadOnlyValue(
+                        text: inputValue,
+                        placeholder: mixed ? mixedLabel : placeholder,
+                        textColor: textColor,
+                        placeholderColor: KozmosColors.primitivesColorsForeground400,
+                        alignment: .leading,
+                        accessibilityName: label ?? placeholder,
+                        hint: KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage)
+                    )
                     .accessibilityFocused($inputAccessibilityFocused)
-                    .accessibilityLabel(label ?? placeholder)
-                    .disabled(disabled || readOnly)
-                    // Read only and in error, said on the field (GAP-235, GAP-236).
-                    .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                     .font(KozmosTypography.subheadline)
-                    .foregroundColor(textColor)
                     .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
                     .frame(height: 44)
-                    .onTapGesture {
-                        if !disabled && !readOnly { setOpen(true) }
-                    }
+                } else {
+                    TextField(mixed ? mixedLabel : placeholder, text: editableInput)
+                        .focused($inputFocused)
+                        .accessibilityFocused($inputAccessibilityFocused)
+                        .accessibilityLabel(label ?? placeholder)
+                        .disabled(disabled || readOnly)
+                        // Read only and in error, said on the field (GAP-235, GAP-236).
+                        .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
+                        .font(KozmosTypography.subheadline)
+                        .foregroundColor(textColor)
+                        .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
+                        .frame(height: 44)
+                        .onTapGesture {
+                            if !disabled && !readOnly { setOpen(true) }
+                        }
+                }
 
                 if clearable && !inputValue.isEmpty && !disabled && !readOnly {
                     Button(action: clearSelection) {

@@ -52,7 +52,7 @@ export function OptionRow({
     >
       {option.media && (
         // Decoration: the label names the option (decision 215).
-        <Avatar aria-hidden="true" className="kozmos-option-media">
+        <Avatar size="sm" aria-hidden="true" className="kozmos-option-media">
           {option.media.src && <AvatarImage src={option.media.src} alt="" />}
           <AvatarFallback>
             {option.media.initials ?? optionInitials(option.label)}

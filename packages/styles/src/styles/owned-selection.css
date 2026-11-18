@@ -136,9 +136,9 @@
     @apply block h-4 w-4 shrink-0;
     color: var(--primitives-colors-theme-600);
   }
-  /* An option's leading Avatar (decision 215, GAP-282), at the Avatar's
-     own 40, before the label, its initials in the row's type; and what it
-     shows at its end (GAP-260), muted as the
+  /* An option's leading Avatar (decision 215, GAP-282), the Avatar's sm,
+     24 (decision 221), before the label, so a row with a logo keeps the
+     list's row height; and what it shows at its end (GAP-260), muted as the
      description, before the check. Rows without them are unchanged. */
   .kozmos-option-media {
     flex-shrink: 0;

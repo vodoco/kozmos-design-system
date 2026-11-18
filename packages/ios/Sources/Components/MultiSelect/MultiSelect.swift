@@ -97,20 +97,38 @@ public struct KozmosMultiSelect: View {
                 HStack(spacing: 0) {
                     // Mixed (GAP-255), the mixed label is the empty field's
                     // placeholder, which VoiceOver reads with it, once.
-                    TextField(mixed ? mixedLabel : (shownValues.isEmpty ? placeholder : ""), text: $searchValue)
+                    // Read only (decision 222): drawn read only, not
+                    // disabled: its placeholder at full strength, said read
+                    // only; its chips are as React's.
+                    if readOnly && !disabled {
+                        KozmosReadOnlyValue(
+                            text: "",
+                            placeholder: mixed ? mixedLabel : (shownValues.isEmpty ? placeholder : ""),
+                            textColor: textColor,
+                            placeholderColor: KozmosColors.primitivesColorsForeground400,
+                            alignment: .leading,
+                            accessibilityName: label ?? placeholder,
+                            hint: KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage)
+                        )
                         .accessibilityFocused($fieldAccessibilityFocused)
-                        .disabled(disabled || readOnly)
-                        // Read only and in error, said on the field (GAP-235, GAP-236).
-                        .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(textColor)
                         .frame(height: 36)
-                        .onTapGesture {
-                            if !disabled && !readOnly { internalOpen = true }
-                        }
-                        .onChange(of: searchValue) { _ in
-                            if !disabled && !readOnly { internalOpen = true }
-                        }
+                    } else {
+                        TextField(mixed ? mixedLabel : (shownValues.isEmpty ? placeholder : ""), text: $searchValue)
+                            .accessibilityFocused($fieldAccessibilityFocused)
+                            .disabled(disabled || readOnly)
+                            // Read only and in error, said on the field (GAP-235, GAP-236).
+                            .accessibilityHint(KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage))
+                            .font(KozmosTypography.subheadline)
+                            .foregroundColor(textColor)
+                            .frame(height: 36)
+                            .onTapGesture {
+                                if !disabled && !readOnly { internalOpen = true }
+                            }
+                            .onChange(of: searchValue) { _ in
+                                if !disabled && !readOnly { internalOpen = true }
+                            }
+                    }
 
                     // The clear and the chevron are 44pt targets, all of them
                     // hittable, as Combobox's are: a plain button's frame adds
