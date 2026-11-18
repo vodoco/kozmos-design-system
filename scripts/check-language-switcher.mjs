@@ -130,9 +130,21 @@ try {
       "pending looks unavailable, as disabled did",
     );
     assert.match(await trigger.textContent(), /English/);
-    assert.match(
-      await page.getByRole("status").textContent(),
-      /Changing language/,
+    // The switcher's own status, the one its trigger is described by. The
+    // shell round it keeps its map status region mounted, empty, before any
+    // words (GAP-226), so a page-wide getByRole("status") finds two.
+    const pendingId = await trigger.getAttribute("aria-describedby");
+    const pendingStatus = page.locator(`[id="${pendingId}"]`);
+    assert.equal(await pendingStatus.getAttribute("role"), "status");
+    assert.match(await pendingStatus.textContent(), /Changing language/);
+    assert.deepEqual(
+      (
+        await page
+          .getByRole("status")
+          .evaluateAll((nodes) => nodes.map((node) => node.textContent))
+      ).filter(Boolean),
+      [await pendingStatus.textContent()],
+      "one status on the page carries words: the switcher's",
     );
     await page.keyboard.press("Space");
     await page.keyboard.press("a");
