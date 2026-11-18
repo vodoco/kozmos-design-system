@@ -55,6 +55,18 @@
       "swiftui": "Not sent yet: SwiftUI's Calendar and DatePicker send no date_selected; a follow-up of GAP-234.",
       "compose": "Not sent yet: Compose's Calendar and DatePicker send no date_selected; a follow-up of GAP-234."
     },
+    "entry_added": {
+      "components": ["ChipInput"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's ChipInput sends no entry_added; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's ChipInput sends no entry_added; a follow-up of GAP-234."
+    },
+    "entry_removed": {
+      "components": ["ChipInput"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's ChipInput sends no entry_removed; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's ChipInput sends no entry_removed; a follow-up of GAP-234."
+    },
     "feedback_submitted": {
       "components": ["FeedbackCard"],
       "react": "sent",

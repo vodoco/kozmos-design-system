@@ -143,17 +143,23 @@ const inlineScripts = [
   ...ui.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/g),
 ].filter((match) => !/\ssrc\s*=/.test(match[1] || ""));
 if (inlineScripts.length === 0) {
-  console.error("Figma plugin UI check failed: ui.html has no inline <script> to parse.");
+  console.error(
+    "Figma plugin UI check failed: ui.html has no inline <script> to parse.",
+  );
   process.exit(1);
 }
 for (const match of inlineScripts) {
-  const startLine = ui.slice(0, match.index + match[0].indexOf(">") + 1).split("\n").length;
+  const startLine = ui
+    .slice(0, match.index + match[0].indexOf(">") + 1)
+    .split("\n").length;
   try {
     // Parse only: a vm.Script compiles the source and runs nothing.
     new vm.Script(match[2], { filename: "ui.html", lineOffset: startLine - 1 });
   } catch (error) {
     const where = String(error.stack || "").split("\n")[0];
-    console.error(`Figma plugin UI check failed: the inline <script> at ui.html:${startLine} does not parse.`);
+    console.error(
+      `Figma plugin UI check failed: the inline <script> at ui.html:${startLine} does not parse.`,
+    );
     console.error(`- ${where}: ${error.message}`);
     process.exit(1);
   }
@@ -163,9 +169,11 @@ const optionKeys = new Set(
   [...ui.matchAll(/<option value="([A-Za-z0-9]+)"/g)].map((match) => match[1]),
 );
 const registryKeys = new Set(
-  [...ui.matchAll(/([A-Za-z][A-Za-z0-9]*):\s*\{\s*\n\s*label:[^\n]*\n\s*build:/g)].map(
-    (match) => match[1],
-  ),
+  [
+    ...ui.matchAll(
+      /([A-Za-z][A-Za-z0-9]*):\s*\{\s*\n\s*label:[^\n]*\n\s*build:/g,
+    ),
+  ].map((match) => match[1]),
 );
 
 const notPickable = [...registryKeys].filter((key) => !optionKeys.has(key));
@@ -174,7 +182,9 @@ const notBuildable = [...optionKeys].filter((key) => !registryKeys.has(key));
 if (notPickable.length > 0 || notBuildable.length > 0) {
   console.error("Figma plugin menu check failed:");
   for (const key of notPickable) {
-    console.error(`- ${key}: has build/update/rebuild actions but no <option>, so nobody can select it.`);
+    console.error(
+      `- ${key}: has build/update/rebuild actions but no <option>, so nobody can select it.`,
+    );
   }
   for (const key of notBuildable) {
     console.error(`- ${key}: is in the dropdown but has no actions behind it.`);
@@ -186,10 +196,15 @@ if (notPickable.length > 0 || notBuildable.length > 0) {
 // as the only origins a plugin may fetch from, so it lists exactly the
 // origins the plugin reads at Build and Update (SpriteIcon's atlas, decision
 // 219), with a reason. Every https origin named in code.js or ui.html is one
-// it may fetch, except the few that are only words in it: the SVG namespace
-// and the Avatar set's placeholder Image URL, never fetched.
+// it may fetch, except the few that are only words in it: the SVG namespace,
+// the Avatar set's placeholder Image URL and the URL in CodeBlock's sample
+// code (GAP-216), never fetched.
 const MANIFEST = path.join(ROOT, "figma/foundations-importer/manifest.json");
-const NEVER_FETCHED = new Set(["http://www.w3.org", "https://example.com"]);
+const NEVER_FETCHED = new Set([
+  "http://www.w3.org",
+  "https://example.com",
+  "https://styles.example.com",
+]);
 {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
   const uiSource = fs.readFileSync(PLUGIN_UI, "utf8");
@@ -202,15 +217,26 @@ const NEVER_FETCHED = new Set(["http://www.w3.org", "https://example.com"]);
   const allowed = new Set((access && access.allowedDomains) || []);
   const problems = [];
   if (named.size > 0 && !access)
-    problems.push(`manifest.json declares no networkAccess, and the plugin names ${[...named].join(", ")}.`);
+    problems.push(
+      `manifest.json declares no networkAccess, and the plugin names ${[...named].join(", ")}.`,
+    );
   for (const origin of named)
     if (!allowed.has(origin))
-      problems.push(`${origin} is named in the plugin but not in networkAccess.allowedDomains.`);
+      problems.push(
+        `${origin} is named in the plugin but not in networkAccess.allowedDomains.`,
+      );
   for (const origin of allowed)
     if (!named.has(origin))
-      problems.push(`${origin} is allowed but the plugin names no URL there: list exactly the origins it reads.`);
-  if (access && !(typeof access.reasoning === "string" && access.reasoning.trim()))
-    problems.push("networkAccess has no reasoning: say what the plugin reads there.");
+      problems.push(
+        `${origin} is allowed but the plugin names no URL there: list exactly the origins it reads.`,
+      );
+  if (
+    access &&
+    !(typeof access.reasoning === "string" && access.reasoning.trim())
+  )
+    problems.push(
+      "networkAccess has no reasoning: say what the plugin reads there.",
+    );
   if (problems.length > 0) {
     console.error("Figma plugin network access check failed:");
     for (const problem of problems) console.error(`- ${problem}`);
