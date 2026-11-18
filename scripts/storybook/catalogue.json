@@ -380,6 +380,13 @@
       ]
     },
     {
+      "file": "packages/react/src/components/DescriptionList/DescriptionList.stories.tsx",
+      "id": "data-display-descriptionlist",
+      "title": "Core/Data display/DescriptionList",
+      "component": "DescriptionList",
+      "exports": ["Default"]
+    },
+    {
       "file": "packages/react/src/components/Dialog/Dialog.stories.tsx",
       "id": "components-dialog",
       "title": "Core/Overlays/Dialog",

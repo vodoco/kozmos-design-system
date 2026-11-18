@@ -1,9 +1,8 @@
-import { Meta } from "@storybook/blocks";
+import { Canvas, Meta } from "@storybook/blocks";
 import { PlatformSnippets } from "../PlatformSnippets";
-import { DescriptionList, DescriptionListItem } from "./DescriptionList";
-import { Badge } from "../Badge";
+import * as DescriptionListStories from "./DescriptionList.stories";
 
-<Meta title="Core/Data display/DescriptionList" />
+<Meta of={DescriptionListStories} />
 
 # DescriptionList
 
@@ -12,19 +11,7 @@ opens a unit for a Read-Only user as its values, not as a form, because greyed, 
 Each value is a muted 12/16 label over the value, 14/20 in the foreground, 4 apart, and items are 16 apart; a value can be
 words, tags, a yes or a no, or carry an action after it such as Copy.
 
-<div className="kozmos-reset" style={{ maxWidth: 480 }}>
-  <DescriptionList aria-label="Unit">
-    <DescriptionListItem label="Name" value="Bean & Leaf Café" />
-    <DescriptionListItem label="Categories">
-      <Badge variant="secondary">Café</Badge>
-      <Badge variant="secondary">Food</Badge>
-    </DescriptionListItem>
-    <DescriptionListItem label="Featured" value={true} />
-    <DescriptionListItem label="Hidden from visitors" value={false} />
-  </DescriptionList>
-</div>
-
-DescriptionList has no story yet: its first story is a new Visual Review baseline, recorded in the Playwright image.
+<Canvas of={DescriptionListStories.Default} />
 
 ## Anatomy
 
