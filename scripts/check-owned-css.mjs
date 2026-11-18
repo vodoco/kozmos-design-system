@@ -244,7 +244,10 @@ try {
       // holds without @scope and under the host's rules too.
       for (const [surface, card] of [
         ["card", page.getByTestId(`${id}-travel-card`)],
-        ["grouped row", page.getByTestId(`${id}-travel-group`).locator("article").nth(1)],
+        [
+          "grouped row",
+          page.getByTestId(`${id}-travel-group`).locator("article").nth(1),
+        ],
       ])
         assert.equal(
           await card
@@ -1815,7 +1818,9 @@ try {
       // Decision 197: drawn from the disabled pair at full strength, no
       // longer at half (the section on every variant reads the rest).
       {
-        const disabled = await measure(page.getByTestId(`${id}-disabled-button`));
+        const disabled = await measure(
+          page.getByTestId(`${id}-disabled-button`),
+        );
         assert.deepEqual(
           [disabled.opacity, disabled.backgroundColor, disabled.color],
           [
@@ -1931,9 +1936,15 @@ try {
       /blur\(20px\) saturate\(1\.8\)/,
       `${mode}: the glass surface's filter: ${nestedSurface.filter}`,
     );
-    assert.equal(
-      nestedSurface.edge,
-      "rgba(255, 255, 255, 0.2)",
+    // White at 0.2. Since decision 208 (GAP-229) the edge reads the colour
+    // token, --semantics-effect-glass-border-color, mixed to the opacity, so
+    // a browser writes it as color(srgb 1 1 1 / 0.2) where it wrote rgba():
+    // the same paint, in either form.
+    const edge =
+      /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(nestedSurface.edge) ||
+      /^color\(srgb 1 1 1 \/ (0\.\d+)\)$/.exec(nestedSurface.edge);
+    assert(
+      edge && Math.abs(Number(edge[1]) - 0.2) < 0.01,
       `${mode}: the glass surface's edge: ${JSON.stringify(nestedSurface)}`,
     );
     assert.notEqual(
@@ -1986,7 +1997,10 @@ try {
           for (let at = node; at; at = at.parentElement)
             if (getComputedStyle(at).opacity !== "1") faded.push(at.tagName);
           const inks = [...node.querySelectorAll("svg, span")]
-            .filter((child) => !child.closest(".kozmos-icon-button-counter, .sr-only"))
+            .filter(
+              (child) =>
+                !child.closest(".kozmos-icon-button-counter, .sr-only"),
+            )
             .map((child) => getComputedStyle(child).color);
           return {
             disabled:
@@ -2344,7 +2358,16 @@ try {
         page.getByTestId(testId).getAttribute("data-state");
       const pairs =
         mode === "full"
-          ? ["toggle-on", "switch-on", "check-on", "check-mixed", "radio-on", "radio-card-on", "tab-on", "accordion-on"]
+          ? [
+              "toggle-on",
+              "switch-on",
+              "check-on",
+              "check-mixed",
+              "radio-on",
+              "radio-card-on",
+              "tab-on",
+              "accordion-on",
+            ]
           : ["toggle-on"];
       for (const part of pairs) {
         const plain = `${id}-${part}`;
@@ -2429,13 +2452,11 @@ try {
         `${id}-toggle-on-outline`,
         `${id}-toggle-on-disabled`,
       ]) {
-        const on = await page
-          .getByTestId(testId)
-          .evaluate(async (node) => {
-            await Promise.all(node.getAnimations().map((a) => a.finished));
-            const s = getComputedStyle(node);
-            return { fill: s.backgroundColor, ink: s.color, opacity: s.opacity };
-          });
+        const on = await page.getByTestId(testId).evaluate(async (node) => {
+          await Promise.all(node.getAnimations().map((a) => a.finished));
+          const s = getComputedStyle(node);
+          return { fill: s.backgroundColor, ink: s.color, opacity: s.opacity };
+        });
         assert.equal(
           on.fill,
           fill,
