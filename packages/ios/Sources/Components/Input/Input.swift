@@ -27,12 +27,19 @@ public enum KozmosInputAction {
     /// shape inside the button (decisions 164 and 165), so pressed is a shape
     /// and not a colour alone; it is selected to VoiceOver.
     case toggle(label: String, icon: Image, isPressed: Binding<Bool>)
+    /// A pencil that calls `onEdit` (GAP-212, decision 224): what editing
+    /// means is the product's, a sheet or making the field editable. For a
+    /// read-only value with an editor elsewhere, Map Personas' ID and Map
+    /// Style; read only does not disable it, only a disabled field does.
+    /// `label` is its name, "Edit" by default, in the product's words.
+    case edit(label: String = "Edit", onEdit: () -> Void)
 
     /// The button's name.
     var label: String {
         switch self {
         case .copy(let label, _, _): return label
         case .toggle(let label, _, _): return label
+        case .edit(let label, _): return label
         }
     }
 }
@@ -202,6 +209,18 @@ public struct KozmosInput: View {
             .accessibilityLabel(label)
             // Pressed is selected, as ToggleButton's and the reveal's are.
             .accessibilityAddTraits(isPressed.wrappedValue ? .isSelected : [])
+        case .edit(let label, let onEdit):
+            // Drawn as the copy is: the field's muted icon in its 44 end.
+            Button(action: onEdit) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(disabled)
+            .foregroundColor(actionColor(pressed: false))
+            .accessibilityLabel(label)
         }
     }
 
