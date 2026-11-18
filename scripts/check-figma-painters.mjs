@@ -19009,7 +19009,9 @@ section("GAP-147: Badge draws on Chip's scale, 28, 32 and 36");
       }),
     );
     const token =
-      size === "Icon" ? "Badge/height/icon" : `Badge/height/${size.toLowerCase()}`;
+      size === "Icon"
+        ? "Badge/height/icon"
+        : `Badge/height/${size.toLowerCase()}`;
     ok(
       component.height === height &&
         menusBound(component, "height") === token &&
@@ -19038,7 +19040,10 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
     typeof plugin.updateSpriteIconVariant === "function" &&
     typeof plugin.parseSpriteIconVariantName === "function" &&
     typeof plugin.configureSpriteIconProperties === "function";
-  ok(ready, "SpriteIcon's painter, its reader and its properties are reachable");
+  ok(
+    ready,
+    "SpriteIcon's painter, its reader and its properties are reachable",
+  );
   const fixture = JSON.parse(
     fs.readFileSync("apps/docs/src/sprite-fixture/sprite@2x.json", "utf8"),
   );
@@ -19052,21 +19057,32 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
     };
     plugin.SPRITE_ICON_IO.image = async (url) => {
       asked.push(url);
-      return { hash: "atlas-hash", getSizeAsync: async () => ({ width: 370, height: 114 }) };
+      return {
+        hash: "atlas-hash",
+        getSizeAsync: async () => ({ width: 370, height: 114 }),
+      };
     };
   }
   const paint = async (value, sprite, cell) => {
     const component = figma.createComponent();
     // Build reads the defaults; Update reads the set's properties. Here the
     // hidden words stand for them, as Update finds them.
-    for (const [name, characters] of [["Sprite", sprite], ["Cell Name", cell]]) {
+    for (const [name, characters] of [
+      ["Sprite", sprite],
+      ["Cell Name", cell],
+    ]) {
       const text = new MockNode("TEXT", name);
       text.characters = characters;
       component.appendChild(text);
     }
     const stats = freshStats();
     await withAutoLayout(() =>
-      plugin.updateSpriteIconVariant(component, { value, fonts: FONTS, stats, variableByName: menusTokens.variableByName }),
+      plugin.updateSpriteIconVariant(component, {
+        value,
+        fonts: FONTS,
+        stats,
+        variableByName: menusTokens.variableByName,
+      }),
     );
     return { component, stats };
   };
@@ -19077,7 +19093,11 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
       ["desk", { width: side, height: side }],
       ["1", { width: (side * 90) / 110, height: side }],
     ]) {
-      const { component, stats } = await paint(value, "https://cdn.test/atlas-a/sprite", name);
+      const { component, stats } = await paint(
+        value,
+        "https://cdn.test/atlas-a/sprite",
+        name,
+      );
       if (name === "desk") variants.push(component);
       const rect = named(component, "Cell");
       const fill = rect && rect.fills[0];
@@ -19112,8 +19132,16 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
       `the @2x atlas is read once for every variant (${asked.join(", ")})`,
     );
     for (const [sprite, cell, says] of [
-      ["https://cdn.test/unreachable/sprite", "desk", /could not be read \(.*network blocked\)/],
-      ["https://cdn.test/atlas-a/sprite", "not-in-the-atlas", /no cell named "not-in-the-atlas"/],
+      [
+        "https://cdn.test/unreachable/sprite",
+        "desk",
+        /could not be read \(.*network blocked\)/,
+      ],
+      [
+        "https://cdn.test/atlas-a/sprite",
+        "not-in-the-atlas",
+        /no cell named "not-in-the-atlas"/,
+      ],
     ]) {
       const { component, stats } = await paint("24", sprite, cell);
       ok(
@@ -19128,10 +19156,13 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
     plugin.configureSpriteIconProperties(set, freshStats());
     const defs = set.componentPropertyDefinitions;
     const text = (name) =>
-      Object.keys(defs).find((k) => k.split("#")[0] === name && defs[k].type === "TEXT");
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+      );
     ok(
       text("Sprite") &&
-        defs[text("Sprite")].defaultValue === "https://cdn.test/atlas-a/sprite" &&
+        defs[text("Sprite")].defaultValue ===
+          "https://cdn.test/atlas-a/sprite" &&
         text("Cell Name") &&
         defs[text("Cell Name")].defaultValue === "desk",
       "SpriteIcon: Sprite and Cell Name text properties, holding the cell drawn",
@@ -19141,16 +19172,23 @@ section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
   }
   ok(
     ready &&
-      /^https:\/\/mapscdn\.pointr\.tech\/sprite\/\d+\.\d+\.\d+\/light\/sprite$/.test(plugin.SPRITE_ICON_DEFAULT_ATLAS) &&
-      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("SpriteIcon")) ===
-        JSON.stringify({ Size: ["16", "20", "24"] }) &&
+      /^https:\/\/mapscdn\.pointr\.tech\/sprite\/\d+\.\d+\.\d+\/light\/sprite$/.test(
+        plugin.SPRITE_ICON_DEFAULT_ATLAS,
+      ) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("SpriteIcon"),
+      ) === JSON.stringify({ Size: ["16", "20", "24"] }) &&
       plugin.CORE_UPDATE_SEQUENCE.some(
-        ([name, update]) => name === "SpriteIcon" && update === plugin.updateSpriteIconComponent,
+        ([name, update]) =>
+          name === "SpriteIcon" && update === plugin.updateSpriteIconComponent,
       ) &&
       plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
-        (entry) => entry.title === "Media" && entry.components.includes("SpriteIcon"),
+        (entry) =>
+          entry.title === "Media" && entry.components.includes("SpriteIcon"),
       ) &&
-      plugin.COMPONENT_DOCS.some((entry) => entry.componentSetName === "SpriteIcon"),
+      plugin.COMPONENT_DOCS.some(
+        (entry) => entry.componentSetName === "SpriteIcon",
+      ),
     "SpriteIcon: its default atlas pinned to a maps release, not `latest`; a Size axis, in Update All Core, the Media section and the docs",
   );
 }
@@ -19177,7 +19215,12 @@ section("GAP-222: ChipInput holds each entry as a chip inside the field");
   // The Chip set the entries are instances of, as Build Chip leaves it.
   const componentsPage = figma.root.children[0];
   const chipLook = (state, removable) => ({
-    properties: { Variant: "Neutral", Size: "Small", State: state, Removable: removable },
+    properties: {
+      Variant: "Neutral",
+      Size: "Small",
+      State: state,
+      Removable: removable,
+    },
     build: (variant) => {
       variant.layoutMode = "HORIZONTAL";
       variant.resize(72, 28);
@@ -19253,7 +19296,9 @@ section("GAP-222: ChipInput holds each entry as a chip inside the field");
         `${name}: the label, the field 44 tall padded 8 and 4 in the input's colours, then the ${error ? "error" : "helper"} (${component.children.map((child) => child.name)}, ${field && `${field.height} ${field.paddingLeft}/${field.paddingTop} gap ${field.itemSpacing} ${boundVariableName(field.strokes[0])} ${boundVariableName(field.fills[0])}`})`,
       );
       const chips = field
-        ? field.children.filter((child) => /^ChipInput Chip \d$/.test(child.name))
+        ? field.children.filter((child) =>
+            /^ChipInput Chip \d$/.test(child.name),
+          )
         : [];
       const placeholder = field && named(field, "Placeholder Text");
       if (content === "Filled") {
@@ -19271,7 +19316,8 @@ section("GAP-222: ChipInput holds each entry as a chip inside the field");
                 chip.mainComponent.parent === chipSet &&
                 chip.mainComponent.variantProperties.Size === "Small" &&
                 chip.mainComponent.variantProperties.State === wanted.State &&
-                chip.mainComponent.variantProperties.Removable === wanted.Removable,
+                chip.mainComponent.variantProperties.Removable ===
+                  wanted.Removable,
             ),
           `${name}: two Chip instances, Small, ${wanted.State}, Removable ${wanted.Removable}, and no placeholder (${chips.map((chip) => chip.mainComponent && chip.mainComponent.name).join(" | ")}${placeholder ? ", a placeholder" : ""})`,
         );
@@ -19281,7 +19327,9 @@ section("GAP-222: ChipInput holds each entry as a chip inside the field");
             placeholder &&
             placeholder.characters === "Add a keyword" &&
             boundVariableName(placeholder.fills[0]) ===
-              (state === "Disabled" ? "Colors/foreground/500" : "Colors/foreground/400"),
+              (state === "Disabled"
+                ? "Colors/foreground/500"
+                : "Colors/foreground/400"),
           `${name}: the placeholder alone (${chips.length} chips, ${placeholder && placeholder.characters})`,
         );
       }
@@ -19301,7 +19349,12 @@ section("GAP-222: ChipInput holds each entry as a chip inside the field");
     set.name = "ChipInput";
     plugin.configureChipInputProperties(set, freshStats());
     const defs = set.componentPropertyDefinitions;
-    const texts = ["Label Text", "Placeholder Text", "Helper Text", "Error Text"];
+    const texts = [
+      "Label Text",
+      "Placeholder Text",
+      "Helper Text",
+      "Error Text",
+    ];
     const has = (name) =>
       Object.keys(defs).some(
         (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
@@ -19315,7 +19368,9 @@ section("GAP-222: ChipInput holds each entry as a chip inside the field");
   chipSet.remove();
   ok(
     ready &&
-      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("ChipInput")) ===
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ChipInput"),
+      ) ===
         JSON.stringify({
           State: ["Default", "Focus", "Disabled", "Readonly", "Error"],
           Content: ["Filled", "Empty"],
@@ -19325,9 +19380,12 @@ section("GAP-222: ChipInput holds each entry as a chip inside the field");
           name === "ChipInput" && update === plugin.updateChipInputComponent,
       ) &&
       plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
-        (entry) => entry.title === "Inputs" && entry.components.includes("ChipInput"),
+        (entry) =>
+          entry.title === "Inputs" && entry.components.includes("ChipInput"),
       ) &&
-      plugin.COMPONENT_DOCS.some((entry) => entry.componentSetName === "ChipInput"),
+      plugin.COMPONENT_DOCS.some(
+        (entry) => entry.componentSetName === "ChipInput",
+      ),
     "ChipInput: State and Content axes, in Update All Core, the Inputs section and the docs",
   );
 }
@@ -19862,7 +19920,9 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
         const glyph = icon && icon.findOne((node) => node.type === "VECTOR");
         const glyphInk =
           glyph &&
-          boundVariableName((glyph.strokes && glyph.strokes[0]) || glyph.fills[0]);
+          boundVariableName(
+            (glyph.strokes && glyph.strokes[0]) || glyph.fills[0],
+          );
         // React's item is min-inline-size 56 and inline-size auto: it hugs
         // its label, 4 each side, and stops at 56 (Straighten is wider). The
         // label never runs out of the item's content box.
@@ -22442,7 +22502,9 @@ section(
       const value = record.values[mode.toLowerCase()];
       if (value.kind !== "alias") return importPlugin.parseColor(value.value);
       const target = payloadByCanonical.get(value.path);
-      return target && depth < 10 ? resolvePayload(target, mode, depth + 1) : null;
+      return target && depth < 10
+        ? resolvePayload(target, mode, depth + 1)
+        : null;
     };
     const inCollection = (name) =>
       variables.filter(
@@ -22518,12 +22580,20 @@ section(
       (variable) =>
         !white ||
         ["Light", "Dark"].some(
-          (mode) => variable.valuesByMode[modeId(variable, mode)]?.id !== white.id,
+          (mode) =>
+            variable.valuesByMode[modeId(variable, mode)]?.id !== white.id,
         ),
     );
     ok(
       bothWhite.length > 0 && elsewhere.length === 0,
-      `every Components colour white in both modes aliases Colors/white (${bothWhite.length} white in both; ${elsewhere.length} elsewhere${elsewhere.length ? `: ${elsewhere.map((variable) => variable.name).slice(0, 4).join("; ")}` : ""})`,
+      `every Components colour white in both modes aliases Colors/white (${bothWhite.length} white in both; ${elsewhere.length} elsewhere${
+        elsewhere.length
+          ? `: ${elsewhere
+              .map((variable) => variable.name)
+              .slice(0, 4)
+              .join("; ")}`
+          : ""
+      })`,
     );
     console.log(
       `  Colors/white ${white ? "created" : "missing"}; ${bothWhite.length - elsewhere.length} of ${bothWhite.length} Components colours white in both modes alias it`,

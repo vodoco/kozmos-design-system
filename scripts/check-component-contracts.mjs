@@ -2775,9 +2775,13 @@ const densityBadge = (density) =>
       ) * 16,
   );
 if (JSON.stringify(densityBadge("touch")) !== "[28,32,36]")
-  fail(`Density.Badge.Height touch is ${densityBadge("touch")}, expected 28, 32, 36 (decision 93)`);
+  fail(
+    `Density.Badge.Height touch is ${densityBadge("touch")}, expected 28, 32, 36 (decision 93)`,
+  );
 if (JSON.stringify(densityBadge("compact")) !== "[20,24,28]")
-  fail(`Density.Badge.Height compact is ${densityBadge("compact")}, expected 20, 24, 28 (decision 93)`);
+  fail(
+    `Density.Badge.Height compact is ${densityBadge("compact")}, expected 20, 24, 28 (decision 93)`,
+  );
 assertContains(
   files.figma,
   source.figma,
