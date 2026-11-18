@@ -35,7 +35,13 @@ export function AvatarExample() {
 
 ## Avatar
 
-It forwards its ref to `HTMLSpanElement`. Its props are `Omit<AvatarPrimitive.AvatarProps & React.RefAttributes<HTMLSpanElement>, "ref">`.
+It forwards its ref to `HTMLSpanElement`. Its props are `AvatarProps`, which extends `React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>`.
+
+- `size`: `"default" | "sm"`, optional, default `"default"`.
+
+  `default`, 40, or `sm`, 24 (decision 221), its initials at 12/16: for a
+  row that keeps its own height, such as an option's media (decision
+  215).
 
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.

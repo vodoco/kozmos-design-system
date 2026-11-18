@@ -458,4 +458,106 @@ describe("FileUpload variant=button", () => {
     render(<FileUpload variant="button" browseLabel="Add logo" disabled />);
     expect(screen.getByRole("button", { name: "Add logo" })).toBeDisabled();
   });
+
+  describe("its messages, one-file picking and its input (GAP-258)", () => {
+    const files = (...names: string[]) =>
+      names.map((name) => new File(["x"], name, { type: "text/plain" }));
+
+    it("says the count refusal in the product's words", () => {
+      render(
+        <FileUpload
+          label="Plans"
+          maxFiles={2}
+          tooManyFilesLabel={(max) => `Höchstens ${max} Dateien.`}
+        />,
+      );
+      fireEvent.drop(screen.getByRole("button", { name: /Plans/ }), {
+        dataTransfer: { files: files("a.txt", "b.txt", "c.txt") },
+      });
+      expect(screen.getByText("Höchstens 2 Dateien.")).toBeInTheDocument();
+    });
+
+    it("says the size refusal in the product's words, with the limit written", async () => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <FileUpload
+          maxSize={2048}
+          tooLargeLabel={(name, limit) => `${name} ist größer als ${limit}.`}
+        />,
+      );
+      await user.upload(
+        container.querySelector('input[type="file"]') as HTMLInputElement,
+        new File(["x".repeat(4096)], "plan.pdf"),
+      );
+      expect(
+        screen.getByText("plan.pdf ist größer als 2.0 KB."),
+      ).toBeInTheDocument();
+    });
+
+    it("says the image refusal in the product's words", () => {
+      render(
+        <FileUpload
+          label="Logo"
+          preview="image"
+          notImageLabel={(name) => `${name} ist kein Bild.`}
+        />,
+      );
+      fireEvent.drop(screen.getByRole("button", { name: /Logo/ }), {
+        dataTransfer: { files: files("plan.txt") },
+      });
+      expect(screen.getByText("plan.txt ist kein Bild.")).toBeInTheDocument();
+    });
+
+    it("opens a one-file picker with no count check of its own", () => {
+      const onFilesChange = vi.fn();
+      const { container } = render(
+        <FileUpload
+          label="Images"
+          multiple={false}
+          maxFiles={Infinity}
+          onFilesChange={onFilesChange}
+        />,
+      );
+      expect(container.querySelector('input[type="file"]')).not.toHaveAttribute(
+        "multiple",
+      );
+      // A drop can still carry several: the product's own check counts them.
+      fireEvent.drop(screen.getByRole("button", { name: /Images/ }), {
+        dataTransfer: { files: files("a.txt", "b.txt") },
+      });
+      expect(onFilesChange).toHaveBeenCalledWith([
+        expect.objectContaining({ name: "a.txt" }),
+        expect.objectContaining({ name: "b.txt" }),
+      ]);
+      expect(screen.queryByText(/Select up to/)).not.toBeInTheDocument();
+    });
+
+    it("keeps multiple={false} a one-file picker even with maxFiles over 1", () => {
+      const { container } = render(
+        <FileUpload multiple={false} maxFiles={3} />,
+      );
+      expect(container.querySelector('input[type="file"]')).not.toHaveAttribute(
+        "multiple",
+      );
+    });
+
+    it("still opens a picker of several when maxFiles is over 1 and multiple is unset", () => {
+      const { container } = render(<FileUpload maxFiles={3} />);
+      expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+        "multiple",
+      );
+    });
+
+    it("hands the product its input through inputRef, its box through ref", () => {
+      const inputRef = React.createRef<HTMLInputElement>();
+      const ref = React.createRef<HTMLDivElement>();
+      const { container } = render(
+        <FileUpload ref={ref} inputRef={inputRef} />,
+      );
+      expect(inputRef.current).toBe(
+        container.querySelector('input[type="file"]'),
+      );
+      expect(ref.current?.tagName).toBe("DIV");
+    });
+  });
 });

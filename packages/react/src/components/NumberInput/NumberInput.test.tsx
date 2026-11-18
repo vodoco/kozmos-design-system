@@ -40,6 +40,58 @@ describe("NumberInput", () => {
     expect(screen.getByRole("spinbutton")).toHaveValue(2);
   });
 
+  describe('step="any" (GAP-257)', () => {
+    it("steps by 1, keeping the value's decimals", () => {
+      const onValueChange = vi.fn();
+      render(
+        <NumberInput
+          defaultValue={2.5}
+          step="any"
+          onValueChange={onValueChange}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /increase value/i }));
+      expect(onValueChange).toHaveBeenLastCalledWith(3.5);
+      expect(screen.getByRole("spinbutton")).toHaveValue(3.5);
+      fireEvent.click(screen.getByRole("button", { name: /decrease value/i }));
+      fireEvent.click(screen.getByRole("button", { name: /decrease value/i }));
+      expect(onValueChange).toHaveBeenLastCalledWith(1.5);
+      expect(screen.getByRole("spinbutton")).toHaveValue(1.5);
+    });
+
+    it("stays within min and max, and starts an empty field at 0", () => {
+      const onValueChange = vi.fn();
+      render(
+        <NumberInput
+          step="any"
+          min={0}
+          max={1.25}
+          onValueChange={onValueChange}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /increase value/i }));
+      expect(onValueChange).toHaveBeenLastCalledWith(1);
+      fireEvent.click(screen.getByRole("button", { name: /increase value/i }));
+      expect(onValueChange).toHaveBeenLastCalledWith(1.25);
+      fireEvent.click(screen.getByRole("button", { name: /decrease value/i }));
+      fireEvent.click(screen.getByRole("button", { name: /decrease value/i }));
+      expect(onValueChange).toHaveBeenLastCalledWith(0);
+    });
+
+    it("leaves a controlled value to the parent", () => {
+      const onValueChange = vi.fn();
+      render(
+        <NumberInput value={0.1} step="any" onValueChange={onValueChange} />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /increase value/i }));
+      expect(onValueChange).toHaveBeenCalledWith(1.1);
+      expect(screen.getByRole("spinbutton")).toHaveValue(0.1);
+    });
+  });
+
   it("emits null when the field is cleared", () => {
     const onValueChange = vi.fn();
     render(<NumberInput defaultValue={4} onValueChange={onValueChange} />);

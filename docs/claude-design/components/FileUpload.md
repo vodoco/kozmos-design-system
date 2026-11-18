@@ -56,8 +56,42 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
 - `helperText`: `string`, optional.
 - `label`: `string`, optional.
 - `maxFiles`: `number`, optional.
+
+  How many files one pick or drop may hold: more, and FileUpload refuses
+  them with `tooManyFilesLabel`. One by default, none with `multiple`.
+
 - `maxSize`: `number`, optional.
+
+  The largest file, in bytes: a larger one is refused with `tooLargeLabel`.
+
 - `multiple`: `boolean`, optional.
+
+  Whether the picker takes several files. Unset, it does when `maxFiles` is
+  over 1; `false` keeps it to one file whatever `maxFiles` says, so a
+  product with its own count check can pass `maxFiles={Infinity}` and
+  still open a one-file picker (GAP-258).
+
+- `tooManyFilesLabel`: `(maxFiles: number) => string`, optional, default `defaultTooManyFilesLabel`.
+
+  The refusal of a pick or drop past `maxFiles`, in the product's words
+  (GAP-258): "Select up to 3 files." by default.
+
+- `tooLargeLabel`: `(fileName: string, maxSize: string) => string`, optional, default `defaultTooLargeLabel`.
+
+  The refusal of a file over `maxSize`, given its name and the limit as
+  written ("2 MB"): "plan.pdf exceeds 2 MB." by default.
+
+- `notImageLabel`: `(fileName: string) => string`, optional, default `defaultNotImageLabel`.
+
+  The refusal of a file that is not an image, in `preview="image"`:
+  "plan.pdf is not an image." by default.
+
+- `inputRef`: `React.Ref<HTMLInputElement>`, optional.
+
+  The hidden file input itself, for a product that has to reach it (a
+  test's `setInputFiles`, a form library). The component's own ref stays
+  its box: moving it would break every caller holding one (GAP-258).
+
 - `onFileSelect`: `(file: File) => void`, optional.
 - `onFilesChange`: `(files: File[]) => void`, optional.
 - `preview`: `"image"`, optional.
@@ -114,8 +148,42 @@ It forwards its ref to `HTMLDivElement`. Its props are `FileUploadProps`, which 
 - `helperText`: `string`, optional.
 - `label`: `string`, optional.
 - `maxFiles`: `number`, optional.
+
+  How many files one pick or drop may hold: more, and FileUpload refuses
+  them with `tooManyFilesLabel`. One by default, none with `multiple`.
+
 - `maxSize`: `number`, optional.
+
+  The largest file, in bytes: a larger one is refused with `tooLargeLabel`.
+
 - `multiple`: `boolean`, optional.
+
+  Whether the picker takes several files. Unset, it does when `maxFiles` is
+  over 1; `false` keeps it to one file whatever `maxFiles` says, so a
+  product with its own count check can pass `maxFiles={Infinity}` and
+  still open a one-file picker (GAP-258).
+
+- `tooManyFilesLabel`: `(maxFiles: number) => string`, optional.
+
+  The refusal of a pick or drop past `maxFiles`, in the product's words
+  (GAP-258): "Select up to 3 files." by default.
+
+- `tooLargeLabel`: `(fileName: string, maxSize: string) => string`, optional.
+
+  The refusal of a file over `maxSize`, given its name and the limit as
+  written ("2 MB"): "plan.pdf exceeds 2 MB." by default.
+
+- `notImageLabel`: `(fileName: string) => string`, optional.
+
+  The refusal of a file that is not an image, in `preview="image"`:
+  "plan.pdf is not an image." by default.
+
+- `inputRef`: `React.Ref<HTMLInputElement>`, optional.
+
+  The hidden file input itself, for a product that has to reach it (a
+  test's `setInputFiles`, a form library). The component's own ref stays
+  its box: moving it would break every caller holding one (GAP-258).
+
 - `onFileSelect`: `(file: File) => void`, optional.
 - `onFilesChange`: `(files: File[]) => void`, optional.
 - `preview`: `"image"`, optional.

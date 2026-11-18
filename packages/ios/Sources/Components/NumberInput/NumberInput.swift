@@ -10,6 +10,8 @@ public struct KozmosNumberInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     let step: Double
     let min: Double?
     let max: Double?
@@ -52,8 +54,10 @@ public struct KozmosNumberInput: View {
         onResetMixed: (() -> Void)? = nil,
         resetMixedLabel: String = KozmosMixedValue.resetLabel,
         unit: String? = nil,
-        unitLabel: String? = nil
+        unitLabel: String? = nil,
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._value = value
         self.label = label
         self.placeholder = placeholder
@@ -94,36 +98,55 @@ public struct KozmosNumberInput: View {
                 // after the value: the text keeps clear of it at any length,
                 // and it mirrors with the layout in right-to-left.
                 HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                    TextField(
-                        mixed ? mixedLabel : placeholder,
-                        text: Binding(
-                            // Mixed, it shows none of its own (GAP-153); the
-                            // unit stays, to say what to type.
-                            get: { draft ?? (mixed ? "" : formatValue(value)) },
-                            set: { nextValue in
-                                if let typed = Self.draftValue(nextValue, mixed: mixed, drafting: draft != nil) {
-                                    draft = nextValue
-                                    // A number, reported; "-", "." or "-." report nothing.
-                                    if let number = typed { value = clamp(number) }
-                                } else {
-                                    value = parseValue(nextValue)
-                                }
-                            }
+                    // Read only (decision 222): drawn read only, not
+                    // disabled: full strength, selectable, said read only,
+                    // with its unit.
+                    if readOnly && !disabled {
+                        KozmosReadOnlyValue(
+                            text: mixed ? "" : formatValue(value),
+                            placeholder: mixed ? mixedLabel : placeholder,
+                            textColor: textColor,
+                            placeholderColor: KozmosColors.primitivesColorsForeground400,
+                            alignment: showSteppers ? .center : .leading,
+                            accessibilityName: label ?? placeholder,
+                            hint: fieldHint
                         )
-                    )
-                    .focused($fieldFocused)
-                    .onChange(of: fieldFocused) { focused in
-                        if !focused { draft = nil }
+                        .accessibilityFocused($fieldAccessibilityFocused)
+                        .modifier(KozmosSpokenValue(hasUnit: hasUnit, value: spokenValue ?? ""))
+                    } else {
+                        TextField(
+                            mixed ? mixedLabel : placeholder,
+                            text: Binding(
+                                // Mixed, it shows none of its own (GAP-153); the
+                                // unit stays, to say what to type.
+                                get: { draft ?? (mixed ? "" : formatValue(value)) },
+                                set: { nextValue in
+                                    if let typed = Self.draftValue(nextValue, mixed: mixed, drafting: draft != nil) {
+                                        draft = nextValue
+                                        // A number, reported; "-", "." or "-." report nothing.
+                                        if let number = typed { value = clamp(number) }
+                                    } else {
+                                        value = parseValue(nextValue)
+                                    }
+                                }
+                            )
+                        )
+                        .focused($fieldFocused)
+                        .onChange(of: fieldFocused) { focused in
+                            if !focused { draft = nil }
+                        }
+                        .onChange(of: mixed) { nowMixed in
+                            // Back to mixed (a reset): the typed text is gone.
+                            if nowMixed { draft = nil }
+                        }
+                        .accessibilityFocused($fieldAccessibilityFocused)
+                        .disabled(disabled || readOnly)
+                        // Read only and in error, said on the field (GAP-235, GAP-236).
+                        .accessibilityHint(fieldHint)
+                        .multilineTextAlignment(showSteppers ? .center : .leading)
+                        .foregroundColor(textColor)
+                        .modifier(KozmosSpokenValue(hasUnit: hasUnit, value: spokenValue ?? ""))
                     }
-                    .onChange(of: mixed) { nowMixed in
-                        // Back to mixed (a reset): the typed text is gone.
-                        if nowMixed { draft = nil }
-                    }
-                    .accessibilityFocused($fieldAccessibilityFocused)
-                    .disabled(disabled || readOnly)
-                    .multilineTextAlignment(showSteppers ? .center : .leading)
-                    .foregroundColor(textColor)
-                    .modifier(KozmosSpokenValue(hasUnit: hasUnit, value: spokenValue ?? ""))
 
                     if hasUnit, let unit {
                         Text(unit)
@@ -247,6 +270,11 @@ public struct KozmosNumberInput: View {
     }
 
     private var hasUnit: Bool { !(unit ?? "").isEmpty }
+
+    /// "Read only", then the error message (GAP-235, GAP-236).
+    var fieldHint: String {
+        KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage)
+    }
 
     private var unitColor: Color {
         disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400

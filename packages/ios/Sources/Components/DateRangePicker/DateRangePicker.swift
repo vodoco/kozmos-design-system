@@ -10,6 +10,7 @@ public struct KozmosDateRangePicker: View {
     public let helperText: String?
     public let disabled: Bool
     public let readOnly: Bool
+    let readOnlyLabel: String
     public let status: KozmosInputStatus
     public let showsCalendarPreview: Bool
     /// The earliest and latest days either end may take, as React's `min` and `max`.
@@ -42,8 +43,11 @@ public struct KozmosDateRangePicker: View {
         mixed: Bool = false,
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
-        resetMixedLabel: String = KozmosMixedValue.resetLabel
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        /// Said on a read-only field (decision 222, GAP-235).
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._startDate = startDate
         self._endDate = endDate
         self.label = label
@@ -78,15 +82,17 @@ public struct KozmosDateRangePicker: View {
                     disabled: disabled, readOnly: readOnly,
                     minimumDate: minimumDate, maximumDate: Self.earlier(endDate, maximumDate),
                     components: .date, iconName: "calendar",
-                    mixed: mixed, mixedLabel: mixedLabel, focus: $startAccessibilityFocused
-                )
+                    mixed: mixed, mixedLabel: mixedLabel, focus: $startAccessibilityFocused,
+            readOnlyLabel: readOnlyLabel
+        )
                 KozmosTemporalField(
                     selection: $endDate, label: endLabel, helperText: nil, status: status,
                     disabled: disabled, readOnly: readOnly,
                     minimumDate: Self.later(startDate, minimumDate), maximumDate: maximumDate,
                     components: .date, iconName: "calendar",
-                    mixed: mixed, mixedLabel: mixedLabel
-                )
+                    mixed: mixed, mixedLabel: mixedLabel,
+            readOnlyLabel: readOnlyLabel
+        )
             }
 
             // One reset for the range: the two ends were edited together.

@@ -36,6 +36,8 @@ struct KozmosTemporalField: View {
     /// VoiceOver's focus on the field, when the caller holds it (the range's
     /// one reset sends it to the start field); else the field's own.
     var focus: AccessibilityFocusState<Bool>.Binding? = nil
+    /// Said on a read-only field (decision 222, GAP-235).
+    var readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     @AccessibilityFocusState private var fieldAccessibilityFocused: Bool
 
     var body: some View {
@@ -50,7 +52,8 @@ struct KozmosTemporalField: View {
                 selection: $selection, label: label, hint: helperText, status: status, disabled: disabled,
                 readOnly: readOnly, minimumDate: minimumDate, maximumDate: maximumDate,
                 components: components, iconName: iconName,
-                mixed: mixed, mixedLabel: mixedLabel, focus: focus ?? $fieldAccessibilityFocused
+                mixed: mixed, mixedLabel: mixedLabel, focus: focus ?? $fieldAccessibilityFocused,
+                readOnlyLabel: readOnlyLabel
             )
             if KozmosMixedValue.showsReset(mixed: mixed, onReset: onResetMixed, disabled: disabled, readOnly: readOnly) {
                 KozmosMixedReset(label: resetMixedLabel) {
@@ -89,6 +92,18 @@ struct KozmosTemporalFieldBox: View {
     var mixed: Bool = false
     var mixedLabel: String = KozmosMixedValue.label
     var focus: AccessibilityFocusState<Bool>.Binding? = nil
+    var readOnlyLabel: String = KozmosFieldState.readOnlyLabel
+
+    /// A read-only field's value, as the compact picker writes it: the date,
+    /// the time, or both, in the reader's locale.
+    var readOnlyText: String {
+        let date = components.contains(.date)
+        let time = components.contains(.hourAndMinute)
+        return selection.formatted(
+            date: date ? .abbreviated : .omitted,
+            time: time ? .shortened : .omitted
+        )
+    }
 
     var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
@@ -97,6 +112,22 @@ struct KozmosTemporalFieldBox: View {
                 .environment(\.kozmosIconHostInk, disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400)
             if mixed {
                 mixedPicker
+            } else if readOnly && !disabled {
+                // Read only (decision 222): its value drawn at full strength,
+                // selectable, said with its name and "Read only", not the
+                // system picker dimmed.
+                KozmosReadOnlyValue(
+                    text: readOnlyText,
+                    placeholder: "",
+                    textColor: KozmosColors.primitivesColorsForeground0,
+                    placeholderColor: KozmosColors.primitivesColorsForeground400,
+                    alignment: .leading,
+                    accessibilityName: label,
+                    hint: KozmosFieldState.hint(readOnly: true, readOnlyLabel: readOnlyLabel, inError: false, errorMessage: nil,
+                                                leading: [hint ?? ""].filter { !$0.isEmpty })
+                )
+                .font(KozmosTypography.subheadline)
+                .kozmosAccessibilityFocused(focus)
             } else {
                 picker
                     .datePickerStyle(.compact)

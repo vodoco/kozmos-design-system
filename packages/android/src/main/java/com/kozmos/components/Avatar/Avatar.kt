@@ -22,18 +22,29 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import com.kozmos.tokens.KozmosThemeTokens
 
+/** An Avatar's size, as React's `size` (decision 221). */
+enum class KozmosAvatarSize(val dimension: androidx.compose.ui.unit.Dp) {
+    /** 40, the Avatar as it always was. */
+    Default(KozmosDimensions.primitivesLayoutSizing500),
+
+    /** 24, its initials small: for a row that keeps its own height, such as an option's media (decision 215). */
+    Sm(KozmosDimensions.primitivesLayoutSizing300)
+}
+
 @Composable
 fun KozmosAvatar(
     imageUrl: String?,
     fallbackText: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** [KozmosAvatarSize.Default], 40, or [KozmosAvatarSize.Sm], 24 (decision 221). */
+    size: KozmosAvatarSize = KozmosAvatarSize.Default
 ) {
     // The initials stand in until the image has loaded, and stay if it never
     // does, as React's Radix fallback and SwiftUI's AsyncImage placeholder.
     // With a URL, a slow or broken image left an empty grey circle until
     // 2026-10-20.
     var loaded by remember(imageUrl) { mutableStateOf(false) }
-    KozmosAvatarFace(fallbackText = fallbackText, loaded = loaded, modifier = modifier) {
+    KozmosAvatarFace(fallbackText = fallbackText, loaded = loaded, modifier = modifier, size = size) {
         if (imageUrl != null) {
             AsyncImage(
                 model = imageUrl,
@@ -57,11 +68,12 @@ internal fun KozmosAvatarFace(
     fallbackText: String,
     loaded: Boolean,
     modifier: Modifier = Modifier,
+    size: KozmosAvatarSize = KozmosAvatarSize.Default,
     image: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
-            .size(KozmosDimensions.primitivesLayoutSizing500)
+            .size(size.dimension)
             .clip(CircleShape)
             .then(if (loaded) Modifier else Modifier.background(KozmosThemeTokens.primitivesColorsBackground300)),
         contentAlignment = Alignment.Center
@@ -69,7 +81,7 @@ internal fun KozmosAvatarFace(
         if (!loaded) {
             Text(
                 text = fallbackText,
-                style = MaterialTheme.typography.titleMedium,
+                style = if (size == KozmosAvatarSize.Sm) MaterialTheme.typography.labelSmall else MaterialTheme.typography.titleMedium,
                 color = KozmosThemeTokens.primitivesColorsForeground500
             )
         }

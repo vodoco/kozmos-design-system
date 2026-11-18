@@ -1,5 +1,7 @@
 package com.kozmos.components.multiselect
 
+import com.kozmos.components.fieldwrapper.KozmosFieldState
+import com.kozmos.components.fieldwrapper.kozmosFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -89,7 +91,9 @@ fun KozmosMultiSelect(
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
     // Shown only while the field can be used, as Combobox's list is: a
@@ -177,8 +181,18 @@ fun KozmosMultiSelect(
                     cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
                     modifier = Modifier
                         .focusRequester(fieldFocus)
-                        // Mixed with nothing typed, said as its state.
-                        .semantics { if (mixed && searchValue.isEmpty()) stateDescription = mixedLabel }
+                        // Mixed with nothing typed, said as its state; read
+                        // only and in error, said on the field itself
+                        // (GAP-235, GAP-236).
+                        .semantics {
+                            kozmosFieldState(
+                                readOnly = readOnly,
+                                readOnlyLabel = readOnlyLabel,
+                                inError = effectiveStatus == KozmosInputStatus.Error,
+                                errorMessage = errorMessage,
+                                stateParts = listOfNotNull(mixedLabel.takeIf { mixed && searchValue.isEmpty() })
+                            )
+                        }
                         .weight(1f)
                         .fillMaxHeight(),
                     decorationBox = { innerTextField ->

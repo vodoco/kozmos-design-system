@@ -745,6 +745,10 @@ function progressHasCombination(value, second) {
 }
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
+// Decision 221: React's Avatar `size`, Default 40 and Sm 24, the size an
+// option's media is drawn at (decision 215) so its row keeps its height.
+const AVATAR_SIZES = ["Default", "Sm"];
+const AVATAR_SIZE_ROW_STEP = 80;
 const ALERT_VARIANTS = ["Default", "Destructive", "Success", "Warning", "Info"];
 // GAP-160 (decision 132): React's Notice. Tone is NoticeTone, Status its
 // `status`, None when it reports no work.
@@ -5598,8 +5602,13 @@ const COMPONENT_DOCS = [
       "Image URL maps to AvatarImage.src.",
       "Alt Text maps to AvatarImage.alt.",
       "Fallback maps to AvatarFallback children in Code Connect.",
+      "Size maps to Avatar.size (decision 221): Default 40, Sm 24 with its initials at 12/16.",
     ],
-    properties: ["Content: Fallback, Image", "Fallback, Image URL, Alt Text"],
+    properties: [
+      "Content: Fallback, Image",
+      "Size: Default, Sm",
+      "Fallback, Image URL, Alt Text",
+    ],
     accessibility: [
       "Fallback text contrast passes in Light and Dark modes.",
       "Avatar is non-interactive unless composed inside another control.",
@@ -10652,6 +10661,7 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["GAP"],
   },
   { name: "Avatar/size/default", value: 40, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Avatar/size/sm", value: 24, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Avatar/radius",
     value: 9999,
@@ -20713,6 +20723,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Avatar") {
     return {
       Content: AVATAR_CONTENT,
+      Size: AVATAR_SIZES,
     };
   }
 
@@ -27248,6 +27259,12 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   }
   if (setName === "Tabs") return "tabsTrigger";
   if (setName === "Tooltip") return "tooltipContent";
+  // Sm's initials (decision 221) are Field / Meta's 12/16; the hidden Image
+  // URL and Alt Text keep the set's style.
+  if (setName === "Avatar" && component && textName === "Fallback") {
+    const avatarProps = parseAvatarVariantName(component.name);
+    if (avatarProps && avatarProps.second === "Sm") return "fieldMeta";
+  }
   if (setName === "Avatar") return "avatarFallback";
   if (setName === "Alert") {
     return textName === "Title" ? "alertTitle" : "alertDescription";
@@ -28694,6 +28711,26 @@ async function applyAvatarFallbackTypography(
     variableByName,
     stats,
   );
+}
+
+/**
+ * An Sm Avatar's initials (decision 221): React's text-xs, 12/16, Field /
+ * Meta's style, which draws them; the Default's 14/20 bindings go.
+ */
+async function applyAvatarSmFallbackTypography(text, fonts, stats) {
+  for (const field of ["fontSize", "lineHeight"]) {
+    try {
+      text.setBoundVariable(field, null);
+    } catch (error) {
+      stats.warnings.push(
+        `Could not unbind the Sm Avatar's ${field} (${messageFor(error)}).`,
+      );
+    }
+  }
+  text.fontName = fonts.medium;
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  await applyTextStyleToNodeAsync(text, "fieldMeta", stats);
 }
 
 async function applyAlertTitleTypography(text, fonts, variableByName, stats) {
@@ -33074,14 +33111,9 @@ function bindProgressGeometryVariables(
   }
 }
 
-function bindAvatarGeometryVariables(component, variableByName, stats) {
-  bindSizeVariables(
-    component,
-    "Avatar/size/default",
-    "Avatar/size/default",
-    variableByName,
-    stats,
-  );
+function bindAvatarGeometryVariables(component, variableByName, stats, sm) {
+  const size = sm ? "Avatar/size/sm" : "Avatar/size/default";
+  bindSizeVariables(component, size, size, variableByName, stats);
   bindFloatVariable(
     component,
     "cornerRadius",
@@ -48183,6 +48215,7 @@ function configureComboboxProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionSlotProperties(componentSet, stats);
   configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(componentSet, "Choose one option.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
@@ -48236,6 +48269,7 @@ function configureMultiSelectProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionSlotProperties(componentSet, stats);
   configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(
     componentSet,
@@ -48290,6 +48324,7 @@ function configureListboxProperties(componentSet, stats) {
     "Secure cycle storage",
     stats,
   );
+  configureOptionSlotProperties(componentSet, stats);
   configureOptionGroupProperties(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
@@ -49053,9 +49088,12 @@ async function buildAvatarComponent() {
     componentSetName: "Avatar",
     axisName: "Content",
     values: AVATAR_CONTENT,
+    axis2Name: "Size",
+    axis2Values: AVATAR_SIZES,
     x: 80,
     y: 3980,
     xStep: 120,
+    yStep: AVATAR_SIZE_ROW_STEP,
     createVariant: createAvatarVariant,
     configureProperties: configureAvatarProperties,
     description: [
@@ -49064,6 +49102,7 @@ async function buildAvatarComponent() {
       "Image URL maps to AvatarImage.src.",
       "Alt Text maps to AvatarImage.alt.",
       "Fallback maps to AvatarFallback children in Code Connect.",
+      "Size maps to Avatar.size (decision 221): Default 40, Sm 24 with its initials at 12/16.",
     ],
   });
 }
@@ -49074,7 +49113,10 @@ async function updateAvatarComponent() {
     componentSetName: "Avatar",
     axisName: "Content",
     values: AVATAR_CONTENT,
+    axis2Name: "Size",
+    axis2Values: AVATAR_SIZES,
     xStep: 120,
+    yStep: AVATAR_SIZE_ROW_STEP,
     createVariant: createAvatarVariant,
     updateVariant: updateAvatarVariant,
     parseVariantName: parseAvatarVariantName,
@@ -49085,6 +49127,7 @@ async function updateAvatarComponent() {
       "Image URL maps to AvatarImage.src.",
       "Alt Text maps to AvatarImage.alt.",
       "Fallback maps to AvatarFallback children in Code Connect.",
+      "Size maps to Avatar.size (decision 221): Default 40, Sm 24 with its initials at 12/16.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -74279,10 +74322,17 @@ async function updateSpinnerVariant(
   });
 }
 
-async function createAvatarVariant({ value, variableByName, fonts, stats }) {
+async function createAvatarVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateAvatarVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -74291,18 +74341,37 @@ async function createAvatarVariant({ value, variableByName, fonts, stats }) {
 }
 
 function parseAvatarVariantName(name) {
-  return parseSingleAxisVariantName(name, "Content", AVATAR_CONTENT);
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  // A variant drawn before the Size axis (decision 221) parses as Default,
+  // so Update renames it in place and the node ids Code Connect pins
+  // survive.
+  const size = values.Size || "Default";
+  if (
+    AVATAR_CONTENT.indexOf(values.Content) === -1 ||
+    AVATAR_SIZES.indexOf(size) === -1
+  ) {
+    return null;
+  }
+  return { value: values.Content, second: size };
 }
 
 async function updateAvatarVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
   const config = avatarConfig(value);
+  const size = AVATAR_SIZES.indexOf(second) === -1 ? "Default" : second;
+  const sm = size === "Sm";
+  const side = sm ? 24 : 40;
 
-  component.name = `Content=${value}`;
+  component.name = `Content=${value}, Size=${size}`;
   component.layoutMode = "NONE";
-  component.resizeWithoutConstraints(40, 40);
+  component.resizeWithoutConstraints(side, side);
   component.cornerRadius = KOZMOS_RADIUS.pill;
   component.clipsContent = true;
   component.fills = [
@@ -74316,11 +74385,12 @@ async function updateAvatarVariant(
   component.strokes = [];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Avatar");
-  bindAvatarGeometryVariables(component, variableByName, stats);
+  bindAvatarGeometryVariables(component, variableByName, stats, sm);
 
   await syncAvatarVariantChildren({
     component,
     value,
+    sm,
     config,
     variableByName,
     fonts,
@@ -82301,6 +82371,9 @@ async function syncComboboxVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Option 1 Trailing",
+    "Option 2 Trailing",
+    "Option 3 Trailing",
     "Group 1 Text",
     "Group 2 Text",
     "Helper Text",
@@ -82483,6 +82556,8 @@ async function syncComboboxVariantChildren({
       const option = await createComboboxOption({
         index,
         text: optionLabels[index],
+        slots: true,
+        trailingWords: preservedText[`Option ${index + 1} Trailing`],
         // Mixed, no option is the choice (GAP-153).
         selected: index === 0 && !mixed,
         active: index === 1,
@@ -82769,6 +82844,8 @@ async function createComboboxOption({
   index,
   text,
   count,
+  slots,
+  trailingWords,
   tokenPrefix,
   selected,
   active,
@@ -82895,6 +82972,18 @@ async function createComboboxOption({
     setFixedChildSizing(slot);
   }
 
+  // Combobox's options take media and trailing words; Select's do not.
+  if (slots) {
+    await appendOptionSlots(option, {
+      index,
+      label: text,
+      trailingWords,
+      disabled,
+      variableByName,
+      fonts,
+      stats,
+    });
+  }
   return option;
 }
 
@@ -82918,6 +83007,9 @@ async function syncMultiSelectVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Option 1 Trailing",
+    "Option 2 Trailing",
+    "Option 3 Trailing",
     "Group 1 Text",
     "Group 2 Text",
     "Helper Text",
@@ -83134,6 +83226,7 @@ async function syncMultiSelectVariantChildren({
       const option = await createMultiSelectOption({
         index,
         text: optionLabels[index],
+        trailingWords: preservedText[`Option ${index + 1} Trailing`],
         // Mixed, no option is checked.
         selected: index < 2 && !mixed,
         active: index === 2,
@@ -83315,6 +83408,7 @@ async function createMultiSelectChip({
 async function createMultiSelectOption({
   index,
   text,
+  trailingWords,
   selected,
   active,
   focused,
@@ -83410,6 +83504,15 @@ async function createMultiSelectOption({
     option.appendChild(icon);
   }
 
+  await appendOptionSlots(option, {
+    index,
+    label: text,
+    trailingWords,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
   return option;
 }
 
@@ -83428,6 +83531,9 @@ async function syncListboxVariantChildren({
     "Option 2 Description",
     "Option 3 Text",
     "Option 3 Description",
+    "Option 1 Trailing",
+    "Option 2 Trailing",
+    "Option 3 Trailing",
     "Group 1 Text",
     "Group 2 Text",
   ]);
@@ -83466,6 +83572,7 @@ async function syncListboxVariantChildren({
       index,
       label: labels[index],
       description: descriptions[index],
+      trailingWords: preservedText[`Option ${index + 1} Trailing`],
       selected,
       active: state === "Focus" && index === 1,
       focused: state === "Focus",
@@ -83502,10 +83609,216 @@ async function syncListboxVariantChildren({
   normalizeInputFamilyChildSizing(component);
 }
 
+// An option's media and trailing words (decision 215, GAP-282; GAP-260):
+// React's ComboboxOption `media`, the Avatar's Sm (decision 221) before the
+// label, and `trailing`, muted at the option's end before the check. Each is
+// drawn in every option of Combobox, Listbox and MultiSelect, hidden, and
+// shown by the set's Show Media and Show Trailing; the row keeps its height
+// either way.
+const OPTION_TRAILING_DEFAULTS = ["Text", "Number", "Image"];
+
+function optionInitials(label) {
+  return String(label || "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+async function createOptionMedia({
+  index,
+  label,
+  disabled,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  // The slot the row shows or hides: the Avatar and the 8 after it (the
+  // row's own gap is SPACE_BETWEEN's, none, beside a filling label).
+  const slot = figma.createFrame();
+  slot.name = `Option ${index + 1} Media`;
+  slot.layoutMode = "HORIZONTAL";
+  slot.primaryAxisSizingMode = "AUTO";
+  slot.counterAxisSizingMode = "AUTO";
+  slot.counterAxisAlignItems = "CENTER";
+  slot.paddingLeft = 0;
+  slot.paddingRight = 8;
+  slot.paddingTop = 0;
+  slot.paddingBottom = 0;
+  slot.itemSpacing = 0;
+  slot.fills = [];
+  slot.strokes = [];
+  slot.clipsContent = false;
+  const media = figma.createFrame();
+  media.name = `Option ${index + 1} Avatar`;
+  media.layoutMode = "HORIZONTAL";
+  media.primaryAxisSizingMode = "FIXED";
+  media.counterAxisSizingMode = "FIXED";
+  media.primaryAxisAlignItems = "CENTER";
+  media.counterAxisAlignItems = "CENTER";
+  media.paddingLeft = 0;
+  media.paddingRight = 0;
+  media.paddingTop = 0;
+  media.paddingBottom = 0;
+  media.itemSpacing = 0;
+  media.resizeWithoutConstraints(24, 24);
+  media.cornerRadius = KOZMOS_RADIUS.pill;
+  media.clipsContent = true;
+  media.strokes = [];
+  media.fills = [
+    paintFromVariable(
+      "Colors/background/200",
+      "#C7CAD1",
+      variableByName,
+      stats,
+    ),
+  ];
+  bindSizeVariables(
+    media,
+    "Avatar/size/sm",
+    "Avatar/size/sm",
+    variableByName,
+    stats,
+  );
+  media.setSharedPluginData(RUN_NAMESPACE, "kind", "option-media");
+  const initials = figma.createText();
+  initials.name = `Option ${index + 1} Initials`;
+  initials.fontName = fonts.medium;
+  initials.fontSize = 12;
+  initials.lineHeight = { unit: "PIXELS", value: 16 };
+  await applyTextStyleToNodeAsync(initials, "fieldMeta", stats);
+  initials.characters = optionInitials(label) || "A";
+  initials.textAutoResize = "WIDTH_AND_HEIGHT";
+  initials.textAlignHorizontal = "CENTER";
+  initials.fills = [
+    paintFromVariable(
+      disabled ? "Colors/foreground/500" : "Colors/foreground/0",
+      disabled ? "#747B8B" : "#000000",
+      variableByName,
+      stats,
+    ),
+  ];
+  media.appendChild(initials);
+  slot.appendChild(media);
+  slot.visible = false;
+  return slot;
+}
+
+async function createOptionEndWords({
+  index,
+  words,
+  disabled,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const endText = figma.createText();
+  endText.name = `Option ${index + 1} Trailing`;
+  await applyListboxDescriptionTypography(
+    endText,
+    fonts,
+    variableByName,
+    stats,
+  );
+  endText.characters = words || OPTION_TRAILING_DEFAULTS[index] || "Text";
+  endText.textAutoResize = "WIDTH_AND_HEIGHT";
+  endText.fills = [
+    paintFromVariable(
+      disabled ? "Colors/foreground/500" : "Colors/foreground/400",
+      disabled ? "#747B8B" : "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+  endText.textAlignVertical = "CENTER";
+  // The slot the row shows or hides: the words, 8 from the label and the
+  // check on either side.
+  const slot = figma.createFrame();
+  slot.name = `Option ${index + 1} Trailing Slot`;
+  slot.layoutMode = "HORIZONTAL";
+  slot.primaryAxisSizingMode = "AUTO";
+  slot.counterAxisSizingMode = "AUTO";
+  slot.counterAxisAlignItems = "CENTER";
+  slot.paddingLeft = 8;
+  slot.paddingRight = 8;
+  slot.paddingTop = 0;
+  slot.paddingBottom = 0;
+  slot.itemSpacing = 0;
+  slot.fills = [];
+  slot.strokes = [];
+  slot.clipsContent = false;
+  slot.appendChild(endText);
+  slot.visible = false;
+  return slot;
+}
+
+/**
+ * Puts an option's hidden media first and its hidden trailing words before
+ * its check, or at its end; the row's alignment and its label are as they
+ * were, so a row with both hidden is drawn as before.
+ */
+async function appendOptionSlots(
+  option,
+  { index, label, trailingWords, disabled, variableByName, fonts, stats },
+) {
+  const media = await createOptionMedia({
+    index,
+    label,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  option.insertChild(0, media);
+  const trailing = await createOptionEndWords({
+    index,
+    words: trailingWords,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  // Before the check, or Select's check slot, which end the row.
+  const end =
+    directChildNamed(option, "Icon") || directChildNamed(option, "Check Slot");
+  if (end) option.insertChild(option.children.indexOf(end), trailing);
+  else option.appendChild(trailing);
+}
+
+/** Show Media and Show Trailing, and each option's Trailing words. */
+function configureOptionSlotProperties(componentSet, stats) {
+  for (let index = 1; index <= 3; index += 1) {
+    configureNamedBooleanProperty(
+      componentSet,
+      `Option ${index} Media`,
+      "Show Media",
+      false,
+      stats,
+    );
+    configureNamedBooleanProperty(
+      componentSet,
+      `Option ${index} Trailing Slot`,
+      "Show Trailing",
+      false,
+      stats,
+    );
+    configureNamedTextProperty(
+      componentSet,
+      `Option ${index} Trailing`,
+      `Option ${index} Trailing`,
+      OPTION_TRAILING_DEFAULTS[index - 1],
+      stats,
+    );
+  }
+}
+
 async function createListboxOption({
   index,
   label,
   description,
+  trailingWords,
   selected,
   active,
   focused,
@@ -83636,6 +83949,15 @@ async function createListboxOption({
     option.appendChild(icon);
   }
 
+  await appendOptionSlots(option, {
+    index,
+    label,
+    trailingWords,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
   return option;
 }
 
@@ -88576,6 +88898,7 @@ async function syncSpinnerVariantChildren({
 async function syncAvatarVariantChildren({
   component,
   value,
+  sm,
   config,
   variableByName,
   fonts,
@@ -88591,11 +88914,11 @@ async function syncAvatarVariantChildren({
       config.foregroundFallback,
       variableByName,
       stats,
-      20,
+      sm ? 16 : 20,
       null,
     );
-    icon.x = 10;
-    icon.y = 10;
+    icon.x = sm ? 4 : 10;
+    icon.y = sm ? 4 : 10;
     component.appendChild(icon);
   }
 
@@ -88623,9 +88946,18 @@ async function syncAvatarVariantChildren({
     ];
     fallback.textAlignHorizontal = "CENTER";
     fallback.textAlignVertical = "CENTER";
-    fallback.x = 10;
-    fallback.y = 10;
     component.appendChild(fallback);
+    if (sm) {
+      // Sm (decision 221): React's text-xs, 12/16, centred in the 24.
+      await applyAvatarSmFallbackTypography(fallback, fonts, stats);
+      fallback.textAutoResize = "NONE";
+      fallback.resize(24, 16);
+      fallback.x = 0;
+      fallback.y = 4;
+    } else {
+      fallback.x = 10;
+      fallback.y = 10;
+    }
   }
 
   await syncHiddenAvatarTextPropertyNode({

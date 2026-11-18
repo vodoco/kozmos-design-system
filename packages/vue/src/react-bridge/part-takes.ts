@@ -398,7 +398,14 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       own: ["onOpenChange", "onRangeChange", "onResetMixed", "onValueChange"],
     },
   ],
-  [Listbox, { dom: true, except: ["onChange"], own: ["onValueChange"] }],
+  [
+    Listbox,
+    {
+      dom: true,
+      except: ["onChange"],
+      own: ["onActiveValueChange", "onValueChange"],
+    },
+  ],
   [MapControlButton, D],
   [
     MultiSelect,

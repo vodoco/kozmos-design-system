@@ -22415,6 +22415,213 @@ section(
   }
 }
 
+// --- Wave C1 (decisions 215 and 221; GAP-260, GAP-282) -----------------------------
+
+// Decision 221: Avatar takes a Size, Default 40 and Sm 24, its initials at
+// 12/16, bound to Avatar/size/sm; a variant from before the axis parses as
+// Default, so an Update renames it in place.
+section("Decision 221: Avatar's Size, Default and Sm");
+{
+  const sizes = plugin.AVATAR_SIZES || [];
+  const axes = plugin.expectedVariantAxesForComponentSetName("Avatar") || {};
+  ok(
+    JSON.stringify(sizes) === JSON.stringify(["Default", "Sm"]) &&
+      JSON.stringify(axes.Size) === JSON.stringify(sizes) &&
+      JSON.stringify(axes.Content) === JSON.stringify(plugin.AVATAR_CONTENT),
+    `the set declares Content and Size, Default first (${Object.keys(axes).join(", ")}: ${sizes.join(", ")})`,
+  );
+  const parsed = [
+    "Content=Fallback",
+    "Content=Image, Size=Sm",
+    "Content=Image, Size=Huge",
+  ].map((name) => plugin.parseAvatarVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { value: "Fallback", second: "Default" },
+        { value: "Image", second: "Sm" },
+        null,
+      ]),
+    `a variant from before the axis parses as Default, an unknown size as none (${JSON.stringify(parsed)})`,
+  );
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const sm = plugin.COMPONENT_FLOAT_TOKENS.find(
+    (token) => token.name === "Avatar/size/sm",
+  );
+  ok(sm && sm.value === 24, `Avatar/size/sm is 24 (${sm && sm.value})`);
+  for (const [content, size, side] of [
+    ["Fallback", "Default", 40],
+    ["Fallback", "Sm", 24],
+    ["Image", "Sm", 24],
+  ]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    if (sizes.length)
+      await plugin.updateAvatarVariant(component, {
+        value: content,
+        second: size,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+    const bound = menusBound(component, "width");
+    ok(
+      component.name === `Content=${content}, Size=${size}` &&
+        component.width === side &&
+        component.height === side &&
+        bound === `Avatar/size/${size === "Sm" ? "sm" : "default"}`,
+      `${content} ${size}: ${side} square, bound to its size (${component.name}, ${component.width}x${component.height}, ${bound})`,
+    );
+    const initials = named(component, "Fallback");
+    if (content === "Fallback")
+      ok(
+        initials &&
+          initials.fontSize === (size === "Sm" ? 12 : 14) &&
+          initials.lineHeight.value === (size === "Sm" ? 16 : 20) &&
+          initials.x + initials.width <= side &&
+          initials.y + initials.height <= side,
+        `${content} ${size}: initials ${size === "Sm" ? "12/16" : "14/20"} inside it (${initials && `${initials.fontSize}/${initials.lineHeight.value} at ${initials.x},${initials.y} ${initials.width}x${initials.height}`})`,
+      );
+  }
+}
+
+// Decision 215 and GAP-260: every option of Combobox, Listbox and MultiSelect
+// carries its media, the Avatar's Sm, first, and its trailing words before
+// the check, both hidden; Show Media and Show Trailing show them, Option N
+// Trailing sets the words. Shown, the row keeps its height. Select's rows,
+// drawn by the same painter, take neither.
+section("Decision 215, GAP-260: an option's media and trailing words in Figma");
+{
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        ...props,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const parts = [
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      { state: "Default", status: "Default", content: "Open" },
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      { state: "Default", status: "Default", content: "Open" },
+    ],
+    [
+      "Listbox",
+      "updateListboxVariant",
+      { selection: "Single", state: "Default" },
+    ],
+  ];
+  for (const [name, fn, props] of parts) {
+    const component = await draw(fn, props);
+    component.name = Object.entries(props)
+      .map(([key, value]) => `${key[0].toUpperCase()}${key.slice(1)}=${value}`)
+      .join(", ");
+    const rows = component.findAll(
+      (node) => node.type === "FRAME" && / Option \d+$/.test(node.name),
+    );
+    ok(rows.length === 3, `${name}: three option rows (${rows.length})`);
+    rows.forEach((row, index) => {
+      const n = index + 1;
+      const media = row.children[0];
+      const avatar = media && named(media, `Option ${n} Avatar`);
+      const slot = named(row, `Option ${n} Trailing Slot`);
+      const words = slot && named(slot, `Option ${n} Trailing`);
+      const last = row.children[row.children.length - 1];
+      ok(
+        media &&
+          media.name === `Option ${n} Media` &&
+          media.visible === false &&
+          avatar &&
+          avatar.width === 24 &&
+          avatar.height === 24 &&
+          menusBound(avatar, "width") === "Avatar/size/sm",
+        `${name} ${row.name}: its media first, hidden, the 24 Avatar (${media && media.name} ${media && media.visible}, ${avatar && `${avatar.width}x${avatar.height} ${menusBound(avatar, "width")}`})`,
+      );
+      ok(
+        slot &&
+          slot.visible === false &&
+          words &&
+          words.type === "TEXT" &&
+          words.fontSize === 12 &&
+          (last.name === "Icon"
+            ? row.children.indexOf(slot) === row.children.length - 2
+            : last === slot),
+        `${name} ${row.name}: its trailing words hidden, 12/16, before the check (${slot && slot.visible}, ${words && words.fontSize}, last ${last && last.name})`,
+      );
+      ok(
+        row.counterAxisSizingMode === "FIXED" &&
+          avatar &&
+          avatar.height + row.paddingTop + row.paddingBottom <= row.height &&
+          words &&
+          words.lineHeight.value + row.paddingTop + row.paddingBottom <=
+            row.height,
+        `${name} ${row.name}: shown, its media and words fit its fixed ${row.height} (${row.counterAxisSizingMode}, ${row.paddingTop}+${avatar && avatar.height}+${row.paddingBottom})`,
+      );
+    });
+    const set = figma.combineAsVariants([component], figma.currentPage);
+    set.name = name;
+    plugin[`configure${name}Properties`](set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const key = (base, type) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === base && defs[k].type === type,
+      );
+    const showMedia = key("Show Media", "BOOLEAN");
+    const showTrailing = key("Show Trailing", "BOOLEAN");
+    const bound = (prop) =>
+      set.findAll(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.visible === prop,
+      ).length;
+    ok(
+      showMedia &&
+        showTrailing &&
+        defs[showMedia].defaultValue === false &&
+        defs[showTrailing].defaultValue === false &&
+        bound(showMedia) === 3 &&
+        bound(showTrailing) === 3,
+      `${name}: Show Media and Show Trailing, off, each showing three rows' slots (${showMedia && bound(showMedia)}, ${showTrailing && bound(showTrailing)})`,
+    );
+    const texts = [1, 2, 3].map((n) => key(`Option ${n} Trailing`, "TEXT"));
+    ok(
+      texts.every(Boolean) &&
+        JSON.stringify(texts.map((k) => defs[k].defaultValue)) ===
+          JSON.stringify(["Text", "Number", "Image"]),
+      `${name}: Option 1 to 3 Trailing set the words (${texts.map((k) => k && defs[k].defaultValue)})`,
+    );
+  }
+  const select = await draw("updateSelectVariant", {
+    state: "Default",
+    status: "Default",
+    content: "Open",
+  });
+  ok(
+    select.findAll((node) => / (Media|Trailing Slot)$/.test(node.name))
+      .length === 0,
+    `Select's rows take no media and no trailing words`,
+  );
+}
+
 // --- Summary ---------------------------------------------------------------------
 
 console.log(

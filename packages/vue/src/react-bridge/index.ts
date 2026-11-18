@@ -665,6 +665,13 @@ export const KozmosListbox = createVueWrapper(Listbox, {
     callback: "onValueChange",
     empty: ({ multiple }) => (multiple ? [] : ""),
   },
+  // The option a product moves (GAP-260): `v-model:active-value`, null for
+  // none.
+  activeValue: {
+    prop: "activeValue",
+    callback: "onActiveValueChange",
+    empty: null,
+  },
 });
 export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
   modelValue: { prop: "value", callback: "onValueChange", empty: [] },

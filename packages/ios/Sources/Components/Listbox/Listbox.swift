@@ -16,24 +16,54 @@ func validPickerActions(_ actions: [KozmosPickerAction]) -> [KozmosPickerAction]
     return actions.filter { !$0.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && counts[$0.id] == 1 }
 }
 
+/// An option's leading Avatar (decision 215, GAP-282), as React's
+/// `ComboboxOption.media`: its image, or its initials when it has none or
+/// until it loads (by default the label's first letters).
+public struct KozmosOptionMedia: Hashable {
+    public let imageURL: URL?
+    public let initials: String?
+
+    public init(imageURL: URL? = nil, initials: String? = nil) {
+        self.imageURL = imageURL
+        self.initials = initials
+    }
+
+    /// A label's initials: the first letter of its first two words, "PC"
+    /// for "Pointr Cloud", as React's.
+    static func initials(of label: String) -> String {
+        label.split(whereSeparator: \.isWhitespace).prefix(2)
+            .compactMap { $0.first.map(String.init) }.joined().uppercased()
+    }
+}
+
 public struct KozmosListboxOption: Identifiable, Hashable {
     public let id: String
     public let value: String
     public let label: String
     public let description: String?
     public let disabled: Bool
+    /// A leading Avatar, drawn before the label (decision 215). Decoration:
+    /// the label stays the option's name.
+    public let media: KozmosOptionMedia?
+    /// What the option shows at its end, before the check (GAP-260): a
+    /// property's type. Muted, and said as the option's hint.
+    public let trailing: String?
 
     public init(
         value: String,
         label: String,
         description: String? = nil,
-        disabled: Bool = false
+        disabled: Bool = false,
+        media: KozmosOptionMedia? = nil,
+        trailing: String? = nil
     ) {
         self.id = value
         self.value = value
         self.label = label
         self.description = description
         self.disabled = disabled
+        self.media = media
+        self.trailing = trailing
     }
 }
 
@@ -50,7 +80,13 @@ public struct KozmosListbox: View {
     /// Inside a Dialog, a Popover or a Card (GAP-271): the list draws no box
     /// of its own, so it is not a box inside the container's box.
     public let embedded: Bool
+    /// The active option's value (GAP-260), for a product that moves it, as
+    /// a search field driving the list with a hardware keyboard does: drawn
+    /// with the hover fill, as React's active row. Nil, none.
+    public let activeValue: String?
 
+    /// - Parameter activeValue: The option the product has made active
+    ///   (GAP-260), drawn with the hover fill; a chosen row keeps its own.
     /// - Parameter embedded: No box of its own (GAP-271): no surface, no
     ///   edge, no corners and no padding round the rows, for a list inside a
     ///   Dialog, a Popover or a Card, as Switch client's list of clients. The
@@ -64,8 +100,10 @@ public struct KozmosListbox: View {
         actions: [KozmosPickerAction] = [],
         emptyText: String? = nil,
         embedded: Bool = false,
+        activeValue: String? = nil,
         onValueChange: (([String], KozmosListboxOption) -> Void)? = nil
     ) {
+        self.activeValue = activeValue
         self.options = options
         self._selectedValues = selectedValues
         self.multiple = multiple
@@ -95,7 +133,14 @@ public struct KozmosListbox: View {
                 }
                 ForEach(options) { option in
                     Button(action: { commit(option) }) {
-                        HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                        // With an Avatar, the sm one, 24 (decision 221), so
+                        // the row keeps its height, the row's parts sit on
+                        // its middle line; without, as they always have.
+                        HStack(alignment: option.media == nil ? .top : .center, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                            if let media = option.media {
+                                KozmosAvatar(imageURL: media.imageURL, fallbackText: media.initials ?? KozmosOptionMedia.initials(of: option.label), size: .sm)
+                                    .accessibilityHidden(true)
+                            }
                             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                                 Text(option.label)
                                     .font(.subheadline.weight(.medium))
@@ -112,6 +157,14 @@ public struct KozmosListbox: View {
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
+
+                            if let trailing = option.trailing, !trailing.isEmpty {
+                                Text(trailing)
+                                    .font(KozmosTypography.caption)
+                                    .foregroundColor(option.disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsForeground400)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                            }
 
                             if selectedValues.contains(option.value) {
                                 // An icon on the row: theme 600 (decision 59).
@@ -133,8 +186,11 @@ public struct KozmosListbox: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(disabled || option.disabled)
-                    .accessibilityLabel([option.label, option.description].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
+                    .accessibilityLabel(Self.accessibilityLabel(for: option))
                     .accessibilityAddTraits(selectedValues.contains(option.value) ? .isSelected : [])
+                    // The trailing words describe the option, as React's
+                    // aria-describedby: its name stays the label.
+                    .accessibilityHint(Self.accessibilityHint(for: option))
                 }
                 ForEach(validPickerActions(actions)) { action in
                     KozmosButton(action.label, variant: .ghost, isDisabled: disabled || action.disabled,
@@ -178,11 +234,33 @@ public struct KozmosListbox: View {
         onValueChange?(nextValues, option)
     }
 
+    /// A row's name: its label, then its description. The Avatar is not in
+    /// it (decision 215): the label names the option.
+    static func accessibilityLabel(for option: KozmosListboxOption) -> String {
+        [option.label, option.description].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
+    }
+
+    /// A row's hint: its trailing words (GAP-260), as React's aria-describedby.
+    static func accessibilityHint(for option: KozmosListboxOption) -> String {
+        option.trailing ?? ""
+    }
+
+    /// Which fill a row takes: chosen, active (GAP-260) or none.
+    enum RowFill { case none, chosen, active }
+
+    func rowFill(for option: KozmosListboxOption) -> RowFill {
+        if selectedValues.contains(option.value) { return .chosen }
+        // The active row, as React's: a chosen row keeps its own fill.
+        if option.value == activeValue, !option.disabled { return .active }
+        return .none
+    }
+
     private func rowBackground(for option: KozmosListboxOption) -> Color {
-        if selectedValues.contains(option.value) {
-            return KozmosColors.primitivesColorsBackground100
+        switch rowFill(for: option) {
+        case .chosen: return KozmosColors.primitivesColorsBackground100
+        case .active: return KozmosColors.semanticsHoverFill
+        case .none: return Color.clear
         }
-        return Color.clear
     }
 }
 

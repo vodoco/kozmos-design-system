@@ -64,10 +64,32 @@ function numericValueFromInput(input: HTMLInputElement) {
   return Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber;
 }
 
+/** The number of decimals a number is written with: 2 for 1.25. */
+const decimalsOf = (value: number) =>
+  Number.isFinite(value) ? (String(value).split(".")[1]?.length ?? 0) : 0;
+
 function stepValue(
   input: HTMLInputElement,
   direction: "decrement" | "increment",
 ) {
+  // `step="any"` takes any decimal, and the input's stepUp() and stepDown()
+  // throw for it, so the steppers step by 1 themselves (GAP-257), within
+  // `min` and `max`, keeping the value's own decimals: 2.5 goes to 3.5.
+  if (input.step.trim().toLowerCase() === "any") {
+    const current = numericValueFromInput(input) ?? 0;
+    let next = current + (direction === "increment" ? 1 : -1);
+    const min = input.min === "" ? NaN : Number(input.min);
+    const max = input.max === "" ? NaN : Number(input.max);
+    if (Number.isFinite(max)) next = Math.min(next, max);
+    if (Number.isFinite(min)) next = Math.max(next, min);
+    next = Number(
+      next.toFixed(
+        Math.min(20, Math.max(decimalsOf(current), decimalsOf(next))),
+      ),
+    );
+    input.value = String(next);
+    return numericValueFromInput(input);
+  }
   if (direction === "increment") {
     input.stepUp();
   } else {

@@ -211,8 +211,15 @@ final class InteractionTests: XCTestCase {
     func testReadOnlyAndDisabledPickerCannotExposeActionsEvenWhenForcedOpen() {
         for scenario in ["combobox-locked-readonly", "combobox-locked-disabled"] {
             launch(scenario)
-            XCTAssertTrue(app.textFields["From"].exists)
-            XCTAssertFalse(app.textFields["From"].isEnabled)
+            if scenario == "combobox-locked-readonly" {
+                // Read only (decision 222), the field is its value drawn read
+                // only, not a disabled text field: nothing there to type in.
+                XCTAssertFalse(app.textFields["From"].exists)
+                XCTAssertTrue(app.descendants(matching: .any)["From"].exists)
+            } else {
+                XCTAssertTrue(app.textFields["From"].exists)
+                XCTAssertFalse(app.textFields["From"].isEnabled)
+            }
             XCTAssertTrue(app.buttons["Open options"].exists)
             XCTAssertFalse(app.buttons["Open options"].isEnabled)
             XCTAssertFalse(app.buttons["Map"].exists)

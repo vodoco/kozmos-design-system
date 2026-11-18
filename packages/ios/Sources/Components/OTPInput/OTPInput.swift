@@ -34,6 +34,8 @@ public struct KozmosOTPInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     /// The words VoiceOver hears as the field's hint, for its number of cells.
     let digitCountLabel: (Int) -> String
     /// The field's name when no `label` is drawn.
@@ -63,8 +65,10 @@ public struct KozmosOTPInput: View {
         helperText: String? = nil,
         errorMessage: String? = nil,
         digitCountLabel: @escaping (Int) -> String = { $0 == 1 ? "1 digit" : "\($0) digits" },
-        fieldLabel: String = "Verification code"
+        fieldLabel: String = "Verification code",
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._value = value
         self.length = max(length, 1)
         self.label = label
@@ -229,7 +233,12 @@ public struct KozmosOTPInput: View {
     /// The field's name: the drawn `label`, or `fieldLabel` without one.
     private var accessibilityName: String { label ?? fieldLabel }
 
-    private var accessibilityHint: String { digitCountLabel(length) }
+    /// The digit count, then read only, then the error message (GAP-235,
+    /// GAP-236): the UIKit field has no read-only trait or invalid state.
+    var accessibilityHint: String {
+        KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error,
+                              errorMessage: errorMessage, leading: [digitCountLabel(length)])
+    }
 
     @ViewBuilder
     private var field: some View {

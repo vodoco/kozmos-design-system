@@ -23,8 +23,12 @@ public enum KozmosFileUploadVariant: Equatable, Sendable, CaseIterable {
 
 public struct KozmosFileUpload: View {
     @State private var isImporting = false
-    @State private var file: URL?
+    @State private var files: [URL] = []
+    /// Why the last pick was turned away, as React's field error says it.
+    @State private var refusal: String?
     @State private var image: CGImage?
+    /// The first file held, the one an image preview shows.
+    private var file: URL? { files.first }
     let allowedContentTypes: [UTType]
     let browseLabel: String
     let removeLabel: String
@@ -34,6 +38,15 @@ public struct KozmosFileUpload: View {
     let previewAlt: String?
     var onFileSelected: ((URL) -> Void)?
     var onFileRemoved: ((URL) -> Void)?
+    /// How many files one pick may hold, as React's `maxFiles`.
+    let maxFiles: Int?
+    /// The largest file, in bytes, as React's `maxSize`.
+    let maxSize: Int64?
+    /// Whether the importer takes several files, as React's `multiple`.
+    let multiple: Bool?
+    let tooManyFilesLabel: (Int) -> String
+    let tooLargeLabel: (String, String) -> String
+    var onFilesChange: (([URL]) -> Void)?
     
     /// `onFileRemoved` is told the file the visitor removed, as React's
     /// `onFilesChange` is told the files left. `browseLabel` is the drop
@@ -52,6 +65,17 @@ public struct KozmosFileUpload: View {
     /// file's name unless you pass one), with a `changeLabel` button,
     /// "Change" by default, that opens the importer again, and the remove
     /// button.
+    ///
+    /// `maxSize`, in bytes, and `maxFiles` limit a pick as React's do
+    /// (GAP-280): a file over the size, or a pick past the count, is turned
+    /// away, the files held stay, and the refusal is said under the part, in
+    /// `tooLargeLabel` (given the file's name and the limit as written, "2.0
+    /// MB") or `tooManyFilesLabel` (given the count), React's English by
+    /// default. `multiple` lets the importer take several files; unset, it
+    /// does when `maxFiles` is over 1. Each file chosen is listed with its
+    /// own remove button, `onFilesChange` is told the files held after each
+    /// pick or removal, and `onFileSelected` the first file of a pick, as
+    /// React's `onFileSelect`. An image preview holds one image.
     public init(
         allowedContentTypes: [UTType] = [.content],
         onFileSelected: ((URL) -> Void)? = nil,
@@ -61,9 +85,23 @@ public struct KozmosFileUpload: View {
         preview: KozmosFileUploadPreview = .none,
         changeLabel: String = "Change",
         previewAlt: String? = nil,
-        variant: KozmosFileUploadVariant = .dropzone
+        variant: KozmosFileUploadVariant = .dropzone,
+        tooManyFilesLabel: @escaping (Int) -> String = KozmosFileUpload.defaultTooManyFilesLabel,
+        tooLargeLabel: @escaping (String, String) -> String = KozmosFileUpload.defaultTooLargeLabel,
+        onFilesChange: (([URL]) -> Void)? = nil,
+        // Not closures, and last: a lone trailing closure is still
+        // `onFileSelected` in Swift 5's backward matching.
+        maxSize: Int64? = nil,
+        maxFiles: Int? = nil,
+        multiple: Bool? = nil
     ) {
         self.allowedContentTypes = allowedContentTypes
+        self.maxSize = maxSize
+        self.maxFiles = maxFiles
+        self.multiple = multiple
+        self.tooManyFilesLabel = tooManyFilesLabel
+        self.tooLargeLabel = tooLargeLabel
+        self.onFilesChange = onFilesChange
         self.variant = variant
         self.browseLabel = browseLabel ?? Self.defaultBrowseLabel(for: variant)
         self.removeLabel = removeLabel
@@ -81,6 +119,16 @@ public struct KozmosFileUpload: View {
         variant == .button ? "Choose file" : "Tap to upload file"
     }
 
+    /// React's refusal of a pick past `maxFiles`: "Select up to 3 files."
+    public static func defaultTooManyFilesLabel(_ maxFiles: Int) -> String {
+        "Select up to \(maxFiles) \(maxFiles == 1 ? "file" : "files")."
+    }
+
+    /// React's refusal of a file over `maxSize`: "plan.pdf exceeds 2.0 MB."
+    public static func defaultTooLargeLabel(_ fileName: String, _ maxSize: String) -> String {
+        "\(fileName) exceeds \(maxSize)."
+    }
+
     /// A part already holding `file`, for the tests: a picked file comes only
     /// from the system's importer.
     init(
@@ -92,15 +140,97 @@ public struct KozmosFileUpload: View {
         previewAlt: String? = nil,
         variant: KozmosFileUploadVariant = .dropzone
     ) {
+        self.init(holding: [file], onFileRemoved: onFileRemoved, removeLabel: removeLabel, preview: preview,
+                  changeLabel: changeLabel, previewAlt: previewAlt, variant: variant)
+    }
+
+    /// A part already holding `files`, and saying `refusal`, for the tests.
+    init(
+        holding files: [URL],
+        refusal: String? = nil,
+        onFileRemoved: ((URL) -> Void)? = nil,
+        removeLabel: String = "Remove",
+        preview: KozmosFileUploadPreview = .none,
+        changeLabel: String = "Change",
+        previewAlt: String? = nil,
+        variant: KozmosFileUploadVariant = .dropzone,
+        onFilesChange: (([URL]) -> Void)? = nil
+    ) {
         self.init(
             onFileRemoved: onFileRemoved,
             removeLabel: removeLabel,
             preview: preview,
             changeLabel: changeLabel,
             previewAlt: previewAlt,
-            variant: variant
+            variant: variant,
+            onFilesChange: onFilesChange
         )
-        self._file = State(initialValue: file)
+        self._files = State(initialValue: files)
+        self._refusal = State(initialValue: refusal)
+    }
+
+    /// How many files a pick may hold: one for an image preview, `maxFiles`,
+    /// or with neither, any number with `multiple` and one without, as
+    /// React's.
+    var resolvedMaxFiles: Int {
+        if preview == .image { return 1 }
+        return maxFiles ?? (multiple == true ? .max : 1)
+    }
+
+    /// Whether the importer takes several files: `multiple` when given,
+    /// otherwise when the count allows more than one; never for an image.
+    var allowsMultipleSelection: Bool {
+        preview != .image && (multiple ?? (resolvedMaxFiles > 1))
+    }
+
+    /// Why `picked` is turned away, or nil: past the count first, then the
+    /// first file over `maxSize`, as React checks them. `sizeOf` reads a
+    /// file's size in bytes, nil where it cannot be read (not refused).
+    func refusal(for picked: [URL], sizeOf: (URL) -> Int64?) -> String? {
+        if picked.count > resolvedMaxFiles { return tooManyFilesLabel(resolvedMaxFiles) }
+        if let maxSize, let oversized = picked.first(where: { (sizeOf($0) ?? 0) > maxSize }) {
+            return tooLargeLabel(oversized.lastPathComponent, Self.formatBytes(maxSize))
+        }
+        return nil
+    }
+
+    /// A size as React's FileUpload writes it: "0 B", "512 B", "2.0 KB",
+    /// "10 MB", one decimal under 10 of a unit past bytes.
+    static func formatBytes(_ bytes: Int64) -> String {
+        if bytes <= 0 { return "0 B" }
+        let units = ["B", "KB", "MB", "GB"]
+        let exponent = min(Int(floor(log(Double(bytes)) / log(1024))), units.count - 1)
+        let value = Double(bytes) / pow(1024, Double(exponent))
+        let digits = value >= 10 || exponent == 0 ? 0 : 1
+        return String(format: "%.\(digits)f", value) + " " + units[exponent]
+    }
+
+    /// A picked file's size, read inside its security scope, as the importer
+    /// hands it out.
+    static func fileSize(of url: URL) -> Int64? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        return (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).flatMap { $0 }.map(Int64.init)
+    }
+
+    /// A pick: refused, keeping the files held, or held in their place.
+    private func receive(_ picked: [URL]) {
+        guard !picked.isEmpty else { return }
+        if let reason = refusal(for: picked, sizeOf: Self.fileSize(of:)) {
+            refusal = reason
+            return
+        }
+        refusal = nil
+        files = picked
+        onFilesChange?(picked)
+        onFileSelected?(picked[0])
+    }
+
+    private func remove(_ removed: URL) {
+        files.removeAll { $0 == removed }
+        refusal = nil
+        onFilesChange?(files)
+        onFileRemoved?(removed)
     }
 
     /// The types the importer offers: images for an image preview whose
@@ -122,31 +252,30 @@ public struct KozmosFileUpload: View {
         VStack {
             if let file, preview == .image {
                 imagePreview(of: file)
-            } else if let file {
-                HStack {
-                    // A theme-coloured icon: theme 600 (decision 59).
-                    // Decoration, as React's file icon: the name beside it
-                    // says what it is. VoiceOver read it as "Document".
-                    Image(systemName: "doc.fill")
-                        .foregroundColor(KozmosColors.primitivesColorsTheme600)
-                        .accessibilityHidden(true)
-                    Text(file.lastPathComponent)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer()
-                    Button(action: {
-                        self.file = nil
-                        onFileRemoved?(file)
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+            } else if !files.isEmpty {
+                ForEach(files, id: \.self) { file in
+                    HStack {
+                        // A theme-coloured icon: theme 600 (decision 59).
+                        // Decoration, as React's file icon: the name beside it
+                        // says what it is. VoiceOver read it as "Document".
+                        Image(systemName: "doc.fill")
+                            .foregroundColor(KozmosColors.primitivesColorsTheme600)
+                            .accessibilityHidden(true)
+                        Text(file.lastPathComponent)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button(action: { remove(file) }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        }
+                        // The symbol's own name, "Close", was all VoiceOver had.
+                        .accessibilityLabel(Text(verbatim: removeLabel))
                     }
-                    // The symbol's own name, "Close", was all VoiceOver had.
-                    .accessibilityLabel(Text(verbatim: removeLabel))
+                    .padding()
+                    .background(KozmosColors.primitivesColorsBackground100)
+                    .cornerRadius(KozmosDimensions.semanticsRadiusControl)
                 }
-                .padding()
-                .background(KozmosColors.primitivesColorsBackground100)
-                .cornerRadius(KozmosDimensions.semanticsRadiusControl)
             } else if variant == .button {
                 // In place of the drop area, the outline Button at its default
                 // size, the upload icon and the browse label (GAP-274). It
@@ -178,6 +307,15 @@ public struct KozmosFileUpload: View {
                     )
                 }
             }
+            // A refused pick, said under the part as React's field error is,
+            // in the error colour; the files held stay (GAP-280).
+            if let refusal {
+                Text(refusal)
+                    .font(KozmosTypography.subheadline)
+                    .foregroundColor(KozmosColors.primitivesColorsEmotionalDanger600)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .task(id: preview == .image ? file : nil) {
             guard preview == .image, let file else {
@@ -189,12 +327,10 @@ public struct KozmosFileUpload: View {
         .fileImporter(
             isPresented: $isImporting,
             allowedContentTypes: importedTypes,
-            allowsMultipleSelection: false
+            allowsMultipleSelection: allowsMultipleSelection
         ) { result in
             do {
-                let selectedFile: URL = try result.get().first!
-                self.file = selectedFile
-                onFileSelected?(selectedFile)
+                receive(try result.get())
             } catch {
                 print("Error selecting file: \(error.localizedDescription)")
             }
@@ -221,10 +357,7 @@ public struct KozmosFileUpload: View {
                 .truncationMode(.middle)
             Spacer(minLength: 0)
             KozmosButton(changeLabel, variant: .outline, size: .sm) { isImporting = true }
-            Button(action: {
-                self.file = nil
-                onFileRemoved?(file)
-            }) {
+            Button(action: { remove(file) }) {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundColor(KozmosColors.primitivesColorsForeground500)
             }

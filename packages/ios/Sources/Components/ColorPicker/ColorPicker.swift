@@ -29,6 +29,8 @@ public struct KozmosColorPicker: View {
     public let disabled: Bool
     public let readOnly: Bool
     public let status: KozmosInputStatus
+    /// Said on a read-only picker (decision 222, GAP-235).
+    public let readOnlyLabel: String
 
     @State private var isOpen: Bool
     @State private var currentFormat: KozmosColorPickerFormat
@@ -45,8 +47,10 @@ public struct KozmosColorPicker: View {
         defaultOpen: Bool = false,
         disabled: Bool = false,
         readOnly: Bool = false,
-        status: KozmosInputStatus = .default
+        status: KozmosInputStatus = .default,
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._value = value
         self._alpha = alpha
         self.label = label
@@ -68,42 +72,25 @@ public struct KozmosColorPicker: View {
                     .foregroundColor(labelColor)
             }
 
-            Button(action: toggleOpen) {
-                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                    RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
-                        .fill(color)
-                        .frame(width: 32, height: 32)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
-                                .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
-                        )
-
-                    Text(normalizedValue)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(textColor)
-                        .lineLimit(1)
-
-                    Spacer(minLength: KozmosDimensions.primitivesLayoutSpacing100)
-
-                    Image(systemName: "chevron.down")
-                        .font(.subheadline.weight(.semibold))
-                        .rotationEffect(.degrees(isOpen ? 180 : 0))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground400)
+            if readOnly && !disabled {
+                // Read only (decision 222): its swatch and value at full
+                // strength, the value selectable, said with "Read only", no
+                // button and nothing dimmed.
+                trigger(selectable: true)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(label ?? "Color")
+                    .accessibilityValue(normalizedValue)
+                    .accessibilityHint(readOnlyLabel)
+            } else {
+                Button(action: toggleOpen) {
+                    trigger(selectable: false)
                 }
-                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
-                .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
-                .background(fieldBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
-                .overlay(
-                    RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                        .stroke(fieldBorderColor, lineWidth: 1)
-                )
+                .buttonStyle(.plain)
+                .disabled(disabled || readOnly)
+                .accessibilityLabel(label ?? "Color")
+                .accessibilityValue(normalizedValue)
+                .accessibilityHint(isOpen ? "Closes the color picker" : "Opens the color picker")
             }
-            .buttonStyle(.plain)
-            .disabled(disabled || readOnly)
-            .accessibilityLabel(label ?? "Color")
-            .accessibilityValue(normalizedValue)
-            .accessibilityHint(isOpen ? "Closes the color picker" : "Opens the color picker")
 
             if isOpen {
                 pickerPanel
@@ -399,6 +386,48 @@ public struct KozmosColorPicker: View {
         case .default:
             return KozmosColors.primitivesColorsForeground400
         }
+    }
+
+    /// The field: the swatch, the value and the chevron. Read only, the
+    /// value can be selected and copied.
+    @ViewBuilder private func trigger(selectable: Bool) -> some View {
+        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
+                .fill(color)
+                .frame(width: 32, height: 32)
+                .overlay(
+                    RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
+                        .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
+                )
+
+            if selectable {
+                Text(normalizedValue)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(textColor)
+                    .lineLimit(1)
+                    .textSelection(.enabled)
+            } else {
+                Text(normalizedValue)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(textColor)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: KozmosDimensions.primitivesLayoutSpacing100)
+
+            Image(systemName: "chevron.down")
+                .font(.subheadline.weight(.semibold))
+                .rotationEffect(.degrees(isOpen ? 180 : 0))
+                .foregroundColor(KozmosColors.primitivesColorsForeground400)
+        }
+        .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
+        .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
+        .background(fieldBackgroundColor)
+        .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+        .overlay(
+            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+                .stroke(fieldBorderColor, lineWidth: 1)
+        )
     }
 
     private var textColor: Color {

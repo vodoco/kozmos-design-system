@@ -24,6 +24,11 @@ cell's `maxLength` is 1. What reaches the cell while an IME composes, such as a 
 Adlam 𞥑, can be pasted into React's cells but not typed: each cell's `maxLength` is 1. SwiftUI and
 Compose take the whole code in one text field, so they have no per-cell limit.
 
+In React, a digit typed into a filled cell replaces its digit and moves on, whether the cell was
+clicked, reached with Tab, or given the focus as the digit before it was typed, so a full code can
+be typed over from its first cell. A focused cell's digit is selected, so a touch keyboard's digit
+replaces it too, and the same digit typed over itself still moves on.
+
 <Canvas>
   <Story of={OTPInputStories.Default} />
 </Canvas>
@@ -42,6 +47,15 @@ with is the one the host's binding or state starts with.
 <Canvas>
   <Story of={OTPInputStories.WithDefaultValue} />
 </Canvas>
+
+## Read only and errors on native
+
+On SwiftUI and Compose the field itself says it is read only and says its error (GAP-235, GAP-236): Compose
+puts "Read only" in the field's state description (`readOnlyLabel`, for the product's own words) and the error
+message as the field's `error`; SwiftUI says "Read only", then the error message, as the field's accessibility hint
+(`readOnlyLabel` too). SwiftUI draws a read-only field read only, not disabled (decision 222): its value at full
+strength and selectable, never dimmed, as React's and Compose's; so are its date and time pickers and ColorPicker.
+OTPInput says its digit count first.
 
 ## Implementation
 
