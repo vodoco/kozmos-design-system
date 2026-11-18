@@ -14,7 +14,17 @@ interface AccordionProps {
    * density's control height: 40 compact, 44 touch.
    */
   variant?: "default" | "boxed";
+  /**
+   * The level of every trigger's heading, 2 to 6 (GAP-248): an h3 by
+   * default, as Radix draws it. Set it so the sections follow the page's own
+   * headings: 2 under a page whose only heading is its h1. A trigger's own
+   * `headingLevel` wins over it.
+   */
+  headingLevel?: AccordionHeadingLevel;
 }
+
+/** A heading level an Accordion's trigger can take. */
+export type AccordionHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
 type AccordionRootProps = AccordionProps &
   (
@@ -25,8 +35,13 @@ type AccordionRootProps = AccordionProps &
 /** Whether the parts sit in a boxed Accordion. */
 const BoxedContext = React.createContext(false);
 
+/** The level the Accordion gives its triggers' headings, when it gives one. */
+const HeadingLevelContext = React.createContext<
+  AccordionHeadingLevel | undefined
+>(undefined);
+
 const Accordion = React.forwardRef<HTMLDivElement, AccordionRootProps>(
-  ({ variant, ...props }, ref) => {
+  ({ variant, headingLevel, ...props }, ref) => {
     const { trackEvent } = useKozmosAnalytics();
     const boxed = variant === "boxed";
     // No className key at all in the default form: Radix's Slot turns an
@@ -40,25 +55,27 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionRootProps>(
 
     return (
       <BoxedContext.Provider value={boxed}>
-        {props.type === "multiple" ? (
-          <AccordionPrimitive.Root
-            {...props}
-            {...form}
-            onValueChange={(value: string[]) => {
-              trackEvent("Accordion", "accordion_toggled", { value });
-              props.onValueChange?.(value);
-            }}
-          />
-        ) : (
-          <AccordionPrimitive.Root
-            {...props}
-            {...form}
-            onValueChange={(value: string) => {
-              trackEvent("Accordion", "accordion_toggled", { value });
-              props.onValueChange?.(value);
-            }}
-          />
-        )}
+        <HeadingLevelContext.Provider value={headingLevel}>
+          {props.type === "multiple" ? (
+            <AccordionPrimitive.Root
+              {...props}
+              {...form}
+              onValueChange={(value: string[]) => {
+                trackEvent("Accordion", "accordion_toggled", { value });
+                props.onValueChange?.(value);
+              }}
+            />
+          ) : (
+            <AccordionPrimitive.Root
+              {...props}
+              {...form}
+              onValueChange={(value: string) => {
+                trackEvent("Accordion", "accordion_toggled", { value });
+                props.onValueChange?.(value);
+              }}
+            />
+          )}
+        </HeadingLevelContext.Provider>
       </BoxedContext.Provider>
     );
   },
@@ -96,15 +113,25 @@ export interface AccordionTriggerProps extends React.ComponentPropsWithoutRef<
    * content is left alone, and `disabled` here can't turn it off.
    */
   loading?: boolean;
+  /**
+   * This trigger's heading level, 2 to 6, over the Accordion's
+   * `headingLevel` (GAP-248). An h3 when neither sets one.
+   */
+  headingLevel?: AccordionHeadingLevel;
 }
 
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
   AccordionTriggerProps
->(({ className, children, icon, label, loading, ...props }, ref) => {
-  const boxed = React.useContext(BoxedContext);
-  return (
-    <AccordionPrimitive.Header className={boxed ? "kozmos-reset" : "flex"}>
+>(
+  (
+    { className, children, icon, label, loading, headingLevel, ...props },
+    ref,
+  ) => {
+    const boxed = React.useContext(BoxedContext);
+    const rootLevel = React.useContext(HeadingLevelContext);
+    const level = headingLevel ?? rootLevel ?? 3;
+    const trigger = (
       <AccordionPrimitive.Trigger
         ref={ref}
         className={cn(
@@ -150,9 +177,25 @@ const AccordionTrigger = React.forwardRef<
           />
         )}
       </AccordionPrimitive.Trigger>
-    </AccordionPrimitive.Header>
-  );
-});
+    );
+    const headerClass = boxed ? "kozmos-reset" : "flex";
+    if (level === 3) {
+      return (
+        <AccordionPrimitive.Header className={headerClass}>
+          {trigger}
+        </AccordionPrimitive.Header>
+      );
+    }
+    // Radix's header is an h3; any other level is drawn as that heading, with
+    // Radix's attributes on it through its Slot.
+    const Heading = `h${level}` as const;
+    return (
+      <AccordionPrimitive.Header asChild>
+        <Heading className={headerClass}>{trigger}</Heading>
+      </AccordionPrimitive.Header>
+    );
+  },
+);
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
 
 const AccordionContent = React.forwardRef<

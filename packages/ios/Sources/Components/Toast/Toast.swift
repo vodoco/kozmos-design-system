@@ -10,6 +10,28 @@ struct KozmosToastAnnouncement: Equatable {
     let queued: Bool
 }
 
+/// A toast's tone, React's `toast()` tones and Compose's `KozmosToastTone`
+/// (GAP-167): Notice's (info, warning, critical) with success, and neutral,
+/// the default, which draws no mark.
+public enum KozmosToastTone: String, CaseIterable, Sendable {
+    case neutral
+    case success
+    case info
+    case warning
+    case critical
+
+    /// Notice's tone of the same name, whose mark and ink a toned toast draws.
+    var notice: KozmosNoticeTone? {
+        switch self {
+        case .neutral: return nil
+        case .success: return .success
+        case .info: return .info
+        case .warning: return .warning
+        case .critical: return .critical
+        }
+    }
+}
+
 public struct KozmosToast: View {
     @Binding var isPresented: Bool
     let title: String
@@ -19,6 +41,7 @@ public struct KozmosToast: View {
     let closeLabel: String
     let autoDismissAfter: TimeInterval?
     let onAction: (() -> Void)?
+    let tone: KozmosToastTone
 
     public init(isPresented: Binding<Bool>, message: String) {
         self.init(isPresented: isPresented, title: message, autoDismissAfter: 3)
@@ -32,6 +55,9 @@ public struct KozmosToast: View {
         showsCloseButton: Bool = true,
         closeLabel: String = "Dismiss notification",
         autoDismissAfter: TimeInterval? = 3,
+        /// Its tone (GAP-167): a mark at the start in the tone's colour, or
+        /// none for `.neutral`, the default. The surface stays the same.
+        tone: KozmosToastTone = .neutral,
         onAction: (() -> Void)? = nil
     ) {
         self._isPresented = isPresented
@@ -46,6 +72,7 @@ public struct KozmosToast: View {
         self.closeLabel = closeLabel
         self.autoDismissAfter = autoDismissAfter
         self.onAction = onAction
+        self.tone = tone
     }
 
     public var body: some View {
@@ -70,6 +97,14 @@ public struct KozmosToast: View {
 
     private var toastSurface: some View {
         HStack(alignment: .center, spacing: KozmosDimensions.primitivesLayoutSpacing200) {
+            // A tone's mark, Notice's for it, at the start in the tone's text
+            // colour, 16 from the words, as React's and Compose's (GAP-167).
+            // Decoration: VoiceOver hears the words.
+            if let notice = tone.notice {
+                KozmosIcon(notice.markName, size: .sm)
+                    .environment(\.kozmosIconHostInk, notice.ink)
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                 Text(title)
                     .font(KozmosTypography.subheadline)

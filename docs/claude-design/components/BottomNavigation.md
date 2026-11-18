@@ -51,6 +51,12 @@ It forwards its ref to `HTMLElement`. Its props are `BottomNavigationProps`, whi
   8px in. The bar keeps its own items (decision 42): the rail's side-menu
   item, which has one size, is not what it draws.
 
+- `inset`: `boolean`, optional, default `false`.
+
+  Space between the bar's top line and its items, 8, so a selected
+  item's fill clears the line (GAP-245). Off by default: the items meet
+  the line, as they always have.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

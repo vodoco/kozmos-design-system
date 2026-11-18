@@ -727,7 +727,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       texts: [],
     },
   ],
-  [BottomNavigation, H],
+  [BottomNavigation, html(["inset"])],
   [Navbar, html(["logoInset"])],
   [Sidebar, html(["collapsed", "collapsible"])],
   [Menu, menuBooleans],
@@ -867,7 +867,10 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [SaveLocationCard, html(["isSaved"])],
   [ScrollArea, html(["hideScrollbar"])],
   [UserLocationMarker, html(["compact", "offFloor", "showHeading"])],
-  [AdaptiveMapShell, html(["bottomControlsPadCamera", "controlsPadCamera"])],
+  [
+    AdaptiveMapShell,
+    html(["bottomControlsPadCamera", "controlsPadCamera", "followsKeyboard"]),
+  ],
   [BrowseCategoriesPanel, H],
   [CategoryTile, categoryTileBooleans],
   [

@@ -77,6 +77,13 @@ Dialog's does.
 
 <Canvas of={DrawerStories.Inline} />
 
+## Corners
+
+A drawer at an edge rounds only the two corners that face the page, the container's 20, and keeps
+its corners at the screen's edge square, on logical sides: right to left, a left drawer sits on the
+right and rounds its left corners. SwiftUI's drawer drew all four round until 0.17.0 (GAP-252). A
+floating inline side drawer rounds all four on every platform.
+
 ## Implementation
 
 <Source of={DrawerStories.Default} />

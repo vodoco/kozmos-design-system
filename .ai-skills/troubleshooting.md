@@ -194,7 +194,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
    # Prints the median export and the five heaviest, Button, everything and the stylesheet
    ```
 
-2. **Find what grew:** each export is bundled alone and held to 8.5 KB, so one over it imports more
+2. **Find what grew:** each export is bundled alone and held to 9 KB, so one over it imports more
    than it needs; `Button` alone over 2 KB means the ES build no longer tree-shakes.
 
 3. **Keep the JavaScript free of side effects:** `packages/react/package.json` declares
@@ -214,7 +214,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
 
 A budget moves only with the measurement that justifies it, on Olcay's decision (decision 53 set
 everything at once to 68 KB; it has been 120 KB since 2026-11-17, decision 213; one export alone has
-been held to 8.5 KB since 2026-10-16, decision 90).
+been held to 9 KB since 2026-11-18, decision 220).
 
 ---
 

@@ -1078,13 +1078,31 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       return () => observer.disconnect();
     }, [virtualized]);
 
+    const [rootNode, setRootNode] = React.useState<HTMLDivElement | null>(null);
     const setRefs = React.useCallback(
       (node: HTMLDivElement | null) => {
+        setRootNode(node);
         if (typeof ref === "function") ref(node);
         else if (ref) ref.current = node;
       },
       [ref],
     );
+    // A tree that scrolls itself, by the product's height and overflow and
+    // not `virtualized`, is the box that clips its rows: the strokes and
+    // band fills reaching the bleed past it scrolled it sideways by the
+    // bleed (GAP-201). Its rows take no bleed then, as a scroller would clip
+    // them at its edges anyway. A virtualized tree's scroller takes the
+    // bleed, and a tree in a scrolling panel reaches into the panel's padding.
+    const [scrollsItself, setScrollsItself] = React.useState(false);
+    const scrollStyle = props.style;
+    useTreeLayoutEffect(() => {
+      setScrollsItself(
+        !!rootNode &&
+          !virtualized &&
+          bleed !== undefined &&
+          /auto|scroll/.test(getComputedStyle(rootNode).overflowY),
+      );
+    }, [rootNode, virtualized, bleed, className, scrollStyle]);
 
     const nodeProps: TreeNodeSharedProps = {
       checkable,
@@ -1173,8 +1191,11 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
           bleed === undefined
             ? props.style
             : ({
-                "--kozmos-tree-bleed":
-                  typeof bleed === "number" ? `${bleed}px` : bleed,
+                "--kozmos-tree-bleed": scrollsItself
+                  ? "0px"
+                  : typeof bleed === "number"
+                    ? `${bleed}px`
+                    : bleed,
                 ...props.style,
               } as React.CSSProperties)
         }

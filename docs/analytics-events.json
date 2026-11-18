@@ -1,0 +1,329 @@
+{
+  "$comment": "GAP-234: the one analytics event table for React, SwiftUI and Compose: each event a part sends and, on each platform, \"sent\" or why it is not. pnpm analytics:parity:check (scripts/check-analytics-parity.mjs) fails when a platform's source sends an event the table does not mark sent there, or the table marks one sent that the source no longer sends. Kept by hand: change it with the part.",
+  "events": {
+    "accordion_toggled": {
+      "components": ["Accordion"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "bottom_nav_item_clicked": {
+      "components": ["BottomNavigation"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's BottomNavigation sends no bottom_nav_item_clicked; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's BottomNavigation sends no bottom_nav_item_clicked; a follow-up of GAP-234."
+    },
+    "button_clicked": {
+      "components": ["Button"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Button sends no button_clicked; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Button sends no button_clicked; a follow-up of GAP-234."
+    },
+    "category_selected": {
+      "components": ["CategoryTile"],
+      "react": "Not sent yet: React's CategoryTile sends no category_selected; a follow-up of GAP-234.",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "checkbox_toggled": {
+      "components": ["Checkbox"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "color_changed": {
+      "components": ["ColorPicker"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "Not sent yet: Compose's ColorPicker sends no color_changed; a follow-up of GAP-234."
+    },
+    "compass_reset": {
+      "components": ["MapControls", "MapControlsGroup"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's MapControls and MapControlsGroup send no compass_reset; a follow-up of GAP-234.",
+      "compose": "sent"
+    },
+    "date_range_changed": {
+      "components": ["Calendar", "DateRangePicker"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Calendar and DateRangePicker send no date_range_changed; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Calendar and DateRangePicker send no date_range_changed; a follow-up of GAP-234."
+    },
+    "date_selected": {
+      "components": ["Calendar", "DatePicker"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Calendar and DatePicker send no date_selected; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Calendar and DatePicker send no date_selected; a follow-up of GAP-234."
+    },
+    "feedback_submitted": {
+      "components": ["FeedbackCard"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "file_removed": {
+      "components": ["FileUpload"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's FileUpload sends no file_removed; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's FileUpload sends no file_removed; a follow-up of GAP-234."
+    },
+    "files_selected": {
+      "components": ["FileUpload"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's FileUpload sends no files_selected; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's FileUpload sends no files_selected; a follow-up of GAP-234."
+    },
+    "floor_selected": {
+      "components": ["FloorSelector"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "floor_selector_expanded": {
+      "components": ["FloorSelector"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "link_clicked": {
+      "components": ["Link"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Link sends no link_clicked; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Link sends no link_clicked; a follow-up of GAP-234."
+    },
+    "location_pin_clicked": {
+      "components": ["LocationPin"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "Not sent yet: Compose's LocationPin sends no location_pin_clicked; a follow-up of GAP-234."
+    },
+    "location_pin_opened": {
+      "components": ["LocationPin"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "Not sent yet: Compose's LocationPin sends no location_pin_opened; a follow-up of GAP-234."
+    },
+    "menu_item_selected": {
+      "components": ["ContextMenu", "Menu"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's ContextMenu and Menu send no menu_item_selected; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's ContextMenu and Menu send no menu_item_selected; a follow-up of GAP-234."
+    },
+    "my_location_triggered": {
+      "components": ["MapControls", "MapControlsGroup"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "navigation_announced": {
+      "components": ["A11y"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's A11y sends no navigation_announced; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's A11y sends no navigation_announced; a follow-up of GAP-234."
+    },
+    "option_removed": {
+      "components": ["MultiSelect"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's MultiSelect sends no option_removed; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's MultiSelect sends no option_removed; a follow-up of GAP-234."
+    },
+    "option_selected": {
+      "components": ["Combobox"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Combobox sends no option_selected; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Combobox sends no option_selected; a follow-up of GAP-234."
+    },
+    "otp_code_completed": {
+      "components": ["OTPInput"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "page_changed": {
+      "components": ["Pagination"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "poi_result_action": {
+      "components": ["POIResultCard"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "poi_result_opened": {
+      "components": ["POIResultCard"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "poi_result_selected": {
+      "components": ["POIResultCard"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "poi_selected": {
+      "components": ["POICard"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's POICard sends no poi_selected; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's POICard sends no poi_selected; a follow-up of GAP-234."
+    },
+    "point_added": {
+      "components": ["RoutingInputGroup"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "point_removed": {
+      "components": ["RoutingInputGroup"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "points_swapped": {
+      "components": ["RoutingInputGroup"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "radio_selection_changed": {
+      "components": ["RadioGroup"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "rating_changed": {
+      "components": ["Rating"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Rating sends no rating_changed; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Rating sends no rating_changed; a follow-up of GAP-234."
+    },
+    "route_requested": {
+      "components": ["SaveLocationCard"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "save_toggled": {
+      "components": ["SaveLocationCard"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "search_cleared": {
+      "components": ["Search", "SearchBar"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "search_initiated": {
+      "components": ["SearchBar"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "segmented_control_toggled": {
+      "components": ["SegmentedControl"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's SegmentedControl sends no segmented_control_toggled; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's SegmentedControl sends no segmented_control_toggled; a follow-up of GAP-234."
+    },
+    "select_value_changed": {
+      "components": ["Select"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "selection_cleared": {
+      "components": ["Combobox", "MultiSelect"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Combobox and MultiSelect send no selection_cleared; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Combobox and MultiSelect send no selection_cleared; a follow-up of GAP-234."
+    },
+    "slider_value_changed": {
+      "components": ["Slider"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "split_button_main_clicked": {
+      "components": ["SplitButton"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's SplitButton sends no split_button_main_clicked; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's SplitButton sends no split_button_main_clicked; a follow-up of GAP-234."
+    },
+    "split_button_menu_item_clicked": {
+      "components": ["SplitButton"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's SplitButton sends no split_button_menu_item_clicked; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's SplitButton sends no split_button_menu_item_clicked; a follow-up of GAP-234."
+    },
+    "step_free_toggled": {
+      "components": ["MapControls", "MapControlsGroup"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "switch_toggled": {
+      "components": ["Switch"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "tab_switched": {
+      "components": ["Tabs"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "tag_removed": {
+      "components": ["Tag"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Tag sends no tag_removed; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Tag sends no tag_removed; a follow-up of GAP-234."
+    },
+    "time_selected": {
+      "components": ["TimePicker"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's TimePicker sends no time_selected; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's TimePicker sends no time_selected; a follow-up of GAP-234."
+    },
+    "toast_shown": {
+      "components": ["Toast"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's Toast sends no toast_shown; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's Toast sends no toast_shown; a follow-up of GAP-234."
+    },
+    "toggle_pressed": {
+      "components": ["ToggleButton"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "wayfinding_card_closed": {
+      "components": ["WayfindingCard"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's WayfindingCard sends no wayfinding_card_closed; a follow-up of GAP-234.",
+      "compose": "Not sent yet: Compose's WayfindingCard sends no wayfinding_card_closed; a follow-up of GAP-234."
+    },
+    "wayfinding_route_swapped": {
+      "components": ["WayfindingInputRow"],
+      "react": "sent",
+      "swiftui": "sent",
+      "compose": "sent"
+    },
+    "zoom_in": {
+      "components": ["MapControls", "MapControlsGroup"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's MapControls and MapControlsGroup send no zoom_in; a follow-up of GAP-234.",
+      "compose": "sent"
+    },
+    "zoom_out": {
+      "components": ["MapControls", "MapControlsGroup"],
+      "react": "sent",
+      "swiftui": "Not sent yet: SwiftUI's MapControls and MapControlsGroup send no zoom_out; a follow-up of GAP-234.",
+      "compose": "sent"
+    }
+  }
+}

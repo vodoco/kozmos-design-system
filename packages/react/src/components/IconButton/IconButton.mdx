@@ -43,6 +43,13 @@ pauses there itself. TalkBack reads it in the button's `contentDescription`, "He
 
 <Canvas of={IconButtonStories.Counter} />
 
+## Loading
+
+A loading IconButton keeps its name, and its counter, while the spinner takes the icon's place
+(GAP-253). On Compose the name is the button's, not its icon's, and TalkBack says it is busy in
+`loadingLabel`'s words, "Loading" by default: `KozmosIconButton(…, isLoading = true, loadingLabel =
+"Yükleniyor")`.
+
 ## Implementation
 
 <div className="subheading">Code</div>

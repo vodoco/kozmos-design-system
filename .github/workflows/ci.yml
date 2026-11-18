@@ -156,6 +156,9 @@ jobs:
       - name: Verify Component Contracts
         run: pnpm components:contract:check
 
+      - name: Check one analytics event table (GAP-234)
+        run: pnpm analytics:parity:check
+
       # Names are a development aid (decision 128): each part carries its
       # source's name in development, unbundled and bundled, and none in a
       # production bundle, where an app's bundler drops the gated assignment

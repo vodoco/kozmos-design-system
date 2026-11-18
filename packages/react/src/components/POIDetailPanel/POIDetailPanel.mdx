@@ -299,6 +299,14 @@ fun PlaceDetails(
 
 `presentation="sheet"` paints no surface, border or shadow of its own: the panel sits on the sheet's, as the browse panel does, and its inset blocks (restrictions, action messages) turn white on that grey.
 
+## The product's own content
+
+The card takes the product's own content and draws it last in its body, inside the body's padding
+and the card's scroll, after everything Kozmos draws (GAP-131): a place's QR code on a desktop or
+kiosk, opening Express with directions to it. Pass it as `children` on React and Vue, as the
+trailing `content` view builder on SwiftUI (`KozmosPOIDetailPanel(poi:…) { PlaceQRCode(…) }`), and
+as `content = { … }` on Compose, whose block is a `ColumnScope`. With none, the card draws as it did.
+
 ## Hosted in the map shell
 
 In `AdaptiveMapShell`'s panel, sheet or side panel alike, use `presentation="sheet"`: the card paints

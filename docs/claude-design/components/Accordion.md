@@ -64,6 +64,13 @@ It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, whi
   section's content in the page's flow under it. Its height is the
   density's control height: 40 compact, 44 touch.
 
+- `headingLevel`: `AccordionHeadingLevel`, optional.
+
+  The level of every trigger's heading, 2 to 6 (GAP-248): an h3 by
+  default, as Radix draws it. Set it so the sections follow the page's own
+  headings: 2 under a page whose only heading is its h1. A trigger's own
+  `headingLevel` wins over it.
+
 - `type`: `'single' | 'multiple'`, **required**.
 
   `'single'` in `AccordionPrimitive.AccordionSingleProps`; `'multiple'` in `AccordionPrimitive.AccordionMultipleProps`.
@@ -151,6 +158,11 @@ It forwards its ref to `HTMLButtonElement`. Its props are `AccordionTriggerProps
   technology and disabled while it is set, in either form. The section's
   content is left alone, and `disabled` here can't turn it off.
 
+- `headingLevel`: `AccordionHeadingLevel`, optional.
+
+  This trigger's heading level, 2 to 6, over the Accordion's
+  `headingLevel` (GAP-248). An h3 when neither sets one.
+
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
@@ -169,3 +181,14 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<AccordionPrimitive.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### AccordionHeadingLevel
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A heading level an Accordion's trigger can take. */
+type AccordionHeadingLevel = 2 | 3 | 4 | 5 | 6;
+```

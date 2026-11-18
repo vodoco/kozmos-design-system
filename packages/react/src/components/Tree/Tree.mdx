@@ -620,6 +620,13 @@ fun MixedSites() {
 `}
 />
 
+## A tree that scrolls itself
+
+`bleed` reaches into the panel's padding. A tree that is not `virtualized` but scrolls itself, by
+your height and overflow, is the box that clips its rows, so they take no bleed there: the strokes
+span the tree, and nothing scrolls sideways (GAP-201). A `virtualized` tree's scroller takes the
+bleed, and a tree in a scrolling panel reaches into the panel's padding.
+
 ## Implementation
 
 <div className="subheading">Code</div>

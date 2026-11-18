@@ -29,6 +29,13 @@ A control that is already busy should not hold a second live region. `Button` dr
   <Story of={SpinnerStories.InAButton} />
 </Canvas>
 
+## Announced
+
+A spinner is mounted when a wait starts, so its `status` region cannot be there before it: it is
+mounted empty and its label is put into it a moment later (GAP-226), because a screen reader may
+say nothing for a region inserted together with its words. The label is visually hidden, so
+nothing seen waits for it.
+
 ## Implementation
 
 <div className="subheading">Code</div>
