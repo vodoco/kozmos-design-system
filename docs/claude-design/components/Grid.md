@@ -83,9 +83,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `GridProps`, which extend
 
 - `asChild`: `boolean`, optional.
 - `align`: `"end" | "start" | "center" | "baseline" | "stretch" | null`, optional.
-- `cols`: `"none" | 3 | 2 | 1 | 4 | 6 | 5 | 12 | null`, optional, default `'none'`.
+- `cols`: `"none" | 3 | 2 | 1 | 4 | 6 | 5 | 12 | null`, optional, default `"none"`.
 - `rows`: `"none" | 3 | 2 | 1 | 4 | 6 | 5 | null`, optional.
-- `flow`: `"row" | "col" | "dense" | "row-dense" | "col-dense" | null`, optional, default `'row'`.
+- `flow`: `"row" | "col" | "dense" | "row-dense" | "col-dense" | null`, optional, default `"row"`.
 - `justify`: `"end" | "start" | "center" | "between" | "around" | null`, optional.
 - `gap`: `0 | 3 | 2 | 1 | 4 | 6 | 8 | null`, optional, default `4`.
 - `xGap`: `0 | 2 | 1 | 4 | 8 | null`, optional.

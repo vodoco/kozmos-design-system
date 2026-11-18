@@ -140,7 +140,9 @@ struct KozmosSplitButtonMenuRows: View {
                 }
                 .disabled(disabled)
             case .separator:
-                Divider()
+                // In the border role, as KozmosMenuRows' divider: a system
+                // menu draws its own separator, and elsewhere it is ours.
+                Divider().overlay(KozmosColors.semanticsBorderSubtle)
             }
         }
         if let content {
