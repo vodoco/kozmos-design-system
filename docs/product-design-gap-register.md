@@ -85,7 +85,7 @@ source's. Its other 189 GAP IDs are each a row here, under the same number or no
 compared by ID, not word by word, because the 9 Nov file is gone. Its features list adds MAP-32 to GAP-016 (Vue), GAP-036
 (PageHeader's band) and GAP-116 (Container's vertical inset), recorded on those rows. Decision 186 builds GAP-268,
 GAP-269, GAP-270, GAP-273 and GAP-277 in 0.16.0 and leaves the other five for 0.17.0. Its next-ID line says
-GAP-244, in its own numbering. Here the next free ID is **GAP-280**, and the next free decision **214**.
+GAP-244, in its own numbering. Here the next free ID is **GAP-280**, and the next free decision **215**.
 
 Previous intake: **Kozmos Design System Gaps (9).md**, exported from Claude Design on 2026-11-09 and compared with
 the 2026-11-05 intake below. Source SHA-256:
@@ -198,7 +198,7 @@ native slot. The repository's findings of 9 Nov from the 0.16.0 reviews add **GA
 **GAP-215 stays unused**: the source used it from 29 Oct to 3 Nov for what is GAP-152, and
 boards of that time may cite it. Then came GAP-254 (12 Nov) and GAP-255 to GAP-267 (13 and 14 Nov), the 0.16.0
 work's, with decisions 176 to 183, and the 15 Nov export's GAP-268 to GAP-277 with decisions 184 to 187 (above).
-The next free ID is **GAP-280**, and the next free decision **214**.
+The next free ID is **GAP-280**, and the next free decision **215**.
 
 Previous intake: **Kozmos Design System Gaps (7).md**, exported from Claude Design on 2026-10-28 and compared with
 the 2026-10-27 intake below. Source SHA-256:
@@ -1653,6 +1653,8 @@ camera control, branding/provider policy and product ranking in their host adapt
   - **213, the bundle budget for 0.17.0 (17 Nov):** every export at once may cost 120 KB, up from 112 (decision 175),
     for all of 0.17.0 (decision 209). Wave A, the mixed state, measured 111.88 KB. The per-export, Button, stylesheet and
     module-count budgets stay.
+  - **214, the stylesheet budget for 0.17.0 (18 Nov):** the stylesheet may cost 40 KB gzipped, up from 36 (decision
+    175), for all of 0.17.0. Wave B (#577) measured 35.81 KB, 0.19 under 36, before wave C and wave D.
   - Also on 26 Oct: GAP-045 is closed as won't do, and the Coachmark, GAP-157, closes with TourStep, which with no
     `stepCount` is the coachmark (GAP-188, #422).
   - Also on 1 Nov: Vue 3 (GAP-016, GAP-148) starts after 0.16.0, as a track of its own alongside Cloud (moved on
