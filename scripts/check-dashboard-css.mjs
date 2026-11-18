@@ -302,7 +302,8 @@ try {
     // Chosen: no fill, label and icon in the theme's ink (the themed
     // emotion's text). Hovered, enabled or chosen: the hover fill, the inks
     // kept. Disabled, `disabled` or decision 217's `aria-disabled` with a
-    // reason: no fill, label and icon in foreground 600, full strength.
+    // reason: no fill, label and icon in foreground 500, full strength (3:1
+    // kept: 4.24:1 on the white card, 5.65:1 on the black one).
     for (const theme of ["light", "dark"]) {
       const box = page.getByTestId(`toolbar-states-${theme}`);
       const read = (hovered) =>
@@ -348,7 +349,7 @@ try {
             ink: colour("var(--primitives-colors-foreground-0)", "color"),
             grey: colour("var(--primitives-colors-foreground-400)", "color"),
             theme: colour("var(--semantics-emotion-themed-text)", "color"),
-            off: colour("var(--primitives-colors-foreground-600)", "color"),
+            off: colour("var(--primitives-colors-foreground-500)", "color"),
             hovered,
           };
         }, hovered);

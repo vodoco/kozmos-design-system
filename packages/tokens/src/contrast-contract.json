@@ -578,10 +578,10 @@
       "minimum": 3
     },
     {
-      "name": "a disabled MapEditToolbar item's label and icon, foreground 600, on the card (decision 226, decision 197's 3:1 floor as ruled: 2.997:1 in light, 3.90:1 in dark; the floor here is 2.99 until the lead confirms)",
+      "name": "a disabled MapEditToolbar item's label and icon, foreground 500, on the card (decision 226, decision 197's 3:1 floor kept: 4.24:1 in light, 5.65:1 in dark; lighter than an enabled item's icon)",
       "background": "primitives-colors-background-0",
-      "foreground": "primitives-colors-foreground-600",
-      "minimum": 2.99
+      "foreground": "primitives-colors-foreground-500",
+      "minimum": 3
     }
   ],
   "disabledButtonLook": {
@@ -623,9 +623,9 @@
         "contains": ".kozmos-map-control.kozmos-button-ghost:is( :disabled:not([data-loading]), [aria-disabled=\"true\"] ) { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); }"
       },
       {
-        "name": "a disabled MapEditToolbar action or tool, `disabled` or aria-disabled with a reason (decision 217), draws no fill and its label and icon in foreground 600, at full strength: the toolbar is decision 197's exception, as Pointr Cloud draws it (decision 226)",
+        "name": "a disabled MapEditToolbar action or tool, `disabled` or aria-disabled with a reason (decision 217), draws no fill and its label and icon in foreground 500, at full strength: the toolbar is decision 197's exception, as Pointr Cloud draws it (decision 226)",
         "file": "packages/styles/src/dashboard/map-edit-toolbar.css",
-        "contains": ".kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled=\"true\"]) .kozmos-map-edit-toolbar-icon { background-color: transparent; color: var(--primitives-colors-foreground-600); opacity: 1; }"
+        "contains": ".kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled=\"true\"]) .kozmos-map-edit-toolbar-icon { background-color: transparent; color: var(--primitives-colors-foreground-500); opacity: 1; }"
       },
       {
         "name": "SwiftUI: a disabled filled or ghost Button draws the disabled fill, and an outline, link or glass one keeps its ground (decision 197)",

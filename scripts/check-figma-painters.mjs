@@ -19383,12 +19383,12 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
         // Decision 226: Pointr Cloud's live toolbar. No fill in any state;
         // enabled, the label foreground 0 over a foreground 400 icon;
         // chosen, both the theme's ink on the surface; disabled, both
-        // foreground 600 (decision 197's exception).
+        // foreground 500, 3:1 kept (decision 197's exception to the fill).
         const ink =
           state === "On"
             ? "Emotion/themed/text"
             : state === "Disabled"
-              ? "Colors/foreground/600"
+              ? "Colors/foreground/500"
               : "Colors/foreground/0";
         const iconInk = state === "Off" ? "Colors/foreground/400" : ink;
         const glyph = icon && icon.findOne((node) => node.type === "VECTOR");
@@ -21363,9 +21363,9 @@ section(
 
   // MapEditToolbar is decision 197's exception (decision 226): a disabled
   // tool and a disabled action have no fill, and their words and icon are
-  // foreground 600, nothing dimmed, as Pointr Cloud and React's toolbar
+  // foreground 500, nothing dimmed, as Pointr Cloud and React's toolbar
   // draw them (map-edit-toolbar.css).
-  const toolbarOff = "Colors/foreground/600 #9095A2/#6F6A5D";
+  const toolbarOff = "Colors/foreground/500 #747B8B/#8B8474";
   const toolbarIssues = [];
   for (const kind of ["tool", "action"]) {
     const item = await plugin.createMapEditToolbarItem(
@@ -21392,7 +21392,7 @@ section(
   }
   ok(
     toolbarIssues.length === 0,
-    `MapEditToolbar: a disabled tool and a disabled action have no fill, their words and icon in foreground 600, undimmed (decision 226) (${toolbarIssues.join("; ")})`,
+    `MapEditToolbar: a disabled tool and a disabled action have no fill, their words and icon in foreground 500, undimmed (decision 226) (${toolbarIssues.join("; ")})`,
   );
 
   // ImageField, Disabled: no layer at half; Frame and Remove are disabled

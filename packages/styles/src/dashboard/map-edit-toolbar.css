@@ -90,10 +90,12 @@
      - Hovered, enabled or chosen: the hover fill (decision 173), the inks
        kept.
      - Disabled, `disabled` or `aria-disabled` with a reason (decision
-       217): no fill, label and icon in foreground 600 (2.997:1 on the white
-       card, 3.90:1 on the black one), at full strength. The toolbar is an
-       exception to decision 197's disabled fill: Cloud draws an unavailable
-       tool as lighter words, with no box. */
+       217): no fill, label and icon in foreground 500, at full strength:
+       lighter than an enabled item, and still 3:1 (4.24:1 on the white
+       card, 5.65:1 on the black one). One step serves both themes; 600
+       would be 2.997:1 in light. The toolbar is an exception to decision
+       197's disabled fill: Cloud draws an unavailable tool as lighter
+       words, with no box. */
   .kozmos-map-edit-toolbar
     .kozmos-map-edit-toolbar-items
     .kozmos-map-edit-toolbar-item {
@@ -131,7 +133,7 @@
     .kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled="true"])
     .kozmos-map-edit-toolbar-icon {
     background-color: transparent;
-    color: var(--primitives-colors-foreground-600);
+    color: var(--primitives-colors-foreground-500);
     opacity: 1;
   }
   .kozmos-map-edit-toolbar-icon {

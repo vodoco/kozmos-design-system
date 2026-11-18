@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "692cecc31f78";
+const PLUGIN_BUILD = "ebc4c5776f85";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -58153,12 +58153,13 @@ async function createMapEditToolbarItem(
   // item has a fill at rest. Enabled, the label is the page's ink
   // (foreground 0) over a grey icon (foreground 400); chosen, label and icon
   // are the theme's ink on the surface (Emotion/themed/text); disabled,
-  // label and icon are foreground 600, undimmed, with no box: the toolbar is
-  // decision 197's exception to the disabled fill.
+  // label and icon are foreground 500, undimmed, with no box, lighter than
+  // enabled and still 3:1: the toolbar is decision 197's exception to the
+  // disabled fill.
   const labelInk = on
     ? { name: "Emotion/themed/text", fallback: "#1051E8" }
     : off
-      ? { name: "Colors/foreground/600", fallback: "#9095A2" }
+      ? { name: "Colors/foreground/500", fallback: "#747B8B" }
       : { name: "Colors/foreground/0", fallback: "#000000" };
   const ink =
     on || off

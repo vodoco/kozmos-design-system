@@ -185,7 +185,7 @@ interface MapEditToolbarControl {
   /**
    * Unavailable now. As every Kozmos button, a disabled item is skipped by
    * the keyboard and the pointer. It is drawn as Pointr Cloud draws it, its
-   * words and icon in foreground 600 with no fill: the toolbar is decision
+   * words and icon lighter (foreground 500, still 3:1) with no fill: the toolbar is decision
    * 197's exception to the disabled fill (decision 226).
    */
   disabled?: boolean;
