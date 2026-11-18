@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "75c630368cf9";
+const PLUGIN_BUILD = "9135eacf5e58";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -82951,7 +82951,7 @@ async function createOptionMedia({
   return slot;
 }
 
-async function createOptionTrailing({
+async function createOptionEndWords({
   index,
   words,
   disabled,
@@ -82959,17 +82959,17 @@ async function createOptionTrailing({
   fonts,
   stats,
 }) {
-  const trailing = figma.createText();
-  trailing.name = `Option ${index + 1} Trailing`;
+  const endText = figma.createText();
+  endText.name = `Option ${index + 1} Trailing`;
   await applyListboxDescriptionTypography(
-    trailing,
+    endText,
     fonts,
     variableByName,
     stats,
   );
-  trailing.characters = words || OPTION_TRAILING_DEFAULTS[index] || "Text";
-  trailing.textAutoResize = "WIDTH_AND_HEIGHT";
-  trailing.fills = [
+  endText.characters = words || OPTION_TRAILING_DEFAULTS[index] || "Text";
+  endText.textAutoResize = "WIDTH_AND_HEIGHT";
+  endText.fills = [
     paintFromVariable(
       disabled ? "Colors/foreground/500" : "Colors/foreground/400",
       disabled ? "#747B8B" : "#5D626F",
@@ -82977,7 +82977,7 @@ async function createOptionTrailing({
       stats,
     ),
   ];
-  trailing.textAlignVertical = "CENTER";
+  endText.textAlignVertical = "CENTER";
   // The slot the row shows or hides: the words, 8 from the label and the
   // check on either side.
   const slot = figma.createFrame();
@@ -82994,7 +82994,7 @@ async function createOptionTrailing({
   slot.fills = [];
   slot.strokes = [];
   slot.clipsContent = false;
-  slot.appendChild(trailing);
+  slot.appendChild(endText);
   slot.visible = false;
   return slot;
 }
@@ -83017,7 +83017,7 @@ async function appendOptionSlots(
     stats,
   });
   option.insertChild(0, media);
-  const trailing = await createOptionTrailing({
+  const trailing = await createOptionEndWords({
     index,
     words: trailingWords,
     disabled,
