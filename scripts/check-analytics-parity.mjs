@@ -29,9 +29,12 @@ const platforms = {
 
 const problems = [];
 for (const [key, [label, sent]] of Object.entries(platforms)) {
+  // A platform that reads no events, or almost none, is a reader that
+  // skipped its sources (as every one did in CI's /__w/ workspace), never a
+  // platform that sends nothing: this alone fails the check.
   if (sent.size < 10)
     problems.push(
-      `${label}: read only ${sent.size} events; is the reader still right?`,
+      `${label}: read only ${sent.size} events from ${root}; the reader skipped its sources, so nothing else said about ${label} here can be trusted.`,
     );
   for (const [name, { files }] of sent) {
     const row = table[name];

@@ -4,18 +4,31 @@
 // lines; SwiftUI's and Compose's `KozmosAnalyticsEvent(…)`s, by their
 // `eventName`, named or, on Compose, second by position.
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 
-const skip =
-  /(\.test\.|\.spec\.|\.stories\.|\.figma\.|\/test\/|\/Tests\/|DocSnippets|docsnippets|\/__)/;
+// What is not a component's source, by its path inside the repository
+// (forward slashes), never by where the repository sits: CI's container
+// workspace is /__w/…, and a rule tested against the absolute path skipped
+// every file there. Each rule is anchored on whole path segments.
+const SKIP_FILE = /\.(?:test|spec|stories|figma)\.[^/]+$/;
+const SKIP_DIRECTORY =
+  /(?:^|\/)(?:test|tests|Tests|__tests__|__snapshots__|__Snapshots__|DocSnippets|docsnippets)(?:\/|$)/;
 
-function walk(directory, extensions, found = []) {
+export function skipped(relativePath) {
+  const path = relativePath.split(sep).join("/");
+  return SKIP_FILE.test(path) || SKIP_DIRECTORY.test(path);
+}
+
+function walk(root, directory, extensions, found = []) {
   for (const name of readdirSync(directory)) {
     const path = join(directory, name);
     if (name === "node_modules" || name === "dist") continue;
     const stat = statSync(path);
-    if (stat.isDirectory()) walk(path, extensions, found);
-    else if (extensions.some((ext) => name.endsWith(ext)) && !skip.test(path))
+    if (stat.isDirectory()) walk(root, path, extensions, found);
+    else if (
+      extensions.some((ext) => name.endsWith(ext)) &&
+      !skipped(relative(root, path))
+    )
       found.push(path);
   }
   return found;
@@ -42,7 +55,7 @@ function collect(root, files, read) {
 }
 
 export function readReact(root) {
-  const files = walk(join(root, "packages/react/src"), [".ts", ".tsx"]);
+  const files = walk(root, join(root, "packages/react/src"), [".ts", ".tsx"]);
   return collect(root, files, (text) =>
     [
       ...text.matchAll(
@@ -65,12 +78,14 @@ function byEventName(text, separator) {
 }
 
 export function readSwiftUI(root) {
-  const files = walk(join(root, "packages/ios/Sources"), [".swift"]);
+  const files = walk(root, join(root, "packages/ios/Sources"), [".swift"]);
   return collect(root, files, (text) => byEventName(text, ":"));
 }
 
 export function readCompose(root) {
-  const files = walk(join(root, "packages/android/src/main/java"), [".kt"]);
+  const files = walk(root, join(root, "packages/android/src/main/java"), [
+    ".kt",
+  ]);
   return collect(root, files, (text) => {
     const found = byEventName(text, "=");
     for (const m of text.matchAll(
