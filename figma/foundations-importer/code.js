@@ -1405,6 +1405,15 @@ const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
 // GAP-221, decision 199: React's DescriptionList `layout`: Stack, the items
 // one under another and the default, first; Row, side by side.
 const DESCRIPTION_LIST_LAYOUTS = ["Stack", "Row"];
+// GAP-222, decision 216: ChipInput's State, the input family's, with its
+// Error status drawn as a state of its own (the danger edge and label, the
+// error under the field); and its Content, two entries as chips or the
+// empty field's placeholder. Filled first, so the set's default holds chips.
+const CHIP_INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly", "Error"];
+const CHIP_INPUT_CONTENT = ["Filled", "Empty"];
+// GAP-150, decision 219: React's SpriteIcon `size`, the box a sprite cell is
+// drawn in. 24, React's default, is the last; the set's first is 16.
+const SPRITE_ICON_SIZES = ["16", "20", "24"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1911,6 +1920,8 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   OTPInput: 760,
   Combobox: 1040,
   MultiSelect: 1200,
+  ChipInput: 760,
+  SpriteIcon: 200,
   Listbox: 520,
   DatePicker: 2100,
   DateRangePicker: 2400,
@@ -2074,6 +2085,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "OTPInput",
       "Combobox",
       "MultiSelect",
+      "ChipInput",
       "Listbox",
       "DatePicker",
       "DateRangePicker",
@@ -2101,7 +2113,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Toast",
     ],
   },
-  { title: "Media", components: ["Avatar"] },
+  { title: "Media", components: ["Avatar", "SpriteIcon"] },
 ];
 const COMPONENT_PAGE_LAYOUT_ORDER = componentPageLayoutOrder(
   COMPONENT_PAGE_LAYOUT_SECTIONS,
@@ -4157,6 +4169,55 @@ const COMPONENT_DOCS = [
       "The label names the control; the description, the state and the reason are read with it.",
       "Reset to default is a button; pressed, focus goes to the control.",
       "A disabled row disables its control and offers no reset.",
+    ],
+  },
+  {
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    category: "Media",
+    summary:
+      "SpriteIcon draws one cell of a published MapLibre sprite atlas as published: a taxonomy type's bubble, glyph and marker dot, at 16, 20 or 24 (GAP-150, decisions 86 and 219).",
+    usage: [
+      "Use for a taxonomy type's icon, from the atlas the product's map uses: the content tree, the type picker, the persona list.",
+      "Use Icon for the UI's own glyphs, which are Kozmos's.",
+      "Pass the atlas's version-pinned base URL; Kozmos names no version.",
+    ],
+    api: [
+      "Size maps to size: 16, 20 or 24.",
+      "Sprite maps to sprite, the atlas's base URL; Cell Name maps to name. The importer draws the real cell from them at Build and Update.",
+      "label names it; without one it is decorative.",
+    ],
+    properties: ["Size: 16, 20, 24", "Sprite, Cell Name"],
+    accessibility: [
+      "Decorative unless label names it: then an image named by the label.",
+      "While loading, or for a missing cell, an empty box of its size, so nothing moves.",
+    ],
+  },
+  {
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    category: "Inputs",
+    summary:
+      "ChipInput takes free text and holds each entry as a removable chip inside the field: a place's keywords, aliases or e-mail addresses (GAP-222, decision 216).",
+    usage: [
+      "Use for words only the person knows, such as a POI's keywords.",
+      "Use MultiSelect when the choices are a set the product knows.",
+      "Enter or a comma adds the typed text; Backspace in the empty field removes the last entry; each chip has its own remove.",
+    ],
+    api: [
+      "State maps to disabled and readOnly; Focus draws the focus ring; Error is error, with Error Text its message.",
+      "Content: Filled draws two entries as Chip instances (Small, Selected, Removable), each exposed so its words are edited on the chip; Empty draws the placeholder.",
+      "Label Text maps to label, Placeholder Text to placeholder, Helper Text to helperText.",
+    ],
+    properties: [
+      "State: Default, Focus, Disabled, Readonly, Error",
+      "Content: Filled, Empty",
+      "Label Text, Placeholder Text, Helper Text, Error Text",
+    ],
+    accessibility: [
+      "The text input is named by the label and described by the helper text or the error.",
+      "Each chip's remove is a button named by removeLabel, Remove {entry} by default, in the product's words.",
+      "Each entry added or removed, and an entry typed again, is said politely in the product's words.",
     ],
   },
   {
@@ -6775,32 +6836,27 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Counter/line-height/default", value: 16, scopes: ["LINE_HEIGHT"] },
   {
     name: "Badge/height/small",
-    value: 44,
-    alias: "Button/height/small",
+    value: 28,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/default",
-    value: 44,
-    alias: "Button/height/default",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/large",
-    value: 44,
-    alias: "Button/height/large",
+    value: 36,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/icon",
-    value: 44,
-    alias: "Button/height/icon",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/width/icon",
-    value: 44,
-    alias: "Button/width/icon",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
@@ -9506,6 +9562,81 @@ const COMPONENT_FLOAT_TOKENS = [
   },
   {
     name: "MultiSelect/text/line-height",
+    value: 20,
+    alias: "Input/text/line-height",
+    scopes: ["LINE_HEIGHT"],
+  },
+  // GAP-222, decision 216: React's ChipInput, MultiSelect's field with no
+  // clear and no open: 320 wide, at least the input's 44, padded 8 and 4, its
+  // chips 6 apart (the chip group's gap-1.5), the input family's type.
+  {
+    name: "ChipInput/width/default",
+    value: 320,
+    alias: "Input/width/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ChipInput/field/min-height",
+    value: 44,
+    alias: "Input/field/height",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ChipInput/field/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/padding/y",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/gap",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/radius",
+    value: 16,
+    alias: "Input/field/radius",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "ChipInput/field/stroke/width",
+    value: 1,
+    alias: "Input/field/stroke/width",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "ChipInput/gap",
+    value: 6,
+    alias: "Input/gap",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/label/font-size",
+    value: 14,
+    alias: "Input/label/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "ChipInput/label/line-height",
+    value: 20,
+    alias: "Input/label/line-height",
+    scopes: ["LINE_HEIGHT"],
+  },
+  {
+    name: "ChipInput/text/font-size",
+    value: 14,
+    alias: "Input/text/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "ChipInput/text/line-height",
     value: 20,
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
@@ -12691,6 +12822,8 @@ const CORE_UPDATE_SEQUENCE = [
   ["OTPInput", updateOTPInputComponent],
   ["Combobox", updateComboboxComponent],
   ["MultiSelect", updateMultiSelectComponent],
+  ["ChipInput", updateChipInputComponent],
+  ["SpriteIcon", updateSpriteIconComponent],
   ["Listbox", updateListboxComponent],
   ["DatePicker", updateDatePickerComponent],
   ["DateRangePicker", updateDateRangePickerComponent],
@@ -12974,6 +13107,12 @@ function additionalComponentActionHandlers() {
     "build-image-cropper": buildImageCropperComponent,
     "update-image-cropper": updateImageCropperComponent,
     "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-sprite-icon": buildSpriteIconComponent,
+    "update-sprite-icon": updateSpriteIconComponent,
+    "rebuild-sprite-icon": rebuildSpriteIconComponent,
+    "build-chip-input": buildChipInputComponent,
+    "update-chip-input": updateChipInputComponent,
+    "rebuild-chip-input": rebuildChipInputComponent,
     "build-description-list": buildDescriptionListComponent,
     "update-description-list": updateDescriptionListComponent,
     "rebuild-description-list": rebuildDescriptionListComponent,
@@ -20462,6 +20601,19 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "DescriptionList") {
     return {
       Layout: DESCRIPTION_LIST_LAYOUTS,
+    };
+  }
+
+  if (canonicalName === "SpriteIcon") {
+    return {
+      Size: SPRITE_ICON_SIZES,
+    };
+  }
+
+  if (canonicalName === "ChipInput") {
+    return {
+      State: CHIP_INPUT_STATES,
+      Content: CHIP_INPUT_CONTENT,
     };
   }
 
@@ -68141,6 +68293,603 @@ async function rebuildDescriptionListComponent() {
   });
 }
 
+// --- ChipInput ------------------------------------------------------------------
+
+// GAP-222, decision 216: React's ChipInput, a field that takes free text and
+// holds each entry as a removable chip inside it, as MultiSelect's field
+// draws it with no clear and no open: the label (the field label's type)
+// over a field 320 wide (ChipInput/width/default), at least 44 tall
+// (ChipInput/field/min-height, the input's height), padded 8 and 4
+// (ChipInput/field/padding/x and /y), on the control radius with a 1 edge,
+// in the input family's colours for its State and Status (inputConfig), and
+// the helper or the error under it, 6 apart (ChipInput/gap). Filled, two
+// entries are live Chip instances, Small, Selected and Removable, as React's
+// small selected chips with their remove; 6 apart (ChipInput/field/gap, the
+// chip group's gap-1.5), and the typed text follows them with no
+// placeholder. Empty, only the placeholder. Disabled, the chips are
+// Disabled; Readonly, they are not Removable, as MultiSelect's. Focus draws
+// the field's focus ring.
+const CHIP_INPUT_GEOMETRY = {
+  width: 320,
+  height: 44,
+  gap: 6,
+  fieldGap: 6,
+  paddingX: 8,
+  paddingY: 4,
+};
+const CHIP_INPUT_ENTRIES = ["coffee", "wifi"];
+
+async function createChipInputVariant(args) {
+  const component = figma.createComponent();
+  await updateChipInputVariant(component, args);
+  return component;
+}
+
+function parseChipInputVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (
+    CHIP_INPUT_STATES.indexOf(values.State) === -1 ||
+    CHIP_INPUT_CONTENT.indexOf(values.Content) === -1
+  ) {
+    return null;
+  }
+  return { value: values.State, second: values.Content };
+}
+
+/** A chip's words, kept across an Update, which repaints the field. */
+function chipInputEntryText(component, index) {
+  const field = directChildNamed(component, "ChipInput Field");
+  const chip = field
+    ? directChildNamed(field, `ChipInput Chip ${index}`)
+    : null;
+  if (!chip) return null;
+  return (
+    instanceTextPropertyValue(chip, "Label Text") ||
+    firstDescendantTextCharactersByName(chip, "Label Text")
+  );
+}
+
+async function createChipInputChip({ index, text, disabled, readonly, stats }) {
+  const nested = await createNestedComponentInstance({
+    componentSetName: "Chip",
+    variantProperties: {
+      Variant: "Neutral",
+      Size: "Small",
+      State: disabled ? "Disabled" : "Selected",
+      Removable: readonly ? "False" : "True",
+    },
+    name: `ChipInput Chip ${index + 1}`,
+    role: "chip-input-chip",
+    stats,
+  });
+  if (!nested || !nested.instance) {
+    stats.warnings.push(
+      "ChipInput needs the Chip set for its entries: Build Chip first, then Update ChipInput.",
+    );
+    return null;
+  }
+  const chip = nested.instance;
+  setInstanceTextProperty(chip, nested.componentSet, "Label Text", text, stats);
+  try {
+    // Exposed, so each entry's words are edited from the properties panel:
+    // a set's property cannot drive text inside a nested instance.
+    chip.isExposedInstance = true;
+  } catch (_error) {
+    // Older Figma runtimes may not support exposing nested instances.
+  }
+  setHugChildSizing(chip);
+  return chip;
+}
+
+async function updateChipInputVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const content = second || "Filled";
+  const status = state === "Error" ? "Error" : "Default";
+  const config = inputConfig(state === "Error" ? "Default" : state, status);
+  const geometry = CHIP_INPUT_GEOMETRY;
+  const disabled = state === "Disabled";
+  const readonly = state === "Readonly";
+  const filled = content === "Filled";
+  const kept = {
+    label: firstDescendantTextCharactersByName(component, "Label Text"),
+    placeholder: firstDescendantTextCharactersByName(
+      component,
+      "Placeholder Text",
+    ),
+    helper: firstDescendantTextCharactersByName(component, "Helper Text"),
+    error: firstDescendantTextCharactersByName(component, "Error Text"),
+    entries: CHIP_INPUT_ENTRIES.map(
+      (entry, index) => chipInputEntryText(component, index + 1) || entry,
+    ),
+  };
+
+  productSdkVariantRoot(
+    component,
+    "ChipInput",
+    `State=${state}, Content=${content}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: geometry.gap,
+      width: geometry.width,
+      height: 96,
+    },
+  );
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "width",
+    "ChipInput/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ChipInput/gap",
+    variableByName,
+    stats,
+  );
+
+  const label = figma.createText();
+  label.name = "Label Text";
+  await applyFieldLabelTypography(
+    label,
+    fonts,
+    "ChipInput",
+    variableByName,
+    stats,
+  );
+  label.characters = kept.label || "Keywords";
+  label.fills = [
+    paintFromVariable(
+      config.label,
+      config.labelFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.appendChild(label);
+
+  const field = figma.createFrame();
+  field.name = "ChipInput Field";
+  field.layoutMode = "HORIZONTAL";
+  field.primaryAxisSizingMode = "FIXED";
+  field.counterAxisSizingMode = "FIXED";
+  field.primaryAxisAlignItems = "MIN";
+  field.counterAxisAlignItems = "CENTER";
+  field.itemSpacing = geometry.fieldGap;
+  field.paddingLeft = geometry.paddingX;
+  field.paddingRight = geometry.paddingX;
+  field.paddingTop = geometry.paddingY;
+  field.paddingBottom = geometry.paddingY;
+  field.resizeWithoutConstraints(geometry.width, geometry.height);
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.clipsContent = false;
+  field.setSharedPluginData(RUN_NAMESPACE, "kind", "input-field");
+  field.fills = [
+    paintFromVariable(
+      config.fieldFill,
+      config.fieldFillFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  field.strokes = [
+    paintFromVariable(
+      config.fieldStroke,
+      config.fieldStrokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  field.strokeWeight = 1;
+  for (const [property, token] of [
+    ["height", "ChipInput/field/min-height"],
+    ["paddingLeft", "ChipInput/field/padding/x"],
+    ["paddingRight", "ChipInput/field/padding/x"],
+    ["paddingTop", "ChipInput/field/padding/y"],
+    ["paddingBottom", "ChipInput/field/padding/y"],
+    ["itemSpacing", "ChipInput/field/gap"],
+    ["cornerRadius", "ChipInput/field/radius"],
+    ["strokeWeight", "ChipInput/field/stroke/width"],
+  ]) {
+    bindFloatVariable(field, property, token, variableByName, stats);
+  }
+  component.appendChild(field);
+  setLayoutSizingHorizontal(field, "FILL");
+
+  if (filled) {
+    for (let index = 0; index < kept.entries.length; index += 1) {
+      const chip = await createChipInputChip({
+        index,
+        text: kept.entries[index],
+        disabled,
+        readonly,
+        stats,
+      });
+      if (chip) field.appendChild(chip);
+    }
+  } else {
+    const placeholder = figma.createText();
+    placeholder.name = "Placeholder Text";
+    await applyFieldTextTypography(
+      placeholder,
+      fonts,
+      "ChipInput",
+      variableByName,
+      stats,
+    );
+    placeholder.characters = kept.placeholder || "Add a keyword";
+    placeholder.fills = [
+      paintFromVariable(
+        config.placeholder,
+        config.placeholderFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    field.appendChild(placeholder);
+    setHorizontalFillTextSizing(placeholder);
+    setTextAutoResize(placeholder, "TRUNCATE");
+  }
+
+  syncFocusRing(field, {
+    enabled: state === "Focus",
+    width: geometry.width,
+    height: geometry.height,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+
+  // The error has its own node and property: one property paints one default
+  // over every node it binds.
+  const isError = status === "Error";
+  const helper = figma.createText();
+  helper.name = isError ? "Error Text" : "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "ChipInput",
+    variableByName,
+    stats,
+  );
+  helper.characters = isError
+    ? kept.error || "Add at least one keyword"
+    : kept.helper || "Press Enter or type a comma to add one.";
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.appendChild(helper);
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  normalizeInputFamilyChildSizing(component);
+}
+
+function configureChipInputProperties(componentSet, stats) {
+  configureLabelTextProperty(componentSet, "Keywords", stats);
+  configurePlaceholderTextProperty(componentSet, "Add a keyword", stats);
+  configureHelperTextProperty(
+    componentSet,
+    "Press Enter or type a comma to add one.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Error Text",
+    "Error Text",
+    "Add at least one keyword",
+    stats,
+  );
+}
+
+const CHIP_INPUT_DESCRIPTION = [
+  "Kozmos ChipInput component set generated from React ChipInput API (GAP-222, decision 216).",
+  "A field that takes free text and holds each entry as a removable Chip inside it. MultiSelect picks from options; ChipInput takes what is typed.",
+  "State maps to disabled and readOnly; Focus draws the focus ring; Error is error, its Error Text the message. Content: Filled shows two entries as live Chip instances (Small, Selected, Removable), each exposed so its words are edited on the chip; Empty shows the placeholder.",
+  "Label Text maps to ChipInput.label, Placeholder Text to ChipInput.placeholder, Helper Text to ChipInput.helperText.",
+];
+
+async function buildChipInputComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    axisName: "State",
+    values: CHIP_INPUT_STATES,
+    axis2Name: "Content",
+    axis2Values: CHIP_INPUT_CONTENT,
+    x: 80,
+    y: 21600,
+    xStep: 380,
+    yStep: 160,
+    createVariant: createChipInputVariant,
+    configureProperties: configureChipInputProperties,
+    autoReorganize: true,
+    description: CHIP_INPUT_DESCRIPTION,
+  });
+}
+
+async function updateChipInputComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    axisName: "State",
+    values: CHIP_INPUT_STATES,
+    axis2Name: "Content",
+    axis2Values: CHIP_INPUT_CONTENT,
+    xStep: 380,
+    yStep: 160,
+    createVariant: createChipInputVariant,
+    updateVariant: updateChipInputVariant,
+    parseVariantName: parseChipInputVariantName,
+    configureProperties: configureChipInputProperties,
+    autoReorganize: true,
+    description: CHIP_INPUT_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildChipInputComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    build: buildChipInputComponent,
+  });
+}
+
+// --- SpriteIcon -----------------------------------------------------------------
+
+// GAP-150, decisions 86 and 219: React's SpriteIcon, one cell of a published
+// MapLibre sprite atlas drawn as published, the full-colour bubble, glyph and
+// marker dot, never tinted, scaled into a 16, 20 or 24 box with its aspect
+// ratio kept. The importer draws the real cell: at Build and Update it reads
+// the atlas's @2x index and image from the set's Sprite and Cell Name
+// properties (by default Pointr's light atlas at the current maps release,
+// 10.17.0, and `desk`), and fills a Cell rectangle with the
+// atlas image cropped to the cell. Where the atlas cannot be read the box is
+// left empty and the run says why: nothing stands in for the cell. A
+// designer who changes the Cell Name runs Update to draw it; an instance's
+// own override changes the words, not the picture.
+// The current maps release, pinned: `latest` is a mutable alias, not a
+// release. Bump it with the maps release. Products pass their own pinned URL;
+// this is only the library's sample cell.
+const SPRITE_ICON_DEFAULT_ATLAS =
+  "https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite";
+const SPRITE_ICON_DEFAULT_CELL = "desk";
+// How the importer reads an atlas: the plugin's fetch for the index and
+// figma.createImageAsync for the image. An object, so the painters check can
+// stand in for the network.
+const SPRITE_ICON_IO = {
+  json: (url) =>
+    typeof fetch === "function"
+      ? fetch(url).then((response) =>
+          response.ok
+            ? response.json()
+            : Promise.reject(new Error(`${response.status} ${url}`)),
+        )
+      : Promise.reject(
+          new Error("fetch is not available in this plugin runtime"),
+        ),
+  image: (url) =>
+    figma && typeof figma.createImageAsync === "function"
+      ? figma.createImageAsync(url)
+      : Promise.reject(new Error("figma.createImageAsync is not available")),
+};
+const spriteIconAtlases = new Map();
+
+/** The @2x atlas at `base`, read once per run: its cells, image hash and size. */
+function loadSpriteIconAtlas(base) {
+  if (!spriteIconAtlases.has(base)) {
+    spriteIconAtlases.set(
+      base,
+      Promise.all([
+        SPRITE_ICON_IO.json(`${base}@2x.json`),
+        SPRITE_ICON_IO.image(`${base}@2x.png`).then(async (image) => ({
+          hash: image.hash,
+          size: await image.getSizeAsync(),
+        })),
+      ]).then(([cells, image]) => ({ cells, image })),
+    );
+  }
+  return spriteIconAtlases.get(base);
+}
+
+/** The cell's rectangle in a `side` box, scaled to fit with its aspect ratio kept. */
+function spriteIconFittedSize(cell, side) {
+  const longest = Math.max(cell.width, cell.height);
+  return {
+    width: (side * cell.width) / longest,
+    height: (side * cell.height) / longest,
+  };
+}
+
+/** An image fill showing just the cell: the atlas cropped to it. */
+function spriteIconCellPaint(atlas, cell) {
+  const { width, height } = atlas.image.size;
+  return {
+    type: "IMAGE",
+    scaleMode: "CROP",
+    imageHash: atlas.image.hash,
+    imageTransform: [
+      [cell.width / width, 0, cell.x / width],
+      [0, cell.height / height, cell.y / height],
+    ],
+  };
+}
+
+/** The set's Sprite and Cell Name, as its text properties hold them. */
+function spriteIconSourceOf(component) {
+  const set = component && component.parent;
+  const defs =
+    set && set.type === "COMPONENT_SET" ? set.componentPropertyDefinitions : {};
+  const value = (name) => {
+    const key = Object.keys(defs || {}).find(
+      (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+    );
+    return key ? String(defs[key].defaultValue || "").trim() : "";
+  };
+  return {
+    sprite:
+      value("Sprite") ||
+      firstDescendantTextCharactersByName(component, "Sprite") ||
+      SPRITE_ICON_DEFAULT_ATLAS,
+    cell:
+      value("Cell Name") ||
+      firstDescendantTextCharactersByName(component, "Cell Name") ||
+      SPRITE_ICON_DEFAULT_CELL,
+  };
+}
+
+async function createSpriteIconVariant(args) {
+  const component = figma.createComponent();
+  await updateSpriteIconVariant(component, args);
+  return component;
+}
+
+function parseSpriteIconVariantName(name) {
+  return productSdkVariantValues(name, "Size", SPRITE_ICON_SIZES);
+}
+
+async function updateSpriteIconVariant(component, { value, fonts, stats }) {
+  const side = Number(value);
+  const source = spriteIconSourceOf(component);
+  productSdkVariantRoot(component, "SpriteIcon", "Size=" + value, {
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: side,
+    height: side,
+  });
+  component.fills = [];
+  component.strokes = [];
+
+  // The source, kept as hidden words its properties bind, so Update and
+  // Code Connect read the same cell the picture shows.
+  for (const [name, characters] of [
+    ["Sprite", source.sprite],
+    ["Cell Name", source.cell],
+  ]) {
+    const text = figma.createText();
+    text.name = name;
+    text.fontName = fonts.regular;
+    text.characters = characters;
+    text.visible = false;
+    component.appendChild(text);
+    text.layoutPositioning = "ABSOLUTE";
+  }
+
+  let atlas = null;
+  try {
+    atlas = await loadSpriteIconAtlas(source.sprite);
+  } catch (error) {
+    stats.warnings.push(
+      `SpriteIcon: the atlas ${source.sprite} could not be read (${messageFor(error)}); the ${value} box is left empty, with no stand-in.`,
+    );
+    return;
+  }
+  const cell = atlas.cells && atlas.cells[source.cell];
+  if (!cell) {
+    stats.warnings.push(
+      `SpriteIcon: ${source.sprite} has no cell named "${source.cell}"; the ${value} box is left empty.`,
+    );
+    return;
+  }
+  const fitted = spriteIconFittedSize(cell, side);
+  const rect = figma.createRectangle();
+  rect.name = "Cell";
+  rect.resize(fitted.width, fitted.height);
+  rect.fills = [spriteIconCellPaint(atlas, cell)];
+  rect.strokes = [];
+  rect.setSharedPluginData(RUN_NAMESPACE, "kind", "sprite-icon-cell");
+  component.appendChild(rect);
+}
+
+function configureSpriteIconProperties(componentSet, stats) {
+  const first = componentSet.children && componentSet.children[0];
+  const source = spriteIconSourceOf(first);
+  configureNamedTextProperty(
+    componentSet,
+    "Sprite",
+    "Sprite",
+    source.sprite,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Cell Name",
+    "Cell Name",
+    source.cell,
+    stats,
+  );
+}
+
+const SPRITE_ICON_DESCRIPTION = [
+  "Kozmos SpriteIcon component set generated from React SpriteIcon API (GAP-150, decisions 86 and 219).",
+  "One cell of a published MapLibre sprite atlas, drawn as published (bubble, glyph and marker dot), never tinted, scaled into the box with its aspect ratio kept.",
+  "Size maps to size: 16, 20 or 24. Sprite maps to sprite, the atlas's base URL; Cell Name maps to name. Update redraws the cell from the set's Sprite and Cell Name; an instance's override changes the words only.",
+  "Decorative unless label names it.",
+];
+
+async function buildSpriteIconComponent() {
+  return buildSingleAxisComponent({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    axisName: "Size",
+    values: SPRITE_ICON_SIZES,
+    x: 80,
+    y: 22000,
+    xStep: 80,
+    createVariant: createSpriteIconVariant,
+    configureProperties: configureSpriteIconProperties,
+    autoReorganize: true,
+    description: SPRITE_ICON_DESCRIPTION,
+  });
+}
+
+async function updateSpriteIconComponent() {
+  spriteIconAtlases.clear();
+  return updateSingleAxisComponent({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    axisName: "Size",
+    values: SPRITE_ICON_SIZES,
+    xStep: 80,
+    createVariant: createSpriteIconVariant,
+    updateVariant: updateSpriteIconVariant,
+    parseVariantName: parseSpriteIconVariantName,
+    configureProperties: configureSpriteIconProperties,
+    autoReorganize: true,
+    description: SPRITE_ICON_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildSpriteIconComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    build: buildSpriteIconComponent,
+  });
+}
+
 // --- ImageCropper ----------------------------------------------------------------
 
 // GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
@@ -91684,11 +92433,15 @@ function floatingActionButtonMetrics(size) {
   };
 }
 
+// Chip's scale (decision 93, GAP-147): 28, 32 and 36, the icon Badge 32
+// square. Plain values, not aliases of Chip's heights, which are declared
+// after these and so are not there yet when a fresh file creates them. A
+// status: no hover state.
 function badgeMetrics(size) {
   if (size === "Small") {
     return {
       width: 58,
-      height: 44,
+      height: 28,
       paddingX: 12,
       heightToken: "Badge/height/small",
       paddingXToken: "Badge/padding/x/small",
@@ -91698,7 +92451,7 @@ function badgeMetrics(size) {
   if (size === "Large") {
     return {
       width: 86,
-      height: 44,
+      height: 36,
       paddingX: 32,
       heightToken: "Badge/height/large",
       paddingXToken: "Badge/padding/x/large",
@@ -91707,8 +92460,8 @@ function badgeMetrics(size) {
 
   if (size === "Icon") {
     return {
-      width: 44,
-      height: 44,
+      width: 32,
+      height: 32,
       paddingX: 0,
       iconSize: 16,
       widthToken: "Badge/width/icon",
@@ -91720,7 +92473,7 @@ function badgeMetrics(size) {
 
   return {
     width: 66,
-    height: 44,
+    height: 32,
     paddingX: 16,
     heightToken: "Badge/height/default",
     paddingXToken: "Badge/padding/x/default",

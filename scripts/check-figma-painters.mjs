@@ -18864,6 +18864,358 @@ section("GAP-221: DescriptionList draws each label over its value");
   );
 }
 
+// --- Badge on Chip's scale (GAP-147) --------------------------------------------
+
+// GAP-147, decision 93: Badge is a status badge on Chip's scale, 28, 32 and 36
+// (the icon Badge 32 square), where it was 44 like a button. Each size's
+// height is bound to its Badge/height token, which holds that value.
+section("GAP-147: Badge draws on Chip's scale, 28, 32 and 36");
+{
+  const ready = typeof plugin.updateBadgeVariant === "function";
+  ok(ready, "Badge's painter is reachable");
+  for (const [size, height, width] of ready
+    ? [
+        ["Small", 28],
+        ["Default", 32],
+        ["Large", 36],
+        ["Icon", 32, 32],
+      ]
+    : []) {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin.updateBadgeVariant(component, {
+        variant: "Default",
+        size,
+        variableByName: menusTokens.variableByName,
+        iconComponent: null,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const token =
+      size === "Icon" ? "Badge/height/icon" : `Badge/height/${size.toLowerCase()}`;
+    ok(
+      component.height === height &&
+        menusBound(component, "height") === token &&
+        menusValueOf(token) === height &&
+        (width === undefined ||
+          (component.width === width &&
+            menusValueOf("Badge/width/icon") === width)),
+      `Badge Size=${size}: ${height} tall${width ? `, ${width} wide` : ""}, bound to ${token} at ${height} (${component.height}x${component.width}, ${menusBound(component, "height")} = ${menusValueOf(token)})`,
+    );
+  }
+}
+
+// --- SpriteIcon (GAP-150) ------------------------------------------------------
+
+// GAP-150, decisions 86 and 219: SpriteIcon draws the real cell of a published
+// atlas, never a stand-in: Build and Update read the @2x index and image from
+// the set's Sprite and Cell Name, and fill a Cell rectangle with the atlas
+// cropped to the cell, scaled into the 16, 20 or 24 box with its aspect ratio
+// kept. An atlas that cannot be read leaves the box empty and says so. The
+// network is stood in for here by the fixture atlas the stories use.
+section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
+{
+  const ready =
+    Array.isArray(plugin.SPRITE_ICON_SIZES) &&
+    plugin.SPRITE_ICON_IO &&
+    typeof plugin.updateSpriteIconVariant === "function" &&
+    typeof plugin.parseSpriteIconVariantName === "function" &&
+    typeof plugin.configureSpriteIconProperties === "function";
+  ok(ready, "SpriteIcon's painter, its reader and its properties are reachable");
+  const fixture = JSON.parse(
+    fs.readFileSync("apps/docs/src/sprite-fixture/sprite@2x.json", "utf8"),
+  );
+  const asked = [];
+  const real = ready && { ...plugin.SPRITE_ICON_IO };
+  if (ready) {
+    plugin.SPRITE_ICON_IO.json = async (url) => {
+      asked.push(url);
+      if (url.includes("unreachable")) throw new Error("network blocked");
+      return url.includes("atlas-a") ? fixture : {};
+    };
+    plugin.SPRITE_ICON_IO.image = async (url) => {
+      asked.push(url);
+      return { hash: "atlas-hash", getSizeAsync: async () => ({ width: 370, height: 114 }) };
+    };
+  }
+  const paint = async (value, sprite, cell) => {
+    const component = figma.createComponent();
+    // Build reads the defaults; Update reads the set's properties. Here the
+    // hidden words stand for them, as Update finds them.
+    for (const [name, characters] of [["Sprite", sprite], ["Cell Name", cell]]) {
+      const text = new MockNode("TEXT", name);
+      text.characters = characters;
+      component.appendChild(text);
+    }
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateSpriteIconVariant(component, { value, fonts: FONTS, stats, variableByName: menusTokens.variableByName }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  for (const value of ready ? plugin.SPRITE_ICON_SIZES : []) {
+    const side = Number(value);
+    for (const [name, expected] of [
+      ["desk", { width: side, height: side }],
+      ["1", { width: (side * 90) / 110, height: side }],
+    ]) {
+      const { component, stats } = await paint(value, "https://cdn.test/atlas-a/sprite", name);
+      if (name === "desk") variants.push(component);
+      const rect = named(component, "Cell");
+      const fill = rect && rect.fills[0];
+      const c = fixture[name];
+      ok(
+        component.name === `Size=${value}` &&
+          plugin.parseSpriteIconVariantName(component.name).value === value &&
+          component.width === side &&
+          component.height === side &&
+          component.fills.length === 0 &&
+          rect &&
+          Math.abs(rect.width - expected.width) < 0.01 &&
+          Math.abs(rect.height - expected.height) < 0.01 &&
+          fill &&
+          fill.type === "IMAGE" &&
+          fill.scaleMode === "CROP" &&
+          fill.imageHash === "atlas-hash" &&
+          JSON.stringify(fill.imageTransform) ===
+            JSON.stringify([
+              [c.width / 370, 0, c.x / 370],
+              [0, c.height / 114, c.y / 114],
+            ]) &&
+          stats.warnings.length === 0,
+        `Size=${value} "${name}": a ${side} box, its Cell ${expected.width.toFixed(2)}x${expected.height} cropped from the atlas, untinted (${component.width}x${component.height}, ${rect && `${rect.width.toFixed(2)}x${rect.height}`}, ${fill && `${fill.type} ${fill.scaleMode} ${JSON.stringify(fill.imageTransform)}`}, ${stats.warnings.join("; ")})`,
+      );
+    }
+  }
+  if (ready) {
+    ok(
+      asked.filter((url) => url.includes("atlas-a")).join() ===
+        "https://cdn.test/atlas-a/sprite@2x.json,https://cdn.test/atlas-a/sprite@2x.png",
+      `the @2x atlas is read once for every variant (${asked.join(", ")})`,
+    );
+    for (const [sprite, cell, says] of [
+      ["https://cdn.test/unreachable/sprite", "desk", /could not be read \(.*network blocked\)/],
+      ["https://cdn.test/atlas-a/sprite", "not-in-the-atlas", /no cell named "not-in-the-atlas"/],
+    ]) {
+      const { component, stats } = await paint("24", sprite, cell);
+      ok(
+        !named(component, "Cell") &&
+          component.width === 24 &&
+          stats.warnings.some((warning) => says.test(warning)),
+        `${cell} from ${sprite}: the 24 box is left empty, with no stand-in, and the run says why (${stats.warnings.join("; ")})`,
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "SpriteIcon";
+    plugin.configureSpriteIconProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const text = (name) =>
+      Object.keys(defs).find((k) => k.split("#")[0] === name && defs[k].type === "TEXT");
+    ok(
+      text("Sprite") &&
+        defs[text("Sprite")].defaultValue === "https://cdn.test/atlas-a/sprite" &&
+        text("Cell Name") &&
+        defs[text("Cell Name")].defaultValue === "desk",
+      "SpriteIcon: Sprite and Cell Name text properties, holding the cell drawn",
+    );
+    set.remove();
+    Object.assign(plugin.SPRITE_ICON_IO, real);
+  }
+  ok(
+    ready &&
+      /^https:\/\/mapscdn\.pointr\.tech\/sprite\/\d+\.\d+\.\d+\/light\/sprite$/.test(plugin.SPRITE_ICON_DEFAULT_ATLAS) &&
+      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("SpriteIcon")) ===
+        JSON.stringify({ Size: ["16", "20", "24"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) => name === "SpriteIcon" && update === plugin.updateSpriteIconComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) => entry.title === "Media" && entry.components.includes("SpriteIcon"),
+      ) &&
+      plugin.COMPONENT_DOCS.some((entry) => entry.componentSetName === "SpriteIcon"),
+    "SpriteIcon: its default atlas pinned to a maps release, not `latest`; a Size axis, in Update All Core, the Media section and the docs",
+  );
+}
+
+// --- ChipInput (GAP-222) -------------------------------------------------------
+
+// GAP-222, decision 216: React's ChipInput, a field that takes free text and
+// holds each entry as a removable chip inside it: MultiSelect's field with no
+// clear and no open, 320 wide, at least 44 tall, padded 8 and 4, on the
+// control radius in the input family's colours. Filled draws two entries as
+// Chip instances (Small, Selected, Removable; Disabled when disabled; not
+// Removable when read-only), 6 apart; Empty the placeholder. Focus draws the
+// ring; Error the danger edge and Error Text. State and Content axes, in
+// Update All Core, the Inputs section and the docs.
+section("GAP-222: ChipInput holds each entry as a chip inside the field");
+{
+  const ready =
+    Array.isArray(plugin.CHIP_INPUT_STATES) &&
+    Array.isArray(plugin.CHIP_INPUT_CONTENT) &&
+    typeof plugin.updateChipInputVariant === "function" &&
+    typeof plugin.parseChipInputVariantName === "function" &&
+    typeof plugin.configureChipInputProperties === "function";
+  ok(ready, "ChipInput's painter and properties are reachable");
+  // The Chip set the entries are instances of, as Build Chip leaves it.
+  const componentsPage = figma.root.children[0];
+  const chipLook = (state, removable) => ({
+    properties: { Variant: "Neutral", Size: "Small", State: state, Removable: removable },
+    build: (variant) => {
+      variant.layoutMode = "HORIZONTAL";
+      variant.resize(72, 28);
+      const text = new MockNode("TEXT", "Label Text");
+      text.characters = "Chip";
+      text.componentPropertyReferences = { characters: "Label Text#1:0" };
+      variant.appendChild(text);
+    },
+  });
+  const chipSet = mockComponentSet("Chip", [
+    chipLook("Selected", "True"),
+    chipLook("Selected", "False"),
+    chipLook("Disabled", "True"),
+  ]);
+  chipSet.componentPropertyDefinitions = {
+    "Label Text#1:0": { type: "TEXT", defaultValue: "Chip" },
+  };
+  componentsPage.appendChild(chipSet);
+  const paint = async (value, second) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateChipInputVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  for (const state of ready ? plugin.CHIP_INPUT_STATES : []) {
+    for (const content of plugin.CHIP_INPUT_CONTENT) {
+      const { component, stats } = await paint(state, content);
+      variants.push(component);
+      const name = `State=${state}, Content=${content}`;
+      const parsed = plugin.parseChipInputVariantName(component.name);
+      ok(
+        component.name === name &&
+          parsed &&
+          parsed.value === state &&
+          parsed.second === content,
+        `${name}: named so, and reads back as itself (${component.name})`,
+      );
+      const field = named(component, "ChipInput Field");
+      const error = state === "Error";
+      ok(
+        field &&
+          component.children.map((child) => child.name).join() ===
+            `Label Text,ChipInput Field,${error ? "Error Text" : "Helper Text"}` &&
+          field.layoutMode === "HORIZONTAL" &&
+          field.height === 44 &&
+          menusBound(field, "height") === "ChipInput/field/min-height" &&
+          menusValueOf("ChipInput/field/min-height") === 44 &&
+          field.paddingLeft === 8 &&
+          field.paddingTop === 4 &&
+          field.itemSpacing === 6 &&
+          menusBound(field, "itemSpacing") === "ChipInput/field/gap" &&
+          menusValueOf("ChipInput/field/gap") === 6 &&
+          field.strokeWeight === 1 &&
+          boundVariableName(field.strokes[0]) ===
+            (error
+              ? "Colors/emotional/danger/600"
+              : state === "Focus"
+                ? "Colors/theme/600"
+                : "Border/Input") &&
+          boundVariableName(field.fills[0]) ===
+            (state === "Disabled" || state === "Readonly"
+              ? "Colors/background/100"
+              : "Colors/background/0"),
+        `${name}: the label, the field 44 tall padded 8 and 4 in the input's colours, then the ${error ? "error" : "helper"} (${component.children.map((child) => child.name)}, ${field && `${field.height} ${field.paddingLeft}/${field.paddingTop} gap ${field.itemSpacing} ${boundVariableName(field.strokes[0])} ${boundVariableName(field.fills[0])}`})`,
+      );
+      const chips = field
+        ? field.children.filter((child) => /^ChipInput Chip \d$/.test(child.name))
+        : [];
+      const placeholder = field && named(field, "Placeholder Text");
+      if (content === "Filled") {
+        const wanted = {
+          State: state === "Disabled" ? "Disabled" : "Selected",
+          Removable: state === "Readonly" ? "False" : "True",
+        };
+        ok(
+          chips.length === 2 &&
+            !placeholder &&
+            chips.every(
+              (chip) =>
+                chip.type === "INSTANCE" &&
+                chip.mainComponent &&
+                chip.mainComponent.parent === chipSet &&
+                chip.mainComponent.variantProperties.Size === "Small" &&
+                chip.mainComponent.variantProperties.State === wanted.State &&
+                chip.mainComponent.variantProperties.Removable === wanted.Removable,
+            ),
+          `${name}: two Chip instances, Small, ${wanted.State}, Removable ${wanted.Removable}, and no placeholder (${chips.map((chip) => chip.mainComponent && chip.mainComponent.name).join(" | ")}${placeholder ? ", a placeholder" : ""})`,
+        );
+      } else {
+        ok(
+          chips.length === 0 &&
+            placeholder &&
+            placeholder.characters === "Add a keyword" &&
+            boundVariableName(placeholder.fills[0]) ===
+              (state === "Disabled" ? "Colors/foreground/500" : "Colors/foreground/400"),
+          `${name}: the placeholder alone (${chips.length} chips, ${placeholder && placeholder.characters})`,
+        );
+      }
+      const ring = field && named(field, "Focus Ring");
+      ok(
+        Boolean(ring) === (state === "Focus"),
+        `${name}: ${state === "Focus" ? "a" : "no"} focus ring`,
+      );
+      ok(
+        stats.warnings.length === 0,
+        `${name}: no warning (${stats.warnings.join("; ")})`,
+      );
+    }
+  }
+  if (ready) {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "ChipInput";
+    plugin.configureChipInputProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const texts = ["Label Text", "Placeholder Text", "Helper Text", "Error Text"];
+    const has = (name) =>
+      Object.keys(defs).some(
+        (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+      );
+    ok(
+      texts.every(has),
+      `ChipInput: a text property for the label, placeholder, helper and error (${texts.filter((name) => !has(name)).join(", ") || "all"})`,
+    );
+    set.remove();
+  }
+  chipSet.remove();
+  ok(
+    ready &&
+      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("ChipInput")) ===
+        JSON.stringify({
+          State: ["Default", "Focus", "Disabled", "Readonly", "Error"],
+          Content: ["Filled", "Empty"],
+        }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ChipInput" && update === plugin.updateChipInputComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) => entry.title === "Inputs" && entry.components.includes("ChipInput"),
+      ) &&
+      plugin.COMPONENT_DOCS.some((entry) => entry.componentSetName === "ChipInput"),
+    "ChipInput: State and Content axes, in Update All Core, the Inputs section and the docs",
+  );
+}
+
 // --- ImageCropper (GAP-273) ----------------------------------------------------
 
 // React's ImageCropper: a column 320 wide, the frame and the zoom row 12

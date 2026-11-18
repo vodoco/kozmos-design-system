@@ -19,6 +19,11 @@ const DENSITY_SIZES = {
   "icon-control": "var(--density-icon-control-size-md, 2.75rem)",
   "icon-control-lg": "var(--density-icon-control-size-lg, 3rem)",
   field: "var(--density-field-height-md, 2.75rem)",
+  // Badge, on Chip's scale (decision 93): 28, 32 and 36 touch, 20, 24 and
+  // 28 compact; an icon Badge is the default height square.
+  "badge-sm": "var(--density-badge-height-sm, 1.75rem)",
+  badge: "var(--density-badge-height-md, 2rem)",
+  "badge-lg": "var(--density-badge-height-lg, 2.25rem)",
 };
 
 module.exports = {

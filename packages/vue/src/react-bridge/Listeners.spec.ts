@@ -814,6 +814,9 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosTable: { click: first("table") },
   KozmosDescriptionList: { slot: true },
   KozmosDescriptionListItem: { props: { label: "FID", value: "f-1042" } },
+  KozmosSpriteIcon: {
+    props: { sprite: "https://cdn.test/sprite", name: "atm", label: "ATM" },
+  },
   KozmosTree: { props: { data: [{ id: "1", name: "a.ts" }] } },
   KozmosTimeline: { slot: true },
   KozmosPopover: { slot: true },
@@ -951,6 +954,10 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { options: fruit, label: "Fruit" },
     click: (drawn) =>
       drawn.querySelector("[data-slot=chip-group]")?.parentElement,
+  },
+  KozmosChipInput: {
+    props: { label: "Keywords" },
+    click: first("input"),
   },
   KozmosNumberInput: {
     props: { "aria-label": "Guests" },

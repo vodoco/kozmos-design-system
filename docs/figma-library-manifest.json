@@ -15914,10 +15914,10 @@
   },
   "components": {
     "summary": {
-      "total": 129,
-      "stories": 129,
-      "tests": 129,
-      "exported": 129,
+      "total": 131,
+      "stories": 131,
+      "tests": 131,
+      "exported": 131,
       "codeConnectFiles": 105,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 105
@@ -16954,6 +16954,54 @@
           "size": ["default", "lg", "sm"],
           "variant": ["brand", "destructive", "neutral"]
         }
+      },
+      {
+        "name": "ChipInput",
+        "source": "packages/react/src/components/ChipInput/ChipInput.tsx",
+        "story": "packages/react/src/components/ChipInput/ChipInput.stories.tsx",
+        "test": "packages/react/src/components/ChipInput/ChipInput.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "addedLabel",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "aria-labelledby",
+          "children",
+          "defaultInputValue",
+          "defaultValue",
+          "disabled",
+          "duplicateLabel",
+          "error",
+          "helperText",
+          "id",
+          "inputId",
+          "inputValue",
+          "label",
+          "placeholder",
+          "readOnly",
+          "removedLabel",
+          "removeLabel",
+          "required",
+          "role",
+          "status",
+          "tabIndex",
+          "title",
+          "value",
+          "wrapperClassName"
+        ],
+        "variants": {}
       },
       {
         "name": "ClientAppBanner",
@@ -20455,6 +20503,39 @@
           "tabIndex",
           "title",
           "variant"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "SpriteIcon",
+        "source": "packages/react/src/components/SpriteIcon/SpriteIcon.tsx",
+        "story": "packages/react/src/components/SpriteIcon/SpriteIcon.stories.tsx",
+        "test": "packages/react/src/components/SpriteIcon/SpriteIcon.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "label",
+          "name",
+          "role",
+          "size",
+          "sprite",
+          "tabIndex",
+          "title"
         ],
         "variants": {}
       },

@@ -767,6 +767,13 @@
       "exports": ["Default", "WithVisibleLabels", "Overflowing"]
     },
     {
+      "file": "packages/react/src/components/ChipInput/ChipInput.stories.tsx",
+      "id": "components-chipinput",
+      "title": "Core/Inputs/ChipInput",
+      "component": "ChipInput",
+      "exports": ["Default"]
+    },
+    {
       "file": "packages/react/src/components/MultiSelect/MultiSelect.stories.tsx",
       "id": "components-multiselect",
       "title": "Core/Inputs/MultiSelect",
@@ -1263,6 +1270,13 @@
         "ManyTabsNarrow",
         "ManyTabsNarrowRightToLeft"
       ]
+    },
+    {
+      "file": "packages/react/src/components/SpriteIcon/SpriteIcon.stories.tsx",
+      "id": "components-spriteicon",
+      "title": "Core/Media/SpriteIcon",
+      "component": "SpriteIcon",
+      "exports": ["Default"]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",

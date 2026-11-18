@@ -293,8 +293,11 @@ const STATE_READS = [
   // Hovered fills: the hover token, opaque, in both themes.
   ["chip", '[data-slot="chip"]', "hover", "backgroundColor", "hover"],
   ["tag", "", "hover", "backgroundColor", "hover"],
-  ["badge", "", "hover", "backgroundColor", "hover"],
   ["toggle", "", "hover", "backgroundColor", "hover"],
+  // Badge is a status, not a control (decision 93, GAP-147): under the
+  // pointer it keeps its rest fill and ink, read at rest and again hovered.
+  ["badge", "", "hover", "backgroundColor", "unchanged"],
+  ["badge", "", "hover", "color", "unchanged"],
   // A keyboard focus on or inside a fill, and a hover inside one.
   ["toggle", "", "focus", "boxShadow", "ring"],
   ["chip-remove", CHIP_REMOVE, "focus", "boxShadow", "ring"],
@@ -767,6 +770,12 @@ try {
         failures.push(`${where}: nothing matched`);
         continue;
       }
+      // "unchanged": the state must draw what rest draws, so rest is read
+      // first, the same way.
+      const rest =
+        kind === "unchanged"
+          ? await target.evaluate(readInPage, { property, fill: THEME_FILL })
+          : null;
       await enter(page, target, state);
       const actual = await target.evaluate(readInPage, {
         property,
@@ -852,6 +861,13 @@ try {
           );
         continue;
       }
+      if (kind === "unchanged") {
+        if (!rest.rgba || !near(rest.rgba, actual.rgba))
+          failures.push(
+            `${where}: ${actual.css}; expected no change from its rest ${rest.css} (decision 93: no hover state)`,
+          );
+        continue;
+      }
       const want = expected(kind, theme);
       if (!near(want, actual.rgba))
         failures.push(
@@ -921,5 +937,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS theme fill (decision 59): ${read} reads, ${READS.length} at rest and ${STATE_READS.length} in a state per theme — every prominent fill is #135BEC under white in light and dark, and the theme on a surface is 600; the filled Button and its kin are the hover, pressed and focus tokens in those states, the secondary Button the neutral tokens in every state under the neutral ink (decision 61), the subtle Button theme 0 under 600 stepping to 100 under 700 and 200 under 800 and its destructive tone danger 0 under 700 (GAP-200), CardHeader's subtle strip theme 0, 52 tall and rounded only first in its card, buttonVariants' subtle link, the subtle SplitButton's seam, hovered fills the hover token, the default Badge's counter inverted, and focus on or inside a fill an offset ring reading ${RING_MIN}:1 on the fill and the page`,
+  `PASS theme fill (decision 59): ${read} reads, ${READS.length} at rest and ${STATE_READS.length} in a state per theme — every prominent fill is #135BEC under white in light and dark, and the theme on a surface is 600; the filled Button and its kin are the hover, pressed and focus tokens in those states, the secondary Button the neutral tokens in every state under the neutral ink (decision 61), the subtle Button theme 0 under 600 stepping to 100 under 700 and 200 under 800 and its destructive tone danger 0 under 700 (GAP-200), CardHeader's subtle strip theme 0, 52 tall and rounded only first in its card, buttonVariants' subtle link, the subtle SplitButton's seam, hovered fills the hover token and a hovered Badge its rest fill and ink (decision 93), the default Badge's counter inverted, and focus on or inside a fill an offset ring reading ${RING_MIN}:1 on the fill and the page`,
 );

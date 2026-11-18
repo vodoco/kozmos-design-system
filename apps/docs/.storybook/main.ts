@@ -17,6 +17,10 @@ const config: StorybookConfig & PinsReact = {
     "../../../packages/react/src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
     "../../../packages/react/src/**/*.mdx",
   ],
+  // SpriteIcon's story draws from a small atlas cut from Pointr's published
+  // 10.17.0 light sprite (GAP-150), served beside the stories, so its
+  // picture never waits on the network.
+  staticDirs: [{ from: "../src/sprite-fixture", to: "/sprite-fixture" }],
   addons: [
     getAbsolutePath("@storybook/addon-links"),
     getAbsolutePath("@storybook/addon-essentials"),

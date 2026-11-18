@@ -57,7 +57,8 @@ try {
   );
   for (const id of ["dark", "nested-light", "light"]) {
     for (const [component, height] of [
-      ["badge", 44],
+      // Badge on Chip's scale (decision 93): 32 at its default size.
+      ["badge", 32],
       ["separator", 1],
       ["button", 44],
       ["input", 44],

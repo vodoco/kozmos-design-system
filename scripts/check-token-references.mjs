@@ -46,11 +46,14 @@ const BRAND_HOVER = "#118855";
 const BRAND_PRESSED = "#553311";
 const NESTED_LIGHT_700 = "#225511";
 const NESTED_DARK_700 = "#55BB99";
-/** Fills whose hover is the Button's hover token, so it follows 600 (400). */
+/**
+ * Fills whose hover is the Button's hover token, so it follows 600 (400).
+ * Badge is not one: a status, not a control, it keeps its rest fill under the
+ * pointer (decision 93, GAP-147), read below.
+ */
 const HOVERS = [
   ["hover-chip", '[data-slot="chip"]'],
   ["hover-tag", ""],
-  ["hover-badge", ""],
   ["hover-toggle", ""],
 ];
 
@@ -381,8 +384,25 @@ try {
     }
   }
 
-  // The hover of a selected Chip, a default Tag, a default Badge and an on
-  // ToggleButton is the Button's hover token: it follows the step it names.
+  // A default Badge hovered keeps its rest fill (decision 93): read at rest,
+  // then under the pointer, in both roots.
+  for (const root of ["light-states", "dark-states"]) {
+    const node = page.getByTestId(`${root}-hover-badge`);
+    const fill = () =>
+      node.evaluate((element) => getComputedStyle(element).backgroundColor);
+    await page.mouse.move(0, 0);
+    const rest = await fill();
+    await node.hover();
+    const hovered = await fill();
+    counts.hovers += 1;
+    if (hovered !== rest)
+      failures.push(
+        `${root} hover-badge hovered: ${hovered}; expected its rest fill ${rest} (decision 93: no hover state)`,
+      );
+  }
+
+  // The hover of a selected Chip, a default Tag and an on ToggleButton is the
+  // Button's hover token: it follows the step it names.
   for (const root of ["light-states", "dark-states"]) {
     for (const [part, selector] of HOVERS) {
       const target = page.getByTestId(`${root}-${part}`);
@@ -428,5 +448,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name; with the whole ramp re-pointed, ${counts.ramp} reads of component and semantic colours on it follow their steps, and ${counts.inks} reads of the outline, ghost, link and subtle Buttons' fill and ink; ${counts.hovers} hovered fills follow the hover token's step; ${counts.nested} nested providers apply their own theme's set`,
+  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name; with the whole ramp re-pointed, ${counts.ramp} reads of component and semantic colours on it follow their steps, and ${counts.inks} reads of the outline, ghost, link and subtle Buttons' fill and ink; ${counts.hovers} hovered fills follow the hover token's step, or, a Badge's, keep its rest fill (decision 93); ${counts.nested} nested providers apply their own theme's set`,
 );

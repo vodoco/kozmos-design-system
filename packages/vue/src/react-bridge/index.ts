@@ -130,6 +130,8 @@ import {
   Listbox,
   MapControlButton,
   MultiSelect,
+  ChipInput,
+  SpriteIcon,
   NavigationItem,
   NumberInput,
   POIDetailPanel,
@@ -400,6 +402,8 @@ export const KozmosTable = createVueWrapper(Table);
 // the part after its value (a Copy IconButton); its value is `value` (words,
 // or true and false for a yes and a no) or its default slot (tags).
 export const KozmosDescriptionList = createVueWrapper(DescriptionList);
+// GAP-150 (decision 219): one cell of a published sprite atlas, drawn as published.
+export const KozmosSpriteIcon = createVueWrapper(SpriteIcon);
 export const KozmosDescriptionListItem = createVueWrapper(DescriptionListItem);
 // Its selection is reported as the item; the model is the item's id. A
 // multiple tree's model is its selected ids (GAP-151).
@@ -669,6 +673,12 @@ export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
     callback: "onSearchValueChange",
     empty: "",
   },
+});
+// GAP-222 (decision 216): the entries are the v-model, the typed text a
+// second one, as Combobox's inputValue.
+export const KozmosChipInput = createVueWrapper(ChipInput, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
+  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
 });
 // A cleared field is `null` to Vue and "" to React's input.
 export const KozmosNumberInput = createVueWrapper(NumberInput, {

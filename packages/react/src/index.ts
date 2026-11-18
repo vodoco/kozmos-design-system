@@ -31,6 +31,8 @@ export * from "./components/SearchBar/SearchBar";
 export * from "./components/Select/Select";
 export * from "./components/Combobox/Combobox";
 export * from "./components/MultiSelect/MultiSelect";
+export * from "./components/ChipInput/ChipInput";
+export * from "./components/SpriteIcon";
 export * from "./components/Listbox/Listbox";
 export * from "./components/BottomNavigation/BottomNavigation";
 export * from "./components/NavigationItem/NavigationItem";

@@ -225,20 +225,20 @@
       ],
       "sizes": {
         "small": {
-          "height": 44,
+          "height": 28,
           "paddingX": 12
         },
         "default": {
-          "height": 44,
+          "height": 32,
           "paddingX": 16
         },
         "large": {
-          "height": 44,
+          "height": 36,
           "paddingX": 32
         },
         "icon": {
-          "width": 44,
-          "height": 44,
+          "width": 32,
+          "height": 32,
           "paddingX": 0
         }
       },

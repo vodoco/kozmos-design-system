@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 81         | 81/81 | 81/81     | 75/81   | 76/81 | 75/81   | 77/81   | 75/81       |
+| Core                   | 83         | 83/83 | 83/83     | 75/83   | 78/83 | 75/83   | 79/83   | 75/83       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 28/41   | 37/42 | 28/41   | 37/42   | 28/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -51,6 +51,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Card                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Checkbox             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Chip                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| ChipInput            | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | ColorPicker          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Combobox             | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Container            | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -101,6 +102,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Slider               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Spinner              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | SplitButton          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| SpriteIcon           | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | Stack                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Stepper              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Surface              | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
@@ -212,18 +214,18 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 
 ## Summary
 
-- Web components: 137/137
-- Web stories: 137/137
-- Web tests: 137/137
-- Web Code Connect files: 113/132
-- Web Code Connect scaffolds: 0/132
-- Web Code Connect linked: 113/132
-- iOS components: 119/137
-- iOS Code Connect files: 105/132
-- iOS Code Connect scaffolds: 0/132
-- iOS Code Connect linked: 105/132
-- Android components: 120/137
-- Android Code Connect files: 105/132
-- Android Code Connect scaffolds: 0/132
-- Android Code Connect linked: 105/132
-- Code Connect not applicable: 5/137
+- Web components: 139/139
+- Web stories: 139/139
+- Web tests: 139/139
+- Web Code Connect files: 113/134
+- Web Code Connect scaffolds: 0/134
+- Web Code Connect linked: 113/134
+- iOS components: 121/139
+- iOS Code Connect files: 105/134
+- iOS Code Connect scaffolds: 0/134
+- iOS Code Connect linked: 105/134
+- Android components: 122/139
+- Android Code Connect files: 105/134
+- Android Code Connect scaffolds: 0/134
+- Android Code Connect linked: 105/134
+- Code Connect not applicable: 5/139
