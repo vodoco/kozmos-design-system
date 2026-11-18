@@ -1272,6 +1272,13 @@
       ]
     },
     {
+      "file": "packages/react/src/components/SpriteIcon/SpriteIcon.stories.tsx",
+      "id": "components-spriteicon",
+      "title": "Core/Media/SpriteIcon",
+      "component": "SpriteIcon",
+      "exports": ["Default"]
+    },
+    {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",
       "id": "data-display-tag",
       "title": "Core/Data display/Tag",

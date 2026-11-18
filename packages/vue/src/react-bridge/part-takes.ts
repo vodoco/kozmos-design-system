@@ -126,6 +126,7 @@ import {
   MapControlButton,
   MultiSelect,
   ChipInput,
+  SpriteIcon,
   NavigationItem,
   NumberInput,
   POIDetailPanel,
@@ -415,6 +416,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       own: ["onInputValueChange", "onValueChange"],
     },
   ],
+  [SpriteIcon, D],
   [NavigationItem, D],
   [NumberInput, segmentedControlTakes],
   [
@@ -935,6 +937,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
     ),
   ],
   [ChipInput, textareaBooleans],
+  [SpriteIcon, H],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
   [
     NumberInput,
