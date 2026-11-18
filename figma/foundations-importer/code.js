@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d6ed913419f5";
+const PLUGIN_BUILD = "8ded02f1573e";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1411,6 +1411,9 @@ const DESCRIPTION_LIST_LAYOUTS = ["Stack", "Row"];
 // empty field's placeholder. Filled first, so the set's default holds chips.
 const CHIP_INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly", "Error"];
 const CHIP_INPUT_CONTENT = ["Filled", "Empty"];
+// GAP-150, decision 219: React's SpriteIcon `size`, the box a sprite cell is
+// drawn in. 24, React's default, is the last; the set's first is 16.
+const SPRITE_ICON_SIZES = ["16", "20", "24"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1918,6 +1921,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Combobox: 1040,
   MultiSelect: 1200,
   ChipInput: 760,
+  SpriteIcon: 200,
   Listbox: 520,
   DatePicker: 2100,
   DateRangePicker: 2400,
@@ -2109,7 +2113,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Toast",
     ],
   },
-  { title: "Media", components: ["Avatar"] },
+  { title: "Media", components: ["Avatar", "SpriteIcon"] },
 ];
 const COMPONENT_PAGE_LAYOUT_ORDER = componentPageLayoutOrder(
   COMPONENT_PAGE_LAYOUT_SECTIONS,
@@ -4165,6 +4169,28 @@ const COMPONENT_DOCS = [
       "The label names the control; the description, the state and the reason are read with it.",
       "Reset to default is a button; pressed, focus goes to the control.",
       "A disabled row disables its control and offers no reset.",
+    ],
+  },
+  {
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    category: "Media",
+    summary:
+      "SpriteIcon draws one cell of a published MapLibre sprite atlas as published: a taxonomy type's bubble, glyph and marker dot, at 16, 20 or 24 (GAP-150, decisions 86 and 219).",
+    usage: [
+      "Use for a taxonomy type's icon, from the atlas the product's map uses: the content tree, the type picker, the persona list.",
+      "Use Icon for the UI's own glyphs, which are Kozmos's.",
+      "Pass the atlas's version-pinned base URL; Kozmos names no version.",
+    ],
+    api: [
+      "Size maps to size: 16, 20 or 24.",
+      "Sprite maps to sprite, the atlas's base URL; Cell Name maps to name. The importer draws the real cell from them at Build and Update.",
+      "label names it; without one it is decorative.",
+    ],
+    properties: ["Size: 16, 20, 24", "Sprite, Cell Name"],
+    accessibility: [
+      "Decorative unless label names it: then an image named by the label.",
+      "While loading, or for a missing cell, an empty box of its size, so nothing moves.",
     ],
   },
   {
@@ -6810,32 +6836,27 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Counter/line-height/default", value: 16, scopes: ["LINE_HEIGHT"] },
   {
     name: "Badge/height/small",
-    value: 44,
-    alias: "Button/height/small",
+    value: 28,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/default",
-    value: 44,
-    alias: "Button/height/default",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/large",
-    value: 44,
-    alias: "Button/height/large",
+    value: 36,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/icon",
-    value: 44,
-    alias: "Button/height/icon",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/width/icon",
-    value: 44,
-    alias: "Button/width/icon",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
@@ -12802,6 +12823,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Combobox", updateComboboxComponent],
   ["MultiSelect", updateMultiSelectComponent],
   ["ChipInput", updateChipInputComponent],
+  ["SpriteIcon", updateSpriteIconComponent],
   ["Listbox", updateListboxComponent],
   ["DatePicker", updateDatePickerComponent],
   ["DateRangePicker", updateDateRangePickerComponent],
@@ -13085,6 +13107,9 @@ function additionalComponentActionHandlers() {
     "build-image-cropper": buildImageCropperComponent,
     "update-image-cropper": updateImageCropperComponent,
     "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-sprite-icon": buildSpriteIconComponent,
+    "update-sprite-icon": updateSpriteIconComponent,
+    "rebuild-sprite-icon": rebuildSpriteIconComponent,
     "build-chip-input": buildChipInputComponent,
     "update-chip-input": updateChipInputComponent,
     "rebuild-chip-input": rebuildChipInputComponent,
@@ -20576,6 +20601,12 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "DescriptionList") {
     return {
       Layout: DESCRIPTION_LIST_LAYOUTS,
+    };
+  }
+
+  if (canonicalName === "SpriteIcon") {
+    return {
+      Size: SPRITE_ICON_SIZES,
     };
   }
 
@@ -68618,6 +68649,238 @@ async function rebuildChipInputComponent() {
   });
 }
 
+// --- SpriteIcon -----------------------------------------------------------------
+
+// GAP-150, decisions 86 and 219: React's SpriteIcon, one cell of a published
+// MapLibre sprite atlas drawn as published, the full-colour bubble, glyph and
+// marker dot, never tinted, scaled into a 16, 20 or 24 box with its aspect
+// ratio kept. The importer draws the real cell: at Build and Update it reads
+// the atlas's @2x index and image from the set's Sprite and Cell Name
+// properties (by default Pointr's `latest` light atlas, the mutable alias,
+// and `desk`; Kozmos names no version), and fills a Cell rectangle with the
+// atlas image cropped to the cell. Where the atlas cannot be read the box is
+// left empty and the run says why: nothing stands in for the cell. A
+// designer who changes the Cell Name runs Update to draw it; an instance's
+// own override changes the words, not the picture.
+const SPRITE_ICON_DEFAULT_ATLAS =
+  "https://mapscdn.pointr.tech/sprite/latest/light/sprite";
+const SPRITE_ICON_DEFAULT_CELL = "desk";
+// How the importer reads an atlas: the plugin's fetch for the index and
+// figma.createImageAsync for the image. An object, so the painters check can
+// stand in for the network.
+const SPRITE_ICON_IO = {
+  json: (url) =>
+    typeof fetch === "function"
+      ? fetch(url).then((response) =>
+          response.ok
+            ? response.json()
+            : Promise.reject(new Error(`${response.status} ${url}`)),
+        )
+      : Promise.reject(
+          new Error("fetch is not available in this plugin runtime"),
+        ),
+  image: (url) =>
+    figma && typeof figma.createImageAsync === "function"
+      ? figma.createImageAsync(url)
+      : Promise.reject(new Error("figma.createImageAsync is not available")),
+};
+const spriteIconAtlases = new Map();
+
+/** The @2x atlas at `base`, read once per run: its cells, image hash and size. */
+function loadSpriteIconAtlas(base) {
+  if (!spriteIconAtlases.has(base)) {
+    spriteIconAtlases.set(
+      base,
+      Promise.all([
+        SPRITE_ICON_IO.json(`${base}@2x.json`),
+        SPRITE_ICON_IO.image(`${base}@2x.png`).then(async (image) => ({
+          hash: image.hash,
+          size: await image.getSizeAsync(),
+        })),
+      ]).then(([cells, image]) => ({ cells, image })),
+    );
+  }
+  return spriteIconAtlases.get(base);
+}
+
+/** The cell's rectangle in a `side` box, scaled to fit with its aspect ratio kept. */
+function spriteIconFittedSize(cell, side) {
+  const longest = Math.max(cell.width, cell.height);
+  return {
+    width: (side * cell.width) / longest,
+    height: (side * cell.height) / longest,
+  };
+}
+
+/** An image fill showing just the cell: the atlas cropped to it. */
+function spriteIconCellPaint(atlas, cell) {
+  const { width, height } = atlas.image.size;
+  return {
+    type: "IMAGE",
+    scaleMode: "CROP",
+    imageHash: atlas.image.hash,
+    imageTransform: [
+      [cell.width / width, 0, cell.x / width],
+      [0, cell.height / height, cell.y / height],
+    ],
+  };
+}
+
+/** The set's Sprite and Cell Name, as its text properties hold them. */
+function spriteIconSourceOf(component) {
+  const set = component && component.parent;
+  const defs =
+    set && set.type === "COMPONENT_SET" ? set.componentPropertyDefinitions : {};
+  const value = (name) => {
+    const key = Object.keys(defs || {}).find(
+      (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+    );
+    return key ? String(defs[key].defaultValue || "").trim() : "";
+  };
+  return {
+    sprite:
+      value("Sprite") ||
+      firstDescendantTextCharactersByName(component, "Sprite") ||
+      SPRITE_ICON_DEFAULT_ATLAS,
+    cell:
+      value("Cell Name") ||
+      firstDescendantTextCharactersByName(component, "Cell Name") ||
+      SPRITE_ICON_DEFAULT_CELL,
+  };
+}
+
+async function createSpriteIconVariant(args) {
+  const component = figma.createComponent();
+  await updateSpriteIconVariant(component, args);
+  return component;
+}
+
+function parseSpriteIconVariantName(name) {
+  return productSdkVariantValues(name, "Size", SPRITE_ICON_SIZES);
+}
+
+async function updateSpriteIconVariant(component, { value, fonts, stats }) {
+  const side = Number(value);
+  const source = spriteIconSourceOf(component);
+  productSdkVariantRoot(component, "SpriteIcon", "Size=" + value, {
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: side,
+    height: side,
+  });
+  component.fills = [];
+  component.strokes = [];
+
+  // The source, kept as hidden words its properties bind, so Update and
+  // Code Connect read the same cell the picture shows.
+  for (const [name, characters] of [
+    ["Sprite", source.sprite],
+    ["Cell Name", source.cell],
+  ]) {
+    const text = figma.createText();
+    text.name = name;
+    text.fontName = fonts.regular;
+    text.characters = characters;
+    text.visible = false;
+    component.appendChild(text);
+    text.layoutPositioning = "ABSOLUTE";
+  }
+
+  let atlas = null;
+  try {
+    atlas = await loadSpriteIconAtlas(source.sprite);
+  } catch (error) {
+    stats.warnings.push(
+      `SpriteIcon: the atlas ${source.sprite} could not be read (${messageFor(error)}); the ${value} box is left empty, with no stand-in.`,
+    );
+    return;
+  }
+  const cell = atlas.cells && atlas.cells[source.cell];
+  if (!cell) {
+    stats.warnings.push(
+      `SpriteIcon: ${source.sprite} has no cell named "${source.cell}"; the ${value} box is left empty.`,
+    );
+    return;
+  }
+  const fitted = spriteIconFittedSize(cell, side);
+  const rect = figma.createRectangle();
+  rect.name = "Cell";
+  rect.resize(fitted.width, fitted.height);
+  rect.fills = [spriteIconCellPaint(atlas, cell)];
+  rect.strokes = [];
+  rect.setSharedPluginData(RUN_NAMESPACE, "kind", "sprite-icon-cell");
+  component.appendChild(rect);
+}
+
+function configureSpriteIconProperties(componentSet, stats) {
+  const first = componentSet.children && componentSet.children[0];
+  const source = spriteIconSourceOf(first);
+  configureNamedTextProperty(
+    componentSet,
+    "Sprite",
+    "Sprite",
+    source.sprite,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Cell Name",
+    "Cell Name",
+    source.cell,
+    stats,
+  );
+}
+
+const SPRITE_ICON_DESCRIPTION = [
+  "Kozmos SpriteIcon component set generated from React SpriteIcon API (GAP-150, decisions 86 and 219).",
+  "One cell of a published MapLibre sprite atlas, drawn as published (bubble, glyph and marker dot), never tinted, scaled into the box with its aspect ratio kept.",
+  "Size maps to size: 16, 20 or 24. Sprite maps to sprite, the atlas's base URL; Cell Name maps to name. Update redraws the cell from the set's Sprite and Cell Name; an instance's override changes the words only.",
+  "Decorative unless label names it.",
+];
+
+async function buildSpriteIconComponent() {
+  return buildSingleAxisComponent({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    axisName: "Size",
+    values: SPRITE_ICON_SIZES,
+    x: 80,
+    y: 22000,
+    xStep: 80,
+    createVariant: createSpriteIconVariant,
+    configureProperties: configureSpriteIconProperties,
+    autoReorganize: true,
+    description: SPRITE_ICON_DESCRIPTION,
+  });
+}
+
+async function updateSpriteIconComponent() {
+  spriteIconAtlases.clear();
+  return updateSingleAxisComponent({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    axisName: "Size",
+    values: SPRITE_ICON_SIZES,
+    xStep: 80,
+    createVariant: createSpriteIconVariant,
+    updateVariant: updateSpriteIconVariant,
+    parseVariantName: parseSpriteIconVariantName,
+    configureProperties: configureSpriteIconProperties,
+    autoReorganize: true,
+    description: SPRITE_ICON_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildSpriteIconComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    build: buildSpriteIconComponent,
+  });
+}
+
 // --- ImageCropper ----------------------------------------------------------------
 
 // GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
@@ -92161,11 +92424,15 @@ function floatingActionButtonMetrics(size) {
   };
 }
 
+// Chip's scale (decision 93, GAP-147): 28, 32 and 36, the icon Badge 32
+// square. Plain values, not aliases of Chip's heights, which are declared
+// after these and so are not there yet when a fresh file creates them. A
+// status: no hover state.
 function badgeMetrics(size) {
   if (size === "Small") {
     return {
       width: 58,
-      height: 44,
+      height: 28,
       paddingX: 12,
       heightToken: "Badge/height/small",
       paddingXToken: "Badge/padding/x/small",
@@ -92175,7 +92442,7 @@ function badgeMetrics(size) {
   if (size === "Large") {
     return {
       width: 86,
-      height: 44,
+      height: 36,
       paddingX: 32,
       heightToken: "Badge/height/large",
       paddingXToken: "Badge/padding/x/large",
@@ -92184,8 +92451,8 @@ function badgeMetrics(size) {
 
   if (size === "Icon") {
     return {
-      width: 44,
-      height: 44,
+      width: 32,
+      height: 32,
       paddingX: 0,
       iconSize: 16,
       widthToken: "Badge/width/icon",
@@ -92197,7 +92464,7 @@ function badgeMetrics(size) {
 
   return {
     width: 66,
-    height: 44,
+    height: 32,
     paddingX: 16,
     heightToken: "Badge/height/default",
     paddingXToken: "Badge/padding/x/default",

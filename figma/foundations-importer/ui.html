@@ -1168,6 +1168,7 @@
               </optgroup>
               <optgroup label="Media">
                 <option value="avatar">Avatar</option>
+                <option value="spriteIcon">SpriteIcon</option>
               </optgroup>
               <optgroup label="Product / SDK">
                 <option value="aiSearchButton">AISearchButton</option>
@@ -2225,6 +2226,13 @@
           update: "update-combobox",
           rebuild: "rebuild-combobox",
           hint: "Build creates Combobox with State, Status, and Content axes plus editable label, placeholder, option, and helper text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        spriteIcon: {
+          label: "SpriteIcon",
+          build: "build-sprite-icon",
+          update: "update-sprite-icon",
+          rebuild: "rebuild-sprite-icon",
+          hint: "Build creates SpriteIcon (GAP-150, decision 219): one cell of a published MapLibre sprite atlas drawn as published, never tinted, in 16, 20 and 24 Size variants, its aspect ratio kept. It reads the real cell over the network at Build and Update, from the set's Sprite (Pointr's latest light atlas by default) and Cell Name (desk) text properties; change them and run Update to draw another cell. Where the atlas cannot be read the box is left empty and the run says why. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         chipInput: {
           label: "ChipInput",

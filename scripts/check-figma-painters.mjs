@@ -18864,6 +18864,181 @@ section("GAP-221: DescriptionList draws each label over its value");
   );
 }
 
+// --- Badge on Chip's scale (GAP-147) --------------------------------------------
+
+// GAP-147, decision 93: Badge is a status badge on Chip's scale, 28, 32 and 36
+// (the icon Badge 32 square), where it was 44 like a button. Each size's
+// height is bound to its Badge/height token, which holds that value.
+section("GAP-147: Badge draws on Chip's scale, 28, 32 and 36");
+{
+  const ready = typeof plugin.updateBadgeVariant === "function";
+  ok(ready, "Badge's painter is reachable");
+  for (const [size, height, width] of ready
+    ? [
+        ["Small", 28],
+        ["Default", 32],
+        ["Large", 36],
+        ["Icon", 32, 32],
+      ]
+    : []) {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin.updateBadgeVariant(component, {
+        variant: "Default",
+        size,
+        variableByName: menusTokens.variableByName,
+        iconComponent: null,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const token =
+      size === "Icon" ? "Badge/height/icon" : `Badge/height/${size.toLowerCase()}`;
+    ok(
+      component.height === height &&
+        menusBound(component, "height") === token &&
+        menusValueOf(token) === height &&
+        (width === undefined ||
+          (component.width === width &&
+            menusValueOf("Badge/width/icon") === width)),
+      `Badge Size=${size}: ${height} tall${width ? `, ${width} wide` : ""}, bound to ${token} at ${height} (${component.height}x${component.width}, ${menusBound(component, "height")} = ${menusValueOf(token)})`,
+    );
+  }
+}
+
+// --- SpriteIcon (GAP-150) ------------------------------------------------------
+
+// GAP-150, decisions 86 and 219: SpriteIcon draws the real cell of a published
+// atlas, never a stand-in: Build and Update read the @2x index and image from
+// the set's Sprite and Cell Name, and fill a Cell rectangle with the atlas
+// cropped to the cell, scaled into the 16, 20 or 24 box with its aspect ratio
+// kept. An atlas that cannot be read leaves the box empty and says so. The
+// network is stood in for here by the fixture atlas the stories use.
+section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
+{
+  const ready =
+    Array.isArray(plugin.SPRITE_ICON_SIZES) &&
+    plugin.SPRITE_ICON_IO &&
+    typeof plugin.updateSpriteIconVariant === "function" &&
+    typeof plugin.parseSpriteIconVariantName === "function" &&
+    typeof plugin.configureSpriteIconProperties === "function";
+  ok(ready, "SpriteIcon's painter, its reader and its properties are reachable");
+  const fixture = JSON.parse(
+    fs.readFileSync("apps/docs/src/sprite-fixture/sprite@2x.json", "utf8"),
+  );
+  const asked = [];
+  const real = ready && { ...plugin.SPRITE_ICON_IO };
+  if (ready) {
+    plugin.SPRITE_ICON_IO.json = async (url) => {
+      asked.push(url);
+      if (url.includes("unreachable")) throw new Error("network blocked");
+      return url.includes("atlas-a") ? fixture : {};
+    };
+    plugin.SPRITE_ICON_IO.image = async (url) => {
+      asked.push(url);
+      return { hash: "atlas-hash", getSizeAsync: async () => ({ width: 370, height: 114 }) };
+    };
+  }
+  const paint = async (value, sprite, cell) => {
+    const component = figma.createComponent();
+    // Build reads the defaults; Update reads the set's properties. Here the
+    // hidden words stand for them, as Update finds them.
+    for (const [name, characters] of [["Sprite", sprite], ["Cell Name", cell]]) {
+      const text = new MockNode("TEXT", name);
+      text.characters = characters;
+      component.appendChild(text);
+    }
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateSpriteIconVariant(component, { value, fonts: FONTS, stats, variableByName: menusTokens.variableByName }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  for (const value of ready ? plugin.SPRITE_ICON_SIZES : []) {
+    const side = Number(value);
+    for (const [name, expected] of [
+      ["desk", { width: side, height: side }],
+      ["1", { width: (side * 90) / 110, height: side }],
+    ]) {
+      const { component, stats } = await paint(value, "https://cdn.test/atlas-a/sprite", name);
+      if (name === "desk") variants.push(component);
+      const rect = named(component, "Cell");
+      const fill = rect && rect.fills[0];
+      const c = fixture[name];
+      ok(
+        component.name === `Size=${value}` &&
+          plugin.parseSpriteIconVariantName(component.name).value === value &&
+          component.width === side &&
+          component.height === side &&
+          component.fills.length === 0 &&
+          rect &&
+          Math.abs(rect.width - expected.width) < 0.01 &&
+          Math.abs(rect.height - expected.height) < 0.01 &&
+          fill &&
+          fill.type === "IMAGE" &&
+          fill.scaleMode === "CROP" &&
+          fill.imageHash === "atlas-hash" &&
+          JSON.stringify(fill.imageTransform) ===
+            JSON.stringify([
+              [c.width / 370, 0, c.x / 370],
+              [0, c.height / 114, c.y / 114],
+            ]) &&
+          stats.warnings.length === 0,
+        `Size=${value} "${name}": a ${side} box, its Cell ${expected.width.toFixed(2)}x${expected.height} cropped from the atlas, untinted (${component.width}x${component.height}, ${rect && `${rect.width.toFixed(2)}x${rect.height}`}, ${fill && `${fill.type} ${fill.scaleMode} ${JSON.stringify(fill.imageTransform)}`}, ${stats.warnings.join("; ")})`,
+      );
+    }
+  }
+  if (ready) {
+    ok(
+      asked.filter((url) => url.includes("atlas-a")).join() ===
+        "https://cdn.test/atlas-a/sprite@2x.json,https://cdn.test/atlas-a/sprite@2x.png",
+      `the @2x atlas is read once for every variant (${asked.join(", ")})`,
+    );
+    for (const [sprite, cell, says] of [
+      ["https://cdn.test/unreachable/sprite", "desk", /could not be read \(.*network blocked\)/],
+      ["https://cdn.test/atlas-a/sprite", "not-in-the-atlas", /no cell named "not-in-the-atlas"/],
+    ]) {
+      const { component, stats } = await paint("24", sprite, cell);
+      ok(
+        !named(component, "Cell") &&
+          component.width === 24 &&
+          stats.warnings.some((warning) => says.test(warning)),
+        `${cell} from ${sprite}: the 24 box is left empty, with no stand-in, and the run says why (${stats.warnings.join("; ")})`,
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "SpriteIcon";
+    plugin.configureSpriteIconProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const text = (name) =>
+      Object.keys(defs).find((k) => k.split("#")[0] === name && defs[k].type === "TEXT");
+    ok(
+      text("Sprite") &&
+        defs[text("Sprite")].defaultValue === "https://cdn.test/atlas-a/sprite" &&
+        text("Cell Name") &&
+        defs[text("Cell Name")].defaultValue === "desk",
+      "SpriteIcon: Sprite and Cell Name text properties, holding the cell drawn",
+    );
+    set.remove();
+    Object.assign(plugin.SPRITE_ICON_IO, real);
+  }
+  ok(
+    ready &&
+      !/\/sprite\/\d+\.\d+\.\d+\//.test(plugin.SPRITE_ICON_DEFAULT_ATLAS) &&
+      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("SpriteIcon")) ===
+        JSON.stringify({ Size: ["16", "20", "24"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) => name === "SpriteIcon" && update === plugin.updateSpriteIconComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) => entry.title === "Media" && entry.components.includes("SpriteIcon"),
+      ) &&
+      plugin.COMPONENT_DOCS.some((entry) => entry.componentSetName === "SpriteIcon"),
+    "SpriteIcon: no version in its default atlas; a Size axis, in Update All Core, the Media section and the docs",
+  );
+}
+
 // --- ChipInput (GAP-222) -------------------------------------------------------
 
 // GAP-222, decision 216: React's ChipInput, a field that takes free text and
