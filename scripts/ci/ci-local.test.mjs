@@ -237,7 +237,8 @@ test("the changeset rule passes the same branch once a changeset names the packa
   );
   commit(
     ".changeset/thing.md",
-    '---\n"@kozmos-ds/react": patch\n---\n\nThe thing is 2.\n',
+    // A part's source is what styles' stylesheet is built from too.
+    '---\n"@kozmos-ds/react": patch\n"@kozmos-ds/styles": patch\n---\n\nThe thing is 2.\n',
   );
   const run = ciLocal(dir, "--only", "Require A Changeset");
   assert.equal(run.status, 0, run.log);
