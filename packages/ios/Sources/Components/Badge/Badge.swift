@@ -51,7 +51,7 @@ public struct KozmosBadge: View {
         }
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, 0)
-            .frame(minWidth: size == .icon ? 44 : nil, minHeight: 44)
+            .frame(minWidth: size == .icon ? minHeight : nil, minHeight: minHeight)
             .background(backgroundColor)
             .foregroundColor(foregroundColor)
             .cornerRadius(KozmosDimensions.semanticsRadiusMarker)
@@ -59,6 +59,17 @@ public struct KozmosBadge: View {
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusMarker)
                     .stroke(borderColor, lineWidth: variant == .outline ? 1 : 0)
             )
+    }
+
+    /// Chip's scale (decision 93, GAP-147): 28, 32 and 36, as `KozmosChip`'s
+    /// sizes; an icon Badge is the default height, square. A status, not a
+    /// control: nothing on it changes when pressed or hovered.
+    var minHeight: CGFloat {
+        switch size {
+        case .sm: return 28
+        case .default, .icon: return 32
+        case .lg: return 36
+        }
     }
 
     private var horizontalPadding: CGFloat {

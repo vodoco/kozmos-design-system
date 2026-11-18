@@ -935,20 +935,33 @@ assertContains(
 assertContains(
   files.reactBadge,
   source.reactBadge,
-  /default:\s*["']h-11 px-4 py-2["']/,
-  "44px default Badge class",
+  /default:\s*["']h-badge px-4["']/,
+  "Badge default at the density's Badge height, Chip's 32 (decision 93)",
 );
 assertContains(
   files.reactBadge,
   source.reactBadge,
-  /sm:\s*["']h-11 rounded-control px-3["']/,
-  "44px small Badge class",
+  /sm:\s*["']h-badge-sm px-3["']/,
+  "Badge sm at the density's Badge height, Chip's 28 (decision 93)",
 );
 assertContains(
   files.reactBadge,
   source.reactBadge,
-  /icon:\s*["']h-11 w-11["']/,
-  "44px icon Badge class",
+  /icon:\s*["']h-badge w-badge["']/,
+  "Badge icon at the density's Badge height, square (decision 93)",
+);
+assertContains(
+  files.reactBadge,
+  source.reactBadge,
+  /lg:\s*["']h-badge-lg px-8["']/,
+  "Badge lg at the density's Badge height, Chip's 36 (decision 93)",
+);
+// A status, not a control (decision 93): no hover state on any variant.
+assertNotContains(
+  files.reactBadge,
+  source.reactBadge,
+  "hover:",
+  "Badge has no hover state (decision 93)",
 );
 assertContains(
   files.reactBadge,
@@ -2710,10 +2723,6 @@ for (const tokenName of [
   "IconButton/size/small",
   "IconButton/size/default",
   "IconButton/size/large",
-  "Badge/height/small",
-  "Badge/height/default",
-  "Badge/height/large",
-  "Badge/height/icon",
   "Checkbox/height/default",
   "Radio/height/default",
   "Switch/height/default",
@@ -2741,12 +2750,34 @@ assertContains(
   tokenValuePattern("Button/width/icon", target),
   "Button icon width token at 44px",
 );
-assertContains(
-  files.figma,
-  source.figma,
-  tokenValuePattern("Badge/width/icon", target),
-  "Badge icon width token at 44px",
-);
+// Badge on Chip's scale (decision 93, GAP-147): 28, 32 and 36, the icon
+// Badge 32 square, each aliasing Chip's height.
+for (const [tokenName, expected] of [
+  ["Badge/height/small", contract.components.badge.sizes.small.height],
+  ["Badge/height/default", contract.components.badge.sizes.default.height],
+  ["Badge/height/large", contract.components.badge.sizes.large.height],
+  ["Badge/height/icon", contract.components.badge.sizes.icon.height],
+  ["Badge/width/icon", contract.components.badge.sizes.icon.width],
+]) {
+  assertContains(
+    files.figma,
+    source.figma,
+    tokenValuePattern(tokenName, expected),
+    `${tokenName} token at ${expected}px (decision 93)`,
+  );
+}
+const densityBadge = (density) =>
+  ["sm", "md", "lg"].map(
+    (k) =>
+      Number.parseFloat(
+        JSON.parse(read(`packages/tokens/src/tokens-density-${density}.json`))
+          .Density.Badge.Height[k].$value,
+      ) * 16,
+  );
+if (JSON.stringify(densityBadge("touch")) !== "[28,32,36]")
+  fail(`Density.Badge.Height touch is ${densityBadge("touch")}, expected 28, 32, 36 (decision 93)`);
+if (JSON.stringify(densityBadge("compact")) !== "[20,24,28]")
+  fail(`Density.Badge.Height compact is ${densityBadge("compact")}, expected 20, 24, 28 (decision 93)`);
 assertContains(
   files.figma,
   source.figma,
@@ -10551,14 +10582,20 @@ for (const sizeName of ["`default`", "sm", "lg", "icon"]) {
 assertContains(
   files.iosBadge,
   source.iosBadge,
-  "minHeight: 44",
-  "iOS Badge 44px minimum height",
+  "minHeight: minHeight",
+  "iOS Badge minimum height by size, Chip's scale (decision 93)",
 );
 assertContains(
   files.iosBadge,
   source.iosBadge,
-  "minWidth: size == .icon ? 44 : nil",
-  "iOS Badge icon 44px minimum width",
+  "case .sm: return 28",
+  "iOS Badge sm 28 (decision 93)",
+);
+assertContains(
+  files.iosBadge,
+  source.iosBadge,
+  "minWidth: size == .icon ? minHeight : nil",
+  "iOS Badge icon square (decision 93)",
 );
 assertContains(
   files.iosBadge,
@@ -11078,14 +11115,20 @@ assertAllVariants(
 assertContains(
   files.androidBadge,
   source.androidBadge,
-  ".height(44.dp)",
-  "Android Badge 44dp height",
+  ".height(height)",
+  "Android Badge height by size, Chip's scale (decision 93)",
 );
 assertContains(
   files.androidBadge,
   source.androidBadge,
-  "Modifier.width(44.dp)",
-  "Android Badge icon 44dp width",
+  "BadgeSize.Sm -> 28.dp",
+  "Android Badge sm 28dp (decision 93)",
+);
+assertContains(
+  files.androidBadge,
+  source.androidBadge,
+  "Modifier.width(height)",
+  "Android Badge icon square (decision 93)",
 );
 assertContains(
   files.androidBadge,

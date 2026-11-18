@@ -67,6 +67,34 @@
           }
         }
       }
+    },
+    "Badge": {
+      "Height": {
+        "sm": {
+          "$value": "1.25rem",
+          "$type": "dimension",
+          "$description": "The height of a Badge at size sm, Chip's scale (decision 93).",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        },
+        "md": {
+          "$value": "1.5rem",
+          "$type": "dimension",
+          "$description": "The height of a Badge at its default size, and the side of an icon Badge (decision 93).",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        },
+        "lg": {
+          "$value": "1.75rem",
+          "$type": "dimension",
+          "$description": "The height of a Badge at size lg (decision 93).",
+          "$extensions": {
+            "com.figma.scopes": ["WIDTH_HEIGHT"]
+          }
+        }
+      }
     }
   }
 }

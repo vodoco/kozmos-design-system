@@ -84,6 +84,12 @@ const EXPECTED = {
   button: { owned: true, height: [44, 40] },
   "button-lg": { owned: true, height: [44, 48] },
   "button-icon": { owned: true, height: [44, 32], width: [44, 32] },
+  // Badge on Chip's scale (decision 93, GAP-147): 28, 32 and 36 at touch,
+  // 20, 24 and 28 compact; the icon Badge the default height, square.
+  "badge-sm": { height: [28, 20] },
+  badge: { height: [32, 24] },
+  "badge-lg": { height: [36, 28] },
+  "badge-icon": { height: [32, 24], width: [32, 24] },
   "icon-button-sm": { height: [44, 28], width: [44, 28] },
   "icon-button": { height: [44, 32], width: [44, 32] },
   "icon-button-lg": { height: [48, 40], width: [48, 40] },
@@ -549,5 +555,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48, in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; the fields on Input's recipe (DatePicker, DateRangePicker, TimePicker, Search, ColorPicker) take the field's height and Pagination's Previous and Next its links'; MultiSelect's clear and open are as tall as the field, which keeps its height, and the open runs over the field's 1px edge to its outer end, as Combobox's does, and ends 1 inside a caller's 2px border, in both directions; a caller's px-4 sets a field's start and Combobox, MultiSelect and PasswordInput keep the room for their actions (in WebKit, which applies no @scope rule to an <input>, the field keeps its own start and the owned room holds); a stacked dialog footer's buttons keep their sizes' heights; dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
+  `PASS density: ${reads} reads, touch keeps 44 and compact reads 28 to 48 (Badge on Chip's scale: 28, 32 and 36 touch, 20, 24 and 28 compact), in roots, a nested touch root, a portal, right-to-left and a compact DensityScope with its popover, with and without @scope and at a 20px root; outside a provider every density size falls back to touch; the fields on Input's recipe (DatePicker, DateRangePicker, TimePicker, Search, ColorPicker) take the field's height and Pagination's Previous and Next its links'; MultiSelect's clear and open are as tall as the field, which keeps its height, and the open runs over the field's 1px edge to its outer end, as Combobox's does, and ends 1 inside a caller's 2px border, in both directions; a caller's px-4 sets a field's start and Combobox, MultiSelect and PasswordInput keep the room for their actions (in WebKit, which applies no @scope rule to an <input>, the field keeps its own start and the owned room holds); a stacked dialog footer's buttons keep their sizes' heights; dialog and drawer closes sit on their titles as in touch; SDK parts stay 44 in compact, with a provider of their own inside and in their popovers, and only their touch mark holds them`,
 );

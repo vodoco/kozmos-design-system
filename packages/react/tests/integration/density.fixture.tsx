@@ -17,6 +17,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   IconButton,
+  Badge,
   Input,
   MultiSelect,
   NumberInput,
@@ -66,6 +67,17 @@ function Controls({ board }: { board: string }) {
       <Button data-measure="button-icon" size="icon" aria-label="Add">
         <Plus />
       </Button>
+      {/* Badge on Chip's scale (decision 93, GAP-147). */}
+      <Badge data-measure="badge-sm" size="sm">
+        New
+      </Badge>
+      <Badge data-measure="badge">New</Badge>
+      <Badge data-measure="badge-lg" size="lg">
+        New
+      </Badge>
+      <Badge data-measure="badge-icon" size="icon" aria-label="New">
+        N
+      </Badge>
       <IconButton data-measure="icon-button-sm" size="sm" aria-label="Add">
         <Plus />
       </IconButton>

@@ -4,28 +4,30 @@ import { cn } from "../../utils";
 import { Counter, type CounterProps } from "../Counter";
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center gap-1 rounded-control text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-1 rounded-control text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
+      // A status, not a control (decision 93): nothing changes under the
+      // pointer, so no variant has a hover state.
       variant: {
         // The theme fill and the theme foreground, the same in both themes
-        // (decision 59). Hovered, the themed Button's hover token, opaque.
-        default:
-          "bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)]",
+        // (decision 59).
+        default: "bg-theme-fill text-theme-fill-foreground",
         destructive:
-          "bg-destructive text-[var(--primitives-colors-foreground-1000)] hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent/10 hover:text-accent",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-destructive text-[var(--primitives-colors-foreground-1000)]",
+        outline: "border border-input bg-background",
+        secondary: "bg-secondary text-secondary-foreground",
+        ghost: "",
+        link: "text-primary underline-offset-4",
       },
+      // Chip's scale (decision 93, GAP-147): 28, 32 and 36 at touch, 20, 24
+      // and 28 compact, from the density's Badge tokens. An icon Badge is
+      // the default height, square.
       size: {
-        default: "h-11 px-4 py-2",
-        sm: "h-11 rounded-control px-3",
-        lg: "h-11 rounded-control px-8",
-        icon: "h-11 w-11",
+        default: "h-badge px-4",
+        sm: "h-badge-sm px-3",
+        lg: "h-badge-lg px-8",
+        icon: "h-badge w-badge",
       },
     },
     defaultVariants: {
