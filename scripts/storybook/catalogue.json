@@ -767,6 +767,13 @@
       "exports": ["Default", "WithVisibleLabels", "Overflowing"]
     },
     {
+      "file": "packages/react/src/components/ChipInput/ChipInput.stories.tsx",
+      "id": "components-chipinput",
+      "title": "Core/Inputs/ChipInput",
+      "component": "ChipInput",
+      "exports": ["Default"]
+    },
+    {
       "file": "packages/react/src/components/MultiSelect/MultiSelect.stories.tsx",
       "id": "components-multiselect",
       "title": "Core/Inputs/MultiSelect",

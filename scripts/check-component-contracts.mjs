@@ -9219,7 +9219,8 @@ assertOccurrenceCount(
   /normalizeInputFamilyChildSizing\(component\);/g,
   // FileUpload's Content=Preview draws its own children (GAP-270), and its
   // Content=Button (GAP-274) normalizes its label, trigger and helper.
-  19,
+  // ChipInput (GAP-222) normalizes its label, field and helper.
+  20,
   "input-family fill sizing normalization calls",
 );
 assertContains(
