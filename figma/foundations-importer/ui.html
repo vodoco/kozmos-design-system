@@ -1138,6 +1138,7 @@
                 <option value="formField">FormField</option>
                 <option value="combobox">Combobox</option>
                 <option value="multiSelect">MultiSelect</option>
+                <option value="chipInput">ChipInput</option>
                 <option value="listbox">Listbox</option>
                 <option value="input">Input</option>
                 <option value="passwordInput">PasswordInput</option>
@@ -2224,6 +2225,13 @@
           update: "update-combobox",
           rebuild: "rebuild-combobox",
           hint: "Build creates Combobox with State, Status, and Content axes plus editable label, placeholder, option, and helper text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        chipInput: {
+          label: "ChipInput",
+          build: "build-chip-input",
+          update: "update-chip-input",
+          rebuild: "rebuild-chip-input",
+          hint: "Build creates ChipInput (GAP-222) after Chip: a field that takes free text and holds each entry as a removable chip, MultiSelect's field with no clear and no open, in State (Default, Focus, Disabled, Readonly, Error) and Content (Filled with two live Chip instances, or Empty with the placeholder) variants, with Label, Placeholder, Helper and Error Text properties. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         multiSelect: {
           label: "MultiSelect",

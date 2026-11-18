@@ -18864,6 +18864,183 @@ section("GAP-221: DescriptionList draws each label over its value");
   );
 }
 
+// --- ChipInput (GAP-222) -------------------------------------------------------
+
+// GAP-222, decision 216: React's ChipInput, a field that takes free text and
+// holds each entry as a removable chip inside it: MultiSelect's field with no
+// clear and no open, 320 wide, at least 44 tall, padded 8 and 4, on the
+// control radius in the input family's colours. Filled draws two entries as
+// Chip instances (Small, Selected, Removable; Disabled when disabled; not
+// Removable when read-only), 6 apart; Empty the placeholder. Focus draws the
+// ring; Error the danger edge and Error Text. State and Content axes, in
+// Update All Core, the Inputs section and the docs.
+section("GAP-222: ChipInput holds each entry as a chip inside the field");
+{
+  const ready =
+    Array.isArray(plugin.CHIP_INPUT_STATES) &&
+    Array.isArray(plugin.CHIP_INPUT_CONTENT) &&
+    typeof plugin.updateChipInputVariant === "function" &&
+    typeof plugin.parseChipInputVariantName === "function" &&
+    typeof plugin.configureChipInputProperties === "function";
+  ok(ready, "ChipInput's painter and properties are reachable");
+  // The Chip set the entries are instances of, as Build Chip leaves it.
+  const componentsPage = figma.root.children[0];
+  const chipLook = (state, removable) => ({
+    properties: { Variant: "Neutral", Size: "Small", State: state, Removable: removable },
+    build: (variant) => {
+      variant.layoutMode = "HORIZONTAL";
+      variant.resize(72, 28);
+      const text = new MockNode("TEXT", "Label Text");
+      text.characters = "Chip";
+      text.componentPropertyReferences = { characters: "Label Text#1:0" };
+      variant.appendChild(text);
+    },
+  });
+  const chipSet = mockComponentSet("Chip", [
+    chipLook("Selected", "True"),
+    chipLook("Selected", "False"),
+    chipLook("Disabled", "True"),
+  ]);
+  chipSet.componentPropertyDefinitions = {
+    "Label Text#1:0": { type: "TEXT", defaultValue: "Chip" },
+  };
+  componentsPage.appendChild(chipSet);
+  const paint = async (value, second) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateChipInputVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  for (const state of ready ? plugin.CHIP_INPUT_STATES : []) {
+    for (const content of plugin.CHIP_INPUT_CONTENT) {
+      const { component, stats } = await paint(state, content);
+      variants.push(component);
+      const name = `State=${state}, Content=${content}`;
+      const parsed = plugin.parseChipInputVariantName(component.name);
+      ok(
+        component.name === name &&
+          parsed &&
+          parsed.value === state &&
+          parsed.second === content,
+        `${name}: named so, and reads back as itself (${component.name})`,
+      );
+      const field = named(component, "ChipInput Field");
+      const error = state === "Error";
+      ok(
+        field &&
+          component.children.map((child) => child.name).join() ===
+            `Label Text,ChipInput Field,${error ? "Error Text" : "Helper Text"}` &&
+          field.layoutMode === "HORIZONTAL" &&
+          field.height === 44 &&
+          menusBound(field, "height") === "ChipInput/field/min-height" &&
+          menusValueOf("ChipInput/field/min-height") === 44 &&
+          field.paddingLeft === 8 &&
+          field.paddingTop === 4 &&
+          field.itemSpacing === 6 &&
+          menusBound(field, "itemSpacing") === "ChipInput/field/gap" &&
+          menusValueOf("ChipInput/field/gap") === 6 &&
+          field.strokeWeight === 1 &&
+          boundVariableName(field.strokes[0]) ===
+            (error
+              ? "Colors/emotional/danger/600"
+              : state === "Focus"
+                ? "Colors/theme/600"
+                : "Border/Input") &&
+          boundVariableName(field.fills[0]) ===
+            (state === "Disabled" || state === "Readonly"
+              ? "Colors/background/100"
+              : "Colors/background/0"),
+        `${name}: the label, the field 44 tall padded 8 and 4 in the input's colours, then the ${error ? "error" : "helper"} (${component.children.map((child) => child.name)}, ${field && `${field.height} ${field.paddingLeft}/${field.paddingTop} gap ${field.itemSpacing} ${boundVariableName(field.strokes[0])} ${boundVariableName(field.fills[0])}`})`,
+      );
+      const chips = field
+        ? field.children.filter((child) => /^ChipInput Chip \d$/.test(child.name))
+        : [];
+      const placeholder = field && named(field, "Placeholder Text");
+      if (content === "Filled") {
+        const wanted = {
+          State: state === "Disabled" ? "Disabled" : "Selected",
+          Removable: state === "Readonly" ? "False" : "True",
+        };
+        ok(
+          chips.length === 2 &&
+            !placeholder &&
+            chips.every(
+              (chip) =>
+                chip.type === "INSTANCE" &&
+                chip.mainComponent &&
+                chip.mainComponent.parent === chipSet &&
+                chip.mainComponent.variantProperties.Size === "Small" &&
+                chip.mainComponent.variantProperties.State === wanted.State &&
+                chip.mainComponent.variantProperties.Removable === wanted.Removable,
+            ),
+          `${name}: two Chip instances, Small, ${wanted.State}, Removable ${wanted.Removable}, and no placeholder (${chips.map((chip) => chip.mainComponent && chip.mainComponent.name).join(" | ")}${placeholder ? ", a placeholder" : ""})`,
+        );
+      } else {
+        ok(
+          chips.length === 0 &&
+            placeholder &&
+            placeholder.characters === "Add a keyword" &&
+            boundVariableName(placeholder.fills[0]) ===
+              (state === "Disabled" ? "Colors/foreground/500" : "Colors/foreground/400"),
+          `${name}: the placeholder alone (${chips.length} chips, ${placeholder && placeholder.characters})`,
+        );
+      }
+      const ring = field && named(field, "Focus Ring");
+      ok(
+        Boolean(ring) === (state === "Focus"),
+        `${name}: ${state === "Focus" ? "a" : "no"} focus ring`,
+      );
+      ok(
+        stats.warnings.length === 0,
+        `${name}: no warning (${stats.warnings.join("; ")})`,
+      );
+    }
+  }
+  if (ready) {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "ChipInput";
+    plugin.configureChipInputProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const texts = ["Label Text", "Placeholder Text", "Helper Text", "Error Text"];
+    const has = (name) =>
+      Object.keys(defs).some(
+        (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+      );
+    ok(
+      texts.every(has),
+      `ChipInput: a text property for the label, placeholder, helper and error (${texts.filter((name) => !has(name)).join(", ") || "all"})`,
+    );
+    set.remove();
+  }
+  chipSet.remove();
+  ok(
+    ready &&
+      JSON.stringify(plugin.expectedVariantAxesForComponentSetName("ChipInput")) ===
+        JSON.stringify({
+          State: ["Default", "Focus", "Disabled", "Readonly", "Error"],
+          Content: ["Filled", "Empty"],
+        }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ChipInput" && update === plugin.updateChipInputComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) => entry.title === "Inputs" && entry.components.includes("ChipInput"),
+      ) &&
+      plugin.COMPONENT_DOCS.some((entry) => entry.componentSetName === "ChipInput"),
+    "ChipInput: State and Content axes, in Update All Core, the Inputs section and the docs",
+  );
+}
+
 // --- ImageCropper (GAP-273) ----------------------------------------------------
 
 // React's ImageCropper: a column 320 wide, the frame and the zoom row 12

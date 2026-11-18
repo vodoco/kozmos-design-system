@@ -15890,10 +15890,10 @@
   },
   "components": {
     "summary": {
-      "total": 129,
-      "stories": 129,
-      "tests": 129,
-      "exported": 129,
+      "total": 130,
+      "stories": 130,
+      "tests": 130,
+      "exported": 130,
       "codeConnectFiles": 105,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 105
@@ -16930,6 +16930,54 @@
           "size": ["default", "lg", "sm"],
           "variant": ["brand", "destructive", "neutral"]
         }
+      },
+      {
+        "name": "ChipInput",
+        "source": "packages/react/src/components/ChipInput/ChipInput.tsx",
+        "story": "packages/react/src/components/ChipInput/ChipInput.stories.tsx",
+        "test": "packages/react/src/components/ChipInput/ChipInput.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "addedLabel",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "aria-labelledby",
+          "children",
+          "defaultInputValue",
+          "defaultValue",
+          "disabled",
+          "duplicateLabel",
+          "error",
+          "helperText",
+          "id",
+          "inputId",
+          "inputValue",
+          "label",
+          "placeholder",
+          "readOnly",
+          "removedLabel",
+          "removeLabel",
+          "required",
+          "role",
+          "status",
+          "tabIndex",
+          "title",
+          "value",
+          "wrapperClassName"
+        ],
+        "variants": {}
       },
       {
         "name": "ClientAppBanner",

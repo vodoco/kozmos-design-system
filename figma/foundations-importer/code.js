@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "0e1b2f242c0d";
+const PLUGIN_BUILD = "d6ed913419f5";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1405,6 +1405,12 @@ const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
 // GAP-221, decision 199: React's DescriptionList `layout`: Stack, the items
 // one under another and the default, first; Row, side by side.
 const DESCRIPTION_LIST_LAYOUTS = ["Stack", "Row"];
+// GAP-222, decision 216: ChipInput's State, the input family's, with its
+// Error status drawn as a state of its own (the danger edge and label, the
+// error under the field); and its Content, two entries as chips or the
+// empty field's placeholder. Filled first, so the set's default holds chips.
+const CHIP_INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly", "Error"];
+const CHIP_INPUT_CONTENT = ["Filled", "Empty"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1911,6 +1917,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   OTPInput: 760,
   Combobox: 1040,
   MultiSelect: 1200,
+  ChipInput: 760,
   Listbox: 520,
   DatePicker: 2100,
   DateRangePicker: 2400,
@@ -2074,6 +2081,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "OTPInput",
       "Combobox",
       "MultiSelect",
+      "ChipInput",
       "Listbox",
       "DatePicker",
       "DateRangePicker",
@@ -4157,6 +4165,33 @@ const COMPONENT_DOCS = [
       "The label names the control; the description, the state and the reason are read with it.",
       "Reset to default is a button; pressed, focus goes to the control.",
       "A disabled row disables its control and offers no reset.",
+    ],
+  },
+  {
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    category: "Inputs",
+    summary:
+      "ChipInput takes free text and holds each entry as a removable chip inside the field: a place's keywords, aliases or e-mail addresses (GAP-222, decision 216).",
+    usage: [
+      "Use for words only the person knows, such as a POI's keywords.",
+      "Use MultiSelect when the choices are a set the product knows.",
+      "Enter or a comma adds the typed text; Backspace in the empty field removes the last entry; each chip has its own remove.",
+    ],
+    api: [
+      "State maps to disabled and readOnly; Focus draws the focus ring; Error is error, with Error Text its message.",
+      "Content: Filled draws two entries as Chip instances (Small, Selected, Removable), each exposed so its words are edited on the chip; Empty draws the placeholder.",
+      "Label Text maps to label, Placeholder Text to placeholder, Helper Text to helperText.",
+    ],
+    properties: [
+      "State: Default, Focus, Disabled, Readonly, Error",
+      "Content: Filled, Empty",
+      "Label Text, Placeholder Text, Helper Text, Error Text",
+    ],
+    accessibility: [
+      "The text input is named by the label and described by the helper text or the error.",
+      "Each chip's remove is a button named by removeLabel, Remove {entry} by default, in the product's words.",
+      "Each entry added or removed, and an entry typed again, is said politely in the product's words.",
     ],
   },
   {
@@ -9510,6 +9545,81 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-222, decision 216: React's ChipInput, MultiSelect's field with no
+  // clear and no open: 320 wide, at least the input's 44, padded 8 and 4, its
+  // chips 6 apart (the chip group's gap-1.5), the input family's type.
+  {
+    name: "ChipInput/width/default",
+    value: 320,
+    alias: "Input/width/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ChipInput/field/min-height",
+    value: 44,
+    alias: "Input/field/height",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ChipInput/field/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/padding/y",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/gap",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/radius",
+    value: 16,
+    alias: "Input/field/radius",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "ChipInput/field/stroke/width",
+    value: 1,
+    alias: "Input/field/stroke/width",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "ChipInput/gap",
+    value: 6,
+    alias: "Input/gap",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/label/font-size",
+    value: 14,
+    alias: "Input/label/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "ChipInput/label/line-height",
+    value: 20,
+    alias: "Input/label/line-height",
+    scopes: ["LINE_HEIGHT"],
+  },
+  {
+    name: "ChipInput/text/font-size",
+    value: 14,
+    alias: "Input/text/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "ChipInput/text/line-height",
+    value: 20,
+    alias: "Input/text/line-height",
+    scopes: ["LINE_HEIGHT"],
+  },
   {
     name: "Listbox/width/default",
     value: 320,
@@ -12691,6 +12801,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["OTPInput", updateOTPInputComponent],
   ["Combobox", updateComboboxComponent],
   ["MultiSelect", updateMultiSelectComponent],
+  ["ChipInput", updateChipInputComponent],
   ["Listbox", updateListboxComponent],
   ["DatePicker", updateDatePickerComponent],
   ["DateRangePicker", updateDateRangePickerComponent],
@@ -12974,6 +13085,9 @@ function additionalComponentActionHandlers() {
     "build-image-cropper": buildImageCropperComponent,
     "update-image-cropper": updateImageCropperComponent,
     "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-chip-input": buildChipInputComponent,
+    "update-chip-input": updateChipInputComponent,
+    "rebuild-chip-input": rebuildChipInputComponent,
     "build-description-list": buildDescriptionListComponent,
     "update-description-list": updateDescriptionListComponent,
     "rebuild-description-list": rebuildDescriptionListComponent,
@@ -20462,6 +20576,13 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "DescriptionList") {
     return {
       Layout: DESCRIPTION_LIST_LAYOUTS,
+    };
+  }
+
+  if (canonicalName === "ChipInput") {
+    return {
+      State: CHIP_INPUT_STATES,
+      Content: CHIP_INPUT_CONTENT,
     };
   }
 
@@ -68132,6 +68253,368 @@ async function rebuildDescriptionListComponent() {
     componentName: "DescriptionList",
     componentSetName: "DescriptionList",
     build: buildDescriptionListComponent,
+  });
+}
+
+// --- ChipInput ------------------------------------------------------------------
+
+// GAP-222, decision 216: React's ChipInput, a field that takes free text and
+// holds each entry as a removable chip inside it, as MultiSelect's field
+// draws it with no clear and no open: the label (the field label's type)
+// over a field 320 wide (ChipInput/width/default), at least 44 tall
+// (ChipInput/field/min-height, the input's height), padded 8 and 4
+// (ChipInput/field/padding/x and /y), on the control radius with a 1 edge,
+// in the input family's colours for its State and Status (inputConfig), and
+// the helper or the error under it, 6 apart (ChipInput/gap). Filled, two
+// entries are live Chip instances, Small, Selected and Removable, as React's
+// small selected chips with their remove; 6 apart (ChipInput/field/gap, the
+// chip group's gap-1.5), and the typed text follows them with no
+// placeholder. Empty, only the placeholder. Disabled, the chips are
+// Disabled; Readonly, they are not Removable, as MultiSelect's. Focus draws
+// the field's focus ring.
+const CHIP_INPUT_GEOMETRY = {
+  width: 320,
+  height: 44,
+  gap: 6,
+  fieldGap: 6,
+  paddingX: 8,
+  paddingY: 4,
+};
+const CHIP_INPUT_ENTRIES = ["coffee", "wifi"];
+
+async function createChipInputVariant(args) {
+  const component = figma.createComponent();
+  await updateChipInputVariant(component, args);
+  return component;
+}
+
+function parseChipInputVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (
+    CHIP_INPUT_STATES.indexOf(values.State) === -1 ||
+    CHIP_INPUT_CONTENT.indexOf(values.Content) === -1
+  ) {
+    return null;
+  }
+  return { value: values.State, second: values.Content };
+}
+
+/** A chip's words, kept across an Update, which repaints the field. */
+function chipInputEntryText(component, index) {
+  const field = directChildNamed(component, "ChipInput Field");
+  const chip = field
+    ? directChildNamed(field, `ChipInput Chip ${index}`)
+    : null;
+  if (!chip) return null;
+  return (
+    instanceTextPropertyValue(chip, "Label Text") ||
+    firstDescendantTextCharactersByName(chip, "Label Text")
+  );
+}
+
+async function createChipInputChip({ index, text, disabled, readonly, stats }) {
+  const nested = await createNestedComponentInstance({
+    componentSetName: "Chip",
+    variantProperties: {
+      Variant: "Neutral",
+      Size: "Small",
+      State: disabled ? "Disabled" : "Selected",
+      Removable: readonly ? "False" : "True",
+    },
+    name: `ChipInput Chip ${index + 1}`,
+    role: "chip-input-chip",
+    stats,
+  });
+  if (!nested || !nested.instance) {
+    stats.warnings.push(
+      "ChipInput needs the Chip set for its entries: Build Chip first, then Update ChipInput.",
+    );
+    return null;
+  }
+  const chip = nested.instance;
+  setInstanceTextProperty(chip, nested.componentSet, "Label Text", text, stats);
+  try {
+    // Exposed, so each entry's words are edited from the properties panel:
+    // a set's property cannot drive text inside a nested instance.
+    chip.isExposedInstance = true;
+  } catch (_error) {
+    // Older Figma runtimes may not support exposing nested instances.
+  }
+  setHugChildSizing(chip);
+  return chip;
+}
+
+async function updateChipInputVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const content = second || "Filled";
+  const status = state === "Error" ? "Error" : "Default";
+  const config = inputConfig(state === "Error" ? "Default" : state, status);
+  const geometry = CHIP_INPUT_GEOMETRY;
+  const disabled = state === "Disabled";
+  const readonly = state === "Readonly";
+  const filled = content === "Filled";
+  const kept = {
+    label: firstDescendantTextCharactersByName(component, "Label Text"),
+    placeholder: firstDescendantTextCharactersByName(
+      component,
+      "Placeholder Text",
+    ),
+    helper: firstDescendantTextCharactersByName(component, "Helper Text"),
+    error: firstDescendantTextCharactersByName(component, "Error Text"),
+    entries: CHIP_INPUT_ENTRIES.map(
+      (entry, index) => chipInputEntryText(component, index + 1) || entry,
+    ),
+  };
+
+  productSdkVariantRoot(
+    component,
+    "ChipInput",
+    `State=${state}, Content=${content}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: geometry.gap,
+      width: geometry.width,
+      height: 96,
+    },
+  );
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "width",
+    "ChipInput/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ChipInput/gap",
+    variableByName,
+    stats,
+  );
+
+  const label = figma.createText();
+  label.name = "Label Text";
+  await applyFieldLabelTypography(
+    label,
+    fonts,
+    "ChipInput",
+    variableByName,
+    stats,
+  );
+  label.characters = kept.label || "Keywords";
+  label.fills = [
+    paintFromVariable(
+      config.label,
+      config.labelFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.appendChild(label);
+
+  const field = figma.createFrame();
+  field.name = "ChipInput Field";
+  field.layoutMode = "HORIZONTAL";
+  field.primaryAxisSizingMode = "FIXED";
+  field.counterAxisSizingMode = "FIXED";
+  field.primaryAxisAlignItems = "MIN";
+  field.counterAxisAlignItems = "CENTER";
+  field.itemSpacing = geometry.fieldGap;
+  field.paddingLeft = geometry.paddingX;
+  field.paddingRight = geometry.paddingX;
+  field.paddingTop = geometry.paddingY;
+  field.paddingBottom = geometry.paddingY;
+  field.resizeWithoutConstraints(geometry.width, geometry.height);
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.clipsContent = false;
+  field.setSharedPluginData(RUN_NAMESPACE, "kind", "input-field");
+  field.fills = [
+    paintFromVariable(
+      config.fieldFill,
+      config.fieldFillFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  field.strokes = [
+    paintFromVariable(
+      config.fieldStroke,
+      config.fieldStrokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  field.strokeWeight = 1;
+  for (const [property, token] of [
+    ["height", "ChipInput/field/min-height"],
+    ["paddingLeft", "ChipInput/field/padding/x"],
+    ["paddingRight", "ChipInput/field/padding/x"],
+    ["paddingTop", "ChipInput/field/padding/y"],
+    ["paddingBottom", "ChipInput/field/padding/y"],
+    ["itemSpacing", "ChipInput/field/gap"],
+    ["cornerRadius", "ChipInput/field/radius"],
+    ["strokeWeight", "ChipInput/field/stroke/width"],
+  ]) {
+    bindFloatVariable(field, property, token, variableByName, stats);
+  }
+  component.appendChild(field);
+  setLayoutSizingHorizontal(field, "FILL");
+
+  if (filled) {
+    for (let index = 0; index < kept.entries.length; index += 1) {
+      const chip = await createChipInputChip({
+        index,
+        text: kept.entries[index],
+        disabled,
+        readonly,
+        stats,
+      });
+      if (chip) field.appendChild(chip);
+    }
+  } else {
+    const placeholder = figma.createText();
+    placeholder.name = "Placeholder Text";
+    await applyFieldTextTypography(
+      placeholder,
+      fonts,
+      "ChipInput",
+      variableByName,
+      stats,
+    );
+    placeholder.characters = kept.placeholder || "Add a keyword";
+    placeholder.fills = [
+      paintFromVariable(
+        config.placeholder,
+        config.placeholderFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    field.appendChild(placeholder);
+    setHorizontalFillTextSizing(placeholder);
+    setTextAutoResize(placeholder, "TRUNCATE");
+  }
+
+  syncFocusRing(field, {
+    enabled: state === "Focus",
+    width: geometry.width,
+    height: geometry.height,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+
+  // The error has its own node and property: one property paints one default
+  // over every node it binds.
+  const isError = status === "Error";
+  const helper = figma.createText();
+  helper.name = isError ? "Error Text" : "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "ChipInput",
+    variableByName,
+    stats,
+  );
+  helper.characters = isError
+    ? kept.error || "Add at least one keyword"
+    : kept.helper || "Press Enter or type a comma to add one.";
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.appendChild(helper);
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  normalizeInputFamilyChildSizing(component);
+}
+
+function configureChipInputProperties(componentSet, stats) {
+  configureLabelTextProperty(componentSet, "Keywords", stats);
+  configurePlaceholderTextProperty(componentSet, "Add a keyword", stats);
+  configureHelperTextProperty(
+    componentSet,
+    "Press Enter or type a comma to add one.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Error Text",
+    "Error Text",
+    "Add at least one keyword",
+    stats,
+  );
+}
+
+const CHIP_INPUT_DESCRIPTION = [
+  "Kozmos ChipInput component set generated from React ChipInput API (GAP-222, decision 216).",
+  "A field that takes free text and holds each entry as a removable Chip inside it. MultiSelect picks from options; ChipInput takes what is typed.",
+  "State maps to disabled and readOnly; Focus draws the focus ring; Error is error, its Error Text the message. Content: Filled shows two entries as live Chip instances (Small, Selected, Removable), each exposed so its words are edited on the chip; Empty shows the placeholder.",
+  "Label Text maps to ChipInput.label, Placeholder Text to ChipInput.placeholder, Helper Text to ChipInput.helperText.",
+];
+
+async function buildChipInputComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    axisName: "State",
+    values: CHIP_INPUT_STATES,
+    axis2Name: "Content",
+    axis2Values: CHIP_INPUT_CONTENT,
+    x: 80,
+    y: 21600,
+    xStep: 380,
+    yStep: 160,
+    createVariant: createChipInputVariant,
+    configureProperties: configureChipInputProperties,
+    autoReorganize: true,
+    description: CHIP_INPUT_DESCRIPTION,
+  });
+}
+
+async function updateChipInputComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    axisName: "State",
+    values: CHIP_INPUT_STATES,
+    axis2Name: "Content",
+    axis2Values: CHIP_INPUT_CONTENT,
+    xStep: 380,
+    yStep: 160,
+    createVariant: createChipInputVariant,
+    updateVariant: updateChipInputVariant,
+    parseVariantName: parseChipInputVariantName,
+    configureProperties: configureChipInputProperties,
+    autoReorganize: true,
+    description: CHIP_INPUT_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildChipInputComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    build: buildChipInputComponent,
   });
 }
 
