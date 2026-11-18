@@ -13,7 +13,7 @@ The shape is the caller's — `rounded-container`, `rounded-panel` — and the e
 
 Glass also says what text that is muted elsewhere draws in on it: `--kozmos-surface-muted-foreground`, the foreground colour, so that text reads at 4.5:1 whatever shows through (decision 48). Solid resets it. These parts' muted text reads it: the parts `AdaptiveMapShell` hosts on its panel, the cards that take `surface` — the manoeuvre and its itinerary, the route summary, the feedback and save-location cards — and a `POIMediaGallery` wherever it sits. Muted text on a card of its own keeps its colour. `Text` with `color="muted"` reads it too, since the site's GAP-94, and so does SwiftUI's `KozmosText` with `tone: .muted`, since GAP-203. On iOS `kozmosSurface(_:style:)` says the same to what it holds (`kozmosSurfaceStyle` in the environment), and `KozmosCard`, a solid surface of its own, says solid; on Android a card provides `LocalKozmosSurfaceStyle`.
 
-The manoeuvre card, the route summary, FeedbackCard, SaveLocationCard and RoutingInputGroup take a `surface` prop with the same two values. On iOS the modifier is `kozmosSurface(_:style:)` — glass is the same tint over the system's thin material, whose blur and saturation are the system's. On Android it is `Modifier.kozmosSurface(shape, style)` and `KozmosSurfaceDefaults` — glass is the tint and the edge alone, since Compose blurs a node's own content, not what lies behind it.
+The manoeuvre card, the route summary, FeedbackCard, SaveLocationCard and RoutingInputGroup take a `surface` prop with the same two values. On iOS it is a view, `KozmosSurface(variant:shape:) { … }`, placed as React's `Surface` is, on the container radius unless given a shape (GAP-207), and the modifier `kozmosSurface(_:style:)` — glass is the same tint over the system's thin material, whose blur and saturation are the system's. The modifier's type, `KozmosSurface` until 0.17.0, is `KozmosSurfaceModifier`. On Android it is `Modifier.kozmosSurface(shape, style)` and `KozmosSurfaceDefaults` — glass is the tint and the edge alone, since Compose blurs a node's own content, not what lies behind it.
 
 <Canvas>
   <Story of={SurfaceStories.Solid} />
@@ -43,11 +43,19 @@ export function Example() {
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-Text("A card over the map")
-    .padding(KozmosDimensions.primitivesLayoutSpacing200)
-    .kozmosSurface(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous), style: .glass)
-    .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+// A glass card over the map, placed as a view (GAP-207): the container
+// radius unless given a shape of its own.
+struct CardOverTheMap: View {
+    var body: some View {
+        KozmosSurface(variant: .glass) {
+            Text("A card over the map")
+                .padding(KozmosDimensions.primitivesLayoutSpacing200)
+        }
+        .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+    }
+}
 `}
     kotlin={`
 Box(

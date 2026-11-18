@@ -2959,3 +2959,58 @@
     height: 1.25rem;
   }
 }
+/* GAP-216, decision 225: CodeBlock, a read-only block of code. The mono
+   family (Semantics/Typography/Family/Mono), 14/20, in the foreground on
+   the muted surface (background 100), on the control radius, layout
+   spacing 150 (12) inside. Long lines wrap, breaking anywhere a line has no
+   space; with wrap off each line stays whole and the block scrolls
+   sideways. A copy sits at the top end, the code kept clear of it. No
+   colouring. */
+@kozmos-owned {
+  .kozmos-code-block {
+    position: relative;
+    min-width: 0;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background-color: var(--primitives-colors-background-100);
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-code-block-pre {
+    margin: 0;
+    padding: calc(var(--primitives-layout-spacing-150) * 1px);
+    overflow-x: auto;
+    border-radius: inherit;
+    font-family: var(--semantics-typography-family-mono);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    tab-size: 2;
+    white-space: pre;
+  }
+  .kozmos-code-block[data-wrap="true"] .kozmos-code-block-pre {
+    overflow-x: visible;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-code-block-pre > code {
+    font: inherit;
+  }
+  /* Inside the block, so a parent that clips never hides it. */
+  .kozmos-code-block-pre:focus-visible {
+    outline: 2px solid var(--primitives-colors-theme-600);
+    outline-offset: -2px;
+  }
+  .kozmos-code-block[data-copyable="true"] .kozmos-code-block-pre {
+    padding-inline-end: calc(
+      var(--density-icon-control-size-sm, 2.75rem) +
+        var(--primitives-layout-spacing-50) * 1px
+    );
+  }
+  .kozmos-code-block-copy {
+    position: absolute;
+    inset-block-start: calc(var(--primitives-layout-spacing-50) * 1px);
+    inset-inline-end: calc(var(--primitives-layout-spacing-50) * 1px);
+  }
+  .kozmos-code-block-copy-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+}

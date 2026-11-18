@@ -252,6 +252,57 @@ describe("Input", () => {
     }
   });
 
+  // GAP-212, decision 224: Map Personas' ID and Map Style read-only, each
+  // with a pencil at the field's end; what editing means is the product's.
+  it("draws an edit action, a pencil that calls onEdit, on a read-only field (GAP-212)", () => {
+    const onEdit = vi.fn();
+    const { getByRole, queryByRole, rerender } = render(
+      <Input
+        label="Map Style"
+        readOnly
+        defaultValue="https://styles.pointr.cloud/persona/staff.json"
+        action={{ kind: "edit", label: "Edit Map Style", onEdit }}
+      />,
+    );
+    const field = getByRole("textbox", { name: "Map Style" });
+    const edit = getByRole("button", { name: "Edit Map Style" });
+    // At the field's end, room kept for it, drawn as the copy is.
+    expect(field.nextElementSibling).toBe(edit);
+    expect(field).toHaveClass("kozmos-input-with-action");
+    expect(edit).toHaveClass("kozmos-field-action", "kozmos-input-action");
+    expect(edit).toHaveAttribute("type", "button");
+    // A plain button: not pressed, and it says nothing of its own.
+    expect(edit).not.toHaveAttribute("aria-pressed");
+    expect(queryByRole("status")).toBeNull();
+    expect(edit.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    // Read only does not disable it: the edit is how the value changes.
+    expect(edit).toBeEnabled();
+    fireEvent.click(edit);
+    expect(onEdit).toHaveBeenCalledTimes(1);
+
+    // Its name is a parameter, "Edit" by default (GAP-182).
+    rerender(
+      <Input
+        label="Map Style"
+        readOnly
+        defaultValue="x"
+        action={{ kind: "edit", onEdit }}
+      />,
+    );
+    expect(getByRole("button", { name: "Edit" })).toBeInTheDocument();
+
+    // Disabled with its field.
+    rerender(
+      <Input
+        label="Map Style"
+        disabled
+        defaultValue="x"
+        action={{ kind: "edit", onEdit }}
+      />,
+    );
+    expect(getByRole("button", { name: "Edit" })).toBeDisabled();
+  });
+
   it("draws no wrapper or room without an action", () => {
     const { getByRole, queryByRole } = render(<Input label="Name" />);
     expect(getByRole("textbox")).not.toHaveClass("kozmos-input-with-action");

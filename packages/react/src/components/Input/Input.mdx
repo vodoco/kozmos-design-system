@@ -143,6 +143,101 @@ VoiceOver and on to TalkBack. Neither platform has a pointer hover to draw.
 
 <Canvas of={InputStories.Actions} />
 
+## An edit action
+
+`{ kind: "edit" }` is a pencil at the field's end that calls `onEdit` (GAP-212, decision 224): for a
+read-only value whose editor is elsewhere, as Pointr Cloud's Map Personas shows a persona's ID and
+its Map Style. What editing means is the product's: open a dialog, or make the field editable. The
+button is named "Edit" (`label`, in the product's words); it is a plain button, not pressed and with
+nothing to announce, drawn as the copy is, and only a disabled field disables it: read only does
+not. On SwiftUI it is `KozmosInputAction.edit(label:onEdit:)`, on Compose
+`KozmosInputAction.Edit(label, onEdit)`, the platform's pencil in the field's 44 end. In Figma it
+is Action=Edit, pencil-01.
+
+<Canvas of={InputStories.EditAction} />
+
+<PlatformSnippets
+  react={`
+import { Input } from "@kozmos-ds/react";
+
+export function PersonaMapStyle({
+  mapStyle,
+  onEdit,
+}: {
+  mapStyle: string;
+  onEdit: () => void;
+}) {
+  return (
+    <Input
+      label="Map Style"
+      readOnly
+      value={mapStyle}
+      action={{ kind: "edit", label: "Edit Map Style", onEdit }}
+    />
+  );
+}
+  `}
+  vue={`
+<script setup>
+import { KozmosInput } from "@kozmos-ds/vue/react-bridge"
+
+defineProps({ mapStyle: String })
+const emit = defineEmits(["edit"])
+</script>
+
+<template>
+  <KozmosInput
+    label="Map Style"
+    readonly
+    :model-value="mapStyle"
+    :action="{ kind: 'edit', label: 'Edit Map Style', onEdit: () => emit('edit') }"
+  />
+</template>
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// Map Personas: a persona's Map Style, read only, with a pencil at the
+// field's end. What editing means is the product's: here, a sheet.
+struct PersonaMapStyle: View {
+    @Binding var mapStyle: String
+    @State private var editing = false
+
+    var body: some View {
+        KozmosInput(
+            text: $mapStyle,
+            label: "Map Style",
+            readOnly: true,
+            action: .edit(label: "Edit Map Style", onEdit: { editing = true })
+        )
+        .sheet(isPresented: $editing) {
+            KozmosInput(text: $mapStyle, label: "Map Style")
+                .padding(KozmosDimensions.primitivesLayoutSpacing200)
+        }
+    }
+}
+`}
+  kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.input.KozmosInput
+import com.kozmos.components.input.KozmosInputAction
+
+// Map Personas: a persona's Map Style, read only, with a pencil at the
+// field's end. What editing means is the product's: onEdit opens its editor.
+@Composable
+fun PersonaMapStyle(mapStyle: String, onEdit: () -> Unit) {
+    KozmosInput(
+        value = mapStyle,
+        onValueChange = {},
+        label = "Map Style",
+        readOnly = true,
+        action = KozmosInputAction.Edit(label = "Edit Map Style", onEdit = onEdit)
+    )
+}
+`}
+/>
+
 ## A mixed value
 
 With several features selected, a property whose values differ is one field for all of them
