@@ -1522,16 +1522,28 @@
        while `getBoundingClientRect` swore they were concentric. WebKit and
        Firefox drew it evenly, so it looked like nothing. Cut by a radial mask
        the band is 2.5 in all three. The disc behind is inset 2, inside the
-       band, so its edge never decides where the ring ends. */
+       band, so its edge never decides where the ring ends.
+
+       The mask cuts the outer edge too, half a pixel soft, and the ring has
+       no corner radius. Rounded as well, it lost the top of its band in
+       Firefox wherever the button sat on a half pixel: 1.99 to 2.50 round
+       the ring on Linux, where the other engines read 2.26 to 2.50 (CI, 19
+       Nov). Cut by the mask alone it reads 2.20 to 2.44 in all three, at
+       any position, and is round by this rule alone. */
+    border-radius: 0;
     -webkit-mask: radial-gradient(
       farthest-side,
       #0000 calc(100% - 2.5px),
-      #000 calc(100% - 2.5px)
+      #000 calc(100% - 2.5px),
+      #000 calc(100% - 0.5px),
+      #0000 100%
     );
     mask: radial-gradient(
       farthest-side,
       #0000 calc(100% - 2.5px),
-      #000 calc(100% - 2.5px)
+      #000 calc(100% - 2.5px),
+      #000 calc(100% - 0.5px),
+      #0000 100%
     );
   }
   /* The build prefixes keyframe names with kozmos-: this becomes kozmos-ai-search-spin. */

@@ -3725,99 +3725,152 @@ try {
   const ring = sharp.getByTestId("outer-ai-search");
   await ring.waitFor();
   // The turn has to stop, or the screenshot catches the square's rotated box.
+  // The rule is in the document, but the turn stops only when the browser
+  // restyles: wait for no running animation and no transform, then two frames.
   await sharp.addStyleTag({
     content: ".kozmos-ai-search-ring{animation:none !important}",
   });
-  await ring.scrollIntoViewIfNeeded();
-  const laidOut = await ring.evaluate(
-    (node) => node.getBoundingClientRect().width,
+  await sharp.waitForFunction(
+    () => {
+      const node = document.querySelector(".kozmos-ai-search-ring");
+      return (
+        node !== null &&
+        node.getAnimations().length === 0 &&
+        getComputedStyle(node).transform === "none"
+      );
+    },
+    undefined,
+    { timeout: 5000 },
   );
-  assert.equal(laidOut, 48, `the AI search button is not 48: ${laidOut}`);
-  // The element's own screenshot, which is exactly the element once the turn is
-  // stopped. While it turns it is the rotated square's bounding box — 49 CSS
-  // pixels, not 48 — and every radius measured against it is wrong.
-  const shot = await ring.screenshot();
-  const measured = await sharp.evaluate(async (b64) => {
-    const image = new Image();
-    image.src = "data:image/png;base64," + b64;
-    await image.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = image.width;
-    canvas.height = image.height;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    context.drawImage(image, 0, 0);
-    const { data, width } = context.getImageData(
-      0,
-      0,
-      image.width,
-      image.height,
+  const frames = () =>
+    sharp.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
     );
-    const at = (x, y) => {
-      const i = (Math.round(y) * width + Math.round(x)) * 4;
-      return [data[i], data[i + 1], data[i + 2], data[i + 3]];
+  await frames();
+  // Wherever the button lands. Layout puts it on whole, half and quarter
+  // pixels as the content above it changes: #586's three ListItemStatus marks
+  // moved it to 75.5 in Linux's fonts, and Firefox, with the ring rounded as
+  // well as masked, lost the top of the band there (1.99 to 2.50, 19 Nov). So
+  // the page above it grows by a quarter pixel at a time, and the band is read
+  // at each place.
+  //
+  // Read round the ring's own centre, in a shot clipped on whole pixels about
+  // it. The element's own screenshot is clipped where Playwright rounds the
+  // box, so at 75.5 it began half a pixel inside the ring and called the
+  // shot's middle the centre.
+  const readings = [];
+  for (const shift of [0, 0.25, 0.5, 0.75]) {
+    await sharp.evaluate((px) => {
+      document.body.style.paddingTop = `${px}px`;
+    }, shift);
+    await ring.scrollIntoViewIfNeeded();
+    await frames();
+    const box = await ring.boundingBox();
+    assert.ok(box, "the AI search button has no box");
+    assert.equal(box.width, 48, `the AI search button is not 48: ${box.width}`);
+    const clip = {
+      x: Math.floor(box.x) - 1,
+      y: Math.floor(box.y) - 1,
+      width: 50,
+      height: 50,
     };
-    // Saturation, not lightness: the ring's gradient is the data colours, and
-    // everything else here — the disc behind it, the page around it — is
-    // neutral. A near-white test only works in the light theme, and the
-    // fixture's outer tree is dark.
-    const plain = (p) =>
-      p[3] < 100 ||
-      Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]) < 40;
-    const perPixel = width / 48;
-    const centre = width / 2;
-    const widths = [];
-    for (let degree = 0; degree < 360; degree += 10) {
-      const angle = ((degree - 90) * Math.PI) / 180;
-      let outer = null;
-      let inner = null;
-      for (let r = centre - 1; r > 0; r -= 0.05) {
-        const sample = at(
-          centre + Math.cos(angle) * r,
-          centre + Math.sin(angle) * r,
+    const shot = await sharp.screenshot({ clip });
+    const measured = await sharp.evaluate(
+      async ([b64, centreX, centreY]) => {
+        const image = new Image();
+        image.src = "data:image/png;base64," + b64;
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        context.drawImage(image, 0, 0);
+        const { data, width } = context.getImageData(
+          0,
+          0,
+          image.width,
+          image.height,
         );
-        if (outer === null && !plain(sample)) outer = r;
-        if (outer !== null && plain(sample)) {
-          inner = r;
-          break;
+        const at = (x, y) => {
+          const i = (Math.round(y) * width + Math.round(x)) * 4;
+          return [data[i], data[i + 1], data[i + 2], data[i + 3]];
+        };
+        // Saturation, not lightness: the ring's gradient is the data colours,
+        // and everything else here — the disc behind it, the page around it —
+        // is neutral. A near-white test only works in the light theme, and the
+        // fixture's outer tree is dark.
+        const plain = (p) =>
+          p[3] < 100 ||
+          Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]) < 40;
+        const perPixel = 8;
+        const widths = [];
+        for (let degree = 0; degree < 360; degree += 10) {
+          const angle = ((degree - 90) * Math.PI) / 180;
+          // The band is the longest unbroken run of the ring's colours along
+          // the ray, from just outside its edge, 24 and a quarter (the shot
+          // reaches a pixel past the button, where its neighbours may draw),
+          // in to 18, well inside it. A soft edge leaves single faint pixels
+          // that read as colour and then not: the first colour met is not
+          // where the band begins.
+          let run = 0;
+          let longest = 0;
+          for (let r = 24.25 * perPixel; r > 18 * perPixel; r -= 0.05) {
+            const sample = at(
+              centreX + Math.cos(angle) * r,
+              centreY + Math.sin(angle) * r,
+            );
+            run = plain(sample) ? 0 : run + 0.05;
+            longest = Math.max(longest, run);
+          }
+          if (longest > 0) widths.push(longest / perPixel);
         }
-      }
-      if (outer !== null && inner !== null)
-        widths.push((outer - inner) / perPixel);
-    }
-    return {
-      min: Math.min(...widths),
-      max: Math.max(...widths),
-      rays: widths.length,
-      width,
-    };
-  }, shot.toString("base64"));
-  assert.equal(
-    measured.width,
-    48 * 8,
-    `the shot is not the button at eight device pixels to the CSS pixel: ${measured.width}`,
-  );
-  assert.equal(
-    measured.rays,
-    36,
-    `the ring was not found all the way round: ${JSON.stringify(measured)}`,
-  );
-  // Evenness is the claim, and evenness is what the defect broke. The absolute
-  // figure carries the classifier's own bias — saturation falls off across the
-  // antialiased inner edge, so the band reads a shade under 2.5 in every engine
-  // — but that bias is the same on every ray, and the spread is not. The old
-  // drawing measured 1.93 to 3.20 in Chromium: a spread of 1.27 against the
-  // 0.24 this leaves.
-  const spread = measured.max - measured.min;
-  assert.ok(
-    spread <= 0.4,
-    `the AI search ring's band is not the same width all the way round: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)}, a spread of ${spread.toFixed(2)}`,
-  );
-  assert.ok(
-    measured.min > 2 && measured.max < 3,
-    `the AI search ring's band is not two and a half wide: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)}`,
-  );
+        return {
+          min: Math.min(...widths),
+          max: Math.max(...widths),
+          rays: widths.length,
+          width,
+        };
+      },
+      [
+        shot.toString("base64"),
+        (box.x + 24 - clip.x) * 8,
+        (box.y + 24 - clip.y) * 8,
+      ],
+    );
+    assert.equal(
+      measured.width,
+      50 * 8,
+      `the shot is not 50 CSS pixels at eight device pixels each: ${measured.width}`,
+    );
+    assert.equal(
+      measured.rays,
+      36,
+      `the ring was not found all the way round at ${box.y}: ${JSON.stringify(measured)}`,
+    );
+    // Evenness is the claim, and evenness is what the defect broke. The
+    // absolute figure carries the classifier's own bias — saturation falls off
+    // across the antialiased edges, so the band reads a shade under 2.5 in
+    // every engine — but that bias is the same on every ray, and the spread is
+    // not. The old drawing measured 1.93 to 3.20 in Chromium: a spread of 1.27
+    // against the 0.24 this leaves.
+    const spread = measured.max - measured.min;
+    assert.ok(
+      spread <= 0.4,
+      `the AI search ring's band is not the same width all the way round at y ${box.y}: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)}, a spread of ${spread.toFixed(2)}`,
+    );
+    assert.ok(
+      measured.min > 2 && measured.max < 3,
+      `the AI search ring's band is not two and a half wide at y ${box.y}: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)}`,
+    );
+    readings.push(
+      `${box.y}: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)}`,
+    );
+  }
   console.log(
-    `PASS the AI search ring's band: ${measured.min.toFixed(2)}–${measured.max.toFixed(2)} of 2.5, a spread of ${spread.toFixed(2)} on 36 rays`,
+    `PASS the AI search ring's band, 36 rays at four places, each within 0.4: ${readings.join("; ")}`,
   );
   await sharp.close();
 
