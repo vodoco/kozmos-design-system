@@ -168,12 +168,37 @@ const byName = new Map(catalog.icons.map((icon) => [icon.name, icon]));
 // nodes — and two entries would emit the same `export const`, so the first
 // wins and the rest are reported rather than silently overwriting.
 const buildAll = process.argv.includes("--all");
+
+// What `--all` leaves out, by name, and why. Nothing is dropped silently: an
+// icon the wrapper cannot draw still fails the build unless it is named here.
+//
+// A whole frame of the library that holds map artwork, not icons: the editor's
+// snap points, crosshair, right-angle mark and rotation readouts, each at its
+// own size (21 to 44 wide) in fixed colours (#051C4F, #0B369C, white). They are
+// marks the map canvas draws, not 24-grid strokes in `currentColor`.
+const NOT_ICON_CATEGORIES = new Set(["Map marks"]);
+// Icons the stroke wrapper cannot draw as Figma has them (checked 19 Nov
+// 2026). Each is still fetched: once one exports as plain stroked paths the
+// build fails until its line here is removed, so the list cannot go stale.
+const NOT_YET_STROKES = new Map([
+  ["snap", "a filled magnet tip"],
+  ["edit-path", "a clip path with a white fill"],
+  ["rotate", "a 25-wide frame, a circle and a filled dot"],
+  ["split", "a <rect>, not a path"],
+  ["transparency", "filled checker squares"],
+]);
+const leftOut = [];
+
 const duplicates = [];
 let picked;
 if (buildAll) {
   const seen = new Set();
   picked = [];
   for (const icon of catalog.icons) {
+    if (NOT_ICON_CATEGORIES.has(icon.category)) {
+      leftOut.push(`${icon.name} (${icon.category}: map artwork)`);
+      continue;
+    }
     if (seen.has(icon.name)) {
       duplicates.push(icon.name);
       continue;
@@ -242,7 +267,25 @@ await Promise.all(
       const index = cursor++;
       if (index >= picked.length) return;
       const icon = picked[index];
-      const paths = extractPaths(await svgOf(icon), icon.name);
+      const svg = await svgOf(icon);
+      const reason = buildAll ? NOT_YET_STROKES.get(icon.name) : undefined;
+      if (reason) {
+        let drawable = true;
+        try {
+          extractPaths(svg, icon.name);
+        } catch {
+          drawable = false;
+        }
+        if (drawable) {
+          throw new Error(
+            `${icon.name} now exports as plain stroked paths: remove it from NOT_YET_STROKES`,
+          );
+        }
+        leftOut.push(`${icon.name} (${reason})`);
+        done += 1;
+        continue;
+      }
+      const paths = extractPaths(svg, icon.name);
       generated[index] = { ...icon, paths };
       done += 1;
       if (picked.length <= 40 || done % 100 === 0 || done === picked.length) {
@@ -252,7 +295,20 @@ await Promise.all(
   }),
 );
 
+const unknown = [...NOT_YET_STROKES.keys()].filter(
+  (name) => buildAll && !byName.has(name),
+);
+if (unknown.length) {
+  throw new Error(
+    `NOT_YET_STROKES names icons the catalogue no longer has: ${unknown.join(", ")}`,
+  );
+}
+if (leftOut.length) {
+  console.log(`  left out ${leftOut.length}: ${leftOut.join("; ")}`);
+}
+
 const body = generated
+  .filter(Boolean)
   .map((icon) => {
     const paths = icon.paths
       .map((p) => {
@@ -284,5 +340,5 @@ import { createPointrIcon } from "./createPointrIcon";
 fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
 fs.writeFileSync(OUTPUT, header + body + "\n");
 console.log(
-  `\n${generated.length} icons -> ${path.relative(ROOT_DIR, OUTPUT)}`,
+  `\n${generated.filter(Boolean).length} icons -> ${path.relative(ROOT_DIR, OUTPUT)}`,
 );

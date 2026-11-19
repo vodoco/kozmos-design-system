@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-05-18T07:44:03.698Z",
+  "generatedAt": "2026-11-19T09:49:44.133Z",
   "source": {
     "fileKey": "PpbQbvpNTMvwqCx9dD4efJ",
     "fileUrl": "https://www.figma.com/design/PpbQbvpNTMvwqCx9dD4efJ/Pointr-Icon-Library",
     "rootNodeId": "181:128951",
     "rootNodeUrl": "https://www.figma.com/design/PpbQbvpNTMvwqCx9dD4efJ/Pointr-Icon-Library?node-id=181-128951",
-    "publishedComponentCount": 1176
+    "publishedComponentCount": 1196
   },
   "summary": {
-    "categoryCount": 19,
-    "iconCount": 1176,
+    "categoryCount": 20,
+    "iconCount": 1196,
     "unmatchedPublishedComponents": 0
   },
   "categories": [
     {
       "name": "Layout",
       "nodeId": "1007:8490",
-      "iconCount": 63,
+      "iconCount": 65,
       "icons": [
         {
           "name": "align-bottom-01",
@@ -395,6 +395,18 @@
           "nodeId": "1007:8677",
           "componentKey": "51ef2e52a6fd1a0a3823b2edbc51935202c03646",
           "description": "table, layout, grid, browser, web, flexbox"
+        },
+        {
+          "name": "combine",
+          "nodeId": "2064:33",
+          "componentKey": "b723395847b43eb91b95e42ebf2cb016b726d6d1",
+          "description": "combine, union, merge, join, unite, shapes, squares"
+        },
+        {
+          "name": "merge",
+          "nodeId": "2258:24",
+          "componentKey": "d8c295b6cd018898e10db361105b1685d3df03f5",
+          "description": "merge, union, combine, join, unite, shapes, squares"
         }
       ]
     },
@@ -5448,7 +5460,7 @@
     {
       "name": "Editor",
       "nodeId": "1007:11187",
-      "iconCount": 104,
+      "iconCount": 113,
       "icons": [
         {
           "name": "align-center",
@@ -6073,6 +6085,60 @@
           "nodeId": "1007:11498",
           "componentKey": "8027b55f095300dece40dbe70cd119dda5d3fc8c",
           "description": "zoom out, minus, zoom"
+        },
+        {
+          "name": "snap",
+          "nodeId": "2064:37",
+          "componentKey": "ea0c661461e0209d60217ecd49c29e9901677ae6",
+          "description": "snap, nearest, guide, line, edge, point, magnet, align, indicator, geometry, editor"
+        },
+        {
+          "name": "square-up",
+          "nodeId": "2064:41",
+          "componentKey": "c194c9f0b540f92b274507db053c44b201aace6f",
+          "description": "square up, rectangle, right angle, conform, straighten, shapes, design, editor"
+        },
+        {
+          "name": "straighten",
+          "nodeId": "2064:45",
+          "componentKey": "265daec9cdf96a9c9e80ca388ae8c3cfc01684ef",
+          "description": "straighten, square, right angle, set square, align, design, editor"
+        },
+        {
+          "name": "simplify",
+          "nodeId": "2074:49",
+          "componentKey": "0e45cbc38661b54c4e1ae239911fe71f23da35c1",
+          "description": "simplify, flatten, reduce points, fewer corners, collinear, design, editor"
+        },
+        {
+          "name": "edit-path",
+          "nodeId": "2074:53",
+          "componentKey": "774f9877d88f2fa38ff7331d292a1ec4876645be",
+          "description": "edit path, reshape, anchor points, vertices, cursor, drag, design, editor"
+        },
+        {
+          "name": "rotate",
+          "nodeId": "2137:24",
+          "componentKey": "5dfea1c37ba3727d59805ed381c14e0739f67781",
+          "description": "rotate, turn, spin, angle, orientation, pivot, transform, design, editor"
+        },
+        {
+          "name": "cut-out",
+          "nodeId": "2142:24",
+          "componentKey": "2c2f76aca7784231356b17d2ed56b1ef5eee1ca8",
+          "description": "cut out, subtract, remove, punch, piece, boolean, difference, shape, design, editor"
+        },
+        {
+          "name": "split",
+          "nodeId": "2142:28",
+          "componentKey": "cffa3cf318740484ad74b6876f1048d3f23899d0",
+          "description": "split, divide, cut, slice, separate, two, geometry, editor"
+        },
+        {
+          "name": "transparency",
+          "nodeId": "2171:24",
+          "componentKey": "7e5f97e0585be41a50b74b89f6e68ec4d988a287",
+          "description": "transparency, opacity, see-through, checker, checkerboard, blueprint, floor plan, underlay, slider, editor"
         }
       ]
     },
@@ -7201,6 +7267,67 @@
           "description": "wind, breeze, storm, weather"
         }
       ]
+    },
+    {
+      "name": "Map marks",
+      "nodeId": "2188:24",
+      "iconCount": 9,
+      "icons": [
+        {
+          "name": "snap-endpoint",
+          "nodeId": "2188:27",
+          "componentKey": "e3d1cffb8d0a7a7747d25137f43a1447de19c9e5",
+          "description": "map mark, screen-space, true pixel size, snap, indicator, editor"
+        },
+        {
+          "name": "snap-nearest",
+          "nodeId": "2188:31",
+          "componentKey": "60986aaff258635d28d9458dc16b91d9ea31984d",
+          "description": "map mark, screen-space, true pixel size, snap, indicator, editor"
+        },
+        {
+          "name": "snap-midpoint",
+          "nodeId": "2188:35",
+          "componentKey": "f18d99c20d6cb08529d0ba0e64bc98dff593b61c",
+          "description": "map mark, screen-space, true pixel size, snap, indicator, editor"
+        },
+        {
+          "name": "snap-perpendicular",
+          "nodeId": "2188:39",
+          "componentKey": "b35917f83d2ccc4d9b4e6e21efae03c236fe7e0b",
+          "description": "map mark, screen-space, true pixel size, snap, indicator, editor"
+        },
+        {
+          "name": "drag-crosshair",
+          "nodeId": "2188:43",
+          "componentKey": "12cfa0e3e2ca0a68e17bf347d0a2d9fff66d81da",
+          "description": "map mark, screen-space, true pixel size, snap, indicator, editor"
+        },
+        {
+          "name": "right-angle-mark",
+          "nodeId": "2189:24",
+          "componentKey": "e2e14229757dbfef2db05a721c0680a1b5c1defa",
+          "description": "map mark, screen-space, true pixel size, editor"
+        },
+        {
+          "name": "rotate-indicator",
+          "nodeId": "2189:27",
+          "componentKey": "8ebbe33dc86c8667af3ff42b56881e39b6e236e9",
+          "description": "map mark, screen-space, true pixel size, editor"
+        },
+        {
+          "name": "degree-chip",
+          "nodeId": "2189:34",
+          "componentKey": "7163f403971497171aaf7beecdd4e0845939277c",
+          "description": "map mark, screen-space, true pixel size, editor"
+        },
+        {
+          "name": "rotate-readout",
+          "nodeId": "2189:37",
+          "componentKey": "3713b83cd2537b620c59f0c5174a0d508753c195",
+          "description": "map mark, screen-space, true pixel size, editor"
+        }
+      ]
     }
   ],
   "icons": [
@@ -7705,6 +7832,22 @@
       "nodeId": "1007:8677",
       "componentKey": "51ef2e52a6fd1a0a3823b2edbc51935202c03646",
       "description": "table, layout, grid, browser, web, flexbox",
+      "category": "Layout",
+      "categoryNodeId": "1007:8490"
+    },
+    {
+      "name": "combine",
+      "nodeId": "2064:33",
+      "componentKey": "b723395847b43eb91b95e42ebf2cb016b726d6d1",
+      "description": "combine, union, merge, join, unite, shapes, squares",
+      "category": "Layout",
+      "categoryNodeId": "1007:8490"
+    },
+    {
+      "name": "merge",
+      "nodeId": "2258:24",
+      "componentKey": "d8c295b6cd018898e10db361105b1685d3df03f5",
+      "description": "merge, union, combine, join, unite, shapes, squares",
       "category": "Layout",
       "categoryNodeId": "1007:8490"
     },
@@ -15149,6 +15292,78 @@
       "categoryNodeId": "1007:11187"
     },
     {
+      "name": "snap",
+      "nodeId": "2064:37",
+      "componentKey": "ea0c661461e0209d60217ecd49c29e9901677ae6",
+      "description": "snap, nearest, guide, line, edge, point, magnet, align, indicator, geometry, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "square-up",
+      "nodeId": "2064:41",
+      "componentKey": "c194c9f0b540f92b274507db053c44b201aace6f",
+      "description": "square up, rectangle, right angle, conform, straighten, shapes, design, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "straighten",
+      "nodeId": "2064:45",
+      "componentKey": "265daec9cdf96a9c9e80ca388ae8c3cfc01684ef",
+      "description": "straighten, square, right angle, set square, align, design, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "simplify",
+      "nodeId": "2074:49",
+      "componentKey": "0e45cbc38661b54c4e1ae239911fe71f23da35c1",
+      "description": "simplify, flatten, reduce points, fewer corners, collinear, design, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "edit-path",
+      "nodeId": "2074:53",
+      "componentKey": "774f9877d88f2fa38ff7331d292a1ec4876645be",
+      "description": "edit path, reshape, anchor points, vertices, cursor, drag, design, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "rotate",
+      "nodeId": "2137:24",
+      "componentKey": "5dfea1c37ba3727d59805ed381c14e0739f67781",
+      "description": "rotate, turn, spin, angle, orientation, pivot, transform, design, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "cut-out",
+      "nodeId": "2142:24",
+      "componentKey": "2c2f76aca7784231356b17d2ed56b1ef5eee1ca8",
+      "description": "cut out, subtract, remove, punch, piece, boolean, difference, shape, design, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "split",
+      "nodeId": "2142:28",
+      "componentKey": "cffa3cf318740484ad74b6876f1048d3f23899d0",
+      "description": "split, divide, cut, slice, separate, two, geometry, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
+      "name": "transparency",
+      "nodeId": "2171:24",
+      "componentKey": "7e5f97e0585be41a50b74b89f6e68ec4d988a287",
+      "description": "transparency, opacity, see-through, checker, checkerboard, blueprint, floor plan, underlay, slider, editor",
+      "category": "Editor",
+      "categoryNodeId": "1007:11187"
+    },
+    {
       "name": "alarm-clock",
       "nodeId": "1007:11503",
       "componentKey": "0e57296713b13d492b69da8fdd15bbfb6d12088b",
@@ -16611,6 +16826,78 @@
       "description": "wind, breeze, storm, weather",
       "category": "Weather",
       "categoryNodeId": "1007:11897"
+    },
+    {
+      "name": "snap-endpoint",
+      "nodeId": "2188:27",
+      "componentKey": "e3d1cffb8d0a7a7747d25137f43a1447de19c9e5",
+      "description": "map mark, screen-space, true pixel size, snap, indicator, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "snap-nearest",
+      "nodeId": "2188:31",
+      "componentKey": "60986aaff258635d28d9458dc16b91d9ea31984d",
+      "description": "map mark, screen-space, true pixel size, snap, indicator, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "snap-midpoint",
+      "nodeId": "2188:35",
+      "componentKey": "f18d99c20d6cb08529d0ba0e64bc98dff593b61c",
+      "description": "map mark, screen-space, true pixel size, snap, indicator, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "snap-perpendicular",
+      "nodeId": "2188:39",
+      "componentKey": "b35917f83d2ccc4d9b4e6e21efae03c236fe7e0b",
+      "description": "map mark, screen-space, true pixel size, snap, indicator, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "drag-crosshair",
+      "nodeId": "2188:43",
+      "componentKey": "12cfa0e3e2ca0a68e17bf347d0a2d9fff66d81da",
+      "description": "map mark, screen-space, true pixel size, snap, indicator, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "right-angle-mark",
+      "nodeId": "2189:24",
+      "componentKey": "e2e14229757dbfef2db05a721c0680a1b5c1defa",
+      "description": "map mark, screen-space, true pixel size, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "rotate-indicator",
+      "nodeId": "2189:27",
+      "componentKey": "8ebbe33dc86c8667af3ff42b56881e39b6e236e9",
+      "description": "map mark, screen-space, true pixel size, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "degree-chip",
+      "nodeId": "2189:34",
+      "componentKey": "7163f403971497171aaf7beecdd4e0845939277c",
+      "description": "map mark, screen-space, true pixel size, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
+    },
+    {
+      "name": "rotate-readout",
+      "nodeId": "2189:37",
+      "componentKey": "3713b83cd2537b620c59f0c5174a0d508753c195",
+      "description": "map mark, screen-space, true pixel size, editor",
+      "category": "Map marks",
+      "categoryNodeId": "2188:24"
     }
   ]
 }
