@@ -3774,8 +3774,10 @@ try {
     const clip = {
       x: Math.floor(box.x) - 1,
       y: Math.floor(box.y) - 1,
-      width: 50,
-      height: 50,
+      // 52: a pixel before the box's floor, the 48 and up to one more for
+      // its fraction, and room for the rays to start a quarter outside.
+      width: 52,
+      height: 52,
     };
     const shot = await sharp.screenshot({ clip });
     const measured = await sharp.evaluate(
@@ -3802,30 +3804,36 @@ try {
         // and everything else here — the disc behind it, the page around it —
         // is neutral. A near-white test only works in the light theme, and the
         // fixture's outer tree is dark.
-        const plain = (p) =>
-          p[3] < 100 ||
-          Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]) < 40;
         const perPixel = 8;
         const widths = [];
         for (let degree = 0; degree < 360; degree += 10) {
           const angle = ((degree - 90) * Math.PI) / 180;
-          // The band is the longest unbroken run of the ring's colours along
-          // the ray, from just outside its edge, 24 and a quarter (the shot
-          // reaches a pixel past the button, where its neighbours may draw),
-          // in to 18, well inside it. A soft edge leaves single faint pixels
-          // that read as colour and then not: the first colour met is not
-          // where the band begins.
-          let run = 0;
-          let longest = 0;
+          // The band's width at half its strength, along the ray: the
+          // saturation of each sample from just outside the ring's edge, 24
+          // and a quarter, in to 18, well inside it; then the longest stretch
+          // at half the ray's peak or more. Half the peak, not a fixed
+          // threshold: the ring's colours fade into its soft edges at
+          // different rates (yellow is less saturated than blue), so a fixed
+          // cut found the edge a sample in or out by colour, and Linux WebKit
+          // read 2.20 to 2.60 round an even ring (CI, 19 Nov).
+          const profile = [];
           for (let r = 24.25 * perPixel; r > 18 * perPixel; r -= 0.05) {
-            const sample = at(
+            const p = at(
               centreX + Math.cos(angle) * r,
               centreY + Math.sin(angle) * r,
             );
-            run = plain(sample) ? 0 : run + 0.05;
+            profile.push(
+              Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]),
+            );
+          }
+          const peak = Math.max(...profile);
+          let run = 0;
+          let longest = 0;
+          for (const saturation of profile) {
+            run = saturation >= peak / 2 ? run + 0.05 : 0;
             longest = Math.max(longest, run);
           }
-          if (longest > 0) widths.push(longest / perPixel);
+          if (peak >= 40) widths.push(longest / perPixel);
         }
         return {
           min: Math.min(...widths),
@@ -3842,8 +3850,8 @@ try {
     );
     assert.equal(
       measured.width,
-      50 * 8,
-      `the shot is not 50 CSS pixels at eight device pixels each: ${measured.width}`,
+      52 * 8,
+      `the shot is not 52 CSS pixels at eight device pixels each: ${measured.width}`,
     );
     assert.equal(
       measured.rays,
