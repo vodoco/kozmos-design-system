@@ -5,19 +5,36 @@ import {
   defineComponent,
   ErrorCodes,
   getCurrentInstance,
+  inject,
   nextTick,
   normalizeStyle,
   onMounted,
   onBeforeUnmount,
   onUpdated,
+  provide,
   ref,
   shallowRef,
   toRaw,
   watch,
   warn,
+  type InjectionKey,
 } from "vue";
+import { createPortal } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import {
+  AnalyticsProvider,
+  DensityScope,
+  ThemeProvider,
+  TooltipProvider,
+} from "@kozmos-ds/react";
+import {
+  AnalyticsKey,
+  DensityKey,
+  ThemeKey,
+  type KozmosAnalytics,
+  type KozmosThemeState,
+} from "../theme/injection";
 
 /*
  * How a bridged wrapper hands Vue's attributes, listeners and models to the
@@ -142,19 +159,145 @@ import React, { useLayoutEffect, useRef } from "react";
  * for the field and debounces what it does with it, not the model.
  */
 
-// Internal React Bridge Component physically transplanting Vue DOM nodes dynamically into the React VDOM
-const VueSlotBridge = ({ slotWrapper }: { slotWrapper: HTMLElement }) => {
-  const bridgeRef = useRef<HTMLDivElement>(null);
+/*
+ * One React tree, and Vue's providers in it (GAP-230, decision 172).
+ *
+ * A wrapper in no other wrapper's slot is a React root. A wrapper in
+ * another's slot is drawn by that one's tree, through a portal into its own
+ * box, where the part it is in draws the slot: React's context reaches it
+ * as it reaches a React child, so a KozmosRadioGroupItem finds its
+ * KozmosRadioGroup, a KozmosSelectItem its KozmosSelect, and every part
+ * the context its compound gives its children. Each slot is a Host: the
+ * wrappers inside it register their portals with it (SlotHost provides it
+ * to them), and the slot's React element draws them.
+ *
+ * Vue's providers reach the React parts: a root is drawn inside a React
+ * ThemeProvider given the nearest KozmosThemeProvider's theme, direction,
+ * density and tokens (its useTheme().setTheme sets Vue's), a DensityScope
+ * given a KozmosDensityScope's density, an AnalyticsProvider that hands
+ * each event to the nearest KozmosAnalyticsProvider, and a TooltipProvider,
+ * which every Radix tooltip needs. A wrapper in a slot is given only those
+ * whose Vue provider sits between it and the slot's wrapper.
+ */
+
+/** The Vue providers where a wrapper is. */
+interface Context {
+  theme?: KozmosThemeState;
+  density?: { value: string };
+  analytics?: KozmosAnalytics;
+}
+
+/** One slot: the portals of the wrappers inside it, which its React element draws. */
+interface Host {
+  context: Context;
+  set(token: object, portal: React.ReactNode): void;
+  subscribe(listener: () => void): () => void;
+  portals(): React.ReactNode[];
+}
+
+const HostKey: InjectionKey<Host> = Symbol("KozmosBridgeHost");
+
+function makeHost(context: Context): Host {
+  const drawn = new Map<object, React.ReactNode>();
+  const listeners = new Set<() => void>();
+  let list: React.ReactNode[] = [];
+  return {
+    context,
+    set(token, portal) {
+      if (portal) drawn.set(token, portal);
+      else drawn.delete(token);
+      list = [...drawn.values()];
+      listeners.forEach((listener) => listener());
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    portals: () => list,
+  };
+}
+
+/** Gives a slot's content its Host. */
+const SlotHost = defineComponent({
+  props: ["host"],
+  setup(props, { slots }) {
+    provide(HostKey, props.host as Host);
+    return () => slots.default?.();
+  },
+});
+
+/**
+ * `node` inside the React providers of `context` that `outer`, the slot's
+ * wrapper's, does not have; a root inside all of them.
+ */
+function withContext(node: React.ReactNode, context: Context, outer?: Context) {
+  const { theme, density, analytics } = context;
+  /** A provider around what is drawn so far: its props, the children apart. */
+  const around = (provider: unknown, props: object) =>
+    React.createElement(provider as React.ElementType, props, drawn);
+  let drawn = node;
+  if (analytics && analytics !== outer?.analytics)
+    drawn = around(AnalyticsProvider, {
+      batchDelayMs: 0,
+      onDispatch: analytics.push,
+    });
+  if (theme && theme !== outer?.theme)
+    drawn = around(ThemeProvider, {
+      theme: theme.theme.value,
+      defaultSystemTheme: theme.resolvedTheme.value,
+      onThemeChange: theme.setTheme,
+      dir: theme.dir.value,
+      density: density?.value,
+      tokens: theme.tokenSets.value,
+    });
+  else if (density && density !== outer?.density)
+    drawn = around(DensityScope, { density: density.value });
+  return outer ? drawn : React.createElement(TooltipProvider, null, drawn);
+}
+
+/**
+ * A slot's content, drawn where the React part draws the prop it fills: the
+ * slot's box is moved into React's element, and the slot's wrappers drawn
+ * there as portals. A part that draws the prop twice (Radix Select draws the
+ * chosen item's text in the trigger too) shows a copy where the slot's box
+ * is already drawn in the page.
+ */
+const boxes = new WeakSet<Element>();
+const VueSlotBridge = ({
+  slotWrapper,
+  host,
+}: {
+  slotWrapper: HTMLElement;
+  host: Host;
+}) => {
+  const bridgeRef = useRef<HTMLSpanElement>(null);
+  const portals = useSyncExternalStore(
+    host.subscribe,
+    host.portals,
+    host.portals,
+  );
   useLayoutEffect(() => {
-    if (bridgeRef.current && slotWrapper) {
-      bridgeRef.current.appendChild(slotWrapper);
-    }
+    const box = bridgeRef.current!;
+    const parent = slotWrapper.parentElement;
+    boxes.add(box);
+    box.appendChild(
+      parent && boxes.has(parent) && parent.isConnected
+        ? slotWrapper.cloneNode(true)
+        : slotWrapper,
+    );
+    slotWrapper.style.display = "contents";
   }, [slotWrapper]);
-  return React.createElement("div", {
-    ref: bridgeRef,
-    style: { display: "contents" },
-  });
+  // A span, which any element React draws may hold (a <p> may hold no
+  // <div>): it draws no box, and the slot's own box inside it is Vue's.
+  return React.createElement(
+    "span",
+    { ref: bridgeRef, style: { display: "contents" } },
+    portals,
+  );
 };
+
+/** A slot's box until React draws it: a slot the part does not draw shows nothing. */
+const UNDRAWN = { display: "none" };
 
 // --------------------------------------------------------------------------
 // React DOM's events
@@ -558,6 +701,24 @@ export function withBooleans(
     given[prop] = asBoolean(value, prop, boolean);
   }
   return given;
+}
+
+/**
+ * `attrs`, each attribute in kebab-case under its camelCase name, as Vue
+ * gives a declared prop (GAP-238): `default-value` is React's
+ * `defaultValue`. Every prop React's types name is camelCase but `aria-*`
+ * and `data-*`, which pass as they are (scripts/bridge-takes.mjs fails on
+ * any other), so this needs no list of names. React's own spelling wins
+ * when both are given. Changes `attrs`.
+ */
+export function withPropNames(attrs: Record<string, unknown>) {
+  for (const key of Object.keys(attrs))
+    if (key.includes("-") && !/^(aria|data)-/.test(key)) {
+      const prop = camelize(key);
+      if (!hasOwn(attrs, prop)) attrs[prop] = attrs[key];
+      delete attrs[key];
+    }
+  return attrs;
 }
 
 /**
@@ -1067,6 +1228,16 @@ export function createVueWrapper<P extends object, N extends string = never>(
       const modelOnceRan = new Set<string>();
       const warned = new Set<string>();
       let root: Root | null = null;
+      // The Vue providers here, and the slot this wrapper is in, if any:
+      // then it is drawn by that slot's React tree, not a root of its own.
+      const context: Context = {
+        theme: inject(ThemeKey, undefined),
+        density: inject(DensityKey, undefined),
+        analytics: inject(AnalyticsKey, undefined),
+      };
+      const host = inject(HostKey, undefined);
+      /** This wrapper's slots, each a Host for the wrappers inside it. */
+      const hosts: Record<string, Host> = {};
       /**
        * What the wrapper was given when React was last drawn: its vnode's
        * props, and the names of its slots, each a prop of React's.
@@ -1193,12 +1364,14 @@ export function createVueWrapper<P extends object, N extends string = never>(
         // A v-model the wrapper does not take: its listener and modifiers
         // never reach React, and neither does `modelValue`, which no React
         // part takes. Said once, in development.
-        const noModel = (name: string) =>
-          warnOnce(
-            name === "modelValue"
-              ? `${label} has no v-model: modelValue and its listener are not given to React. Give React's own prop instead, such as :value.`
-              : `${label} has no v-model:${name}: its listener is not given to React. Listen to the part's own change callback instead.`,
-          );
+        const noModel = (name: string) => {
+          if (process.env.NODE_ENV !== "production")
+            warnOnce(
+              name === "modelValue"
+                ? `${label} has no v-model: modelValue and its listener are not given to React. Give React's own prop instead, such as :value.`
+                : `${label} has no v-model:${name}: its listener is not given to React. Listen to the part's own change callback instead.`,
+            );
+        };
         for (const key of Object.keys(rest)) {
           const model = /^onUpdate:(.+?)(?:Once)?$/.exec(key)?.[1];
           if (!model) continue;
@@ -1236,18 +1409,18 @@ export function createVueWrapper<P extends object, N extends string = never>(
               ...(Array.isArray(handler) ? handler : [handler]),
             );
         }
-        return { bound, react, native, rest: withBooleans(rest, booleans()) };
+        return {
+          bound,
+          react,
+          native,
+          rest: withPropNames(withBooleans(rest, booleans())),
+        };
       };
 
       const renderReact = () => {
         if (!containerRef.value) return;
         drawnFrom = { ...given() };
         drawnSlots = slotNames();
-
-        // Initialize the React root once
-        if (!root) {
-          root = createRoot(containerRef.value);
-        }
 
         const sorted = sort();
         const reactProps = sorted.rest as Record<string, any>;
@@ -1260,11 +1433,12 @@ export function createVueWrapper<P extends object, N extends string = never>(
           delete reactProps.class;
         }
         if (reactProps.style != null)
-          reactProps.style = toReactStyle(reactProps.style, (name) =>
-            warnOnce(
-              `${label}'s style ${name} is given to React without !important: React's style prop takes no priority.`,
-            ),
-          );
+          reactProps.style = toReactStyle(reactProps.style, (name) => {
+            if (process.env.NODE_ENV !== "production")
+              warnOnce(
+                `${label}'s style ${name} is given to React without !important: React's style prop takes no priority.`,
+              );
+          });
 
         // The listeners the part takes, by React's name.
         for (const [prop, entries] of Object.entries(sorted.react))
@@ -1326,12 +1500,23 @@ export function createVueWrapper<P extends object, N extends string = never>(
               slotName === "default" ? "children" : slotName;
             reactProps[reactPropName] = React.createElement(VueSlotBridge, {
               slotWrapper: slotRefs[slotName].value as HTMLElement,
+              host: hosts[slotName],
             });
           }
         }
 
         // Mount the React tree
-        root.render(React.createElement(ReactComponent, reactProps as any));
+        const drawn = withContext(
+          React.createElement(ReactComponent, reactProps as any),
+          context,
+          host?.context,
+        );
+        if (host)
+          host.set(
+            instance,
+            createPortal(drawn, containerRef.value, `${instance.uid}`),
+          );
+        else (root ??= createRoot(containerRef.value)).render(drawn);
       };
 
       /**
@@ -1465,11 +1650,26 @@ export function createVueWrapper<P extends object, N extends string = never>(
         redraw();
       });
       watch(givenNow, redraw, { deep: true });
+      // A Vue provider's value changed: theme, direction, density or tokens.
+      watch(
+        () => [
+          context.theme?.theme.value,
+          context.theme?.resolvedTheme.value,
+          context.theme?.dir.value,
+          context.theme?.tokenSets.value,
+          context.density?.value,
+        ],
+        () => {
+          if (!unmounted) renderReact();
+        },
+        { flush: "post" },
+      );
 
       // Cleanly unmount the React Virtual DOM when the Vue Component is destroyed
       onBeforeUnmount(() => {
         unmounted = true;
         containerRef.value?.removeEventListener("change", commit);
+        host?.set(instance, null);
         if (root) {
           root.unmount();
         }
@@ -1486,10 +1686,16 @@ export function createVueWrapper<P extends object, N extends string = never>(
               ref: (el: any) => {
                 if (el) slotRefs[name].value = el as HTMLElement;
               },
-              style: { display: "contents" },
+              style: UNDRAWN,
               key: name,
             },
-            slotFn ? slotFn() : [],
+            [
+              h(
+                SlotHost,
+                { host: (hosts[name] ??= makeHost(context)) },
+                slotFn,
+              ),
+            ],
           );
         });
 

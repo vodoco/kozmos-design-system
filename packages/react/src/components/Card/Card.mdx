@@ -201,13 +201,30 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosCard } from "@kozmos-ds/vue/react-bridge"
-// @kozmos-ds/vue wraps the Card only: it has no CardHeader, CardTitle, CardDescription, CardContent or CardFooter.
+import {
+  KozmosCard,
+  KozmosCardContent,
+  KozmosCardDescription,
+  KozmosCardHeader,
+  KozmosCardTitle,
+} from "@kozmos-ds/vue/react-bridge"
+// The header's actions are its #actions slot.
 </script>
 
 <template>
-  <KozmosCard>
-    <p>Card Content</p>
+  <KozmosCard padding="compact">
+    <KozmosCardHeader tone="subtle">
+      <KozmosCardTitle>Add beacon</KozmosCardTitle>
+      <KozmosCardDescription>Terminal A / Level 2</KozmosCardDescription>
+    </KozmosCardHeader>
+    <KozmosCardContent>
+      <p>The form</p>
+    </KozmosCardContent>
+  </KozmosCard>
+  <KozmosCard padding="compact">
+    <KozmosCardHeader>
+      <KozmosCardTitle size="md">Lunch nearby</KozmosCardTitle>
+    </KozmosCardHeader>
   </KozmosCard>
 </template>
     `}

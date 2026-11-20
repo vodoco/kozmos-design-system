@@ -67,6 +67,7 @@ export const VUE_STORIES = {
   },
   "vue-poicard--default": { interaction: "buttons-in-order" },
   "vue-poicard--inside-map-overlay": { interaction: "buttons-in-order" },
+  "vue-radiogroup--group": { interaction: "radio-group" },
   "vue-searchbar--floating-overlay": { interaction: "search-typing" },
   "vue-searchbar--inline": { interaction: "search-typing" },
   "vue-stepper--dots": {

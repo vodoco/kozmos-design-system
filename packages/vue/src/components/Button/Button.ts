@@ -15,6 +15,7 @@ import {
   TREATMENT_CLASSES,
 } from "#kozmos-recipes";
 import { spinnerArc } from "../Spinner/SpinnerArc";
+import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
 import type {
   KozmosButtonEmotion,
   KozmosButtonSize,
@@ -30,9 +31,9 @@ import type {
  * `<button>`; a `class` merges with the recipe's as React's `className` does.
  *
  * Like React's, it does not reparent its content: for navigation, use Link,
- * or `buttonVariants` on an anchor. React's reports each press to its
- * AnalyticsProvider; Vue has no analytics provider yet, so this one reports
- * nothing.
+ * or `buttonVariants` on an anchor. Each press is reported to the nearest
+ * KozmosAnalyticsProvider as `button_clicked`, with React's properties,
+ * before the press's own listeners run, as React's Button reports it.
  */
 export const KozmosButton = defineComponent({
   name: "KozmosButton",
@@ -58,8 +59,15 @@ export const KozmosButton = defineComponent({
   /** The label, as React's `children`. */
   slots: Object as SlotsType<{ default?: () => VNode[] }>,
   setup(props, { attrs, slots }) {
+    const { trackEvent } = useKozmosAnalytics();
+    const track = () =>
+      trackEvent("Button", "button_clicked", {
+        variant: props.variant || "default",
+        emotion: props.emotion || null,
+        disabled: props.disabled,
+      });
     return () => {
-      const { class: className, style, ...rest } = attrs;
+      const { class: className, style, onClick, ...rest } = attrs;
       const emotional = buttonEmotionTokens(props.variant, props.emotion);
       // A style only when there is one: an empty one is written as style="".
       const drawnStyle = emotional
@@ -81,6 +89,7 @@ export const KozmosButton = defineComponent({
           // loading button keeps its colours unless it is disabled too.
           "data-loading": props.isLoading && !props.disabled ? "" : undefined,
           ...rest,
+          onClick: onClick ? [track, onClick] : track,
         },
         [
           props.isLoading

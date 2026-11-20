@@ -10,6 +10,10 @@
 export { KozmosThemeProvider } from "./components/ThemeProvider/ThemeProvider";
 export { KozmosDensityScope } from "./components/DensityScope/DensityScope";
 export { KozmosButton } from "./components/Button/Button";
+export {
+  KozmosAnalyticsProvider,
+  useKozmosAnalytics,
+} from "./components/AnalyticsProvider/AnalyticsProvider";
 export type {
   KozmosButtonEmotion,
   KozmosButtonSize,
@@ -17,6 +21,7 @@ export type {
 } from "./components/Button/types";
 export {
   useTheme,
+  type KozmosAnalyticsEvent,
   type KozmosDensity,
   type KozmosResolvedTheme,
   type KozmosTheme,

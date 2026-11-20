@@ -1986,10 +1986,14 @@ describe("a model's change goes through Vue's emit", () => {
 });
 
 describe("the bridge's entry", () => {
-  it("exports the wrappers and createVueWrapper, and none of the bridge's own", () => {
+  it("exports the wrappers, createVueWrapper and React's toast(), and none of the bridge's own", () => {
     expect(
-      Object.keys(Bridge).filter((name) => !name.startsWith("Kozmos")),
-    ).toEqual(["createVueWrapper"]);
+      Object.keys(Bridge)
+        .filter((name) => !name.startsWith("Kozmos"))
+        .sort(),
+    ).toEqual(["createVueWrapper", "toast"]);
+    // React's own: a KozmosToaster draws what it shows (GAP-230).
+    expect(Bridge.toast).toBe(KozmosReact.toast);
   });
 });
 

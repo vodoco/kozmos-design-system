@@ -48,12 +48,26 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosSelect } from "@kozmos-ds/vue/react-bridge"
-// @kozmos-ds/vue wraps the Select root only: it has no SelectTrigger, SelectValue, SelectContent or SelectItem, so it cannot draw the field or its options yet.
+import {
+  KozmosSelect,
+  KozmosSelectContent,
+  KozmosSelectItem,
+  KozmosSelectTrigger,
+  KozmosSelectValue,
+} from "@kozmos-ds/vue/react-bridge"
 </script>
 
 <template>
-  <KozmosSelect />
+  <KozmosSelect>
+    <KozmosSelectTrigger aria-label="Theme" class="w-[180px]">
+      <KozmosSelectValue placeholder="Theme" />
+    </KozmosSelectTrigger>
+    <KozmosSelectContent>
+      <KozmosSelectItem value="light">Light</KozmosSelectItem>
+      <KozmosSelectItem value="dark">Dark</KozmosSelectItem>
+      <KozmosSelectItem value="system">System</KozmosSelectItem>
+    </KozmosSelectContent>
+  </KozmosSelect>
 </template>
     `}
     swift={`
@@ -139,8 +153,8 @@ trigger once chosen, never while the Select is disabled, at its root or on its t
 `label` drawn over it and said first, then the value, and takes the same props; Compose's
 `KozmosSelectTrigger` takes them. Input's page has the whole of it.
 
-Vue cannot draw a mixed Select yet: `@kozmos-ds/vue` bridges only Select's root, and the trigger,
-which draws the mixed label and the reset, is not bridged (GAP-230).
+On Vue, `KozmosSelect` takes `mixed` and `@reset-mixed`, and the `KozmosSelectTrigger` inside it
+draws the mixed label and the reset: a bridged part made of parts is one React tree (GAP-230).
 
 <Canvas of={SelectStories.MixedValue} />
 
@@ -186,7 +200,7 @@ The bordered field stays the default. SwiftUI's `KozmosSelect` and `KozmosSelect
 Compose's `KozmosSelectTrigger` takes `KozmosSelectTriggerVariant.Ghost`: no edge and no fill at rest, as wide as the
 value and chevron, the hover fill pressed or under a pointer, and the red edge in error (decision 88).
 
-Vue cannot draw it yet: `@kozmos-ds/vue` bridges only Select's root, not its trigger (GAP-230).
+On Vue, `variant="ghost"` goes on `KozmosSelectTrigger`, inside its `KozmosSelect` (GAP-230).
 
 <PlatformSnippets
     react={`
@@ -207,7 +221,27 @@ export function LevelControl() {
 }
     `}
     vue={`
-<!-- Not yet: @kozmos-ds/vue bridges only Select's root, not SelectTrigger (GAP-230). -->
+<script setup>
+import {
+  KozmosSelect,
+  KozmosSelectContent,
+  KozmosSelectItem,
+  KozmosSelectTrigger,
+  KozmosSelectValue,
+} from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosSelect default-value="1">
+    <KozmosSelectTrigger aria-label="Level" variant="ghost">
+      <KozmosSelectValue />
+    </KozmosSelectTrigger>
+    <KozmosSelectContent>
+      <KozmosSelectItem value="1">Level 1</KozmosSelectItem>
+      <KozmosSelectItem value="2">Level 2</KozmosSelectItem>
+    </KozmosSelectContent>
+  </KozmosSelect>
+</template>
     `}
     swift={`
 import SwiftUI

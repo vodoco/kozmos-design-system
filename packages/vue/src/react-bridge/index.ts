@@ -1,10 +1,17 @@
 /**
  * `@kozmos-ds/vue/react-bridge`: the Kozmos parts that have no Vue port yet,
- * each mounting its React component in a React root of its own. It needs
- * `react`, `react-dom` and `@kozmos-ds/react`, which the main entry never
- * imports. A part leaves this file when its Vue port lands in the main entry
- * (`KozmosButton` and `KozmosThemeProvider` were the first, Vue 3 Phase 0),
- * so one name is never two components.
+ * each mounting its React component. A wrapper in no other wrapper's slot
+ * is a React root; one in another's slot is drawn in that one's React tree,
+ * so a part made of parts (`KozmosRadioGroup` and its items, `KozmosSelect`
+ * and its trigger, content and items) is one React tree, and the Vue
+ * providers around it (KozmosThemeProvider, KozmosDensityScope,
+ * KozmosAnalyticsProvider) reach every part it draws (GAP-230, decision
+ * 172; react-adapter.ts). It needs `react`, `react-dom` and
+ * `@kozmos-ds/react`, which the main entry never imports. A part leaves
+ * this file when its Vue port lands in the main entry (`KozmosButton` and
+ * `KozmosThemeProvider` were the first, Vue 3 Phase 0;
+ * `KozmosAnalyticsProvider` left in 0.17.0), so one name is never two
+ * components.
  */
 import React from "react";
 import {
@@ -104,7 +111,6 @@ import {
   Tabs,
   Dialog,
   MapOverlay,
-  AnalyticsProvider,
   Chip,
   DynamicIsland,
   EmptyState,
@@ -143,6 +149,50 @@ import {
   RouteOptionCard,
   RoutePreviewPanel,
   TourStep,
+  // The parts of the parts made of parts (GAP-230): each is drawn in its
+  // compound's React tree.
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  TooltipProvider,
+  TooltipTrigger,
+  TooltipContent,
+  Toaster,
+  ToastProvider,
+  ToastViewport,
+  ToastTitle,
+  ToastDescription,
+  ToastAction,
+  ToastClose,
 } from "@kozmos-ds/react";
 
 import { toReactTarget } from "./targets";
@@ -221,8 +271,8 @@ const TourStepAdapter = ({ target, ...props }: any) =>
 TourStepAdapter.displayName = "TourStep";
 
 // GAP-190: a popover the product opens beside an element or rect it does not
-// own. One part, not a PopoverAnchor of its own: every wrapper mounts its own
-// React root, and Radix's anchor must share its Popover's. `anchor` is an
+// own. One part, not a PopoverAnchor of its own: the anchor is an element
+// or rect Vue holds, which no wrapper draws. `anchor` is an
 // element, a Vue component (a template ref on KozmosButton: its element), or
 // anything with a getBoundingClientRect(); the rest go to PopoverContent,
 // v-model:open to `open` and `onOpenChange`. Focus is React's: a close that
@@ -394,15 +444,15 @@ export const KozmosAvatar = createVueWrapper(AvatarAdapter);
 export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
 // ListItem's slots (GAP-195): #leading, #title, #titleAddon, #description,
-// #meta and #trailing, or its props for words. A row mounts a React root of
-// its own, so it is a row of a KozmosList's default slot.
+// #meta and #trailing, or its props for words. A row in a KozmosList's
+// default slot is drawn in the list's React tree (GAP-230).
 export const KozmosListItem = createVueWrapper(ListItem);
 export const KozmosListItemStatus = createVueWrapper(ListItemStatus);
 // GAP-040: #control is the setting's control, @reset its Reset to default.
 export const KozmosSettingsRow = createVueWrapper(SettingsRow);
-// Its rows are React's, as `children` (GAP-016), in its one React root, so
-// its selection reaches them: v-model:selectedIds is the selected rows'
-// rowIds (GAP-171).
+// Its rows are React's, as `children` (GAP-016), so its selection reaches
+// them: v-model:selectedIds is the selected rows' rowIds (GAP-171). Its row
+// parts are not bridged: a <table> holds no box a Vue slot is drawn in.
 export const KozmosTable = createVueWrapper(Table, {
   selectedIds: {
     prop: "selectedIds",
@@ -434,6 +484,15 @@ export const KozmosTree = createVueWrapper(Tree, {
     prop: "selectedIds",
     callback: "onSelectedIdsChange",
     empty: [],
+  },
+});
+// Its name is its own `ariaLabel` prop, not an `aria-label` attribute:
+// declared, `aria-label` reaches it by that name, as Vue gives a declared
+// prop (GAP-238). Beside its models' props, which it would replace.
+Object.assign(KozmosTree, {
+  props: {
+    ...(KozmosTree as unknown as { props: object }).props,
+    ariaLabel: { type: String, default: undefined },
   },
 });
 export const KozmosTimeline = createVueWrapper(Timeline);
@@ -533,7 +592,6 @@ export const KozmosTabs = createVueWrapper(Tabs, {
 });
 export const KozmosDialog = createVueWrapper(Dialog);
 export const KozmosMapOverlay = createVueWrapper(MapOverlay);
-export const KozmosAnalyticsProvider = createVueWrapper(AnalyticsProvider);
 export const KozmosChip = createVueWrapper(Chip);
 export const KozmosDynamicIsland = createVueWrapper(DynamicIsland);
 export const KozmosEmptyState = createVueWrapper(EmptyState);
@@ -710,3 +768,65 @@ export const KozmosPasswordInput = createVueWrapper(PasswordInput, {
   modelValue: textField,
   visible: { prop: "visible", callback: "onVisibleChange", empty: false },
 });
+
+// ----------------------------------------------------------------------
+// The parts of the parts made of parts (GAP-230, decision 172). Each is
+// drawn in the React tree of the wrapper whose slot it is in, so it finds
+// the context its compound gives it, as a React child does:
+//
+//   <KozmosRadioGroup v-model="level">
+//     <KozmosRadioGroupItem value="1" label="Level 1" />
+//   </KozmosRadioGroup>
+//
+// A trigger draws its own button: `as-child` cannot hand its behaviour to
+// a Vue element (a slot is drawn in a box of its own), so open a dialog,
+// drawer or tooltip from a KozmosButton by `v-model:open` instead.
+// ----------------------------------------------------------------------
+export const KozmosAccordionItem = createVueWrapper(AccordionItem);
+export const KozmosAccordionTrigger = createVueWrapper(AccordionTrigger);
+export const KozmosAccordionContent = createVueWrapper(AccordionContent);
+export const KozmosCardHeader = createVueWrapper(CardHeader);
+export const KozmosCardTitle = createVueWrapper(CardTitle);
+export const KozmosCardDescription = createVueWrapper(CardDescription);
+export const KozmosCardContent = createVueWrapper(CardContent);
+export const KozmosCardFooter = createVueWrapper(CardFooter);
+export const KozmosDialogTrigger = createVueWrapper(DialogTrigger);
+export const KozmosDialogContent = createVueWrapper(DialogContent);
+export const KozmosDialogHeader = createVueWrapper(DialogHeader);
+export const KozmosDialogTitle = createVueWrapper(DialogTitle);
+export const KozmosDialogDescription = createVueWrapper(DialogDescription);
+export const KozmosDialogFooter = createVueWrapper(DialogFooter);
+export const KozmosDialogClose = createVueWrapper(DialogClose);
+export const KozmosDrawerTrigger = createVueWrapper(DrawerTrigger);
+export const KozmosDrawerContent = createVueWrapper(DrawerContent);
+export const KozmosDrawerHeader = createVueWrapper(DrawerHeader);
+export const KozmosDrawerTitle = createVueWrapper(DrawerTitle);
+export const KozmosDrawerDescription = createVueWrapper(DrawerDescription);
+export const KozmosDrawerFooter = createVueWrapper(DrawerFooter);
+export const KozmosDrawerClose = createVueWrapper(DrawerClose);
+export const KozmosSelectTrigger = createVueWrapper(SelectTrigger);
+export const KozmosSelectValue = createVueWrapper(SelectValue);
+export const KozmosSelectContent = createVueWrapper(SelectContent);
+export const KozmosSelectGroup = createVueWrapper(SelectGroup);
+export const KozmosSelectLabel = createVueWrapper(SelectLabel);
+export const KozmosSelectItem = createVueWrapper(SelectItem);
+export const KozmosSelectSeparator = createVueWrapper(SelectSeparator);
+export const KozmosTabsList = createVueWrapper(TabsList);
+export const KozmosTabsTrigger = createVueWrapper(TabsTrigger);
+export const KozmosTabsContent = createVueWrapper(TabsContent);
+// Every bridged root is inside a TooltipProvider of its own, so a
+// KozmosTooltip needs none; one sets the delays for the tooltips in it.
+export const KozmosTooltipProvider = createVueWrapper(TooltipProvider);
+export const KozmosTooltipTrigger = createVueWrapper(TooltipTrigger);
+export const KozmosTooltipContent = createVueWrapper(TooltipContent);
+// Mount one KozmosToaster, inside a KozmosThemeProvider, and call `toast()`
+// from anywhere: its toasts are drawn in the provider's theme, as React's.
+// The parts below compose a toast by hand, as React's do.
+export const KozmosToaster = createVueWrapper(Toaster);
+export { toast } from "@kozmos-ds/react";
+export const KozmosToastProvider = createVueWrapper(ToastProvider);
+export const KozmosToastViewport = createVueWrapper(ToastViewport);
+export const KozmosToastTitle = createVueWrapper(ToastTitle);
+export const KozmosToastDescription = createVueWrapper(ToastDescription);
+export const KozmosToastAction = createVueWrapper(ToastAction);
+export const KozmosToastClose = createVueWrapper(ToastClose);
