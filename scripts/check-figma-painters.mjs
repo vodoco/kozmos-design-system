@@ -1413,6 +1413,10 @@ section("A set runs after the sets it reaches into");
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
+    // GAP-206: the closes' x-close, tinted again after the swap, and the
+    // search's own label, hidden.
+    retintMapPartCloseIcon: ["IconButton", ["MapInfoPanel", "RouteSetupPanel"]],
+    hideRouteLocationComboboxLabel: ["Combobox", "RouteLocationField"],
   };
   ok(
     [...writersFound].sort().join(",") ===
@@ -1463,8 +1467,8 @@ section("A set runs after the sets it reaches into");
     // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
       [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
-        "Card,PageHeader,TourStep",
-      `after IconButton: TourStep, Card and PageHeader (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+        "Card,MapInfoPanel,PageHeader,RouteSetupPanel,TourStep",
+      `after IconButton: TourStep, Card, PageHeader, MapInfoPanel and RouteSetupPanel (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -23343,6 +23347,598 @@ section(
       `SplitButton after Update: every variant keeps its id, and Menu Open is off and shows the ${enabled} enabled variants' menus (${menus.length} menus, ${open || "no Menu Open"})`,
     );
   }
+}
+
+// --- GAP-206: the map and route parts --------------------------------------------
+
+// Seven SDK parts that had no Figma set: MapStatusPill, MapAttribution,
+// MapInfoPanel, POIResultGroup, RouteLocationField, RouteSetupPanel and
+// ArrivalPanel. The sets they hold are built first, by their own Builds, in a
+// file with every icon, as Update All runs them; then each part is built by its
+// own Build and painted with the payload's variables, and read: the tokens
+// React draws with, the sizes, the nested sets' variants, the properties and
+// the layers they drive.
+section("GAP-206: the map and route parts");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const mapIcons = new MockNode("PAGE", "Icons");
+  const registry = fs.readFileSync(
+    path.join(ROOT, "packages/icons/src/registry.ts"),
+    "utf8",
+  );
+  for (const match of registry
+    .slice(
+      registry.indexOf("export const kozmosIconNames = ["),
+      registry.indexOf("] as const"),
+    )
+    .matchAll(/^\s+"([a-z0-9-]+)",$/gm)) {
+    mapIcons.appendChild(mockIconComponent(match[1]));
+  }
+  const mapPage = new MockNode("PAGE", "Components");
+  const mapFigma = createFigmaMock({ pages: [mapPage, mapIcons] });
+  const map = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: mapFigma,
+    append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  const parts = [
+    "MapStatusPill",
+    "MapAttribution",
+    "MapInfoPanel",
+    "POIResultGroup",
+    "RouteLocationField",
+    "RouteSetupPanel",
+    "ArrivalPanel",
+  ];
+  const held = [
+    "Button",
+    "IconButton",
+    "Spinner",
+    "Accordion",
+    "Link",
+    "Combobox",
+    "POIResultCard",
+  ];
+  const buildWarnings = {};
+  await withAutoLayout(async () => {
+    for (const name of [...held, ...parts]) {
+      const build = map[`build${name}Component`];
+      if (typeof build !== "function") continue;
+      const result = await build();
+      buildWarnings[name] = (result && result.warnings) || [];
+    }
+  });
+  const setOf = (name) => map.findComponentSetOnPage(mapPage, name);
+  const missing = parts.filter((name) => !setOf(name));
+  ok(
+    missing.length === 0,
+    `each part's Build draws its set (missing: ${missing.join(", ") || "none"})`,
+  );
+
+  // The sequence runs each after the sets it holds, and the page lists them.
+  const product = (map.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(([n]) => n);
+  const sdk = (map.COMPONENT_PAGE_LAYOUT_SECTIONS || []).find(
+    (entry) => entry.title === "Product / SDK",
+  );
+  ok(
+    parts.every((name) => product.includes(name)) &&
+      product.indexOf("POIResultCard") < product.indexOf("POIResultGroup") &&
+      product.indexOf("RouteLocationField") <
+        product.indexOf("RouteSetupPanel") &&
+      sdk &&
+      parts.every((name) => sdk.components.includes(name)) &&
+      parts.every((name) =>
+        (map.COMPONENT_DOCS || []).some((doc) => doc.componentSetName === name),
+      ),
+    `all seven in Update All Product / SDK after the sets they hold, in the Product / SDK section and documented (${product.filter((n) => parts.includes(n)).join(", ")})`,
+  );
+  const ui = fs.readFileSync(
+    path.join(path.dirname(PLUGIN), "ui.html"),
+    "utf8",
+  );
+  const slugs = [
+    "map-status-pill",
+    "map-attribution",
+    "map-info-panel",
+    "poi-result-group",
+    "route-location-field",
+    "route-setup-panel",
+    "arrival-panel",
+  ];
+  ok(
+    slugs.every(
+      (slug) =>
+        ui.includes(`build: "build-${slug}"`) &&
+        ui.includes(`update: "update-${slug}"`),
+    ),
+    "the panel offers each part's Build and Update",
+  );
+
+  // Every variant the axes name, and every property bound to a layer.
+  const wantAxes = {
+    MapStatusPill: {
+      Tone: ["Neutral", "Progress", "Success", "Danger", "Warning"],
+    },
+    MapAttribution: { Appearance: ["Map", "Surface"] },
+    MapInfoPanel: { Content: ["Default", "ExpandedFAQ", "Minimal"] },
+    POIResultGroup: { State: ["Collapsed", "Expanded"] },
+    RouteLocationField: {
+      State: ["Search", "Loading", "Empty", "Error", "Resolved"],
+    },
+    RouteSetupPanel: {
+      State: ["Incomplete", "Ready", "Pending"],
+      Presentation: ["Hosted", "Standalone"],
+    },
+    ArrivalPanel: {
+      State: ["Default", "Pending"],
+      Presentation: ["Hosted", "Standalone"],
+    },
+  };
+  const wantProperties = {
+    MapStatusPill: ["Status Text", "Show Mark"],
+    MapAttribution: ["Credit Text", "Credit Text 2", "Show Brand"],
+    MapInfoPanel: ["Title Text", "Introduction Text", "Show Brand"],
+    POIResultGroup: ["Show More Text", "Hide Text"],
+    RouteLocationField: [
+      "Label Text",
+      "Location Text",
+      "Description Text",
+      "Show Description",
+    ],
+    RouteSetupPanel: ["Title Text", "Description Text", "Show Description"],
+    ArrivalPanel: [
+      "Title Text",
+      "Destination Text",
+      "Location Text",
+      "Message Text",
+      "Duration Label Text",
+      "Duration Text",
+      "Distance Label Text",
+      "Distance Text",
+      "Show Image",
+      "Show Location",
+      "Show Message",
+      "Show Metrics",
+    ],
+  };
+  for (const name of parts) {
+    const set = setOf(name);
+    if (!set) continue;
+    const axes = wantAxes[name];
+    const combos = Object.entries(axes).reduce(
+      (all, [axis, values]) =>
+        all.flatMap((prefix) =>
+          values.map((value) => [...prefix, `${axis}=${value}`]),
+        ),
+      [[]],
+    );
+    const names = set.children.map((child) => child.name).sort();
+    const want = combos.map((parts) => parts.join(", ")).sort();
+    const definitions = set.componentPropertyDefinitions || {};
+    const declared = Object.keys(definitions)
+      .filter((key) => definitions[key].type !== "VARIANT")
+      .map((key) => key.split("#")[0])
+      .sort();
+    const unbound = propertiesBoundToNoLayer(set).map(
+      (key) => key.split("#")[0],
+    );
+    const warnings = (buildWarnings[name] || []).filter(
+      // A runtime with no variables paints fallbacks and says so.
+      (warning) => !/variable/i.test(warning),
+    );
+    ok(
+      JSON.stringify(map.expectedVariantAxesForComponentSetName(name)) ===
+        JSON.stringify(axes) &&
+        JSON.stringify(names) === JSON.stringify(want) &&
+        JSON.stringify(declared) ===
+          JSON.stringify([...wantProperties[name]].sort()) &&
+        unbound.length === 0 &&
+        warnings.length === 0,
+      `${name}: ${want.length} variants by ${Object.keys(axes).join(" × ")}; ${declared.join(", ")}, each driving a layer${unbound.length ? ` (unbound: ${unbound.join(", ")})` : ""}${warnings.length ? `; warnings: ${warnings.slice(0, 2).join(" | ")}` : ""}${JSON.stringify(names) !== JSON.stringify(want) ? `; variants ${names.join(" | ")}` : ""}`,
+    );
+  }
+
+  // Painted with the payload's variables, as Update paints in the file.
+  const paint = async (name, value, second) => {
+    const component = mapFigma.createComponent();
+    const stats = freshStats();
+    let error = null;
+    try {
+      await withAutoLayout(() =>
+        map[`update${name}Variant`](component, {
+          value,
+          second,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
+    } catch (caught) {
+      error = caught;
+    }
+    return { component, stats, error };
+  };
+  const bound = (paint) => paint && boundVariableName(paint);
+  const source = (node) =>
+    node && node.type === "INSTANCE" && node.mainComponent
+      ? `${node.mainComponent.parent && node.mainComponent.parent.name}/${node.mainComponent.name}`
+      : node
+        ? `${node.type} ${node.name}`
+        : "none";
+  const mark = (node) => {
+    const vector = node && node.findOne((child) => child.type === "VECTOR");
+    return vector && bound(vector.strokes[0]);
+  };
+  const clean = (name, value, result) =>
+    ok(
+      !result.error && result.stats.warnings.length === 0,
+      `${name} ${value}: painted, no warnings (${result.error ? result.error.message : result.stats.warnings.slice(0, 2).join(" | ")})`,
+    );
+
+  // MapStatusPill (decision 39): the map controls' surface, 48 at least,
+  // 8 by 12 inside, the mark 8 from 13/16 words; each tone's tokens.
+  const pillTones = {
+    Neutral: ["Colors/background/0", "Colors/foreground/300", null, null],
+    Progress: [
+      "Colors/background/0",
+      "Colors/foreground/300",
+      "Spinner/Size=Medium",
+      null,
+    ],
+    Success: [
+      "Colors/background/0",
+      "Emotion/success/text",
+      "check",
+      "Emotion/success/text",
+    ],
+    Danger: [
+      "Colors/background/0",
+      "Colors/foreground/300",
+      "alert-triangle",
+      "Emotion/danger/text",
+    ],
+    // Turn Back: no mark, as React's story draws it (icon={null}).
+    Warning: ["Emotion/alert/fill", "Emotion/alert/onFill", null, null],
+  };
+  for (const [tone, [surface, ink, glyph, glyphInk]] of Object.entries(
+    pillTones,
+  )) {
+    const result = await paint("MapStatusPill", tone);
+    clean("MapStatusPill", tone, result);
+    const pill = result.component;
+    const words = named(pill, "Status Words");
+    const box = named(pill, "Mark");
+    const inner = box && box.children[0];
+    const drawn = !box
+      ? null
+      : inner && inner.name === "Mark Icon"
+        ? inner.mainComponent.name.replace(/^Icon \/ /, "")
+        : inner && inner.type === "INSTANCE" && inner.mainComponent.parent
+          ? `${inner.mainComponent.parent.name}/${inner.mainComponent.name}`
+          : "?";
+    ok(
+      pill.name === `Tone=${tone}` &&
+        bound(pill.fills[0]) === surface &&
+        pill.strokes.length === 0 &&
+        pill.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        pill.effects.length === 1 &&
+        pill.minHeight === 48 &&
+        pill.paddingTop === 8 &&
+        pill.paddingLeft === 12 &&
+        pill.itemSpacing === 8 &&
+        words &&
+        words.fontSize === 13 &&
+        words.lineHeight.value === 16 &&
+        bound(words.fills[0]) === ink &&
+        (glyph === null
+          ? !box
+          : box.width === 24 &&
+            drawn === glyph &&
+            (glyphInk === null || mark(inner) === glyphInk)),
+      `MapStatusPill ${tone}: ${bound(pill.fills[0])} at the control radius, ${words && words.fontSize}/${words && words.lineHeight.value} words in ${words && bound(words.fills[0])}, mark ${drawn}${inner ? ` in ${mark(inner) || "its own"}` : ""}`,
+    );
+  }
+
+  // MapAttribution: Map transparent, its credits in the attribution's
+  // colour; Surface on the background, its credits ink. 10/12, the first
+  // underlined, the brand 98 by 34 over them.
+  for (const [appearance, fill, ink, bottom] of [
+    ["Map", null, "Map attribution/text", 0],
+    ["Surface", "Colors/background/0", "Colors/foreground/0", 8],
+  ]) {
+    const result = await paint("MapAttribution", appearance);
+    clean("MapAttribution", appearance, result);
+    const node = result.component;
+    const credits = named(node, "Credits");
+    const first = credits && named(credits, "Credit");
+    const second = credits && named(credits, "Credit 2");
+    const brand = named(node, "Brand Slot");
+    ok(
+      (fill === null
+        ? node.fills.length === 0
+        : bound(node.fills[0]) === fill) &&
+        node.paddingLeft === 8 &&
+        node.paddingTop === 8 &&
+        node.paddingBottom === bottom &&
+        node.counterAxisAlignItems === "CENTER" &&
+        node.children[0] === brand &&
+        brand.width === 98 &&
+        brand.height === 34 &&
+        first &&
+        second &&
+        [first, second].every(
+          (text) =>
+            text.fontSize === 10 &&
+            text.lineHeight.value === 12 &&
+            bound(text.fills[0]) === ink,
+        ) &&
+        first.textDecoration === "UNDERLINE" &&
+        second.textDecoration !== "UNDERLINE",
+      `MapAttribution ${appearance}: ${fill || "no fill"}, the brand over 10/12 credits in ${first && bound(first.fills[0])}, the linked one underlined`,
+    );
+  }
+
+  // MapInfoPanel: 384 wide on the background, 24 inside, 16 between; a
+  // 20/28 title; the FAQ an Accordion, open in ExpandedFAQ; the close a ghost
+  // IconButton showing x-close in its own tint, 16 from the top and the end.
+  for (const content of ["Default", "ExpandedFAQ", "Minimal"]) {
+    const result = await paint("MapInfoPanel", content);
+    clean("MapInfoPanel", content, result);
+    const panel = result.component;
+    const title = named(panel, "Panel Title");
+    const accordion = named(panel, "FAQ Accordion");
+    const close = named(panel, "Close Button");
+    const closeIcon =
+      close &&
+      close.findOne(
+        (node) =>
+          node.type === "INSTANCE" &&
+          node.componentPropertyReferences &&
+          String(
+            node.componentPropertyReferences.mainComponent || "",
+          ).startsWith("Icon#"),
+      );
+    const minimal = content === "Minimal";
+    ok(
+      panel.width === 384 &&
+        panel.paddingLeft === 24 &&
+        panel.itemSpacing === 16 &&
+        bound(panel.fills[0]) === "Colors/background/0" &&
+        title &&
+        title.fontSize === 20 &&
+        title.lineHeight.value === 28 &&
+        bound(title.fills[0]) === "Colors/foreground/0" &&
+        (minimal
+          ? !accordion &&
+            !named(panel, "Introduction") &&
+            !named(panel, "Footer")
+          : source(accordion) ===
+              `Accordion/Variant=Default, State=${content === "ExpandedFAQ" ? "Open" : "Closed"}` &&
+            accordion.isExposedInstance === true &&
+            source(named(panel, "Support Link")).startsWith("Link/") &&
+            named(panel, "Footer").paddingTop === 32) &&
+        source(close) ===
+          "IconButton/Variant=Ghost, Size=Default, State=Default" &&
+        close.layoutPositioning === "ABSOLUTE" &&
+        close.x === 384 - 16 - 44 &&
+        close.y === 16 &&
+        closeIcon &&
+        closeIcon.mainComponent.name.endsWith("x-close") &&
+        mark(closeIcon) === plugin.buttonConfig("Ghost", "Default").foreground,
+      `MapInfoPanel ${content}: 384 at 24, a 20/28 title, ${minimal ? "nothing else" : `FAQ ${source(accordion)}`}, close ${source(close)} at ${close && close.x},${close && close.y} showing ${closeIcon && closeIcon.mainComponent.name} in ${mark(closeIcon)}`,
+    );
+  }
+
+  // POIResultGroup: one edge, the control radius, clipped; POIResultCard
+  // rows, a divider between; the muted toggle, its words and chevron.
+  for (const [state, members, words, chevron] of [
+    ["Collapsed", 1, "Show 2 more", "chevron-down"],
+    ["Expanded", 3, "Hide", "chevron-up"],
+  ]) {
+    const result = await paint("POIResultGroup", state);
+    clean("POIResultGroup", state, result);
+    const group = result.component;
+    const rows = group.children.filter((child) => child.type === "INSTANCE");
+    const dividers = group.children.filter((child) => child.name === "Divider");
+    const toggle = named(group, "Toggle");
+    const text = toggle && toggle.findOne((node) => node.type === "TEXT");
+    const icon = toggle && named(toggle, "Chevron");
+    ok(
+      bound(group.strokes[0]) === "Border/Subtle" &&
+        group.strokeWeight === 1 &&
+        group.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        group.clipsContent === true &&
+        bound(group.fills[0]) === "Surface/0" &&
+        rows.length === members &&
+        rows.every(
+          (row) =>
+            source(row) === "POIResultCard/State=Default, Appearance=Row" &&
+            row.isExposedInstance === true,
+        ) &&
+        dividers.length === members &&
+        dividers.every(
+          (rule) =>
+            rule.height === 1 && bound(rule.fills[0]) === "Border/Subtle",
+        ) &&
+        group.children[group.children.length - 1] === toggle &&
+        bound(toggle.fills[0]) === "Colors/background/100" &&
+        text.characters === words &&
+        text.fontSize === 14 &&
+        bound(text.fills[0]) === "Colors/foreground/400" &&
+        icon &&
+        icon.mainComponent.name.endsWith(chevron) &&
+        icon.width === 16,
+      `POIResultGroup ${state}: ${rows.length} POIResultCard rows, ${dividers.length} dividers, "${text && text.characters}" with ${icon && icon.mainComponent.name}`,
+    );
+  }
+
+  // RouteLocationField: the muted label over a Combobox whose own label is
+  // hidden, its status words its helper; Resolved, the place in a bordered
+  // box, 12 inside, its name 16 semibold over its description.
+  for (const [state, helper, status, action] of [
+    ["Search", null, "Default", null],
+    ["Loading", "Searching locations…", "Default", "Clear Search Button"],
+    ["Empty", "No locations found", "Default", "Clear Search Button"],
+    ["Error", "Locations are unavailable", "Error", "Clear Search Button"],
+    ["Resolved", null, null, "Clear Location Button"],
+  ]) {
+    const result = await paint("RouteLocationField", state);
+    clean("RouteLocationField", state, result);
+    const field = result.component;
+    const label = named(field, "Field Label");
+    const search = named(field, "Search");
+    const button = named(field, "Header").children[1];
+    const props = (search && search.componentProperties) || {};
+    const prop = (base) =>
+      Object.keys(props).find((key) => key.split("#")[0] === base);
+    const comboLabel =
+      search && search.findOne((node) => node.name === "Label Text");
+    const resolved = state === "Resolved";
+    const name = named(field, "Location Name");
+    const description = named(field, "Location Description");
+    ok(
+      label &&
+        label.fontSize === 14 &&
+        bound(label.fills[0]) === "Colors/foreground/400" &&
+        (action === null
+          ? !button
+          : button &&
+            button.name === action &&
+            source(button) ===
+              "Button/Variant=Ghost, Size=Default, State=Default") &&
+        (resolved
+          ? !search &&
+            bound(field.strokes[0]) === "Border/Subtle" &&
+            field.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+            field.paddingLeft === 12 &&
+            name.fontSize === 16 &&
+            bound(name.fills[0]) === "Colors/foreground/0" &&
+            description.fontSize === 14 &&
+            bound(description.fills[0]) === "Colors/foreground/400"
+          : field.strokes.length === 0 &&
+            source(search) ===
+              `Combobox/State=Default, Status=${status}, Content=Closed` &&
+            comboLabel &&
+            comboLabel.visible === false &&
+            props[prop("Show Helper Text")] === Boolean(helper) &&
+            (helper === null || props[prop("Helper Text")] === helper) &&
+            props[prop("Placeholder Text")] === "Search for a place"),
+      `RouteLocationField ${state}: ${resolved ? "the place in its box" : `${source(search)}, its label ${comboLabel && comboLabel.visible === false ? "hidden" : "shown"}, helper ${JSON.stringify(props[prop("Helper Text")] || null)}`}; action ${button ? button.name : "none"}`,
+    );
+  }
+
+  // RouteSetupPanel and ArrivalPanel: Hosted draws no surface, Standalone
+  // the solid one on the panel corner with the overlay shadow and 16 inside;
+  // the primary action a default Button the full width, disabled until ready
+  // and while pending.
+  for (const [name, state, fields, disabled] of [
+    ["RouteSetupPanel", "Incomplete", ["Resolved", "Search"], true],
+    ["RouteSetupPanel", "Ready", ["Resolved", "Resolved"], false],
+    ["RouteSetupPanel", "Pending", ["Resolved", "Resolved"], true],
+    ["ArrivalPanel", "Default", null, false],
+    ["ArrivalPanel", "Pending", null, true],
+  ]) {
+    for (const presentation of ["Hosted", "Standalone"]) {
+      const result = await paint(name, state, presentation);
+      clean(name, `${state} ${presentation}`, result);
+      const panel = result.component;
+      const standalone = presentation === "Standalone";
+      const action = named(
+        panel,
+        name === "ArrivalPanel" ? "Done Button" : "Continue Button",
+      );
+      const title = named(
+        panel,
+        name === "ArrivalPanel" ? "Arrival Title" : "Panel Title",
+      );
+      const surfaceOk = standalone
+        ? bound(panel.fills[0]) === "Surface/0" &&
+          panel.cornerRadius === plugin.KOZMOS_RADIUS.panel &&
+          panel.paddingLeft === 16 &&
+          panel.effects.length === 1 &&
+          panel.effects[0].radius === 16
+        : panel.fills.length === 0 &&
+          panel.paddingLeft === 0 &&
+          panel.effects.length === 0;
+      let partOk = false;
+      let detail = "";
+      if (name === "RouteSetupPanel") {
+        const locations = named(panel, "Locations");
+        const got = locations
+          ? locations.children.map((child) =>
+              child.mainComponent ? child.mainComponent.name : child.name,
+            )
+          : [];
+        const labels = locations
+          ? locations.children.map((child) => {
+              const key = Object.keys(child.componentProperties || {}).find(
+                (k) => k.split("#")[0] === "Label Text",
+              );
+              return key && child.componentProperties[key];
+            })
+          : [];
+        const close = named(panel, "Close Button");
+        partOk =
+          JSON.stringify(got) ===
+            JSON.stringify(fields.map((value) => `State=${value}`)) &&
+          locations.children.every(
+            (child) => child.mainComponent.parent.name === "RouteLocationField",
+          ) &&
+          labels.join() === "Start,Destination" &&
+          source(close) ===
+            "IconButton/Variant=Outline, Size=Default, State=Default";
+        detail = `fields ${got.join(" + ")} (${labels.join(", ")}), close ${source(close)}`;
+      } else {
+        const image = named(panel, "Destination Image");
+        const pin = image && named(image, "Pin");
+        const metrics = named(panel, "Metrics");
+        partOk =
+          image &&
+          image.width === 48 &&
+          image.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+          bound(image.fills[0]) === "Colors/background/100" &&
+          bound(image.strokes[0]) === "Border/Subtle" &&
+          pin &&
+          pin.mainComponent.name.endsWith("marker-pin-01") &&
+          pin.width === 20 &&
+          metrics &&
+          metrics.itemSpacing === 16 &&
+          named(metrics, "Duration Value").characters === "6 min" &&
+          named(metrics, "Distance Value").characters === "202 m" &&
+          bound(named(metrics, "Duration Label").fills[0]) ===
+            "Colors/foreground/400";
+        detail = `the 48 picture with ${pin && pin.mainComponent.name}, the journey ${metrics ? "drawn" : "missing"}`;
+      }
+      ok(
+        panel.name === `State=${state}, Presentation=${presentation}` &&
+          panel.width === 360 &&
+          panel.itemSpacing === 16 &&
+          surfaceOk &&
+          title &&
+          title.fontSize === 20 &&
+          title.lineHeight.value === 28 &&
+          action &&
+          source(action) ===
+            `Button/Variant=Default, Size=Default, State=${disabled ? "Disabled" : "Default"}` &&
+          action.layoutSizingHorizontal === "FILL" &&
+          panel.children[panel.children.length - 1] === action &&
+          partOk,
+        `${name} ${state} ${presentation}: ${standalone ? "its own surface" : "the sheet's"}, ${source(action)} the full width; ${detail}`,
+      );
+    }
+  }
+
+  // Every writer inside a nested instance is in the map, so a bulk run
+  // updates the dependents after the sets they reach into.
+  ok(
+    map.SETS_THAT_OVERRIDE_INSIDE.IconButton.includes("MapInfoPanel") &&
+      map.SETS_THAT_OVERRIDE_INSIDE.IconButton.includes("RouteSetupPanel") &&
+      map.SETS_THAT_OVERRIDE_INSIDE.Combobox.includes("RouteLocationField"),
+    "IconButton names MapInfoPanel and RouteSetupPanel, Combobox RouteLocationField, as sets that override inside them",
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------
