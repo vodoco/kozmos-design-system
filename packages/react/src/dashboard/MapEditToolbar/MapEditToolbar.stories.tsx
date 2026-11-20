@@ -30,8 +30,8 @@ import { Input } from "../../components/Input/Input";
 // draws them): the part is the same, the items the product's. The icons are
 // named exports of @kozmos-ds/icons (decision 121): Transform, ScissorsCut01,
 // Divider and Ruler for Adjust, Cut-out, Split and Straighten, as MAP-64's
-// toolbar draws them. MAP-619's Merge, after Split, waits for its glyph
-// (GAP-223), which @kozmos-ds/icons does not have yet.
+// toolbar draws them. MAP-619's Merge, after Split, draws Merge (GAP-223);
+// Cloud 10.16's toolbars, which these stories are, have no Merge yet.
 
 const undo: MapEditToolbarAction = {
   type: "action",

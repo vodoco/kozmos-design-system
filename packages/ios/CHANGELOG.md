@@ -89,6 +89,7 @@ Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is
 
 ### Changed
 
+- **Pointr's outlines regenerated from the icon library of 19 Nov (GAP-223):** `KozmosPointrIconPaths` and the navigation glyphs carry Figma's new export of bookmark, eye, phone, stars-01, droplets-01, medical-cross, plane and navigation-pointer-01, most as one path where there were several. Each was rendered old against new: the outlines lie on their predecessors, and only a few antialiased pixels differ where strokes overlap. No icon is added or removed on SwiftUI.
 - **`KozmosLineSpacingTests` and `pnpm ios:line-spacing:check` (decision 203):** every `.lineSpacing` passes one of `KozmosTypography`'s spacings, and each is measured on the simulator: it takes away no more than its text style's leading, and SwiftUI moves two lines apart by all of it. SwiftUI ignores a negative spacing past the leading without a word. `KozmosColors.swift` writes eight colours' dark white as `#ffffff`, the case of the primitive they now refer to (GAP-281); the colours are unchanged.
 - **`KozmosColors.primitivesColorsWhite`, white in both themes (decision 223):** the themed Button's words and marks refer to it, not to a ramp step white in one theme only.
 - **The surface modifier's type is `KozmosSurfaceModifier` (GAP-207):** it was `KozmosSurface`, a name the new view takes. `kozmosSurface(_:style:)` is unchanged; a product that wrote `.modifier(KozmosSurface(shape:style:))` writes `.modifier(KozmosSurfaceModifier(shape:style:))`, or the `kozmosSurface` modifier.

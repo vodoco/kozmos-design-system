@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AlertTriangle } from "@kozmos-ds/icons";
+import { AlertTriangle, Cursor02 } from "@kozmos-ds/icons";
 import {
   act,
   fireEvent,
@@ -413,7 +413,11 @@ describe("TourStep (GAP-188)", () => {
     // Cursor02, centred on the words, and no "More".
     const pointer = notice().querySelector('[aria-hidden="true"] > svg');
     expect(pointer).toHaveAttribute("width", "16");
-    expect(pointer!.innerHTML).toContain("M20.5056 10.7754");
+    // The icons package's own outline, not a copy of its path: a regenerated
+    // library traces the same shape from another point (19 Nov).
+    const { container: cursor } = render(<Cursor02 />);
+    const cursorPath = cursor.querySelector("path")!.getAttribute("d")!;
+    expect(pointer!.querySelector("path")!.getAttribute("d")).toBe(cursorPath);
     expect(notice().firstElementChild).toHaveClass("items-center");
     expect(notice().querySelector("button")).toBeNull();
     rerender(<Step instructionTone="warning" />);
