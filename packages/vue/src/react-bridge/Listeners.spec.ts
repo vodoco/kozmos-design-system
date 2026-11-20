@@ -33,6 +33,7 @@ import {
   type Takes,
 } from "./react-adapter";
 import { REPOSITORY, computeTakes } from "../../scripts/bridge-takes.mjs";
+import { IN_A_COMPOUND } from "../../test/compounds";
 import {
   $,
   $$,
@@ -299,7 +300,7 @@ describe("which on… props each part takes", () => {
     expect(undescribed).toEqual([]);
   });
 
-  it("the parts that take no onClick: the element-less nine, Tooltip, and two whose props omit it", () => {
+  it("the parts that take no onClick: the element-less ten, Tooltip, Toaster, and two whose props omit it", () => {
     const none = bridgedParts()
       .filter(({ bridge }) => !takesProp(bridge!.takes!, "onClick"))
       .map(({ name }) => name)
@@ -308,6 +309,8 @@ describe("which on… props each part takes", () => {
       [
         ...ELEMENTLESS,
         "KozmosTooltip",
+        // Its props are its own: where its toasts go, and their words.
+        "KozmosToaster",
         // Their props omit onClick: each draws a button whose click is its
         // onSelect.
         "KozmosCategoryTile",
@@ -856,7 +859,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosTabs: { slot: true },
   KozmosDialog: { slot: true },
   KozmosMapOverlay: { slot: true },
-  KozmosAnalyticsProvider: { slot: true },
   KozmosChip: { slot: true },
   // Its island, inside the theme scope it draws round it.
   KozmosDynamicIsland: { click: first("[data-kozmos-root] > *") },
@@ -968,6 +970,31 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { "aria-label": "Password" },
     click: first("input"),
   },
+  // Every root is inside a TooltipProvider of its own (GAP-230), so a
+  // tooltip draws alone; it and its provider draw no element.
+  KozmosTooltip: { slot: true },
+  KozmosTooltipProvider: { slot: true },
+  // The parts of the parts made of parts that draw alone, as their React
+  // parts do (GAP-230).
+  KozmosCardHeader: { slot: true },
+  KozmosCardTitle: { slot: true },
+  // A <p> cannot hold the slot's box.
+  KozmosCardDescription: { props: { children: "Gate 4" } },
+  KozmosCardContent: { slot: true },
+  KozmosCardFooter: { slot: true },
+  KozmosDialogHeader: { slot: true },
+  KozmosDialogFooter: { slot: true },
+  KozmosDrawerHeader: { slot: true },
+  KozmosDrawerFooter: { slot: true },
+  KozmosSelectGroup: { slot: true },
+  KozmosSelectSeparator: {},
+  // Its list, drawn in place outside a theme provider.
+  KozmosToaster: {},
+  KozmosToastProvider: { slot: true },
+  KozmosToastTitle: { slot: true },
+  KozmosToastDescription: { slot: true },
+  KozmosToastAction: { props: { altText: "Undo" }, slot: true },
+  KozmosToastClose: {},
 };
 
 /**
@@ -981,14 +1008,10 @@ const IN_A_PORTAL = [
 ];
 
 /**
- * Exports that cannot draw alone: each needs a React parent, and no wrapper
- * can be one, since each wrapper is a React root of its own (GAP-016).
+ * Exports that draw only inside their compound, as their React parts do:
+ * Compounds.spec.ts draws each there (test/compounds.ts).
  */
-const CANNOT_DRAW_ALONE: Record<string, string> = {
-  KozmosToast: "a ToastProvider",
-  KozmosTooltip: "a TooltipProvider",
-  KozmosRadioGroupItem: "a RadioGroup",
-};
+const CANNOT_DRAW_ALONE = IN_A_COMPOUND;
 
 /** The parts the review named, which draw no element of their own. */
 const ELEMENTLESS = [
@@ -999,8 +1022,9 @@ const ELEMENTLESS = [
   "KozmosDrawer",
   "KozmosPopover",
   "KozmosBottomSheet",
-  "KozmosAnalyticsProvider",
   "KozmosNavigationAnnouncer",
+  "KozmosTooltipProvider",
+  "KozmosToastProvider",
 ];
 
 /** The first element React drew inside a wrapper's root that draws a box. */

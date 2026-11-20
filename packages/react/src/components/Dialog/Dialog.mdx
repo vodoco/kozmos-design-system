@@ -67,12 +67,36 @@ export function AnalyticsInvite({ illustration }: { illustration: string }) {
     `}
     vue={`
 <script setup>
-import { KozmosDialog } from "@kozmos-ds/vue/react-bridge"
-// @kozmos-ds/vue wraps the Dialog root only: it has no DialogContent or DialogHeader, so it cannot draw a dialog yet.
+import { KozmosButton } from "@kozmos-ds/vue"
+import {
+  KozmosDialog,
+  KozmosDialogContent,
+  KozmosDialogDescription,
+  KozmosDialogFooter,
+  KozmosDialogHeader,
+  KozmosDialogTitle,
+} from "@kozmos-ds/vue/react-bridge"
+// An illustration above the title, out to the dialog's edges and top
+// corners: the header's #media slot. Left unnamed it is decorative;
+// media-label names it as one image.
+defineProps({ illustration: String })
 </script>
 
 <template>
-  <KozmosDialog />
+  <KozmosDialog default-open>
+    <KozmosDialogContent>
+      <KozmosDialogHeader media-bleed>
+        <template #media><img :src="illustration" alt="" /></template>
+        <KozmosDialogTitle>Interested in Analytics?</KozmosDialogTitle>
+        <KozmosDialogDescription>
+          See how people move through your buildings, floor by floor.
+        </KozmosDialogDescription>
+      </KozmosDialogHeader>
+      <KozmosDialogFooter>
+        <KozmosButton>Contact sales</KozmosButton>
+      </KozmosDialogFooter>
+    </KozmosDialogContent>
+  </KozmosDialog>
 </template>
     `}
     swift={`
@@ -170,12 +194,29 @@ export function ImagePreview({ src, onClose }: { src: string; onClose: () => voi
     `}
     vue={`
 <script setup>
-import { KozmosDialog } from "@kozmos-ds/vue/react-bridge"
-// @kozmos-ds/vue wraps the Dialog root only: it has no DialogContent or DialogHeader, so it cannot draw a dialog yet.
+import {
+  KozmosDialog,
+  KozmosDialogContent,
+  KozmosDialogDescription,
+  KozmosDialogHeader,
+  KozmosDialogTitle,
+} from "@kozmos-ds/vue/react-bridge"
+// The window less 16 on each side: the header keeps its height and the
+// image takes the rest, as large as it fits.
+defineProps({ src: String })
+const emit = defineEmits(["close"])
 </script>
 
 <template>
-  <KozmosDialog />
+  <KozmosDialog :open="true" @update:open="(open) => !open && emit('close')">
+    <KozmosDialogContent size="full">
+      <KozmosDialogHeader>
+        <KozmosDialogTitle>Image 1</KozmosDialogTitle>
+        <KozmosDialogDescription>Main entrance</KozmosDialogDescription>
+      </KozmosDialogHeader>
+      <img :src="src" alt="Main entrance" />
+    </KozmosDialogContent>
+  </KozmosDialog>
 </template>
     `}
     swift={`
@@ -269,12 +310,26 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosDialog } from "@kozmos-ds/vue/react-bridge"
-// @kozmos-ds/vue wraps the Dialog root only: it has no DialogTrigger, DialogContent, DialogHeader, DialogTitle or DialogDescription, so it cannot draw a dialog yet.
+import {
+  KozmosDialog,
+  KozmosDialogContent,
+  KozmosDialogDescription,
+  KozmosDialogHeader,
+  KozmosDialogTitle,
+  KozmosDialogTrigger,
+} from "@kozmos-ds/vue/react-bridge"
 </script>
 
 <template>
-  <KozmosDialog />
+  <KozmosDialog>
+    <KozmosDialogTrigger>Open</KozmosDialogTrigger>
+    <KozmosDialogContent>
+      <KozmosDialogHeader>
+        <KozmosDialogTitle>Are you sure absolutely sure?</KozmosDialogTitle>
+        <KozmosDialogDescription>This action cannot be undone.</KozmosDialogDescription>
+      </KozmosDialogHeader>
+    </KozmosDialogContent>
+  </KozmosDialog>
 </template>
     `}
     swift={`

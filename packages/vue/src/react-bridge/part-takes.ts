@@ -102,7 +102,6 @@ import {
   Tabs,
   Dialog,
   MapOverlay,
-  AnalyticsProvider,
   Chip,
   DynamicIsland,
   EmptyState,
@@ -138,6 +137,48 @@ import {
   RouteOptionCard,
   RoutePreviewPanel,
   TourStep,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  TooltipProvider,
+  TooltipTrigger,
+  TooltipContent,
+  Toaster,
+  ToastProvider,
+  ToastViewport,
+  ToastTitle,
+  ToastDescription,
+  ToastAction,
+  ToastClose,
 } from "@kozmos-ds/react";
 import type { Booleans, Takes } from "./react-adapter";
 
@@ -146,6 +187,17 @@ const D: Takes = { dom: true, own: [] };
 const inputTakes: Takes = { dom: true, own: ["onResetMixed"] };
 const searchTakes: Takes = { dom: true, own: ["onClear"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
+const popoverContentTakes: Takes = {
+  dom: true,
+  own: [
+    "onCloseAutoFocus",
+    "onEscapeKeyDown",
+    "onFocusOutside",
+    "onInteractOutside",
+    "onOpenAutoFocus",
+    "onPointerDownOutside",
+  ],
+};
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
 const datePickerTakes: Takes = {
   dom: true,
@@ -155,6 +207,7 @@ const segmentedControlTakes: Takes = {
   dom: true,
   own: ["onResetMixed", "onValueChange"],
 };
+const navigationAnnouncerTakes: Takes = { dom: false, own: [] };
 const categoryTileTakes: Takes = { dom: true, except: ["onClick"], own: [] };
 const tourStepTakes: Takes = {
   dom: true,
@@ -254,20 +307,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Tooltip, menuTakes],
   [Popover, menuTakes],
   [PopoverAnchor, D],
-  [
-    PopoverContent,
-    {
-      dom: true,
-      own: [
-        "onCloseAutoFocus",
-        "onEscapeKeyDown",
-        "onFocusOutside",
-        "onInteractOutside",
-        "onOpenAutoFocus",
-        "onPointerDownOutside",
-      ],
-    },
-  ],
+  [PopoverContent, popoverContentTakes],
   [Accordion, accordionTakes],
   [Separator, D],
   [MapView, D],
@@ -305,7 +345,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Tabs, accordionTakes],
   [Dialog, menuTakes],
   [MapOverlay, D],
-  [AnalyticsProvider, { dom: false, own: ["onDispatch"] }],
   [Chip, { dom: true, except: ["onSelect"], own: ["onRemove"] }],
   [
     DynamicIsland,
@@ -351,7 +390,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       ],
     },
   ],
-  [NavigationAnnouncer, { dom: false, own: [] }],
+  [NavigationAnnouncer, navigationAnnouncerTakes],
   [RadioGroup, segmentedControlTakes],
   [RadioGroupItem, D],
   [RouteSummary, { dom: true, own: ["onEndRoute", "onStartNavigation"] }],
@@ -454,6 +493,57 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     { dom: true, own: ["onBack", "onContinue", "onOptionSelect"] },
   ],
   [TourStep, tourStepTakes],
+  [AccordionItem, D],
+  [AccordionTrigger, D],
+  [AccordionContent, D],
+  [CardHeader, D],
+  [CardTitle, D],
+  [CardDescription, D],
+  [CardContent, D],
+  [CardFooter, D],
+  [DialogTrigger, D],
+  [DialogContent, popoverContentTakes],
+  [DialogHeader, D],
+  [DialogTitle, D],
+  [DialogDescription, D],
+  [DialogFooter, D],
+  [DialogClose, D],
+  [DrawerTrigger, D],
+  [DrawerContent, popoverContentTakes],
+  [DrawerHeader, D],
+  [DrawerTitle, D],
+  [DrawerDescription, D],
+  [DrawerFooter, D],
+  [DrawerClose, D],
+  [SelectTrigger, D],
+  [SelectValue, D],
+  [
+    SelectContent,
+    {
+      dom: true,
+      own: ["onCloseAutoFocus", "onEscapeKeyDown", "onPointerDownOutside"],
+    },
+  ],
+  [SelectGroup, D],
+  [SelectLabel, D],
+  [SelectItem, D],
+  [SelectSeparator, D],
+  [TabsList, D],
+  [TabsTrigger, D],
+  [TabsContent, D],
+  [TooltipProvider, navigationAnnouncerTakes],
+  [TooltipTrigger, D],
+  [
+    TooltipContent,
+    { dom: true, own: ["onEscapeKeyDown", "onPointerDownOutside"] },
+  ],
+  [Toaster, navigationAnnouncerTakes],
+  [ToastProvider, navigationAnnouncerTakes],
+  [ToastViewport, D],
+  [ToastTitle, D],
+  [ToastDescription, D],
+  [ToastAction, D],
+  [ToastClose, D],
 ]);
 
 /** By the adapter in index.ts that hands its props on to React parts. */
@@ -541,6 +631,12 @@ const menuBooleans = {
 };
 const backdropBooleans = html(["visible"]);
 const settingsRowBooleans = html(["disabled"]);
+const popoverContentBooleans = html([
+  "asChild",
+  "avoidCollisions",
+  "forceMount",
+  "hideWhenDetached",
+]);
 const datePickerBooleans = html(
   [
     "checked",
@@ -563,6 +659,10 @@ const floatingActionButtonBooleans = html([
 ]);
 const categoryTileBooleans = html(["disabled", "formNoValidate"]);
 const tourStepBooleans = html(["nextDisabled", "open"]);
+const accordionItemBooleans = html(["asChild", "disabled"]);
+const accordionContentBooleans = html(["asChild", "forceMount"]);
+const dialogTriggerBooleans = html(["asChild", "disabled", "formNoValidate"]);
+const toasterBooleans = { flags: [], unions: [], texts: [] };
 
 /** By React part. */
 export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
@@ -772,10 +872,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   ],
   [Popover, menuBooleans],
   [PopoverAnchor, boxBooleans],
-  [
-    PopoverContent,
-    html(["asChild", "avoidCollisions", "forceMount", "hideWhenDetached"]),
-  ],
+  [PopoverContent, popoverContentBooleans],
   [Accordion, html(["asChild", "collapsible", "disabled"])],
   [Separator, html(["asChild", "decorative"])],
   [MapView, H],
@@ -821,7 +918,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Tabs, boxBooleans],
   [Dialog, menuBooleans],
   [MapOverlay, H],
-  [AnalyticsProvider, { flags: [], unions: [], texts: [] }],
   [Chip, html(["active", "disabled", "selected"])],
   [
     DynamicIsland,
@@ -994,6 +1090,57 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [RouteOptionCard, categoryTileBooleans],
   [RoutePreviewPanel, H],
   [TourStep, tourStepBooleans],
+  [AccordionItem, accordionItemBooleans],
+  [
+    AccordionTrigger,
+    html(["asChild", "disabled", "formNoValidate", "loading"]),
+  ],
+  [AccordionContent, accordionContentBooleans],
+  [CardHeader, H],
+  [CardTitle, H],
+  [CardDescription, H],
+  [CardContent, H],
+  [CardFooter, H],
+  [DialogTrigger, dialogTriggerBooleans],
+  [DialogContent, accordionContentBooleans],
+  [DialogHeader, html(["mediaBleed"])],
+  [DialogTitle, boxBooleans],
+  [DialogDescription, boxBooleans],
+  [DialogFooter, H],
+  [DialogClose, dialogTriggerBooleans],
+  [DrawerTrigger, dialogTriggerBooleans],
+  [DrawerContent, html(["asChild", "forceMount", "showClose"])],
+  [DrawerHeader, H],
+  [DrawerTitle, boxBooleans],
+  [DrawerDescription, boxBooleans],
+  [DrawerFooter, H],
+  [DrawerClose, dialogTriggerBooleans],
+  [
+    SelectTrigger,
+    html(["asChild", "disabled", "formNoValidate"], [], ["error"]),
+  ],
+  [SelectValue, boxBooleans],
+  [SelectContent, html(["asChild", "avoidCollisions", "hideWhenDetached"])],
+  [SelectGroup, boxBooleans],
+  [SelectLabel, boxBooleans],
+  [SelectItem, accordionItemBooleans],
+  [SelectSeparator, boxBooleans],
+  [TabsList, html(["asChild", "loop"])],
+  [TabsTrigger, dialogTriggerBooleans],
+  [TabsContent, accordionContentBooleans],
+  [
+    TooltipProvider,
+    { flags: ["disableHoverableContent"], unions: [], texts: [] },
+  ],
+  [TooltipTrigger, dialogTriggerBooleans],
+  [TooltipContent, popoverContentBooleans],
+  [Toaster, toasterBooleans],
+  [ToastProvider, toasterBooleans],
+  [ToastViewport, html(["asChild", "reversed"])],
+  [ToastTitle, boxBooleans],
+  [ToastDescription, boxBooleans],
+  [ToastAction, dialogTriggerBooleans],
+  [ToastClose, dialogTriggerBooleans],
 ]);
 
 /** By the adapter in index.ts that hands its props on to React parts. */

@@ -80,6 +80,16 @@ export const PORTS: Port[] = [
       SubtleEmotions: "parity/button.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosAnalyticsProvider",
+    react: "AnalyticsProvider",
+    stories: null,
+    drawnIn: "parity/analytics.parity.spec.ts",
+    sample: { children: "Reported" },
+    events: {
+      dispatch: "parity/analytics.parity.spec.ts",
+    },
+  },
 ];
 
 /**
@@ -89,6 +99,7 @@ export const PORTS: Port[] = [
  */
 export const COMPOSABLES: { vue: string; react: string }[] = [
   { vue: "useTheme", react: "useTheme" },
+  { vue: "useKozmosAnalytics", react: "useKozmosAnalytics" },
 ];
 
 export const REPOSITORY = path.resolve(__dirname, "../../..");

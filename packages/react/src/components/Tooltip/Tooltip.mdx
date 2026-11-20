@@ -49,12 +49,25 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosButton } from "@kozmos-ds/vue"
-// @kozmos-ds/vue cannot attach a tooltip yet: it has no TooltipProvider, TooltipTrigger or TooltipContent, and KozmosTooltip throws outside a provider.
+import {
+  KozmosTooltip,
+  KozmosTooltipContent,
+  KozmosTooltipProvider,
+  KozmosTooltipTrigger,
+} from "@kozmos-ds/vue/react-bridge"
+// Every bridged part has a TooltipProvider of its own; this one sets the
+// delays of the tooltips inside it.
 </script>
 
 <template>
-  <KozmosButton>Hover</KozmosButton>
+  <KozmosTooltipProvider>
+    <KozmosTooltip>
+      <KozmosTooltipTrigger>Hover</KozmosTooltipTrigger>
+      <KozmosTooltipContent>
+        <p>Add to library</p>
+      </KozmosTooltipContent>
+    </KozmosTooltip>
+  </KozmosTooltipProvider>
 </template>
     `}
     swift={`
@@ -134,12 +147,22 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosButton } from "@kozmos-ds/vue"
-// @kozmos-ds/vue cannot attach a tooltip yet, in either tone: it has no TooltipProvider, TooltipTrigger or TooltipContent.
+import {
+  KozmosTooltip,
+  KozmosTooltipContent,
+  KozmosTooltipTrigger,
+} from "@kozmos-ds/vue/react-bridge"
+// The trigger draws its own button: a bridged trigger cannot take a Vue
+// element as its child (as-child), so it cannot wrap a KozmosButton.
 </script>
 
 <template>
-  <KozmosButton variant="outline">Adjust</KozmosButton>
+  <KozmosTooltip>
+    <KozmosTooltipTrigger>Adjust</KozmosTooltipTrigger>
+    <KozmosTooltipContent tone="inverse">
+      Keep holding Shift for multi-selection
+    </KozmosTooltipContent>
+  </KozmosTooltip>
 </template>
     `}
     swift={`

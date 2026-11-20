@@ -74,11 +74,27 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosTabs } from "@kozmos-ds/vue/react-bridge"
+import {
+  KozmosTabs,
+  KozmosTabsContent,
+  KozmosTabsList,
+  KozmosTabsTrigger,
+} from "@kozmos-ds/vue/react-bridge"
 </script>
 
 <template>
-  <KozmosTabs />
+  <KozmosTabs default-value="overview">
+    <KozmosTabsList aria-label="Place details">
+      <KozmosTabsTrigger value="overview">Overview</KozmosTabsTrigger>
+      <KozmosTabsTrigger value="access">Access</KozmosTabsTrigger>
+    </KozmosTabsList>
+    <KozmosTabsContent value="overview">
+      Reception is on the ground floor.
+    </KozmosTabsContent>
+    <KozmosTabsContent value="access">
+      Step-free access through the main entrance.
+    </KozmosTabsContent>
+  </KozmosTabs>
 </template>
     `}
     swift={`
