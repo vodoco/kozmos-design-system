@@ -66,3 +66,33 @@ export function useTheme() {
     setTheme: state.setTheme,
   };
 }
+
+/**
+ * One event a part reports, as React's `AnalyticsEvent`: what happened
+ * (`eventName`), in which part (`component`), when (`timestamp`, milliseconds
+ * since 1970) and anything it says of it (`properties`).
+ */
+export interface KozmosAnalyticsEvent {
+  eventName: string;
+  component: string;
+  timestamp: number;
+  properties?: Record<string, any>;
+}
+
+/**
+ * What a KozmosAnalyticsProvider gives the parts inside it: `trackEvent`, as
+ * React's AnalyticsContext, and `push`, which queues events already made.
+ * The React bridge hands each bridged part's events to `push`, so native
+ * and bridged parts report through one provider, in one batch (GAP-230).
+ */
+export interface KozmosAnalytics {
+  trackEvent: (
+    component: string,
+    eventName: string,
+    properties?: Record<string, any>,
+  ) => void;
+  push: (events: KozmosAnalyticsEvent[]) => void;
+}
+
+export const AnalyticsKey: InjectionKey<KozmosAnalytics> =
+  Symbol("KozmosAnalytics");

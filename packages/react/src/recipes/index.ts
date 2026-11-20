@@ -7,5 +7,8 @@
  * holds this folder, and `cn` in `../utils`, to framework-free imports.
  */
 export { cn } from "../utils";
+export * from "./badge";
 export * from "./button";
+export * from "./counter";
+export * from "./separator";
 export * from "./spinner-arc";

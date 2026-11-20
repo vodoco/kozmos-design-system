@@ -43,12 +43,24 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosRadioGroup } from "@kozmos-ds/vue/react-bridge"
-// Each @kozmos-ds/vue part mounts its own React root, so a KozmosRadioGroupItem inside a KozmosRadioGroup cannot reach its group and throws: it cannot draw options yet.
+import {
+  KozmosLabel,
+  KozmosRadioGroup,
+  KozmosRadioGroupItem,
+} from "@kozmos-ds/vue/react-bridge"
 </script>
 
 <template>
-  <KozmosRadioGroup aria-label="Choose an option" defaultValue="option-one" />
+  <KozmosRadioGroup aria-label="Choose an option" default-value="option-one">
+    <div class="flex items-center space-x-2">
+      <KozmosRadioGroupItem id="r1" value="option-one" />
+      <KozmosLabel html-for="r1">Option One</KozmosLabel>
+    </div>
+    <div class="flex items-center space-x-2">
+      <KozmosRadioGroupItem id="r2" value="option-two" />
+      <KozmosLabel html-for="r2">Option Two</KozmosLabel>
+    </div>
+  </KozmosRadioGroup>
 </template>
     `}
     swift={`
@@ -114,7 +126,7 @@ Each box is one radio, named by its title alone; its description is its descript
 
 **On SwiftUI** the description is read after the name as the element's custom content, at high importance, so VoiceOver speaks it whether or not the reader turned on Speak Hints; its key, "Description", is looked up in your app's `Localizable` strings. Compose reads it after the title, in the one node. A Compose card or tile fills the width it is given, so side by side in a `Row` give each `Modifier.weight(1f)`, as the snippet below does. `KozmosRadioGroupItem` is now generic over its media, `KozmosRadioGroupItem<Media>`: every initialiser compiles unchanged, but code that names the type needs a parameter, `KozmosRadioGroupItem<EmptyView>` for an option without media.
 
-**On Vue** a bridged `KozmosRadioGroupItem` cannot reach a bridged `KozmosRadioGroup` (GAP-230), so a working group of cards or tiles cannot be drawn through the bridge yet.
+**On Vue** a bridged `KozmosRadioGroupItem` inside a bridged `KozmosRadioGroup` is drawn in the group's React tree (GAP-230), so it is the group's option, as on React; its media is its `#media` slot.
 
 <Canvas of={RadioStories.Cards} />
 
@@ -152,12 +164,31 @@ export function GeometryChoice() {
     `}
     vue={`
 <script setup>
-import { KozmosRadioGroup } from "@kozmos-ds/vue/react-bridge"
-// Each @kozmos-ds/vue part mounts its own React root, so a KozmosRadioGroupItem inside a KozmosRadioGroup cannot reach its group and throws (GAP-230): the bridge passes variant, description and a #media slot, but cannot draw a group of cards yet.
+import {
+  KozmosGrid,
+  KozmosRadioGroup,
+  KozmosRadioGroupItem,
+} from "@kozmos-ds/vue/react-bridge"
+// Each option's media is its #media slot.
 </script>
 
 <template>
-  <KozmosRadioGroup aria-label="Geometry" defaultValue="auto" />
+  <KozmosRadioGroup aria-label="Geometry" default-value="auto">
+    <KozmosGrid :cols="2" :gap="2">
+      <KozmosRadioGroupItem
+        value="auto"
+        variant="card"
+        label="Auto-generate"
+        description="Kozmos traces the outline from the floor plan"
+      />
+      <KozmosRadioGroupItem
+        value="manual"
+        variant="card"
+        label="Draw manually"
+        description="Draw the outline point by point"
+      />
+    </KozmosGrid>
+  </KozmosRadioGroup>
 </template>
     `}
     swift={`
@@ -303,9 +334,13 @@ export function AccessAcrossSelection({ levels }: { levels: string[] }) {
     `}
     vue={`
 <script setup>
-import { KozmosRadioGroup } from "@kozmos-ds/vue/react-bridge"
+import {
+  KozmosRadioGroup,
+  KozmosRadioGroupItem,
+} from "@kozmos-ds/vue/react-bridge"
 import { computed, ref } from "vue"
-// Each @kozmos-ds/vue part mounts its own React root, so a KozmosRadioGroupItem inside a KozmosRadioGroup cannot reach its group and throws (GAP-230): the group takes mixed and draws its line, but cannot draw options yet.
+// The features' access differs, so the group is mixed until an option is
+// chosen: none is chosen, and "Multiple values" is under the options.
 
 const props = defineProps({ levels: Array })
 const edit = ref(null)
@@ -319,7 +354,11 @@ const differs = computed(() => new Set(props.levels).size > 1)
     :model-value="edit ?? (differs ? '' : props.levels[0])"
     @update:model-value="edit = $event"
     @reset-mixed="edit = null"
-  />
+  >
+    <KozmosRadioGroupItem value="public" label="Public" />
+    <KozmosRadioGroupItem value="staff" label="Staff only" />
+    <KozmosRadioGroupItem value="closed" label="Closed" />
+  </KozmosRadioGroup>
 </template>
     `}
     swift={`

@@ -8,7 +8,8 @@ import { PlatformSnippets } from "../components/PlatformSnippets";
 Kozmos parts report what people do with them, such as a switch being toggled or a result being opened.
 A provider collects those events and hands them to your `onDispatch` in batches, for you to send where
 you like. In React it is `AnalyticsProvider`; in SwiftUI, the `.kozmosAnalytics(batchDelayMs:onDispatch:)`
-modifier; in Compose, `KozmosAnalyticsProvider(onDispatch, batchDelayMs)`.
+modifier; in Compose, `KozmosAnalyticsProvider(onDispatch, batchDelayMs)`; in Vue, `KozmosAnalyticsProvider`
+from `@kozmos-ds/vue`, with `@dispatch`.
 
 ## Batches
 
@@ -36,6 +37,14 @@ happens, unbatched.
 React's and SwiftUI's take any value. With no provider, Compose prints each event; a tracker provided
 through `LocalKozmosAnalytics` itself gets each event as it happens, unbatched.
 
+## Vue
+
+`KozmosAnalyticsProvider` batches as React's does, and `useKozmosAnalytics()` gives a product's own
+`trackEvent`, as React's hook does. It needs no React: `KozmosButton` reports its `button_clicked` to it.
+Every part `@kozmos-ds/vue/react-bridge` draws inside it reports to it too: the bridge gives each a React
+`AnalyticsProvider` that hands its events on (GAP-230), so they reach the batch a moment after a native
+part's event of the same moment. With no provider, an event goes nowhere.
+
 ## Implementation
 
 <div className="subheading">Code</div>
@@ -55,6 +64,21 @@ export function App({ children }: { children: ReactNode }) {
     </AnalyticsProvider>
   );
 }
+    `}
+    vue={`
+<script setup>
+import { KozmosAnalyticsProvider } from "@kozmos-ds/vue"
+
+// Interaction events arrive in batches, every 2000ms by default: those of
+// the Vue parts inside and of the parts the React bridge draws inside.
+const props = defineProps({ send: Function })
+</script>
+
+<template>
+  <KozmosAnalyticsProvider @dispatch="(events) => props.send(events)">
+    <slot />
+  </KozmosAnalyticsProvider>
+</template>
     `}
     swift={`
 import SwiftUI

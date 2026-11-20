@@ -54,12 +54,23 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosAccordion } from "@kozmos-ds/vue/react-bridge"
-// @kozmos-ds/vue wraps the Accordion root only: it has no AccordionItem, AccordionTrigger or AccordionContent, so it cannot draw an item yet.
+import {
+  KozmosAccordion,
+  KozmosAccordionContent,
+  KozmosAccordionItem,
+  KozmosAccordionTrigger,
+} from "@kozmos-ds/vue/react-bridge"
 </script>
 
 <template>
-  <KozmosAccordion type="single" collapsible />
+  <KozmosAccordion type="single" collapsible>
+    <KozmosAccordionItem value="item-1">
+      <KozmosAccordionTrigger>Is it accessible?</KozmosAccordionTrigger>
+      <KozmosAccordionContent>
+        Yes. It adheres to the WAI-ARIA design pattern.
+      </KozmosAccordionContent>
+    </KozmosAccordionItem>
+  </KozmosAccordion>
 </template>
     `}
     swift={`

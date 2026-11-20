@@ -65,6 +65,7 @@
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-tour-step.mjs
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import AxeBuilder from "@axe-core/playwright";
 import {
@@ -75,6 +76,23 @@ import {
 
 const { code, css } = await buildReactFixture("tour-step-host.tsx");
 const require = createRequire(`${process.cwd()}/packages/react/package.json`);
+// The pointer TourStep's info instruction draws: Cursor02's own outline, read
+// from the icons package rather than a copy of its path, which broke when the
+// regenerated library traced the same shape from another point (19 Nov).
+const CURSOR_02_PATH = (() => {
+  const source = readFileSync(
+    `${process.cwd()}/packages/icons/src/pointr/icons.generated.ts`,
+    "utf8",
+  );
+  const found = source.match(
+    /export const Cursor02 = \/\* @__PURE__ \*\/ createPointrIcon\("Cursor02", \[\s*\{\s*d: "([^"]+)"/,
+  );
+  assert.ok(
+    found,
+    "Cursor02 is in packages/icons/src/pointr/icons.generated.ts",
+  );
+  return found[1];
+})();
 const unscoped = require("postcss").parse(css);
 unscoped.walkAtRules("scope", (rule) => rule.remove());
 const browser = await launchFixtureBrowser({ pointer: "mouse" });
@@ -344,7 +362,7 @@ function flat(value, over = "rgb(255, 255, 255)") {
 
 /** The card's geometry, styles and the tokens they come from, read in the page. */
 const measure = (page) =>
-  page.evaluate(() => {
+  page.evaluate((cursorPath) => {
     const card = document.getElementById("step");
     const round = (n) => Math.round(n * 100) / 100;
     const box = (node) => {
@@ -490,7 +508,8 @@ const measure = (page) =>
         lineHeight: parseFloat(getComputedStyle(noticeText).lineHeight),
         text: box(noticeText),
         icon: box(noticeIcon),
-        pointer: !!noticeIcon?.innerHTML.includes("M20.5056 10.7754"),
+        pointer:
+          noticeIcon?.querySelector("path")?.getAttribute("d") === cursorPath,
       },
       progress: bar && {
         row: box(q(".kozmos-tour-step-progress")),
@@ -526,7 +545,7 @@ const measure = (page) =>
         warningText: token("--semantics-emotion-alert-text"),
       },
     };
-  });
+  }, CURSOR_02_PATH);
 
 /** Whether `inner`'s middle is `outer`'s, across the block axis. */
 const middleOf = (inner, outer) =>

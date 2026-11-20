@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { NavigationPointer01 } from "@kozmos-ds/icons";
 import type { POIAction, POIPresentation } from "@kozmos-ds/product-contracts";
 import { describe, expect, it, vi } from "vitest";
 import { POIDetailPanel } from "./POIDetailPanel";
@@ -59,8 +60,12 @@ describe("POIDetailPanel", () => {
     );
     const go = screen.getByRole("button", { name: "Go" });
     expect(go.querySelector("svg")).toHaveAttribute("fill", "none");
-    expect(go.querySelector("path")?.getAttribute("d")).toMatch(
-      /^M3\.41345 10\.7445/,
+    // NavigationPointer01, read from the icons package itself rather than a
+    // copy of its path: a regenerated library traces the same shape from
+    // another point (19 Nov).
+    const { container: pointer } = render(<NavigationPointer01 />);
+    expect(go.querySelector("path")?.getAttribute("d")).toBe(
+      pointer.querySelector("path")!.getAttribute("d"),
     );
     for (const name of ["Share", "Order", "Book", "Call"])
       expect(
@@ -385,6 +390,73 @@ describe("POIDetailPanel", () => {
     );
     expect(screen.getByRole("button", { name: "Go 1 min 40 m" })).toBeVisible();
     expect(screen.queryByText(/Nearby/)).not.toBeInTheDocument();
+  });
+
+  it("draws what Navigate's estimate includes under the strip and says it with Go (GAP-047)", () => {
+    const details = {
+      ...restaurantDetails,
+      travelEstimate: {
+        durationSeconds: 720,
+        durationLabel: "12 min",
+        distanceLabel: "400 m",
+        breakdown: [
+          {
+            kind: "securityQueue" as const,
+            durationSeconds: 480,
+            label: "Includes security (about 8 min)",
+          },
+        ],
+      },
+    };
+    const { container, rerender } = render(
+      <POIDetailPanel
+        poi={restaurantPOI}
+        details={details}
+        actionLabels={labels}
+        onAction={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Go 12 min 400 m Includes security (about 8 min)",
+      }),
+    ).toBeVisible();
+    const line = container.querySelector(".kozmos-poi-estimate-breakdown");
+    expect(line).toHaveTextContent("Includes security (about 8 min)");
+    // Said once, with Go's time, not again as a line of its own.
+    expect(line).toHaveAttribute("aria-hidden", "true");
+
+    // Without Navigate there is no estimate to qualify, so no line.
+    rerender(
+      <POIDetailPanel
+        poi={{ ...restaurantPOI, actions: ["share"] }}
+        details={details}
+        actionLabels={labels}
+        onAction={vi.fn()}
+      />,
+    );
+    expect(
+      container.querySelector(".kozmos-poi-estimate-breakdown"),
+    ).toBeNull();
+
+    // Without a breakdown, Go and the strip are as before.
+    rerender(
+      <POIDetailPanel
+        poi={restaurantPOI}
+        details={{
+          ...details,
+          travelEstimate: { ...details.travelEstimate, breakdown: [] },
+        }}
+        actionLabels={labels}
+        onAction={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Go 12 min 400 m" }),
+    ).toBeVisible();
+    expect(
+      container.querySelector(".kozmos-poi-estimate-breakdown"),
+    ).toBeNull();
   });
 
   it("emits supplementary capabilities independently of legacy actions", () => {

@@ -4,7 +4,14 @@ import { describe, expect, it } from "vitest";
 import ts from "typescript";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as KozmosVue from "../src/index";
-import { COMPOSABLES, PORTS, REACT_SOURCE, type Port } from "./ports";
+import * as KozmosBridge from "../src/react-bridge/index";
+import {
+  COMPOSABLES,
+  LEAVING_BRIDGE,
+  PORTS,
+  REACT_SOURCE,
+  type Port,
+} from "./ports";
 import { readStoryArgs } from "./parity/story-args";
 
 /**
@@ -35,6 +42,32 @@ describe("every Vue export answers to React", () => {
       ...COMPOSABLES.map((pair) => pair.react),
     ])
       expect(react.has(name), `@kozmos-ds/react exports no ${name}`).toBe(true);
+  });
+});
+
+/**
+ * One name is one component (`src/react-bridge/index.ts`): a part leaves
+ * the bridge when its Vue port lands in the main entry, so an app that
+ * imports `KozmosBadge` from either gets the same part. A port whose bridge
+ * entry is still to be taken out is named in `LEAVING_BRIDGE`, with why;
+ * a name there that is not both native and bridged fails, so the list
+ * never outlives what it excuses.
+ */
+describe("the bridge exports no part the main entry exports", () => {
+  const both = () => exported(KozmosVue).filter((name) => name in KozmosBridge);
+
+  it("exports each native part from the main entry only", () => {
+    expect(both().filter((name) => !(name in LEAVING_BRIDGE))).toEqual([]);
+  });
+
+  it("names in LEAVING_BRIDGE only native parts still in the bridge", () => {
+    expect(Object.keys(LEAVING_BRIDGE).sort()).toEqual(
+      Object.keys(LEAVING_BRIDGE)
+        .filter((name) => both().includes(name))
+        .sort(),
+    );
+    for (const reason of Object.values(LEAVING_BRIDGE))
+      expect(reason.trim().length).toBeGreaterThan(20);
   });
 });
 

@@ -310,6 +310,18 @@ public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
     /// `durationLabel`, the exact minutes, so one estimate serves the list and
     /// the details card alike. Nil, a result shows `durationLabel`, as before.
     public let band: KozmosTravelTimeBand?
+    /// What the time includes besides the walk itself, in the order to say
+    /// it (GAP-047): "Includes security (about 8 min)" on an after-security
+    /// board, where a walk crosses the security queue.
+    ///
+    /// `KozmosPOIResultCard` draws each part's `label` under the travel time,
+    /// and `KozmosPOIDetailPanel` under its action strip when Navigate carries
+    /// the estimate: one line, `breakdownLabel`, in the card's secondary text.
+    /// Each card says it with the time, after it. The product chooses which
+    /// parts to list and words each one; a part with an empty label is not
+    /// drawn. Nil or empty, nothing is drawn, as before. Mirrors
+    /// `TravelEstimatePresentation.breakdown` on the web and Compose.
+    public let breakdown: [KozmosTravelEstimatePartPresentation]?
 
     public init(
         durationSeconds: Double,
@@ -318,7 +330,8 @@ public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
         distanceLabel: String? = nil,
         mode: String? = nil,
         modeLabel: String? = nil,
-        band: KozmosTravelTimeBand? = nil
+        band: KozmosTravelTimeBand? = nil,
+        breakdown: [KozmosTravelEstimatePartPresentation]? = nil
     ) {
         self.durationSeconds = durationSeconds
         self.durationLabel = durationLabel
@@ -327,6 +340,42 @@ public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
         self.mode = mode
         self.modeLabel = modeLabel
         self.band = band
+        self.breakdown = breakdown
+    }
+
+    /// The breakdown as the cards draw and say it: each part's label, in
+    /// order, joined by " · ", leaving out empty ones. Nil when no part has
+    /// words. The rule React's cards draw by.
+    public var breakdownLabel: String? {
+        let labels = (breakdown ?? []).map(\.label).filter { !$0.isEmpty }
+        return labels.isEmpty ? nil : labels.joined(separator: " · ")
+    }
+}
+
+/// What one part of a travel time is (GAP-047). `other` is a part Kozmos has
+/// no name for, a shuttle or a check-in queue: its label says what it is.
+/// Mirrors `TravelEstimatePartKind` on the web and Compose.
+public enum KozmosTravelEstimatePartKind: String, Sendable, Hashable, CaseIterable, Codable {
+    case walking
+    case securityQueue
+    case liftWait
+    case other
+}
+
+/// One part of a travel time: the walk, a security queue, a lift wait.
+/// Mirrors `TravelEstimatePartPresentation` on the web and Compose.
+public struct KozmosTravelEstimatePartPresentation: Sendable, Hashable, Codable {
+    public let kind: KozmosTravelEstimatePartKind
+    /// How long this part takes, in seconds, as the estimate's own time.
+    public let durationSeconds: Double
+    /// Already localized, with the time in it: "Includes security (about
+    /// 8 min)". What the card draws and VoiceOver says.
+    public let label: String
+
+    public init(kind: KozmosTravelEstimatePartKind, durationSeconds: Double, label: String) {
+        self.kind = kind
+        self.durationSeconds = durationSeconds
+        self.label = label
     }
 }
 

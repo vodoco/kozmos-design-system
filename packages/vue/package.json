@@ -7,6 +7,10 @@
   "main": "dist/kozmos-vue.cjs",
   "module": "dist/kozmos-vue.mjs",
   "types": "dist/index.d.ts",
+  "sideEffects": [
+    "./dist/react-bridge.mjs",
+    "./dist/react-bridge.cjs"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -27,7 +31,8 @@
     "bridge:takes": "node scripts/bridge-takes.mjs",
     "build": "rm -rf dist .recipes-types && vite build && tsc -p tsconfig.recipes.json && vue-tsc -p tsconfig.declarations.json",
     "dev": "vite build --watch",
-    "lint": "eslint src test scripts vite.config.mts vitest.react18.config.mts",
+    "lint": "eslint src test scripts vite-plugins vite.config.mts vitest.react18.config.mts",
+    "port": "tsx scripts/port.ts",
     "test": "vitest run",
     "test:react18": "vitest run --config vitest.react18.config.mts",
     "typecheck": "vue-tsc -p tsconfig.json --noEmit"
@@ -57,6 +62,7 @@
     "tailwind-merge": "3.4.0"
   },
   "devDependencies": {
+    "@kozmos-ds/icons": "workspace:*",
     "@kozmos-ds/react": "workspace:*",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",

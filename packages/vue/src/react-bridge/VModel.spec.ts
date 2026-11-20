@@ -356,7 +356,14 @@ const PARTS: Part[] = [
     },
     start: { x: 0, y: 0, width: 0.375, height: 0.5 },
     before: "0%",
-    field: () => $("[role=application]"),
+    // The frame once its image is placed, not merely in the page: on React 18
+    // a key pressed before the cropper lays out its image was lost, and
+    // onCrop was never called (main's CI, 20 Nov). Nobody presses a key in
+    // the instant a part mounts.
+    field: () =>
+      ($("[role=application] img") as HTMLElement | null)?.style.left
+        ? $("[role=application]")
+        : null,
     change: (frame) => press(frame, "ArrowRight"),
     next: { x: 0.375 * 0.1, y: 0, width: 0.375, height: 0.5 },
     shown: () =>
@@ -1688,18 +1695,18 @@ describe("createVueWrapper's models", () => {
     ]);
   });
 
-  it("KozmosBadge with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
+  it("KozmosTag with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
     mount(() =>
       h(
-        Bridge.KozmosBadge,
-        { id: "badge", modelValue: "a", "onUpdate:modelValue": () => {} },
+        Bridge.KozmosTag,
+        { id: "tag", modelValue: "a", "onUpdate:modelValue": () => {} },
         { default: () => "New" },
       ),
     );
-    const badge = await until(() => $("[id=badge]"));
+    const tag = await until(() => $("[id=tag]"));
     await settle();
-    expect(badge.getAttributeNames()).not.toContain("modelvalue");
-    expect(heard()).toEqual([expect.stringContaining("Badge has no v-model")]);
+    expect(tag.getAttributeNames()).not.toContain("modelvalue");
+    expect(heard()).toEqual([expect.stringContaining("Tag has no v-model")]);
   });
 
   it("KozmosProgress with :model-value draws no value, and says to give React's :value instead, which it draws", async () => {
@@ -1986,10 +1993,14 @@ describe("a model's change goes through Vue's emit", () => {
 });
 
 describe("the bridge's entry", () => {
-  it("exports the wrappers and createVueWrapper, and none of the bridge's own", () => {
+  it("exports the wrappers, createVueWrapper and React's toast(), and none of the bridge's own", () => {
     expect(
-      Object.keys(Bridge).filter((name) => !name.startsWith("Kozmos")),
-    ).toEqual(["createVueWrapper"]);
+      Object.keys(Bridge)
+        .filter((name) => !name.startsWith("Kozmos"))
+        .sort(),
+    ).toEqual(["createVueWrapper", "toast"]);
+    // React's own: a KozmosToaster draws what it shows (GAP-230).
+    expect(Bridge.toast).toBe(KozmosReact.toast);
   });
 });
 
@@ -2401,7 +2412,7 @@ describe("attributes reach React alone", () => {
     props?: Record<string, unknown>;
     slot?: string;
   }[] = [
-    { name: "KozmosBadge", kind: "a plain element", slot: "New" },
+    { name: "KozmosTag", kind: "a plain element", slot: "New" },
     { name: "KozmosCard", kind: "a box drawing a Vue slot", slot: "Gate 4" },
     {
       name: "KozmosAlert",
@@ -2499,7 +2510,7 @@ describe("attributes reach React alone", () => {
     ],
   ] as const)("takes style as %s", async (_, style, name) => {
     const host = mount(() =>
-      h(Bridge.KozmosBadge, { id: "probe", style }, { default: () => "New" }),
+      h(Bridge.KozmosTag, { id: "probe", style }, { default: () => "New" }),
     );
     const { element } = await drawnByReact(host);
     expect(element.style.color).toBe("rgb(255, 0, 0)");
@@ -2509,7 +2520,7 @@ describe("attributes reach React alone", () => {
   it("keeps a declaration given !important, without it, and says so", async () => {
     const host = mount(() =>
       h(
-        Bridge.KozmosBadge,
+        Bridge.KozmosTag,
         {
           id: "probe",
           style:
@@ -2523,7 +2534,7 @@ describe("attributes reach React alone", () => {
     expect(element.style.columnRuleColor).toBe("rgb(0, 0, 255)");
     expect(heard()).toEqual([
       expect.stringContaining(
-        "Badge's style color is given to React without !important",
+        "Tag's style color is given to React without !important",
       ),
     ]);
   });

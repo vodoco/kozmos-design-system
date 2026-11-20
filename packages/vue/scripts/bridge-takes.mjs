@@ -202,6 +202,17 @@ function booleansOfParts(api, name, targets) {
     return entry.component.propsType;
   });
   const { flags, unions, texts, props } = booleansOf(api, types);
+  // The bridge gives an attribute in kebab-case to React by its camelCase
+  // name (`default-value` is `defaultValue`), but `aria-*` and `data-*`
+  // (react-adapter.ts, `withPropNames`, GAP-238): that holds only while
+  // every other prop React's types name is camelCase.
+  const kebab = props.filter(
+    (prop) => prop.includes("-") && !/^(aria|data)-/.test(prop),
+  );
+  if (kebab.length)
+    throw new Error(
+      `${name}: its props ${kebab.join(", ")} are named in kebab-case, which the bridge gives React in camelCase. Name them in camelCase, or teach withPropNames to keep them.`,
+    );
   const named = new Set(props);
   const spelt = new Map();
   for (const prop of [...flags, ...unions, ...texts])
@@ -215,7 +226,7 @@ function booleansOfParts(api, name, targets) {
         );
       spelt.set(spelling, prop);
     }
-  return { flags, unions, texts };
+  return { flags, unions, texts, props };
 }
 
 /**
@@ -300,11 +311,17 @@ export function computeTakes(
     parts: {},
     adapters: {},
   };
+  /** Every prop each part's and adapter's types name: what PropNames.spec.ts gives each. */
+  const props = {};
+  const read = (name, { props: named, ...kinds }) => {
+    props[name] = named;
+    return kinds;
+  };
   for (const name of partNames ?? importedParts(root)) {
     const own = handlersOf(api, name, dom);
     parts[name] = compress(own, dom);
     handlers[name] = [...own].sort();
-    booleans.parts[name] = booleansOfParts(api, name, [name]);
+    booleans.parts[name] = read(name, booleansOfParts(api, name, [name]));
   }
   const adapters = {};
   for (const [adapter, targets] of Object.entries(adapterTargets)) {
@@ -313,9 +330,19 @@ export function computeTakes(
       for (const handler of handlersOf(api, target, dom)) all.add(handler);
     adapters[adapter] = compress(all, dom);
     handlers[adapter] = [...all].sort();
-    booleans.adapters[adapter] = booleansOfParts(api, adapter, targets);
+    booleans.adapters[adapter] = read(
+      adapter,
+      booleansOfParts(api, adapter, targets),
+    );
   }
-  return { parts, adapters, handlers, domProps: [...dom].sort(), booleans };
+  return {
+    parts,
+    adapters,
+    handlers,
+    domProps: [...dom].sort(),
+    booleans,
+    props,
+  };
 }
 
 /**

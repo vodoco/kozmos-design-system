@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -231,6 +233,10 @@ fun KozmosPOIResultCard(
             ?: estimate.durationLabel
     }
 
+    // What the time includes, "Includes security (about 8 min)", from the
+    // estimate's breakdown (GAP-047): drawn under the time and said after it.
+    val breakdownText = result.travelEstimate?.breakdownLabel
+
     // One generated line about this result, or nothing: an empty one is none.
     val summary = result.summary?.takeIf { it.isNotEmpty() }
 
@@ -248,6 +254,7 @@ fun KozmosPOIResultCard(
         summary?.let { KozmosSpokenPhrase(it, result.summaryLanguage) },
         poi.availabilityLabel?.let(::KozmosSpokenPhrase),
         travelTimeText?.let(::KozmosSpokenPhrase),
+        breakdownText?.let(::KozmosSpokenPhrase),
         (if (available) null else result.unavailableReason)?.let(::KozmosSpokenPhrase)
     ).filter { it.text.isNotEmpty() }
     val languageDisclosure = languageNotListedLabel.takeIf { result.languageNotListed == true }
@@ -459,6 +466,25 @@ fun KozmosPOIResultCard(
                                         KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
                                         KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
                                     }
+                                )
+                            }
+                        }
+
+                        breakdownText?.let { text ->
+                            // Secondary text, as the location line is, kept
+                            // narrow so the name keeps the row: longer words
+                            // wrap, at the end, as on the web (GAP-047). Up
+                            // to 2dp under the time, as on the web and iOS.
+                            Box(
+                                saidByTheRow
+                                    .offset(y = -KozmosDimensions.primitivesLayoutSpacing75)
+                                    .widthIn(max = KozmosDimensions.primitivesLayoutSpacing1000)
+                            ) {
+                                Text(
+                                    text = text,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = secondaryText,
+                                    textAlign = TextAlign.End
                                 )
                             }
                         }

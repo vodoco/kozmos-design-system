@@ -11,12 +11,23 @@ import path from "node:path";
 
 const REACT_FACTORIES = new Set(["forwardRef", "memo", "createContext"]);
 
+// React's makers, by the module they come from. @kozmos-ds/vue passes its own
+// (packages/vue/vite-plugins/pure-calls.mjs): Vue's defineComponent, cva and
+// extendTailwindMerge.
+const REACT_MAKERS = {
+  react: [...REACT_FACTORIES],
+  "class-variance-authority": ["cva"],
+};
+
 /**
  * @param {string} esmDir dist/esm
  * @param {(code: string) => any} parse an ESTree parser (Rollup's parseAst)
+ * @param {Record<string, string[]>} [makers] the calls that make a part, by
+ *   the module they are imported from; a namespace import of `react` reaches
+ *   React's factories too
  * @returns {string[]} one line per retainer: module, then what it is
  */
-export function topLevelRetainers(esmDir, parse) {
+export function topLevelRetainers(esmDir, parse, makers = REACT_MAKERS) {
   const found = [];
   const files = fs
     .readdirSync(esmDir, { recursive: true })
@@ -33,14 +44,10 @@ export function topLevelRetainers(esmDir, parse) {
           specifier.type === "ImportSpecifier"
             ? (specifier.imported.name ?? specifier.imported.value)
             : null;
-        if (statement.source.value === "react") {
-          if (imported === null) reactNamespaces.add(specifier.local.name);
-          else if (REACT_FACTORIES.has(imported))
-            factories.add(specifier.local.name);
-        } else if (
-          statement.source.value === "class-variance-authority" &&
-          imported === "cva"
-        )
+        const source = statement.source.value;
+        if (source === "react" && imported === null && makers.react)
+          reactNamespaces.add(specifier.local.name);
+        else if (imported !== null && makers[source]?.includes(imported))
           factories.add(specifier.local.name);
       }
     }

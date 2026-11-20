@@ -136,11 +136,36 @@ export function Example() {
     vue={`
 <script setup>
 import { KozmosButton } from "@kozmos-ds/vue"
-// @kozmos-ds/vue cannot show a toast from a call yet: it has no Toaster and no toast().
+import { KozmosToaster, toast } from "@kozmos-ds/vue/react-bridge"
+// Inside your KozmosThemeProvider. One call shows a toast; the second, given
+// the first's id, replaces it where it is and is announced again.
+function save(place) {
+  const id = toast("Saving", { duration: Infinity })
+  fetch("/api/places/" + place, { method: "PUT" }).then(
+    () =>
+      toast("Location saved", {
+        id,
+        tone: "success",
+        description: "Find it in your saved places.",
+      }),
+    () =>
+      toast("Could not save", {
+        id,
+        tone: "critical",
+        description: "Check your connection and try again.",
+        action: {
+          label: "Retry",
+          altText: "Save again from the place's card",
+          onClick: () => save(place),
+        },
+      }),
+  )
+}
 </script>
 
 <template>
-  <KozmosButton>Save</KozmosButton>
+  <KozmosButton @click="save('desk-12')">Save</KozmosButton>
+  <KozmosToaster close-label="Dismiss notification" />
 </template>
     `}
     kotlin={`
@@ -246,12 +271,31 @@ export function Example() {
     `}
     vue={`
 <script setup>
+import { ref } from "vue"
 import { KozmosButton } from "@kozmos-ds/vue"
-// @kozmos-ds/vue cannot show a toast yet: it has no ToastProvider, ToastViewport, ToastTitle, ToastDescription or ToastClose and no toast(), and KozmosToast throws outside a provider.
+import {
+  KozmosToast,
+  KozmosToastClose,
+  KozmosToastDescription,
+  KozmosToastProvider,
+  KozmosToastTitle,
+  KozmosToastViewport,
+} from "@kozmos-ds/vue/react-bridge"
+const open = ref(false)
 </script>
 
 <template>
-  <KozmosButton>Show toast</KozmosButton>
+  <KozmosToastProvider>
+    <KozmosButton @click="open = true">Show toast</KozmosButton>
+    <KozmosToast v-model:open="open">
+      <div>
+        <KozmosToastTitle>Location saved</KozmosToastTitle>
+        <KozmosToastDescription>Find it in your saved places.</KozmosToastDescription>
+      </div>
+      <KozmosToastClose aria-label="Dismiss notification" />
+    </KozmosToast>
+    <KozmosToastViewport />
+  </KozmosToastProvider>
 </template>
     `}
     swift={`
