@@ -58,14 +58,14 @@
     "entry_added": {
       "components": ["ChipInput"],
       "react": "sent",
-      "swiftui": "Not sent yet: SwiftUI's ChipInput sends no entry_added; a follow-up of GAP-234.",
-      "compose": "Not sent yet: Compose's ChipInput sends no entry_added; a follow-up of GAP-234."
+      "swiftui": "sent",
+      "compose": "sent"
     },
     "entry_removed": {
       "components": ["ChipInput"],
       "react": "sent",
-      "swiftui": "Not sent yet: SwiftUI's ChipInput sends no entry_removed; a follow-up of GAP-234.",
-      "compose": "Not sent yet: Compose's ChipInput sends no entry_removed; a follow-up of GAP-234."
+      "swiftui": "sent",
+      "compose": "sent"
     },
     "feedback_submitted": {
       "components": ["FeedbackCard"],
