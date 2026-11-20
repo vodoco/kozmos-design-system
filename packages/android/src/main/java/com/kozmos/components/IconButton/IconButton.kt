@@ -19,6 +19,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +72,10 @@ enum class KozmosIconButtonSize {
  * @param counterSeparator What stands between the button's name and its count
  * when they are read, so TalkBack pauses there: ", " by default, as English
  * writes it; a product that translates passes its own, "、" in Japanese.
+ * @param loadingLabel What TalkBack says the button's state is while it loads,
+ * after its name (GAP-253): "Loading" by default; a product that translates
+ * passes its own. The name and the count are the button's, not its icon's, so
+ * they stay while the spinner is drawn in the icon's place.
  */
 @Composable
 fun KozmosIconButton(
@@ -85,7 +92,8 @@ fun KozmosIconButton(
     interactionSource: MutableInteractionSource? = null,
     counter: Int? = null,
     counterLabel: (Int) -> String = { it.toString() },
-    counterSeparator: String = ", "
+    counterSeparator: String = ", ",
+    loadingLabel: String = "Loading"
 ) {
     val source = interactionSource ?: remember { MutableInteractionSource() }
     // The count is read with the button's name, as React's "Help, 3".
@@ -111,7 +119,15 @@ fun KozmosIconButton(
     val disabledInk = KozmosThemeTokens.semanticsDisabledForeground
     val disabledFill = KozmosThemeTokens.semanticsDisabledFill
     val themedInk = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle
+    // The name, and the count, are the button's own (GAP-253): on the icon,
+    // they went with it when the spinner took its place. Loading, the button
+    // says it is busy, as its state, since Compose has no busy property.
     val rootModifier = modifier.size(if (size == KozmosIconButtonSize.Lg) 48.dp else 44.dp)
+        .semantics {
+            // `this.`: the parameter of the same name would be taken instead.
+            if (description != null) this.contentDescription = description
+            if (isLoading) stateDescription = loadingLabel
+        }
         // Outside the button's clip, which would cut it.
         .then(if (counter != null) Modifier.iconButtonCounter(counter, disabled) else Modifier)
     val iconSize = when (size) {
@@ -134,7 +150,8 @@ fun KozmosIconButton(
         } else {
             Icon(
                 imageVector = icon,
-                contentDescription = description,
+                // Named on the button, so the name stays while it loads.
+                contentDescription = null,
                 modifier = Modifier.size(iconSize)
             )
         }

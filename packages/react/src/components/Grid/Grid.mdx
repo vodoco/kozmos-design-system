@@ -16,6 +16,112 @@ Use it for two-dimensional layouts; use Stack for a row or column of content.
 
 <Controls />
 
+## Virtualized
+
+`virtualized` draws only the rows in view and `overscan` rows past each edge, two by default, for Home's hundreds of
+site cards (GAP-172, decision 209). The Grid scrolls itself, so give it a height. Every row is `rowHeight` px tall;
+the columns are `cols`, or as many of `minColumnWidth` as the width holds. Items are drawn in reading order, each a
+`listitem` said as its place in the whole list (`aria-posinset` of `itemCount`), so a screen reader counts all of them.
+Tab moves through the cards in view and the page scrolls to each; a focused card that scrolls out of the drawn rows
+hands focus to the Grid, which takes the keyboard's scrolling, so focus is never lost.
+
+`renderItem(index)` draws each item. Without it the Grid draws its children as the items of the range it reports to
+`onRangeChange`, `{ start, end }`, so a caller draws only those: Vue's default slot does, with `@range-change`.
+SwiftUI's and Compose's Grids are lazy already, a `LazyVGrid` and a `LazyVerticalGrid`, and draw only what shows.
+
+<Canvas>
+  <Story of={GridStories.Virtualized} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { Card, CardHeader, CardTitle, Grid } from "@kozmos-ds/react";
+
+export function SiteCards({ sites }: { sites: { id: string; name: string }[] }) {
+  return (
+    <Grid
+      virtualized
+      aria-label="Sites"
+      minColumnWidth={240}
+      gap={4}
+      itemCount={sites.length}
+      rowHeight={96}
+      renderItem={(index) => (
+        <Card>
+          <CardHeader>
+            <CardTitle>{sites[index].name}</CardTitle>
+          </CardHeader>
+        </Card>
+      )}
+      style={{ height: 640 }}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { computed, ref } from "vue"
+import { KozmosCard, KozmosGrid } from "@kozmos-ds/vue/react-bridge"
+
+const sites = Array.from({ length: 400 }, (_, index) => ({ id: index, name: "Site " + (index + 1) }))
+const range = ref({ start: 0, end: 0 })
+const shown = computed(() => sites.slice(range.value.start, range.value.end))
+</script>
+
+<template>
+  <KozmosGrid
+    virtualized
+    aria-label="Sites"
+    :cols="3"
+    :gap="4"
+    :item-count="sites.length"
+    :row-height="96"
+    style="height: 640px"
+    @range-change="range = $event"
+  >
+    <div v-for="(site, offset) in shown" :key="site.id" role="listitem" :aria-posinset="range.start + offset + 1" :aria-setsize="sites.length">
+      <KozmosCard>{{ site.name }}</KozmosCard>
+    </div>
+  </KozmosGrid>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Kozmos's Grid is a LazyVGrid: in a ScrollView it draws only the cards in
+// view, in reading order, for hundreds of sites.
+struct SiteCards: View {
+    let sites: [String]
+
+    var body: some View {
+        ScrollView {
+            Grid(cols: 3) {
+                ForEach(sites, id: \\.self) { site in
+                    KozmosText(site)
+                }
+            }
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.runtime.Composable
+import com.kozmos.components.grid.KozmosGrid
+import com.kozmos.components.text.KozmosText
+
+// KozmosGrid is a LazyVerticalGrid: it scrolls itself and composes only the
+// cards in view, for hundreds of sites.
+@Composable
+fun SiteCards(sites: List<String>) {
+    KozmosGrid(cols = 3) {
+        items(sites) { site -> KozmosText(text = site) }
+    }
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

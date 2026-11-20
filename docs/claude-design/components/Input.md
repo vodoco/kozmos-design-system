@@ -45,7 +45,7 @@ It forwards its ref to `HTMLInputElement`. Its props are `InputProps`, which ext
 
 - `action`: `InputAction`, optional.
 
-  A copy or toggle button inside the field's end (GAP-154).
+  A copy, toggle or edit button inside the field's end (GAP-154, GAP-212).
 
 - `mixed`: `boolean`, optional, default `false`.
 
@@ -124,6 +124,10 @@ From `@kozmos-ds/react`.
  *   Featured star at a field's end. `icon` is the product's; pressed, it is
  *   drawn as a pressed ToggleButton is, the theme fill under the icon in the
  *   hover fill's shape, so the state is a shape and not a colour alone.
+ * - `edit` is a pencil that calls `onEdit` (GAP-212, decision 224): what
+ *   editing means is the product's, a dialog or making the field editable.
+ *   For a read-only value with an editor elsewhere, Map Personas' ID and Map
+ *   Style; read only does not disable it, only a disabled field does.
  */
 type InputAction =
   | {
@@ -140,6 +144,12 @@ type InputAction =
       icon: React.ReactNode;
       pressed: boolean;
       onPressedChange: (pressed: boolean) => void;
+    }
+  | {
+      kind: "edit";
+      /** The button's name. Default "Edit". */
+      label?: string;
+      onEdit: () => void;
     };
 ```
 

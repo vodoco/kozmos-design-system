@@ -10,6 +10,14 @@ import {
   entrancePOI,
 } from "./POIDetailPanel.fixtures";
 
+// Every action keeps its live regions mounted, empty until it has a message
+// (GAP-226): the one region of a role that holds words.
+const saying = (role: "alert" | "status") => {
+  const held = screen.getAllByRole(role).filter((node) => node.textContent);
+  expect(held).toHaveLength(1);
+  return held[0];
+};
+
 const labels: Record<POIAction, string> = {
   navigate: "Go",
   favourite: "Favourite",
@@ -533,7 +541,7 @@ describe("POIDetailPanel", () => {
       />,
     );
     expect(screen.getByRole("button", { name: "Book" })).toBeDisabled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Could not book.");
+    expect(saying("alert")).toHaveTextContent("Could not book.");
   });
   it("renders optional regions and emits typed actions", () => {
     const onAction = vi.fn();
@@ -570,8 +578,55 @@ describe("POIDetailPanel", () => {
     );
 
     expect(screen.getByRole("button", { name: "Share" })).toBeDisabled();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Ordering is unavailable.",
-    );
+    expect(saying("alert")).toHaveTextContent("Ordering is unavailable.");
+  });
+
+  // GAP-131: the product's own content, a place's QR code on desktop and
+  // kiosk, is drawn last in the body, inside its padding and the card's
+  // scroll. It was dropped.
+  describe("children", () => {
+    it("draws the product's content last in the body", () => {
+      render(
+        <POIDetailPanel
+          poi={poi}
+          details={restaurantDetails}
+          actionLabels={labels}
+          onAction={vi.fn()}
+        >
+          <figure data-testid="qr">Scan for directions</figure>
+        </POIDetailPanel>,
+      );
+      const qr = screen.getByTestId("qr");
+      const body = qr.parentElement!;
+      expect(body).toHaveClass("kozmos-poi-body");
+      expect(body.lastElementChild).toBe(qr);
+      expect(body.closest("article")).toHaveClass("kozmos-poi-detail");
+    });
+
+    it("draws the body for the content alone", () => {
+      render(
+        <POIDetailPanel
+          poi={{ ...poi, services: [], media: [] }}
+          actionLabels={labels}
+          onAction={vi.fn()}
+        >
+          <figure data-testid="qr">Scan for directions</figure>
+        </POIDetailPanel>,
+      );
+      expect(screen.getByTestId("qr").parentElement).toHaveClass(
+        "kozmos-poi-body",
+      );
+    });
+
+    it("draws no body for no content, as before", () => {
+      const { container } = render(
+        <POIDetailPanel
+          poi={{ ...poi, services: [], media: [] }}
+          actionLabels={labels}
+          onAction={vi.fn()}
+        />,
+      );
+      expect(container.querySelector(".kozmos-poi-body")).toBeNull();
+    });
   });
 });

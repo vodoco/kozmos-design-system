@@ -55,12 +55,20 @@ fun KozmosBadge(
         BadgeSize.Icon -> 0.dp
     }
 
+    // Chip's scale (decision 93, GAP-147): 28, 32 and 36, as Chip's sizes;
+    // an icon Badge is the default height, square. A status, not a control.
+    val height = when (size) {
+        BadgeSize.Sm -> 28.dp
+        BadgeSize.Default, BadgeSize.Icon -> 32.dp
+        BadgeSize.Lg -> 36.dp
+    }
+
     val hasCounter = size != BadgeSize.Icon && showCounter && counter != null
 
     Box(
         modifier = modifier
-            .height(44.dp)
-            .then(if (size == BadgeSize.Icon) Modifier.width(44.dp) else Modifier)
+            .height(height)
+            .then(if (size == BadgeSize.Icon) Modifier.width(height) else Modifier)
             .background(containerColor, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
             .border(
                 width = if (variant == BadgeVariant.Outline) 1.dp else 0.dp,

@@ -1,16 +1,27 @@
 import SwiftUI
 import Figma
 
-// Tone=Neutral only: SwiftUI's KozmosToast has no tone yet (GAP-167 is web and
-// Figma first), so a Success, Info, Warning or Critical instance shows no
-// SwiftUI snippet rather than a plain toast without its icon.
+// Tone is KozmosToast's `tone` (GAP-167), as React's and Compose's: a mark
+// at the start in the tone's colour, or none for Neutral.
 //
 // Close Always Visible (GAP-268) is not mapped: SwiftUI has no hover, so its
 // close shows the whole time the toast does, which is the property on.
 struct KozmosToastBasicConnect: FigmaConnect {
     let component = KozmosToast.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=101-8189"
-    var variant = ["Content": "Basic", "Tone": "Neutral"]
+    var variant = ["Content": "Basic"]
+
+    @FigmaEnum(
+        "Tone",
+        mapping: [
+            "Neutral": KozmosToastTone.neutral,
+            "Success": KozmosToastTone.success,
+            "Info": KozmosToastTone.info,
+            "Warning": KozmosToastTone.warning,
+            "Critical": KozmosToastTone.critical
+        ]
+    )
+    var tone: KozmosToastTone = .neutral
 
     @FigmaString("Title Text")
     var title: String = "Notification"
@@ -23,7 +34,8 @@ struct KozmosToastBasicConnect: FigmaConnect {
             isPresented: .constant(true),
             title: self.title,
             description: self.description,
-            autoDismissAfter: nil
+            autoDismissAfter: nil,
+            tone: self.tone
         )
     }
 }
@@ -31,7 +43,19 @@ struct KozmosToastBasicConnect: FigmaConnect {
 struct KozmosToastActionConnect: FigmaConnect {
     let component = KozmosToast.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=101-8189"
-    var variant = ["Content": "Action", "Tone": "Neutral"]
+    var variant = ["Content": "Action"]
+
+    @FigmaEnum(
+        "Tone",
+        mapping: [
+            "Neutral": KozmosToastTone.neutral,
+            "Success": KozmosToastTone.success,
+            "Info": KozmosToastTone.info,
+            "Warning": KozmosToastTone.warning,
+            "Critical": KozmosToastTone.critical
+        ]
+    )
+    var tone: KozmosToastTone = .neutral
 
     @FigmaString("Title Text")
     var title: String = "Notification"
@@ -49,6 +73,7 @@ struct KozmosToastActionConnect: FigmaConnect {
             description: self.description,
             actionTitle: self.actionTitle,
             autoDismissAfter: nil,
+            tone: self.tone,
             onAction: {}
         )
     }

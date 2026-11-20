@@ -27,12 +27,19 @@ public enum KozmosInputAction {
     /// shape inside the button (decisions 164 and 165), so pressed is a shape
     /// and not a colour alone; it is selected to VoiceOver.
     case toggle(label: String, icon: Image, isPressed: Binding<Bool>)
+    /// A pencil that calls `onEdit` (GAP-212, decision 224): what editing
+    /// means is the product's, a sheet or making the field editable. For a
+    /// read-only value with an editor elsewhere, Map Personas' ID and Map
+    /// Style; read only does not disable it, only a disabled field does.
+    /// `label` is its name, "Edit" by default, in the product's words.
+    case edit(label: String = "Edit", onEdit: () -> Void)
 
     /// The button's name.
     var label: String {
         switch self {
         case .copy(let label, _, _): return label
         case .toggle(let label, _, _): return label
+        case .edit(let label, _): return label
         }
     }
 }
@@ -56,6 +63,8 @@ public struct KozmosInput: View {
     let error: Bool
     let helperText: String?
     let errorMessage: String?
+    /// Said on the field while read only (GAP-235).
+    let readOnlyLabel: String
     let action: KozmosInputAction?
     /// The copy's check, while it shows: a count, so a second copy restarts it.
     @State private var copiedCount = 0
@@ -81,8 +90,10 @@ public struct KozmosInput: View {
         mixed: Bool = false,
         mixedLabel: String = KozmosMixedValue.label,
         onResetMixed: (() -> Void)? = nil,
-        resetMixedLabel: String = KozmosMixedValue.resetLabel
+        resetMixedLabel: String = KozmosMixedValue.resetLabel,
+        readOnlyLabel: String = KozmosFieldState.readOnlyLabel
     ) {
+        self.readOnlyLabel = readOnlyLabel
         self._text = text
         self.label = label
         self.placeholder = placeholder
@@ -108,9 +119,27 @@ public struct KozmosInput: View {
             }
 
             HStack(spacing: 0) {
-                TextField(mixed ? mixedLabel : placeholder, text: shownText)
+                Group {
+                    // Read only (decision 222): drawn read only, not
+                    // disabled: full strength, selectable, said read only.
+                    if readOnly && !disabled {
+                        KozmosReadOnlyValue(
+                            text: mixed ? "" : text,
+                            placeholder: mixed ? mixedLabel : placeholder,
+                            textColor: textColor,
+                            placeholderColor: KozmosColors.primitivesColorsForeground400,
+                            alignment: .leading,
+                            accessibilityName: label ?? placeholder,
+                            hint: fieldHint
+                        )
+                    } else {
+                        TextField(mixed ? mixedLabel : placeholder, text: shownText)
+                            .disabled(disabled || readOnly)
+                            // Read only and in error, said on the field (GAP-235, GAP-236).
+                            .accessibilityHint(fieldHint)
+                    }
+                }
                     .accessibilityFocused($fieldAccessibilityFocused)
-                    .disabled(disabled || readOnly)
                     .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
                     .padding(.trailing, action == nil ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
                 if let action {
@@ -202,6 +231,18 @@ public struct KozmosInput: View {
             .accessibilityLabel(label)
             // Pressed is selected, as ToggleButton's and the reveal's are.
             .accessibilityAddTraits(isPressed.wrappedValue ? .isSelected : [])
+        case .edit(let label, let onEdit):
+            // Drawn as the copy is: the field's muted icon in its 44 end.
+            Button(action: onEdit) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(disabled)
+            .foregroundColor(actionColor(pressed: false))
+            .accessibilityLabel(label)
         }
     }
 
@@ -229,6 +270,11 @@ public struct KozmosInput: View {
         if pressed { return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle }
         if disabled || (mixed && isCopy) { return KozmosColors.primitivesColorsForeground500 }
         return KozmosColors.primitivesColorsForeground400
+    }
+
+    /// "Read only", then the error message (GAP-235, GAP-236).
+    var fieldHint: String {
+        KozmosFieldState.hint(readOnly: readOnly, readOnlyLabel: readOnlyLabel, inError: effectiveStatus == .error, errorMessage: errorMessage)
     }
 
     private var effectiveStatus: KozmosInputStatus {

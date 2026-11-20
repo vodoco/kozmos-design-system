@@ -1,0 +1,112 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import { PlatformSnippets } from "../PlatformSnippets";
+import * as CodeBlockStories from "./CodeBlock.stories";
+
+<Meta of={CodeBlockStories} />
+
+# CodeBlock
+
+A read-only block of code (GAP-216, decision 225): MAP-619's merged unit shows a custom field's JSON in one. The code is
+in the mono family (Semantics / Typography / Family / Mono), 14/20 in the foreground, on the muted surface (background
+100), on the control radius, 12 inside. There is no syntax colouring: the code is plain text, shown as written, every
+space and line kept, and it can be selected.
+
+<Canvas of={CodeBlockStories.Default} />
+
+## Anatomy
+
+- **`code`**: the text, as written.
+- **`label`**: the block's name, what a screen reader says it is ("mergedUnit JSON"), in the product's words.
+- **`wrap`**: long lines wrap, breaking anywhere a line has no space (the default). With `wrap={false}` each line stays
+  whole and the block scrolls sideways.
+- **`maxHeight`**: the block's tallest, a number of pixels or any CSS length (`"12rem"`), so a long value never pushes
+  the page: past it the code scrolls inside the block. Unset, the default, the block is as tall as its code. SwiftUI's
+  `maxHeight: CGFloat?` and Compose's `maxHeight: Dp?` do the same; on SwiftUI a value shorter than the cap keeps its
+  own height.
+- **`copyable`**: a copy at the block's top end, 4 in from its edges, the code kept clear of it. It copies the code and
+  says so: "Copied" (`copiedLabel`) in a polite live region, and a check in place of the copy icon for two seconds;
+  copied again, it says so again. If the browser refuses the clipboard, it says nothing. The button is named "Copy"
+  (`copyLabel`); `onCopy` receives the code.
+
+<Canvas of={CodeBlockStories.Scroll} />
+
+## Accessibility
+
+A CodeBlock is a region named by `label`, holding a `<pre>` and its `<code>`. Scrolling sideways, or capped by `maxHeight`, the
+`<pre>` is a stop on the keyboard's way, so its overflow can be read with the arrow keys; wrapped and uncapped, it never
+scrolls and is not one. The copy stays at the block's top end as the code scrolls. The copy is a button of its own, after the code. SwiftUI's `KozmosCodeBlock` is a VoiceOver container named by its
+label, holding the code and the copy; Compose's is a group TalkBack walks together, named by its label as a pane,
+Compose's nearest to a named region. On both the copy says it copied: a VoiceOver announcement, a polite live region on
+Compose.
+
+## Not a field
+
+A CodeBlock shows code a person reads and copies, never edits: there is no caret and nothing to type into. A value a
+person edits is a Textarea.
+
+In Figma it is the CodeBlock set: Overflow, Wrap or Scroll, Copy to show the copy, and Code Text for the code. Figma
+has no Max Height: a cap is a product's layout choice, and the set draws the block at its code's height. It draws the
+code in the Primitives mono family, Fira Mono, falling back to the UI font where the file does not have it.
+
+## Implementation
+
+<PlatformSnippets
+    react={`
+import { CodeBlock } from "@kozmos-ds/react";
+
+export function MergedUnitJSON({ value }: { value: unknown }) {
+  return (
+    <CodeBlock
+      label="mergedUnit JSON"
+      code={JSON.stringify(value, null, 2)}
+      copyable
+      copyLabel="Copy JSON"
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosCodeBlock } from "@kozmos-ds/vue/react-bridge"
+
+const props = defineProps({ value: Object })
+</script>
+
+<template>
+  <KozmosCodeBlock
+    label="mergedUnit JSON"
+    :code="JSON.stringify(props.value, null, 2)"
+    copyable
+    copyLabel="Copy JSON"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// MAP-619's merged unit: a custom field's JSON, read only, with a copy.
+struct MergedUnitJSON: View {
+    let json: String
+
+    var body: some View {
+        KozmosCodeBlock(json, label: "mergedUnit JSON", copyable: true, copyLabel: "Copy JSON")
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.codeblock.KozmosCodeBlock
+
+// MAP-619's merged unit: a custom field's JSON, read only, with a copy.
+@Composable
+fun MergedUnitJSON(json: String) {
+    KozmosCodeBlock(
+        code = json,
+        label = "mergedUnit JSON",
+        copyable = true,
+        copyLabel = "Copy JSON"
+    )
+}
+`}
+/>

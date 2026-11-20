@@ -16,6 +16,9 @@ export interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export type SpinnerSize = NonNullable<SpinnerProps["size"]>;
 
+/** How long after it mounts a spinner's region is given its label. */
+const LABEL_DELAY_MS = 100;
+
 /**
  * Indeterminate loading: the system's arc, turning, with a name to hear.
  *
@@ -42,6 +45,16 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
       lg: "h-8 w-8",
       xl: "h-12 w-12",
     };
+    // A spinner is mounted when a wait starts, so its status region cannot
+    // be there before it: it is mounted empty, and its label is put into it
+    // a moment later (GAP-226), as a screen reader may say nothing for a
+    // region inserted together with its words. The label is visually
+    // hidden, so nothing seen waits for it.
+    const [labelled, setLabelled] = React.useState(false);
+    React.useEffect(() => {
+      const timer = setTimeout(() => setLabelled(true), LABEL_DELAY_MS);
+      return () => clearTimeout(timer);
+    }, []);
 
     return (
       <div
@@ -54,7 +67,7 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
         {...props}
       >
         <SpinnerArc className={sizeClasses[size]} size={pixels[size]} />
-        <span className="sr-only">{label}</span>
+        <span className="sr-only">{labelled ? label : null}</span>
       </div>
     );
   },

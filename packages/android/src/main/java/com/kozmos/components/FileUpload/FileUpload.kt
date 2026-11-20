@@ -88,6 +88,61 @@ enum class KozmosFileUploadVariant {
 internal fun fileUploadPickerInput(preview: KozmosFileUploadPreview): String =
     if (preview == KozmosFileUploadPreview.Image) "image/*" else "*/*"
 
+/** React's refusal of a pick past `maxFiles`: "Select up to 3 files." (GAP-280). */
+fun kozmosFileUploadTooManyFiles(maxFiles: Int): String =
+    "Select up to $maxFiles ${if (maxFiles == 1) "file" else "files"}."
+
+/** React's refusal of a file over `maxSize`: "plan.pdf exceeds 2.0 MB." (GAP-280). */
+fun kozmosFileUploadTooLarge(fileName: String, maxSize: String): String = "$fileName exceeds $maxSize."
+
+/** A size as React's FileUpload writes it: "0 B", "512 B", "2.0 KB", "10 MB". */
+internal fun fileUploadFormatBytes(bytes: Long): String {
+    if (bytes <= 0) return "0 B"
+    val units = listOf("B", "KB", "MB", "GB")
+    val exponent = minOf(
+        kotlin.math.floor(kotlin.math.ln(bytes.toDouble()) / kotlin.math.ln(1024.0)).toInt(),
+        units.size - 1
+    )
+    val value = bytes / Math.pow(1024.0, exponent.toDouble())
+    val digits = if (value >= 10 || exponent == 0) 0 else 1
+    return String.format(java.util.Locale.ROOT, "%.${digits}f", value) + " " + units[exponent]
+}
+
+/**
+ * How many files a pick may hold: one for an image preview, [maxFiles], or
+ * with neither, any number with [multiple] and one without, as React's.
+ */
+internal fun fileUploadMaxFiles(preview: KozmosFileUploadPreview, maxFiles: Int?, multiple: Boolean?): Int =
+    if (preview == KozmosFileUploadPreview.Image) 1 else maxFiles ?: if (multiple == true) Int.MAX_VALUE else 1
+
+/** Whether the picker takes several files: [multiple] when given, else when the count allows. */
+internal fun fileUploadPicksSeveral(preview: KozmosFileUploadPreview, maxFiles: Int?, multiple: Boolean?): Boolean =
+    preview != KozmosFileUploadPreview.Image && (multiple ?: (fileUploadMaxFiles(preview, maxFiles, multiple) > 1))
+
+/** A picked file as the refusal reads it: its name and its size in bytes, either unknown. */
+internal data class FileUploadPicked(val name: String, val size: Long?)
+
+/**
+ * Why a pick is turned away, or null: past the count first, then the first
+ * file over [maxSize], as React checks them. A size that cannot be read
+ * refuses nothing.
+ */
+internal fun fileUploadRefusal(
+    picked: List<FileUploadPicked>,
+    maxFiles: Int,
+    maxSize: Long?,
+    tooManyFilesLabel: (Int) -> String,
+    tooLargeLabel: (String, String) -> String
+): String? {
+    if (picked.size > maxFiles) return tooManyFilesLabel(maxFiles)
+    if (maxSize != null) {
+        picked.firstOrNull { (it.size ?: 0L) > maxSize }?.let {
+            return tooLargeLabel(it.name, fileUploadFormatBytes(maxSize))
+        }
+    }
+    return null
+}
+
 /** The words that open the picker: the product's own, or each form's own default. */
 internal fun fileUploadBrowseLabel(browseLabel: String?, variant: KozmosFileUploadVariant): String =
     browseLabel ?: if (variant == KozmosFileUploadVariant.Button) "Choose file" else "Tap to upload file"
@@ -128,51 +183,161 @@ fun KozmosFileUpload(
      * still [onFileSelected].
      */
     variant: KozmosFileUploadVariant = KozmosFileUploadVariant.Dropzone,
+    /**
+     * The largest file, in bytes, as React's `maxSize` (GAP-280): a larger
+     * one is turned away with [tooLargeLabel], the files held staying.
+     */
+    maxSize: Long? = null,
+    /**
+     * How many files one pick may hold, as React's `maxFiles`: more are
+     * turned away with [tooManyFilesLabel]. One by default, any number with
+     * [multiple].
+     */
+    maxFiles: Int? = null,
+    /**
+     * Whether the picker takes several files, as React's `multiple`; unset,
+     * it does when [maxFiles] is over 1. Each file held is listed with its
+     * own remove button.
+     */
+    multiple: Boolean? = null,
+    /** The refusal of a pick past [maxFiles], given the count; React's English by default. */
+    tooManyFilesLabel: (Int) -> String = ::kozmosFileUploadTooManyFiles,
+    /**
+     * The refusal of a file over [maxSize], given its name and the limit as
+     * written ("2.0 MB"); React's English by default.
+     */
+    tooLargeLabel: (String, String) -> String = ::kozmosFileUploadTooLarge,
+    /** Told the files held after each pick or removal, as React's `onFilesChange`. */
+    onFilesChange: ((List<Uri>) -> Unit)? = null,
     onFileSelected: (Uri) -> Unit
 ) {
     val words = fileUploadBrowseLabel(browseLabel, variant)
-    var file by remember { mutableStateOf<Uri?>(null) }
-    var fileName by remember { mutableStateOf<String?>(null) }
+    // The files held, each with the name shown for it.
+    var held by remember { mutableStateOf<List<Pair<Uri, String>>>(emptyList()) }
+    // Why the last pick was turned away, said under the part as React's
+    // field error is (GAP-280).
+    var refusal by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     // Which pick, or removal, is the latest: a name that arrives for an
     // earlier one is dropped.
     val latest = remember { AtomicInteger() }
+    val countLimit = fileUploadMaxFiles(preview, maxFiles, multiple)
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            // The file's own name, as React shows a File's name. The URI's last
-            // segment shows until it arrives, and stays where the provider
-            // gives none: for a document provider's URI it is the document's
-            // ID, not its name. It was all this showed until 2026-10-20. With
-            // neither, nothing, as React shows a nameless File: the fixed
-            // English "Selected File" it fell back to is gone.
-            val pick = latest.incrementAndGet()
-            file = it
-            fileName = it.lastPathSegment.orEmpty()
-            onFileSelected(it)
-            val resolver = context.contentResolver
-            // Asked off the main thread: a provider may answer over the network.
+    val hold: (List<Uri>) -> Unit = { uris ->
+        // The file's own name, as React shows a File's name. The URI's last
+        // segment shows until it arrives, and stays where the provider
+        // gives none: for a document provider's URI it is the document's
+        // ID, not its name. It was all this showed until 2026-10-20. With
+        // neither, nothing, as React shows a nameless File: the fixed
+        // English "Selected File" it fell back to is gone.
+        val pick = latest.incrementAndGet()
+        refusal = null
+        held = uris.map { it to it.lastPathSegment.orEmpty() }
+        onFilesChange?.invoke(uris)
+        onFileSelected(uris.first())
+        val resolver = context.contentResolver
+        // Asked off the main thread: a provider may answer over the network.
+        uris.forEach { uri ->
             scope.launch {
-                val name = withContext(Dispatchers.IO) { displayNameOf(resolver, it) }
-                if (name != null && latest.get() == pick) fileName = name
+                val name = withContext(Dispatchers.IO) { displayNameOf(resolver, uri) }
+                if (name != null && latest.get() == pick) {
+                    held = held.map { if (it.first == uri) uri to name else it }
+                }
             }
         }
     }
 
-    val remove: () -> Unit = {
+    val receive: (List<Uri>) -> Unit = receive@{ uris ->
+        if (uris.isEmpty()) return@receive
+        if (uris.size > countLimit) {
+            refusal = tooManyFilesLabel(countLimit)
+            return@receive
+        }
+        if (maxSize == null) {
+            hold(uris)
+            return@receive
+        }
+        // The sizes, and the names a refusal says, from the provider, off
+        // the main thread, before a file over the size is held.
+        val resolver = context.contentResolver
+        val pick = latest.incrementAndGet()
+        scope.launch {
+            val picked = withContext(Dispatchers.IO) {
+                uris.map { uri ->
+                    val (name, size) = metadataOf(resolver, uri)
+                    FileUploadPicked(name ?: uri.lastPathSegment.orEmpty(), size)
+                }
+            }
+            if (latest.get() != pick) return@launch
+            val reason = fileUploadRefusal(picked, countLimit, maxSize, tooManyFilesLabel, tooLargeLabel)
+            if (reason != null) refusal = reason else hold(uris)
+        }
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> uri?.let { receive(listOf(it)) } }
+    val severalLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> -> receive(uris) }
+    val picksSeveral = fileUploadPicksSeveral(preview, maxFiles, multiple)
+
+    val removeFile: (Uri) -> Unit = { removed ->
         latest.incrementAndGet()
-        val removed = file
-        file = null
-        fileName = null
-        if (removed != null) onFileRemoved?.invoke(removed)
+        held = held.filterNot { it.first == removed }
+        refusal = null
+        onFilesChange?.invoke(held.map { it.first })
+        onFileRemoved?.invoke(removed)
     }
     val pickerInput = fileUploadPickerInput(preview)
+    val openPicker: () -> Unit = {
+        if (picksSeveral) severalLauncher.launch(pickerInput) else launcher.launch(pickerInput)
+    }
 
-    val shown = file
-    if (preview == KozmosFileUploadPreview.Image && fileName != null && shown != null) {
+    // The refusal goes under the part: the column adds no box of its own,
+    // and the part keeps the caller's modifier, as it always had.
+    Column {
+        FileUploadBody(
+            modifier = modifier,
+            held = held,
+            preview = preview,
+            variant = variant,
+            words = words,
+            removeLabel = removeLabel,
+            changeLabel = changeLabel,
+            previewAlt = previewAlt,
+            openPicker = openPicker,
+            removeFile = removeFile
+        )
+        refusal?.let {
+            Text(
+                text = it,
+                modifier = Modifier.padding(top = KozmosDimensions.primitivesLayoutSpacing75),
+                style = MaterialTheme.typography.bodySmall,
+                color = KozmosThemeTokens.primitivesColorsEmotionalDanger600
+            )
+        }
+    }
+}
+
+@Composable
+private fun FileUploadBody(
+    modifier: Modifier,
+    held: List<Pair<Uri, String>>,
+    preview: KozmosFileUploadPreview,
+    variant: KozmosFileUploadVariant,
+    words: String,
+    removeLabel: String,
+    changeLabel: String,
+    previewAlt: String?,
+    openPicker: () -> Unit,
+    removeFile: (Uri) -> Unit
+) {
+    val first = held.firstOrNull()
+    if (preview == KozmosFileUploadPreview.Image && first != null) {
+        val (shown, fileName) = first
+        val remove = { removeFile(shown) }
         Row(
             modifier = modifier
                 .fillMaxWidth()
@@ -198,7 +363,7 @@ fun KozmosFileUpload(
             }
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing150))
             Text(
-                text = fileName!!,
+                text = fileName,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyMedium,
                 color = KozmosThemeTokens.primitivesColorsForeground100,
@@ -207,7 +372,7 @@ fun KozmosFileUpload(
             )
             Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
             KozmosButton(
-                onClick = { launcher.launch(pickerInput) },
+                onClick = openPicker,
                 variant = KozmosButtonVariant.Outline,
                 size = KozmosButtonSize.Sm
             ) {
@@ -217,33 +382,20 @@ fun KozmosFileUpload(
                 Icon(Icons.Default.Close, contentDescription = removeLabel)
             }
         }
-    } else if (fileName != null) {
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(KozmosDimensions.primitivesLayoutSpacing100)
-                .border(1.dp, KozmosThemeTokens.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-                .padding(KozmosDimensions.primitivesLayoutSpacing150),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // An icon on a surface: theme/600 (decision 59).
-            Icon(Icons.Default.UploadFile, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsTheme600)
-            Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
-            Text(
-                text = fileName!!,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
-                color = KozmosThemeTokens.primitivesColorsForeground100
-            )
-            IconButton(onClick = remove) {
-                Icon(Icons.Default.Close, contentDescription = removeLabel)
+    } else if (held.size == 1) {
+        FileUploadRow(modifier, first!!.second, removeLabel) { removeFile(first.first) }
+    } else if (held.isNotEmpty()) {
+        // Each file held, with its own remove button (GAP-280).
+        Column(modifier = modifier) {
+            held.forEach { (uri, name) ->
+                FileUploadRow(Modifier, name, removeLabel) { removeFile(uri) }
             }
         }
     } else if (variant == KozmosFileUploadVariant.Button) {
         // In place of the drop area: the outline Button, opening the same
         // picker for the same files (GAP-274).
         KozmosButton(
-            onClick = { launcher.launch(pickerInput) },
+            onClick = openPicker,
             modifier = modifier,
             variant = KozmosButtonVariant.Outline
         ) {
@@ -268,7 +420,7 @@ fun KozmosFileUpload(
                     // Note: Dashed border support in Compose often requires custom Canvas drawing
                     // We'll stick to solid for now or implement custom modifier later if needed
                 )
-                .clickable { launcher.launch(pickerInput) },
+                .clickable(onClick = openPicker),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -286,6 +438,51 @@ fun KozmosFileUpload(
             )
         }
     }
+}
+
+/** One file held: its icon, its name and its remove button. */
+@Composable
+private fun FileUploadRow(modifier: Modifier, fileName: String, removeLabel: String, remove: () -> Unit) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(KozmosDimensions.primitivesLayoutSpacing100)
+            .border(1.dp, KozmosThemeTokens.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+            .padding(KozmosDimensions.primitivesLayoutSpacing150),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // An icon on a surface: theme/600 (decision 59).
+        Icon(Icons.Default.UploadFile, contentDescription = null, tint = KozmosThemeTokens.primitivesColorsTheme600)
+        Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing100))
+        Text(
+            text = fileName,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = KozmosThemeTokens.primitivesColorsForeground100
+        )
+        IconButton(onClick = remove) {
+            Icon(Icons.Default.Close, contentDescription = removeLabel)
+        }
+    }
+}
+
+/**
+ * The name and the size, in bytes, the provider that holds a picked file
+ * gives it (`OpenableColumns.DISPLAY_NAME` and `SIZE`), each null where it
+ * gives none, for any URI not a content URI, and for a provider that fails.
+ */
+private fun metadataOf(resolver: ContentResolver, uri: Uri): Pair<String?, Long?> {
+    if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null to null
+    return runCatching {
+        resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null to null
+            val nameColumn = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeColumn = cursor.getColumnIndex(OpenableColumns.SIZE)
+            val name = if (nameColumn >= 0) cursor.getString(nameColumn)?.takeIf { it.isNotBlank() } else null
+            val size = if (sizeColumn >= 0 && !cursor.isNull(sizeColumn)) cursor.getLong(sizeColumn) else null
+            name to size
+        }
+    }.getOrNull() ?: (null to null)
 }
 
 /**

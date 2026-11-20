@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "0e1b2f242c0d";
+const PLUGIN_BUILD = "c43af8a04ebc";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -489,8 +489,15 @@ const INPUT_STATUSES = ["Default", "Error", "Warning", "Success"];
 // PasswordInput's reveal is. None is the field as it always was; Copy shows
 // copy-01, for a read-only value such as a feature's ID; Toggle and
 // TogglePressed are the Featured star at rest and pressed, its icon swappable
-// through Action Icon.
-const INPUT_ACTIONS = ["None", "Copy", "Toggle", "TogglePressed"];
+// through Action Icon. Edit (GAP-212, decision 224) shows pencil-01, the
+// pencil a product's editor opens from, for a read-only value such as Map
+// Personas' ID and Map Style; last, so a set from before it keeps its order
+// and Update adds the 20 it lacks.
+const INPUT_ACTIONS = ["None", "Copy", "Toggle", "TogglePressed", "Edit"];
+// The Action values whose bands lie above the Mixed rows (GAP-153). A value
+// added after them (Edit) takes a band under those rows, its own Mixed row
+// last, so no variant drawn before it moves.
+const INPUT_ACTIONS_ABOVE_MIXED = 4;
 // A field another part nests: at rest and with no action, named in full, so
 // a set whose first State=Default, Status=Default variant draws a copy or a
 // toggle is never the one picked. A set from before the Action axis has no
@@ -745,6 +752,10 @@ function progressHasCombination(value, second) {
 }
 const SPINNER_SIZES = ["Small", "Medium", "Large", "XLarge"];
 const AVATAR_CONTENT = ["Fallback", "Image"];
+// Decision 221: React's Avatar `size`, Default 40 and Sm 24, the size an
+// option's media is drawn at (decision 215) so its row keeps its height.
+const AVATAR_SIZES = ["Default", "Sm"];
+const AVATAR_SIZE_ROW_STEP = 80;
 const ALERT_VARIANTS = ["Default", "Destructive", "Success", "Warning", "Info"];
 // GAP-160 (decision 132): React's Notice. Tone is NoticeTone, Status its
 // `status`, None when it reports no work.
@@ -1405,6 +1416,19 @@ const IMAGE_CROPPER_RATIOS = ["Square", "Landscape"];
 // GAP-221, decision 199: React's DescriptionList `layout`: Stack, the items
 // one under another and the default, first; Row, side by side.
 const DESCRIPTION_LIST_LAYOUTS = ["Stack", "Row"];
+// GAP-222, decision 216: ChipInput's State, the input family's, with its
+// Error status drawn as a state of its own (the danger edge and label, the
+// error under the field); and its Content, two entries as chips or the
+// empty field's placeholder. Filled first, so the set's default holds chips.
+const CHIP_INPUT_STATES = ["Default", "Focus", "Disabled", "Readonly", "Error"];
+const CHIP_INPUT_CONTENT = ["Filled", "Empty"];
+// GAP-150, decision 219: React's SpriteIcon `size`, the box a sprite cell is
+// drawn in. 24, React's default, is the last; the set's first is 16.
+const SPRITE_ICON_SIZES = ["16", "20", "24"];
+// GAP-216, decision 225: React's CodeBlock `wrap`: Wrap, long lines broken
+// onto the lines under them, the default and first; Scroll, each line whole
+// and the block scrolling sideways.
+const CODE_BLOCK_OVERFLOWS = ["Wrap", "Scroll"];
 // GAP-106: React's PersonaMark draws one persona's diamond, and
 // PersonaMarkGroup the diamonds of the personas a row is visible to. One
 // mark comes first, so the set's default is the plain diamond.
@@ -1911,6 +1935,8 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   OTPInput: 760,
   Combobox: 1040,
   MultiSelect: 1200,
+  ChipInput: 760,
+  SpriteIcon: 200,
   Listbox: 520,
   DatePicker: 2100,
   DateRangePicker: 2400,
@@ -1918,6 +1944,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   FileUpload: 1420,
   ImageCropper: 560,
   DescriptionList: 320,
+  CodeBlock: 260,
   ColorPicker: 10500,
   SearchBar: 620,
   Search: 620,
@@ -1969,6 +1996,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "SettingsRow",
       "MetaStrip",
       "DescriptionList",
+      "CodeBlock",
       "Table",
       "TreeParentItem",
       "TreeChildItem",
@@ -2074,6 +2102,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "OTPInput",
       "Combobox",
       "MultiSelect",
+      "ChipInput",
       "Listbox",
       "DatePicker",
       "DateRangePicker",
@@ -2101,7 +2130,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Toast",
     ],
   },
-  { title: "Media", components: ["Avatar"] },
+  { title: "Media", components: ["Avatar", "SpriteIcon"] },
 ];
 const COMPONENT_PAGE_LAYOUT_ORDER = componentPageLayoutOrder(
   COMPONENT_PAGE_LAYOUT_SECTIONS,
@@ -4160,6 +4189,55 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    category: "Media",
+    summary:
+      "SpriteIcon draws one cell of a published MapLibre sprite atlas as published: a taxonomy type's bubble, glyph and marker dot, at 16, 20 or 24 (GAP-150, decisions 86 and 219).",
+    usage: [
+      "Use for a taxonomy type's icon, from the atlas the product's map uses: the content tree, the type picker, the persona list.",
+      "Use Icon for the UI's own glyphs, which are Kozmos's.",
+      "Pass the atlas's version-pinned base URL; Kozmos names no version.",
+    ],
+    api: [
+      "Size maps to size: 16, 20 or 24.",
+      "Sprite maps to sprite, the atlas's base URL; Cell Name maps to name. The importer draws the real cell from them at Build and Update.",
+      "label names it; without one it is decorative.",
+    ],
+    properties: ["Size: 16, 20, 24", "Sprite, Cell Name"],
+    accessibility: [
+      "Decorative unless label names it: then an image named by the label.",
+      "While loading, or for a missing cell, an empty box of its size, so nothing moves.",
+    ],
+  },
+  {
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    category: "Inputs",
+    summary:
+      "ChipInput takes free text and holds each entry as a removable chip inside the field: a place's keywords, aliases or e-mail addresses (GAP-222, decision 216).",
+    usage: [
+      "Use for words only the person knows, such as a POI's keywords.",
+      "Use MultiSelect when the choices are a set the product knows.",
+      "Enter or a comma adds the typed text; Backspace in the empty field removes the last entry; each chip has its own remove.",
+    ],
+    api: [
+      "State maps to disabled and readOnly; Focus draws the focus ring; Error is error, with Error Text its message.",
+      "Content: Filled draws two entries as Chip instances (Small, Selected, Removable), each exposed so its words are edited on the chip; Empty draws the placeholder.",
+      "Label Text maps to label, Placeholder Text to placeholder, Helper Text to helperText.",
+    ],
+    properties: [
+      "State: Default, Focus, Disabled, Readonly, Error",
+      "Content: Filled, Empty",
+      "Label Text, Placeholder Text, Helper Text, Error Text",
+    ],
+    accessibility: [
+      "The text input is named by the label and described by the helper text or the error.",
+      "Each chip's remove is a button named by removeLabel, Remove {entry} by default, in the product's words.",
+      "Each entry added or removed, and an entry typed again, is said politely in the product's words.",
+    ],
+  },
+  {
     componentName: "DescriptionList",
     componentSetName: "DescriptionList",
     category: "Data Display",
@@ -4183,6 +4261,28 @@ const COMPONENT_DOCS = [
       "A <dl>: each item a <dt> and its <dd>, so a screen reader hears each label with its value.",
       "SwiftUI makes each item one VoiceOver element, its label the name and its value the value; Compose merges each label and value into one TalkBack node. The action is an element of its own.",
       "Nothing in it is a field: no textbox, nothing disabled, no read-only input.",
+    ],
+  },
+  {
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    category: "Data Display",
+    summary:
+      "CodeBlock shows a block of code read-only, in the mono family on the muted surface, with an optional copy: MAP-619's merged unit's JSON (GAP-216, decision 225).",
+    usage: [
+      "Use for code or data a person reads and copies, never edits, such as a custom field's JSON value.",
+      "Use Wrap so long lines break onto the lines under them; Scroll where each line must stay whole.",
+      "Use a Textarea for a value a person edits.",
+    ],
+    api: [
+      "Overflow maps to wrap: Wrap is wrap (the default), Scroll is wrap={false}.",
+      "Code Text is code. Copy shows the copy, copyable; its name and words are copyLabel and copiedLabel.",
+      "No syntax colouring: the code is plain text.",
+    ],
+    properties: ["Overflow: Wrap, Scroll", "Code Text, Copy"],
+    accessibility: [
+      "A region named by label, holding a <pre> and its <code>; scrolling sideways, the <pre> is a stop on the keyboard's way.",
+      "The copy is a button named Copy by default, and it says Copied in a polite live region.",
     ],
   },
   {
@@ -4877,7 +4977,7 @@ const COMPONENT_DOCS = [
     api: [
       "State maps to focus, disabled, and readOnly props in Code Connect.",
       "Status maps to default, error, warning, and success validation tones.",
-      "Action maps to Input.action: None, a copy button (Copy), or a toggle at rest or pressed (Toggle, TogglePressed), at the field's end.",
+      "Action maps to Input.action: None, a copy button (Copy), a toggle at rest or pressed (Toggle, TogglePressed), or an edit pencil that calls onEdit (Edit, GAP-212), at the field's end.",
       "Action Icon is the toggle's icon, the Featured star by default.",
       "State=Mixed maps to Input.mixed (GAP-153): Multiple values in place of the field's own, for a multi-selection whose values differ.",
       "Reset Mixed shows Reset to multiple values under the field, Input.onResetMixed, for a field edited out of Mixed; State=Mixed has no reset to show. Reset Mixed Text and Mixed Text are the words, Input.resetMixedLabel and Input.mixedLabel.",
@@ -4887,7 +4987,7 @@ const COMPONENT_DOCS = [
     properties: [
       "State: Default, Focus, Disabled, Readonly, Mixed",
       "Status: Default, Error, Warning, Success",
-      "Action: None, Copy, Toggle, TogglePressed",
+      "Action: None, Copy, Toggle, TogglePressed, Edit",
       "Label Text, Placeholder Text, Helper Text, Show Helper Text, Reset Mixed, Reset Mixed Text, Mixed Text, Action Icon, Focus Visible",
     ],
     accessibility: [
@@ -5537,8 +5637,13 @@ const COMPONENT_DOCS = [
       "Image URL maps to AvatarImage.src.",
       "Alt Text maps to AvatarImage.alt.",
       "Fallback maps to AvatarFallback children in Code Connect.",
+      "Size maps to Avatar.size (decision 221): Default 40, Sm 24 with its initials at 12/16.",
     ],
-    properties: ["Content: Fallback, Image", "Fallback, Image URL, Alt Text"],
+    properties: [
+      "Content: Fallback, Image",
+      "Size: Default, Sm",
+      "Fallback, Image URL, Alt Text",
+    ],
     accessibility: [
       "Fallback text contrast passes in Light and Dark modes.",
       "Avatar is non-interactive unless composed inside another control.",
@@ -6775,32 +6880,27 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Counter/line-height/default", value: 16, scopes: ["LINE_HEIGHT"] },
   {
     name: "Badge/height/small",
-    value: 44,
-    alias: "Button/height/small",
+    value: 28,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/default",
-    value: 44,
-    alias: "Button/height/default",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/large",
-    value: 44,
-    alias: "Button/height/large",
+    value: 36,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/height/icon",
-    value: 44,
-    alias: "Button/height/icon",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
     name: "Badge/width/icon",
-    value: 44,
-    alias: "Button/width/icon",
+    value: 32,
     scopes: ["WIDTH_HEIGHT"],
   },
   {
@@ -9510,6 +9610,81 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Input/text/line-height",
     scopes: ["LINE_HEIGHT"],
   },
+  // GAP-222, decision 216: React's ChipInput, MultiSelect's field with no
+  // clear and no open: 320 wide, at least the input's 44, padded 8 and 4, its
+  // chips 6 apart (the chip group's gap-1.5), the input family's type.
+  {
+    name: "ChipInput/width/default",
+    value: 320,
+    alias: "Input/width/default",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ChipInput/field/min-height",
+    value: 44,
+    alias: "Input/field/height",
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "ChipInput/field/padding/x",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/padding/y",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/gap",
+    value: 6,
+    alias: "Layout/spacing/75",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/field/radius",
+    value: 16,
+    alias: "Input/field/radius",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "ChipInput/field/stroke/width",
+    value: 1,
+    alias: "Input/field/stroke/width",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "ChipInput/gap",
+    value: 6,
+    alias: "Input/gap",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ChipInput/label/font-size",
+    value: 14,
+    alias: "Input/label/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "ChipInput/label/line-height",
+    value: 20,
+    alias: "Input/label/line-height",
+    scopes: ["LINE_HEIGHT"],
+  },
+  {
+    name: "ChipInput/text/font-size",
+    value: 14,
+    alias: "Input/text/font-size",
+    scopes: ["FONT_SIZE"],
+  },
+  {
+    name: "ChipInput/text/line-height",
+    value: 20,
+    alias: "Input/text/line-height",
+    scopes: ["LINE_HEIGHT"],
+  },
   {
     name: "Listbox/width/default",
     value: 320,
@@ -10020,6 +10195,20 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Layout/spacing/50",
     scopes: ["GAP"],
   },
+  // GAP-216: React's CodeBlock: 12 inside (Layout/spacing/150), the copy 4
+  // in from the block's top end (Layout/spacing/50).
+  {
+    name: "CodeBlock/padding",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "CodeBlock/copy/inset",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
   {
     name: "DescriptionList/item/min-width",
     value: 160,
@@ -10521,6 +10710,7 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["GAP"],
   },
   { name: "Avatar/size/default", value: 40, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Avatar/size/sm", value: 24, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Avatar/radius",
     value: 9999,
@@ -12691,6 +12881,8 @@ const CORE_UPDATE_SEQUENCE = [
   ["OTPInput", updateOTPInputComponent],
   ["Combobox", updateComboboxComponent],
   ["MultiSelect", updateMultiSelectComponent],
+  ["ChipInput", updateChipInputComponent],
+  ["SpriteIcon", updateSpriteIconComponent],
   ["Listbox", updateListboxComponent],
   ["DatePicker", updateDatePickerComponent],
   ["DateRangePicker", updateDateRangePickerComponent],
@@ -12698,6 +12890,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["FileUpload", updateFileUploadComponent],
   ["ImageCropper", updateImageCropperComponent],
   ["DescriptionList", updateDescriptionListComponent],
+  ["CodeBlock", updateCodeBlockComponent],
   ["ColorPicker", updateColorPickerComponent],
   ["Textarea", updateTextareaComponent],
   ["Search", updateSearchComponent],
@@ -12974,9 +13167,18 @@ function additionalComponentActionHandlers() {
     "build-image-cropper": buildImageCropperComponent,
     "update-image-cropper": updateImageCropperComponent,
     "rebuild-image-cropper": rebuildImageCropperComponent,
+    "build-sprite-icon": buildSpriteIconComponent,
+    "update-sprite-icon": updateSpriteIconComponent,
+    "rebuild-sprite-icon": rebuildSpriteIconComponent,
+    "build-chip-input": buildChipInputComponent,
+    "update-chip-input": updateChipInputComponent,
+    "rebuild-chip-input": rebuildChipInputComponent,
     "build-description-list": buildDescriptionListComponent,
     "update-description-list": updateDescriptionListComponent,
     "rebuild-description-list": rebuildDescriptionListComponent,
+    "build-code-block": buildCodeBlockComponent,
+    "update-code-block": updateCodeBlockComponent,
+    "rebuild-code-block": rebuildCodeBlockComponent,
     "build-list-item": buildListItemComponent,
     "update-list-item": updateListItemComponent,
     "rebuild-list-item": rebuildListItemComponent,
@@ -20465,6 +20667,25 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "SpriteIcon") {
+    return {
+      Size: SPRITE_ICON_SIZES,
+    };
+  }
+
+  if (canonicalName === "ChipInput") {
+    return {
+      State: CHIP_INPUT_STATES,
+      Content: CHIP_INPUT_CONTENT,
+    };
+  }
+
+  if (canonicalName === "CodeBlock") {
+    return {
+      Overflow: CODE_BLOCK_OVERFLOWS,
+    };
+  }
+
   if (canonicalName === "ImageCropper") {
     return {
       Ratio: IMAGE_CROPPER_RATIOS,
@@ -20561,6 +20782,7 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "Avatar") {
     return {
       Content: AVATAR_CONTENT,
+      Size: AVATAR_SIZES,
     };
   }
 
@@ -27096,6 +27318,12 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   }
   if (setName === "Tabs") return "tabsTrigger";
   if (setName === "Tooltip") return "tooltipContent";
+  // Sm's initials (decision 221) are Field / Meta's 12/16; the hidden Image
+  // URL and Alt Text keep the set's style.
+  if (setName === "Avatar" && component && textName === "Fallback") {
+    const avatarProps = parseAvatarVariantName(component.name);
+    if (avatarProps && avatarProps.second === "Sm") return "fieldMeta";
+  }
   if (setName === "Avatar") return "avatarFallback";
   if (setName === "Alert") {
     return textName === "Title" ? "alertTitle" : "alertDescription";
@@ -28542,6 +28770,26 @@ async function applyAvatarFallbackTypography(
     variableByName,
     stats,
   );
+}
+
+/**
+ * An Sm Avatar's initials (decision 221): React's text-xs, 12/16, Field /
+ * Meta's style, which draws them; the Default's 14/20 bindings go.
+ */
+async function applyAvatarSmFallbackTypography(text, fonts, stats) {
+  for (const field of ["fontSize", "lineHeight"]) {
+    try {
+      text.setBoundVariable(field, null);
+    } catch (error) {
+      stats.warnings.push(
+        `Could not unbind the Sm Avatar's ${field} (${messageFor(error)}).`,
+      );
+    }
+  }
+  text.fontName = fonts.medium;
+  text.fontSize = 12;
+  text.lineHeight = { unit: "PIXELS", value: 16 };
+  await applyTextStyleToNodeAsync(text, "fieldMeta", stats);
 }
 
 async function applyAlertTitleTypography(text, fonts, variableByName, stats) {
@@ -32922,14 +33170,9 @@ function bindProgressGeometryVariables(
   }
 }
 
-function bindAvatarGeometryVariables(component, variableByName, stats) {
-  bindSizeVariables(
-    component,
-    "Avatar/size/default",
-    "Avatar/size/default",
-    variableByName,
-    stats,
-  );
+function bindAvatarGeometryVariables(component, variableByName, stats, sm) {
+  const size = sm ? "Avatar/size/sm" : "Avatar/size/default";
+  bindSizeVariables(component, size, size, variableByName, stats);
   bindFloatVariable(
     component,
     "cornerRadius",
@@ -36059,7 +36302,8 @@ async function buildTableComponent() {
       "Kozmos Table component set generated from React Table API.",
       "Density maps to default and compact row spacing examples.",
       "Header and cell text properties map to TableHead and TableCell children.",
-      "Sorting, selection, pagination, and empty states remain separate composition concerns.",
+      "Selectable maps to Table selectable with TableSelectAll and TableRowSelect (GAP-171); Sortable to TableHead onSort and sortDirection; Numeric Column to TableHead and TableCell numeric (GAP-037).",
+      "Pagination and empty states remain separate composition concerns.",
     ],
   });
 }
@@ -36080,7 +36324,8 @@ async function updateTableComponent() {
       "Kozmos Table component set generated from React Table API.",
       "Density maps to default and compact row spacing examples.",
       "Header and cell text properties map to TableHead and TableCell children.",
-      "Sorting, selection, pagination, and empty states remain separate composition concerns.",
+      "Selectable maps to Table selectable with TableSelectAll and TableRowSelect (GAP-171); Sortable to TableHead onSort and sortDirection; Numeric Column to TableHead and TableCell numeric (GAP-037).",
+      "Pagination and empty states remain separate composition concerns.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -48031,6 +48276,7 @@ function configureComboboxProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionSlotProperties(componentSet, stats);
   configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(componentSet, "Choose one option.", stats);
   configureHelperVisibilityProperty(componentSet, stats);
@@ -48084,6 +48330,7 @@ function configureMultiSelectProperties(componentSet, stats) {
     "Bike Parking",
     stats,
   );
+  configureOptionSlotProperties(componentSet, stats);
   configureOptionGroupProperties(componentSet, stats);
   configureHelperTextProperty(
     componentSet,
@@ -48138,6 +48385,7 @@ function configureListboxProperties(componentSet, stats) {
     "Secure cycle storage",
     stats,
   );
+  configureOptionSlotProperties(componentSet, stats);
   configureOptionGroupProperties(componentSet, stats);
   configureFocusVisibleProperty(componentSet, stats);
 }
@@ -48901,9 +49149,12 @@ async function buildAvatarComponent() {
     componentSetName: "Avatar",
     axisName: "Content",
     values: AVATAR_CONTENT,
+    axis2Name: "Size",
+    axis2Values: AVATAR_SIZES,
     x: 80,
     y: 3980,
     xStep: 120,
+    yStep: AVATAR_SIZE_ROW_STEP,
     createVariant: createAvatarVariant,
     configureProperties: configureAvatarProperties,
     description: [
@@ -48912,6 +49163,7 @@ async function buildAvatarComponent() {
       "Image URL maps to AvatarImage.src.",
       "Alt Text maps to AvatarImage.alt.",
       "Fallback maps to AvatarFallback children in Code Connect.",
+      "Size maps to Avatar.size (decision 221): Default 40, Sm 24 with its initials at 12/16.",
     ],
   });
 }
@@ -48922,7 +49174,10 @@ async function updateAvatarComponent() {
     componentSetName: "Avatar",
     axisName: "Content",
     values: AVATAR_CONTENT,
+    axis2Name: "Size",
+    axis2Values: AVATAR_SIZES,
     xStep: 120,
+    yStep: AVATAR_SIZE_ROW_STEP,
     createVariant: createAvatarVariant,
     updateVariant: updateAvatarVariant,
     parseVariantName: parseAvatarVariantName,
@@ -48933,6 +49188,7 @@ async function updateAvatarComponent() {
       "Image URL maps to AvatarImage.src.",
       "Alt Text maps to AvatarImage.alt.",
       "Fallback maps to AvatarFallback children in Code Connect.",
+      "Size maps to Avatar.size (decision 221): Default 40, Sm 24 with its initials at 12/16.",
       "Updated in place to preserve the Code Connect node ID.",
     ],
   });
@@ -58148,13 +58404,22 @@ async function createMapEditToolbarItem(
 ) {
   const g = MAP_EDIT_TOOLBAR_GEOMETRY;
   const on = item.state === "On";
-  // Disabled, a tool or an action is the disabled pair, undimmed (decision
-  // 197; map-edit-toolbar.css): Disabled/fill under Disabled/foreground.
   const off = item.state === "Disabled";
-  const ink = on
-    ? THEME_FILL_FOREGROUND
+  // Decision 226 (map-edit-toolbar.css): Pointr Cloud's live toolbar. No
+  // item has a fill at rest. Enabled, the label is the page's ink
+  // (foreground 0) over a grey icon (foreground 400); chosen, label and icon
+  // are the theme's ink on the surface (Emotion/themed/text); disabled,
+  // label and icon are foreground 500, undimmed, with no box, lighter than
+  // enabled and still 3:1: the toolbar is decision 197's exception to the
+  // disabled fill.
+  const labelInk = on
+    ? { name: "Emotion/themed/text", fallback: "#1051E8" }
     : off
-      ? DISABLED_FOREGROUND
+      ? { name: "Colors/foreground/500", fallback: "#747B8B" }
+      : { name: "Colors/foreground/0", fallback: "#000000" };
+  const ink =
+    on || off
+      ? labelInk
       : { name: "Colors/foreground/400", fallback: "#5D626F" };
   // React's item is min-inline-size 56, inline-size auto: it hugs its
   // label, 4 each side, and stops at 56, so "Straighten" is wider than 56.
@@ -58175,10 +58440,7 @@ async function createMapEditToolbarItem(
   frame.cornerRadius = g.itemRadius;
   frame.clipsContent = false;
   frame.strokes = [];
-  const ground = on ? THEME_FILL : off ? DISABLED_FILL : null;
-  frame.fills = ground
-    ? [paintFromVariable(ground.name, ground.fallback, variableByName, stats)]
-    : [];
+  frame.fills = [];
   frame.opacity = 1;
   frame.setSharedPluginData(RUN_NAMESPACE, "kind", "map-edit-toolbar-item");
   frame.setSharedPluginData(RUN_NAMESPACE, "itemKind", item.kind);
@@ -58231,8 +58493,8 @@ async function createMapEditToolbarItem(
     bold: true,
     fontSize: g.labelSize,
     lineHeight: g.labelLineHeight,
-    colorToken: ink.name,
-    colorFallback: ink.fallback,
+    colorToken: labelInk.name,
+    colorFallback: labelInk.fallback,
     variableByName,
     stats,
     width: g.itemWidth - 2 * g.itemPaddingX,
@@ -60612,6 +60874,15 @@ function configureToggleButtonProperties(componentSet, stats) {
   configureFocusVisibleProperty(componentSet, stats);
 }
 
+// Decision 209 (17 Nov 2026), GAP-168: SplitButton's menu takes Menu's
+// items. Menu Open, a boolean off by default, shows the open menu under the
+// button, at its end, as React's MenuContent align="end" with its 4 offset:
+// an item with an icon, a separator and a disabled item at half, as React's
+// SplitButton `menuItems` draw them.
+const SPLIT_BUTTON_MENU_PROPERTY_NAME = "Menu Open";
+const SPLIT_BUTTON_MENU = "Split Menu";
+const SPLIT_BUTTON_MENU_WIDTH = 224;
+
 function configureSplitButtonProperties(componentSet, stats) {
   configureNamedTextProperty(
     componentSet,
@@ -60621,6 +60892,80 @@ function configureSplitButtonProperties(componentSet, stats) {
     stats,
   );
   configureFocusVisibleProperty(componentSet, stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    SPLIT_BUTTON_MENU,
+    SPLIT_BUTTON_MENU_PROPERTY_NAME,
+    false,
+    stats,
+  );
+}
+
+/**
+ * The open menu (GAP-168): Menu's panel, its items Menu's rows. Redrawn on
+ * each Update; nothing pins it. Drawn on the enabled variants only.
+ */
+async function syncSplitButtonMenu(
+  component,
+  { metrics, variableByName, fonts, stats },
+) {
+  const old = directChildNamed(component, SPLIT_BUTTON_MENU);
+  if (old) old.remove();
+
+  const menu = figma.createFrame();
+  menu.name = SPLIT_BUTTON_MENU;
+  menu.layoutMode = "VERTICAL";
+  menu.primaryAxisSizingMode = "AUTO";
+  menu.counterAxisSizingMode = "FIXED";
+  menu.primaryAxisAlignItems = "MIN";
+  menu.counterAxisAlignItems = "MIN";
+  menu.itemSpacing = 0;
+  menu.paddingLeft = POPOVER_ROW_INSET;
+  menu.paddingRight = POPOVER_ROW_INSET;
+  menu.paddingTop = POPOVER_ROW_INSET;
+  menu.paddingBottom = POPOVER_ROW_INSET;
+  menu.resizeWithoutConstraints(SPLIT_BUTTON_MENU_WIDTH, 100);
+  menu.cornerRadius = KOZMOS_RADIUS.control;
+  menu.clipsContent = false;
+  menu.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  menu.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  menu.strokeWeight = 1;
+  menu.effects = [elevationEffect("overlay")];
+  menu.setSharedPluginData(RUN_NAMESPACE, "kind", "split-button-menu");
+
+  await syncMenuItemRow({
+    component: menu,
+    name: "Menu Item 1",
+    textName: "Item 1 Text",
+    text: "Publish to staging",
+    icon: "download-01",
+    variableByName,
+    fonts,
+    stats,
+  });
+  syncMenuSeparator({ component: menu, variableByName, stats });
+  const production = await syncMenuItemRow({
+    component: menu,
+    name: "Menu Item 2",
+    textName: "Item 2 Text",
+    text: "Publish to production",
+    variableByName,
+    fonts,
+    stats,
+  });
+  // React's data-[disabled]:opacity-50.
+  production.opacity = 0.5;
+
+  component.appendChild(menu);
+  menu.layoutPositioning = "ABSOLUTE";
+  menu.x = metrics.width - SPLIT_BUTTON_MENU_WIDTH;
+  menu.y = metrics.height + 4;
+  menu.visible = false;
+  return menu;
 }
 
 async function configureFloatingActionButtonProperties(
@@ -60756,7 +61101,44 @@ function configureListProperties(componentSet, stats) {
   }
 }
 
+// Decision 209 (17 Nov 2026), GAP-171 and GAP-037: Table's row selection,
+// sortable headers and numeric alignment, each a boolean off by default, so
+// a table drawn before them is unchanged. Selectable shows each row's
+// Select Cell, React's TableRowSelect and the header's TableSelectAll, with
+// the header's box mixed and the last row selected on the hover fill
+// (Selected Fill; the last row draws no divider, as decision 207 asks of a
+// selected row). Sortable shows Header 1's ascending arrow, React's
+// TableHead onSort with sortDirection="ascending". Numeric Column shows a
+// fourth column aligned to the end, React's TableHead and TableCell
+// `numeric`.
+const TABLE_SELECTABLE_PROPERTY_NAME = "Selectable";
+const TABLE_SORTABLE_PROPERTY_NAME = "Sortable";
+const TABLE_NUMERIC_PROPERTY_NAME = "Numeric Column";
+const TABLE_SELECT_CELL = "Select Cell";
+const TABLE_SELECTED_FILL = "Selected Fill";
+const TABLE_SORT_ICON = "Header 1 Sort Icon";
+const TABLE_NUMERIC_CELL = "Numeric Cell";
+const TABLE_NUMERIC_VALUES = ["POIs", "1,204", "86", "3"];
+
+function configureTableBooleanProperties(componentSet, stats) {
+  for (const [nodeName, propertyName] of [
+    [TABLE_SELECT_CELL, TABLE_SELECTABLE_PROPERTY_NAME],
+    [TABLE_SELECTED_FILL, TABLE_SELECTABLE_PROPERTY_NAME],
+    [TABLE_SORT_ICON, TABLE_SORTABLE_PROPERTY_NAME],
+    [TABLE_NUMERIC_CELL, TABLE_NUMERIC_PROPERTY_NAME],
+  ]) {
+    configureNamedBooleanProperty(
+      componentSet,
+      nodeName,
+      propertyName,
+      false,
+      stats,
+    );
+  }
+}
+
 function configureTableProperties(componentSet, stats) {
+  configureTableBooleanProperties(componentSet, stats);
   const headers = ["Name", "Status", "Updated"];
   for (let column = 1; column <= 3; column += 1) {
     const label = `Header ${column} Text`;
@@ -62527,6 +62909,20 @@ async function updateSplitButtonVariant(
     variableByName,
     stats,
   });
+
+  // A disabled SplitButton's menu never opens: its Disabled variants draw
+  // none.
+  if (state === "Disabled") {
+    const old = directChildNamed(component, SPLIT_BUTTON_MENU);
+    if (old) old.remove();
+  } else {
+    await syncSplitButtonMenu(component, {
+      metrics,
+      variableByName,
+      fonts,
+      stats,
+    });
+  }
 }
 
 async function createFloatingActionButtonVariant({
@@ -68135,6 +68531,858 @@ async function rebuildDescriptionListComponent() {
   });
 }
 
+// --- ChipInput ------------------------------------------------------------------
+
+// GAP-222, decision 216: React's ChipInput, a field that takes free text and
+// holds each entry as a removable chip inside it, as MultiSelect's field
+// draws it with no clear and no open: the label (the field label's type)
+// over a field 320 wide (ChipInput/width/default), at least 44 tall
+// (ChipInput/field/min-height, the input's height), padded 8 and 4
+// (ChipInput/field/padding/x and /y), on the control radius with a 1 edge,
+// in the input family's colours for its State and Status (inputConfig), and
+// the helper or the error under it, 6 apart (ChipInput/gap). Filled, two
+// entries are live Chip instances, Small, Selected and Removable, as React's
+// small selected chips with their remove; 6 apart (ChipInput/field/gap, the
+// chip group's gap-1.5), and the typed text follows them with no
+// placeholder. Empty, only the placeholder. Disabled, the chips are
+// Disabled; Readonly, they are not Removable, as MultiSelect's. Focus draws
+// the field's focus ring.
+const CHIP_INPUT_GEOMETRY = {
+  width: 320,
+  height: 44,
+  gap: 6,
+  fieldGap: 6,
+  paddingX: 8,
+  paddingY: 4,
+};
+const CHIP_INPUT_ENTRIES = ["coffee", "wifi"];
+
+async function createChipInputVariant(args) {
+  const component = figma.createComponent();
+  await updateChipInputVariant(component, args);
+  return component;
+}
+
+function parseChipInputVariantName(name) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (
+    CHIP_INPUT_STATES.indexOf(values.State) === -1 ||
+    CHIP_INPUT_CONTENT.indexOf(values.Content) === -1
+  ) {
+    return null;
+  }
+  return { value: values.State, second: values.Content };
+}
+
+/** A chip's words, kept across an Update, which repaints the field. */
+function chipInputEntryText(component, index) {
+  const field = directChildNamed(component, "ChipInput Field");
+  const chip = field
+    ? directChildNamed(field, `ChipInput Chip ${index}`)
+    : null;
+  if (!chip) return null;
+  return (
+    instanceTextPropertyValue(chip, "Label Text") ||
+    firstDescendantTextCharactersByName(chip, "Label Text")
+  );
+}
+
+async function createChipInputChip({ index, text, disabled, readonly, stats }) {
+  const nested = await createNestedComponentInstance({
+    componentSetName: "Chip",
+    variantProperties: {
+      Variant: "Neutral",
+      Size: "Small",
+      State: disabled ? "Disabled" : "Selected",
+      Removable: readonly ? "False" : "True",
+    },
+    name: `ChipInput Chip ${index + 1}`,
+    role: "chip-input-chip",
+    stats,
+  });
+  if (!nested || !nested.instance) {
+    stats.warnings.push(
+      "ChipInput needs the Chip set for its entries: Build Chip first, then Update ChipInput.",
+    );
+    return null;
+  }
+  const chip = nested.instance;
+  setInstanceTextProperty(chip, nested.componentSet, "Label Text", text, stats);
+  try {
+    // Exposed, so each entry's words are edited from the properties panel:
+    // a set's property cannot drive text inside a nested instance.
+    chip.isExposedInstance = true;
+  } catch (_error) {
+    // Older Figma runtimes may not support exposing nested instances.
+  }
+  setHugChildSizing(chip);
+  return chip;
+}
+
+async function updateChipInputVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const content = second || "Filled";
+  const status = state === "Error" ? "Error" : "Default";
+  const config = inputConfig(state === "Error" ? "Default" : state, status);
+  const geometry = CHIP_INPUT_GEOMETRY;
+  const disabled = state === "Disabled";
+  const readonly = state === "Readonly";
+  const filled = content === "Filled";
+  const kept = {
+    label: firstDescendantTextCharactersByName(component, "Label Text"),
+    placeholder: firstDescendantTextCharactersByName(
+      component,
+      "Placeholder Text",
+    ),
+    helper: firstDescendantTextCharactersByName(component, "Helper Text"),
+    error: firstDescendantTextCharactersByName(component, "Error Text"),
+    entries: CHIP_INPUT_ENTRIES.map(
+      (entry, index) => chipInputEntryText(component, index + 1) || entry,
+    ),
+  };
+
+  productSdkVariantRoot(
+    component,
+    "ChipInput",
+    `State=${state}, Content=${content}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: geometry.gap,
+      width: geometry.width,
+      height: 96,
+    },
+  );
+  component.fills = [];
+  component.strokes = [];
+  bindFloatVariable(
+    component,
+    "width",
+    "ChipInput/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ChipInput/gap",
+    variableByName,
+    stats,
+  );
+
+  const label = figma.createText();
+  label.name = "Label Text";
+  await applyFieldLabelTypography(
+    label,
+    fonts,
+    "ChipInput",
+    variableByName,
+    stats,
+  );
+  label.characters = kept.label || "Keywords";
+  label.fills = [
+    paintFromVariable(
+      config.label,
+      config.labelFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.appendChild(label);
+
+  const field = figma.createFrame();
+  field.name = "ChipInput Field";
+  field.layoutMode = "HORIZONTAL";
+  field.primaryAxisSizingMode = "FIXED";
+  field.counterAxisSizingMode = "FIXED";
+  field.primaryAxisAlignItems = "MIN";
+  field.counterAxisAlignItems = "CENTER";
+  field.itemSpacing = geometry.fieldGap;
+  field.paddingLeft = geometry.paddingX;
+  field.paddingRight = geometry.paddingX;
+  field.paddingTop = geometry.paddingY;
+  field.paddingBottom = geometry.paddingY;
+  field.resizeWithoutConstraints(geometry.width, geometry.height);
+  field.cornerRadius = KOZMOS_RADIUS.control;
+  field.clipsContent = false;
+  field.setSharedPluginData(RUN_NAMESPACE, "kind", "input-field");
+  field.fills = [
+    paintFromVariable(
+      config.fieldFill,
+      config.fieldFillFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  field.strokes = [
+    paintFromVariable(
+      config.fieldStroke,
+      config.fieldStrokeFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  field.strokeWeight = 1;
+  for (const [property, token] of [
+    ["height", "ChipInput/field/min-height"],
+    ["paddingLeft", "ChipInput/field/padding/x"],
+    ["paddingRight", "ChipInput/field/padding/x"],
+    ["paddingTop", "ChipInput/field/padding/y"],
+    ["paddingBottom", "ChipInput/field/padding/y"],
+    ["itemSpacing", "ChipInput/field/gap"],
+    ["cornerRadius", "ChipInput/field/radius"],
+    ["strokeWeight", "ChipInput/field/stroke/width"],
+  ]) {
+    bindFloatVariable(field, property, token, variableByName, stats);
+  }
+  component.appendChild(field);
+  setLayoutSizingHorizontal(field, "FILL");
+
+  if (filled) {
+    for (let index = 0; index < kept.entries.length; index += 1) {
+      const chip = await createChipInputChip({
+        index,
+        text: kept.entries[index],
+        disabled,
+        readonly,
+        stats,
+      });
+      if (chip) field.appendChild(chip);
+    }
+  } else {
+    const placeholder = figma.createText();
+    placeholder.name = "Placeholder Text";
+    await applyFieldTextTypography(
+      placeholder,
+      fonts,
+      "ChipInput",
+      variableByName,
+      stats,
+    );
+    placeholder.characters = kept.placeholder || "Add a keyword";
+    placeholder.fills = [
+      paintFromVariable(
+        config.placeholder,
+        config.placeholderFallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    field.appendChild(placeholder);
+    setHorizontalFillTextSizing(placeholder);
+    setTextAutoResize(placeholder, "TRUNCATE");
+  }
+
+  syncFocusRing(field, {
+    enabled: state === "Focus",
+    width: geometry.width,
+    height: geometry.height,
+    radius: KOZMOS_RADIUS.control,
+    variableName: focusRingVariableForInputStatus(status),
+    fallback: focusRingFallbackForInputStatus(status),
+    variableByName,
+    stats,
+  });
+
+  // The error has its own node and property: one property paints one default
+  // over every node it binds.
+  const isError = status === "Error";
+  const helper = figma.createText();
+  helper.name = isError ? "Error Text" : "Helper Text";
+  await applyFieldTextTypography(
+    helper,
+    fonts,
+    "ChipInput",
+    variableByName,
+    stats,
+  );
+  helper.characters = isError
+    ? kept.error || "Add at least one keyword"
+    : kept.helper || "Press Enter or type a comma to add one.";
+  helper.fills = [
+    paintFromVariable(
+      config.helper,
+      config.helperFallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.appendChild(helper);
+  setVerticalStackChildSizing(helper);
+  setTextAutoResize(helper, "HEIGHT");
+  normalizeInputFamilyChildSizing(component);
+}
+
+function configureChipInputProperties(componentSet, stats) {
+  configureLabelTextProperty(componentSet, "Keywords", stats);
+  configurePlaceholderTextProperty(componentSet, "Add a keyword", stats);
+  configureHelperTextProperty(
+    componentSet,
+    "Press Enter or type a comma to add one.",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Error Text",
+    "Error Text",
+    "Add at least one keyword",
+    stats,
+  );
+}
+
+const CHIP_INPUT_DESCRIPTION = [
+  "Kozmos ChipInput component set generated from React ChipInput API (GAP-222, decision 216).",
+  "A field that takes free text and holds each entry as a removable Chip inside it. MultiSelect picks from options; ChipInput takes what is typed.",
+  "State maps to disabled and readOnly; Focus draws the focus ring; Error is error, its Error Text the message. Content: Filled shows two entries as live Chip instances (Small, Selected, Removable), each exposed so its words are edited on the chip; Empty shows the placeholder.",
+  "Label Text maps to ChipInput.label, Placeholder Text to ChipInput.placeholder, Helper Text to ChipInput.helperText.",
+];
+
+async function buildChipInputComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    axisName: "State",
+    values: CHIP_INPUT_STATES,
+    axis2Name: "Content",
+    axis2Values: CHIP_INPUT_CONTENT,
+    x: 80,
+    y: 21600,
+    xStep: 380,
+    yStep: 160,
+    createVariant: createChipInputVariant,
+    configureProperties: configureChipInputProperties,
+    autoReorganize: true,
+    description: CHIP_INPUT_DESCRIPTION,
+  });
+}
+
+async function updateChipInputComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    axisName: "State",
+    values: CHIP_INPUT_STATES,
+    axis2Name: "Content",
+    axis2Values: CHIP_INPUT_CONTENT,
+    xStep: 380,
+    yStep: 160,
+    createVariant: createChipInputVariant,
+    updateVariant: updateChipInputVariant,
+    parseVariantName: parseChipInputVariantName,
+    configureProperties: configureChipInputProperties,
+    autoReorganize: true,
+    description: CHIP_INPUT_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildChipInputComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ChipInput",
+    componentSetName: "ChipInput",
+    build: buildChipInputComponent,
+  });
+}
+
+// --- SpriteIcon -----------------------------------------------------------------
+
+// GAP-150, decisions 86 and 219: React's SpriteIcon, one cell of a published
+// MapLibre sprite atlas drawn as published, the full-colour bubble, glyph and
+// marker dot, never tinted, scaled into a 16, 20 or 24 box with its aspect
+// ratio kept. The importer draws the real cell: at Build and Update it reads
+// the atlas's @2x index and image from the set's Sprite and Cell Name
+// properties (by default Pointr's light atlas at the current maps release,
+// 10.17.0, and `desk`), and fills a Cell rectangle with the
+// atlas image cropped to the cell. Where the atlas cannot be read the box is
+// left empty and the run says why: nothing stands in for the cell. A
+// designer who changes the Cell Name runs Update to draw it; an instance's
+// own override changes the words, not the picture.
+// The current maps release, pinned: `latest` is a mutable alias, not a
+// release. Bump it with the maps release. Products pass their own pinned URL;
+// this is only the library's sample cell.
+const SPRITE_ICON_DEFAULT_ATLAS =
+  "https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite";
+const SPRITE_ICON_DEFAULT_CELL = "desk";
+// How the importer reads an atlas: the plugin's fetch for the index and
+// figma.createImageAsync for the image. An object, so the painters check can
+// stand in for the network.
+const SPRITE_ICON_IO = {
+  json: (url) =>
+    typeof fetch === "function"
+      ? fetch(url).then((response) =>
+          response.ok
+            ? response.json()
+            : Promise.reject(new Error(`${response.status} ${url}`)),
+        )
+      : Promise.reject(
+          new Error("fetch is not available in this plugin runtime"),
+        ),
+  image: (url) =>
+    figma && typeof figma.createImageAsync === "function"
+      ? figma.createImageAsync(url)
+      : Promise.reject(new Error("figma.createImageAsync is not available")),
+};
+const spriteIconAtlases = new Map();
+
+/** The @2x atlas at `base`, read once per run: its cells, image hash and size. */
+function loadSpriteIconAtlas(base) {
+  if (!spriteIconAtlases.has(base)) {
+    spriteIconAtlases.set(
+      base,
+      Promise.all([
+        SPRITE_ICON_IO.json(`${base}@2x.json`),
+        SPRITE_ICON_IO.image(`${base}@2x.png`).then(async (image) => ({
+          hash: image.hash,
+          size: await image.getSizeAsync(),
+        })),
+      ]).then(([cells, image]) => ({ cells, image })),
+    );
+  }
+  return spriteIconAtlases.get(base);
+}
+
+/** The cell's rectangle in a `side` box, scaled to fit with its aspect ratio kept. */
+function spriteIconFittedSize(cell, side) {
+  const longest = Math.max(cell.width, cell.height);
+  return {
+    width: (side * cell.width) / longest,
+    height: (side * cell.height) / longest,
+  };
+}
+
+/** An image fill showing just the cell: the atlas cropped to it. */
+function spriteIconCellPaint(atlas, cell) {
+  const { width, height } = atlas.image.size;
+  return {
+    type: "IMAGE",
+    scaleMode: "CROP",
+    imageHash: atlas.image.hash,
+    imageTransform: [
+      [cell.width / width, 0, cell.x / width],
+      [0, cell.height / height, cell.y / height],
+    ],
+  };
+}
+
+/** The set's Sprite and Cell Name, as its text properties hold them. */
+function spriteIconSourceOf(component) {
+  const set = component && component.parent;
+  const defs =
+    set && set.type === "COMPONENT_SET" ? set.componentPropertyDefinitions : {};
+  const value = (name) => {
+    const key = Object.keys(defs || {}).find(
+      (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+    );
+    return key ? String(defs[key].defaultValue || "").trim() : "";
+  };
+  return {
+    sprite:
+      value("Sprite") ||
+      firstDescendantTextCharactersByName(component, "Sprite") ||
+      SPRITE_ICON_DEFAULT_ATLAS,
+    cell:
+      value("Cell Name") ||
+      firstDescendantTextCharactersByName(component, "Cell Name") ||
+      SPRITE_ICON_DEFAULT_CELL,
+  };
+}
+
+async function createSpriteIconVariant(args) {
+  const component = figma.createComponent();
+  await updateSpriteIconVariant(component, args);
+  return component;
+}
+
+function parseSpriteIconVariantName(name) {
+  return productSdkVariantValues(name, "Size", SPRITE_ICON_SIZES);
+}
+
+async function updateSpriteIconVariant(component, { value, fonts, stats }) {
+  const side = Number(value);
+  const source = spriteIconSourceOf(component);
+  productSdkVariantRoot(component, "SpriteIcon", "Size=" + value, {
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: side,
+    height: side,
+  });
+  component.fills = [];
+  component.strokes = [];
+
+  // The source, kept as hidden words its properties bind, so Update and
+  // Code Connect read the same cell the picture shows.
+  for (const [name, characters] of [
+    ["Sprite", source.sprite],
+    ["Cell Name", source.cell],
+  ]) {
+    const text = figma.createText();
+    text.name = name;
+    text.fontName = fonts.regular;
+    text.characters = characters;
+    text.visible = false;
+    component.appendChild(text);
+    text.layoutPositioning = "ABSOLUTE";
+  }
+
+  let atlas = null;
+  try {
+    atlas = await loadSpriteIconAtlas(source.sprite);
+  } catch (error) {
+    stats.warnings.push(
+      `SpriteIcon: the atlas ${source.sprite} could not be read (${messageFor(error)}); the ${value} box is left empty, with no stand-in.`,
+    );
+    return;
+  }
+  const cell = atlas.cells && atlas.cells[source.cell];
+  if (!cell) {
+    stats.warnings.push(
+      `SpriteIcon: ${source.sprite} has no cell named "${source.cell}"; the ${value} box is left empty.`,
+    );
+    return;
+  }
+  const fitted = spriteIconFittedSize(cell, side);
+  const rect = figma.createRectangle();
+  rect.name = "Cell";
+  rect.resize(fitted.width, fitted.height);
+  rect.fills = [spriteIconCellPaint(atlas, cell)];
+  rect.strokes = [];
+  rect.setSharedPluginData(RUN_NAMESPACE, "kind", "sprite-icon-cell");
+  component.appendChild(rect);
+}
+
+function configureSpriteIconProperties(componentSet, stats) {
+  const first = componentSet.children && componentSet.children[0];
+  const source = spriteIconSourceOf(first);
+  configureNamedTextProperty(
+    componentSet,
+    "Sprite",
+    "Sprite",
+    source.sprite,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Cell Name",
+    "Cell Name",
+    source.cell,
+    stats,
+  );
+}
+
+const SPRITE_ICON_DESCRIPTION = [
+  "Kozmos SpriteIcon component set generated from React SpriteIcon API (GAP-150, decisions 86 and 219).",
+  "One cell of a published MapLibre sprite atlas, drawn as published (bubble, glyph and marker dot), never tinted, scaled into the box with its aspect ratio kept.",
+  "Size maps to size: 16, 20 or 24. Sprite maps to sprite, the atlas's base URL; Cell Name maps to name. Update redraws the cell from the set's Sprite and Cell Name; an instance's override changes the words only.",
+  "Decorative unless label names it.",
+];
+
+async function buildSpriteIconComponent() {
+  return buildSingleAxisComponent({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    axisName: "Size",
+    values: SPRITE_ICON_SIZES,
+    x: 80,
+    y: 22000,
+    xStep: 80,
+    createVariant: createSpriteIconVariant,
+    configureProperties: configureSpriteIconProperties,
+    autoReorganize: true,
+    description: SPRITE_ICON_DESCRIPTION,
+  });
+}
+
+async function updateSpriteIconComponent() {
+  spriteIconAtlases.clear();
+  return updateSingleAxisComponent({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    axisName: "Size",
+    values: SPRITE_ICON_SIZES,
+    xStep: 80,
+    createVariant: createSpriteIconVariant,
+    updateVariant: updateSpriteIconVariant,
+    parseVariantName: parseSpriteIconVariantName,
+    configureProperties: configureSpriteIconProperties,
+    autoReorganize: true,
+    description: SPRITE_ICON_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildSpriteIconComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "SpriteIcon",
+    componentSetName: "SpriteIcon",
+    build: buildSpriteIconComponent,
+  });
+}
+
+// --- CodeBlock --------------------------------------------------------------------
+
+// GAP-216, decision 225: React's CodeBlock, as packages/styles' owned CSS
+// draws it: the code 14/20 in Colors/foreground/0, in the mono family, on
+// the muted surface (Colors/background/100), on the control radius, 12
+// inside (CodeBlock/padding), 320 wide and as tall as its code. The mono
+// family is the Primitives one, Fira Mono (Typography/font/family/mono): the
+// web's stack names the platform's own monospaced faces, which a Figma file
+// cannot load, so the code is drawn in Fira Mono, or in the file's UI font,
+// with a warning, where Fira Mono cannot be loaded. Wrap breaks the long line
+// onto the lines under it; Scroll keeps it whole, clipped at the block's end
+// as the scroller clips it. The Copy, shown by Copy, is a 44 square 4 in
+// from the block's top end (CodeBlock/copy/inset), copy-01 at 16 in
+// Colors/foreground/400, and a 36 Copy Gutter beside the code, shown with
+// it, keeps the code clear of it: the code ends 48 from the block's end, as
+// React's padding-inline-end, and 12 without the copy. No colouring.
+const CODE_BLOCK_GEOMETRY = {
+  width: 320,
+  padding: 12,
+  line: 20,
+  copy: 44,
+  copyInset: 4,
+};
+const CODE_BLOCK_SAMPLE = [
+  "{",
+  '  "mergedUnit": {',
+  '    "fid": "f-1209",',
+  '    "sources": ["f-1042", "f-1043"],',
+  '    "mapStyleUrl": "https://styles.example.com/persona/staff.json"',
+  "  }",
+  "}",
+].join("\n");
+const CODE_BLOCK_MONO_FONT = { family: "Fira Mono", style: "Regular" };
+// A mono face's advance, 0.6 of its size: Fira Mono's 600 to the em.
+const CODE_BLOCK_ADVANCE = 0.6;
+
+/**
+ * How tall the block is asked to be: its padding and a 20 line for each of
+ * the code's lines, each long line counted as the lines it breaks onto at
+ * the width it is drawn in when `wrap`. The frame hugs its code after.
+ */
+function codeBlockHeight(code, wrap) {
+  const geometry = CODE_BLOCK_GEOMETRY;
+  const perLine = Math.max(
+    1,
+    Math.floor(
+      (geometry.width - geometry.padding * 2) / (14 * CODE_BLOCK_ADVANCE),
+    ),
+  );
+  let lines = 0;
+  for (const line of code.split("\n")) {
+    lines += wrap ? Math.max(1, Math.ceil(line.length / perLine)) : 1;
+  }
+  return lines * geometry.line + geometry.padding * 2;
+}
+
+async function createCodeBlockVariant(args) {
+  const component = figma.createComponent();
+  await updateCodeBlockVariant(component, args);
+  return component;
+}
+
+function parseCodeBlockVariantName(name) {
+  return productSdkVariantValues(name, "Overflow", CODE_BLOCK_OVERFLOWS);
+}
+
+/** Fira Mono, or the file's UI font with a warning where it cannot load. */
+async function loadCodeBlockFont(fonts, stats) {
+  try {
+    await figma.loadFontAsync(CODE_BLOCK_MONO_FONT);
+    return CODE_BLOCK_MONO_FONT;
+  } catch (error) {
+    pushUniqueWarning(
+      stats,
+      "code-block-mono-font",
+      `CodeBlock: ${CODE_BLOCK_MONO_FONT.family} ${CODE_BLOCK_MONO_FONT.style} could not be loaded (${messageFor(error)}), so the code is drawn in ${fontLabel(fonts.regular)}.`,
+    );
+    return fonts.regular;
+  }
+}
+
+async function updateCodeBlockVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const geometry = CODE_BLOCK_GEOMETRY;
+  const scroll = value === "Scroll";
+  productSdkVariantRoot(component, "CodeBlock", "Overflow=" + value, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    padding: geometry.padding,
+    width: geometry.width,
+    height: codeBlockHeight(CODE_BLOCK_SAMPLE, !scroll),
+    // Scrolling, the long line runs past the block's end and is clipped
+    // there, as the scroller clips it.
+    clip: true,
+  });
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  component.strokes = [];
+  for (const field of [
+    "paddingLeft",
+    "paddingRight",
+    "paddingTop",
+    "paddingBottom",
+  ]) {
+    bindFloatVariable(
+      component,
+      field,
+      "CodeBlock/padding",
+      variableByName,
+      stats,
+    );
+  }
+
+  const code = figma.createText();
+  code.name = "Code";
+  code.fontName = await loadCodeBlockFont(fonts, stats);
+  code.fontSize = 14;
+  code.lineHeight = { unit: "PIXELS", value: geometry.line };
+  code.characters = CODE_BLOCK_SAMPLE;
+  code.fills = [
+    paintFromVariable("Colors/foreground/0", "#000000", variableByName, stats),
+  ];
+  code.textAlignVertical = "TOP";
+  code.setSharedPluginData(RUN_NAMESPACE, "kind", "code-block-code");
+  if (scroll) {
+    code.textAutoResize = "WIDTH_AND_HEIGHT";
+    appendWithSizing(component, code, "HUG", "HUG");
+  } else {
+    code.textAutoResize = "HEIGHT";
+    code.resizeWithoutConstraints(
+      geometry.width - geometry.padding * 2,
+      geometry.line,
+    );
+    appendWithSizing(component, code, "FILL", "HUG");
+  }
+
+  // Shown with the copy: the copy's 44 and its 4, less the 12 the block
+  // keeps at its end already.
+  const gutter = productSdkFrame("Copy Gutter", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    width: geometry.copy + geometry.copyInset - geometry.padding,
+    height: geometry.line,
+  });
+  gutter.setSharedPluginData(RUN_NAMESPACE, "kind", "code-block-copy-gutter");
+  appendWithSizing(component, gutter, "FIXED", "FIXED");
+
+  const copy = productSdkFrame("Copy", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: geometry.copy,
+    height: geometry.copy,
+  });
+  copy.cornerRadius = KOZMOS_RADIUS.control;
+  copy.setSharedPluginData(RUN_NAMESPACE, "kind", "code-block-copy");
+  copy.setSharedPluginData(RUN_NAMESPACE, "aria-label", "Copy");
+  const icon = await createFixedIconInstance(
+    "copy-01",
+    "Colors/foreground/400",
+    "#5D626F",
+    variableByName,
+    stats,
+    16,
+  );
+  if (icon) {
+    icon.name = "Copy Icon";
+    copy.appendChild(icon);
+  }
+  component.appendChild(copy);
+  copy.layoutPositioning = "ABSOLUTE";
+  copy.x = geometry.width - geometry.copy - geometry.copyInset;
+  copy.y = geometry.copyInset;
+  copy.constraints = { horizontal: "MAX", vertical: "MIN" };
+}
+
+function configureCodeBlockProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Code",
+    "Code Text",
+    CODE_BLOCK_SAMPLE,
+    stats,
+  );
+  // One Copy shows the button and the gutter that keeps the code clear of it.
+  configureNamedBooleanProperty(componentSet, "Copy", "Copy", false, stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Copy Gutter",
+    "Copy",
+    false,
+    stats,
+  );
+}
+
+const CODE_BLOCK_DESCRIPTION = [
+  "Kozmos CodeBlock component set generated from React CodeBlock API (GAP-216, decision 225).",
+  "Overflow maps to wrap: Wrap is wrap (the default), Scroll is wrap={false}. Code Text is code; Copy is copyable.",
+  "A region named by label, holding a <pre> and its <code>. No syntax colouring.",
+];
+
+async function buildCodeBlockComponent() {
+  return buildSingleAxisComponent({
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    axisName: "Overflow",
+    values: CODE_BLOCK_OVERFLOWS,
+    x: 80,
+    y: 21400,
+    xStep: 400,
+    createVariant: createCodeBlockVariant,
+    configureProperties: configureCodeBlockProperties,
+    autoReorganize: true,
+    description: CODE_BLOCK_DESCRIPTION,
+  });
+}
+
+async function updateCodeBlockComponent() {
+  return updateSingleAxisComponent({
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    axisName: "Overflow",
+    values: CODE_BLOCK_OVERFLOWS,
+    xStep: 400,
+    createVariant: createCodeBlockVariant,
+    updateVariant: updateCodeBlockVariant,
+    parseVariantName: parseCodeBlockVariantName,
+    configureProperties: configureCodeBlockProperties,
+    autoReorganize: true,
+    description: CODE_BLOCK_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildCodeBlockComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "CodeBlock",
+    componentSetName: "CodeBlock",
+    build: buildCodeBlockComponent,
+  });
+}
+
 // --- ImageCropper ----------------------------------------------------------------
 
 // GAP-273: React's ImageCropper, as packages/styles' owned CSS draws it: a
@@ -70332,12 +71580,22 @@ function layoutInputVariants(componentSet) {
     const statusIndex = INPUT_STATUSES.indexOf(props.status);
     const actionIndex = INPUT_ACTIONS.indexOf(props.action);
     child.x = statusIndex * 360;
+    const mixed = props.state === MIXED_FIELD_STATE;
+    if (actionIndex >= INPUT_ACTIONS_ABOVE_MIXED) {
+      // A band per later Action (Edit, GAP-212) under the Mixed rows, its
+      // states and then its own Mixed row, so nothing drawn before moves.
+      const top =
+        INPUT_ACTIONS_ABOVE_MIXED * INPUT_STATES.length +
+        INPUT_ACTIONS_ABOVE_MIXED +
+        (actionIndex - INPUT_ACTIONS_ABOVE_MIXED) * INPUT_FIELD_STATES.length;
+      child.y = (top + (mixed ? INPUT_STATES.length : stateIndex)) * 126;
+      continue;
+    }
     // The Mixed row (GAP-153) goes under every band, one row per Action, so
     // no variant drawn before it moves.
-    child.y =
-      props.state === MIXED_FIELD_STATE
-        ? (INPUT_ACTIONS.length * INPUT_STATES.length + actionIndex) * 126
-        : (actionIndex * INPUT_STATES.length + stateIndex) * 126;
+    child.y = mixed
+      ? (INPUT_ACTIONS_ABOVE_MIXED * INPUT_STATES.length + actionIndex) * 126
+      : (actionIndex * INPUT_STATES.length + stateIndex) * 126;
   }
 
   // The set holds the Action bands it gained.
@@ -73524,10 +74782,17 @@ async function updateSpinnerVariant(
   });
 }
 
-async function createAvatarVariant({ value, variableByName, fonts, stats }) {
+async function createAvatarVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
   const component = figma.createComponent();
   await updateAvatarVariant(component, {
     value,
+    second,
     variableByName,
     fonts,
     stats,
@@ -73536,18 +74801,37 @@ async function createAvatarVariant({ value, variableByName, fonts, stats }) {
 }
 
 function parseAvatarVariantName(name) {
-  return parseSingleAxisVariantName(name, "Content", AVATAR_CONTENT);
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  // A variant drawn before the Size axis (decision 221) parses as Default,
+  // so Update renames it in place and the node ids Code Connect pins
+  // survive.
+  const size = values.Size || "Default";
+  if (
+    AVATAR_CONTENT.indexOf(values.Content) === -1 ||
+    AVATAR_SIZES.indexOf(size) === -1
+  ) {
+    return null;
+  }
+  return { value: values.Content, second: size };
 }
 
 async function updateAvatarVariant(
   component,
-  { value, variableByName, fonts, stats },
+  { value, second, variableByName, fonts, stats },
 ) {
   const config = avatarConfig(value);
+  const size = AVATAR_SIZES.indexOf(second) === -1 ? "Default" : second;
+  const sm = size === "Sm";
+  const side = sm ? 24 : 40;
 
-  component.name = `Content=${value}`;
+  component.name = `Content=${value}, Size=${size}`;
   component.layoutMode = "NONE";
-  component.resizeWithoutConstraints(40, 40);
+  component.resizeWithoutConstraints(side, side);
   component.cornerRadius = KOZMOS_RADIUS.pill;
   component.clipsContent = true;
   component.fills = [
@@ -73561,11 +74845,12 @@ async function updateAvatarVariant(
   component.strokes = [];
   component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
   component.setSharedPluginData(RUN_NAMESPACE, "component", "Avatar");
-  bindAvatarGeometryVariables(component, variableByName, stats);
+  bindAvatarGeometryVariables(component, variableByName, stats, sm);
 
   await syncAvatarVariantChildren({
     component,
     value,
+    sm,
     config,
     variableByName,
     fonts,
@@ -75157,6 +76442,62 @@ async function syncTableRow({
   );
   setLayoutSizingVertical(row, "FIXED");
 
+  // Decision 209: the last row is the selected one, on the hover fill under
+  // its cells, hidden until Selectable.
+  const lastRow = rowIndex === metrics.rowCount - 1;
+  if (!header && lastRow) {
+    const fill = figma.createRectangle();
+    fill.name = TABLE_SELECTED_FILL;
+    fill.resizeWithoutConstraints(metrics.width, metrics.rowHeight);
+    fill.fills = [
+      paintFromVariable(
+        "Colors/background/100",
+        "#E3E4E8",
+        variableByName,
+        stats,
+      ),
+    ];
+    fill.strokes = [];
+    fill.setSharedPluginData(RUN_NAMESPACE, "kind", "table-selected-fill");
+    row.appendChild(fill);
+    fill.layoutPositioning = "ABSOLUTE";
+    fill.x = 0;
+    fill.y = 0;
+    fill.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+    fill.visible = false;
+  }
+
+  // The row's checkbox, React's TableRowSelect (the header's TableSelectAll,
+  // mixed): the cell's 16 inset and Checkbox's 20 box, no end inset
+  // ([&:has([role=checkbox])]:pr-0), hidden until Selectable.
+  const selectCell = figma.createFrame();
+  selectCell.name = TABLE_SELECT_CELL;
+  selectCell.layoutMode = "HORIZONTAL";
+  selectCell.primaryAxisSizingMode = "FIXED";
+  selectCell.counterAxisSizingMode = "FIXED";
+  selectCell.primaryAxisAlignItems = "MIN";
+  selectCell.counterAxisAlignItems = "CENTER";
+  selectCell.itemSpacing = 0;
+  selectCell.paddingLeft = 16;
+  selectCell.paddingRight = 0;
+  selectCell.paddingTop = 0;
+  selectCell.paddingBottom = 0;
+  selectCell.resizeWithoutConstraints(36, metrics.rowHeight);
+  selectCell.fills = [];
+  selectCell.strokes = [];
+  selectCell.clipsContent = false;
+  selectCell.setSharedPluginData(RUN_NAMESPACE, "kind", "table-select-cell");
+  selectCell.appendChild(
+    await createTableSelectBox(
+      header ? "Mixed" : lastRow ? "Checked" : "Unchecked",
+      variableByName,
+      stats,
+    ),
+  );
+  row.appendChild(selectCell);
+  setFixedChildSizing(selectCell);
+  selectCell.visible = false;
+
   const rowCells = [];
   for (
     let columnIndex = 0;
@@ -75223,14 +76564,146 @@ async function syncTableRow({
     setLayoutSizingVertical(text, "HUG");
     cell.appendChild(text);
     setLayoutSizingHorizontal(text, "FILL");
+    // Decision 209 (GAP-037): Header 1 sorts, ascending; its arrow follows
+    // its words, 4 after them, hidden until Sortable.
+    if (header && columnIndex === 0) {
+      cell.itemSpacing = 4;
+      const sortIcon = await createFixedIconInstance(
+        "arrow-up",
+        "Colors/foreground/0",
+        "#000000",
+        variableByName,
+        stats,
+        16,
+        "Menu/icon/size",
+      );
+      sortIcon.name = TABLE_SORT_ICON;
+      sortIcon.setSharedPluginData(RUN_NAMESPACE, "kind", "table-sort-icon");
+      cell.appendChild(sortIcon);
+      setFixedChildSizing(sortIcon);
+      sortIcon.visible = false;
+    }
     row.appendChild(cell);
     setLayoutSizingHorizontal(cell, "FILL");
     rowCells.push(cell);
   }
 
+  // Decision 209 (GAP-037): a fourth column of numbers, aligned to the end,
+  // hidden until Numeric Column.
+  const numericCell = figma.createFrame();
+  numericCell.name = TABLE_NUMERIC_CELL;
+  numericCell.layoutMode = "HORIZONTAL";
+  numericCell.primaryAxisSizingMode = "FIXED";
+  numericCell.counterAxisSizingMode = "FIXED";
+  numericCell.primaryAxisAlignItems = "MAX";
+  numericCell.counterAxisAlignItems = "CENTER";
+  numericCell.itemSpacing = 0;
+  numericCell.paddingLeft = 16;
+  numericCell.paddingRight = 16;
+  numericCell.paddingTop = metrics.paddingY;
+  numericCell.paddingBottom = metrics.paddingY;
+  numericCell.resizeWithoutConstraints(
+    metrics.width / metrics.columnCount,
+    metrics.rowHeight,
+  );
+  numericCell.fills = [];
+  numericCell.strokes = [];
+  numericCell.clipsContent = false;
+  numericCell.setSharedPluginData(RUN_NAMESPACE, "kind", "table-numeric-cell");
+  const numericText = figma.createText();
+  numericText.name = header
+    ? "Header Numeric Text"
+    : `Row ${rowIndex} Numeric Text`;
+  if (header) {
+    await applyTableHeaderTypography(numericText, fonts, variableByName, stats);
+  } else {
+    await applyTableCellTypography(numericText, fonts, variableByName, stats);
+  }
+  numericText.characters = TABLE_NUMERIC_VALUES[rowIndex] || "0";
+  numericText.textAlignHorizontal = "RIGHT";
+  numericText.textAlignVertical = "CENTER";
+  numericText.fills = [
+    paintFromVariable(
+      header ? "Colors/foreground/400" : "Colors/foreground/0",
+      header ? "#5D626F" : "#000000",
+      variableByName,
+      stats,
+    ),
+  ];
+  numericText.resizeWithoutConstraints(
+    metrics.width / metrics.columnCount - 32,
+    metrics.textHeight,
+  );
+  setLayoutSizingVertical(numericText, "HUG");
+  numericCell.appendChild(numericText);
+  setLayoutSizingHorizontal(numericText, "FILL");
+  row.appendChild(numericCell);
+  setLayoutSizingHorizontal(numericCell, "FILL");
+  setLayoutSizingVertical(numericCell, "FIXED");
+  numericCell.visible = false;
+
   component.appendChild(row);
   setLayoutSizingHorizontal(row, "FILL");
   return { row, cells: rowCells };
+}
+
+/**
+ * Checkbox's box in a selectable table (decision 209, GAP-171): 20 square,
+ * radius marker; Unchecked a 1px Border/Input edge, Checked and Mixed the
+ * theme fill with its own edge and the check or Checkbox's dash in the theme
+ * foreground, as Checkbox draws them (decisions 59 and 188).
+ */
+async function createTableSelectBox(look, variableByName, stats) {
+  const box = figma.createFrame();
+  box.name = `Checkbox ${look}`;
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(20, 20);
+  box.cornerRadius = KOZMOS_RADIUS.marker;
+  box.clipsContent = false;
+  const filled = look !== "Unchecked";
+  box.fills = filled
+    ? [
+        paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  box.strokes = [
+    filled
+      ? paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        )
+      : paintFromVariable(
+          TREE_CHECKBOX.stroke,
+          TREE_CHECKBOX.strokeFallback,
+          variableByName,
+          stats,
+        ),
+  ];
+  box.strokeWeight = 1;
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", "table-select-box");
+  if (filled) {
+    const mark = await createFixedIconInstance(
+      look === "Mixed" ? "minus" : "check",
+      THEME_FILL_FOREGROUND.name,
+      THEME_FILL_FOREGROUND.fallback,
+      variableByName,
+      stats,
+      16,
+      "Menu/icon/size",
+    );
+    mark.name = "Checkbox Mark";
+    box.appendChild(mark);
+    mark.x = 2;
+    mark.y = 2;
+  }
+  return box;
 }
 
 async function syncTabsVariantChildren({
@@ -80286,7 +81759,8 @@ async function syncInputVariantChildren({
  * (decision 139): a 32 disc of the theme fill under the icon, held to the
  * button's centre, and the icon in the fill's foreground, so pressed is a
  * shape and not a colour alone (WCAG 1.4.1). Copy is copy-01; the toggle is
- * star-01, which Action Icon swaps.
+ * star-01, which Action Icon swaps; Edit (GAP-212, decision 224) is
+ * pencil-01, a plain button in the field's muted foreground, as the copy.
  */
 async function syncInputAction(
   field,
@@ -80326,9 +81800,9 @@ async function syncInputAction(
   button.setSharedPluginData(
     RUN_NAMESPACE,
     "aria-label",
-    action === "Copy" ? "Copy" : "Featured",
+    action === "Copy" ? "Copy" : action === "Edit" ? "Edit" : "Featured",
   );
-  if (action !== "Copy") {
+  if (action === "Toggle" || action === "TogglePressed") {
     button.setSharedPluginData(
       RUN_NAMESPACE,
       "aria-pressed",
@@ -80380,7 +81854,9 @@ async function syncInputAction(
   const source =
     action === "Copy"
       ? await findImporterIconSource("copy-01", "Input", stats)
-      : await findImporterIconSource("star-01", "Input", stats);
+      : action === "Edit"
+        ? await findImporterIconSource("pencil-01", "Input", stats)
+        : await findImporterIconSource("star-01", "Input", stats);
   if (source) {
     const icon = createIconSlotInstance(
       source,
@@ -80390,7 +81866,12 @@ async function syncInputAction(
       stats,
       16,
     );
-    icon.name = action === "Copy" ? "Copy Icon" : "Action Icon";
+    icon.name =
+      action === "Copy"
+        ? "Copy Icon"
+        : action === "Edit"
+          ? "Edit Icon"
+          : "Action Icon";
     button.appendChild(icon);
   }
 
@@ -81546,6 +83027,9 @@ async function syncComboboxVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Option 1 Trailing",
+    "Option 2 Trailing",
+    "Option 3 Trailing",
     "Group 1 Text",
     "Group 2 Text",
     "Helper Text",
@@ -81728,6 +83212,8 @@ async function syncComboboxVariantChildren({
       const option = await createComboboxOption({
         index,
         text: optionLabels[index],
+        slots: true,
+        trailingWords: preservedText[`Option ${index + 1} Trailing`],
         // Mixed, no option is the choice (GAP-153).
         selected: index === 0 && !mixed,
         active: index === 1,
@@ -82014,6 +83500,8 @@ async function createComboboxOption({
   index,
   text,
   count,
+  slots,
+  trailingWords,
   tokenPrefix,
   selected,
   active,
@@ -82140,6 +83628,18 @@ async function createComboboxOption({
     setFixedChildSizing(slot);
   }
 
+  // Combobox's options take media and trailing words; Select's do not.
+  if (slots) {
+    await appendOptionSlots(option, {
+      index,
+      label: text,
+      trailingWords,
+      disabled,
+      variableByName,
+      fonts,
+      stats,
+    });
+  }
   return option;
 }
 
@@ -82163,6 +83663,9 @@ async function syncMultiSelectVariantChildren({
     "Option 1 Text",
     "Option 2 Text",
     "Option 3 Text",
+    "Option 1 Trailing",
+    "Option 2 Trailing",
+    "Option 3 Trailing",
     "Group 1 Text",
     "Group 2 Text",
     "Helper Text",
@@ -82379,6 +83882,7 @@ async function syncMultiSelectVariantChildren({
       const option = await createMultiSelectOption({
         index,
         text: optionLabels[index],
+        trailingWords: preservedText[`Option ${index + 1} Trailing`],
         // Mixed, no option is checked.
         selected: index < 2 && !mixed,
         active: index === 2,
@@ -82560,6 +84064,7 @@ async function createMultiSelectChip({
 async function createMultiSelectOption({
   index,
   text,
+  trailingWords,
   selected,
   active,
   focused,
@@ -82655,6 +84160,15 @@ async function createMultiSelectOption({
     option.appendChild(icon);
   }
 
+  await appendOptionSlots(option, {
+    index,
+    label: text,
+    trailingWords,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
   return option;
 }
 
@@ -82673,6 +84187,9 @@ async function syncListboxVariantChildren({
     "Option 2 Description",
     "Option 3 Text",
     "Option 3 Description",
+    "Option 1 Trailing",
+    "Option 2 Trailing",
+    "Option 3 Trailing",
     "Group 1 Text",
     "Group 2 Text",
   ]);
@@ -82711,6 +84228,7 @@ async function syncListboxVariantChildren({
       index,
       label: labels[index],
       description: descriptions[index],
+      trailingWords: preservedText[`Option ${index + 1} Trailing`],
       selected,
       active: state === "Focus" && index === 1,
       focused: state === "Focus",
@@ -82747,10 +84265,216 @@ async function syncListboxVariantChildren({
   normalizeInputFamilyChildSizing(component);
 }
 
+// An option's media and trailing words (decision 215, GAP-282; GAP-260):
+// React's ComboboxOption `media`, the Avatar's Sm (decision 221) before the
+// label, and `trailing`, muted at the option's end before the check. Each is
+// drawn in every option of Combobox, Listbox and MultiSelect, hidden, and
+// shown by the set's Show Media and Show Trailing; the row keeps its height
+// either way.
+const OPTION_TRAILING_DEFAULTS = ["Text", "Number", "Image"];
+
+function optionInitials(label) {
+  return String(label || "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+async function createOptionMedia({
+  index,
+  label,
+  disabled,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  // The slot the row shows or hides: the Avatar and the 8 after it (the
+  // row's own gap is SPACE_BETWEEN's, none, beside a filling label).
+  const slot = figma.createFrame();
+  slot.name = `Option ${index + 1} Media`;
+  slot.layoutMode = "HORIZONTAL";
+  slot.primaryAxisSizingMode = "AUTO";
+  slot.counterAxisSizingMode = "AUTO";
+  slot.counterAxisAlignItems = "CENTER";
+  slot.paddingLeft = 0;
+  slot.paddingRight = 8;
+  slot.paddingTop = 0;
+  slot.paddingBottom = 0;
+  slot.itemSpacing = 0;
+  slot.fills = [];
+  slot.strokes = [];
+  slot.clipsContent = false;
+  const media = figma.createFrame();
+  media.name = `Option ${index + 1} Avatar`;
+  media.layoutMode = "HORIZONTAL";
+  media.primaryAxisSizingMode = "FIXED";
+  media.counterAxisSizingMode = "FIXED";
+  media.primaryAxisAlignItems = "CENTER";
+  media.counterAxisAlignItems = "CENTER";
+  media.paddingLeft = 0;
+  media.paddingRight = 0;
+  media.paddingTop = 0;
+  media.paddingBottom = 0;
+  media.itemSpacing = 0;
+  media.resizeWithoutConstraints(24, 24);
+  media.cornerRadius = KOZMOS_RADIUS.pill;
+  media.clipsContent = true;
+  media.strokes = [];
+  media.fills = [
+    paintFromVariable(
+      "Colors/background/200",
+      "#C7CAD1",
+      variableByName,
+      stats,
+    ),
+  ];
+  bindSizeVariables(
+    media,
+    "Avatar/size/sm",
+    "Avatar/size/sm",
+    variableByName,
+    stats,
+  );
+  media.setSharedPluginData(RUN_NAMESPACE, "kind", "option-media");
+  const initials = figma.createText();
+  initials.name = `Option ${index + 1} Initials`;
+  initials.fontName = fonts.medium;
+  initials.fontSize = 12;
+  initials.lineHeight = { unit: "PIXELS", value: 16 };
+  await applyTextStyleToNodeAsync(initials, "fieldMeta", stats);
+  initials.characters = optionInitials(label) || "A";
+  initials.textAutoResize = "WIDTH_AND_HEIGHT";
+  initials.textAlignHorizontal = "CENTER";
+  initials.fills = [
+    paintFromVariable(
+      disabled ? "Colors/foreground/500" : "Colors/foreground/0",
+      disabled ? "#747B8B" : "#000000",
+      variableByName,
+      stats,
+    ),
+  ];
+  media.appendChild(initials);
+  slot.appendChild(media);
+  slot.visible = false;
+  return slot;
+}
+
+async function createOptionEndWords({
+  index,
+  words,
+  disabled,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const endText = figma.createText();
+  endText.name = `Option ${index + 1} Trailing`;
+  await applyListboxDescriptionTypography(
+    endText,
+    fonts,
+    variableByName,
+    stats,
+  );
+  endText.characters = words || OPTION_TRAILING_DEFAULTS[index] || "Text";
+  endText.textAutoResize = "WIDTH_AND_HEIGHT";
+  endText.fills = [
+    paintFromVariable(
+      disabled ? "Colors/foreground/500" : "Colors/foreground/400",
+      disabled ? "#747B8B" : "#5D626F",
+      variableByName,
+      stats,
+    ),
+  ];
+  endText.textAlignVertical = "CENTER";
+  // The slot the row shows or hides: the words, 8 from the label and the
+  // check on either side.
+  const slot = figma.createFrame();
+  slot.name = `Option ${index + 1} Trailing Slot`;
+  slot.layoutMode = "HORIZONTAL";
+  slot.primaryAxisSizingMode = "AUTO";
+  slot.counterAxisSizingMode = "AUTO";
+  slot.counterAxisAlignItems = "CENTER";
+  slot.paddingLeft = 8;
+  slot.paddingRight = 8;
+  slot.paddingTop = 0;
+  slot.paddingBottom = 0;
+  slot.itemSpacing = 0;
+  slot.fills = [];
+  slot.strokes = [];
+  slot.clipsContent = false;
+  slot.appendChild(endText);
+  slot.visible = false;
+  return slot;
+}
+
+/**
+ * Puts an option's hidden media first and its hidden trailing words before
+ * its check, or at its end; the row's alignment and its label are as they
+ * were, so a row with both hidden is drawn as before.
+ */
+async function appendOptionSlots(
+  option,
+  { index, label, trailingWords, disabled, variableByName, fonts, stats },
+) {
+  const media = await createOptionMedia({
+    index,
+    label,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  option.insertChild(0, media);
+  const trailing = await createOptionEndWords({
+    index,
+    words: trailingWords,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
+  // Before the check, or Select's check slot, which end the row.
+  const end =
+    directChildNamed(option, "Icon") || directChildNamed(option, "Check Slot");
+  if (end) option.insertChild(option.children.indexOf(end), trailing);
+  else option.appendChild(trailing);
+}
+
+/** Show Media and Show Trailing, and each option's Trailing words. */
+function configureOptionSlotProperties(componentSet, stats) {
+  for (let index = 1; index <= 3; index += 1) {
+    configureNamedBooleanProperty(
+      componentSet,
+      `Option ${index} Media`,
+      "Show Media",
+      false,
+      stats,
+    );
+    configureNamedBooleanProperty(
+      componentSet,
+      `Option ${index} Trailing Slot`,
+      "Show Trailing",
+      false,
+      stats,
+    );
+    configureNamedTextProperty(
+      componentSet,
+      `Option ${index} Trailing`,
+      `Option ${index} Trailing`,
+      OPTION_TRAILING_DEFAULTS[index - 1],
+      stats,
+    );
+  }
+}
+
 async function createListboxOption({
   index,
   label,
   description,
+  trailingWords,
   selected,
   active,
   focused,
@@ -82881,6 +84605,15 @@ async function createListboxOption({
     option.appendChild(icon);
   }
 
+  await appendOptionSlots(option, {
+    index,
+    label,
+    trailingWords,
+    disabled,
+    variableByName,
+    fonts,
+    stats,
+  });
   return option;
 }
 
@@ -87821,6 +89554,7 @@ async function syncSpinnerVariantChildren({
 async function syncAvatarVariantChildren({
   component,
   value,
+  sm,
   config,
   variableByName,
   fonts,
@@ -87836,11 +89570,11 @@ async function syncAvatarVariantChildren({
       config.foregroundFallback,
       variableByName,
       stats,
-      20,
+      sm ? 16 : 20,
       null,
     );
-    icon.x = 10;
-    icon.y = 10;
+    icon.x = sm ? 4 : 10;
+    icon.y = sm ? 4 : 10;
     component.appendChild(icon);
   }
 
@@ -87868,9 +89602,18 @@ async function syncAvatarVariantChildren({
     ];
     fallback.textAlignHorizontal = "CENTER";
     fallback.textAlignVertical = "CENTER";
-    fallback.x = 10;
-    fallback.y = 10;
     component.appendChild(fallback);
+    if (sm) {
+      // Sm (decision 221): React's text-xs, 12/16, centred in the 24.
+      await applyAvatarSmFallbackTypography(fallback, fonts, stats);
+      fallback.textAutoResize = "NONE";
+      fallback.resize(24, 16);
+      fallback.x = 0;
+      fallback.y = 4;
+    } else {
+      fallback.x = 10;
+      fallback.y = 10;
+    }
   }
 
   await syncHiddenAvatarTextPropertyNode({
@@ -91678,11 +93421,15 @@ function floatingActionButtonMetrics(size) {
   };
 }
 
+// Chip's scale (decision 93, GAP-147): 28, 32 and 36, the icon Badge 32
+// square. Plain values, not aliases of Chip's heights, which are declared
+// after these and so are not there yet when a fresh file creates them. A
+// status: no hover state.
 function badgeMetrics(size) {
   if (size === "Small") {
     return {
       width: 58,
-      height: 44,
+      height: 28,
       paddingX: 12,
       heightToken: "Badge/height/small",
       paddingXToken: "Badge/padding/x/small",
@@ -91692,7 +93439,7 @@ function badgeMetrics(size) {
   if (size === "Large") {
     return {
       width: 86,
-      height: 44,
+      height: 36,
       paddingX: 32,
       heightToken: "Badge/height/large",
       paddingXToken: "Badge/padding/x/large",
@@ -91701,8 +93448,8 @@ function badgeMetrics(size) {
 
   if (size === "Icon") {
     return {
-      width: 44,
-      height: 44,
+      width: 32,
+      height: 32,
       paddingX: 0,
       iconSize: 16,
       widthToken: "Badge/width/icon",
@@ -91714,7 +93461,7 @@ function badgeMetrics(size) {
 
   return {
     width: 66,
-    height: 44,
+    height: 32,
     paddingX: 16,
     heightToken: "Badge/height/default",
     paddingXToken: "Badge/padding/x/default",

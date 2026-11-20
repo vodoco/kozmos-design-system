@@ -425,7 +425,8 @@
     margin: 0.5rem 1rem;
     padding: 0.75rem;
   }
-  .kozmos-poi-action-message[role="alert"] {
+  /* An error message, in the alert region it is put into (GAP-226). */
+  [role="alert"] > .kozmos-poi-action-message {
     @apply text-destructive-text bg-background;
   }
 }

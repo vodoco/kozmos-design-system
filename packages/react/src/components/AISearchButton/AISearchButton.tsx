@@ -51,7 +51,7 @@ const AISearchButton = React.forwardRef<HTMLButtonElement, AISearchButtonProps>(
         />
         <span
           aria-hidden="true"
-          className="kozmos-ai-search-ring absolute inset-0 rounded-pill"
+          className="kozmos-ai-search-ring absolute inset-0"
         />
         <Stars01
           aria-hidden="true"

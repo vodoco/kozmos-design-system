@@ -1,5 +1,7 @@
 package com.kozmos.components.numberinput
 
+import com.kozmos.components.fieldwrapper.kozmosFieldState
+import com.kozmos.components.fieldwrapper.KozmosFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -74,7 +76,9 @@ fun KozmosNumberInput(
      */
     unit: String? = null,
     /** The unit's spoken name, "metres" for "m", read after the value; [unit] when unset. */
-    unitLabel: String? = null
+    unitLabel: String? = null,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) {
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
@@ -208,8 +212,15 @@ fun KozmosNumberInput(
                         // then the unit: "Multiple values, metres". Else the
                         // unit is read once, after the value the field already
                         // says as its text: "15, metres".
-                        val said = listOfNotNull(mixedLabel.takeIf { mixed }, spokenUnit)
-                        if (said.isNotEmpty()) stateDescription = said.joinToString(", ")
+                        // Read only and in error, said on the field itself
+                        // (GAP-235, GAP-236).
+                        kozmosFieldState(
+                            readOnly = readOnly,
+                            readOnlyLabel = readOnlyLabel,
+                            inError = effectiveStatus == KozmosInputStatus.Error,
+                            errorMessage = errorMessage,
+                            stateParts = listOfNotNull(mixedLabel.takeIf { mixed }, spokenUnit)
+                        )
                     },
                 decorationBox = { innerTextField ->
                     Row(

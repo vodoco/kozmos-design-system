@@ -23,6 +23,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@kozmos-ds/react";
+import * as KozmosReact from "@kozmos-ds/react";
 import * as Bridge from "./index";
 import { bridgeOf, createVueWrapper, RADIX_MODELS } from "./react-adapter";
 import {
@@ -496,6 +497,32 @@ const PARTS: Part[] = [
     alone: ["Banana"],
   },
   {
+    // The option a product moves (GAP-260): the list asks for the next one
+    // by its keys. Null is no active option, so Down Arrow reaches the first.
+    name: "KozmosListbox",
+    model: "activeValue",
+    props: { options: fruit, "aria-label": "Fruit" },
+    start: "apple",
+    before: "Apple",
+    field: () => $("[role=listbox]"),
+    change: (list: HTMLElement) => {
+      list.focus();
+      list.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+      );
+    },
+    next: "banana",
+    shown: () =>
+      document.getElementById(
+        $("[role=listbox]")?.getAttribute("aria-activedescendant") ?? "",
+      )?.textContent ?? null,
+    shows: "Banana",
+    nothing: null,
+    fromNothing: { next: "apple", shows: "Apple" },
+    listener: "onActiveValueChange",
+    alone: "Banana",
+  },
+  {
     // An array, from onValueChange: typing in its search never reaches it.
     name: "KozmosMultiSelect",
     props: { options: fruit, label: "Fruit" },
@@ -532,6 +559,43 @@ const PARTS: Part[] = [
     nothing: "",
     listener: "onSearchValueChange",
     alone: "Ba",
+  },
+  {
+    // GAP-222: an array, from onValueChange: a comma adds what was typed.
+    name: "KozmosChipInput",
+    props: { label: "Keywords" },
+    start: ["coffee"],
+    before: ["coffee"],
+    field: () => $("input"),
+    change: (input) => {
+      input.focus();
+      type(input, "tea,");
+    },
+    next: ["coffee", "tea"],
+    shown: () => texts('[data-slot="chip-label"]'),
+    shows: ["coffee", "tea"],
+    nothing: [],
+    fromNothing: { next: ["tea"], shows: ["tea"] },
+    listener: "onValueChange",
+    alone: ["tea"],
+  },
+  {
+    name: "KozmosChipInput",
+    model: "inputValue",
+    props: { label: "Keywords" },
+    start: "",
+    before: "",
+    field: () => $("input"),
+    change: (input) => {
+      input.focus();
+      type(input, "tea");
+    },
+    next: "tea",
+    shown: () => $<HTMLInputElement>("input")?.value,
+    shows: "tea",
+    nothing: "",
+    listener: "onInputValueChange",
+    alone: "tea",
   },
   {
     name: "KozmosDateRangePicker",
@@ -866,6 +930,40 @@ const PARTS: Part[] = [
     fromNothing: { next: ["3"], shows: ["b.ts"] },
     listener: "onSelectedIdsChange",
     alone: ["b.ts"],
+  },
+  {
+    // A selectable table's model is its selected rows' rowIds (GAP-171): a
+    // row's checkbox adds its row. The rows are React's, as children.
+    name: "KozmosTable",
+    model: "selectedIds",
+    props: {
+      selectable: true,
+      children: e(
+        KozmosReact.TableBody,
+        null,
+        ["ada", "grace"].map((id) =>
+          e(KozmosReact.TableRow, { key: id, rowId: id }, [
+            e(
+              KozmosReact.TableCell,
+              { key: "select" },
+              e(KozmosReact.TableRowSelect, { label: id }),
+            ),
+            e(KozmosReact.TableCell, { key: "name" }, id),
+          ]),
+        ),
+      ),
+    },
+    start: ["ada"],
+    before: ["ada"],
+    field: () => $('[role=checkbox][aria-label="grace"]'),
+    change: (box) => box.click(),
+    next: ["ada", "grace"],
+    shown: () => texts("tr[data-state=selected] td:last-child"),
+    shows: ["ada", "grace"],
+    nothing: [],
+    fromNothing: { next: ["grace"], shows: ["grace"] },
+    listener: "onSelectedIdsChange",
+    alone: ["grace"],
   },
   {
     // A phone-sized shell, so the sheet and its handle are drawn.

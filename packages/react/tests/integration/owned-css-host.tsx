@@ -55,6 +55,7 @@ import {
   FloatingActionButton,
   SplitButton,
   AISearchButton,
+  ListItemStatus,
 } from "@kozmos-ds/react";
 import type {
   POIPresentation,
@@ -620,6 +621,13 @@ function Controls({ id }: { id: string }) {
       <h1 className="consumer-heading" data-testid={`${id}-host-heading`}>
         Host heading
       </h1>
+      {/* GAP-283: ListItemStatus's three marks, for the ring or fill each
+          draws inside the provider. */}
+      <div data-testid={`${id}-list-status`}>
+        <ListItemStatus status="todo" />
+        <ListItemStatus status="inProgress" />
+        <ListItemStatus status="done" />
+      </div>
       {/* The route rail's waypoints, in route mode, for the edge each draws. */}
       <RouteProgressRail
         data-testid={`${id}-route-rail`}

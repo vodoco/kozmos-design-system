@@ -540,6 +540,48 @@
       "background": "primitives-colors-background-0",
       "foreground": "semantics-scrollbar-thumb-hover",
       "minimum": 3
+    },
+    {
+      "name": "an enabled MapEditToolbar item's label on the card (decision 226)",
+      "background": "primitives-colors-background-0",
+      "foreground": "primitives-colors-foreground-0",
+      "minimum": 4.5
+    },
+    {
+      "name": "an enabled MapEditToolbar item's label on the hover fill (decision 226)",
+      "background": "semantics-hover-fill",
+      "foreground": "primitives-colors-foreground-0",
+      "minimum": 4.5
+    },
+    {
+      "name": "an enabled MapEditToolbar item's icon on the card (decision 226: at least 3:1)",
+      "background": "primitives-colors-background-0",
+      "foreground": "primitives-colors-foreground-400",
+      "minimum": 3
+    },
+    {
+      "name": "an enabled MapEditToolbar item's icon on the hover fill (decision 226: at least 3:1)",
+      "background": "semantics-hover-fill",
+      "foreground": "primitives-colors-foreground-400",
+      "minimum": 3
+    },
+    {
+      "name": "a chosen MapEditToolbar tool's label and icon, the theme's ink, on the card (decision 226)",
+      "background": "primitives-colors-background-0",
+      "foreground": "semantics-emotion-themed-text",
+      "minimum": 4.5
+    },
+    {
+      "name": "a chosen MapEditToolbar tool's label and icon on the hover fill (decision 226: at least 3:1)",
+      "background": "semantics-hover-fill",
+      "foreground": "semantics-emotion-themed-text",
+      "minimum": 3
+    },
+    {
+      "name": "a disabled MapEditToolbar item's label and icon, foreground 500, on the card (decision 226, decision 197's 3:1 floor kept: 4.24:1 in light, 5.65:1 in dark; lighter than an enabled item's icon)",
+      "background": "primitives-colors-background-0",
+      "foreground": "primitives-colors-foreground-500",
+      "minimum": 3
     }
   ],
   "disabledButtonLook": {
@@ -581,9 +623,9 @@
         "contains": ".kozmos-map-control.kozmos-button-ghost:is( :disabled:not([data-loading]), [aria-disabled=\"true\"] ) { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); }"
       },
       {
-        "name": "a disabled MapEditToolbar action or tool, whose ink is already the disabled foreground, takes the disabled fill, at full strength (decision 197)",
+        "name": "a disabled MapEditToolbar action or tool, `disabled` or aria-disabled with a reason (decision 217), draws no fill and its label and icon in foreground 500, at full strength: the toolbar is decision 197's exception, as Pointr Cloud draws it (decision 226)",
         "file": "packages/styles/src/dashboard/map-edit-toolbar.css",
-        "contains": ".kozmos-map-edit-toolbar-item:disabled { background-color: var(--semantics-disabled-fill); color: var(--semantics-disabled-foreground); opacity: 1; }"
+        "contains": ".kozmos-map-edit-toolbar-item:is(:disabled, [aria-disabled=\"true\"]) .kozmos-map-edit-toolbar-icon { background-color: transparent; color: var(--primitives-colors-foreground-500); opacity: 1; }"
       },
       {
         "name": "SwiftUI: a disabled filled or ghost Button draws the disabled fill, and an outline, link or glass one keeps its ground (decision 197)",

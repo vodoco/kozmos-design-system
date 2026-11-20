@@ -24,6 +24,13 @@ Displays compact metadata, status, or categorization. Opt-in counts are rendered
 
 <Controls />
 
+## Sizes
+
+A Badge is a status, not a control (decision 93, GAP-147): it sits on Chip's scale, `sm` 28, the default 32 and `lg`
+36 tall at touch, and 20, 24 and 28 under `ThemeProvider density="compact"`, read from the density's Badge tokens. An
+icon Badge is the default height, square. Nothing on it changes under the pointer: no variant has a hover state.
+SwiftUI's `KozmosBadge` and Compose's `KozmosBadge` draw the same 28, 32 and 36 (they stay touch, decision 82).
+
 ## Implementation
 
 <div className="subheading">Code</div>

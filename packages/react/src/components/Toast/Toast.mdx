@@ -199,6 +199,13 @@ fun SavePlaceScreen(onSave: () -> Unit) {
   <Story of={ToastStories.CloseAlwaysVisible} />
 </Canvas>
 
+### Tones on SwiftUI
+
+SwiftUI's `KozmosToast` takes the tones React's and Compose's toasts do (GAP-167): `tone:
+.success`, `.info`, `.warning` or `.critical` draws the tone's mark at the start in its text colour,
+16 from the words, and `.neutral`, the default, draws none. The surface stays the same. SwiftUI has
+no `toast()` call yet.
+
 ## Implementation
 
 The close shows only a cross and is named "Dismiss notification" on all three platforms. A product
@@ -254,7 +261,7 @@ import Kozmos
 // The toast draws itself at the bottom of the space it is given, so it goes
 // over the screen's content. It closes after 3 seconds (autoDismissAfter) or
 // at its close button, named by closeLabel, "Dismiss notification" unless you
-// pass your own.
+// pass your own. Its tone, success here, draws the tone's mark at its start.
 struct LocationSavedToast: View {
     @State private var isPresented = false
 
@@ -264,7 +271,8 @@ struct LocationSavedToast: View {
             KozmosToast(
                 isPresented: $isPresented,
                 title: "Location saved",
-                description: "Find it in your saved places."
+                description: "Find it in your saved places.",
+                tone: .success
             )
         }
     }

@@ -4,5 +4,9 @@
   "main": "code.js",
   "ui": "ui.html",
   "editorType": ["figma"],
-  "documentAccess": "dynamic-page"
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["https://mapscdn.pointr.tech"],
+    "reasoning": "SpriteIcon (GAP-150, decision 219) draws the real cell of Pointr's published MapLibre sprite atlas: at Build and Update the plugin reads the atlas's @2x index (fetch) and image (figma.createImageAsync) from Pointr's maps CDN. It reads nothing else."
+  }
 }

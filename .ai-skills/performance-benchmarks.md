@@ -40,7 +40,7 @@
 
 ### Performance Budget Tiers
 
-There are no tiers: every public export is held to the same budget, 8.5 KB gzipped alone (§2). The
+There are no tiers: every public export is held to the same budget, 9 KB gzipped alone (§2). The
 tiers planned before the code are kept in
 [docs/proposals/performance-plan.md](../docs/proposals/performance-plan.md).
 
@@ -58,7 +58,7 @@ budgets, gzipped:
 
 | Measure                              | Budget |
 | ------------------------------------ | ------ |
-| Any one public export, bundled alone | 8.5 KB |
+| Any one public export, bundled alone | 9 KB   |
 | `Button` alone                       | 2 KB   |
 | Every export at once                 | 120 KB |
 | The stylesheet                       | 40 KB  |
@@ -352,6 +352,7 @@ The published versions are what `npm view @kozmos-ds/react versions` lists: 0.1.
 | 2026-11-09 | Everything's budget went from 100 to 112 KB and the stylesheet's from 32 to 36 KB (decision 175), for 0.16.0's promised items (decision 174); main measured 96.53 and 31.79 KB on CI |
 | 2026-11-17 | Everything's budget went from 112 to 120 KB (decision 213), for 0.17.0 (decision 209); its first wave, the mixed state (#566, #571), measured 111.88 KB on a Mac                     |
 | 2026-11-18 | The stylesheet's budget went from 36 to 40 KB (decision 214), for 0.17.0; wave B (#577) measured 35.81 KB on a Mac                                                                   |
+| 2026-11-18 | The per-export budget went from 8.5 to 9 KB (decision 220); `AdaptiveMapShell` measured 8.60 KB after GAP-084, GAP-226 and GAP-265 (#582)                                            |
 
 No render or Core Web Vitals history is recorded.
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T22:57:25.613Z",
+  "generatedAt": "2026-11-18T17:55:15.451Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 754,
-    "variableTokens": 702,
+    "totalTokens": 755,
+    "variableTokens": 703,
     "styleOnlyTokens": 52,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 530,
+      "color": 531,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -4279,6 +4279,35 @@
         "dark": {
           "kind": "raw",
           "value": "#000000"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/white",
+      "figmaName": "Colors/white",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-white",
+      "syntax": {
+        "web": "var(--primitives-colors-white)",
+        "ios": "primitivesColorsWhite",
+        "android": "primitivesColorsWhite"
+      },
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FFFFFF"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FFFFFF"
         }
       }
     },
@@ -9191,12 +9220,12 @@
       "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         }
       }
     },
@@ -9215,12 +9244,12 @@
       "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -9239,12 +9268,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         }
       }
     },
@@ -9263,12 +9292,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         }
       }
     },
@@ -9287,12 +9316,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/white"
         }
       }
     },
@@ -9335,12 +9364,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -9455,12 +9484,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -9575,12 +9604,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -9671,12 +9700,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -9695,12 +9724,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -9719,12 +9748,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -9743,12 +9772,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -9767,12 +9796,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -9791,12 +9820,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CBF5E0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#14653D"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         }
       }
     },
@@ -9815,12 +9844,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -9839,12 +9868,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CBF5E0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#14653D"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         }
       }
     },
@@ -9863,12 +9892,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CBF5E0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#14653D"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         }
       }
     },
@@ -9887,12 +9916,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CBF5E0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#14653D"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/100"
         }
       }
     },
@@ -9935,12 +9964,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -10031,12 +10060,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10055,12 +10084,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -10079,12 +10108,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10103,12 +10132,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10127,12 +10156,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10151,12 +10180,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -10175,12 +10204,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -10199,12 +10228,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -10223,12 +10252,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -10247,12 +10276,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -10295,12 +10324,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -10391,12 +10420,12 @@
       "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10415,12 +10444,12 @@
       "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -10439,12 +10468,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10463,12 +10492,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10487,12 +10516,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10511,12 +10540,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FCEAEE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#430915"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         }
       }
     },
@@ -10535,12 +10564,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -10559,12 +10588,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FCEAEE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#430915"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         }
       }
     },
@@ -10583,12 +10612,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FCEAEE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#430915"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         }
       }
     },
@@ -10607,12 +10636,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FCEAEE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#430915"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/0"
         }
       }
     },
@@ -10655,12 +10684,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -10751,12 +10780,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10775,12 +10804,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -10799,12 +10828,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10823,12 +10852,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10847,12 +10876,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -10871,12 +10900,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CAE6F3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#154761"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         }
       }
     },
@@ -10895,12 +10924,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -10919,12 +10948,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CAE6F3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#154761"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         }
       }
     },
@@ -10943,12 +10972,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CAE6F3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#154761"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         }
       }
     },
@@ -10967,12 +10996,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CAE6F3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#154761"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/100"
         }
       }
     },
@@ -11015,12 +11044,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -11111,12 +11140,12 @@
       "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -11135,12 +11164,12 @@
       "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -11159,12 +11188,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -11183,12 +11212,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -11207,12 +11236,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -11231,12 +11260,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#17191C"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#e8e6e3"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         }
       }
     },
@@ -11255,12 +11284,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -11279,12 +11308,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#17191C"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#e8e6e3"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         }
       }
     },
@@ -11303,12 +11332,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#17191C"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#e8e6e3"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         }
       }
     },
@@ -11327,12 +11356,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#17191C"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#e8e6e3"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/100"
         }
       }
     },
@@ -11375,12 +11404,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -11495,12 +11524,12 @@
       "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -11615,12 +11644,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -11711,12 +11740,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1E995B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#76E4AD"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         }
       }
     },
@@ -11735,12 +11764,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -11759,12 +11788,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -11783,12 +11812,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#197F4C"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A0ECC6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
         }
       }
     },
@@ -11807,12 +11836,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -11835,8 +11864,8 @@
           "path": "Primitives/Colors/emotional/success/900"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#76E4AD"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         }
       }
     },
@@ -11855,12 +11884,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -11883,8 +11912,8 @@
           "path": "Primitives/Colors/emotional/success/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -11907,8 +11936,8 @@
           "path": "Primitives/Colors/emotional/success/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A0ECC6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
         }
       }
     },
@@ -11931,8 +11960,8 @@
           "path": "Primitives/Colors/emotional/success/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -11951,12 +11980,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -11975,12 +12004,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -11999,12 +12028,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         }
       }
     },
@@ -12023,12 +12052,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1E995B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#76E4AD"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         }
       }
     },
@@ -12047,12 +12076,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         }
       }
     },
@@ -12071,12 +12100,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#B01736"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#EE7E95"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         }
       }
     },
@@ -12095,12 +12124,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -12119,12 +12148,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -12143,12 +12172,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#8C132B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#F3A2B3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
         }
       }
     },
@@ -12167,12 +12196,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -12195,8 +12224,8 @@
           "path": "Primitives/Colors/emotional/danger/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#EE7E95"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         }
       }
     },
@@ -12215,12 +12244,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -12243,8 +12272,8 @@
           "path": "Primitives/Colors/emotional/danger/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -12267,8 +12296,8 @@
           "path": "Primitives/Colors/emotional/danger/900"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#F3A2B3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
         }
       }
     },
@@ -12291,8 +12320,8 @@
           "path": "Primitives/Colors/emotional/danger/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -12311,12 +12340,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -12335,12 +12364,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -12359,12 +12388,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         }
       }
     },
@@ -12383,12 +12412,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#B01736"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#EE7E95"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         }
       }
     },
@@ -12407,12 +12436,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         }
       }
     },
@@ -12431,12 +12460,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CD8905"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FCD281"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/700"
         }
       }
     },
@@ -12455,12 +12484,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -12479,12 +12508,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#F9A707"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FBC459"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         }
       }
     },
@@ -12503,12 +12532,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#A06B04"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FDE0A8"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/800"
         }
       }
     },
@@ -12527,12 +12556,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#F9A707"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FBC459"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         }
       }
     },
@@ -12555,8 +12584,8 @@
           "path": "Primitives/Colors/emotional/alert/900"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FCD281"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/700"
         }
       }
     },
@@ -12575,12 +12604,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -12603,8 +12632,8 @@
           "path": "Primitives/Colors/emotional/alert/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FBC459"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         }
       }
     },
@@ -12627,8 +12656,8 @@
           "path": "Primitives/Colors/emotional/alert/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FDE0A8"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/800"
         }
       }
     },
@@ -12651,8 +12680,8 @@
           "path": "Primitives/Colors/emotional/alert/1000"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FBC459"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         }
       }
     },
@@ -12671,12 +12700,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#F9A707"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FBC459"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         }
       }
     },
@@ -12695,12 +12724,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -12719,12 +12748,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FAB735"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FAB735"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/500"
         }
       }
     },
@@ -12743,12 +12772,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CD8905"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FCD281"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/700"
         }
       }
     },
@@ -12767,12 +12796,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FAB735"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FAB735"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/500"
         }
       }
     },
@@ -12791,12 +12820,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2379A4"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#87C6E5"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         }
       }
     },
@@ -12815,12 +12844,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -12839,12 +12868,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -12863,12 +12892,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1C6082"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A9D6EC"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
         }
       }
     },
@@ -12887,12 +12916,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -12915,8 +12944,8 @@
           "path": "Primitives/Colors/emotional/info/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#87C6E5"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         }
       }
     },
@@ -12935,12 +12964,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -12963,8 +12992,8 @@
           "path": "Primitives/Colors/emotional/info/900"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -12987,8 +13016,8 @@
           "path": "Primitives/Colors/emotional/info/900"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A9D6EC"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
         }
       }
     },
@@ -13011,8 +13040,8 @@
           "path": "Primitives/Colors/emotional/info/900"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -13031,12 +13060,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -13055,12 +13084,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -13079,12 +13108,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         }
       }
     },
@@ -13103,12 +13132,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2379A4"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#87C6E5"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         }
       }
     },
@@ -13127,12 +13156,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         }
       }
     },
@@ -13151,8 +13180,8 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#ABAFBA"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
         },
         "dark": {
           "kind": "raw",
@@ -13175,12 +13204,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -13199,12 +13228,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#9095A2"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/400"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#6f6a5d"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/400"
         }
       }
     },
@@ -13223,12 +13252,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#C7CAD1"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/200"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
         }
       }
     },
@@ -13247,12 +13276,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#9095A2"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/400"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#6f6a5d"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/400"
         }
       }
     },
@@ -13295,12 +13324,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -13391,12 +13420,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#9095A2"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#6f6a5d"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         }
       }
     },
@@ -13415,12 +13444,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -13439,12 +13468,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#747B8B"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#8b8474"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         }
       }
     },
@@ -13463,8 +13492,8 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#ABAFBA"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/700"
         },
         "dark": {
           "kind": "raw",
@@ -13487,12 +13516,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#747B8B"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#8b8474"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         }
       }
     },
@@ -13535,12 +13564,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -13655,12 +13684,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -13775,12 +13804,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -13871,12 +13900,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1E995B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#76E4AD"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         }
       }
     },
@@ -13895,12 +13924,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -13919,12 +13948,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -13943,12 +13972,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#197F4C"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A0ECC6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
         }
       }
     },
@@ -13967,12 +13996,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -13991,12 +14020,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1E995B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#76E4AD"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         }
       }
     },
@@ -14015,12 +14044,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -14039,12 +14068,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -14063,12 +14092,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#197F4C"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A0ECC6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/800"
         }
       }
     },
@@ -14087,12 +14116,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -14111,12 +14140,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#23B26B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#4BDC93"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/600"
         }
       }
     },
@@ -14135,12 +14164,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -14159,12 +14188,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         }
       }
     },
@@ -14183,12 +14212,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1E995B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#76E4AD"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/700"
         }
       }
     },
@@ -14207,12 +14236,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#28CC7A"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/success/500"
         }
       }
     },
@@ -14231,12 +14260,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#B01736"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#EE7E95"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         }
       }
     },
@@ -14255,12 +14284,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -14279,12 +14308,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -14303,12 +14332,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#8C132B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#F3A2B3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
         }
       }
     },
@@ -14327,12 +14356,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -14351,12 +14380,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#B01736"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#EE7E95"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         }
       }
     },
@@ -14375,12 +14404,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -14399,12 +14428,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -14423,12 +14452,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#8C132B"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#F3A2B3"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/800"
         }
       }
     },
@@ -14447,12 +14476,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -14471,12 +14500,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#D41C42"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E95A77"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/600"
         }
       }
     },
@@ -14495,12 +14524,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -14519,12 +14548,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         }
       }
     },
@@ -14543,12 +14572,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#B01736"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#EE7E95"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/700"
         }
       }
     },
@@ -14567,12 +14596,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#E43458"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/danger/500"
         }
       }
     },
@@ -14591,12 +14620,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#CD8905"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FCD281"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/700"
         }
       }
     },
@@ -14615,12 +14644,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -14639,12 +14668,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#F9A707"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FBC459"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         }
       }
     },
@@ -14663,12 +14692,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#A06B04"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FDE0A8"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/800"
         }
       }
     },
@@ -14687,12 +14716,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#F9A707"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FBC459"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
         }
       }
     },
@@ -14711,12 +14740,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -14735,12 +14764,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -14759,12 +14788,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -14783,12 +14812,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -14807,12 +14836,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#000000"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#FFFFFF"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
         }
       }
     },
@@ -14831,12 +14860,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -14855,12 +14884,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -14879,12 +14908,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -14903,12 +14932,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -14927,12 +14956,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#FEEED0"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#744D03"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/100"
         }
       }
     },
@@ -14951,12 +14980,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2379A4"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#87C6E5"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         }
       }
     },
@@ -14975,12 +15004,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -14999,12 +15028,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -15023,12 +15052,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1C6082"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A9D6EC"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
         }
       }
     },
@@ -15047,12 +15076,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -15071,12 +15100,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2379A4"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#87C6E5"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         }
       }
     },
@@ -15095,12 +15124,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -15119,12 +15148,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -15143,12 +15172,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1C6082"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A9D6EC"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/800"
         }
       }
     },
@@ -15167,12 +15196,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -15191,12 +15220,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2A92C6"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#65B6DE"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/600"
         }
       }
     },
@@ -15215,12 +15244,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -15239,12 +15268,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         }
       }
     },
@@ -15263,12 +15292,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2379A4"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#87C6E5"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/700"
         }
       }
     },
@@ -15287,12 +15316,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#42A5D7"
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/info/500"
         }
       }
     },
@@ -15311,12 +15340,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#C7CAD1"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/200"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
         }
       }
     },
@@ -15335,12 +15364,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#d1cec7"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/800"
         }
       }
     },
@@ -15359,8 +15388,8 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#ABAFBA"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
         },
         "dark": {
           "kind": "raw",
@@ -15383,12 +15412,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#E3E4E8"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/100"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#2E3138"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/200"
         }
       }
     },
@@ -15407,8 +15436,8 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#ABAFBA"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
         },
         "dark": {
           "kind": "raw",
@@ -15431,8 +15460,8 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#ABAFBA"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/700"
         },
         "dark": {
           "kind": "raw",
@@ -15455,12 +15484,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -15479,12 +15508,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#9095A2"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#6f6a5d"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         }
       }
     },
@@ -15503,12 +15532,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#C7CAD1"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/800"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/background/300"
         }
       }
     },
@@ -15527,12 +15556,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#9095A2"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#6f6a5d"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         }
       }
     },
@@ -15551,12 +15580,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#9095A2"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#6f6a5d"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/600"
         }
       }
     },
@@ -15575,12 +15604,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#464A53"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#b9b5ac"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/300"
         }
       }
     },
@@ -15599,12 +15628,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#747B8B"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#8b8474"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         }
       }
     },
@@ -15623,8 +15652,8 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#ABAFBA"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/700"
         },
         "dark": {
           "kind": "raw",
@@ -15647,12 +15676,12 @@
       "suggestedScopes": ["TEXT_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#747B8B"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#8b8474"
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/500"
         }
       }
     },

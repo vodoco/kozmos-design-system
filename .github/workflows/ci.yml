@@ -156,6 +156,9 @@ jobs:
       - name: Verify Component Contracts
         run: pnpm components:contract:check
 
+      - name: Check one analytics event table (GAP-234)
+        run: pnpm analytics:parity:check
+
       # Names are a development aid (decision 128): each part carries its
       # source's name in development, unbundled and bundled, and none in a
       # production bundle, where an app's bundler drops the gated assignment
@@ -209,6 +212,13 @@ jobs:
 
       - name: Verify Border Parity
         run: pnpm tokens:border:check
+
+      # A component colour that copies a primitive's hex draws the same, so
+      # nothing else sees it, but a change to the ramp, or a product's
+      # override of it, then misses that state: until 0.17.0, 198 light and
+      # 214 dark Button colours were copies (GAP-281).
+      - name: Verify Component Colours Refer to Their Primitives
+        run: node --test scripts/lib/component-colour-references.test.mjs && pnpm tokens:component-refs:check
 
       # Compose reads colours through the generated themed accessor; iOS and
       # the web follow the theme on their own. The build step above wrote the
@@ -323,6 +333,14 @@ jobs:
       # 2026-10-21 (#348, #356), and no simulator run could see both kinds.
       - name: Verify SwiftUI Shapes Say How They Read Right To Left
         run: node --test scripts/ci/ios-shape-direction.test.mjs && pnpm ios:shapes:check
+
+      # SwiftUI sets no line tighter than the font's own: a negative line
+      # spacing past the style's leading is ignored without a word, as the
+      # display size's 54 is (decision 203, #575). KozmosLineSpacingTests
+      # measures each of KozmosTypography's spacings on the simulator; this
+      # makes every .lineSpacing pass one of them, and each one measured.
+      - name: Verify SwiftUI Line Spacings Are Ones It Draws
+        run: node --test scripts/ci/ios-line-spacing.test.mjs && pnpm ios:line-spacing:check
 
       - name: Verify Documentation Snippets
         run: pnpm docs:snippets:check
@@ -576,7 +594,8 @@ jobs:
       # its panels (scripts/check-calendar.mjs), and DatePicker opening it
       # where the browser's own button can give way (check-date-picker.mjs),
       # and DateRangePicker its range (check-date-range-picker.mjs), and
-      # TimePicker's list of times (check-time-picker.mjs).
+      # TimePicker's list of times (check-time-picker.mjs), and OTPInput's
+      # overtyping (check-otp-input.mjs).
       - name: Verify Built Focus, Keyboard and Scrolling
         run: |
           pnpm test:react-interactions

@@ -107,10 +107,29 @@ const TSCONFIGS = ["tsconfig.json", "tsconfig.build.json"];
 // Outside styles, the sources its Tailwind build scans for the classes it
 // emits (`content.files` in packages/styles/tailwind.config.js): a class one
 // of them adds or drops changes the style.css styles ships and react copies
-// into its dist. React's own src already counts for react; Vue's counts for
-// both. `globs` are the config's, which changeset-required.test.mjs holds this
-// list to; `matches` is them as a repository path test.
+// into its dist, so each counts for both. `globs` are the config's, which
+// changeset-required.test.mjs holds this list to; `matches` is them as a
+// repository path test.
+//
+// React's src counted for react alone until 0.17.0, so a pull request that
+// changed a part's classes released react and left styles' style.css behind
+// at its last version, though styles is built from those classes too. Of
+// React's scanned files, `matches` takes what react ships (NOT_SHIPPED leaves
+// out stories, Code Connect files and docs pages, which the scan also reads):
+// a story edit asks for no release, as it never has.
 export const STYLESHEET_SCANS = [
+  {
+    globs: [
+      "../react/src/**/*.{js,ts,jsx,tsx}",
+      "!../react/src/**/*.test.{js,ts,jsx,tsx}",
+      "!../react/src/dashboard/**",
+    ],
+    matches: (file) =>
+      /^packages\/react\/src\/.+\.(js|ts|jsx|tsx)$/.test(file) &&
+      !file.startsWith("packages/react/src/dashboard/") &&
+      !NOT_SHIPPED.test(file.slice("packages/react/".length)),
+    packages: ["@kozmos-ds/styles", "@kozmos-ds/react"],
+  },
   {
     globs: [
       "../vue/src/**/*.{vue,js,ts}",

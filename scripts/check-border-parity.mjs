@@ -252,9 +252,10 @@ for (const [file, needle, label] of [
     "h-px bg-border",
     "Menu and ContextMenu separator",
   ],
+  // Each item draws its own rail down to the next (GAP-247), in owned CSS.
   [
-    "packages/react/src/components/Timeline/Timeline.tsx",
-    "border-l border-border",
+    "packages/styles/src/styles/owned-components.css",
+    "border-left: 1px solid var(--semantics-border-subtle);",
     "Timeline rail",
   ],
   [

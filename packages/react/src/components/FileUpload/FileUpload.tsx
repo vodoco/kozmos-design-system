@@ -29,9 +29,41 @@ export interface FileUploadProps extends Omit<
   error?: boolean | string;
   helperText?: string;
   label?: string;
+  /**
+   * How many files one pick or drop may hold: more, and FileUpload refuses
+   * them with `tooManyFilesLabel`. One by default, none with `multiple`.
+   */
   maxFiles?: number;
+  /** The largest file, in bytes: a larger one is refused with `tooLargeLabel`. */
   maxSize?: number;
+  /**
+   * Whether the picker takes several files. Unset, it does when `maxFiles` is
+   * over 1; `false` keeps it to one file whatever `maxFiles` says, so a
+   * product with its own count check can pass `maxFiles={Infinity}` and
+   * still open a one-file picker (GAP-258).
+   */
   multiple?: boolean;
+  /**
+   * The refusal of a pick or drop past `maxFiles`, in the product's words
+   * (GAP-258): "Select up to 3 files." by default.
+   */
+  tooManyFilesLabel?: (maxFiles: number) => string;
+  /**
+   * The refusal of a file over `maxSize`, given its name and the limit as
+   * written ("2 MB"): "plan.pdf exceeds 2 MB." by default.
+   */
+  tooLargeLabel?: (fileName: string, maxSize: string) => string;
+  /**
+   * The refusal of a file that is not an image, in `preview="image"`:
+   * "plan.pdf is not an image." by default.
+   */
+  notImageLabel?: (fileName: string) => string;
+  /**
+   * The hidden file input itself, for a product that has to reach it (a
+   * test's `setInputFiles`, a form library). The component's own ref stays
+   * its box: moving it would break every caller holding one (GAP-258).
+   */
+  inputRef?: React.Ref<HTMLInputElement>;
   onFileSelect?: (file: File) => void;
   onFilesChange?: (files: File[]) => void;
   /**
@@ -59,6 +91,14 @@ export interface FileUploadProps extends Omit<
   defaultFiles?: File[];
   wrapperClassName?: string;
 }
+
+/** React's refusal messages, each a label prop's default (GAP-258, GAP-280). */
+const defaultTooManyFilesLabel = (maxFiles: number) =>
+  `Select up to ${maxFiles} ${maxFiles === 1 ? "file" : "files"}.`;
+const defaultTooLargeLabel = (fileName: string, maxSize: string) =>
+  `${fileName} exceeds ${maxSize}.`;
+const defaultNotImageLabel = (fileName: string) =>
+  `${fileName} is not an image.`;
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 B";
@@ -114,6 +154,10 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
       maxFiles,
       maxSize,
       multiple,
+      tooManyFilesLabel = defaultTooManyFilesLabel,
+      tooLargeLabel = defaultTooLargeLabel,
+      notImageLabel = defaultNotImageLabel,
+      inputRef: inputRefProp,
       onFileSelect,
       onFilesChange,
       preview,
@@ -130,7 +174,18 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
     },
     ref,
   ) => {
-    const inputRef = React.useRef<HTMLInputElement>(null);
+    const inputRef = React.useRef<HTMLInputElement | null>(null);
+    const setInputRef = React.useCallback(
+      (node: HTMLInputElement | null) => {
+        inputRef.current = node;
+        if (typeof inputRefProp === "function") inputRefProp(node);
+        else if (inputRefProp)
+          (
+            inputRefProp as React.MutableRefObject<HTMLInputElement | null>
+          ).current = node;
+      },
+      [inputRefProp],
+    );
     const dropzoneRef = React.useRef<HTMLButtonElement>(null);
     const changeRef = React.useRef<HTMLButtonElement>(null);
     // Where focus goes once a pick or a removal has redrawn the part: the
@@ -176,8 +231,10 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
     ]
       .filter(Boolean)
       .join(" ");
+    // `multiple`, when given, is the picker's own; unset, the picker takes
+    // as many as `maxFiles` allows.
     const canSelectMultiple =
-      !isImagePreview && (multiple || resolvedMaxFiles > 1);
+      !isImagePreview && (multiple ?? resolvedMaxFiles > 1);
 
     const updateFiles = React.useCallback(
       (nextFiles: File[]) => {
@@ -198,9 +255,7 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
           Number.isFinite(resolvedMaxFiles) &&
           nextFiles.length > resolvedMaxFiles
         ) {
-          return `Select up to ${resolvedMaxFiles} ${
-            resolvedMaxFiles === 1 ? "file" : "files"
-          }.`;
+          return tooManyFilesLabel(resolvedMaxFiles);
         }
 
         if (isImagePreview) {
@@ -210,20 +265,27 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
             (file) => !file.type.startsWith("image/"),
           );
           if (notImage) {
-            return `${notImage.name} is not an image.`;
+            return notImageLabel(notImage.name);
           }
         }
 
         if (maxSize) {
           const oversized = nextFiles.find((file) => file.size > maxSize);
           if (oversized) {
-            return `${oversized.name} exceeds ${formatBytes(maxSize)}.`;
+            return tooLargeLabel(oversized.name, formatBytes(maxSize));
           }
         }
 
         return null;
       },
-      [isImagePreview, maxSize, resolvedMaxFiles],
+      [
+        isImagePreview,
+        maxSize,
+        notImageLabel,
+        resolvedMaxFiles,
+        tooLargeLabel,
+        tooManyFilesLabel,
+      ],
     );
 
     const handleFiles = React.useCallback(
@@ -324,7 +386,7 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
       >
         <div ref={ref} className={cn("w-full", className)} {...props}>
           <input
-            ref={inputRef}
+            ref={setInputRef}
             id={`${inputId}-file`}
             type="file"
             hidden

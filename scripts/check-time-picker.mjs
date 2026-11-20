@@ -287,6 +287,68 @@ await scenario(
   },
 );
 
+// GAP-256: with a `step` of whole minutes, Up and Down Arrow step the time
+// by it, whichever segment is focused, carrying into the hour and round
+// midnight, or within `min` and `max`; the browser's own step one segment by
+// one. Each key is pressed on the hours and on the minutes.
+const STEPPED = { defaultValue: "08:00", locale: "en-GB", step: 300 };
+for (const segment of ["hours", "minutes"]) {
+  await scenario(
+    `a 5-minute step's arrows step the ${segment} by 5, carrying (GAP-256)`,
+    { props: STEPPED },
+    async (page) => {
+      const box = await field(page).boundingBox();
+      // The hours sit at 44 from the start, the minutes after them.
+      await page.mouse.click(
+        box.x + (segment === "hours" ? 44 : 66),
+        box.y + box.height / 2,
+      );
+      await page.keyboard.press("ArrowDown");
+      assert.equal(await field(page).inputValue(), "07:55", "08:00 back");
+      await page.keyboard.press("ArrowUp");
+      await page.keyboard.press("ArrowUp");
+      assert.equal(await field(page).inputValue(), "08:05", "07:55 on twice");
+      assert.deepEqual(
+        await page.evaluate(() => window.timePicker.changes),
+        ["07:55", "08:00", "08:05"],
+        "each step is heard as typing",
+      );
+      assert.equal(await list(page).count(), 0, "and opens nothing");
+    },
+  );
+}
+
+await scenario(
+  "a step's arrows go round midnight, or stop at min and max (GAP-256)",
+  { props: { ...STEPPED, defaultValue: "23:55" }, controlled: "23:55" },
+  async (page) => {
+    await field(page).focus();
+    await page.keyboard.press("ArrowUp");
+    assert.equal(await field(page).inputValue(), "00:00", "23:55 on");
+    await page.keyboard.press("ArrowDown");
+    assert.equal(await field(page).inputValue(), "23:55", "00:00 back");
+    await page.evaluate(() =>
+      window.timePicker.mount({
+        props: {
+          defaultValue: "09:10",
+          locale: "en-GB",
+          step: 900,
+          min: "09:00",
+          max: "10:00",
+        },
+      }),
+    );
+    await settleLayout(page);
+    await field(page).focus();
+    await page.keyboard.press("ArrowUp");
+    assert.equal(await field(page).inputValue(), "09:15", "on the min's grid");
+    for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowUp");
+    assert.equal(await field(page).inputValue(), "10:00", "stops at max");
+    for (let i = 0; i < 8; i++) await page.keyboard.press("ArrowDown");
+    assert.equal(await field(page).inputValue(), "09:00", "stops at min");
+  },
+);
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} TimePicker scenario(s) failed.`);

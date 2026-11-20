@@ -92,6 +92,7 @@ import {
   ImageCropper,
   DescriptionList,
   DescriptionListItem,
+  CodeBlock,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -130,6 +131,8 @@ import {
   Listbox,
   MapControlButton,
   MultiSelect,
+  ChipInput,
+  SpriteIcon,
   NavigationItem,
   NumberInput,
   POIDetailPanel,
@@ -321,6 +324,8 @@ const textField = {
 // ----------------------------------------------------------------------
 export const KozmosBox = createVueWrapper(Box);
 export const KozmosStack = createVueWrapper(Stack);
+// Virtualized (GAP-172), @range-change reports the items in view, and the
+// default slot draws only those.
 export const KozmosGrid = createVueWrapper(Grid);
 export const KozmosText = createVueWrapper(Text);
 export const KozmosHeading = createVueWrapper(Heading);
@@ -395,12 +400,26 @@ export const KozmosListItem = createVueWrapper(ListItem);
 export const KozmosListItemStatus = createVueWrapper(ListItemStatus);
 // GAP-040: #control is the setting's control, @reset its Reset to default.
 export const KozmosSettingsRow = createVueWrapper(SettingsRow);
-export const KozmosTable = createVueWrapper(Table);
+// Its rows are React's, as `children` (GAP-016), in its one React root, so
+// its selection reaches them: v-model:selectedIds is the selected rows'
+// rowIds (GAP-171).
+export const KozmosTable = createVueWrapper(Table, {
+  selectedIds: {
+    prop: "selectedIds",
+    callback: "onSelectedIdsChange",
+    empty: [],
+  },
+});
 // GAP-221, decision 199: a value under each label. An item's #action is
 // the part after its value (a Copy IconButton); its value is `value` (words,
 // or true and false for a yes and a no) or its default slot (tags).
 export const KozmosDescriptionList = createVueWrapper(DescriptionList);
+// GAP-150 (decision 219): one cell of a published sprite atlas, drawn as published.
+export const KozmosSpriteIcon = createVueWrapper(SpriteIcon);
 export const KozmosDescriptionListItem = createVueWrapper(DescriptionListItem);
+// GAP-216, decision 225: a read-only block of code; @copy is its onCopy,
+// with the code copied.
+export const KozmosCodeBlock = createVueWrapper(CodeBlock);
 // Its selection is reported as the item; the model is the item's id. A
 // multiple tree's model is its selected ids (GAP-151).
 export const KozmosTree = createVueWrapper(Tree, {
@@ -661,6 +680,13 @@ export const KozmosListbox = createVueWrapper(Listbox, {
     callback: "onValueChange",
     empty: ({ multiple }) => (multiple ? [] : ""),
   },
+  // The option a product moves (GAP-260): `v-model:active-value`, null for
+  // none.
+  activeValue: {
+    prop: "activeValue",
+    callback: "onActiveValueChange",
+    empty: null,
+  },
 });
 export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
   modelValue: { prop: "value", callback: "onValueChange", empty: [] },
@@ -669,6 +695,12 @@ export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
     callback: "onSearchValueChange",
     empty: "",
   },
+});
+// GAP-222 (decision 216): the entries are the v-model, the typed text a
+// second one, as Combobox's inputValue.
+export const KozmosChipInput = createVueWrapper(ChipInput, {
+  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
+  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
 });
 // A cleared field is `null` to Vue and "" to React's input.
 export const KozmosNumberInput = createVueWrapper(NumberInput, {

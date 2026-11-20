@@ -414,6 +414,21 @@ them.
 Native equivalents use `attribution: AnyView(...)` in SwiftUI and `attribution = { ... }` in
 Compose. Native locale remains device/app-owned; there is no native language button.
 
+## The on-screen keyboard
+
+On the web the on-screen keyboard overlays the page rather than resizing it. The shell reads
+`window.visualViewport` and keeps its sheet and controls above what the keyboard covers of it
+(GAP-084), with no `safeAreaInsets` from you: the larger of the keyboard and
+`safeAreaInsets.bottom` wins, so a product that already passes the keyboard's height sees no change.
+A pinch zoom is not taken for a keyboard. Set `followsKeyboard={false}` to leave the keyboard to
+`safeAreaInsets` alone. SwiftUI and Compose follow the keyboard as their platforms do.
+
+## Before its first measure
+
+Until it has measured itself, the shell lays its panel out at its own full width, transparent
+but still focusable, and places it once measured (GAP-265). It used to lay the panel out at width 0 first, and WebKit could
+keep a grid's auto row at the height that layout gave it.
+
 ## Browse and details in one panel
 
 Wide side panels hug short content and scroll long content within their available

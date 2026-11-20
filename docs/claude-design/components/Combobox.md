@@ -119,6 +119,20 @@ interface ComboboxOption {
    */
   group?: string;
   label: string;
+  /**
+   * A leading Avatar, drawn before the label (decision 215, GAP-282): a
+   * logo or a photo by its `src`, or its `initials` when it has none or it
+   * does not load (by default the label's first letters). It is decoration:
+   * the label stays the option's accessible name. Combobox, Listbox and
+   * MultiSelect all take it.
+   */
+  media?: ComboboxOptionMedia;
+  /**
+   * What the option shows at its end, before the check (GAP-260): a
+   * property's type, a count. Muted, and read after the label and the
+   * description. Combobox, Listbox and MultiSelect all take it.
+   */
+  trailing?: React.ReactNode;
   value: string;
 }
 ```
@@ -144,4 +158,18 @@ From `@kozmos-ds/react`.
 
 ```ts
 type InputStatus = "default" | "error" | "warning" | "success";
+```
+
+### ComboboxOptionMedia
+
+From `@kozmos-ds/react`.
+
+```ts
+/** An option's leading Avatar (decision 215): its image, or its initials. */
+interface ComboboxOptionMedia {
+  /** The image: a client's logo, a person's photo. */
+  src?: string;
+  /** Drawn when there is no image, or until it loads; the label's first letters by default. */
+  initials?: string;
+}
 ```

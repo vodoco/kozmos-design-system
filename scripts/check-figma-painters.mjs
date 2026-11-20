@@ -13341,12 +13341,12 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   ok(
     axes &&
       JSON.stringify(axes.Action) ===
-        JSON.stringify(["None", "Copy", "Toggle", "TogglePressed"]) &&
+        JSON.stringify(["None", "Copy", "Toggle", "TogglePressed", "Edit"]) &&
       JSON.stringify(axes.State) ===
         JSON.stringify(["Default", "Focus", "Disabled", "Readonly", "Mixed"]) &&
       JSON.stringify(axes.Status) ===
         JSON.stringify(["Default", "Error", "Warning", "Success"]),
-    `Input gains an Action axis: None, Copy, Toggle, TogglePressed, beside State (with Mixed, GAP-153) and Status: 80 variants (${JSON.stringify(axes && axes.Action)})`,
+    `Input gains an Action axis: None, Copy, Toggle, TogglePressed and Edit (GAP-212), beside State (with Mixed, GAP-153) and Status: 100 variants (${JSON.stringify(axes && axes.Action)})`,
   );
   ok(
     JSON.stringify(
@@ -13497,8 +13497,9 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   }
   {
     // Update over the 16 variants in the file before the Action axis: each
-    // keeps its node id and is renamed Action=None, and the other 64 are
-    // created: 48 Action bands, and the Mixed row of each (GAP-153).
+    // keeps its node id and is renamed Action=None, and the other 84 are
+    // created: 64 Action bands, and the Mixed row of each (GAP-153); Edit's
+    // band and its Mixed row (GAP-212) are the last 20.
     const livePage = new MockNode("PAGE", "Components");
     const liveSet = new MockNode("COMPONENT_SET", "Input");
     const ids = new Map();
@@ -13528,10 +13529,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       updated &&
         updated.componentSetId === setId &&
         updated.variantsUpdated === 16 &&
-        updated.variantsCreated === 64 &&
-        liveSet.children.length === 80 &&
-        new Set(names).size === 80,
-      `Update keeps the set and its 16 variants, and adds 64: 80 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
+        updated.variantsCreated === 84 &&
+        liveSet.children.length === 100 &&
+        new Set(names).size === 100,
+      `Update keeps the set and its 16 variants, and adds 84: 100 in all, each named once (${updated ? `${updated.variantsUpdated} updated, ${updated.variantsCreated} created` : "threw"}, ${liveSet.children.length} children)`,
     );
     ok(
       [...ids].every(([name, id]) => {
@@ -13572,8 +13573,8 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         child.y + child.height > liveSet.height,
     );
     ok(
-      liveSet.children.length === 80 && outside.length === 0,
-      `and the set grows to hold all 80 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
+      liveSet.children.length === 100 && outside.length === 0,
+      `and the set grows to hold all 100 (${liveSet.width}x${liveSet.height}, ${outside.length} outside)`,
     );
     const reset = propertyNamed(liveSet, "Reset Mixed", "BOOLEAN");
     const resetBound = liveSet.children.filter((variant) => {
@@ -13601,10 +13602,10 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
     ok(
       reset &&
         liveSet.componentPropertyDefinitions[reset].defaultValue === false &&
-        resetBound.length === 64 &&
-        mixedRows.length === 16 &&
+        resetBound.length === 80 &&
+        mixedRows.length === 20 &&
         mixedRows.every((variant) => !named(variant, "Reset Mixed")),
-      `Reset Mixed is a boolean, off, showing the Reset Mixed layer of every variant but the 16 Mixed ones, which have none, so mixed and its way back cannot be drawn together (GAP-153) (${reset}, ${resetBound.length} bound)`,
+      `Reset Mixed is a boolean, off, showing the Reset Mixed layer of every variant but the 20 Mixed ones, which have none, so mixed and its way back cannot be drawn together (GAP-153) (${reset}, ${resetBound.length} bound)`,
     );
     ok(
       resetWords &&
@@ -13617,6 +13618,121 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         wordsBound("Mixed Text", mixedWords) &&
         mixedRows.every((variant) => named(variant, "Mixed Text")),
       `Reset Mixed Text and Mixed Text are text properties a product localises, bound to every reset and every Mixed variant's words (${resetWords}, ${mixedWords})`,
+    );
+  }
+
+  // GAP-212, decision 224: Input's Edit action ---------------------------------
+  // Action=Edit is a pencil at the field's end, drawn as the copy is: the
+  // transparent 44 square inside the field's end, bound to its height,
+  // pencil-01 at 16 in the field's muted foreground, named Edit, never
+  // pressed, with no disc. Enabled on a read-only field as on any other; a
+  // disabled field's pencil is dimmed. Its band lies under the Mixed rows,
+  // its own Mixed row last, so no variant drawn before it moves.
+  section("GAP-212: Input's Edit action draws pencil-01 at the field's end");
+  {
+    const edit = async (state, status) => {
+      const node = new MockNode("COMPONENT", "Input");
+      componentsPage.appendChild(node);
+      await attempt(() =>
+        controls.updateInputVariant(node, {
+          state,
+          status,
+          action: "Edit",
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      return node;
+    };
+    ok(
+      JSON.stringify(
+        controls.parseInputVariantName(
+          "State=Readonly, Status=Default, Action=Edit",
+        ),
+      ) ===
+        JSON.stringify({
+          state: "Readonly",
+          status: "Default",
+          action: "Edit",
+        }),
+      "Action=Edit parses as itself",
+    );
+    for (const [state, tint] of [
+      ["Readonly", "Colors/foreground/400"],
+      ["Default", "Colors/foreground/400"],
+      ["Disabled", "Colors/foreground/500"],
+    ]) {
+      const node = await edit(state, "Default");
+      const field = named(node, "Input Field");
+      const button = field && named(field, "Input Action");
+      const icon =
+        button && button.children.find((child) => child.type === "INSTANCE");
+      const strokes = icon
+        ? icon.findAll((child) => (child.strokes || []).length > 0)
+        : [];
+      ok(
+        node.name === `State=${state}, Status=Default, Action=Edit` &&
+          button &&
+          button.layoutPositioning === "ABSOLUTE" &&
+          button.x + button.width === field.width &&
+          button.width === 44 &&
+          button.height === field.height &&
+          boundFloat(button, "height") === "Input/field/height" &&
+          (button.fills || []).length === 0 &&
+          field.paddingRight === 48,
+        `${state}/Edit: the pencil's button is the transparent 44 square inside the field's end, the text kept 48 clear (${button ? `x ${button.x}+${button.width} of ${field.width}, padding ${field.paddingRight}` : "none"})`,
+      );
+      ok(
+        icon &&
+          icon.name === "Edit Icon" &&
+          icon.mainComponent === iconComponent("pencil-01") &&
+          icon.width === 16 &&
+          strokes.length > 0 &&
+          strokes.every(
+            (child) => boundVariableName(child.strokes[0]) === tint,
+          ),
+        `${state}/Edit: pencil-01 at 16 in ${tint}, named Edit Icon (${icon ? `${icon.name}, ${icon.mainComponent && icon.mainComponent.name}, ${strokes.map((child) => boundVariableName(child.strokes[0])).join(" ")}` : "no icon"})`,
+      );
+      ok(
+        button &&
+          !named(button, "Pressed Fill") &&
+          button.getSharedPluginData("kozmos_ds_importer", "aria-label") ===
+            "Edit" &&
+          button.getSharedPluginData("kozmos_ds_importer", "aria-pressed") ===
+            "",
+        `${state}/Edit: named Edit, never pressed, no disc (${button && `${button.getSharedPluginData("kozmos_ds_importer", "aria-label")}, pressed "${button.getSharedPluginData("kozmos_ds_importer", "aria-pressed")}"`})`,
+      );
+    }
+    // The set's layout: the four bands and their Mixed rows where they were,
+    // Edit's four rows and its Mixed row under them.
+    const set = new MockNode("COMPONENT_SET", "Input");
+    for (const name of [
+      "State=Default, Status=Default, Action=None",
+      "State=Mixed, Status=Success, Action=TogglePressed",
+      "State=Default, Status=Default, Action=Edit",
+      "State=Readonly, Status=Warning, Action=Edit",
+      "State=Mixed, Status=Default, Action=Edit",
+    ])
+      set.appendChild(new MockNode("COMPONENT", name));
+    controls.layoutInputVariants(set);
+    const at = (name) => {
+      const node = set.children.find((child) => child.name === name);
+      return node ? [node.x, node.y] : null;
+    };
+    ok(
+      JSON.stringify(at("State=Default, Status=Default, Action=None")) ===
+        JSON.stringify([0, 0]) &&
+        JSON.stringify(
+          at("State=Mixed, Status=Success, Action=TogglePressed"),
+        ) === JSON.stringify([3 * 360, 19 * 126]) &&
+        JSON.stringify(at("State=Default, Status=Default, Action=Edit")) ===
+          JSON.stringify([0, 20 * 126]) &&
+        JSON.stringify(at("State=Readonly, Status=Warning, Action=Edit")) ===
+          JSON.stringify([2 * 360, 23 * 126]) &&
+        JSON.stringify(at("State=Mixed, Status=Default, Action=Edit")) ===
+          JSON.stringify([0, 24 * 126]),
+      `Edit's band lies under the Mixed rows, its Mixed row last, and nothing before it moves (${JSON.stringify(set.children.map((child) => [child.name, child.x, child.y]))})`,
     );
   }
 
@@ -18864,6 +18980,416 @@ section("GAP-221: DescriptionList draws each label over its value");
   );
 }
 
+// --- Badge on Chip's scale (GAP-147) --------------------------------------------
+
+// GAP-147, decision 93: Badge is a status badge on Chip's scale, 28, 32 and 36
+// (the icon Badge 32 square), where it was 44 like a button. Each size's
+// height is bound to its Badge/height token, which holds that value.
+section("GAP-147: Badge draws on Chip's scale, 28, 32 and 36");
+{
+  const ready = typeof plugin.updateBadgeVariant === "function";
+  ok(ready, "Badge's painter is reachable");
+  for (const [size, height, width] of ready
+    ? [
+        ["Small", 28],
+        ["Default", 32],
+        ["Large", 36],
+        ["Icon", 32, 32],
+      ]
+    : []) {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin.updateBadgeVariant(component, {
+        variant: "Default",
+        size,
+        variableByName: menusTokens.variableByName,
+        iconComponent: null,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const token =
+      size === "Icon"
+        ? "Badge/height/icon"
+        : `Badge/height/${size.toLowerCase()}`;
+    ok(
+      component.height === height &&
+        menusBound(component, "height") === token &&
+        menusValueOf(token) === height &&
+        (width === undefined ||
+          (component.width === width &&
+            menusValueOf("Badge/width/icon") === width)),
+      `Badge Size=${size}: ${height} tall${width ? `, ${width} wide` : ""}, bound to ${token} at ${height} (${component.height}x${component.width}, ${menusBound(component, "height")} = ${menusValueOf(token)})`,
+    );
+  }
+}
+
+// --- SpriteIcon (GAP-150) ------------------------------------------------------
+
+// GAP-150, decisions 86 and 219: SpriteIcon draws the real cell of a published
+// atlas, never a stand-in: Build and Update read the @2x index and image from
+// the set's Sprite and Cell Name, and fill a Cell rectangle with the atlas
+// cropped to the cell, scaled into the 16, 20 or 24 box with its aspect ratio
+// kept. An atlas that cannot be read leaves the box empty and says so. The
+// network is stood in for here by the fixture atlas the stories use.
+section("GAP-150: SpriteIcon draws the published cell, cropped from the atlas");
+{
+  const ready =
+    Array.isArray(plugin.SPRITE_ICON_SIZES) &&
+    plugin.SPRITE_ICON_IO &&
+    typeof plugin.updateSpriteIconVariant === "function" &&
+    typeof plugin.parseSpriteIconVariantName === "function" &&
+    typeof plugin.configureSpriteIconProperties === "function";
+  ok(
+    ready,
+    "SpriteIcon's painter, its reader and its properties are reachable",
+  );
+  const fixture = JSON.parse(
+    fs.readFileSync("apps/docs/src/sprite-fixture/sprite@2x.json", "utf8"),
+  );
+  const asked = [];
+  const real = ready && { ...plugin.SPRITE_ICON_IO };
+  if (ready) {
+    plugin.SPRITE_ICON_IO.json = async (url) => {
+      asked.push(url);
+      if (url.includes("unreachable")) throw new Error("network blocked");
+      return url.includes("atlas-a") ? fixture : {};
+    };
+    plugin.SPRITE_ICON_IO.image = async (url) => {
+      asked.push(url);
+      return {
+        hash: "atlas-hash",
+        getSizeAsync: async () => ({ width: 370, height: 114 }),
+      };
+    };
+  }
+  const paint = async (value, sprite, cell) => {
+    const component = figma.createComponent();
+    // Build reads the defaults; Update reads the set's properties. Here the
+    // hidden words stand for them, as Update finds them.
+    for (const [name, characters] of [
+      ["Sprite", sprite],
+      ["Cell Name", cell],
+    ]) {
+      const text = new MockNode("TEXT", name);
+      text.characters = characters;
+      component.appendChild(text);
+    }
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateSpriteIconVariant(component, {
+        value,
+        fonts: FONTS,
+        stats,
+        variableByName: menusTokens.variableByName,
+      }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  for (const value of ready ? plugin.SPRITE_ICON_SIZES : []) {
+    const side = Number(value);
+    for (const [name, expected] of [
+      ["desk", { width: side, height: side }],
+      ["1", { width: (side * 90) / 110, height: side }],
+    ]) {
+      const { component, stats } = await paint(
+        value,
+        "https://cdn.test/atlas-a/sprite",
+        name,
+      );
+      if (name === "desk") variants.push(component);
+      const rect = named(component, "Cell");
+      const fill = rect && rect.fills[0];
+      const c = fixture[name];
+      ok(
+        component.name === `Size=${value}` &&
+          plugin.parseSpriteIconVariantName(component.name).value === value &&
+          component.width === side &&
+          component.height === side &&
+          component.fills.length === 0 &&
+          rect &&
+          Math.abs(rect.width - expected.width) < 0.01 &&
+          Math.abs(rect.height - expected.height) < 0.01 &&
+          fill &&
+          fill.type === "IMAGE" &&
+          fill.scaleMode === "CROP" &&
+          fill.imageHash === "atlas-hash" &&
+          JSON.stringify(fill.imageTransform) ===
+            JSON.stringify([
+              [c.width / 370, 0, c.x / 370],
+              [0, c.height / 114, c.y / 114],
+            ]) &&
+          stats.warnings.length === 0,
+        `Size=${value} "${name}": a ${side} box, its Cell ${expected.width.toFixed(2)}x${expected.height} cropped from the atlas, untinted (${component.width}x${component.height}, ${rect && `${rect.width.toFixed(2)}x${rect.height}`}, ${fill && `${fill.type} ${fill.scaleMode} ${JSON.stringify(fill.imageTransform)}`}, ${stats.warnings.join("; ")})`,
+      );
+    }
+  }
+  if (ready) {
+    ok(
+      asked.filter((url) => url.includes("atlas-a")).join() ===
+        "https://cdn.test/atlas-a/sprite@2x.json,https://cdn.test/atlas-a/sprite@2x.png",
+      `the @2x atlas is read once for every variant (${asked.join(", ")})`,
+    );
+    for (const [sprite, cell, says] of [
+      [
+        "https://cdn.test/unreachable/sprite",
+        "desk",
+        /could not be read \(.*network blocked\)/,
+      ],
+      [
+        "https://cdn.test/atlas-a/sprite",
+        "not-in-the-atlas",
+        /no cell named "not-in-the-atlas"/,
+      ],
+    ]) {
+      const { component, stats } = await paint("24", sprite, cell);
+      ok(
+        !named(component, "Cell") &&
+          component.width === 24 &&
+          stats.warnings.some((warning) => says.test(warning)),
+        `${cell} from ${sprite}: the 24 box is left empty, with no stand-in, and the run says why (${stats.warnings.join("; ")})`,
+      );
+    }
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "SpriteIcon";
+    plugin.configureSpriteIconProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const text = (name) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+      );
+    ok(
+      text("Sprite") &&
+        defs[text("Sprite")].defaultValue ===
+          "https://cdn.test/atlas-a/sprite" &&
+        text("Cell Name") &&
+        defs[text("Cell Name")].defaultValue === "desk",
+      "SpriteIcon: Sprite and Cell Name text properties, holding the cell drawn",
+    );
+    set.remove();
+    Object.assign(plugin.SPRITE_ICON_IO, real);
+  }
+  ok(
+    ready &&
+      /^https:\/\/mapscdn\.pointr\.tech\/sprite\/\d+\.\d+\.\d+\/light\/sprite$/.test(
+        plugin.SPRITE_ICON_DEFAULT_ATLAS,
+      ) &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("SpriteIcon"),
+      ) === JSON.stringify({ Size: ["16", "20", "24"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "SpriteIcon" && update === plugin.updateSpriteIconComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Media" && entry.components.includes("SpriteIcon"),
+      ) &&
+      plugin.COMPONENT_DOCS.some(
+        (entry) => entry.componentSetName === "SpriteIcon",
+      ),
+    "SpriteIcon: its default atlas pinned to a maps release, not `latest`; a Size axis, in Update All Core, the Media section and the docs",
+  );
+}
+
+// --- ChipInput (GAP-222) -------------------------------------------------------
+
+// GAP-222, decision 216: React's ChipInput, a field that takes free text and
+// holds each entry as a removable chip inside it: MultiSelect's field with no
+// clear and no open, 320 wide, at least 44 tall, padded 8 and 4, on the
+// control radius in the input family's colours. Filled draws two entries as
+// Chip instances (Small, Selected, Removable; Disabled when disabled; not
+// Removable when read-only), 6 apart; Empty the placeholder. Focus draws the
+// ring; Error the danger edge and Error Text. State and Content axes, in
+// Update All Core, the Inputs section and the docs.
+section("GAP-222: ChipInput holds each entry as a chip inside the field");
+{
+  const ready =
+    Array.isArray(plugin.CHIP_INPUT_STATES) &&
+    Array.isArray(plugin.CHIP_INPUT_CONTENT) &&
+    typeof plugin.updateChipInputVariant === "function" &&
+    typeof plugin.parseChipInputVariantName === "function" &&
+    typeof plugin.configureChipInputProperties === "function";
+  ok(ready, "ChipInput's painter and properties are reachable");
+  // The Chip set the entries are instances of, as Build Chip leaves it.
+  const componentsPage = figma.root.children[0];
+  const chipLook = (state, removable) => ({
+    properties: {
+      Variant: "Neutral",
+      Size: "Small",
+      State: state,
+      Removable: removable,
+    },
+    build: (variant) => {
+      variant.layoutMode = "HORIZONTAL";
+      variant.resize(72, 28);
+      const text = new MockNode("TEXT", "Label Text");
+      text.characters = "Chip";
+      text.componentPropertyReferences = { characters: "Label Text#1:0" };
+      variant.appendChild(text);
+    },
+  });
+  const chipSet = mockComponentSet("Chip", [
+    chipLook("Selected", "True"),
+    chipLook("Selected", "False"),
+    chipLook("Disabled", "True"),
+  ]);
+  chipSet.componentPropertyDefinitions = {
+    "Label Text#1:0": { type: "TEXT", defaultValue: "Chip" },
+  };
+  componentsPage.appendChild(chipSet);
+  const paint = async (value, second) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateChipInputVariant(component, {
+        value,
+        second,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  for (const state of ready ? plugin.CHIP_INPUT_STATES : []) {
+    for (const content of plugin.CHIP_INPUT_CONTENT) {
+      const { component, stats } = await paint(state, content);
+      variants.push(component);
+      const name = `State=${state}, Content=${content}`;
+      const parsed = plugin.parseChipInputVariantName(component.name);
+      ok(
+        component.name === name &&
+          parsed &&
+          parsed.value === state &&
+          parsed.second === content,
+        `${name}: named so, and reads back as itself (${component.name})`,
+      );
+      const field = named(component, "ChipInput Field");
+      const error = state === "Error";
+      ok(
+        field &&
+          component.children.map((child) => child.name).join() ===
+            `Label Text,ChipInput Field,${error ? "Error Text" : "Helper Text"}` &&
+          field.layoutMode === "HORIZONTAL" &&
+          field.height === 44 &&
+          menusBound(field, "height") === "ChipInput/field/min-height" &&
+          menusValueOf("ChipInput/field/min-height") === 44 &&
+          field.paddingLeft === 8 &&
+          field.paddingTop === 4 &&
+          field.itemSpacing === 6 &&
+          menusBound(field, "itemSpacing") === "ChipInput/field/gap" &&
+          menusValueOf("ChipInput/field/gap") === 6 &&
+          field.strokeWeight === 1 &&
+          boundVariableName(field.strokes[0]) ===
+            (error
+              ? "Colors/emotional/danger/600"
+              : state === "Focus"
+                ? "Colors/theme/600"
+                : "Border/Input") &&
+          boundVariableName(field.fills[0]) ===
+            (state === "Disabled" || state === "Readonly"
+              ? "Colors/background/100"
+              : "Colors/background/0"),
+        `${name}: the label, the field 44 tall padded 8 and 4 in the input's colours, then the ${error ? "error" : "helper"} (${component.children.map((child) => child.name)}, ${field && `${field.height} ${field.paddingLeft}/${field.paddingTop} gap ${field.itemSpacing} ${boundVariableName(field.strokes[0])} ${boundVariableName(field.fills[0])}`})`,
+      );
+      const chips = field
+        ? field.children.filter((child) =>
+            /^ChipInput Chip \d$/.test(child.name),
+          )
+        : [];
+      const placeholder = field && named(field, "Placeholder Text");
+      if (content === "Filled") {
+        const wanted = {
+          State: state === "Disabled" ? "Disabled" : "Selected",
+          Removable: state === "Readonly" ? "False" : "True",
+        };
+        ok(
+          chips.length === 2 &&
+            !placeholder &&
+            chips.every(
+              (chip) =>
+                chip.type === "INSTANCE" &&
+                chip.mainComponent &&
+                chip.mainComponent.parent === chipSet &&
+                chip.mainComponent.variantProperties.Size === "Small" &&
+                chip.mainComponent.variantProperties.State === wanted.State &&
+                chip.mainComponent.variantProperties.Removable ===
+                  wanted.Removable,
+            ),
+          `${name}: two Chip instances, Small, ${wanted.State}, Removable ${wanted.Removable}, and no placeholder (${chips.map((chip) => chip.mainComponent && chip.mainComponent.name).join(" | ")}${placeholder ? ", a placeholder" : ""})`,
+        );
+      } else {
+        ok(
+          chips.length === 0 &&
+            placeholder &&
+            placeholder.characters === "Add a keyword" &&
+            boundVariableName(placeholder.fills[0]) ===
+              (state === "Disabled"
+                ? "Colors/foreground/500"
+                : "Colors/foreground/400"),
+          `${name}: the placeholder alone (${chips.length} chips, ${placeholder && placeholder.characters})`,
+        );
+      }
+      const ring = field && named(field, "Focus Ring");
+      ok(
+        Boolean(ring) === (state === "Focus"),
+        `${name}: ${state === "Focus" ? "a" : "no"} focus ring`,
+      );
+      ok(
+        stats.warnings.length === 0,
+        `${name}: no warning (${stats.warnings.join("; ")})`,
+      );
+    }
+  }
+  if (ready) {
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "ChipInput";
+    plugin.configureChipInputProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const texts = [
+      "Label Text",
+      "Placeholder Text",
+      "Helper Text",
+      "Error Text",
+    ];
+    const has = (name) =>
+      Object.keys(defs).some(
+        (k) => k.split("#")[0] === name && defs[k].type === "TEXT",
+      );
+    ok(
+      texts.every(has),
+      `ChipInput: a text property for the label, placeholder, helper and error (${texts.filter((name) => !has(name)).join(", ") || "all"})`,
+    );
+    set.remove();
+  }
+  chipSet.remove();
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ChipInput"),
+      ) ===
+        JSON.stringify({
+          State: ["Default", "Focus", "Disabled", "Readonly", "Error"],
+          Content: ["Filled", "Empty"],
+        }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "ChipInput" && update === plugin.updateChipInputComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Inputs" && entry.components.includes("ChipInput"),
+      ) &&
+      plugin.COMPONENT_DOCS.some(
+        (entry) => entry.componentSetName === "ChipInput",
+      ),
+    "ChipInput: State and Content axes, in Update All Core, the Inputs section and the docs",
+  );
+}
+
 // --- ImageCropper (GAP-273) ----------------------------------------------------
 
 // React's ImageCropper: a column 320 wide, the frame and the zoom row 12
@@ -19380,12 +19906,23 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
         );
         const label = named(item, "Label Text");
         const icon = named(item, "Icon");
+        // Decision 226: Pointr Cloud's live toolbar. No fill in any state;
+        // enabled, the label foreground 0 over a foreground 400 icon;
+        // chosen, both the theme's ink on the surface; disabled, both
+        // foreground 500, 3:1 kept (decision 197's exception to the fill).
         const ink =
           state === "On"
-            ? "Primary Buttons/themed/button/foreground/content/idle"
+            ? "Emotion/themed/text"
             : state === "Disabled"
-              ? "Disabled/foreground"
-              : "Colors/foreground/400";
+              ? "Colors/foreground/500"
+              : "Colors/foreground/0";
+        const iconInk = state === "Off" ? "Colors/foreground/400" : ink;
+        const glyph = icon && icon.findOne((node) => node.type === "VECTOR");
+        const glyphInk =
+          glyph &&
+          boundVariableName(
+            (glyph.strokes && glyph.strokes[0]) || glyph.fills[0],
+          );
         // React's item is min-inline-size 56 and inline-size auto: it hugs
         // its label, 4 each side, and stops at 56 (Straighten is wider). The
         // label never runs out of the item's content box.
@@ -19415,14 +19952,10 @@ section("CLOUD-UI-005: MapEditToolbar draws Cloud's toolbars");
             label.fontSize === 11 &&
             label.lineHeight.value === 14 &&
             boundVariableName(label.fills[0]) === ink &&
-            (state === "On"
-              ? boundVariableName(item.fills[0]) ===
-                "Primary Buttons/themed/button/background/idle"
-              : state === "Disabled"
-                ? boundVariableName(item.fills[0]) === "Disabled/fill"
-                : item.fills.length === 0) &&
+            glyphInk === iconInk &&
+            item.fills.length === 0 &&
             item.opacity === 1,
-          `${at}: ${item.name} is 48 tall, a 24 icon over an 11/14 label in ${ink}, ${state === "On" ? "on the theme fill" : state === "Disabled" ? "on Disabled/fill" : "no fill"} (${item.width}x${item.height}, ${label && label.fontSize}/${label && label.lineHeight.value}, ${item.opacity})`,
+          `${at}: ${item.name} (${state}) is 48 tall, a 24 icon in ${iconInk} over an 11/14 label in ${ink}, with no fill (decision 226) (label ${label && boundVariableName(label.fills[0])}, icon ${glyphInk}, ${item.fills.length} fill(s), ${item.width}x${item.height}, ${item.opacity})`,
         );
       }
       card.remove();
@@ -21356,8 +21889,11 @@ section(
     [node].concat(node.findAll(() => true)).filter((child) => child.opacity < 1)
       .length === 0;
 
-  // MapEditToolbar: a disabled tool and a disabled action are the pair,
-  // nothing dimmed, as React's toolbar draws them (map-edit-toolbar.css).
+  // MapEditToolbar is decision 197's exception (decision 226): a disabled
+  // tool and a disabled action have no fill, and their words and icon are
+  // foreground 500, nothing dimmed, as Pointr Cloud and React's toolbar
+  // draw them (map-edit-toolbar.css).
+  const toolbarOff = "Colors/foreground/500 #747B8B/#8B8474";
   const toolbarIssues = [];
   for (const kind of ["tool", "action"]) {
     const item = await plugin.createMapEditToolbarItem(
@@ -21371,11 +21907,11 @@ section(
     const label = named(item, "Label Text");
     const marks = iconMarksOf(item);
     if (
-      reads(item.fills[0]) !== fill ||
+      item.fills.length !== 0 ||
       !label ||
-      reads(label.fills[0]) !== ink ||
+      reads(label.fills[0]) !== toolbarOff ||
       !marks.length ||
-      !marks.every((mark) => mark === ink) ||
+      !marks.every((mark) => mark === toolbarOff) ||
       !undimmed(item)
     )
       toolbarIssues.push(
@@ -21384,7 +21920,7 @@ section(
   }
   ok(
     toolbarIssues.length === 0,
-    `MapEditToolbar: a disabled tool and a disabled action are Disabled/fill under Disabled/foreground words and icon, undimmed (${toolbarIssues.join("; ")})`,
+    `MapEditToolbar: a disabled tool and a disabled action have no fill, their words and icon in foreground 500, undimmed (decision 226) (${toolbarIssues.join("; ")})`,
   );
 
   // ImageField, Disabled: no layer at half; Frame and Remove are disabled
@@ -21858,6 +22394,901 @@ section("Decision 207: no divider under a selected tree row");
         under.length === 0 &&
         dividers.length === total,
       `${setName}: after Update its ${selected.length} Selected rows draw no divider and the other ${total} one each (${dividers.length} dividers, ${under.length} under a selected row)`,
+    );
+  }
+}
+
+// GAP-281 (0.17.0 wave C): Import Foundations writes a component colour that
+// is a primitive's value as an alias of that primitive, in Light and Dark, so
+// a change to a ramp reaches every Button state drawn from it in Figma as in
+// code. Until 0.17.0 the payload carried 198 Light and 214 Dark Button
+// colours as hex copies, and the Components collection held them as values.
+// This runs the plugin's own variable import against a stand-in variable API
+// and reads what it stored: each Kozmos Components colour whose value, in a
+// mode, is a Kozmos Primitives colour's value in that mode must hold an alias
+// there, and every colour must resolve to what the payload resolves it to.
+section(
+  "GAP-281: Import Foundations aliases each component colour that is a primitive's value",
+);
+{
+  const payload = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  );
+  const importFigma = createFigmaMock({ pages: [] });
+  const collections = [];
+  const variables = [];
+  importFigma.variables.getLocalVariableCollectionsAsync = async () =>
+    collections;
+  importFigma.variables.getLocalVariablesAsync = async () => variables;
+  importFigma.variables.getVariableByIdAsync = async (id) =>
+    variables.find((variable) => variable.id === id) || null;
+  delete importFigma.variables.createVariableAliasByIdAsync;
+  importFigma.variables.createVariableCollection = (name) => {
+    const collection = {
+      id: `VariableCollectionId:${name}`,
+      name,
+      modes: [{ modeId: `${name}:m1`, name: "Mode 1" }],
+      setSharedPluginData() {},
+      renameMode(id, next) {
+        const mode = this.modes.find((m) => m.modeId === id);
+        if (mode) mode.name = next;
+      },
+      addMode(next) {
+        const id = `${name}:m${this.modes.length + 1}`;
+        this.modes.push({ modeId: id, name: next });
+        return id;
+      },
+    };
+    collections.push(collection);
+    return collection;
+  };
+  importFigma.variables.createVariable = (name, collection, type) => {
+    const variable = {
+      id: `VariableID:${collection.name}/${name}`,
+      name,
+      resolvedType: type,
+      variableCollectionId: collection.id,
+      valuesByMode: {},
+      scopes: [],
+      setSharedPluginData() {},
+      setValueForMode(mode, value) {
+        this.valuesByMode[mode] = value;
+      },
+      setVariableCodeSyntax() {},
+    };
+    variables.push(variable);
+    return variable;
+  };
+  const importPlugin = loadPlugin({ pluginPath: PLUGIN, figma: importFigma });
+  const reachable = typeof importPlugin.ensureVariables === "function";
+  ok(reachable, "Import Foundations' variable import is reachable");
+  if (reachable) {
+    const stats = { ...freshStats(), skipped: [] };
+    await importPlugin.ensureVariables(payload, stats);
+
+    const byId = new Map(variables.map((variable) => [variable.id, variable]));
+    const collectionOf = new Map(
+      collections.map((collection) => [collection.id, collection]),
+    );
+    const modeId = (variable, mode) =>
+      collectionOf
+        .get(variable.variableCollectionId)
+        .modes.find((m) => m.name === mode).modeId;
+    // Figma resolves an alias in the target collection's mode of the same
+    // name: the plugin sets Dark on every Kozmos collection together.
+    const resolveStored = (variable, mode, depth = 0) => {
+      const value = variable.valuesByMode[modeId(variable, mode)];
+      if (value && value.type === "VARIABLE_ALIAS") {
+        const target = byId.get(value.id);
+        return target && depth < 10
+          ? resolveStored(target, mode, depth + 1)
+          : null;
+      }
+      return value || null;
+    };
+    const key = (color) =>
+      color
+        ? [color.r, color.g, color.b, color.a === undefined ? 1 : color.a]
+            .map((channel) => Math.round(channel * 255))
+            .join(",")
+        : "none";
+    const payloadByCanonical = new Map(
+      payload.variables.map((record) => [record.canonicalName, record]),
+    );
+    const resolvePayload = (record, mode, depth = 0) => {
+      const value = record.values[mode.toLowerCase()];
+      if (value.kind !== "alias") return importPlugin.parseColor(value.value);
+      const target = payloadByCanonical.get(value.path);
+      return target && depth < 10
+        ? resolvePayload(target, mode, depth + 1)
+        : null;
+    };
+    const inCollection = (name) =>
+      variables.filter(
+        (variable) =>
+          collectionOf.get(variable.variableCollectionId).name === name &&
+          variable.resolvedType === "COLOR",
+      );
+    const primitiveColours = {};
+    for (const mode of ["Light", "Dark"]) {
+      primitiveColours[mode] = new Set(
+        inCollection("Kozmos Primitives").map((variable) =>
+          key(resolveStored(variable, mode)),
+        ),
+      );
+    }
+
+    const components = inCollection("Kozmos Components");
+    const copies = [];
+    const drifted = [];
+    let aliased = 0;
+    for (const variable of components) {
+      const record = payload.variables.find(
+        (item) =>
+          item.collection === "Kozmos Components" &&
+          item.figmaName === variable.name,
+      );
+      for (const mode of ["Light", "Dark"]) {
+        const stored = variable.valuesByMode[modeId(variable, mode)];
+        const resolved = key(resolveStored(variable, mode));
+        if (stored && stored.type === "VARIABLE_ALIAS") aliased += 1;
+        else if (primitiveColours[mode].has(resolved))
+          copies.push(`${variable.name} (${mode}) ${resolved}`);
+        if (record && resolved !== key(resolvePayload(record, mode)))
+          drifted.push(`${variable.name} (${mode})`);
+      }
+    }
+    ok(
+      components.length > 300 && copies.length === 0,
+      `every Components colour that is a Primitives colour is stored as an alias (${aliased} aliases across ${components.length} colours in two modes; ${copies.length} copies${copies.length ? `: ${copies.slice(0, 4).join("; ")}` : ""})`,
+    );
+    ok(
+      drifted.length === 0,
+      `every Components colour resolves to the payload's colour in Light and Dark (${drifted.length} differ${drifted.length ? `: ${drifted.slice(0, 4).join("; ")}` : ""})`,
+    );
+    ok(
+      stats.warnings.length === 0,
+      `the variable import warns of nothing (${stats.warnings.slice(0, 3).join("; ") || "no warnings"})`,
+    );
+    console.log(
+      `  ${components.length} Components colours imported: ${aliased} mode values stored as aliases, ${copies.length} copies of a primitive, ${drifted.length} resolving differently from the payload`,
+    );
+
+    // Decision 223: the constant white is a Primitives variable, white in
+    // Light and Dark, and every Components colour white in both modes aliases
+    // it, not a ramp step that is white in one mode only.
+    const white = inCollection("Kozmos Primitives").find(
+      (variable) => variable.name === "Colors/white",
+    );
+    const opaqueWhite = "255,255,255,255";
+    ok(
+      white &&
+        key(resolveStored(white, "Light")) === opaqueWhite &&
+        key(resolveStored(white, "Dark")) === opaqueWhite &&
+        white.scopes.includes("TEXT_FILL"),
+      `Import Foundations creates Kozmos Primitives' Colors/white, white in Light and Dark (${white ? `${key(resolveStored(white, "Light"))} / ${key(resolveStored(white, "Dark"))}, scopes ${white.scopes.join(" ")}` : "missing"})`,
+    );
+    const bothWhite = components.filter(
+      (variable) =>
+        key(resolveStored(variable, "Light")) === opaqueWhite &&
+        key(resolveStored(variable, "Dark")) === opaqueWhite,
+    );
+    const elsewhere = bothWhite.filter(
+      (variable) =>
+        !white ||
+        ["Light", "Dark"].some(
+          (mode) =>
+            variable.valuesByMode[modeId(variable, mode)]?.id !== white.id,
+        ),
+    );
+    ok(
+      bothWhite.length > 0 && elsewhere.length === 0,
+      `every Components colour white in both modes aliases Colors/white (${bothWhite.length} white in both; ${elsewhere.length} elsewhere${
+        elsewhere.length
+          ? `: ${elsewhere
+              .map((variable) => variable.name)
+              .slice(0, 4)
+              .join("; ")}`
+          : ""
+      })`,
+    );
+    console.log(
+      `  Colors/white ${white ? "created" : "missing"}; ${bothWhite.length - elsewhere.length} of ${bothWhite.length} Components colours white in both modes alias it`,
+    );
+  }
+}
+
+// --- Wave C1 (decisions 215 and 221; GAP-260, GAP-282) -----------------------------
+
+// Decision 221: Avatar takes a Size, Default 40 and Sm 24, its initials at
+// 12/16, bound to Avatar/size/sm; a variant from before the axis parses as
+// Default, so an Update renames it in place.
+section("Decision 221: Avatar's Size, Default and Sm");
+{
+  const sizes = plugin.AVATAR_SIZES || [];
+  const axes = plugin.expectedVariantAxesForComponentSetName("Avatar") || {};
+  ok(
+    JSON.stringify(sizes) === JSON.stringify(["Default", "Sm"]) &&
+      JSON.stringify(axes.Size) === JSON.stringify(sizes) &&
+      JSON.stringify(axes.Content) === JSON.stringify(plugin.AVATAR_CONTENT),
+    `the set declares Content and Size, Default first (${Object.keys(axes).join(", ")}: ${sizes.join(", ")})`,
+  );
+  const parsed = [
+    "Content=Fallback",
+    "Content=Image, Size=Sm",
+    "Content=Image, Size=Huge",
+  ].map((name) => plugin.parseAvatarVariantName(name));
+  ok(
+    JSON.stringify(parsed) ===
+      JSON.stringify([
+        { value: "Fallback", second: "Default" },
+        { value: "Image", second: "Sm" },
+        null,
+      ]),
+    `a variant from before the axis parses as Default, an unknown size as none (${JSON.stringify(parsed)})`,
+  );
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const sm = plugin.COMPONENT_FLOAT_TOKENS.find(
+    (token) => token.name === "Avatar/size/sm",
+  );
+  ok(sm && sm.value === 24, `Avatar/size/sm is 24 (${sm && sm.value})`);
+  for (const [content, size, side] of [
+    ["Fallback", "Default", 40],
+    ["Fallback", "Sm", 24],
+    ["Image", "Sm", 24],
+  ]) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    if (sizes.length)
+      await plugin.updateAvatarVariant(component, {
+        value: content,
+        second: size,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+    const bound = menusBound(component, "width");
+    ok(
+      component.name === `Content=${content}, Size=${size}` &&
+        component.width === side &&
+        component.height === side &&
+        bound === `Avatar/size/${size === "Sm" ? "sm" : "default"}`,
+      `${content} ${size}: ${side} square, bound to its size (${component.name}, ${component.width}x${component.height}, ${bound})`,
+    );
+    const initials = named(component, "Fallback");
+    if (content === "Fallback")
+      ok(
+        initials &&
+          initials.fontSize === (size === "Sm" ? 12 : 14) &&
+          initials.lineHeight.value === (size === "Sm" ? 16 : 20) &&
+          initials.x + initials.width <= side &&
+          initials.y + initials.height <= side,
+        `${content} ${size}: initials ${size === "Sm" ? "12/16" : "14/20"} inside it (${initials && `${initials.fontSize}/${initials.lineHeight.value} at ${initials.x},${initials.y} ${initials.width}x${initials.height}`})`,
+      );
+  }
+}
+
+// Decision 215 and GAP-260: every option of Combobox, Listbox and MultiSelect
+// carries its media, the Avatar's Sm, first, and its trailing words before
+// the check, both hidden; Show Media and Show Trailing show them, Option N
+// Trailing sets the words. Shown, the row keeps its height. Select's rows,
+// drawn by the same painter, take neither.
+section("Decision 215, GAP-260: an option's media and trailing words in Figma");
+{
+  const tokens = payloadVariables(
+    plugin.COMPONENT_FLOAT_TOKENS.map((token) => token.name).concat([
+      ...variableByName.keys(),
+    ]),
+  );
+  const draw = async (fn, props) => {
+    const component = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin[fn](component, {
+        ...props,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    return component;
+  };
+  const parts = [
+    [
+      "Combobox",
+      "updateComboboxVariant",
+      { state: "Default", status: "Default", content: "Open" },
+    ],
+    [
+      "MultiSelect",
+      "updateMultiSelectVariant",
+      { state: "Default", status: "Default", content: "Open" },
+    ],
+    [
+      "Listbox",
+      "updateListboxVariant",
+      { selection: "Single", state: "Default" },
+    ],
+  ];
+  for (const [name, fn, props] of parts) {
+    const component = await draw(fn, props);
+    component.name = Object.entries(props)
+      .map(([key, value]) => `${key[0].toUpperCase()}${key.slice(1)}=${value}`)
+      .join(", ");
+    const rows = component.findAll(
+      (node) => node.type === "FRAME" && / Option \d+$/.test(node.name),
+    );
+    ok(rows.length === 3, `${name}: three option rows (${rows.length})`);
+    rows.forEach((row, index) => {
+      const n = index + 1;
+      const media = row.children[0];
+      const avatar = media && named(media, `Option ${n} Avatar`);
+      const slot = named(row, `Option ${n} Trailing Slot`);
+      const words = slot && named(slot, `Option ${n} Trailing`);
+      const last = row.children[row.children.length - 1];
+      ok(
+        media &&
+          media.name === `Option ${n} Media` &&
+          media.visible === false &&
+          avatar &&
+          avatar.width === 24 &&
+          avatar.height === 24 &&
+          menusBound(avatar, "width") === "Avatar/size/sm",
+        `${name} ${row.name}: its media first, hidden, the 24 Avatar (${media && media.name} ${media && media.visible}, ${avatar && `${avatar.width}x${avatar.height} ${menusBound(avatar, "width")}`})`,
+      );
+      ok(
+        slot &&
+          slot.visible === false &&
+          words &&
+          words.type === "TEXT" &&
+          words.fontSize === 12 &&
+          (last.name === "Icon"
+            ? row.children.indexOf(slot) === row.children.length - 2
+            : last === slot),
+        `${name} ${row.name}: its trailing words hidden, 12/16, before the check (${slot && slot.visible}, ${words && words.fontSize}, last ${last && last.name})`,
+      );
+      ok(
+        row.counterAxisSizingMode === "FIXED" &&
+          avatar &&
+          avatar.height + row.paddingTop + row.paddingBottom <= row.height &&
+          words &&
+          words.lineHeight.value + row.paddingTop + row.paddingBottom <=
+            row.height,
+        `${name} ${row.name}: shown, its media and words fit its fixed ${row.height} (${row.counterAxisSizingMode}, ${row.paddingTop}+${avatar && avatar.height}+${row.paddingBottom})`,
+      );
+    });
+    const set = figma.combineAsVariants([component], figma.currentPage);
+    set.name = name;
+    plugin[`configure${name}Properties`](set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const key = (base, type) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === base && defs[k].type === type,
+      );
+    const showMedia = key("Show Media", "BOOLEAN");
+    const showTrailing = key("Show Trailing", "BOOLEAN");
+    const bound = (prop) =>
+      set.findAll(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.visible === prop,
+      ).length;
+    ok(
+      showMedia &&
+        showTrailing &&
+        defs[showMedia].defaultValue === false &&
+        defs[showTrailing].defaultValue === false &&
+        bound(showMedia) === 3 &&
+        bound(showTrailing) === 3,
+      `${name}: Show Media and Show Trailing, off, each showing three rows' slots (${showMedia && bound(showMedia)}, ${showTrailing && bound(showTrailing)})`,
+    );
+    const texts = [1, 2, 3].map((n) => key(`Option ${n} Trailing`, "TEXT"));
+    ok(
+      texts.every(Boolean) &&
+        JSON.stringify(texts.map((k) => defs[k].defaultValue)) ===
+          JSON.stringify(["Text", "Number", "Image"]),
+      `${name}: Option 1 to 3 Trailing set the words (${texts.map((k) => k && defs[k].defaultValue)})`,
+    );
+  }
+  const select = await draw("updateSelectVariant", {
+    state: "Default",
+    status: "Default",
+    content: "Open",
+  });
+  ok(
+    select.findAll((node) => / (Media|Trailing Slot)$/.test(node.name))
+      .length === 0,
+    `Select's rows take no media and no trailing words`,
+  );
+}
+
+// --- CodeBlock (GAP-216) ------------------------------------------------------
+
+// GAP-216, decision 225: React's CodeBlock, a read-only block of code. 320
+// wide and as tall as its code, 12 inside (CodeBlock/padding), on the control
+// radius in Colors/background/100; the code 14/20 in Colors/foreground/0 in
+// Fira Mono, the Primitives mono family. Wrap breaks the long line; Scroll
+// keeps it whole, clipped at the block's end. The Copy, a 44 square 4 in
+// from the top end with copy-01 at 16 in Colors/foreground/400, and the 36
+// Copy Gutter that keeps the code 48 clear of the end are shown by one Copy
+// boolean, off as React's copyable is. One Overflow axis, Wrap first, in
+// Update All Core and the page's Data display section.
+section(
+  "GAP-216: CodeBlock draws code in the mono family on the muted surface",
+);
+{
+  const ready =
+    Array.isArray(plugin.CODE_BLOCK_OVERFLOWS) &&
+    typeof plugin.updateCodeBlockVariant === "function" &&
+    typeof plugin.parseCodeBlockVariantName === "function" &&
+    typeof plugin.configureCodeBlockProperties === "function";
+  ok(ready, "CodeBlock's painter and properties are reachable");
+  const paint = async (value) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      plugin.updateCodeBlockVariant(component, {
+        value,
+        variableByName: menusTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      }),
+    );
+    return { component, stats };
+  };
+  const variants = [];
+  const heights = {};
+  for (const value of ready ? ["Wrap", "Scroll"] : []) {
+    const { component, stats } = await paint(value);
+    variants.push(component);
+    const scroll = value === "Scroll";
+    ok(
+      component.name === `Overflow=${value}` &&
+        plugin.parseCodeBlockVariantName(component.name).value === value,
+      `${value}: named Overflow=${value}, and reads back as itself (${component.name})`,
+    );
+    ok(
+      JSON.stringify(component.children.map((child) => child.name)) ===
+        JSON.stringify(["Code", "Copy Gutter", "Copy"]) &&
+        component.width === 320 &&
+        component.cornerRadius === 16 &&
+        boundVariableName(component.fills[0]) === "Colors/background/100" &&
+        component.strokes.length === 0 &&
+        component.clipsContent === true &&
+        ["paddingLeft", "paddingRight", "paddingTop", "paddingBottom"].every(
+          (field) =>
+            component[field] === 12 &&
+            menusBound(component, field) === "CodeBlock/padding",
+        ) &&
+        menusValueOf("CodeBlock/padding") === 12,
+      `${value}: the code, the gutter and the copy, 320 wide, 12 inside, on the control radius in background/100, clipping (${component.children.map((child) => child.name)}, ${component.width}, ${component.cornerRadius}, ${boundVariableName(component.fills[0])}, ${component.paddingLeft})`,
+    );
+    const code = named(component, "Code");
+    ok(
+      code &&
+        code.type === "TEXT" &&
+        code.fontName.family === "Fira Mono" &&
+        code.fontSize === 14 &&
+        code.lineHeight.value === 20 &&
+        boundVariableName(code.fills[0]) === "Colors/foreground/0" &&
+        code.characters.split("\n").length === 7 &&
+        code.textAutoResize === (scroll ? "WIDTH_AND_HEIGHT" : "HEIGHT"),
+      `${value}: the code is Fira Mono 14/20 in foreground 0, ${scroll ? "each line whole" : "wrapping"} (${code && `${code.fontName.family} ${code.fontSize}/${code.lineHeight.value}, ${boundVariableName(code.fills[0])}, ${code.textAutoResize}`})`,
+    );
+    heights[value] = component.height;
+    if (scroll) {
+      ok(
+        code && code.width > 320 - 24,
+        `Scroll: the long line runs past the block's end, clipped there (${code && code.width})`,
+      );
+    }
+    const gutter = named(component, "Copy Gutter");
+    const copy = named(component, "Copy");
+    const icon =
+      copy && copy.children.find((child) => child.type === "INSTANCE");
+    ok(
+      gutter &&
+        gutter.width === 36 &&
+        copy &&
+        copy.layoutPositioning === "ABSOLUTE" &&
+        copy.width === 44 &&
+        copy.height === 44 &&
+        copy.x === 320 - 48 &&
+        copy.y === 4 &&
+        copy.constraints.horizontal === "MAX" &&
+        icon &&
+        icon.width === 16 &&
+        icon
+          .findAll((child) => (child.strokes || []).length > 0)
+          .every(
+            (child) =>
+              boundVariableName(child.strokes[0]) === "Colors/foreground/400",
+          ),
+      `${value}: the copy is 44, 4 in from the top end, copy-01 at 16 in foreground 400, a 36 gutter beside the code (${gutter && gutter.width}, ${copy && `${copy.x},${copy.y} ${copy.width}x${copy.height}`}, ${icon && icon.width})`,
+    );
+    ok(
+      framesLargerThanAsked(component).length === 0,
+      `${value}: no frame larger than it was drawn (${framesLargerThanAsked(
+        component,
+      )
+        .map((node) => node.name)
+        .join(", ")})`,
+    );
+    ok(
+      stats.warnings.every((warning) =>
+        /is not on the Icons page|icon/i.test(warning),
+      ),
+      `${value}: no warning but the stand-in's missing icons (${stats.warnings.join("; ")})`,
+    );
+  }
+  if (ready) {
+    ok(
+      heights.Wrap > heights.Scroll,
+      `Wrap breaks the long line onto another, so it is taller than Scroll (${heights.Wrap} against ${heights.Scroll})`,
+    );
+    const set = figma.combineAsVariants(variants, figma.currentPage);
+    set.name = "CodeBlock";
+    plugin.configureCodeBlockProperties(set, freshStats());
+    const defs = set.componentPropertyDefinitions;
+    const key = (name, type) =>
+      Object.keys(defs).find(
+        (k) => k.split("#")[0] === name && defs[k].type === type,
+      );
+    const copy = key("Copy", "BOOLEAN");
+    const shown = set.findAll(
+      (node) =>
+        node.componentPropertyReferences &&
+        node.componentPropertyReferences.visible === copy,
+    );
+    ok(
+      copy &&
+        defs[copy].defaultValue === false &&
+        shown.length === 4 &&
+        shown.every((node) => ["Copy", "Copy Gutter"].includes(node.name)),
+      `CodeBlock: Copy, off as React's copyable, shows each variant's Copy and its gutter and nothing else (${copy}, ${shown.map((node) => node.name)})`,
+    );
+    const codeText = key("Code Text", "TEXT");
+    ok(
+      codeText &&
+        set
+          .findAll((node) => node.name === "Code")
+          .every(
+            (node) =>
+              node.componentPropertyReferences &&
+              node.componentPropertyReferences.characters === codeText,
+          ),
+      `CodeBlock: Code Text edits the code in every variant (${codeText})`,
+    );
+    set.remove();
+  }
+  ok(
+    ready &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("CodeBlock"),
+      ) === JSON.stringify({ Overflow: ["Wrap", "Scroll"] }) &&
+      plugin.CORE_UPDATE_SEQUENCE.some(
+        ([name, update]) =>
+          name === "CodeBlock" && update === plugin.updateCodeBlockComponent,
+      ) &&
+      plugin.COMPONENT_PAGE_LAYOUT_SECTIONS.some(
+        (entry) =>
+          entry.title === "Data display" &&
+          entry.components.includes("CodeBlock"),
+      ) &&
+      plugin.COMPONENT_DOCS.some(
+        (entry) => entry.componentSetName === "CodeBlock",
+      ),
+    "CodeBlock: one Overflow axis, in Update All Core, the Data display section and the docs",
+  );
+}
+
+section(
+  "Decision 209: Table's Selectable, Sortable and Numeric Column, and SplitButton's Menu Open",
+);
+{
+  const tokens = menusTokens;
+  const kindOf = (node) =>
+    node && node.getSharedPluginData("kozmos_ds_importer", "kind");
+  const reachable =
+    typeof plugin.updateTableVariant === "function" &&
+    typeof plugin.createSplitButtonVariant === "function";
+  ok(reachable, "Table's and SplitButton's painters are reachable");
+
+  // Table: every row's hidden Select Cell first, the header's box mixed and
+  // the last row's checked on its hidden Selected Fill; Header 1's hidden
+  // ascending arrow; and every row's hidden Numeric Cell last, to the end.
+  for (const density of reachable ? ["Default", "Compact"] : []) {
+    const table = figma.createComponent();
+    await withAutoLayout(() =>
+      plugin.updateTableVariant(table, {
+        value: density,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    const rows = table.children;
+    const height = density === "Compact" ? 40 : 48;
+    const issues = [];
+    rows.forEach((row, index) => {
+      const flow = row.children.filter(
+        (child) => child.layoutPositioning !== "ABSOLUTE",
+      );
+      const select = flow[0];
+      const numeric = flow[flow.length - 1];
+      const look =
+        index === 0 ? "Mixed" : index === 3 ? "Checked" : "Unchecked";
+      const box = select && select.children[0];
+      const mark = box && box.children[0];
+      if (
+        !select ||
+        select.name !== "Select Cell" ||
+        select.visible !== false ||
+        select.width !== 36 ||
+        select.paddingLeft !== 16 ||
+        select.paddingRight !== 0 ||
+        kindOf(select) !== "table-select-cell"
+      )
+        issues.push(
+          `${row.name}: no hidden 36 Select Cell first (${select && select.name})`,
+        );
+      if (
+        !box ||
+        box.name !== `Checkbox ${look}` ||
+        box.width !== 20 ||
+        box.cornerRadius !== 4 ||
+        boundVariableName(box.strokes[0]) !==
+          (look === "Unchecked"
+            ? "Border/Input"
+            : "Primary Buttons/themed/button/background/idle") ||
+        (look === "Unchecked"
+          ? box.fills.length !== 0 || mark
+          : boundVariableName(box.fills[0]) !==
+              "Primary Buttons/themed/button/background/idle" ||
+            !mark ||
+            mark.width !== 16 ||
+            mark.x !== 2 ||
+            mark.y !== 2)
+      )
+        issues.push(
+          `${row.name}: its box is not Checkbox's ${look} (${box && box.name})`,
+        );
+      const words = numeric && numeric.children[0];
+      if (
+        !numeric ||
+        numeric.name !== "Numeric Cell" ||
+        numeric.visible !== false ||
+        numeric.primaryAxisAlignItems !== "MAX" ||
+        !words ||
+        words.textAlignHorizontal !== "RIGHT" ||
+        words.characters !== ["POIs", "1,204", "86", "3"][index]
+      )
+        issues.push(
+          `${row.name}: no hidden Numeric Cell last, to the end (${numeric && numeric.name})`,
+        );
+      if (row.height !== height)
+        issues.push(`${row.name}: ${row.height} high, not ${height}`);
+      const fill = row.children.find((child) => child.name === "Selected Fill");
+      if (index === 3) {
+        if (
+          !fill ||
+          fill.visible !== false ||
+          fill.layoutPositioning !== "ABSOLUTE" ||
+          row.children.indexOf(fill) !== 0 ||
+          boundVariableName(fill.fills[0]) !== "Colors/background/100" ||
+          fill.width !== row.width ||
+          fill.height !== height ||
+          row.strokeBottomWeight !== 0
+        )
+          issues.push(
+            `${row.name}: no hidden hover fill under it, or a divider under it`,
+          );
+      } else if (fill) {
+        issues.push(
+          `${row.name}: a Selected Fill on a row that is not selected`,
+        );
+      }
+    });
+    const headerCell =
+      rows[0] && rows[0].children.find((c) => c.name === "Header 1 Cell");
+    const arrow =
+      headerCell &&
+      headerCell.children.find((c) => c.name === "Header 1 Sort Icon");
+    if (
+      !arrow ||
+      arrow.type !== "INSTANCE" ||
+      arrow.visible !== false ||
+      arrow.width !== 16 ||
+      headerCell.children.indexOf(arrow) !== 1 ||
+      kindOf(arrow) !== "table-sort-icon"
+    )
+      issues.push(
+        `Header 1: no hidden 16 arrow after its words (${arrow && arrow.type})`,
+      );
+    // Hidden, the three columns share the width as before.
+    const widths = (row) =>
+      row.children
+        .filter(
+          (c) => c.visible !== false && c.layoutPositioning !== "ABSOLUTE",
+        )
+        .map((c) => c.width);
+    const even = (list) => list.every((w) => Math.abs(w - list[0]) < 0.01);
+    const sum = (list) => list.reduce((a, b) => a + b, 0);
+    const hiddenWidths = rows[1] ? widths(rows[1]) : [];
+    const hiddenSum = sum(hiddenWidths);
+    if (hiddenWidths.length !== 3 || !even(hiddenWidths))
+      issues.push(
+        `hidden, a row's columns are ${hiddenWidths.map(Math.round).join()}, not three equal ones`,
+      );
+    ok(
+      rows.length === 4 && issues.length === 0,
+      `Table ${density}: Select Cell, Selected Fill, Header 1 Sort Icon and Numeric Cell drawn hidden, as decision 209 asks (${issues.slice(0, 4).join("; ") || "all as expected"})`,
+    );
+    if (rows[1]) {
+      await withAutoLayout(async () => {
+        for (const row of rows)
+          for (const child of row.children)
+            if (child.name === "Select Cell" || child.name === "Numeric Cell")
+              child.visible = true;
+        for (const row of rows)
+          row.resizeWithoutConstraints(row.width, row.height);
+      });
+      const shown = widths(rows[1]);
+      ok(
+        shown.length === 5 &&
+          shown[0] === 36 &&
+          even(shown.slice(1)) &&
+          Math.abs(sum(shown) - hiddenSum) < 0.01,
+        `Table ${density}: shown, the Select Cell is 36 and four equal columns share the rest of the row's ${Math.round(hiddenSum)} (${shown.map(Math.round).join()})`,
+      );
+    }
+  }
+
+  // The set's three booleans, each off and bound to its layers, after an
+  // Update that keeps both variants' node ids.
+  if (reachable) {
+    const replay = await replayUpdate(
+      "Table",
+      ["Density=Default", "Density=Compact"],
+      "updateTableComponent",
+      [
+        (() => {
+          const page = new MockNode("PAGE", "Icons");
+          for (const name of ["check", "minus", "arrow-up"])
+            page.appendChild(mockIconComponent(name));
+          return page;
+        })(),
+      ],
+    );
+    const definitions = replay.liveSet.componentPropertyDefinitions || {};
+    const key = (base) =>
+      Object.keys(definitions).find(
+        (k) => k.split("#")[0] === base && definitions[k].type === "BOOLEAN",
+      );
+    const bound = (base, layer) =>
+      replay.liveSet
+        .findAll((node) => node.name === layer)
+        .filter(
+          (node) =>
+            node.componentPropertyReferences &&
+            node.componentPropertyReferences.visible === key(base),
+        ).length;
+    const counts = [
+      ["Selectable", "Select Cell", 8],
+      ["Selectable", "Selected Fill", 2],
+      ["Sortable", "Header 1 Sort Icon", 2],
+      ["Numeric Column", "Numeric Cell", 8],
+    ].map(([base, layer, expected]) => [
+      base,
+      layer,
+      expected,
+      bound(base, layer),
+    ]);
+    ok(
+      replay.kept.every(Boolean) &&
+        ["Selectable", "Sortable", "Numeric Column"].every(
+          (base) => key(base) && definitions[key(base)].defaultValue === false,
+        ) &&
+        counts.every(([, , expected, got]) => expected === got) &&
+        propertiesBoundToNoLayer(replay.liveSet).length === 0,
+      `Table after Update: its variants keep their ids, and Selectable, Sortable and Numeric Column are off, each bound to its layers (${counts.map(([b, l, e, g]) => `${b}→${l} ${g}/${e}`).join(", ")}; unbound ${propertiesBoundToNoLayer(replay.liveSet).join(", ") || "none"})`,
+    );
+  }
+
+  // SplitButton: the open menu, hidden, under the button at its end, with
+  // an item and its icon, a separator and a disabled item at half; none on
+  // a Disabled variant, whose menu never opens.
+  const menuIssues = [];
+  for (const variant of reachable ? plugin.SPLIT_BUTTON_VARIANTS : []) {
+    for (const state of ["Default", "Disabled"]) {
+      const button = await withAutoLayout(() =>
+        plugin.createSplitButtonVariant({
+          variant,
+          size: "Default",
+          state,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          textStyle: null,
+          stats: freshStats(),
+        }),
+      );
+      const menu = button.children.find((c) => c.name === "Split Menu");
+      if (state === "Disabled") {
+        if (menu) menuIssues.push(`${variant} Disabled draws a menu`);
+        continue;
+      }
+      const names = menu ? menu.children.map((c) => c.name) : [];
+      const first = menu && menu.children[0];
+      const icon = first && first.children.find((c) => c.name === "Item Icon");
+      const second = menu && menu.children[2];
+      if (
+        !menu ||
+        menu.visible !== false ||
+        menu.layoutPositioning !== "ABSOLUTE" ||
+        menu.width !== 224 ||
+        menu.x !== button.width - 224 ||
+        menu.y !== button.height + 4 ||
+        boundVariableName(menu.fills[0]) !== "Surface/0" ||
+        kindOf(menu) !== "split-button-menu" ||
+        names.join() !== "Menu Item 1,Menu Separator,Menu Item 2" ||
+        !icon ||
+        icon.width !== 16 ||
+        first.opacity === 0.5 ||
+        !second ||
+        second.opacity !== 0.5
+      )
+        menuIssues.push(
+          `${variant}: ${menu ? `${menu.visible}, ${menu.layoutPositioning}, ${menu.x},${menu.y}, ${names.join("/")}` : "no menu"}`,
+        );
+    }
+  }
+  ok(
+    reachable && menuIssues.length === 0,
+    `SplitButton: every enabled variant draws its open menu hidden, under its end, an icon item, a separator and a disabled item at half; no Disabled variant draws one (${menuIssues.slice(0, 4).join("; ") || "all as expected"})`,
+  );
+  if (reachable) {
+    const names = [];
+    for (const variant of plugin.SPLIT_BUTTON_VARIANTS)
+      for (const size of plugin.SPLIT_BUTTON_SIZES)
+        for (const state of plugin.SPLIT_BUTTON_STATES)
+          names.push(`Variant=${variant}, Size=${size}, State=${state}`);
+    const replay = await replayUpdate(
+      "SplitButton",
+      names,
+      "updateSplitButtonComponent",
+      [
+        (() => {
+          const page = new MockNode("PAGE", "Icons");
+          for (const name of ["chevron-down", "download-01"])
+            page.appendChild(mockIconComponent(name));
+          return page;
+        })(),
+      ],
+    );
+    const definitions = replay.liveSet.componentPropertyDefinitions || {};
+    const open = Object.keys(definitions).find(
+      (k) =>
+        k.split("#")[0] === "Menu Open" && definitions[k].type === "BOOLEAN",
+    );
+    const menus = replay.liveSet.findAll((node) => node.name === "Split Menu");
+    const enabled = names.filter((name) => !/State=Disabled/.test(name)).length;
+    ok(
+      replay.kept.every(Boolean) &&
+        open &&
+        definitions[open].defaultValue === false &&
+        menus.length === enabled &&
+        menus.every(
+          (menu) =>
+            menu.componentPropertyReferences &&
+            menu.componentPropertyReferences.visible === open,
+        ),
+      `SplitButton after Update: every variant keeps its id, and Menu Open is off and shows the ${enabled} enabled variants' menus (${menus.length} menus, ${open || "no Menu Open"})`,
     );
   }
 }

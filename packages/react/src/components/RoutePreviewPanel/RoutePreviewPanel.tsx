@@ -71,6 +71,14 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
     // and nothing in the shell's panel, whose surface, solid or glass, is the
     // one surface (decision 43). A `bg-background` would outrank it.
 
+    const showsStatus = status !== "ready" && Boolean(statusContent);
+    const statusIsAlert = status === "error" || status === "no-route";
+    const statusBox = (
+      <div className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm">
+        {statusContent}
+      </div>
+    );
+
     return (
       // The SDK's touch geometry under any density (decision 89).
       <DensityScope density="touch" asChild>
@@ -98,25 +106,19 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
               {selectedRouteAnnouncement}
             </p>
 
-            {status !== "ready" && statusContent ? (
-              <div
-                className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm"
-                role={
-                  status === "error" || status === "no-route"
-                    ? "alert"
-                    : "status"
-                }
-                // Said as well as implied: an open popup hides every box not
-                // marked aria-live (GAP-193).
-                aria-live={impliedLive(
-                  status === "error" || status === "no-route"
-                    ? "alert"
-                    : "status",
-                )}
-              >
-                {statusContent}
-              </div>
-            ) : (
+            {/* The status box goes into a live region that is mounted, empty,
+                before it (GAP-226): one inserted with its words may not be
+                said. A status and an error each have their own, so an error
+                after a status is inserted into the alert region. Said as
+                well as implied: an open popup hides every box not marked
+                aria-live (GAP-193). */}
+            <div role="status" aria-live={impliedLive("status")}>
+              {showsStatus && !statusIsAlert && statusBox}
+            </div>
+            <div role="alert" aria-live={impliedLive("alert")}>
+              {showsStatus && statusIsAlert && statusBox}
+            </div>
+            {showsStatus ? null : (
               <div aria-label={optionsLabel} role="group">
                 <ul className="m-0 grid snap-x snap-mandatory auto-cols-[min(78%,14rem)] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-0 pb-3">
                   {options.map((option, index) => (
@@ -141,19 +143,20 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
               </div>
             )}
 
-            {alert && (
-              <div
-                className={cn(
-                  "mt-3 rounded-control px-3 py-2 text-sm",
-                  EMOTION_FILLED_CLASSES,
-                )}
-                style={emotionSurfaceProperties("alert")}
-                role="status"
-                aria-live="polite"
-              >
-                {alert}
-              </div>
-            )}
+            {/* Its own region, mounted before the notice (GAP-226). */}
+            <div role="status" aria-live="polite">
+              {alert && (
+                <div
+                  className={cn(
+                    "mt-3 rounded-control px-3 py-2 text-sm",
+                    EMOTION_FILLED_CLASSES,
+                  )}
+                  style={emotionSurfaceProperties("alert")}
+                >
+                  {alert}
+                </div>
+              )}
+            </div>
           </div>
 
           <footer className="flex gap-3 border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

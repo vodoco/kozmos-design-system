@@ -4,14 +4,20 @@ public struct KozmosBottomNavigation: View {
     @Binding var selection: Int
     let items: [(icon: String, title: String)]
     let onSelect: (Int) -> Void
+    let inset: Bool
 
+    /// - Parameter inset: 8 between the bar's top line and its tiles, where
+    ///   it is 4, so a selected tile's fill clears the line (GAP-245), as
+    ///   React's `inset`. Off by default: the bar is drawn as it was.
     public init(
         selection: Binding<Int>,
         items: [(icon: String, title: String)],
+        inset: Bool = false,
         onSelect: @escaping (Int) -> Void = { _ in }
     ) {
         self._selection = selection
         self.items = items
+        self.inset = inset
         self.onSelect = onSelect
     }
 
@@ -32,7 +38,8 @@ public struct KozmosBottomNavigation: View {
             }
         }
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
-        .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
+        .padding(.top, inset ? KozmosDimensions.primitivesLayoutSpacing100 : KozmosDimensions.primitivesLayoutSpacing50)
+        .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing50)
         .background(KozmosColors.primitivesColorsBackground0)
         .overlay(
             Rectangle()

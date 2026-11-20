@@ -90,6 +90,7 @@ import {
   ImageCropper,
   DescriptionList,
   DescriptionListItem,
+  CodeBlock,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -125,6 +126,8 @@ import {
   Listbox,
   MapControlButton,
   MultiSelect,
+  ChipInput,
+  SpriteIcon,
   NavigationItem,
   NumberInput,
   POIDetailPanel,
@@ -169,7 +172,7 @@ const tourStepTakes: Takes = {
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Box, D],
   [Stack, D],
-  [Grid, D],
+  [Grid, { dom: true, own: ["onRangeChange"] }],
   [Text, D],
   [Heading, D],
   [Container, D],
@@ -233,7 +236,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [ListItem, D],
   [ListItemStatus, D],
   [SettingsRow, D],
-  [Table, D],
+  [Table, { dom: true, own: ["onSelectedIdsChange"] }],
   [
     Tree,
     {
@@ -290,6 +293,7 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   ],
   [DescriptionList, D],
   [DescriptionListItem, D],
+  [CodeBlock, D],
   [DatePicker, datePickerTakes],
   [TimePicker, datePickerTakes],
   [FloatingActionButton, D],
@@ -396,7 +400,14 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       own: ["onOpenChange", "onRangeChange", "onResetMixed", "onValueChange"],
     },
   ],
-  [Listbox, { dom: true, except: ["onChange"], own: ["onValueChange"] }],
+  [
+    Listbox,
+    {
+      dom: true,
+      except: ["onChange"],
+      own: ["onActiveValueChange", "onValueChange"],
+    },
+  ],
   [MapControlButton, D],
   [
     MultiSelect,
@@ -406,6 +417,15 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       own: ["onResetMixed", "onSearchValueChange", "onValueChange"],
     },
   ],
+  [
+    ChipInput,
+    {
+      dom: true,
+      except: ["onChange"],
+      own: ["onInputValueChange", "onValueChange"],
+    },
+  ],
+  [SpriteIcon, D],
   [NavigationItem, D],
   [NumberInput, segmentedControlTakes],
   [
@@ -509,6 +529,11 @@ const html = (
 const H = html();
 const boxBooleans = html(["asChild"]);
 const textBooleans = html(["asChild", "truncate"]);
+const textareaBooleans = html(
+  ["disabled", "readOnly", "required"],
+  [],
+  ["error"],
+);
 const menuBooleans = {
   flags: ["defaultOpen", "modal", "open"],
   unions: [],
@@ -546,7 +571,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
 >([
   [Box, boxBooleans],
   [Stack, boxBooleans],
-  [Grid, boxBooleans],
+  [Grid, html(["asChild", "virtualized"])],
   [Text, textBooleans],
   [Heading, textBooleans],
   [Container, html(["asChild", "centered"])],
@@ -599,7 +624,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
-  [Textarea, html(["disabled", "readOnly", "required"], [], ["error"])],
+  [Textarea, textareaBooleans],
   [
     Checkbox,
     {
@@ -704,7 +729,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       texts: [],
     },
   ],
-  [BottomNavigation, H],
+  [BottomNavigation, html(["inset"])],
   [Navbar, html(["logoInset"])],
   [Sidebar, html(["collapsed", "collapsible"])],
   [Menu, menuBooleans],
@@ -734,7 +759,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [ListItem, html(["selected"])],
   [ListItemStatus, H],
   [SettingsRow, settingsRowBooleans],
-  [Table, html(["framed"])],
+  [Table, html(["framed", "selectable"])],
   [Tree, html(["checkable", "divided", "virtualized"])],
   [Timeline, H],
   [
@@ -767,6 +792,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [ImageCropper, html(["disabled", "showZoomControls"])],
   [DescriptionList, H],
   [DescriptionListItem, H],
+  [CodeBlock, html(["copyable", "wrap"])],
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
   [FloatingActionButton, floatingActionButtonBooleans],
@@ -844,7 +870,10 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [SaveLocationCard, html(["isSaved"])],
   [ScrollArea, html(["hideScrollbar"])],
   [UserLocationMarker, html(["compact", "offFloor", "showHeading"])],
-  [AdaptiveMapShell, html(["bottomControlsPadCamera", "controlsPadCamera"])],
+  [
+    AdaptiveMapShell,
+    html(["bottomControlsPadCamera", "controlsPadCamera", "followsKeyboard"]),
+  ],
   [BrowseCategoriesPanel, H],
   [CategoryTile, categoryTileBooleans],
   [
@@ -920,6 +949,8 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
+  [ChipInput, textareaBooleans],
+  [SpriteIcon, H],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
   [
     NumberInput,

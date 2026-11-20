@@ -1,5 +1,7 @@
 package com.kozmos.components.input
 
+import com.kozmos.components.fieldwrapper.kozmosFieldState
+import com.kozmos.components.fieldwrapper.KozmosFieldState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +26,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -93,6 +96,18 @@ sealed interface KozmosInputAction {
         val pressed: Boolean,
         val onPressedChange: (Boolean) -> Unit
     ) : KozmosInputAction
+
+    /**
+     * A pencil that calls [onEdit] (GAP-212, decision 224): what editing
+     * means is the product's, a dialog or making the field editable. For a
+     * read-only value with an editor elsewhere, Map Personas' ID and Map
+     * Style; read only does not disable it, only a disabled field does.
+     * [label] is its name, "Edit" by default, in the product's words.
+     */
+    data class Edit(
+        override val label: String = "Edit",
+        val onEdit: () -> Unit
+    ) : KozmosInputAction
 }
 
 /** Decision 164: what a field-end button draws is 4 in from its edges, with the control radius less 4. */
@@ -114,12 +129,14 @@ fun KozmosInput(
     error: Boolean = false,
     helperText: String? = null,
     errorMessage: String? = null,
-    /** A copy or toggle button inside the field's end (GAP-154). */
+    /** A copy, toggle or edit button inside the field's end (GAP-154, GAP-212). */
     action: KozmosInputAction? = null,
     mixed: Boolean = false,
     mixedLabel: String = KozmosMixedValue.LABEL,
     onResetMixed: (() -> Unit)? = null,
-    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL
+    resetMixedLabel: String = KozmosMixedValue.RESET_LABEL,
+    /** Said as a read-only field's state (GAP-235); a product that translates passes its own. */
+    readOnlyLabel: String = KozmosFieldState.READ_ONLY_LABEL
 ) {
     // Mixed (GAP-153), the field shows none of its own text; the visitor's
     // typing still reaches the product, which clears `mixed`.
@@ -177,8 +194,16 @@ fun KozmosInput(
             cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
             // Said as its state while mixed, set in one semantics block so the
             // field is the same node as it stops being mixed and keeps focus.
+            // Read only and in error, said on the field itself (GAP-235,
+            // GAP-236), as React's readOnly and aria-invalid.
             modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus).semantics {
-                if (mixed) stateDescription = mixedLabel
+                kozmosFieldState(
+                    readOnly = readOnly,
+                    readOnlyLabel = readOnlyLabel,
+                    inError = effectiveStatus == KozmosInputStatus.Error,
+                    errorMessage = errorMessage,
+                    stateParts = listOfNotNull(mixedLabel.takeIf { mixed })
+                )
             },
             decorationBox = { innerTextField ->
                 Row(
@@ -292,6 +317,24 @@ private fun KozmosInputActionButton(action: KozmosInputAction, value: String, en
                     liveRegion = LiveRegionMode.Polite
                     if (said.isNotEmpty()) contentDescription = said
                 })
+            }
+        }
+
+        is KozmosInputAction.Edit -> {
+            // Drawn as the copy is: the field's muted icon in its 44 end.
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clickable(enabled = enabled, role = Role.Button, onClick = action.onEdit)
+                    .semantics { contentDescription = action.label },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = if (enabled) KozmosThemeTokens.primitivesColorsForeground400 else KozmosThemeTokens.primitivesColorsForeground500,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
 

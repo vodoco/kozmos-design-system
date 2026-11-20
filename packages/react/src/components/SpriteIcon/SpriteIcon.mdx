@@ -1,0 +1,101 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import { PlatformSnippets } from "../PlatformSnippets";
+import * as SpriteIconStories from "./SpriteIcon.stories";
+
+<Meta of={SpriteIconStories} />
+
+# SpriteIcon
+
+One cell of a published MapLibre sprite atlas, drawn as published (GAP-150, decisions 86 and 219): a taxonomy type's
+full-colour bubble, its glyph and its marker dot, exactly as the map draws it, never tinted or recoloured. The UI's own
+glyphs are Kozmos's `Icon`; a type's icon comes from the published taxonomy sprite, and SpriteIcon is how a content tree,
+a type picker or a persona list draws one.
+
+<Canvas of={SpriteIconStories.Default} />
+
+## Anatomy
+
+- **`sprite`** is the atlas's base URL, the one the product's map style names, pinned to its published version, such as
+  `https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite`. MapLibre's suffixes are added to it: `.json` and `.png`,
+  or `@2x.json` and `@2x.png` on a 2x screen. Kozmos names no version: the product passes the one its map uses.
+- **`name`** is the cell's name in the atlas's index, such as a type's subType (`desk`, `atm`).
+- **`size`** is the box, 16, 20 or 24 (the default). The cell is scaled into it with its aspect ratio kept: a square
+  bubble fills it, a taller marker cell is as tall as the box and narrower.
+- **While the atlas loads, or where the cell is missing,** the box stays, empty, at its size, so nothing around it moves.
+
+Each atlas is read once per URL and scale and shared by every icon on the page.
+
+## Accessibility
+
+Decorative unless `label` names it: without a label it is hidden from assistive technology, as a type's icon beside the
+type's name should be; with one it is an image named by the label. SwiftUI's `KozmosSpriteIcon` is hidden from VoiceOver,
+or one image element named by its `label`; Compose's has no node, or an image node named by its `label`.
+
+## Implementation
+
+<PlatformSnippets
+    react={`
+import { SpriteIcon } from "@kozmos-ds/react";
+
+// The atlas the map style names, pinned to its published version.
+const SPRITE = "https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite";
+
+export function DeskType() {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+      <SpriteIcon sprite={SPRITE} name="desk" size={20} />
+      Office desk
+    </span>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosSpriteIcon } from "@kozmos-ds/vue/react-bridge"
+
+const sprite = "https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite"
+</script>
+
+<template>
+  <span>
+    <KozmosSpriteIcon :sprite="sprite" name="desk" :size="20" />
+    Office desk
+  </span>
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A type's icon beside its name: decorative, since the name is beside it.
+struct DeskType: View {
+    let sprite = "https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite"
+
+    var body: some View {
+        HStack(spacing: 8) {
+            KozmosSpriteIcon(sprite: sprite, name: "desk", size: .s20)
+            Text("Office desk")
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import com.kozmos.components.spriteicon.KozmosSpriteIcon
+import com.kozmos.components.spriteicon.KozmosSpriteIconSize
+
+// A type's icon beside its name: decorative, since the name is beside it.
+@Composable
+fun DeskType(sprite: String = "https://mapscdn.pointr.tech/sprite/10.17.0/light/sprite") {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        KozmosSpriteIcon(sprite = sprite, name = "desk", size = KozmosSpriteIconSize.S20)
+        Text("Office desk")
+    }
+}
+`}
+/>

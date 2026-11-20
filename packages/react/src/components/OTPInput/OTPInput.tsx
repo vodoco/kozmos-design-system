@@ -258,6 +258,23 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
       // Backspace inside a composition edits the IME's text. Safari's
       // keydown that ends a composition has keyCode 229 and no isComposing.
       if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+      // A digit typed into a filled cell replaces its digit and moves on
+      // (GAP-239): each cell holds one, so with its digit unselected the key
+      // was dropped, and the same digit typed over itself changed nothing,
+      // so the focus stayed. A keyboard's digit is entered here; a touch
+      // keyboard's, which names no key, through the selection (below).
+      if (
+        !readOnly &&
+        otp[index] &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        isDecimalDigit(event.key)
+      ) {
+        event.preventDefault();
+        enterDigits(event.key, index);
+        return;
+      }
       if (event.key === "Backspace" && !otp[index] && index > 0) {
         inputs.current[index - 1]?.focus();
       }
@@ -312,6 +329,33 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
               onCompositionStart={() => handleCompositionStart(index)}
               onCompositionEnd={(event) => handleCompositionEnd(event, index)}
               onBlur={() => handleBlur(index)}
+              // A focused cell's digit is selected, as Tab selects it, so
+              // typing replaces it: after a click, and when the field moves
+              // the focus on as each digit is typed (GAP-239).
+              onFocus={(event) => event.currentTarget.select()}
+              onInput={(event) => {
+                // The same digit typed over a selected one changes nothing,
+                // so no change is heard: the focus still moves on.
+                const { data, inputType } = event.nativeEvent as InputEvent;
+                if (
+                  inputType === "insertText" &&
+                  data &&
+                  otp[index] &&
+                  sanitizeOtpValue(data, 1) === otp[index] &&
+                  event.currentTarget.value === otp[index] &&
+                  index < cellCount - 1
+                )
+                  inputs.current[index + 1]?.focus();
+              }}
+              onMouseUp={(event) => {
+                // A click places the caret after the focus selected the
+                // digit: WebKit as its mouseup ends, unless it is refused.
+                const cell = event.currentTarget;
+                if (cell.value) {
+                  event.preventDefault();
+                  cell.select();
+                }
+              }}
               onKeyDown={(event) => handleKeyDown(event, index)}
               onPaste={handlePaste}
               disabled={disabled}

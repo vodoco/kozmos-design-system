@@ -207,6 +207,105 @@ describe("MapEditToolbar (CLOUD-UI-005)", () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
+  // Decision 217 (GAP-284): MAP-619's Merge says why it is unavailable.
+  describe("a disabled item with a reason", () => {
+    const REASONED: MapEditToolbarItem[] = [
+      { type: "tool", id: "adjust", label: "Adjust", icon: Transform },
+      {
+        type: "tool",
+        id: "merge",
+        label: "Merge",
+        icon: Divider,
+        disabled: true,
+        disabledReason: "Select two areas to merge them",
+      },
+      {
+        type: "action",
+        id: "clear",
+        label: "Clear",
+        icon: XSquare,
+        disabled: true,
+        disabledReason: "Nothing to clear",
+        tooltip: "Remove every shape",
+      },
+    ];
+
+    it("stays focusable, says it is unavailable, and is described by its reason", () => {
+      render(<MapEditToolbar label="Geometry tools" items={REASONED} />);
+      for (const [name, reason] of [
+        ["Merge", "Select two areas to merge them"],
+        ["Clear", "Nothing to clear"],
+      ]) {
+        expect(item(name)).not.toBeDisabled();
+        expect(item(name)).toHaveAttribute("aria-disabled", "true");
+        expect(item(name)).toHaveAccessibleName(name);
+        expect(item(name)).toHaveAccessibleDescription(reason);
+      }
+    });
+
+    it("is reached by the arrow keys", async () => {
+      const user = userEvent.setup();
+      render(<MapEditToolbar label="Geometry tools" items={REASONED} />);
+      await user.tab();
+      expect(item("Adjust")).toHaveFocus();
+      await user.keyboard("{ArrowRight}");
+      expect(item("Merge")).toHaveFocus();
+      await user.keyboard("{ArrowRight}");
+      expect(item("Clear")).toHaveFocus();
+    });
+
+    it("does nothing when clicked, or pressed with Enter or Space", async () => {
+      const user = userEvent.setup();
+      const onAction = vi.fn();
+      const onValueChange = vi.fn();
+      render(
+        <MapEditToolbar
+          label="Geometry tools"
+          items={REASONED}
+          onAction={onAction}
+          onValueChange={onValueChange}
+        />,
+      );
+      await user.click(item("Merge"));
+      await user.click(item("Clear"));
+      item("Merge").focus();
+      await user.keyboard("{Enter}");
+      await user.keyboard(" ");
+      item("Clear").focus();
+      await user.keyboard("{Enter}");
+      await user.keyboard(" ");
+      expect(onAction).not.toHaveBeenCalled();
+      expect(onValueChange).not.toHaveBeenCalled();
+      expect(item("Merge")).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("shows its reason as its tooltip, not its tooltip", async () => {
+      const user = userEvent.setup();
+      render(<MapEditToolbar label="Geometry tools" items={REASONED} />);
+      await user.hover(item("Clear"));
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "Nothing to clear",
+      );
+    });
+
+    it("without a reason, a disabled item is unchanged: disabled, skipped, with no tooltip", async () => {
+      const user = userEvent.setup();
+      const plain = REASONED.map((entry) =>
+        entry.type === "divider"
+          ? entry
+          : { ...entry, disabledReason: undefined },
+      );
+      render(<MapEditToolbar label="Geometry tools" items={plain} />);
+      expect(item("Merge")).toBeDisabled();
+      expect(item("Merge")).not.toHaveAttribute("aria-disabled");
+      expect(item("Merge")).not.toHaveAccessibleDescription();
+      expect(item("Clear")).not.toHaveAccessibleDescription();
+      await user.tab();
+      await user.keyboard("{ArrowRight}");
+      expect(item("Adjust")).toHaveFocus();
+    });
+  });
+
   describe("roving focus", () => {
     const tabStops = () =>
       within(toolbar())

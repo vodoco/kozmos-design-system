@@ -219,4 +219,74 @@ describe("Accordion", () => {
       expect(await axe(container)).toHaveNoViolations();
     });
   });
+
+  // GAP-248: the trigger's heading is h3 unless a level is given, on the
+  // Accordion for every trigger or on one trigger, so a section under a
+  // page's h1 can be an h2 and the heading order skips no level.
+  describe("headingLevel", () => {
+    const Section = ({
+      rootLevel,
+      triggerLevel,
+    }: {
+      rootLevel?: 2 | 3 | 4 | 5 | 6;
+      triggerLevel?: 2 | 3 | 4 | 5 | 6;
+    }) => (
+      <div>
+        <h1>The code has expired</h1>
+        <Accordion type="single" defaultValue="one" headingLevel={rootLevel}>
+          <AccordionItem value="one">
+            <AccordionTrigger headingLevel={triggerLevel}>
+              Why codes expire
+            </AccordionTrigger>
+            <AccordionContent>Body</AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="two">
+            <AccordionTrigger>What to do next</AccordionTrigger>
+            <AccordionContent>Body</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+    );
+
+    it("is an h3 by default, as Radix draws it", () => {
+      render(<Section />);
+      expect(
+        screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent),
+      ).toEqual(["Why codes expire", "What to do next"]);
+    });
+
+    it("takes a level for every trigger from the Accordion", () => {
+      render(<Section rootLevel={2} />);
+      expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
+      const headings = screen.getAllByRole("heading", { level: 2 });
+      expect(headings.map((h) => h.tagName)).toEqual(["H2", "H2"]);
+      // Radix's header attributes stay on the heading.
+      expect(headings[0]).toHaveAttribute("data-state", "open");
+      expect(headings[1]).toHaveAttribute("data-state", "closed");
+    });
+
+    it("takes a level on one trigger over the Accordion's", () => {
+      render(<Section rootLevel={2} triggerLevel={4} />);
+      expect(screen.getByRole("heading", { level: 4 })).toHaveTextContent(
+        "Why codes expire",
+      );
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+        "What to do next",
+      );
+    });
+
+    it("keeps the default form's header class at any level", () => {
+      render(<Section rootLevel={2} />);
+      expect(screen.getAllByRole("heading", { level: 2 })[0]).toHaveClass(
+        "flex",
+      );
+    });
+
+    it("passes axe's heading order under an h1 at level 2", async () => {
+      const { container } = render(<Section rootLevel={2} />);
+      expect(
+        await axe(container, { rules: { "heading-order": { enabled: true } } }),
+      ).toHaveNoViolations();
+    });
+  });
 });

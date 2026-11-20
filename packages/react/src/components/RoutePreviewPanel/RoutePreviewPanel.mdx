@@ -23,6 +23,13 @@ Outside `ready`, previous options may remain visible when `statusContent` is omi
 <Canvas of={Stories.Ready} />
 <Canvas of={Stories.Calculating} />
 
+## Statuses said
+
+The status box, its error and the notice each go into a live region that is mounted, empty, before
+them (GAP-226): a status into a `status` region, an error or no route into an `alert` one, the
+notice into a `status` one. A screen reader says a change inside a region that is already there,
+and may say nothing for one inserted with its words.
+
 ## In the map shell's panel
 
 As the whole content of `AdaptiveMapShell`'s panel, the route preview is the panel's top. Its

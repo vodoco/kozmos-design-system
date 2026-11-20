@@ -76,4 +76,46 @@ describe("Badge", () => {
     expect(screen.getByTestId("badge-icon")).toBeInTheDocument();
     expect(screen.queryByText("Text")).not.toBeInTheDocument();
   });
+
+  // GAP-147, decision 93: a status badge on Chip's scale, from the density's
+  // Badge tokens, with nothing that changes under the pointer.
+  it("sits on Chip's scale and has no hover state, in every variant and size", () => {
+    const heights = {
+      sm: "h-badge-sm",
+      default: "h-badge",
+      lg: "h-badge-lg",
+      icon: "h-badge",
+    } as const;
+    for (const variant of [
+      "default",
+      "destructive",
+      "outline",
+      "secondary",
+      "ghost",
+      "link",
+    ] as const) {
+      for (const size of ["sm", "default", "lg", "icon"] as const) {
+        render(
+          <Badge
+            data-testid={`${variant}-${size}`}
+            variant={variant}
+            size={size}
+          >
+            New
+          </Badge>,
+        );
+        const badge = screen.getByTestId(`${variant}-${size}`);
+        const classes = badge.className.split(/\s+/);
+        expect(classes, `${variant} ${size}`).toContain(heights[size]);
+        expect(
+          classes.filter((c) => c.startsWith("h-11") || c === "w-11"),
+        ).toEqual([]);
+        expect(
+          classes.filter((c) => c.includes("hover:")),
+          `${variant} ${size}`,
+        ).toEqual([]);
+      }
+    }
+    expect(screen.getByTestId("default-icon").className).toContain("w-badge");
+  });
 });

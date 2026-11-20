@@ -529,7 +529,9 @@ describe("AdaptiveMapShell status and top corners", () => {
       screen.getByRole("button", { name: "Exit Main Mall" }),
     );
     expect(top).toContainElement(screen.getByRole("button", { name: "Info" }));
-    expect(screen.getByRole("status")).toHaveTextContent("Route updated");
+    // The product's status, beside the map's own status region, which is
+    // mounted empty (GAP-226).
+    expect(screen.getByText("Route updated")).toHaveAttribute("role", "status");
     expect(screen.getAllByRole("region").map((r) => r.ariaLabel)).toEqual([
       "Map",
       "Map top corner controls",

@@ -16,6 +16,58 @@ An image element with a fallback for representing the user.
 
 <Controls />
 
+## Sizes
+
+`size="sm"` draws the Avatar at 24, its initials at 12/16, where `default` is 40 (decision 221): for a row that keeps
+its own height, as an option's media in Combobox, Listbox and MultiSelect does (decision 215). SwiftUI's
+`KozmosAvatar(size: .sm)` and Compose's `KozmosAvatar(size = KozmosAvatarSize.Sm)` draw the same, and Figma's Avatar
+set has a `Size` of `Default` and `Sm`.
+
+<PlatformSnippets
+    react={`
+import { Avatar, AvatarFallback } from "@kozmos-ds/react";
+
+export function ClientMark() {
+  return (
+    <Avatar size="sm">
+      <AvatarFallback>AA</AvatarFallback>
+    </Avatar>
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosAvatar } from "@kozmos-ds/vue/react-bridge"
+</script>
+
+<template>
+  <KozmosAvatar size="sm" fallback="AA" />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// 24, for a row that keeps its own height (decision 221).
+struct ClientMark: View {
+    var body: some View {
+        KozmosAvatar(imageURL: nil, fallbackText: "AA", size: .sm)
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.avatar.KozmosAvatar
+import com.kozmos.components.avatar.KozmosAvatarSize
+
+// 24, for a row that keeps its own height (decision 221).
+@Composable
+fun ClientMark() {
+    KozmosAvatar(imageUrl = null, fallbackText = "AA", size = KozmosAvatarSize.Sm)
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

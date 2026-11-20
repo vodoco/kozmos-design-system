@@ -45,6 +45,15 @@ public enum KozmosTypography {
         .system(style)
     }
 
+    /// The mono family (Semantics / Typography / Family / Mono): code,
+    /// coordinates, IDs, anything that aligns in columns. The platform's
+    /// monospaced design at a Dynamic Type style, so it scales with the
+    /// reader's text size, as Compose's `KozmosTypography.mono` is its
+    /// platform's monospace and the web's the token's stack.
+    public static func mono(_ style: Font.TextStyle) -> Font {
+        .system(style, design: .monospaced)
+    }
+
     public static var body: Font { font(.body) }
     public static var headline: Font { font(.headline) }
     public static var subheadline: Font { font(.subheadline) }

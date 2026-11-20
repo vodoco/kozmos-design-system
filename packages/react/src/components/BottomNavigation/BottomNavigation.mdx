@@ -21,6 +21,14 @@ Material's navigation bar with 11sp labels.
 
 <Controls />
 
+## Inset under the top line
+
+By default the items meet the bar's top line, so a selected item's fill touches it. `inset` puts 8
+between the line and the items (GAP-245): `<BottomNavigation inset items={…} />` on React and Vue,
+`KozmosBottomNavigation(selection:items:inset: true)` on SwiftUI, where the tiles sit 4 below the
+line by default and 8 with it. Compose's bar is Material's `NavigationBar`, which draws no top line
+and keeps its selected indicator 12 below its top edge, so it takes no `inset`.
+
 ## Implementation
 
 <div className="subheading">Code</div>

@@ -9,7 +9,6 @@ import {
   BreadcrumbSeparator,
   Container,
   Heading,
-  ScrollArea,
   Separator,
   Stack,
   Tabs,
@@ -112,18 +111,15 @@ export function ExamplePage({
 
         <Section title="Source" lead="The example’s own files, as they are.">
           <Tabs defaultValue={files[0]?.name}>
-            {/* TabsList neither wraps nor scrolls (GAPS.md, GAP-16): three
-                file names overflow a phone, so the list scrolls sideways in a
-                ScrollArea. */}
-            <ScrollArea orientation="horizontal">
-              <TabsList aria-label="Source files">
-                {files.map((file) => (
-                  <TabsTrigger key={file.name} value={file.name}>
-                    {file.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </ScrollArea>
+            {/* A list wider than a phone scrolls sideways in its own track,
+                Kozmos 0.16.0's (GAPS.md, GAP-16, fixed). */}
+            <TabsList aria-label="Source files">
+              {files.map((file) => (
+                <TabsTrigger key={file.name} value={file.name}>
+                  {file.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
             {files.map((file) => (
               <TabsContent key={file.name} value={file.name}>
                 <CodeBlock label={file.name} code={file.code} />

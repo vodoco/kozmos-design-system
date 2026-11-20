@@ -1,0 +1,30 @@
+{
+  "desk": {
+    "x": 2,
+    "y": 2,
+    "width": 90,
+    "height": 90,
+    "pixelRatio": 2
+  },
+  "atm": {
+    "x": 94,
+    "y": 2,
+    "width": 90,
+    "height": 90,
+    "pixelRatio": 2
+  },
+  "auditorium": {
+    "x": 186,
+    "y": 2,
+    "width": 90,
+    "height": 90,
+    "pixelRatio": 2
+  },
+  "1": {
+    "x": 278,
+    "y": 2,
+    "width": 90,
+    "height": 110,
+    "pixelRatio": 2
+  }
+}

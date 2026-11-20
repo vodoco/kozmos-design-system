@@ -9,7 +9,7 @@ import { PlatformSnippets } from "../../components/PlatformSnippets";
 
 Pointr Cloud's map edit toolbar (CLOUD-UI-005): one part for its seven geometry toolbars, a card on the map of tools, actions and dividers, with one tool chosen at a time. A Dashboard module: it ships from `@kozmos-ds/react/dashboard`, with `@kozmos-ds/react/dashboard.css` loaded after the package's `style.css`, and only on the web.
 
-The card is 60 tall, with padding 6 and 8, a corner of 16 and the map controls' lift (decisions 139 and 151). Each item is 56 wide and 48 tall, a 24 icon over an 11/14 label. A tool is a ToggleButton, drawn pressed while it is chosen; an action is a ghost Button. The product decides which items each mode shows, and passes them as data: the toolbar draws them and reports what is pressed.
+The card is 60 tall, with padding 6 and 8, a corner of 16 and the map controls' lift (decisions 139 and 151). Each item is 56 wide and 48 tall, a 24 icon over an 11/14 label. A tool is a ToggleButton, pressed while it is chosen; an action is a ghost Button. The product decides which items each mode shows, and passes them as data: the toolbar draws them and reports what is pressed.
 
 <Canvas>
   <Story of={MapEditToolbarStories.Create} />
@@ -62,6 +62,30 @@ The toolbar is one tab stop (`role="toolbar"`, named by `label`): Tab reaches th
 <Canvas>
   <Story of={MapEditToolbarStories.RightToLeft} />
 </Canvas>
+
+## How each state is drawn
+
+The items are drawn as Pointr Cloud's live toolbar draws them (decision 226). No item has a fill at rest.
+
+- **Enabled**, a tool not chosen or an action: the label in the page's ink (foreground 0: black in light, white in dark), the icon in Cloud's grey (foreground 400).
+- **Chosen**: label and icon in the theme's ink on the surface (the themed emotion's text, theme 600), with no fill, not ToggleButton's pressed theme fill. The focus ring is kept.
+- **Hovered**, enabled or chosen: the hover fill (decision 173), the inks kept.
+- **Disabled**: label and icon in foreground 500, at full strength, with no fill: lighter than an enabled item, and still 3:1, 4.24:1 on the white card and 5.65:1 on the black one. The toolbar is an exception to decision 197's disabled fill, which every other Kozmos button draws: Cloud shows an unavailable tool as lighter words with no box.
+
+## Saying why an item is unavailable
+
+A disabled item can say why with `disabledReason` (decision 217): MAP-619's Merge waits for two areas to be selected. With a reason, the item is not removed from the keyboard's way: it stays in the arrow-key order and under the pointer, says it is unavailable with `aria-disabled="true"` rather than `disabled`, and does nothing when it is clicked or pressed with Enter or Space, so neither `onValueChange` nor `onAction` hears of it. Its reason is its tooltip, on hover and on keyboard focus, and its accessible description, in place of any `tooltip`. It is drawn as any disabled item (below), under the pointer too. Without a reason, a disabled item is skipped and shows nothing, as before. In the More menu a disabled item is a disabled entry, reason or not.
+
+```tsx
+{
+  type: "tool",
+  id: "merge",
+  label: "Merge",
+  icon: Divider,
+  disabled: true,
+  disabledReason: "Select two areas to merge them",
+}
+```
 
 ## On a narrow map
 

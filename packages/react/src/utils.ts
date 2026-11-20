@@ -43,6 +43,9 @@ const DENSITY_SIZES = [
   "icon-control",
   "icon-control-lg",
   "field",
+  "badge-sm",
+  "badge",
+  "badge-lg",
 ] as const;
 
 /**

@@ -14,6 +14,19 @@ export interface ListboxProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
   "onChange"
 > {
+  /**
+   * The active option's value, for a product that moves it (GAP-260): a
+   * search field that drives the list as a combobox, focus staying in the
+   * field, which points at the active option with `aria-activedescendant`
+   * (`listboxOptionId` gives its id). `null` is no active option. With
+   * `onActiveValueChange`; unset, the list keeps its own.
+   */
+  activeValue?: string | null;
+  /**
+   * Called with the option the list would make active: by the arrows, Home
+   * and End while the list has focus, by the pointer, and by a choice.
+   */
+  onActiveValueChange?: (value: string | null) => void;
   defaultValue?: string | string[];
   disabled?: boolean;
   /**
@@ -27,6 +40,24 @@ export interface ListboxProps extends Omit<
   onValueChange?: (value: string | string[], option: ComboboxOption) => void;
   options: ComboboxOption[];
   value?: string | string[];
+}
+
+/**
+ * The id of the option `value` names in a Listbox whose `id` is
+ * `listboxId`, for a field's `aria-activedescendant` (GAP-260); undefined
+ * for a value it does not list. Options are drawn under their groups, so
+ * pass the same options the Listbox is given.
+ */
+export function listboxOptionId(
+  listboxId: string,
+  options: ComboboxOption[],
+  value: string | null | undefined,
+) {
+  if (value == null) return undefined;
+  const index = orderByGroup(options).findIndex(
+    (option) => option.value === value,
+  );
+  return index >= 0 ? `${listboxId}-option-${index}` : undefined;
 }
 
 function asValueArray(value: string | string[] | undefined) {
@@ -61,6 +92,7 @@ function nextEnabledIndex(
 export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
   (
     {
+      activeValue,
       className,
       defaultValue,
       disabled,
@@ -70,6 +102,7 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
       onBlur,
       onFocus,
       onKeyDown,
+      onActiveValueChange,
       onValueChange,
       options: givenOptions,
       value,
@@ -105,9 +138,21 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
       () => new Set(selectedValues),
       [selectedValues],
     );
-    const [activeIndex, setActiveIndex] = React.useState(() =>
+    const [ownActiveIndex, setOwnActiveIndex] = React.useState(() =>
       firstEnabledIndex(options, selectedValues),
     );
+    // A product's active option wins (GAP-260): the list then only asks for
+    // a move, through onActiveValueChange.
+    const activeControlled = activeValue !== undefined;
+    const activeIndex = activeControlled
+      ? options.findIndex((option) => option.value === activeValue)
+      : ownActiveIndex;
+    const setActiveIndex = (next: number | ((current: number) => number)) => {
+      const index = typeof next === "function" ? next(activeIndex) : next;
+      if (!activeControlled) setOwnActiveIndex(index);
+      if (index !== activeIndex)
+        onActiveValueChange?.(options[index]?.value ?? null);
+    };
     const activeOptionId =
       activeIndex >= 0 && options[activeIndex]
         ? `${listboxId}-option-${activeIndex}`
@@ -122,9 +167,12 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
       [options],
     );
     const [activeFor, setActiveFor] = React.useState(drawnList);
-    if (activeFor !== drawnList) {
+    if (activeControlled) {
+      // The product's: nothing is moved here.
+      if (activeFor !== drawnList) setActiveFor(drawnList);
+    } else if (activeFor !== drawnList) {
       setActiveFor(drawnList);
-      setActiveIndex(firstEnabledIndex(options, selectedValues));
+      setOwnActiveIndex(firstEnabledIndex(options, selectedValues));
     } else if (!options[activeIndex] || options[activeIndex].disabled) {
       // The active option can no longer be chosen (a limit the product
       // draws with `disabled`): the next enabled one, on from it, takes over,
@@ -133,15 +181,21 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
         activeIndex >= 0
           ? nextEnabledIndex(options, activeIndex, 1)
           : firstEnabledIndex(options, selectedValues);
-      if (next !== activeIndex) setActiveIndex(next);
+      if (next !== activeIndex) setOwnActiveIndex(next);
     }
 
+    // The active option is kept in view while the list has focus, and,
+    // when a product moves it, wherever focus is: in the field driving it.
     React.useEffect(() => {
       const root = rootRef.current;
-      if (root && root.ownerDocument.activeElement === root && activeOptionId) {
+      if (
+        root &&
+        (activeControlled || root.ownerDocument.activeElement === root) &&
+        activeOptionId
+      ) {
         scrollOptionIntoView(root.ownerDocument.getElementById(activeOptionId));
       }
-    }, [activeOptionId]);
+    }, [activeOptionId, activeControlled]);
 
     const commitOption = (option: ComboboxOption) => {
       if (disabled || option.disabled) return;
@@ -190,10 +244,10 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
           if (event.defaultPrevented || disabled) return;
           if (event.key === "ArrowDown") {
             event.preventDefault();
-            setActiveIndex((current) => nextEnabledIndex(options, current, 1));
+            setActiveIndex(nextEnabledIndex(options, activeIndex, 1));
           } else if (event.key === "ArrowUp") {
             event.preventDefault();
-            setActiveIndex((current) => nextEnabledIndex(options, current, -1));
+            setActiveIndex(nextEnabledIndex(options, activeIndex, -1));
           } else if (event.key === "Home") {
             event.preventDefault();
             setActiveIndex(firstEnabledIndex(options));

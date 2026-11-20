@@ -20,6 +20,12 @@ export interface BottomNavigationProps extends React.HTMLAttributes<HTMLElement>
    * item, which has one size, is not what it draws.
    */
   density?: "default" | "compact" | null;
+  /**
+   * Space between the bar's top line and its items, 8, so a selected
+   * item's fill clears the line (GAP-245). Off by default: the items meet
+   * the line, as they always have.
+   */
+  inset?: boolean;
 }
 
 // The bar's own items (decision 42). They were NavigationItem's compact rail
@@ -57,6 +63,7 @@ const BottomNavigation = React.forwardRef<HTMLElement, BottomNavigationProps>(
       "aria-label": ariaLabel = "Bottom navigation",
       className,
       density = "compact",
+      inset = false,
       items,
       ...props
     },
@@ -68,6 +75,7 @@ const BottomNavigation = React.forwardRef<HTMLElement, BottomNavigationProps>(
         ref={ref}
         aria-label={ariaLabel}
         data-slot="bottom-navigation"
+        data-inset={inset ? "" : undefined}
         // As Figma's bar: as tall as its items, 64 compact and 72 at the
         // default density, with its top line drawn inside, over the items
         // (.kozmos-bottom-navigation). A fixed 64 with a border on top held

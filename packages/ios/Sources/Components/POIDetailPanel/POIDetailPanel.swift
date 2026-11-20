@@ -78,6 +78,8 @@ public struct KozmosPOIDetailPanel: View {
     /// supplementary actions in the same strip; without it, disabled.
     private let onHostAction: ((String, String) -> Void)?
     private let onClose: (() -> Void)?
+    /// The product's own content, drawn at the end of the body (GAP-131).
+    private let content: AnyView?
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
     @Environment(\.kozmosPanelInsetBottom) private var panelInsetBottom
@@ -114,7 +116,11 @@ public struct KozmosPOIDetailPanel: View {
         tagsLabel: String = "Tags",
         loadingLabel: String = "Loading",
         hostActionStates: [String: KozmosPOIActionState] = [:],
-        onHostAction: ((String, String) -> Void)? = nil
+        onHostAction: ((String, String) -> Void)? = nil,
+        /// The product's own content, drawn last in the body, inside the
+        /// card's padding and its scroll (GAP-131): a place's QR code on a
+        /// desktop or kiosk. None by default.
+        @ViewBuilder content: () -> some View = { EmptyView() }
     ) {
         self.poi = poi; self.details = details; self.actionLabels = actionLabels
         self.onAction = onAction; self.actionStates = actionStates; self.onClose = onClose
@@ -131,6 +137,8 @@ public struct KozmosPOIDetailPanel: View {
         self.loadingLabel = loadingLabel
         self.hostActionStates = hostActionStates
         self.onHostAction = onHostAction
+        let built = content()
+        self.content = built is EmptyView ? nil : AnyView(built)
     }
 
     private var quickActions: [KozmosPOIAction] {
@@ -199,6 +207,9 @@ public struct KozmosPOIDetailPanel: View {
                     }
                     POIDetailExtendedContent(details: details, readMoreLabel: readMoreLabel,
                                              readLessLabel: readLessLabel, tagsLabel: tagsLabel)
+                    // The product's own content (GAP-131), a place's QR code:
+                    // last in the body, inside its padding and its scroll.
+                    if let content { content }
                 }
                 .padding([.horizontal, .top], 16)
                 .padding(.bottom, bottomPadding)

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.ScrollState
@@ -156,6 +157,10 @@ enum class KozmosPOIDetailPanelPresentation {
  * action's id and the POI's ID, and with no callback they are drawn
  * disabled. Their state, by id, is in [hostActionStates], as a supplementary
  * action's is, and their messages follow the supplementary ones.
+ *
+ * [content] is the product's own, drawn last in the body, inside its padding
+ * and its scroll, after everything Kozmos draws (GAP-131): a place's QR code
+ * on a desktop or kiosk, as the web's `children` and SwiftUI's `content`.
  */
 @Composable
 fun KozmosPOIDetailPanel(
@@ -179,7 +184,8 @@ fun KozmosPOIDetailPanel(
     tagsLabel: String = "Tags",
     loadingLabel: String = "Loading",
     hostActionStates: Map<String, KozmosPOIActionState> = emptyMap(),
-    onHostAction: ((String, String) -> Unit)? = null
+    onHostAction: ((String, String) -> Unit)? = null,
+    content: (@Composable ColumnScope.() -> Unit)? = null
 ) {
     val radius = KozmosDimensions.semanticsRadiusPanel
     // An inset block's surface: the muted grey on the panel's own white, and
@@ -437,6 +443,10 @@ fun KozmosPOIDetailPanel(
                     readLessLabel = readLessLabel,
                     tagsLabel = tagsLabel
                 )
+
+                // The product's own content (GAP-131), a place's QR code:
+                // last in the body, inside its padding and its scroll.
+                content?.invoke(this)
             }
         }
         }

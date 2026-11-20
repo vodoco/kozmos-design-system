@@ -46,7 +46,7 @@ is removed. Its words are "Choose file" unless the product passes its own; with 
 "Add logo: Logo", as the drop area is. The drop area stays the default. SwiftUI's and Compose's `KozmosFileUpload` take `variant`, `.button` and
 `KozmosFileUploadVariant.Button`: the outline `KozmosButton` with the upload icon and `browseLabel` ("Choose file" by
 default) in place of the drop area, opening the same picker of the same types, and showing what was chosen, or the
-image preview, as the drop area does. The native parts have no size limit to set, on either form.
+image preview, as the drop area does. Both forms take the limits below.
 
 <PlatformSnippets
     react={`
@@ -110,6 +110,96 @@ fun ClientLogoButton(onLogoChosen: (Uri) -> Unit) {
         preview = KozmosFileUploadPreview.Image,
         variant = KozmosFileUploadVariant.Button,
         onFileSelected = onLogoChosen
+    )
+}
+`}
+/>
+
+## Limits and their messages
+
+`maxSize`, in bytes, and `maxFiles` limit a pick or a drop: a file over the size, or more files than the count, are
+turned away, the files already held stay, and the refusal is said as the field's error. Its words are the product's
+(GAP-258, GAP-280): `tooManyFilesLabel` is given the count ("Select up to 3 files." by default), `tooLargeLabel` the
+file's name and the limit as written ("plan.pdf exceeds 10 MB."), and, with `preview="image"`, `notImageLabel` the
+name of a file that is not an image. The picker takes several files when `maxFiles` is over 1, or with `multiple`;
+`multiple={false}` keeps it to one file whatever `maxFiles` says, so a product with a count check of its own passes
+`multiple={false}` and `maxFiles={Infinity}`, as ImageField does with one slot left. The component's `ref` is its
+box; `inputRef` reaches the hidden file input itself.
+
+SwiftUI's and Compose's `KozmosFileUpload` take the same `maxSize`, `maxFiles`, `multiple`, `tooManyFilesLabel` and
+`tooLargeLabel`, with React's English by default: a refusal is said under the part in the error colour, each file held
+is listed with its own remove button, and `onFilesChange` is told the files held after each pick or removal. Compose
+reads each file's size from its provider, off the main thread, before it holds the pick.
+
+<PlatformSnippets
+    react={`
+import { FileUpload } from "@kozmos-ds/react";
+
+export function FloorPlans() {
+  return (
+    <FileUpload
+      label="Grundrisse"
+      accept="application/pdf"
+      maxSize={10 * 1024 * 1024}
+      maxFiles={3}
+      tooManyFilesLabel={(max) => \`Höchstens \${max} Dateien.\`}
+      tooLargeLabel={(name, limit) => \`\${name} ist größer als \${limit}.\`}
+      onFilesChange={(files) => console.log(files.length)}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosFileUpload } from "@kozmos-ds/vue/react-bridge"
+
+const tooMany = (max) => "Höchstens " + max + " Dateien."
+</script>
+
+<template>
+  <KozmosFileUpload
+    label="Grundrisse"
+    accept="application/pdf"
+    :max-size="10 * 1024 * 1024"
+    :max-files="3"
+    :too-many-files-label="tooMany"
+  />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct FloorPlans: View {
+    var body: some View {
+        KozmosFileUpload(
+            allowedContentTypes: [.pdf],
+            onFileSelected: { url in print(url.lastPathComponent) },
+            browseLabel: "Grundrisse hochladen",
+            tooManyFilesLabel: { "Höchstens \\($0) Dateien." },
+            tooLargeLabel: { name, limit in "\\(name) ist größer als \\(limit)." },
+            onFilesChange: { urls in print(urls.count) },
+            maxSize: 10 * 1024 * 1024,
+            maxFiles: 3
+        )
+    }
+}
+`}
+    kotlin={`
+import android.net.Uri
+import androidx.compose.runtime.Composable
+import com.kozmos.components.fileupload.KozmosFileUpload
+
+@Composable
+fun FloorPlans(onPlansChosen: (List<Uri>) -> Unit) {
+    KozmosFileUpload(
+        browseLabel = "Grundrisse hochladen",
+        maxSize = 10L * 1024 * 1024,
+        maxFiles = 3,
+        tooManyFilesLabel = { "Höchstens $it Dateien." },
+        tooLargeLabel = { name, limit -> "$name ist größer als $limit." },
+        onFilesChange = onPlansChosen,
+        onFileSelected = {}
     )
 }
 `}

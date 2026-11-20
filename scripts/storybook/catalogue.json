@@ -380,6 +380,13 @@
       ]
     },
     {
+      "file": "packages/react/src/components/CodeBlock/CodeBlock.stories.tsx",
+      "id": "data-display-codeblock",
+      "title": "Core/Data display/CodeBlock",
+      "component": "CodeBlock",
+      "exports": ["Default", "Scroll"]
+    },
+    {
       "file": "packages/react/src/components/DescriptionList/DescriptionList.stories.tsx",
       "id": "data-display-descriptionlist",
       "title": "Core/Data display/DescriptionList",
@@ -481,7 +488,7 @@
       "id": "foundations-grid",
       "title": "Core/Layout/Grid",
       "component": "Grid",
-      "exports": ["Default"]
+      "exports": ["Default", "Virtualized"]
     },
     {
       "file": "packages/react/src/components/Heading/Heading.stories.tsx",
@@ -529,6 +536,7 @@
         "WithError",
         "ValidationStates",
         "Actions",
+        "EditAction",
         "MixedValue"
       ]
     },
@@ -765,6 +773,13 @@
       "title": "Core/Data display/MetaStrip",
       "component": "MetaStrip",
       "exports": ["Default", "WithVisibleLabels", "Overflowing"]
+    },
+    {
+      "file": "packages/react/src/components/ChipInput/ChipInput.stories.tsx",
+      "id": "components-chipinput",
+      "title": "Core/Inputs/ChipInput",
+      "component": "ChipInput",
+      "exports": ["Default"]
     },
     {
       "file": "packages/react/src/components/MultiSelect/MultiSelect.stories.tsx",
@@ -1249,7 +1264,7 @@
       "id": "data-display-table",
       "title": "Core/Data display/Table",
       "component": "Table",
-      "exports": ["Default", "Framed"]
+      "exports": ["Default", "Framed", "Selectable", "SortableNumeric"]
     },
     {
       "file": "packages/react/src/components/Tabs/Tabs.stories.tsx",
@@ -1263,6 +1278,13 @@
         "ManyTabsNarrow",
         "ManyTabsNarrowRightToLeft"
       ]
+    },
+    {
+      "file": "packages/react/src/components/SpriteIcon/SpriteIcon.stories.tsx",
+      "id": "components-spriteicon",
+      "title": "Core/Media/SpriteIcon",
+      "component": "SpriteIcon",
+      "exports": ["Default"]
     },
     {
       "file": "packages/react/src/components/Tag/Tag.stories.tsx",

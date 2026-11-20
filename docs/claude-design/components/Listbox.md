@@ -39,6 +39,19 @@ export function ListboxExample() {
 
 It forwards its ref to `HTMLDivElement`. Its props are `ListboxProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "onChange">`.
 
+- `activeValue`: `string | null`, optional.
+
+  The active option's value, for a product that moves it (GAP-260): a
+  search field that drives the list as a combobox, focus staying in the
+  field, which points at the active option with `aria-activedescendant`
+  (`listboxOptionId` gives its id). `null` is no active option. With
+  `onActiveValueChange`; unset, the list keeps its own.
+
+- `onActiveValueChange`: `(value: string | null) => void`, optional.
+
+  Called with the option the list would make active: by the arrows, Home
+  and End while the list has focus, by the pointer, and by a choice.
+
 - `defaultValue`: `string | string[]`, optional.
 - `disabled`: `boolean`, optional.
 - `embedded`: `boolean`, optional, default `false`.
@@ -77,6 +90,38 @@ interface ComboboxOption {
    */
   group?: string;
   label: string;
+  /**
+   * A leading Avatar, drawn before the label (decision 215, GAP-282): a
+   * logo or a photo by its `src`, or its `initials` when it has none or it
+   * does not load (by default the label's first letters). It is decoration:
+   * the label stays the option's accessible name. Combobox, Listbox and
+   * MultiSelect all take it.
+   */
+  media?: ComboboxOptionMedia;
+  /**
+   * What the option shows at its end, before the check (GAP-260): a
+   * property's type, a count. Muted, and read after the label and the
+   * description. Combobox, Listbox and MultiSelect all take it.
+   */
+  trailing?: React.ReactNode;
   value: string;
 }
 ```
+
+### ComboboxOptionMedia
+
+From `@kozmos-ds/react`.
+
+```ts
+/** An option's leading Avatar (decision 215): its image, or its initials. */
+interface ComboboxOptionMedia {
+  /** The image: a client's logo, a person's photo. */
+  src?: string;
+  /** Drawn when there is no image, or until it loads; the label's first letters by default. */
+  initials?: string;
+}
+```
+
+## Also exported
+
+- `listboxOptionId`: `(listboxId: string, options: ComboboxOption[], value: string | null | undefined) => string | undefined`. The id of the option `value` names in a Listbox whose `id` is `listboxId`, for a field's `aria-activedescendant` (GAP-260); undefined for a value it does not list.
