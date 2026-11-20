@@ -22,12 +22,20 @@ figma.connect(
         Left: "left",
       }),
       children: figma.string("Content Text"),
+      // Decision 192: Inverse is the dark tooltip, Pointr Cloud's info and
+      // guidance bubbles. Default names no tone.
+      tone: figma.enum("Tone", {
+        Default: undefined,
+        Inverse: "inverse",
+      }),
     },
-    example: ({ children, side }) => (
+    example: ({ children, side, tone }) => (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>Hover me</TooltipTrigger>
-          <TooltipContent side={side}>{children}</TooltipContent>
+          <TooltipContent side={side} tone={tone}>
+            {children}
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
     ),

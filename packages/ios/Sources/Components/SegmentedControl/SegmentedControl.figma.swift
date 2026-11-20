@@ -46,9 +46,9 @@ struct KozmosSegmentedControlConnect: FigmaConnect {
     )
     var state: String = "default"
 
-    // Decision 191: no option chosen, and the "Multiple values" line. Mixed
-    // Text is mapped once the owner's plugin Update has put it in the
-    // library: the dry run reads the live file.
+    // Decision 191: no option chosen, and the "Multiple values" line.
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
 
     var body: some View {
         KozmosSegmentedControl(
@@ -56,7 +56,8 @@ struct KozmosSegmentedControlConnect: FigmaConnect {
             items: [self.item1Text, self.item2Text, self.item3Text],
             size: self.size,
             disabled: self.state == "disabled",
-            mixed: self.state == "mixed"
+            mixed: self.state == "mixed",
+            mixedLabel: self.mixedLabel
         )
     }
 }

@@ -36,6 +36,14 @@ class KozmosSelectConnect {
         "Error" to true
     )
 
+    // Decision 151 (CLOUD-UI-009): Ghost is the borderless trigger, the
+    // map's level control.
+    @FigmaProperty(FigmaType.Enum, "Variant")
+    val variant: KozmosSelectTriggerVariant = Figma.mapping(
+        "Default" to KozmosSelectTriggerVariant.Default,
+        "Ghost" to KozmosSelectTriggerVariant.Ghost
+    )
+
     // GAP-164: the open list, each option with its count.
     @FigmaProperty(FigmaType.Enum, "Content")
     val expanded: Boolean = Figma.mapping(
@@ -81,7 +89,8 @@ class KozmosSelectConnect {
                     mixed = state == "mixed",
                     mixedLabel = mixedLabel,
                     onResetMixed = if (resetMixed) ({}) else null,
-                    resetMixedLabel = resetMixedLabel
+                    resetMixedLabel = resetMixedLabel,
+                    variant = variant
                 )
             }
         ) {

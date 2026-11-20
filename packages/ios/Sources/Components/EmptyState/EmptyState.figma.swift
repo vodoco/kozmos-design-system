@@ -25,11 +25,27 @@ struct KozmosEmptyStateBasicConnect: FigmaConnect {
     @FigmaString("List Item 3 Text")
     var item3: String = "Search by another name or an ID"
 
+    // GAP-213, decision 194: an emotion's card. None is no card.
+    @FigmaEnum(
+        "Tone",
+        mapping: [
+            "None": nil,
+            "Themed": KozmosEmotion.themed,
+            "Neutral": KozmosEmotion.neutral,
+            "Success": KozmosEmotion.success,
+            "Danger": KozmosEmotion.danger,
+            "Informative": KozmosEmotion.informative,
+            "Alert": KozmosEmotion.alert
+        ]
+    )
+    var tone: KozmosEmotion? = nil
+
     var body: some View {
         KozmosEmptyState(
             title: self.title,
             description: self.description,
-            list: self.showList ? [self.item1, self.item2, self.item3] : []
+            list: self.showList ? [self.item1, self.item2, self.item3] : [],
+            tone: self.tone
         )
     }
 }
@@ -58,11 +74,27 @@ struct KozmosEmptyStateIconConnect: FigmaConnect {
     @FigmaString("List Item 3 Text")
     var item3: String = "Search by another name or an ID"
 
+    // GAP-213, decision 194: an emotion's card. None is no card.
+    @FigmaEnum(
+        "Tone",
+        mapping: [
+            "None": nil,
+            "Themed": KozmosEmotion.themed,
+            "Neutral": KozmosEmotion.neutral,
+            "Success": KozmosEmotion.success,
+            "Danger": KozmosEmotion.danger,
+            "Informative": KozmosEmotion.informative,
+            "Alert": KozmosEmotion.alert
+        ]
+    )
+    var tone: KozmosEmotion? = nil
+
     var body: some View {
         KozmosEmptyState(
             title: self.title,
             description: self.description,
-            list: self.showList ? [self.item1, self.item2, self.item3] : []
+            list: self.showList ? [self.item1, self.item2, self.item3] : [],
+            tone: self.tone
         ) {
             Image(systemName: "magnifyingglass")
         } action: {
@@ -95,11 +127,27 @@ struct KozmosEmptyStateActionConnect: FigmaConnect {
     @FigmaString("List Item 3 Text")
     var item3: String = "Search by another name or an ID"
 
+    // GAP-213, decision 194: an emotion's card. None is no card.
+    @FigmaEnum(
+        "Tone",
+        mapping: [
+            "None": nil,
+            "Themed": KozmosEmotion.themed,
+            "Neutral": KozmosEmotion.neutral,
+            "Success": KozmosEmotion.success,
+            "Danger": KozmosEmotion.danger,
+            "Informative": KozmosEmotion.informative,
+            "Alert": KozmosEmotion.alert
+        ]
+    )
+    var tone: KozmosEmotion? = nil
+
     var body: some View {
         KozmosEmptyState(
             title: self.title,
             description: self.description,
-            list: self.showList ? [self.item1, self.item2, self.item3] : []
+            list: self.showList ? [self.item1, self.item2, self.item3] : [],
+            tone: self.tone
         ) {
             Image(systemName: "magnifyingglass")
         } action: {

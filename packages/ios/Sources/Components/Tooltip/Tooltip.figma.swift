@@ -19,8 +19,19 @@ struct KozmosTooltipConnect: FigmaConnect {
     )
     var side: KozmosTooltipSide = .top
 
+    // Decision 192: Inverse is the dark tooltip, Pointr Cloud's info and
+    // guidance bubbles.
+    @FigmaEnum(
+        "Tone",
+        mapping: [
+            "Default": KozmosTooltipTone.default,
+            "Inverse": KozmosTooltipTone.inverse
+        ]
+    )
+    var tone: KozmosTooltipTone = .default
+
     var body: some View {
         Text("Hover me")
-            .kozmosTooltip(self.content, side: self.side)
+            .kozmosTooltip(self.content, side: self.side, tone: self.tone)
     }
 }

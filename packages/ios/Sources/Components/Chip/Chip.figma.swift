@@ -18,6 +18,22 @@ struct KozmosChipConnect: FigmaConnect {
     )
     var chipVariant: KozmosChipVariant = .neutral
 
+    // GAP-170, decision 200: one of Tag's six emotions, deciding the colour
+    // whatever the Variant. None is a chip in its variant's colours.
+    @FigmaEnum(
+        "Emotion",
+        mapping: [
+            "None": nil,
+            "Themed": KozmosEmotion.themed,
+            "Neutral": KozmosEmotion.neutral,
+            "Success": KozmosEmotion.success,
+            "Danger": KozmosEmotion.danger,
+            "Informative": KozmosEmotion.informative,
+            "Alert": KozmosEmotion.alert
+        ]
+    )
+    var emotion: KozmosEmotion? = nil
+
     @FigmaEnum(
         "Size",
         mapping: [
@@ -51,6 +67,7 @@ struct KozmosChipConnect: FigmaConnect {
         KozmosChip(
             text: self.label,
             variant: self.chipVariant,
+            emotion: self.emotion,
             size: self.size,
             selected: self.state == "selected",
             disabled: self.state == "disabled",

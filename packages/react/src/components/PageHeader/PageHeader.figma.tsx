@@ -10,6 +10,7 @@ import {
 } from "../Breadcrumb/Breadcrumb";
 import { Button } from "../Button/Button";
 import { IconButton } from "../IconButton/IconButton";
+import { Tag } from "../Tag/Tag";
 import { PageHeader } from "./PageHeader";
 
 // GAP-036: the PageHeader set. Its node id is the set built in the live file
@@ -28,6 +29,13 @@ figma.connect(
         Large: "lg",
       }),
       title: figma.string("Title Text"),
+      // Decision 210: a node beside the title and outside its h1, drawn as
+      // a status Tag in the alert emotion, its words Addon Text, as
+      // ListItem's titleAddon is mapped.
+      titleAddon: figma.boolean("Show Title Addon", {
+        true: figma.string("Addon Text"),
+        false: undefined,
+      }),
       description: figma.boolean("Description", {
         true: figma.string("Description Text"),
         false: undefined,
@@ -67,6 +75,7 @@ figma.connect(
       tone,
       size,
       title,
+      titleAddon,
       description,
       breadcrumb,
       info,
@@ -77,6 +86,7 @@ figma.connect(
         size={size}
         breadcrumb={breadcrumb}
         title={title}
+        titleAddon={<Tag emotion="alert">{titleAddon}</Tag>}
         info={info}
         description={description}
         actions={actions}

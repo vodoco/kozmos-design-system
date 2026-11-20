@@ -20,6 +20,22 @@ figma.connect(
         Single: "metro-station",
         Multiple: ["metro-station", "bus-stop"],
       }),
+      // Decision 215, GAP-282: Show Media is each option's Sm Avatar, its
+      // initials the label's. GAP-260: Show Trailing is each option's muted
+      // words at its end, before the check.
+      media: figma.boolean("Show Media", { true: {}, false: undefined }),
+      option1Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 1 Trailing"),
+        false: undefined,
+      }),
+      option2Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 2 Trailing"),
+        false: undefined,
+      }),
+      option3Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 3 Trailing"),
+        false: undefined,
+      }),
       option1: figma.string("Option 1 Text"),
       option1Description: figma.string("Option 1 Description"),
       option2: figma.string("Option 2 Text"),
@@ -28,6 +44,10 @@ figma.connect(
       option3Description: figma.string("Option 3 Description"),
     },
     example: ({
+      media,
+      option1Trailing,
+      option2Trailing,
+      option3Trailing,
       defaultValue,
       disabled,
       multiple,
@@ -46,16 +66,22 @@ figma.connect(
           {
             description: option1Description,
             label: option1,
+            media,
+            trailing: option1Trailing,
             value: "metro-station",
           },
           {
             description: option2Description,
             label: option2,
+            media,
+            trailing: option2Trailing,
             value: "bus-stop",
           },
           {
             description: option3Description,
             label: option3,
+            media,
+            trailing: option3Trailing,
             value: "bike-parking",
           },
         ]}
@@ -88,6 +114,22 @@ figma.connect(
       }),
       group1: figma.string("Group 1 Text"),
       group2: figma.string("Group 2 Text"),
+      // Decision 215, GAP-282: Show Media is each option's Sm Avatar, its
+      // initials the label's. GAP-260: Show Trailing is each option's muted
+      // words at its end, before the check.
+      media: figma.boolean("Show Media", { true: {}, false: undefined }),
+      option1Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 1 Trailing"),
+        false: undefined,
+      }),
+      option2Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 2 Trailing"),
+        false: undefined,
+      }),
+      option3Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 3 Trailing"),
+        false: undefined,
+      }),
       option1: figma.string("Option 1 Text"),
       option1Description: figma.string("Option 1 Description"),
       option2: figma.string("Option 2 Text"),
@@ -96,6 +138,10 @@ figma.connect(
       option3Description: figma.string("Option 3 Description"),
     },
     example: ({
+      media,
+      option1Trailing,
+      option2Trailing,
+      option3Trailing,
       defaultValue,
       disabled,
       group1,
@@ -117,18 +163,24 @@ figma.connect(
             description: option1Description,
             group: group1,
             label: option1,
+            media,
+            trailing: option1Trailing,
             value: "metro-station",
           },
           {
             description: option2Description,
             group: group1,
             label: option2,
+            media,
+            trailing: option2Trailing,
             value: "bus-stop",
           },
           {
             description: option3Description,
             group: group2,
             label: option3,
+            media,
+            trailing: option3Trailing,
             value: "bike-parking",
           },
         ]}

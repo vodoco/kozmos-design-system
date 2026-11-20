@@ -36,6 +36,17 @@ struct KozmosSelectConnect: FigmaConnect {
     )
     var error: Bool = false
 
+    // Decision 151 (CLOUD-UI-009): Ghost is the borderless trigger, the
+    // map's level control.
+    @FigmaEnum(
+        "Variant",
+        mapping: [
+            "Default": KozmosSelectVariant.default,
+            "Ghost": KozmosSelectVariant.ghost
+        ]
+    )
+    var selectVariant: KozmosSelectVariant = .default
+
     // GAP-153: its way back to the several values, once chosen.
     @FigmaBoolean("Reset Mixed")
     var resetMixed: Bool = false
@@ -75,7 +86,8 @@ struct KozmosSelectConnect: FigmaConnect {
             mixed: self.state == "mixed",
             mixedLabel: self.mixedLabel,
             onResetMixed: self.resetMixed ? {} : nil,
-            resetMixedLabel: self.resetMixedLabel
+            resetMixedLabel: self.resetMixedLabel,
+            variant: self.selectVariant
         ) {
             KozmosSelectItem(
                 value: "option-1",
@@ -136,9 +148,25 @@ struct KozmosSelectOpenConnect: FigmaConnect {
     )
     var error: Bool = false
 
+    // Decision 151 (CLOUD-UI-009): Ghost is the borderless trigger, the
+    // map's level control.
+    @FigmaEnum(
+        "Variant",
+        mapping: [
+            "Default": KozmosSelectVariant.default,
+            "Ghost": KozmosSelectVariant.ghost
+        ]
+    )
+    var selectVariant: KozmosSelectVariant = .default
+
     // Open is drawn at State=Default only: no focus, disabled or mixed.
     var body: some View {
-        KozmosSelect(value: nil, placeholder: self.placeholder, error: self.error) {
+        KozmosSelect(
+            value: nil,
+            placeholder: self.placeholder,
+            error: self.error,
+            variant: self.selectVariant
+        ) {
             KozmosSelectItem(
                 value: "option-1",
                 label: self.option1Text,

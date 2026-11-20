@@ -7,6 +7,7 @@ import com.figma.code.connect.FigmaProperty
 import com.figma.code.connect.FigmaType
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.listbox.KozmosListboxOption
+import com.kozmos.components.listbox.KozmosOptionMedia
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=401-9365")
 class KozmosMultiSelectConnect {
@@ -31,8 +32,15 @@ class KozmosMultiSelectConnect {
         "Mixed" to "mixed"
     )
 
-    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
-    // the owner's plugin Update has put them in the library.
+    // GAP-255: its way back to the several values, once edited.
+    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
+    val resetMixed: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
+
+    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
+    val resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaProperty(FigmaType.Enum, "Status")
     val status: KozmosInputStatus = Figma.mapping(
@@ -58,6 +66,24 @@ class KozmosMultiSelectConnect {
     @FigmaProperty(FigmaType.Text, "Option 3 Text")
     val option3: String = "Bike Parking"
 
+    // Decision 215, GAP-282: Show Media is each option's Sm Avatar, its
+    // initials the label's. GAP-260: Show Trailing is each option's muted
+    // words at its end, before the check.
+    @FigmaProperty(FigmaType.Boolean, "Show Media")
+    val media: KozmosOptionMedia? = Figma.mapping(true to KozmosOptionMedia(), false to null)
+
+    @FigmaProperty(FigmaType.Boolean, "Show Trailing")
+    val showTrailing: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Option 1 Trailing")
+    val option1Trailing: String = "Text"
+
+    @FigmaProperty(FigmaType.Text, "Option 2 Trailing")
+    val option2Trailing: String = "Number"
+
+    @FigmaProperty(FigmaType.Text, "Option 3 Trailing")
+    val option3Trailing: String = "Image"
+
     @Composable
     fun ComponentExample() {
         KozmosMultiSelect(
@@ -66,9 +92,9 @@ class KozmosMultiSelectConnect {
             searchValue = "",
             onSearchValueChange = {},
             options = listOf(
-                KozmosListboxOption("metro-station", option1),
-                KozmosListboxOption("bus-stop", option2),
-                KozmosListboxOption("bike-parking", option3)
+                KozmosListboxOption("metro-station", option1, media = media, trailing = if (showTrailing) option1Trailing else null),
+                KozmosListboxOption("bus-stop", option2, media = media, trailing = if (showTrailing) option2Trailing else null),
+                KozmosListboxOption("bike-parking", option3, media = media, trailing = if (showTrailing) option3Trailing else null)
             ),
             label = label,
             placeholder = placeholder,
@@ -77,7 +103,10 @@ class KozmosMultiSelectConnect {
             status = status,
             helperText = if (showHelperText) helperText else null,
             defaultExpanded = content == "open",
-            mixed = state == "mixed"
+            mixed = state == "mixed",
+            mixedLabel = mixedLabel,
+            onResetMixed = if (resetMixed) ({}) else null,
+            resetMixedLabel = resetMixedLabel
         )
     }
 }

@@ -1,5 +1,11 @@
 import figma from "@figma/code-connect";
+import { Download01 } from "@kozmos-ds/icons";
 import { SplitButton } from "./SplitButton";
+
+// Decision 209, GAP-168: the menu's items are the ones Menu Open shows, an
+// item with an icon, a separator and a disabled item. Menu Open itself is
+// not mapped: it draws the menu open, which the user does, and SplitButton
+// takes no prop for it.
 
 figma.connect(
   SplitButton,
@@ -29,8 +35,13 @@ figma.connect(
         disabled={disabled}
         onMainClick={() => {}}
         menuItems={[
-          { label: "Action 1", onClick: () => {} },
-          { label: "Action 2", onClick: () => {} },
+          {
+            label: "Publish to staging",
+            icon: <Download01 />,
+            onClick: () => {},
+          },
+          { type: "separator" },
+          { label: "Publish to production", disabled: true },
         ]}
         size={size}
         variant={variant}

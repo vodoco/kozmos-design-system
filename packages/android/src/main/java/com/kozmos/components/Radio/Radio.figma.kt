@@ -22,8 +22,9 @@ class KozmosRadioConnect {
         "Mixed" to "mixed"
     )
 
-    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
-    // put it in the library: the dry run reads the live file.
+    // Decision 191: the group's "Multiple values" line.
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
 
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Option"
@@ -43,7 +44,7 @@ class KozmosRadioConnect {
 
     @Composable
     fun ComponentExample() {
-        KozmosRadioGroup(mixed = checked == "mixed") {
+        KozmosRadioGroup(mixed = checked == "mixed", mixedLabel = mixedLabel) {
             KozmosRadioGroupItem(
                 value = "option",
                 selectedValue = if (checked == "checked") "option" else "",
@@ -69,8 +70,9 @@ class KozmosRadioCardConnect {
         "Mixed" to "mixed"
     )
 
-    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
-    // put it in the library: the dry run reads the live file.
+    // Decision 191: the group's "Multiple values" line.
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
 
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Vector"
@@ -94,7 +96,7 @@ class KozmosRadioCardConnect {
 
     @Composable
     fun ComponentExample() {
-        KozmosRadioGroup(mixed = checked == "mixed") {
+        KozmosRadioGroup(mixed = checked == "mixed", mixedLabel = mixedLabel) {
             KozmosRadioGroupItem(
                 value = "option",
                 selectedValue = if (checked == "checked") "option" else "",
@@ -126,8 +128,9 @@ class KozmosRadioTileConnect {
         "Mixed" to "mixed"
     )
 
-    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
-    // put it in the library: the dry run reads the live file.
+    // Decision 191: the group's "Multiple values" line.
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
 
     @FigmaProperty(FigmaType.Text, "Label Text")
     val label: String = "Fade"
@@ -151,7 +154,7 @@ class KozmosRadioTileConnect {
 
     @Composable
     fun ComponentExample() {
-        KozmosRadioGroup(mixed = checked == "mixed") {
+        KozmosRadioGroup(mixed = checked == "mixed", mixedLabel = mixedLabel) {
             KozmosRadioGroupItem(
                 value = "option",
                 selectedValue = if (checked == "checked") "option" else "",

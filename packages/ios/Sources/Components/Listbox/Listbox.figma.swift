@@ -42,12 +42,30 @@ struct KozmosListboxConnect: FigmaConnect {
     @FigmaString("Option 3 Description")
     var option3Description: String = "Secure racks nearby"
 
+    // Decision 215, GAP-282: Show Media is each option's Sm Avatar, its
+    // initials the label's. GAP-260: Show Trailing is each option's muted
+    // words at its end, before the check.
+    @FigmaBoolean("Show Media", mapping: [true: KozmosOptionMedia(), false: nil])
+    var media: KozmosOptionMedia? = nil
+
+    @FigmaBoolean("Show Trailing")
+    var showTrailing: Bool = false
+
+    @FigmaString("Option 1 Trailing")
+    var option1Trailing: String = "Text"
+
+    @FigmaString("Option 2 Trailing")
+    var option2Trailing: String = "Number"
+
+    @FigmaString("Option 3 Trailing")
+    var option3Trailing: String = "Image"
+
     var body: some View {
         KozmosListbox(
             options: [
-                KozmosListboxOption(value: "metro-station", label: self.option1, description: self.option1Description),
-                KozmosListboxOption(value: "bus-stop", label: self.option2, description: self.option2Description),
-                KozmosListboxOption(value: "bike-parking", label: self.option3, description: self.option3Description)
+                KozmosListboxOption(value: "metro-station", label: self.option1, description: self.option1Description, media: self.media, trailing: self.showTrailing ? self.option1Trailing : nil),
+                KozmosListboxOption(value: "bus-stop", label: self.option2, description: self.option2Description, media: self.media, trailing: self.showTrailing ? self.option2Trailing : nil),
+                KozmosListboxOption(value: "bike-parking", label: self.option3, description: self.option3Description, media: self.media, trailing: self.showTrailing ? self.option3Trailing : nil)
             ],
             selectedValues: .constant(self.multiple ? ["metro-station", "bus-stop"] : ["metro-station"]),
             multiple: self.multiple,
