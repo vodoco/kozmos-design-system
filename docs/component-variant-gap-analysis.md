@@ -39,11 +39,11 @@ token was declined, so this is not a gap to close.
 | Variations that are compositional only    | 64     |
 | Components with variant gaps — iOS        | 16/68  |
 | Components with variant gaps — Android    | 16/68  |
-| Components with variant gaps — Figma      | 26/68  |
+| Components with variant gaps — Figma      | 25/68  |
 | Components with variant gaps — Vue        | 11/68  |
 | Components absent entirely — iOS          | 10/132 |
 | Components absent entirely — Android      | 9/132  |
-| Components absent entirely — Figma        | 21/132 |
+| Components absent entirely — Figma        | 16/132 |
 | Components absent entirely — Vue          | 23/132 |
 
 <!-- /generated:headline -->
@@ -105,7 +105,7 @@ Icon
 LanguageSwitcher
   - ios: component/set absent
   - android: component/set absent
-  - figma: component/set absent
+  - figma missing axes -> dir (ltr, rtl)
   - vue: component absent
 Link
   - ios missing axes -> variant (default, subtle)
@@ -147,7 +147,6 @@ Stepper
   - android missing axes -> variant (numbered, dots)
 Surface
   - ios: component/set absent
-  - figma: component/set absent
   - vue: component absent
 ThemeProvider
   - ios missing axes -> dir (ltr, rtl)
@@ -241,9 +240,9 @@ AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, La
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, TourStep, UserMessage.
 
-### Figma — 21 of 132
+### Figma — 16 of 132
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, Calendar, ClientAppBanner, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, POIResultGroup, RouteLocationField, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ArrivalPanel, FieldWrapper, Icon, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, POIResultGroup, RouteLocationField, RouteSetupPanel, ThemeProvider, UserMessage.
 
 ### Vue — 23 of 132
 

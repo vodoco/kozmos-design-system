@@ -1089,6 +1089,7 @@
                 <option value="pageHeader">PageHeader</option>
                 <option value="scrollArea">ScrollArea</option>
                 <option value="stack">Stack</option>
+                <option value="surface">Surface</option>
               </optgroup>
               <optgroup label="Data display">
                 <option value="list">List</option>
@@ -1098,6 +1099,7 @@
                 <option value="descriptionList">DescriptionList</option>
                 <option value="codeBlock">CodeBlock</option>
                 <option value="personaMark">PersonaMark</option>
+                <option value="actionCard">ActionCard</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
                 <option value="tree">Tree</option>
@@ -1147,6 +1149,7 @@
                 <option value="otpInput">OTPInput</option>
                 <option value="datePicker">DatePicker</option>
                 <option value="dateRangePicker">DateRangePicker</option>
+                <option value="calendar">Calendar</option>
                 <option value="timePicker">TimePicker</option>
                 <option value="fileUpload">FileUpload</option>
                 <option value="imageCropper">ImageCropper</option>
@@ -1201,6 +1204,8 @@
                 <option value="itinerary">Itinerary</option>
                 <option value="manoeuvreCard">ManoeuvreCard</option>
                 <option value="routeProgressRail">RouteProgressRail</option>
+                <option value="clientAppBanner">ClientAppBanner</option>
+                <option value="languageSwitcher">LanguageSwitcher</option>
               </optgroup>
               <optgroup label="Platform / Form-Factor">
                 <option value="dynamicIsland">DynamicIsland</option>
@@ -2395,6 +2400,42 @@
           update: "update-alert",
           rebuild: "rebuild-alert",
           hint: "Build creates Alert with Variant axis plus editable Title and Description text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        // GAP-206: the sets that had no Figma node.
+        surface: {
+          label: "Surface",
+          build: "build-surface",
+          update: "update-surface",
+          rebuild: "rebuild-surface",
+          hint: "Build creates Surface (GAP-206) with Solid and Glass Variant variants, as its stories draw it: the Container corner, 16 inside, the floating elevation and a Content Slot. Solid is the background with the subtle edge; Glass the glass colour at 70 % over a 20 background blur, with a white edge at 20 %. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        actionCard: {
+          label: "ActionCard",
+          build: "build-action-card",
+          update: "update-action-card",
+          rebuild: "rebuild-action-card",
+          hint: "Build creates ActionCard (GAP-206) with Titled and Basic Content variants: an assistant turn's rich content, an optional Title Text in Text XS semibold over a Content Slot, 8 apart, with no surface. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        calendar: {
+          label: "Calendar",
+          build: "build-calendar",
+          update: "update-calendar",
+          rebuild: "rebuild-calendar",
+          hint: "Build creates Calendar (GAP-206) with Mode (Single, Range) by Months (One, Two): May 2026 in en-US, today the 22nd, the 25th or the 21st to the 25th chosen, 36 days (40 in a range) 4 apart, with no surface. Run Curated Icons first for the month chevrons. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        clientAppBanner: {
+          label: "ClientAppBanner",
+          build: "build-client-app-banner",
+          update: "update-client-app-banner",
+          rebuild: "rebuild-client-app-banner",
+          hint: "Build creates ClientAppBanner (GAP-206) with Wide and Narrow Layout variants: the promotion, the app's 48 icon (its initial until filled), name and description, a live Button and a live IconButton dismiss on the solid surface. Build Button and IconButton and run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        languageSwitcher: {
+          label: "LanguageSwitcher",
+          build: "build-language-switcher",
+          update: "update-language-switcher",
+          rebuild: "rebuild-language-switcher",
+          hint: "Build creates LanguageSwitcher (GAP-206) with Default, Pending, Failed and Disabled State variants: the closed 48 trigger with the language's native name, the pending line, or the error with a live ghost Retry Button. Build Button and run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         notice: {
           label: "Notice",

@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "156122f6e684";
+const PLUGIN_BUILD = "c91727a8dca5";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -819,6 +819,23 @@ const NOTICE_DESCRIPTION = [
   "Summary maps to Notice.summary; Detail, shown by Show Detail, to its children.",
   "Show Icon off is icon={null}; Show Action shows Notice.action, a Button under the text.",
 ];
+// GAP-206: the sets that gave React's Surface, ActionCard, Calendar,
+// ClientAppBanner and LanguageSwitcher no Figma node, so Dev Mode showed no
+// Kozmos code for them. Each axis is the React prop or story it draws.
+//
+// Surface's `variant`: the solid surface (the default) or glass.
+const SURFACE_VARIANTS = ["Solid", "Glass"];
+// ActionCard's `title`: given (its story's "2 results") or left out.
+const ACTION_CARD_CONTENT = ["Titled", "Basic"];
+// Calendar's `mode` and `months`: one day or a range, in one month or two.
+const CALENDAR_MODES = ["Single", "Range"];
+const CALENDAR_MONTHS = ["One", "Two"];
+// ClientAppBanner's two layouts: wide enough, the action beside the words
+// (its Default story, 560); narrow, under them and as wide (Narrow, 320).
+const CLIENT_APP_BANNER_LAYOUTS = ["Wide", "Narrow"];
+// LanguageSwitcher's stories: Default; Pending (`pending`); Failed (`error`
+// with `onRetry`); Disabled (`disabled`, or nothing else to choose).
+const LANGUAGE_SWITCHER_STATES = ["Default", "Pending", "Failed", "Disabled"];
 // How much room an empty state takes. Default pads 32 and fills its region,
 // which is right when the empty state IS the screen; Compact is for a slot
 // that already draws a box round it. Measured on the web, the same content
@@ -1954,6 +1971,9 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Textarea: 760,
   Alert: 260,
   Notice: 700,
+  Surface: 360,
+  ActionCard: 360,
+  Calendar: 700,
   Stepper: 420,
   Progress: 260,
   Skeleton: 260,
@@ -1986,6 +2006,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "PageHeader",
       "ScrollArea",
       "Stack",
+      "Surface",
     ],
   },
   {
@@ -2005,6 +2026,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Tree",
       "Timeline",
       "PersonaMark",
+      "ActionCard",
     ],
   },
   {
@@ -2053,6 +2075,8 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Itinerary",
       "ManoeuvreCard",
       "RouteProgressRail",
+      "ClientAppBanner",
+      "LanguageSwitcher",
     ],
   },
   {
@@ -2106,6 +2130,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Listbox",
       "DatePicker",
       "DateRangePicker",
+      "Calendar",
       "TimePicker",
       "FileUpload",
       "ImageCropper",
@@ -3197,6 +3222,55 @@ const COMPONENT_DOCS = [
       "The code renders an ordered list; the current step carries aria-current.",
       "Marks are decorative: assistive technology hears the instruction.",
       "The current step is set apart by weight as well as colour.",
+    ],
+  },
+  // GAP-206: the Product / SDK sets that had no Figma node.
+  {
+    componentName: "ClientAppBanner",
+    componentSetName: "ClientAppBanner",
+    category: "Product / SDK",
+    summary:
+      "ClientAppBanner is Express's Client App Banner: the customer's promotion, the app's icon, name and description, one action and a dismiss, for AdaptiveMapShell's topBar (GAP-206, GAP-127).",
+    usage: [
+      "Use in AdaptiveMapShell's topBar; it brings its own surface.",
+      "Every word is the customer's, set in Pointr Cloud in the visitor's language.",
+      "Fill App Icon with the app's icon; its initial stands in until it loads.",
+    ],
+    api: [
+      "Layout is how the width falls: Wide puts the action beside the words, Narrow under them.",
+      "Promotion Text, App Name Text and Description Text map to promotionText, appName and description; the Action's Label Text to actionLabel.",
+      "Show Dismiss maps to onDismiss.",
+    ],
+    properties: [
+      "Layout: Wide, Narrow",
+      "Promotion Text, App Name Text, Description Text, Initial Text, Show Promotion, Show Description, Show Dismiss",
+    ],
+    accessibility: [
+      "In code the banner is a region named by the app; it reads the promotion, the name and the description, then the action, then dismiss.",
+      "The icon is decoration beside the name unless appIconAlt names it; dismiss is a 44 target named by dismissLabel.",
+    ],
+  },
+  {
+    componentName: "LanguageSwitcher",
+    componentSetName: "LanguageSwitcher",
+    category: "Product / SDK",
+    summary:
+      "LanguageSwitcher is the map's language control: the committed language's native name on a 48 trigger, pending, failed with a retry, or unavailable (GAP-206, SDK-UI-003).",
+    usage: [
+      "Place it at the map's bottom start; on phones the SDK hides it.",
+      "Name each language in its own language, never with a flag.",
+    ],
+    api: [
+      "State maps to pending (Pending), error with onRetry (Failed) and disabled (Disabled).",
+      "Language Text is the selected language's label; Pending Text is pendingLabel; Error Text is error.",
+    ],
+    properties: [
+      "State: Default, Pending, Failed, Disabled",
+      "Language Text, Pending Text, Error Text",
+    ],
+    accessibility: [
+      "The trigger is named by its label and the language; pending keeps focus, busy and aria-disabled.",
+      "Pending is a polite status and a failure an assertive alert.",
     ],
   },
   {
@@ -5702,6 +5776,67 @@ const COMPONENT_DOCS = [
       "In code the notice is a polite status by default; live sets off or assertive.",
       "Progress marks the notice busy; the marks are decoration, and the summary says what happened.",
       "Text and marks take the tone's text role, 4.5:1 on the tinted fill in Light and Dark.",
+    ],
+  },
+  // GAP-206: the five sets that had no Figma node.
+  {
+    componentName: "Surface",
+    componentSetName: "Surface",
+    category: "Layout",
+    summary:
+      "Surface is what a card or panel is made of: the solid surface, or glass that lets the map show through (GAP-206).",
+    usage: [
+      "Use Solid by default; choose Glass per surface, over a map or imagery.",
+      "The corner, padding and elevation are the caller's: these are its stories' (Container corner, 16 inside, floating).",
+      "Put the content in the Content Slot.",
+    ],
+    api: [
+      "Variant maps to Surface.variant: Solid is solid, Glass is glass.",
+      "Content Slot maps to children.",
+    ],
+    properties: ["Variant: Solid, Glass", "Content Slot"],
+    accessibility: [
+      "Surface is a box with no role of its own; what it holds keeps its names.",
+      "With transparency reduced, code draws glass as the plain colour.",
+    ],
+  },
+  {
+    componentName: "ActionCard",
+    componentSetName: "ActionCard",
+    category: "Data display",
+    summary:
+      "ActionCard holds the rich content of an assistant turn — a result list, a result card, a hand-off — under an optional title (GAP-206).",
+    usage: [
+      "Use inside an assistant turn, for what the assistant found or hands off.",
+      "Put the result parts themselves in the Content Slot: ActionCard draws no surface and no result of its own.",
+    ],
+    api: [
+      "Content maps to title: Titled gives it (Title Text), Basic leaves it out.",
+      "Content Slot maps to children.",
+    ],
+    properties: ["Content: Titled, Basic", "Title Text", "Content Slot"],
+    accessibility: [
+      "The title is a paragraph read before the content; ActionCard is non-interactive.",
+    ],
+  },
+  {
+    componentName: "Calendar",
+    componentSetName: "Calendar",
+    category: "Inputs",
+    summary:
+      "Calendar is the month grid to choose a day or a range in, one month or two side by side (GAP-206, decision 104).",
+    usage: [
+      "Use DatePicker or DateRangePicker for a field that opens one; place Calendar itself on a page or Card.",
+      "Range chooses its two ends; Two shows two months side by side.",
+    ],
+    api: [
+      "Mode maps to mode: Single (the default) or Range. Months maps to months: One or Two.",
+      "The days drawn are an example: in code they follow value, month, min, max and locale.",
+    ],
+    properties: ["Mode: Single, Range", "Months: One, Two"],
+    accessibility: [
+      "In code each month is a grid; the arrows, Home, End, Page Up and Page Down move between days, and Enter or Space chooses.",
+      "Every day is named in full, today is marked current, and chosen days are selected.",
     ],
   },
   {
@@ -10762,6 +10897,81 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/icon/size",
     scopes: ["WIDTH_HEIGHT"],
   },
+  // GAP-206: Surface as its stories draw it, rounded-container p-4 at 320.
+  { name: "Surface/width/default", value: 320, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Surface/padding",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Surface/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  // GAP-206: ActionCard, flex-col gap-2, as wide as the turn it sits in.
+  { name: "ActionCard/width/default", value: 320, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "ActionCard/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  // GAP-206: Calendar's owned CSS (owned-calendar.css): a 2.25rem day, 2.5rem
+  // in a range, 4 apart; 8 from the header to the days, 12 between months; a
+  // 2rem month button with a 1rem chevron.
+  { name: "Calendar/day/size", value: 36, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Calendar/day/size/range", value: 40, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Calendar/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Calendar/month/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Calendar/months/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  { name: "Calendar/nav/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Calendar/icon/size", value: 16, scopes: ["WIDTH_HEIGHT"] },
+  // GAP-206: ClientAppBanner's owned CSS (owned-client-app-banner.css): 16
+  // inside, 12 between its parts, a 48 icon, the Container corner.
+  {
+    name: "ClientAppBanner/padding",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ClientAppBanner/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  { name: "ClientAppBanner/icon/size", value: 48, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "ClientAppBanner/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  // GAP-206: LanguageSwitcher's trigger, h-12 min-w-32.
+  { name: "LanguageSwitcher/height", value: 48, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "LanguageSwitcher/min-width",
+    value: 128,
+    scopes: ["WIDTH_HEIGHT"],
+  },
   { name: "Alert/width/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Alert/padding",
@@ -12753,7 +12963,8 @@ const SETS_THAT_OVERRIDE_INSIDE = {
   // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
   // each tinted again after the swap.
   // PageHeader's Info: info-circle (GAP-036).
-  IconButton: ["TourStep", "Card", "PageHeader"],
+  // ClientAppBanner's Dismiss: x-close (GAP-206).
+  IconButton: ["TourStep", "Card", "PageHeader", "ClientAppBanner"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -12886,6 +13097,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Listbox", updateListboxComponent],
   ["DatePicker", updateDatePickerComponent],
   ["DateRangePicker", updateDateRangePickerComponent],
+  ["Calendar", updateCalendarComponent],
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
   ["ImageCropper", updateImageCropperComponent],
@@ -12903,6 +13115,8 @@ const CORE_UPDATE_SEQUENCE = [
   ["Avatar", updateAvatarComponent],
   ["Alert", updateAlertComponent],
   ["Notice", updateNoticeComponent],
+  ["Surface", updateSurfaceComponent],
+  ["ActionCard", updateActionCardComponent],
   ["EmptyState", updateEmptyStateComponent],
   ["Toast", updateToastComponent],
   ["Tag", updateTagComponent],
@@ -12959,6 +13173,10 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["RouteProgressRail", updateRouteProgressRailComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
+  // GAP-206: each holds live Core Buttons (ClientAppBanner an IconButton
+  // too), which the Core run draws first.
+  ["ClientAppBanner", updateClientAppBannerComponent],
+  ["LanguageSwitcher", updateLanguageSwitcherComponent],
   // Dashboard modules (decision 183) ride this run: they share no painter
   // with Core, and a lane of one needs no button of its own.
   ["BrandLoader", updateBrandLoaderComponent],
@@ -13161,6 +13379,21 @@ function additionalComponentActionHandlers() {
     "build-persona-mark": buildPersonaMarkComponent,
     "update-persona-mark": updatePersonaMarkComponent,
     "rebuild-persona-mark": rebuildPersonaMarkComponent,
+    "build-surface": buildSurfaceComponent,
+    "update-surface": updateSurfaceComponent,
+    "rebuild-surface": rebuildSurfaceComponent,
+    "build-action-card": buildActionCardComponent,
+    "update-action-card": updateActionCardComponent,
+    "rebuild-action-card": rebuildActionCardComponent,
+    "build-calendar": buildCalendarComponent,
+    "update-calendar": updateCalendarComponent,
+    "rebuild-calendar": rebuildCalendarComponent,
+    "build-client-app-banner": buildClientAppBannerComponent,
+    "update-client-app-banner": updateClientAppBannerComponent,
+    "rebuild-client-app-banner": rebuildClientAppBannerComponent,
+    "build-language-switcher": buildLanguageSwitcherComponent,
+    "update-language-switcher": updateLanguageSwitcherComponent,
+    "rebuild-language-switcher": rebuildLanguageSwitcherComponent,
     "build-page-header": buildPageHeaderComponent,
     "update-page-header": updatePageHeaderComponent,
     "rebuild-page-header": rebuildPageHeaderComponent,
@@ -20545,6 +20778,38 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  // GAP-206.
+  if (canonicalName === "Surface") {
+    return {
+      Variant: SURFACE_VARIANTS,
+    };
+  }
+
+  if (canonicalName === "ActionCard") {
+    return {
+      Content: ACTION_CARD_CONTENT,
+    };
+  }
+
+  if (canonicalName === "Calendar") {
+    return {
+      Mode: CALENDAR_MODES,
+      Months: CALENDAR_MONTHS,
+    };
+  }
+
+  if (canonicalName === "ClientAppBanner") {
+    return {
+      Layout: CLIENT_APP_BANNER_LAYOUTS,
+    };
+  }
+
+  if (canonicalName === "LanguageSwitcher") {
+    return {
+      State: LANGUAGE_SWITCHER_STATES,
+    };
+  }
+
   if (canonicalName === "Toast") {
     return {
       Content: TOAST_CONTENT,
@@ -27330,6 +27595,10 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   }
   if (setName === "Notice") {
     return textName === "Summary" ? "alertTitle" : "alertDescription";
+  }
+  {
+    const gap206 = gap206TextStyleKey(setName, textName);
+    if (gap206) return gap206;
   }
   if (setName === "EmptyState") {
     return textName === "Title Text"
@@ -74737,6 +75006,1616 @@ function configureNoticeProperties(componentSet, stats) {
     "Show Action",
     false,
     stats,
+  );
+}
+
+// --- GAP-206: Surface, ActionCard, Calendar, ClientAppBanner, LanguageSwitcher
+
+// The five sets GAP-206 found without a Figma node, each drawn as its React
+// stories draw it. They share these helpers and nothing else.
+
+/** A frame that lays out and paints nothing until told to. */
+function gap206Frame(name, direction) {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = direction;
+  frame.primaryAxisSizingMode = "AUTO";
+  frame.counterAxisSizingMode = "AUTO";
+  frame.primaryAxisAlignItems = "MIN";
+  frame.counterAxisAlignItems = "MIN";
+  frame.itemSpacing = 0;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  return frame;
+}
+
+/** The variant itself, stamped as a generated variant of `owner`. */
+function gap206VariantRoot(component, owner, name, direction) {
+  component.name = name;
+  component.layoutMode = direction;
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 0;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.fills = [];
+  component.strokes = [];
+  component.effects = [];
+  component.opacity = 1;
+  component.clipsContent = false;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", owner);
+}
+
+/**
+ * A line of React's Text: its size and weight from the Text styles, in a
+ * colour role. The style key is kept on the layer, so Apply Text Styles
+ * attaches the same style (gap206TextStyleKey).
+ */
+async function gap206Text({
+  name,
+  characters,
+  size,
+  weight,
+  ink,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const metrics = textMetrics(size);
+  const key = textStyleKeyForText(size, weight);
+  const text = figma.createText();
+  text.name = name;
+  text.fontName = textFontForWeight(weight, fonts);
+  text.fontSize = metrics.fontSize;
+  text.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, key, stats);
+  text.fills = [
+    paintFromVariable(ink.name, ink.fallback, variableByName, stats),
+  ];
+  text.setSharedPluginData(RUN_NAMESPACE, "text-style", key);
+  return text;
+}
+
+const GAP206_INK = {
+  foreground: { name: "Colors/foreground/0", fallback: "#000000" },
+  muted: { name: "Colors/foreground/400", fallback: "#5D626F" },
+  danger: { name: "Emotion/danger/text", fallback: "#B01736" },
+};
+
+/** The Text style each GAP-206 set's words take, by layer name. */
+const GAP206_TEXT_STYLES = {
+  ActionCard: { "Title Text": ["XS", "Semibold"] },
+  Calendar: {
+    "Title Text": ["Small", "Medium"],
+    "Weekday Text": ["XS", "Normal"],
+    "Day Text": ["Small", "Normal"],
+  },
+  ClientAppBanner: {
+    "Promotion Text": ["XS", "Medium"],
+    "App Name Text": ["Base", "Semibold"],
+    "Description Text": ["Small", "Normal"],
+    "Initial Text": ["Large", "Semibold"],
+  },
+  LanguageSwitcher: {
+    "Language Text": ["Small", "Normal"],
+    "Pending Text": ["Small", "Normal"],
+    "Error Text": ["Small", "Normal"],
+  },
+};
+
+function gap206TextStyleKey(setName, textName) {
+  const styles = GAP206_TEXT_STYLES[setName];
+  const style = styles && styles[textName];
+  return style ? textStyleKeyForText(style[0], style[1]) : null;
+}
+
+/** A Core part placed live, or a marked placeholder that says to build it. */
+async function gap206NestedInstance({
+  componentSetName,
+  variantProperties,
+  name,
+  role,
+  owner,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name,
+    role,
+    stats,
+  });
+  if (!created) {
+    return {
+      node: createMissingNestedComponentNode(
+        name,
+        `Build ${componentSetName} before updating ${owner}.`,
+        stats,
+      ),
+      componentSet: null,
+    };
+  }
+  return { node: created.instance, componentSet: created.componentSet };
+}
+
+/** A live Button with its words, as React's <Button>. */
+async function gap206Button({ variant, label, name, role, owner, stats }) {
+  const placed = await gap206NestedInstance({
+    componentSetName: "Button",
+    variantProperties: { Variant: variant, Size: "Default", State: "Default" },
+    name,
+    role,
+    owner,
+    stats,
+  });
+  if (placed.componentSet) {
+    setInstanceTextProperty(
+      placed.node,
+      placed.componentSet,
+      "Label Text",
+      label,
+      stats,
+    );
+  }
+  markControlSurface(placed.node);
+  return placed.node;
+}
+
+/**
+ * Layers out of the flow that stand for the box itself (a glass fill, an
+ * edge): the box's size once it hugs its content, and a warning if not.
+ */
+function holdGap206Layers(component, names, owner, stats) {
+  for (const name of names) {
+    const layer = directChildNamed(component, name);
+    if (!layer) continue;
+    layer.x = 0;
+    layer.y = 0;
+    layer.resizeWithoutConstraints(component.width, component.height);
+    if (
+      Math.abs(layer.width - component.width) > 0.5 ||
+      Math.abs(layer.height - component.height) > 0.5
+    ) {
+      stats.warnings.push(
+        `${owner}: ${name} is ${layer.width} by ${layer.height} in a ${component.width} by ${component.height} box.`,
+      );
+    }
+  }
+}
+
+/** A 1 edge laid inside a box as a layer of its own, at a strength. */
+function insertGap206Edge(component, { name, token, opacity, radius }, at) {
+  const edge = figma.createRectangle();
+  edge.name = name;
+  edge.resize(component.width, component.height);
+  edge.cornerRadius = radius;
+  edge.fills = [];
+  setTranslucentTokenPaint(
+    edge,
+    "strokes",
+    token,
+    opacity,
+    at.variableByName,
+    at.stats,
+  );
+  edge.strokeWeight = 1;
+  edge.strokeAlign = "INSIDE";
+  edge.setSharedPluginData(RUN_NAMESPACE, "role", "translucent-token-layer");
+  component.insertChild(Math.min(1, component.children.length), edge);
+  edge.layoutPositioning = "ABSOLUTE";
+  edge.x = 0;
+  edge.y = 0;
+  edge.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+  return edge;
+}
+
+async function rebuildGap206Component(componentName, build) {
+  return rebuildGeneratedComponentSet({
+    componentName,
+    componentSetName: componentName,
+    build,
+  });
+}
+
+// --- Surface ----------------------------------------------------------------
+
+// GAP-206: React's Surface, the material a card or panel is made of
+// (`variant`). Drawn as its stories draw it, rounded-container p-4 at 320
+// with the floating elevation: a 20 corner, 16 inside, a Content Slot for
+// what it holds. Solid is Colors/background/0 with the Border/Subtle edge
+// (.kozmos-surface-solid). Glass is the glass colour, Colors/background/0 (white
+// in Light, black in Dark, as --kozmos-glass-rgb), at Effect/glass/opacity's
+// 0.7, what is behind it blurred by Effect/glass/blur's 20, and its edge
+// Effect/glass/border/color at Effect/glass/border/opacity's 0.2
+// (.kozmos-surface-glass). A strength on a bound colour does not hold
+// (setTranslucentTokenPaint), so Glass's fill and both edges are layers of
+// their own; Solid's edge is a layer too, so every variant lays its edge out
+// the same way. Figma has no backdrop saturation: Effect/glass/saturation is
+// code's alone. The shape is the caller's in code; a designer may change the
+// corner on an instance.
+const SURFACE_WIDTH = 320;
+const SURFACE_PADDING = 16;
+const SURFACE_GLASS = {
+  fill: { name: "Colors/background/0", fallback: "#FFFFFF" },
+  opacity: 0.7,
+  blur: 20,
+  edge: { name: "Effect/glass/border/color", fallback: "#FFFFFF" },
+  edgeOpacity: 0.2,
+};
+const SURFACE_DESCRIPTION = [
+  "Kozmos Surface component set generated from React Surface API (GAP-206).",
+  "Variant maps to Surface.variant: Solid is solid (the default), Glass is glass.",
+  "Content Slot maps to children. The corner, padding and elevation are its stories' (rounded-container p-4 shadow-floating): in code they are the caller's className.",
+  "Glass draws the glass colour at Effect/glass/opacity over a background blur of Effect/glass/blur, with its edge at Effect/glass/border/opacity; backdrop saturation is code's alone.",
+];
+
+async function createSurfaceVariant({ value, variableByName, fonts, stats }) {
+  const component = figma.createComponent();
+  await updateSurfaceVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseSurfaceVariantName(name) {
+  return parseSingleAxisVariantName(name, "Variant", SURFACE_VARIANTS);
+}
+
+async function updateSurfaceVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  const variant = SURFACE_VARIANTS.indexOf(value) === -1 ? "Solid" : value;
+  const glass = variant === "Glass";
+  gap206VariantRoot(component, "Surface", `Variant=${variant}`, "VERTICAL");
+  component.counterAxisSizingMode = "FIXED";
+  component.paddingLeft = SURFACE_PADDING;
+  component.paddingRight = SURFACE_PADDING;
+  component.paddingTop = SURFACE_PADDING;
+  component.paddingBottom = SURFACE_PADDING;
+  component.resizeWithoutConstraints(SURFACE_WIDTH, 120);
+  component.cornerRadius = KOZMOS_RADIUS.container;
+  component.setSharedPluginData(RUN_NAMESPACE, "surface-variant", variant);
+  component.fills = glass
+    ? []
+    : [
+        paintFromVariable(
+          "Colors/background/0",
+          "#FFFFFF",
+          variableByName,
+          stats,
+        ),
+      ];
+  component.effects = glass
+    ? [
+        elevationEffect("floating"),
+        {
+          type: "BACKGROUND_BLUR",
+          blurType: "NORMAL",
+          radius: SURFACE_GLASS.blur,
+          visible: true,
+        },
+      ]
+    : [elevationEffect("floating")];
+
+  removeDirectChildrenNamed(component, [
+    "Glass Fill",
+    "Surface Edge",
+    "Content Slot",
+  ]);
+  const slot = appendComponentContentSlot({
+    component,
+    height: 24,
+    ownerName: "Surface",
+    parent: component,
+    slotName: "Content Slot",
+    stats,
+    width: SURFACE_WIDTH - 2 * SURFACE_PADDING,
+  });
+  setVerticalStackFillChildSizing(slot);
+
+  if (glass) {
+    insertTranslucentTokenLayer(component, {
+      name: "Glass Fill",
+      token: SURFACE_GLASS.fill,
+      opacity: SURFACE_GLASS.opacity,
+      cornerRadius: KOZMOS_RADIUS.container,
+      variableByName,
+      stats,
+    });
+  }
+  insertGap206Edge(
+    component,
+    {
+      name: "Surface Edge",
+      token: glass
+        ? SURFACE_GLASS.edge
+        : { name: "Border/Subtle", fallback: "#C7CAD1" },
+      opacity: glass ? SURFACE_GLASS.edgeOpacity : 1,
+      radius: KOZMOS_RADIUS.container,
+    },
+    { variableByName, stats },
+  );
+  // The edge sits over the fill and under the content.
+  if (glass)
+    component.insertChild(1, directChildNamed(component, "Surface Edge"));
+  else component.insertChild(0, directChildNamed(component, "Surface Edge"));
+
+  bindFloatVariable(
+    component,
+    "width",
+    "Surface/width/default",
+    variableByName,
+    stats,
+  );
+  for (const side of [
+    "paddingLeft",
+    "paddingRight",
+    "paddingTop",
+    "paddingBottom",
+  ]) {
+    bindFloatVariable(
+      component,
+      side,
+      "Surface/padding",
+      variableByName,
+      stats,
+    );
+  }
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "Surface/radius",
+    variableByName,
+    stats,
+  );
+  holdGap206Layers(component, ["Glass Fill", "Surface Edge"], "Surface", stats);
+}
+
+function configureSurfaceProperties(componentSet, stats) {
+  configureSharedSlotProperties(componentSet, ["Content Slot"], stats);
+}
+
+async function buildSurfaceComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Surface",
+    componentSetName: "Surface",
+    axisName: "Variant",
+    values: SURFACE_VARIANTS,
+    x: 80,
+    y: 10560,
+    xStep: 360,
+    createVariant: createSurfaceVariant,
+    configureProperties: configureSurfaceProperties,
+    description: SURFACE_DESCRIPTION,
+  });
+}
+
+async function updateSurfaceComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Surface",
+    componentSetName: "Surface",
+    axisName: "Variant",
+    values: SURFACE_VARIANTS,
+    xStep: 360,
+    createVariant: createSurfaceVariant,
+    updateVariant: updateSurfaceVariant,
+    parseVariantName: parseSurfaceVariantName,
+    configureProperties: configureSurfaceProperties,
+    description: SURFACE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildSurfaceComponent() {
+  return rebuildGap206Component("Surface", buildSurfaceComponent);
+}
+
+// --- ActionCard -------------------------------------------------------------
+
+// GAP-206: React's ActionCard, what an assistant turn holds besides its words
+// (a POIResultList, a POIResultCard, a hand-off): a column 8 apart (gap-2),
+// its title, when given, in Text XS semibold muted (text-xs font-semibold
+// text-muted-foreground), over a Content Slot. It draws no surface: what it
+// holds brings its own. Titled is its story's "2 results"; Basic has none.
+const ACTION_CARD_WIDTH = 320;
+const ACTION_CARD_GAP = 8;
+const ACTION_CARD_SAMPLE_TITLE = "2 results";
+const ACTION_CARD_DESCRIPTION = [
+  "Kozmos ActionCard component set generated from React ActionCard API (GAP-206).",
+  "Content maps to title: Titled gives it (Title Text), Basic leaves it out.",
+  "Content Slot maps to children: a POIResultList, a POIResultCard or a hand-off, each its own part. ActionCard draws no surface.",
+];
+
+async function createActionCardVariant({
+  value,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateActionCardVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseActionCardVariantName(name) {
+  return parseSingleAxisVariantName(name, "Content", ACTION_CARD_CONTENT);
+}
+
+async function updateActionCardVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const content = ACTION_CARD_CONTENT.indexOf(value) === -1 ? "Titled" : value;
+  gap206VariantRoot(component, "ActionCard", `Content=${content}`, "VERTICAL");
+  component.counterAxisSizingMode = "FIXED";
+  component.itemSpacing = ACTION_CARD_GAP;
+  component.resizeWithoutConstraints(ACTION_CARD_WIDTH, 40);
+  removeDirectChildrenNamed(component, ["Title Text", "Content Slot"]);
+  if (content === "Titled") {
+    const title = await gap206Text({
+      name: "Title Text",
+      characters: ACTION_CARD_SAMPLE_TITLE,
+      size: "XS",
+      weight: "Semibold",
+      ink: GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(component, title, "FILL", null);
+    setTextAutoResize(title, "HEIGHT");
+  }
+  const slot = appendComponentContentSlot({
+    component,
+    height: 64,
+    ownerName: "ActionCard",
+    parent: component,
+    slotName: "Content Slot",
+    stats,
+    width: ACTION_CARD_WIDTH,
+  });
+  setVerticalStackFillChildSizing(slot);
+  bindFloatVariable(
+    component,
+    "width",
+    "ActionCard/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ActionCard/gap",
+    variableByName,
+    stats,
+  );
+}
+
+function configureActionCardProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    ACTION_CARD_SAMPLE_TITLE,
+    stats,
+  );
+  configureSharedSlotProperties(componentSet, ["Content Slot"], stats);
+}
+
+async function buildActionCardComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ActionCard",
+    componentSetName: "ActionCard",
+    axisName: "Content",
+    values: ACTION_CARD_CONTENT,
+    x: 80,
+    y: 7420,
+    xStep: 360,
+    createVariant: createActionCardVariant,
+    configureProperties: configureActionCardProperties,
+    description: ACTION_CARD_DESCRIPTION,
+  });
+}
+
+async function updateActionCardComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ActionCard",
+    componentSetName: "ActionCard",
+    axisName: "Content",
+    values: ACTION_CARD_CONTENT,
+    xStep: 360,
+    createVariant: createActionCardVariant,
+    updateVariant: updateActionCardVariant,
+    parseVariantName: parseActionCardVariantName,
+    configureProperties: configureActionCardProperties,
+    description: ACTION_CARD_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildActionCardComponent() {
+  return rebuildGap206Component("ActionCard", buildActionCardComponent);
+}
+
+// --- Calendar ---------------------------------------------------------------
+
+// GAP-206: React's Calendar (decision 104), the month grid DatePicker opens,
+// drawn as its stories draw it, in en-US with today the 22nd of May 2026: no
+// surface of its own (DatePicker's Popover or a Card brings one). Each month
+// is a column 8 apart (Calendar/month/gap): its header, 32 tall, the month's
+// title in Text Small medium and, on the last month, the previous and next
+// month buttons, 32 squares 4 apart with a 16 chevron in Colors/foreground/400;
+// then the weekdays, Text XS in Colors/foreground/400 over 4 more; then six
+// weeks of days, 4 apart each way (Calendar/gap). A day is 36 square (40 in a
+// range), the Control corner, its number in Text Small: today on
+// Colors/background/100; the chosen day, or a range's two ends, on the theme
+// fill in its foreground; the days between on Colors/theme/100; the days of
+// the months either side in Colors/foreground/400. Two months sit 12 apart
+// (Calendar/months/gap). Disabled (the whole grid at half strength) and
+// unavailable days (as the months either side) are not variants.
+const CALENDAR_EXAMPLE = {
+  year: 2026,
+  monthIndex: 4,
+  today: 22,
+  single: 25,
+  range: [21, 25],
+};
+const CALENDAR_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const CALENDAR_MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const CALENDAR_GAP = 4;
+const CALENDAR_MONTH_GAP = 8;
+const CALENDAR_MONTHS_GAP = 12;
+const CALENDAR_HEADER_HEIGHT = 32;
+const CALENDAR_NAV_SIZE = 32;
+const CALENDAR_ICON = 16;
+const CALENDAR_WEEKDAY_HEIGHT = 20;
+const CALENDAR_DESCRIPTION = [
+  "Kozmos Calendar component set generated from React Calendar API (GAP-206, decision 104).",
+  "Mode maps to mode: Single (the default) or Range. Months maps to months: One (the default) or Two.",
+  "Drawn in en-US, May 2026, today the 22nd; Single chooses the 25th, Range the 21st to the 25th. The days, months and week's first day are code's, from locale.",
+  "It draws no surface: DatePicker opens it in a Popover, and a page can set it on a Card. disabled (half strength) and unavailable days are not variants.",
+];
+
+/** A day's edge in a range, or a single chosen day, is 40; otherwise 36. */
+function calendarDaySize(mode) {
+  return mode === "Range" ? 40 : 36;
+}
+
+/** Six weeks from the Sunday on or before the 1st, as React's monthGrid. */
+function calendarMonthCells(year, monthIndex) {
+  const first = Date.UTC(year, monthIndex, 1);
+  const lead = new Date(first).getUTCDay();
+  const cells = [];
+  for (let index = 0; index < 42; index += 1) {
+    const date = new Date(first + (index - lead) * 86400000);
+    cells.push({
+      day: date.getUTCDate(),
+      outside: date.getUTCMonth() !== monthIndex,
+    });
+  }
+  return cells;
+}
+
+/** What a day of the example draws: outside, chosen, between, today or plain. */
+function calendarDayState(mode, cell, inExampleMonth) {
+  if (cell.outside) return "Outside";
+  if (!inExampleMonth) return "Default";
+  if (mode === "Range") {
+    const [start, end] = CALENDAR_EXAMPLE.range;
+    if (cell.day === start || cell.day === end) return "Selected";
+    if (cell.day > start && cell.day < end) return "InRange";
+  } else if (cell.day === CALENDAR_EXAMPLE.single) {
+    return "Selected";
+  }
+  return cell.day === CALENDAR_EXAMPLE.today ? "Today" : "Default";
+}
+
+const CALENDAR_DAY_PAINT = {
+  Default: { fill: null, ink: GAP206_INK.foreground },
+  Outside: { fill: null, ink: GAP206_INK.muted },
+  Today: {
+    fill: { name: "Colors/background/100", fallback: "#E3E4E8" },
+    ink: GAP206_INK.foreground,
+  },
+  InRange: {
+    fill: { name: "Colors/theme/100", fallback: "#D2E0FC" },
+    ink: GAP206_INK.foreground,
+  },
+  Selected: { fill: THEME_FILL, ink: THEME_FILL_FOREGROUND },
+};
+
+const CALENDAR_DAY_LAYER_NAMES = {
+  Default: "Day",
+  Outside: "Outside Day",
+  Today: "Today Day",
+  InRange: "In Range Day",
+  Selected: "Selected Day",
+};
+
+async function createCalendarVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateCalendarVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseCalendarVariantName(name) {
+  const base = parseSingleAxisVariantName(name, "Mode", CALENDAR_MODES);
+  if (!base) return null;
+  const second = variantAxisValue(name, "Months") || "One";
+  if (CALENDAR_MONTHS.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+async function calendarDay({
+  mode,
+  cell,
+  state,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const size = calendarDaySize(mode);
+  const paint = CALENDAR_DAY_PAINT[state];
+  const day = gap206Frame(CALENDAR_DAY_LAYER_NAMES[state], "HORIZONTAL");
+  day.primaryAxisSizingMode = "FIXED";
+  day.counterAxisSizingMode = "FIXED";
+  day.primaryAxisAlignItems = "CENTER";
+  day.counterAxisAlignItems = "CENTER";
+  day.resizeWithoutConstraints(size, size);
+  day.cornerRadius = KOZMOS_RADIUS.control;
+  day.fills = paint.fill
+    ? [
+        paintFromVariable(
+          paint.fill.name,
+          paint.fill.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  day.setSharedPluginData(RUN_NAMESPACE, "kind", "calendar-day");
+  day.setSharedPluginData(RUN_NAMESPACE, "calendar-state", state);
+  const sizeToken =
+    mode === "Range" ? "Calendar/day/size/range" : "Calendar/day/size";
+  bindFloatVariable(day, "width", sizeToken, variableByName, stats);
+  bindFloatVariable(day, "height", sizeToken, variableByName, stats);
+  const label = await gap206Text({
+    name: "Day Text",
+    characters: String(cell.day),
+    size: "Small",
+    weight: "Normal",
+    ink: paint.ink,
+    fonts,
+    variableByName,
+    stats,
+  });
+  label.textAlignHorizontal = "CENTER";
+  day.appendChild(label);
+  return day;
+}
+
+async function calendarNavButton(name, iconName, variableByName, stats) {
+  const button = gap206Frame(name, "HORIZONTAL");
+  button.primaryAxisSizingMode = "FIXED";
+  button.counterAxisSizingMode = "FIXED";
+  button.primaryAxisAlignItems = "CENTER";
+  button.counterAxisAlignItems = "CENTER";
+  button.resizeWithoutConstraints(CALENDAR_NAV_SIZE, CALENDAR_NAV_SIZE);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  bindFloatVariable(
+    button,
+    "width",
+    "Calendar/nav/size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    button,
+    "height",
+    "Calendar/nav/size",
+    variableByName,
+    stats,
+  );
+  const icon = await createFixedIconInstance(
+    iconName,
+    GAP206_INK.muted.name,
+    GAP206_INK.muted.fallback,
+    variableByName,
+    stats,
+    CALENDAR_ICON,
+    "Calendar/icon/size",
+  );
+  icon.name = "Icon";
+  scaleIconStrokes(icon, CALENDAR_ICON);
+  button.appendChild(icon);
+  return button;
+}
+
+async function calendarMonth({
+  mode,
+  offset,
+  last,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const size = calendarDaySize(mode);
+  const width = 7 * size + 6 * CALENDAR_GAP;
+  const monthIndex = CALENDAR_EXAMPLE.monthIndex + offset;
+  const month = gap206Frame(`Month ${offset + 1}`, "VERTICAL");
+  month.counterAxisSizingMode = "FIXED";
+  month.itemSpacing = CALENDAR_MONTH_GAP;
+  month.resizeWithoutConstraints(width, 300);
+  bindFloatVariable(
+    month,
+    "itemSpacing",
+    "Calendar/month/gap",
+    variableByName,
+    stats,
+  );
+
+  const header = gap206Frame("Calendar Header", "HORIZONTAL");
+  header.primaryAxisSizingMode = "FIXED";
+  header.counterAxisSizingMode = "FIXED";
+  header.counterAxisAlignItems = "CENTER";
+  header.itemSpacing = 8;
+  header.resizeWithoutConstraints(width, CALENDAR_HEADER_HEIGHT);
+  const title = await gap206Text({
+    name: "Title Text",
+    characters: `${CALENDAR_MONTH_NAMES[monthIndex]} ${CALENDAR_EXAMPLE.year}`,
+    size: "Small",
+    weight: "Medium",
+    ink: GAP206_INK.foreground,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(header, title, "FILL", null);
+  if (last) {
+    const nav = gap206Frame("Calendar Navigation", "HORIZONTAL");
+    nav.counterAxisAlignItems = "CENTER";
+    nav.itemSpacing = CALENDAR_GAP;
+    nav.appendChild(
+      await calendarNavButton(
+        "Previous Month",
+        "chevron-left",
+        variableByName,
+        stats,
+      ),
+    );
+    nav.appendChild(
+      await calendarNavButton(
+        "Next Month",
+        "chevron-right",
+        variableByName,
+        stats,
+      ),
+    );
+    header.appendChild(nav);
+  }
+  appendWithSizing(month, header, "FILL", null);
+
+  const grid = gap206Frame("Calendar Grid", "VERTICAL");
+  grid.itemSpacing = CALENDAR_GAP;
+  bindFloatVariable(grid, "itemSpacing", "Calendar/gap", variableByName, stats);
+  const weekdays = gap206Frame("Weekdays", "HORIZONTAL");
+  weekdays.itemSpacing = CALENDAR_GAP;
+  weekdays.paddingBottom = CALENDAR_GAP;
+  for (const name of CALENDAR_WEEKDAYS) {
+    const label = await gap206Text({
+      name: "Weekday Text",
+      characters: name,
+      size: "XS",
+      weight: "Normal",
+      ink: GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    setTextAutoResize(label, "NONE");
+    label.resizeWithoutConstraints(size, CALENDAR_WEEKDAY_HEIGHT);
+    label.textAlignHorizontal = "CENTER";
+    label.textAlignVertical = "CENTER";
+    weekdays.appendChild(label);
+  }
+  grid.appendChild(weekdays);
+  const cells = calendarMonthCells(CALENDAR_EXAMPLE.year, monthIndex);
+  for (let week = 0; week < 6; week += 1) {
+    const row = gap206Frame(`Week ${week + 1}`, "HORIZONTAL");
+    row.itemSpacing = CALENDAR_GAP;
+    bindFloatVariable(
+      row,
+      "itemSpacing",
+      "Calendar/gap",
+      variableByName,
+      stats,
+    );
+    for (const cell of cells.slice(week * 7, week * 7 + 7)) {
+      row.appendChild(
+        await calendarDay({
+          mode,
+          cell,
+          state: calendarDayState(mode, cell, offset === 0),
+          variableByName,
+          fonts,
+          stats,
+        }),
+      );
+    }
+    grid.appendChild(row);
+  }
+  appendWithSizing(month, grid, "FILL", null);
+  return month;
+}
+
+async function updateCalendarVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const mode = CALENDAR_MODES.indexOf(value) === -1 ? "Single" : value;
+  const months = CALENDAR_MONTHS.indexOf(second) === -1 ? "One" : second;
+  const count = months === "Two" ? 2 : 1;
+  gap206VariantRoot(
+    component,
+    "Calendar",
+    `Mode=${mode}, Months=${months}`,
+    "HORIZONTAL",
+  );
+  component.itemSpacing = CALENDAR_MONTHS_GAP;
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "Calendar/months/gap",
+    variableByName,
+    stats,
+  );
+  removeDirectChildren(component);
+  for (let offset = 0; offset < count; offset += 1) {
+    component.appendChild(
+      await calendarMonth({
+        mode,
+        offset,
+        last: offset === count - 1,
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+  }
+}
+
+// Calendar has no component property: its days are code's, from the value,
+// the month shown and the locale.
+function configureCalendarProperties() {}
+
+async function buildCalendarComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Calendar",
+    componentSetName: "Calendar",
+    axisName: "Mode",
+    values: CALENDAR_MODES,
+    axis2Name: "Months",
+    axis2Values: CALENDAR_MONTHS,
+    x: 80,
+    y: 20400,
+    xStep: 680,
+    yStep: 360,
+    createVariant: createCalendarVariant,
+    configureProperties: configureCalendarProperties,
+    description: CALENDAR_DESCRIPTION,
+  });
+}
+
+async function updateCalendarComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Calendar",
+    componentSetName: "Calendar",
+    axisName: "Mode",
+    values: CALENDAR_MODES,
+    axis2Name: "Months",
+    axis2Values: CALENDAR_MONTHS,
+    xStep: 680,
+    yStep: 360,
+    createVariant: createCalendarVariant,
+    updateVariant: updateCalendarVariant,
+    parseVariantName: parseCalendarVariantName,
+    configureProperties: configureCalendarProperties,
+    description: CALENDAR_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildCalendarComponent() {
+  return rebuildGap206Component("Calendar", buildCalendarComponent);
+}
+
+// --- ClientAppBanner --------------------------------------------------------
+
+// GAP-206 (GAP-127): React's ClientAppBanner, Express's Client App Banner for
+// AdaptiveMapShell's topBar, as owned-client-app-banner.css lays it out. Its
+// own surface: Colors/background/0 with the Border/Subtle edge laid out with
+// the content (the CSS's border), the Container corner and the floating
+// elevation; 16 inside (ClientAppBanner/padding) and 12 between its parts
+// (ClientAppBanner/gap). The icon is 48 square (ClientAppBanner/icon/size)
+// with the Control corner and the subtle edge, the app's initial, Text Large
+// semibold, on Colors/background/100: the icon itself is the customer's
+// image, which a designer fills the App Icon frame with. Beside it, 2 apart,
+// the promotion (Text XS medium, muted), the app's name (Text Base semibold)
+// and its description (Text Small, muted, two lines at most). The action is a
+// live Button; Wide puts it beside the words, Narrow under the icon and the
+// words, as wide as both. Dismiss is a live IconButton, Ghost at Large (a 44
+// target with a 20 icon), x-close, pulled 12 into the padding at the top end
+// as React's negative margins pull it, 4 inside the edge: the banner's top
+// and end padding are 4, and the words' column takes the other 12 itself.
+const CLIENT_APP_BANNER_WIDTHS = { Wide: 560, Narrow: 320 };
+const CLIENT_APP_BANNER_PADDING = 16;
+const CLIENT_APP_BANNER_GAP = 12;
+const CLIENT_APP_BANNER_ICON = 48;
+const CLIENT_APP_BANNER_DISMISS_INSET = 4;
+const CLIENT_APP_BANNER_DISMISS_ICON = 20;
+const CLIENT_APP_BANNER_SAMPLE = {
+  promotion: "Get the app",
+  appName: "Northfield Airport",
+  description:
+    "Live gate changes, step-free routes and your boarding pass, on your phone.",
+  action: "Open",
+};
+const CLIENT_APP_BANNER_DESCRIPTION = [
+  "Kozmos ClientAppBanner component set generated from React ClientAppBanner API (GAP-206, GAP-127).",
+  "Layout is how the width falls: Wide puts the action beside the words, Narrow under them; code wraps it by itself.",
+  "Promotion Text maps to promotionText, App Name Text to appName, Description Text to description (two lines at most); Show Promotion and Show Description off leave them out.",
+  "The action is a live Button whose Label Text is actionLabel; Show Dismiss is onDismiss, a live IconButton named by dismissLabel.",
+  "Initial Text stands in for appIconSrc until it loads: fill App Icon with the customer's image.",
+];
+
+async function createClientAppBannerVariant({
+  value,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateClientAppBannerVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseClientAppBannerVariantName(name) {
+  return parseSingleAxisVariantName(name, "Layout", CLIENT_APP_BANNER_LAYOUTS);
+}
+
+async function clientAppBannerIcon(variableByName, fonts, stats) {
+  const icon = gap206Frame("App Icon", "HORIZONTAL");
+  icon.primaryAxisSizingMode = "FIXED";
+  icon.counterAxisSizingMode = "FIXED";
+  icon.primaryAxisAlignItems = "CENTER";
+  icon.counterAxisAlignItems = "CENTER";
+  icon.resizeWithoutConstraints(CLIENT_APP_BANNER_ICON, CLIENT_APP_BANNER_ICON);
+  icon.cornerRadius = KOZMOS_RADIUS.control;
+  icon.clipsContent = true;
+  icon.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  icon.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  icon.strokeWeight = 1;
+  icon.strokeAlign = "INSIDE";
+  keepStrokeOutOfLayout(icon);
+  icon.setSharedPluginData(RUN_NAMESPACE, "kind", "client-app-banner-icon");
+  bindFloatVariable(
+    icon,
+    "width",
+    "ClientAppBanner/icon/size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    icon,
+    "height",
+    "ClientAppBanner/icon/size",
+    variableByName,
+    stats,
+  );
+  const initial = await gap206Text({
+    name: "Initial Text",
+    characters: Array.from(CLIENT_APP_BANNER_SAMPLE.appName.trim())[0],
+    size: "Large",
+    weight: "Semibold",
+    ink: GAP206_INK.foreground,
+    fonts,
+    variableByName,
+    stats,
+  });
+  initial.textAlignHorizontal = "CENTER";
+  icon.appendChild(initial);
+  return icon;
+}
+
+async function clientAppBannerWords(variableByName, fonts, stats) {
+  const words = gap206Frame("Words", "VERTICAL");
+  words.itemSpacing = 2;
+  const lines = [
+    ["Promotion Text", CLIENT_APP_BANNER_SAMPLE.promotion, "XS", "Medium"],
+    ["App Name Text", CLIENT_APP_BANNER_SAMPLE.appName, "Base", "Semibold"],
+    [
+      "Description Text",
+      CLIENT_APP_BANNER_SAMPLE.description,
+      "Small",
+      "Normal",
+    ],
+  ];
+  for (const [name, characters, size, weight] of lines) {
+    const text = await gap206Text({
+      name,
+      characters,
+      size,
+      weight,
+      ink: name === "App Name Text" ? GAP206_INK.foreground : GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(words, text, "FILL", null);
+    if (name === "Description Text") {
+      // Two lines at most: truncate, then hug, then clamp.
+      setNodePropertyIfSupported(text, "textTruncation", "ENDING");
+      setTextAutoResize(text, "HEIGHT");
+      setNodePropertyIfSupported(text, "maxLines", 2);
+    } else {
+      setTextAutoResize(text, "HEIGHT");
+    }
+  }
+  return words;
+}
+
+/**
+ * Dismiss is IconButton's Ghost at Large with its Icon swapped to x-close.
+ * The swap replaces the layer the IconButton tinted, so the Ghost's tint and
+ * the 20 icon's stroke are laid again, as TourStep's Close does.
+ */
+function retintClientAppBannerDismissIcon(instance, variableByName, stats) {
+  const config = buttonConfig("Ghost", "Default");
+  const icon =
+    instance.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          BUTTON_ICON_PROPERTY,
+    ) ||
+    instance.findOne(
+      (node) => node.type === "INSTANCE" && node.name === BUTTON_ICON_PROPERTY,
+    );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "client-app-banner-dismiss-icon",
+      "ClientAppBanner: Dismiss has no Icon layer to tint after the swap.",
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+  scaleIconStrokes(icon, CLIENT_APP_BANNER_DISMISS_ICON);
+}
+
+async function clientAppBannerDismiss(variableByName, stats) {
+  const placed = await gap206NestedInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: "Ghost", Size: "Large", State: "Default" },
+    name: "Dismiss",
+    role: "client-app-banner-dismiss",
+    owner: "ClientAppBanner",
+    stats,
+  });
+  if (placed.componentSet) {
+    const glyph = await findKozmosIconSourceComponent("x-close");
+    if (
+      glyph &&
+      setInstanceSwapProperty(
+        placed.node,
+        placed.componentSet,
+        BUTTON_ICON_PROPERTY,
+        glyph.id,
+        stats,
+      )
+    ) {
+      retintClientAppBannerDismissIcon(placed.node, variableByName, stats);
+    } else if (!glyph) {
+      stats.warnings.push(
+        'ClientAppBanner: icon "x-close" was not found on the Icons page.',
+      );
+    }
+  }
+  markControlSurface(placed.node);
+  return placed.node;
+}
+
+async function updateClientAppBannerVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const layout =
+    CLIENT_APP_BANNER_LAYOUTS.indexOf(value) === -1 ? "Wide" : value;
+  const narrow = layout === "Narrow";
+  const width = CLIENT_APP_BANNER_WIDTHS[layout];
+  const pull = CLIENT_APP_BANNER_PADDING - CLIENT_APP_BANNER_DISMISS_INSET;
+  gap206VariantRoot(
+    component,
+    "ClientAppBanner",
+    `Layout=${layout}`,
+    "HORIZONTAL",
+  );
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisSizingMode = "FIXED";
+  component.itemSpacing = CLIENT_APP_BANNER_GAP;
+  component.paddingLeft = CLIENT_APP_BANNER_PADDING;
+  component.paddingBottom = CLIENT_APP_BANNER_PADDING;
+  component.paddingTop = CLIENT_APP_BANNER_DISMISS_INSET;
+  component.paddingRight = CLIENT_APP_BANNER_DISMISS_INSET;
+  component.resizeWithoutConstraints(width, 120);
+  productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
+  component.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokeAlign = "INSIDE";
+  // The CSS border is laid out with the content: 16 inside the edge.
+  setNodePropertyIfSupported(component, "strokesIncludedInLayout", true);
+  component.effects = [elevationEffect("floating")];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ClientAppBanner/gap",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingBottom"]) {
+    bindFloatVariable(
+      component,
+      side,
+      "ClientAppBanner/padding",
+      variableByName,
+      stats,
+    );
+  }
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "ClientAppBanner/radius",
+    variableByName,
+    stats,
+  );
+  removeDirectChildren(component);
+
+  // The icon and the words, then the action: beside them, or under both.
+  const body = gap206Frame("Body", narrow ? "VERTICAL" : "HORIZONTAL");
+  body.paddingTop = pull;
+  body.itemSpacing = CLIENT_APP_BANNER_GAP;
+  body.counterAxisAlignItems = narrow ? "MIN" : "CENTER";
+  const head = gap206Frame("Head", "HORIZONTAL");
+  head.itemSpacing = CLIENT_APP_BANNER_GAP;
+  head.appendChild(await clientAppBannerIcon(variableByName, fonts, stats));
+  appendWithSizing(
+    head,
+    await clientAppBannerWords(variableByName, fonts, stats),
+    "FILL",
+    null,
+  );
+  appendWithSizing(component, body, "FILL", null);
+  appendWithSizing(body, head, "FILL", null);
+  const action = await gap206Button({
+    variant: "Default",
+    label: CLIENT_APP_BANNER_SAMPLE.action,
+    name: "Action",
+    role: "client-app-banner-action",
+    owner: "ClientAppBanner",
+    stats,
+  });
+  appendWithSizing(body, action, narrow ? "FILL" : null, null);
+  component.appendChild(await clientAppBannerDismiss(variableByName, stats));
+}
+
+function configureClientAppBannerProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Promotion Text",
+    "Promotion Text",
+    CLIENT_APP_BANNER_SAMPLE.promotion,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "App Name Text",
+    "App Name Text",
+    CLIENT_APP_BANNER_SAMPLE.appName,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    CLIENT_APP_BANNER_SAMPLE.description,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Initial Text",
+    "Initial Text",
+    Array.from(CLIENT_APP_BANNER_SAMPLE.appName.trim())[0],
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Promotion Text",
+    "Show Promotion",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Show Description",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Dismiss",
+    "Show Dismiss",
+    true,
+    stats,
+  );
+}
+
+async function buildClientAppBannerComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ClientAppBanner",
+    componentSetName: "ClientAppBanner",
+    axisName: "Layout",
+    values: CLIENT_APP_BANNER_LAYOUTS,
+    x: 80,
+    y: 15300,
+    xStep: 600,
+    createVariant: createClientAppBannerVariant,
+    configureProperties: configureClientAppBannerProperties,
+    autoReorganize: true,
+    description: CLIENT_APP_BANNER_DESCRIPTION,
+  });
+}
+
+async function updateClientAppBannerComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ClientAppBanner",
+    componentSetName: "ClientAppBanner",
+    axisName: "Layout",
+    values: CLIENT_APP_BANNER_LAYOUTS,
+    xStep: 600,
+    createVariant: createClientAppBannerVariant,
+    updateVariant: updateClientAppBannerVariant,
+    parseVariantName: parseClientAppBannerVariantName,
+    configureProperties: configureClientAppBannerProperties,
+    autoReorganize: true,
+    description: CLIENT_APP_BANNER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildClientAppBannerComponent() {
+  return rebuildGap206Component(
+    "ClientAppBanner",
+    buildClientAppBannerComponent,
+  );
+}
+
+// --- LanguageSwitcher -------------------------------------------------------
+
+// GAP-206 (SDK-UI-003): React's LanguageSwitcher, the map's language control,
+// closed, as its stories draw it. The trigger is Select's (decision: the closed
+// select is a field with a caret) at the SDK's touch size: 48 tall
+// (LanguageSwitcher/height), at least 128 wide (LanguageSwitcher/min-width),
+// 12 across, the Control corner, Colors/background/0 with no edge and map
+// chrome's floating elevation, the committed language's native name in Text
+// Small and Select's 16 chevron-down in Colors/foreground/400. Pending and
+// Disabled draw the trigger at half strength; Pending says so 8 under it in
+// Text Small muted. Failed says why 8 under it in Text Small in
+// Emotion/danger/text, over a live ghost Button, Retry. The open list is
+// Select's and the host's: it is not drawn here.
+const LANGUAGE_SWITCHER_WIDTH = 240;
+const LANGUAGE_SWITCHER_HEIGHT = 48;
+const LANGUAGE_SWITCHER_GAP = 8;
+const LANGUAGE_SWITCHER_SAMPLE = {
+  language: "English",
+  pending: "Changing language…",
+  error: "Language could not be changed.",
+  retry: "Retry",
+};
+const LANGUAGE_SWITCHER_DESCRIPTION = [
+  "Kozmos LanguageSwitcher component set generated from React LanguageSwitcher API (GAP-206, SDK-UI-003).",
+  "State maps to Default; Pending to pending (Pending Text is pendingLabel); Failed to error (Error Text) with onRetry (the Retry Button's Label Text is retryLabel); Disabled to disabled.",
+  "Language Text is the committed language's native name, from languages and selectedLocale.",
+  "The open list is Select's: products draw Select's open state for it. On phones the SDK hides the control.",
+];
+
+async function createLanguageSwitcherVariant({
+  value,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateLanguageSwitcherVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseLanguageSwitcherVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", LANGUAGE_SWITCHER_STATES);
+}
+
+async function languageSwitcherTrigger(variableByName, fonts, stats) {
+  const trigger = gap206Frame("Trigger", "HORIZONTAL");
+  trigger.primaryAxisSizingMode = "FIXED";
+  trigger.counterAxisSizingMode = "FIXED";
+  trigger.primaryAxisAlignItems = "SPACE_BETWEEN";
+  trigger.counterAxisAlignItems = "CENTER";
+  trigger.itemSpacing = LANGUAGE_SWITCHER_GAP;
+  trigger.paddingLeft = 12;
+  trigger.paddingRight = 12;
+  trigger.resizeWithoutConstraints(
+    LANGUAGE_SWITCHER_WIDTH,
+    LANGUAGE_SWITCHER_HEIGHT,
+  );
+  trigger.cornerRadius = KOZMOS_RADIUS.control;
+  trigger.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  trigger.effects = [elevationEffect("floating")];
+  trigger.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    "language-switcher-trigger",
+  );
+  markControlSurface(trigger);
+  bindFloatVariable(
+    trigger,
+    "height",
+    "LanguageSwitcher/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    trigger,
+    "minWidth",
+    "LanguageSwitcher/min-width",
+    variableByName,
+    stats,
+  );
+  const language = await gap206Text({
+    name: "Language Text",
+    characters: LANGUAGE_SWITCHER_SAMPLE.language,
+    size: "Small",
+    weight: "Normal",
+    ink: GAP206_INK.foreground,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(trigger, language, "FILL", null);
+  setTextAutoResize(language, "TRUNCATE");
+  const icon = await createFixedIconInstance(
+    "chevron-down",
+    GAP206_INK.muted.name,
+    GAP206_INK.muted.fallback,
+    variableByName,
+    stats,
+    16,
+    "Select/icon/size",
+  );
+  icon.name = "Chevron";
+  trigger.appendChild(icon);
+  return trigger;
+}
+
+async function updateLanguageSwitcherVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const state =
+    LANGUAGE_SWITCHER_STATES.indexOf(value) === -1 ? "Default" : value;
+  gap206VariantRoot(
+    component,
+    "LanguageSwitcher",
+    `State=${state}`,
+    "VERTICAL",
+  );
+  component.counterAxisSizingMode = "FIXED";
+  component.resizeWithoutConstraints(
+    LANGUAGE_SWITCHER_WIDTH,
+    LANGUAGE_SWITCHER_HEIGHT,
+  );
+  removeDirectChildren(component);
+  const trigger = await languageSwitcherTrigger(variableByName, fonts, stats);
+  appendWithSizing(component, trigger, "FILL", null);
+  trigger.opacity = state === "Pending" || state === "Disabled" ? 0.5 : 1;
+
+  if (state === "Pending") {
+    const row = gap206Frame("Pending Row", "VERTICAL");
+    row.paddingTop = LANGUAGE_SWITCHER_GAP;
+    const pending = await gap206Text({
+      name: "Pending Text",
+      characters: LANGUAGE_SWITCHER_SAMPLE.pending,
+      size: "Small",
+      weight: "Normal",
+      ink: GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(row, pending, "FILL", null);
+    setTextAutoResize(pending, "HEIGHT");
+    appendWithSizing(component, row, "FILL", null);
+  }
+  if (state === "Failed") {
+    const row = gap206Frame("Error Row", "VERTICAL");
+    row.paddingTop = LANGUAGE_SWITCHER_GAP;
+    const error = await gap206Text({
+      name: "Error Text",
+      characters: LANGUAGE_SWITCHER_SAMPLE.error,
+      size: "Small",
+      weight: "Normal",
+      ink: GAP206_INK.danger,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(row, error, "FILL", null);
+    setTextAutoResize(error, "HEIGHT");
+    row.appendChild(
+      await gap206Button({
+        variant: "Ghost",
+        label: LANGUAGE_SWITCHER_SAMPLE.retry,
+        name: "Retry",
+        role: "language-switcher-retry",
+        owner: "LanguageSwitcher",
+        stats,
+      }),
+    );
+    appendWithSizing(component, row, "FILL", null);
+  }
+}
+
+function configureLanguageSwitcherProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Language Text",
+    "Language Text",
+    LANGUAGE_SWITCHER_SAMPLE.language,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Pending Text",
+    "Pending Text",
+    LANGUAGE_SWITCHER_SAMPLE.pending,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Error Text",
+    "Error Text",
+    LANGUAGE_SWITCHER_SAMPLE.error,
+    stats,
+  );
+}
+
+async function buildLanguageSwitcherComponent() {
+  return buildSingleAxisComponent({
+    componentName: "LanguageSwitcher",
+    componentSetName: "LanguageSwitcher",
+    axisName: "State",
+    values: LANGUAGE_SWITCHER_STATES,
+    x: 80,
+    y: 15600,
+    xStep: 280,
+    createVariant: createLanguageSwitcherVariant,
+    configureProperties: configureLanguageSwitcherProperties,
+    autoReorganize: true,
+    description: LANGUAGE_SWITCHER_DESCRIPTION,
+  });
+}
+
+async function updateLanguageSwitcherComponent() {
+  return updateSingleAxisComponent({
+    componentName: "LanguageSwitcher",
+    componentSetName: "LanguageSwitcher",
+    axisName: "State",
+    values: LANGUAGE_SWITCHER_STATES,
+    xStep: 280,
+    createVariant: createLanguageSwitcherVariant,
+    updateVariant: updateLanguageSwitcherVariant,
+    parseVariantName: parseLanguageSwitcherVariantName,
+    configureProperties: configureLanguageSwitcherProperties,
+    autoReorganize: true,
+    description: LANGUAGE_SWITCHER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildLanguageSwitcherComponent() {
+  return rebuildGap206Component(
+    "LanguageSwitcher",
+    buildLanguageSwitcherComponent,
   );
 }
 

@@ -1410,6 +1410,8 @@ section("A set runs after the sets it reaches into");
     retintCardHeaderActionIcon: ["IconButton", "Card"],
     // GAP-036: PageHeader's info-circle, tinted again after the swap.
     retintPageHeaderInfoIcon: ["IconButton", "PageHeader"],
+    // GAP-206: ClientAppBanner's Dismiss, x-close, tinted again after the swap.
+    retintClientAppBannerDismissIcon: ["IconButton", "ClientAppBanner"],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1463,8 +1465,8 @@ section("A set runs after the sets it reaches into");
     // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
       [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
-        "Card,PageHeader,TourStep",
-      `after IconButton: TourStep, Card and PageHeader (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+        "Card,ClientAppBanner,PageHeader,TourStep",
+      `after IconButton: TourStep, Card, PageHeader and ClientAppBanner (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -3006,6 +3008,750 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
 // until 2026-11-01 this section read what the painter wrote, every assertion
 // passed, and the Build drew labels out of their buttons, words out of the
 // instruction and "2 of 4" over a full bar.
+section(
+  "GAP-206: Surface, ActionCard, Calendar, ClientAppBanner and LanguageSwitcher sets",
+);
+{
+  const ready =
+    [
+      "updateSurfaceVariant",
+      "updateActionCardVariant",
+      "updateCalendarVariant",
+      "updateClientAppBannerVariant",
+      "updateLanguageSwitcherVariant",
+    ].every((fn) => typeof plugin[fn] === "function") &&
+    [
+      "SURFACE_VARIANTS",
+      "ACTION_CARD_CONTENT",
+      "CALENDAR_MODES",
+      "CALENDAR_MONTHS",
+      "CLIENT_APP_BANNER_LAYOUTS",
+      "LANGUAGE_SWITCHER_STATES",
+    ].every((name) => Array.isArray(plugin[name]));
+  ok(ready, "GAP-206's five painters and their axes are reachable");
+
+  // Registered everywhere a set is: its bulk run, the actions the UI sends,
+  // the Components page, the audit's axes and its docs.
+  const axesOf = (name) =>
+    typeof plugin.expectedVariantAxesForComponentSetName === "function"
+      ? JSON.stringify(plugin.expectedVariantAxesForComponentSetName(name))
+      : null;
+  const AXES = {
+    Surface: { Variant: ["Solid", "Glass"] },
+    ActionCard: { Content: ["Titled", "Basic"] },
+    Calendar: { Mode: ["Single", "Range"], Months: ["One", "Two"] },
+    ClientAppBanner: { Layout: ["Wide", "Narrow"] },
+    LanguageSwitcher: {
+      State: ["Default", "Pending", "Failed", "Disabled"],
+    },
+  };
+  const KEBAB = {
+    Surface: "surface",
+    ActionCard: "action-card",
+    Calendar: "calendar",
+    ClientAppBanner: "client-app-banner",
+    LanguageSwitcher: "language-switcher",
+  };
+  const RUN = {
+    Surface: "core",
+    ActionCard: "core",
+    Calendar: "core",
+    ClientAppBanner: "product",
+    LanguageSwitcher: "product",
+  };
+  const core = (plugin.CORE_UPDATE_SEQUENCE || []).map(([name]) => name);
+  const product = (plugin.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(
+    ([name]) => name,
+  );
+  const handlers =
+    typeof plugin.additionalComponentActionHandlers === "function"
+      ? plugin.additionalComponentActionHandlers()
+      : {};
+  const { names, axes } = expectations();
+  const docs = (plugin.COMPONENT_DOCS || []).map((doc) => doc.componentSetName);
+  for (const [name, expected] of Object.entries(AXES)) {
+    const run = RUN[name] === "core" ? core : product;
+    ok(
+      axesOf(name) === JSON.stringify(expected) &&
+        JSON.stringify(axes[name]) === JSON.stringify(expected),
+      `${name}'s axes are ${JSON.stringify(expected)}, and figma:verify reads the same (${axesOf(name)})`,
+    );
+    ok(
+      run.includes(name) &&
+        ["build", "update", "rebuild"].every(
+          (verb) => typeof handlers[`${verb}-${KEBAB[name]}`] === "function",
+        ) &&
+        names.includes(name) &&
+        docs.includes(name),
+      `${name} is in the ${RUN[name] === "core" ? "Core" : "Product / SDK"} run, has its build, update and rebuild actions, a place on the Components page and its docs`,
+    );
+  }
+  // Each nested part's set is updated before the set that holds it.
+  ok(
+    ["Button", "IconButton"].every(
+      (inner) => core.includes(inner) && !product.includes(inner),
+    ) &&
+      product.includes("ClientAppBanner") &&
+      product.includes("LanguageSwitcher"),
+    "Button and IconButton are Core, so the Core run draws them before ClientAppBanner and LanguageSwitcher hold them",
+  );
+
+  // The file: Button's Default and Ghost with their label, IconButton's Ghost
+  // at Large tinting its Icon in the Ghost's ink, and the icons the sets use.
+  const ghostInk = "Secondary Buttons/themed/button/foreground/content/idle";
+  const plus = mockIconComponent("plus");
+  const close = mockIconComponent("x-close");
+  const button = mockComponentSet(
+    "Button",
+    ["Default", "Ghost"].map((variant) => ({
+      properties: { Variant: variant, Size: "Default", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.resize(80, 44);
+        const label = new MockNode("TEXT", "Label Text");
+        label.fontSize = 14;
+        label.lineHeight = { unit: "PIXELS", value: 20 };
+        label.characters = "Button";
+        label.componentPropertyReferences = { characters: "Label Text#1:0" };
+        node.appendChild(label);
+      },
+    })),
+  );
+  button.componentPropertyDefinitions = {
+    "Label Text#1:0": { type: "TEXT", defaultValue: "Button" },
+  };
+  const iconButton = mockComponentSet("IconButton", [
+    {
+      properties: { Variant: "Ghost", Size: "Large", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(44, 44);
+        const icon = plus.createInstance();
+        icon.name = "Icon";
+        icon.resize(20, 20);
+        icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+        node.appendChild(icon);
+      },
+    },
+  ]);
+  iconButton.componentPropertyDefinitions = {
+    "Icon#2:0": { type: "INSTANCE_SWAP", defaultValue: plus.id },
+  };
+  const components = new MockNode("PAGE", "Components");
+  for (const set of [button, iconButton]) components.appendChild(set);
+  const icons = new MockNode("PAGE", "Icons");
+  for (const icon of [
+    plus,
+    close,
+    mockIconComponent("chevron-left"),
+    mockIconComponent("chevron-right"),
+    mockIconComponent("chevron-down"),
+  ])
+    icons.appendChild(icon);
+  const fileFigma = createFigmaMock({ pages: [components, icons] });
+  const file = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: fileFigma,
+    append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  const tokens = payloadVariables(
+    (plugin.COMPONENT_FLOAT_TOKENS || [])
+      .map((token) => token.name)
+      .concat([
+        ...variableByName.keys(),
+        "Effect/glass/border/color",
+        "Emotion/danger/text",
+        ghostInk,
+      ]),
+  );
+  // The glass numbers the painter writes are the tokens' Light values.
+  const payload = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  );
+  const tokenValue = (figmaName) => {
+    const variable = payload.variables.find((v) => v.figmaName === figmaName);
+    return variable ? variable.values.light.value : undefined;
+  };
+  const bound = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const fillOf = (node) => node && node.fills && node.fills[0];
+  const order = (node) => (node ? node.children.map((n) => n.name) : []);
+  const draw = async (painter, args) => {
+    const component = fileFigma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      file[painter](component, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+        ...args,
+      }),
+    );
+    return { component, stats };
+  };
+  const floating = (effect) =>
+    Boolean(
+      effect &&
+      effect.type === "DROP_SHADOW" &&
+      effect.offset.y === 4 &&
+      effect.radius === 8 &&
+      Math.abs(effect.color.a - 0.1) < 1e-9,
+    );
+
+  // --- Surface: solid, or glass ----------------------------------------------
+  const glassOpacity = tokenValue("Effect/glass/opacity");
+  const glassBlur = tokenValue("Effect/glass/blur");
+  const glassEdge = tokenValue("Effect/glass/border/opacity");
+  for (const variant of ready ? plugin.SURFACE_VARIANTS : []) {
+    const glass = variant === "Glass";
+    const { component: c } = await draw("updateSurfaceVariant", {
+      value: variant,
+    });
+    const at = `Surface ${variant}`;
+    ok(
+      c.name === `Variant=${variant}` &&
+        file.parseSurfaceVariantName(c.name).value === variant,
+      `${at}: named Variant=${variant}, and reads back as itself (${c.name})`,
+    );
+    ok(
+      c.width === 320 &&
+        c.layoutMode === "VERTICAL" &&
+        [c.paddingLeft, c.paddingRight, c.paddingTop, c.paddingBottom].every(
+          (pad) => pad === 16,
+        ) &&
+        c.cornerRadius === 20 &&
+        bound(c, "width") === "Surface/width/default" &&
+        bound(c, "paddingTop") === "Surface/padding" &&
+        bound(c, "paddingLeft") === "Surface/padding" &&
+        bound(c, "cornerRadius") === "Surface/radius" &&
+        c.strokes.length === 0,
+      `${at}: 320 wide, 16 inside, the Container corner, each bound, no stroke of its own (${[c.width, c.paddingTop, c.cornerRadius, bound(c, "paddingTop")].join(", ")})`,
+    );
+    const expected = glass
+      ? ["Glass Fill", "Surface Edge", "Content Slot"]
+      : ["Surface Edge", "Content Slot"];
+    ok(
+      JSON.stringify(order(c)) === JSON.stringify(expected),
+      `${at}: ${expected.join(", ")} (${order(c).join(", ")})`,
+    );
+    const edge = named(c, "Surface Edge");
+    const edgeToken = glass ? "Effect/glass/border/color" : "Border/Subtle";
+    const edgeStrength = glass ? glassEdge : 1;
+    ok(
+      edge &&
+        edge.fills.length === 0 &&
+        edge.strokes.length === 1 &&
+        boundVariableName(edge.strokes[0]) === edgeToken &&
+        Math.abs(edge.opacity - edgeStrength) < 1e-6 &&
+        edge.strokeWeight === 1 &&
+        edge.strokeAlign === "INSIDE" &&
+        edge.cornerRadius === 20 &&
+        edge.layoutPositioning === "ABSOLUTE" &&
+        edge.width === c.width &&
+        edge.height === c.height,
+      `${at}: its edge is ${edgeToken} at ${edgeStrength}, 1 inside, a layer the surface's size (${edge && [boundVariableName(edge.strokes[0]), edge.opacity, edge.width, edge.height].join(", ")})`,
+    );
+    if (glass) {
+      const blur = c.effects.find((e) => e.type === "BACKGROUND_BLUR");
+      ok(
+        c.fills.length === 0 &&
+          isWash(
+            c,
+            "Glass Fill",
+            "Colors/background/0",
+            0.7,
+            c.width,
+            c.height,
+          ) &&
+          Math.abs(glassOpacity - 0.7) < 1e-6 &&
+          named(c, "Glass Fill").cornerRadius === 20 &&
+          typeof glassOpacity === "number",
+        `${at}: the glass colour, Colors/background/0, at Effect/glass/opacity's ${glassOpacity}, a layer of its own (${named(c, "Glass Fill") && named(c, "Glass Fill").opacity})`,
+      );
+      ok(
+        c.effects.length === 2 &&
+          floating(c.effects[0]) &&
+          blur &&
+          blur.radius === glassBlur &&
+          blur.visible === true,
+        `${at}: the floating elevation and a background blur of Effect/glass/blur's ${glassBlur} (${JSON.stringify(c.effects.map((e) => [e.type, e.radius]))})`,
+      );
+    } else {
+      ok(
+        c.fills.length === 1 &&
+          boundVariableName(fillOf(c)) === "Colors/background/0" &&
+          c.effects.length === 1 &&
+          floating(c.effects[0]),
+        `${at}: Colors/background/0 and the floating elevation (${boundVariableName(fillOf(c))}, ${c.effects.length})`,
+      );
+    }
+    await withAutoLayout(() =>
+      file.updateSurfaceVariant(c, {
+        value: variant,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    ok(
+      JSON.stringify(order(c)) === JSON.stringify(expected),
+      `${at}: an Update keeps ${expected.join(", ")} once (${order(c).join(", ")})`,
+    );
+  }
+
+  // --- ActionCard: a title over the content ----------------------------------
+  for (const content of ready ? plugin.ACTION_CARD_CONTENT : []) {
+    const { component: c } = await draw("updateActionCardVariant", {
+      value: content,
+    });
+    const at = `ActionCard ${content}`;
+    const titled = content === "Titled";
+    const expected = titled ? ["Title Text", "Content Slot"] : ["Content Slot"];
+    const title = named(c, "Title Text");
+    ok(
+      c.name === `Content=${content}` &&
+        file.parseActionCardVariantName(c.name).value === content &&
+        JSON.stringify(order(c)) === JSON.stringify(expected),
+      `${at}: named Content=${content}, ${expected.join(", ")} (${order(c).join(", ")})`,
+    );
+    ok(
+      c.width === 320 &&
+        c.layoutMode === "VERTICAL" &&
+        c.itemSpacing === 8 &&
+        bound(c, "itemSpacing") === "ActionCard/gap" &&
+        bound(c, "width") === "ActionCard/width/default" &&
+        c.fills.length === 0 &&
+        c.strokes.length === 0 &&
+        c.effects.length === 0,
+      `${at}: a column 8 apart (ActionCard/gap), 320 wide, with no surface (${c.itemSpacing}, ${bound(c, "itemSpacing")}, ${c.fills.length})`,
+    );
+    if (titled) {
+      ok(
+        title &&
+          title.characters === "2 results" &&
+          title.fontSize === 12 &&
+          title.lineHeight.value === 16 &&
+          boundVariableName(fillOf(title)) === "Colors/foreground/400" &&
+          title.getSharedPluginData("kozmos_ds_importer", "text-style") ===
+            "text.XS.Semibold" &&
+          file.gap206TextStyleKey("ActionCard", "Title Text") ===
+            "text.XS.Semibold",
+        `${at}: "2 results" in Text XS semibold, muted (${title && [title.fontSize, boundVariableName(fillOf(title))].join(", ")})`,
+      );
+    }
+  }
+
+  // --- Calendar: a day or a range, one month or two --------------------------
+  const MAY_OUTSIDE = 11; // 26-30 April before, 1-6 June after
+  const JUNE_OUTSIDE = 12; // 31 May before, 1-11 July after
+  const days = (month, layer) =>
+    month ? month.findAll((n) => n.name === layer) : [];
+  for (const mode of ready ? plugin.CALENDAR_MODES : []) {
+    for (const months of ready ? plugin.CALENDAR_MONTHS : []) {
+      const { component: c } = await draw("updateCalendarVariant", {
+        value: mode,
+        second: months,
+      });
+      const at = `Calendar ${mode}/${months}`;
+      const size = mode === "Range" ? 40 : 36;
+      const sizeToken =
+        mode === "Range" ? "Calendar/day/size/range" : "Calendar/day/size";
+      const count = months === "Two" ? 2 : 1;
+      const expectedMonths = count === 2 ? ["Month 1", "Month 2"] : ["Month 1"];
+      ok(
+        c.name === `Mode=${mode}, Months=${months}` &&
+          JSON.stringify(file.parseCalendarVariantName(c.name)) ===
+            JSON.stringify({ value: mode, second: months }) &&
+          JSON.stringify(order(c)) === JSON.stringify(expectedMonths) &&
+          c.layoutMode === "HORIZONTAL" &&
+          c.itemSpacing === 12 &&
+          bound(c, "itemSpacing") === "Calendar/months/gap" &&
+          c.fills.length === 0 &&
+          c.strokes.length === 0 &&
+          c.effects.length === 0,
+        `${at}: ${expectedMonths.join(", ")} 12 apart, with no surface (${c.name}; ${order(c).join(", ")})`,
+      );
+      c.children.forEach((month, index) => {
+        const last = index === count - 1;
+        const where = `${at} / ${month.name}`;
+        const header = named(month, "Calendar Header");
+        const title = header && named(header, "Title Text");
+        const nav = header && named(header, "Calendar Navigation");
+        ok(
+          month.width === 7 * size + 6 * 4 &&
+            month.itemSpacing === 8 &&
+            bound(month, "itemSpacing") === "Calendar/month/gap" &&
+            JSON.stringify(order(month)) ===
+              JSON.stringify(["Calendar Header", "Calendar Grid"]) &&
+            header.height === 32 &&
+            title.characters === (index === 0 ? "May 2026" : "June 2026") &&
+            title.fontSize === 14 &&
+            title.fontName.style === "Medium" &&
+            boundVariableName(fillOf(title)) === "Colors/foreground/0",
+          `${where}: ${7 * size + 24} wide, its 32 header 8 above the days, "${title && title.characters}" in Text Small medium`,
+        );
+        const buttons = nav ? nav.children : [];
+        ok(
+          last
+            ? nav &&
+                JSON.stringify(order(nav)) ===
+                  JSON.stringify(["Previous Month", "Next Month"]) &&
+                nav.itemSpacing === 4 &&
+                buttons.every((b) => {
+                  const icon = named(b, "Icon");
+                  const vector =
+                    icon && icon.findOne((n) => n.type === "VECTOR");
+                  return (
+                    b.width === 32 &&
+                    b.height === 32 &&
+                    b.cornerRadius === 16 &&
+                    b.fills.length === 0 &&
+                    bound(b, "width") === "Calendar/nav/size" &&
+                    icon.width === 16 &&
+                    vector &&
+                    boundVariableName(vector.strokes[0]) ===
+                      "Colors/foreground/400"
+                  );
+                }) &&
+                buttons[0].findOne((n) => n.name === "Icon").mainComponent
+                  .name === "Icon / chevron-left" &&
+                buttons[1].findOne((n) => n.name === "Icon").mainComponent
+                  .name === "Icon / chevron-right"
+            : !nav,
+          last
+            ? `${where}: the month buttons, 32 squares 4 apart, a 16 chevron in Colors/foreground/400`
+            : `${where}: no month buttons; the last month carries them`,
+        );
+        const grid = named(month, "Calendar Grid");
+        const weekdays = grid && named(grid, "Weekdays");
+        const weeks = grid ? grid.children.slice(1) : [];
+        ok(
+          grid &&
+            grid.itemSpacing === 4 &&
+            bound(grid, "itemSpacing") === "Calendar/gap" &&
+            weekdays &&
+            weekdays.paddingBottom === 4 &&
+            weekdays.children.map((t) => t.characters).join(",") ===
+              "Sun,Mon,Tue,Wed,Thu,Fri,Sat" &&
+            weekdays.children.every(
+              (t) =>
+                t.width === size &&
+                t.fontSize === 12 &&
+                boundVariableName(fillOf(t)) === "Colors/foreground/400",
+            ) &&
+            weeks.length === 6 &&
+            weeks.every(
+              (row) =>
+                row.children.length === 7 &&
+                row.itemSpacing === 4 &&
+                bound(row, "itemSpacing") === "Calendar/gap",
+            ),
+          `${where}: Sun to Sat in Text XS muted, 4 over six weeks of seven days 4 apart`,
+        );
+        const all = weeks.flatMap((row) => row.children);
+        ok(
+          all.length === 42 &&
+            all.every(
+              (day) =>
+                day.width === size &&
+                day.height === size &&
+                day.cornerRadius === 16 &&
+                bound(day, "width") === sizeToken &&
+                bound(day, "height") === sizeToken &&
+                named(day, "Day Text").fontSize === 14,
+            ),
+          `${where}: every day ${size} square (${sizeToken}), the Control corner, its number in Text Small`,
+        );
+        const numbers = (layer) =>
+          days(month, layer)
+            .map((day) => named(day, "Day Text").characters)
+            .join(",");
+        const outside = days(month, "Outside Day");
+        ok(
+          outside.length === (index === 0 ? MAY_OUTSIDE : JUNE_OUTSIDE) &&
+            outside.every(
+              (day) =>
+                day.fills.length === 0 &&
+                boundVariableName(fillOf(named(day, "Day Text"))) ===
+                  "Colors/foreground/400",
+            ) &&
+            all[0] === outside[0],
+          `${where}: the weeks start on the Sunday before the 1st, and the ${outside.length} days of the months either side are muted`,
+        );
+        if (index === 1) {
+          ok(
+            numbers("Selected Day") === "" &&
+              numbers("In Range Day") === "" &&
+              numbers("Today Day") === "",
+            `${where}: nothing chosen and no today in June`,
+          );
+          return;
+        }
+        const selected = days(month, "Selected Day");
+        ok(
+          numbers("Selected Day") === (mode === "Range" ? "21,25" : "25") &&
+            selected.every(
+              (day) =>
+                boundVariableName(fillOf(day)) === plugin.THEME_FILL.name &&
+                boundVariableName(fillOf(named(day, "Day Text"))) ===
+                  plugin.THEME_FILL_FOREGROUND.name,
+            ),
+          `${where}: ${mode === "Range" ? "the range's ends, the 21st and 25th," : "the 25th"} on the theme fill in its foreground (${numbers("Selected Day")})`,
+        );
+        ok(
+          mode === "Range"
+            ? numbers("In Range Day") === "22,23,24" &&
+                days(month, "In Range Day").every(
+                  (day) =>
+                    boundVariableName(fillOf(day)) === "Colors/theme/100" &&
+                    boundVariableName(fillOf(named(day, "Day Text"))) ===
+                      "Colors/foreground/0",
+                ) &&
+                numbers("Today Day") === ""
+            : numbers("In Range Day") === "" &&
+                numbers("Today Day") === "22" &&
+                boundVariableName(fillOf(days(month, "Today Day")[0])) ===
+                  "Colors/background/100",
+          mode === "Range"
+            ? `${where}: the 22nd to the 24th on Colors/theme/100, today among them (${numbers("In Range Day")})`
+            : `${where}: today, the 22nd, on Colors/background/100 (${numbers("Today Day")})`,
+        );
+      });
+      await withAutoLayout(() =>
+        file.updateCalendarVariant(c, {
+          value: mode,
+          second: months,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      ok(
+        JSON.stringify(order(c)) === JSON.stringify(expectedMonths),
+        `${at}: an Update keeps ${expectedMonths.join(", ")} once`,
+      );
+    }
+  }
+
+  // --- ClientAppBanner: wide and narrow --------------------------------------
+  for (const layout of ready ? plugin.CLIENT_APP_BANNER_LAYOUTS : []) {
+    const { component: c, stats } = await draw("updateClientAppBannerVariant", {
+      value: layout,
+    });
+    const at = `ClientAppBanner ${layout}`;
+    const narrow = layout === "Narrow";
+    const width = narrow ? 320 : 560;
+    ok(
+      c.name === `Layout=${layout}` &&
+        file.parseClientAppBannerVariantName(c.name).value === layout &&
+        JSON.stringify(order(c)) === JSON.stringify(["Body", "Dismiss"]),
+      `${at}: named Layout=${layout}; Body, Dismiss (${order(c).join(", ")})`,
+    );
+    ok(
+      c.width === width &&
+        c.layoutMode === "HORIZONTAL" &&
+        c.counterAxisAlignItems === "MIN" &&
+        c.itemSpacing === 12 &&
+        c.paddingLeft === 16 &&
+        c.paddingBottom === 16 &&
+        c.paddingTop === 4 &&
+        c.paddingRight === 4 &&
+        bound(c, "itemSpacing") === "ClientAppBanner/gap" &&
+        bound(c, "paddingLeft") === "ClientAppBanner/padding" &&
+        bound(c, "paddingBottom") === "ClientAppBanner/padding" &&
+        c.cornerRadius === 20 &&
+        bound(c, "cornerRadius") === "ClientAppBanner/radius",
+      `${at}: ${width} wide, 16 inside at the start and bottom and 4 at the top and end, where Dismiss is pulled in, 12 apart, the Container corner (${[c.width, c.paddingLeft, c.paddingTop, c.paddingRight, c.itemSpacing, c.cornerRadius].join(", ")})`,
+    );
+    ok(
+      boundVariableName(fillOf(c)) === "Colors/background/0" &&
+        c.strokes.length === 1 &&
+        boundVariableName(c.strokes[0]) === "Border/Subtle" &&
+        c.strokeWeight === 1 &&
+        c.strokesIncludedInLayout === true &&
+        c.effects.length === 1 &&
+        floating(c.effects[0]),
+      `${at}: the solid surface, its 1 subtle edge laid out with the content, the floating elevation`,
+    );
+    const body = named(c, "Body");
+    const head = body && named(body, "Head");
+    const icon = head && named(head, "App Icon");
+    const initial = icon && named(icon, "Initial Text");
+    ok(
+      body &&
+        body.layoutMode === (narrow ? "VERTICAL" : "HORIZONTAL") &&
+        body.paddingTop === 12 &&
+        body.itemSpacing === 12 &&
+        body.layoutSizingHorizontal === "FILL" &&
+        JSON.stringify(order(body)) === JSON.stringify(["Head", "Action"]) &&
+        JSON.stringify(order(head)) === JSON.stringify(["App Icon", "Words"]) &&
+        head.itemSpacing === 12,
+      `${at}: the icon and the words, then the action ${narrow ? "under them" : "beside them"}, 12 apart, the words' column 12 down to meet the padding (${body && [body.layoutMode, body.paddingTop].join(", ")})`,
+    );
+    ok(
+      icon &&
+        icon.width === 48 &&
+        icon.height === 48 &&
+        bound(icon, "width") === "ClientAppBanner/icon/size" &&
+        icon.cornerRadius === 16 &&
+        boundVariableName(fillOf(icon)) === "Colors/background/100" &&
+        boundVariableName(icon.strokes[0]) === "Border/Subtle" &&
+        icon.strokeAlign === "INSIDE" &&
+        initial.characters === "N" &&
+        initial.fontSize === 18 &&
+        boundVariableName(fillOf(initial)) === "Colors/foreground/0",
+      `${at}: a 48 icon, the Control corner and the subtle edge, the app's initial in Text Large on Colors/background/100 (${icon && [icon.width, icon.cornerRadius, initial && initial.characters].join(", ")})`,
+    );
+    const words = head && named(head, "Words");
+    const lines = words ? words.children : [];
+    ok(
+      words &&
+        words.itemSpacing === 2 &&
+        words.layoutSizingHorizontal === "FILL" &&
+        JSON.stringify(order(words)) ===
+          JSON.stringify([
+            "Promotion Text",
+            "App Name Text",
+            "Description Text",
+          ]) &&
+        lines[0].fontSize === 12 &&
+        boundVariableName(fillOf(lines[0])) === "Colors/foreground/400" &&
+        lines[1].fontSize === 16 &&
+        lines[1].characters === "Northfield Airport" &&
+        boundVariableName(fillOf(lines[1])) === "Colors/foreground/0" &&
+        lines[2].fontSize === 14 &&
+        boundVariableName(fillOf(lines[2])) === "Colors/foreground/400" &&
+        lines[2].textTruncation === "ENDING" &&
+        lines[2].maxLines === 2,
+      `${at}: the promotion (12, muted), the name (16), the description (14, muted, two lines at most), 2 apart (${lines.map((t) => t.fontSize).join(", ")}; maxLines ${lines[2] && lines[2].maxLines})`,
+    );
+    const action = body && named(body, "Action");
+    ok(
+      action &&
+        action.type === "INSTANCE" &&
+        action.mainComponent.name ===
+          "Variant=Default, Size=Default, State=Default" &&
+        action.componentProperties["Label Text#1:0"] === "Open" &&
+        (narrow
+          ? action.layoutSizingHorizontal === "FILL"
+          : action.layoutSizingHorizontal !== "FILL"),
+      `${at}: the action is a live Default Button, "Open", ${narrow ? "as wide as the words" : "its own width"} (${action && action.type}, ${action && action.layoutSizingHorizontal})`,
+    );
+    const dismiss = named(c, "Dismiss");
+    const glyph = dismiss && dismiss.findOne((n) => n.type === "INSTANCE");
+    const vector = glyph && glyph.findOne((n) => n.type === "VECTOR");
+    ok(
+      dismiss &&
+        dismiss.type === "INSTANCE" &&
+        dismiss.mainComponent.name ===
+          "Variant=Ghost, Size=Large, State=Default" &&
+        dismiss.componentProperties["Icon#2:0"] === close.id &&
+        vector &&
+        boundVariableName(vector.strokes[0]) === ghostInk &&
+        dismiss.getSharedPluginData("kozmos_ds_importer", "surface") ===
+          "control" &&
+        // React's -12 margins pull it to 4 inside the 1 edge.
+        Math.abs(dismiss.x - (width - 1 - 4 - 44)) < 0.5 &&
+        Math.abs(dismiss.y - (1 + 4)) < 0.5,
+      `${at}: Dismiss is IconButton's Ghost at Large with x-close, tinted again in the Ghost's ink, a control, 4 inside the edge at the top and the end (${dismiss && [dismiss.x, dismiss.y, vector && boundVariableName(vector.strokes[0])].join(", ")})`,
+    );
+    ok(
+      !stats.warnings.some((w) => /ClientAppBanner|Missing|missing/.test(w)),
+      `${at}: no warning (${stats.warnings.join("; ")})`,
+    );
+  }
+
+  // --- LanguageSwitcher: the closed control, in each of its states -----------
+  for (const state of ready ? plugin.LANGUAGE_SWITCHER_STATES : []) {
+    const { component: c } = await draw("updateLanguageSwitcherVariant", {
+      value: state,
+    });
+    const at = `LanguageSwitcher ${state}`;
+    const rows = {
+      Default: ["Trigger"],
+      Pending: ["Trigger", "Pending Row"],
+      Failed: ["Trigger", "Error Row"],
+      Disabled: ["Trigger"],
+    }[state];
+    ok(
+      c.name === `State=${state}` &&
+        file.parseLanguageSwitcherVariantName(c.name).value === state &&
+        JSON.stringify(order(c)) === JSON.stringify(rows) &&
+        c.width === 240 &&
+        c.fills.length === 0,
+      `${at}: named State=${state}; ${rows.join(", ")} (${order(c).join(", ")})`,
+    );
+    const trigger = named(c, "Trigger");
+    const language = trigger && named(trigger, "Language Text");
+    const chevron = trigger && named(trigger, "Chevron");
+    const dim = state === "Pending" || state === "Disabled";
+    ok(
+      trigger &&
+        trigger.height === 48 &&
+        trigger.width === 240 &&
+        bound(trigger, "height") === "LanguageSwitcher/height" &&
+        bound(trigger, "minWidth") === "LanguageSwitcher/min-width" &&
+        trigger.paddingLeft === 12 &&
+        trigger.paddingRight === 12 &&
+        trigger.cornerRadius === 16 &&
+        boundVariableName(fillOf(trigger)) === "Colors/background/0" &&
+        trigger.strokes.length === 0 &&
+        trigger.effects.length === 1 &&
+        floating(trigger.effects[0]) &&
+        trigger.opacity === (dim ? 0.5 : 1),
+      `${at}: a 48 trigger, 12 across, the Control corner, Colors/background/0 with no edge and the floating elevation, at ${dim ? "half" : "full"} strength (${trigger && [trigger.height, trigger.cornerRadius, trigger.opacity].join(", ")})`,
+    );
+    ok(
+      JSON.stringify(order(trigger)) ===
+        JSON.stringify(["Language Text", "Chevron"]) &&
+        language.characters === "English" &&
+        language.fontSize === 14 &&
+        boundVariableName(fillOf(language)) === "Colors/foreground/0" &&
+        chevron.mainComponent.name === "Icon / chevron-down" &&
+        chevron.width === 16,
+      `${at}: "English" in Text Small and Select's 16 chevron-down`,
+    );
+    if (state === "Pending") {
+      const row = named(c, "Pending Row");
+      const text = row && named(row, "Pending Text");
+      ok(
+        row.paddingTop === 8 &&
+          text.characters === "Changing language…" &&
+          text.fontSize === 14 &&
+          boundVariableName(fillOf(text)) === "Colors/foreground/400",
+        `${at}: "Changing language…" 8 under the trigger, in Text Small muted`,
+      );
+    }
+    if (state === "Failed") {
+      const row = named(c, "Error Row");
+      const text = row && named(row, "Error Text");
+      const retry = row && named(row, "Retry");
+      ok(
+        row.paddingTop === 8 &&
+          JSON.stringify(order(row)) ===
+            JSON.stringify(["Error Text", "Retry"]) &&
+          text.fontSize === 14 &&
+          boundVariableName(fillOf(text)) === "Emotion/danger/text" &&
+          retry.type === "INSTANCE" &&
+          retry.mainComponent.name ===
+            "Variant=Ghost, Size=Default, State=Default" &&
+          retry.componentProperties["Label Text#1:0"] === "Retry",
+        `${at}: the error in Emotion/danger/text 8 under the trigger, over a live ghost Button, "Retry"`,
+      );
+    }
+  }
+}
+
 section("TourStep (GAP-188, decision 136)");
 {
   const ready =
