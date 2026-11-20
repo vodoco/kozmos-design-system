@@ -65,8 +65,51 @@ export const VUE_STORIES = {
   "vue-core-actions-button--compact-scope": {
     interaction: "buttons-in-order",
   },
+  "vue-core-data-display-badge--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Badge is a status, not a control (decision 93): nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-badge--outline": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Badge is a status, not a control (decision 93): nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-badge--with-counter": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Badge is a status, not a control (decision 93): nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-badge--default-with-counter": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Badge is a status, not a control (decision 93): nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-badge--icon": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Badge is a status, not a control (decision 93): nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-separator--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Separator is a line between groups: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
   "vue-poicard--default": { interaction: "buttons-in-order" },
   "vue-poicard--inside-map-overlay": { interaction: "buttons-in-order" },
+  "vue-radiogroup--group": { interaction: "radio-group" },
   "vue-searchbar--floating-overlay": { interaction: "search-typing" },
   "vue-searchbar--inline": { interaction: "search-typing" },
   "vue-stepper--dots": {

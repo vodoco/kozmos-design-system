@@ -5,6 +5,7 @@ import { execSync } from "child_process";
 import { createRequire } from "module";
 import { gzipSync } from "zlib";
 import { topLevelRetainers } from "./top-level-retainers.mjs";
+import { PURE_CALLS } from "../../packages/vue/vite-plugins/pure-calls.mjs";
 
 // What an app pays for @kozmos-ds/react. The ES build is one file per module, and package.json
 // declares the JavaScript free of side effects, so an app's bundler keeps only the modules behind
@@ -107,7 +108,24 @@ const MIN_ESM_MODULES = 50;
 // half kilobyte, the step React's later budgets take (8.5, 30.5). On 6 Nov
 // 2026 the main entry measured 2.69 KB here, and 110% of that, rounded up
 // to the half, is 3. Raise it only with the measurement that justifies it.
-const MAX_VUE_GZIP_KB = 3;
+//
+// Decision 227 (owner, 20 Nov 2026): during the Vue track the main entry
+// follows React's model instead, sized for the core. Its first two ports
+// (Badge, Separator, #590) took it to 3.66 KB, and the core adds about 85
+// parts on Reka UI: the whole entry stays under 75 KB (React's 120 holds
+// about 140 parts), and every export alone under React's own 9 KB
+// (MAX_EXPORT_GZIP_KB), so no one import pulls in the rest. Re-measured and
+// re-sized when the core is done.
+const MAX_VUE_GZIP_KB = 75;
+// KozmosButton alone, the canary for Vue's per-module output, as Button is
+// React's (MAX_BUTTON_GZIP_KB). While Vue's ES build was one file, with no
+// sideEffects declared and its top-level calls unmarked, every export alone
+// cost the whole entry: KozmosButton 3.85 KB of the entry's 3.99 here on
+// 20 Nov 2026. One module per source file, `sideEffects` in package.json and
+// pure marks (packages/vue/vite-plugins/pure-calls.mjs) took it to
+// 1.48 KB (the main entry 3.98, the median export 0.66); the same rule,
+// 110% of that to the next half kilobyte, gives 2, React's Button cap.
+const MAX_VUE_BUTTON_GZIP_KB = 2;
 // ./react-bridge, on a line of its own: it mounts React's parts, and an app
 // that imports it pays for @kozmos-ds/react, React and ReactDOM besides,
 // which are its peers and left out here as Vue's are. Its own code measured
@@ -120,7 +138,14 @@ const MAX_VUE_GZIP_KB = 3;
 // prop names alone gzip to about 700 B; 110% of either figure, to the half,
 // is 11.5. It never counts towards the main entry's, which must not import it
 // (packages/vue/test/react-free.spec.ts).
-const MAX_VUE_BRIDGE_GZIP_KB = 11.5;
+//
+// Decision 228 (owner, 20 Nov 2026): 13.5. GAP-230's context bridge (#591)
+// measured 12.67 KB: 0.58 for drawing a compound as one React tree with the
+// Vue providers' values, and 1.08 for its 42 sub-part wrappers (Select,
+// Dialog, Tabs, Toast and the rest). The bridge only shrinks from here, as
+// parts become native: each Vue wave lowers this line to the wave's
+// measurement plus half a kilobyte, until the bridge is retired.
+const MAX_VUE_BRIDGE_GZIP_KB = 13.5;
 // @kozmos-ds/react/dashboard, on lines of its own (decision 183, owner, 13 Nov
 // 2026): Pointr Cloud's Dashboard modules ship from that entry and its sheet,
 // dashboard.css, so an SDK or Core product pays nothing for them; the main
@@ -218,19 +243,35 @@ function globToRegExp(glob: string) {
   return new RegExp(`^${source}$`);
 }
 
-// The package's own declaration, read rather than assumed: drop it, and every budget below fails.
-const declared = JSON.parse(
-  fs.readFileSync(path.join(REACT_PKG_DIR, "package.json"), "utf8"),
-).sideEffects as boolean | string[] | undefined;
-const sideEffectGlobs = Array.isArray(declared)
-  ? declared.map(globToRegExp)
-  : [];
+// Each package's own declaration, read rather than assumed: drop React's or Vue's, and every
+// budget below on that package fails. A module is taken to have side effects unless it is in the
+// dist of a package that declares otherwise, as an app's bundler reads the package.json nearest
+// the module.
+function sideEffectsOf(packageDir: string) {
+  const declared = JSON.parse(
+    fs.readFileSync(path.join(packageDir, "package.json"), "utf8"),
+  ).sideEffects as boolean | string[] | undefined;
+  return {
+    packageDir,
+    distDir: path.join(packageDir, "dist"),
+    declared,
+    globs: Array.isArray(declared) ? declared.map(globToRegExp) : [],
+  };
+}
+const declarations = [REACT_PKG_DIR, VUE_PKG_DIR].map(sideEffectsOf);
 function moduleSideEffects(id: string, external: boolean) {
-  if (external || !id.startsWith(DIST_DIR + path.sep)) return true;
-  if (declared === false) return false;
-  if (!Array.isArray(declared)) return true;
-  const relative = path.relative(REACT_PKG_DIR, id).split(path.sep).join("/");
-  return sideEffectGlobs.some(
+  if (external) return true;
+  const owner = declarations.find(({ distDir }) =>
+    id.startsWith(distDir + path.sep),
+  );
+  if (!owner || owner.declared === undefined || owner.declared === true)
+    return true;
+  if (owner.declared === false) return false;
+  const relative = path
+    .relative(owner.packageDir, id)
+    .split(path.sep)
+    .join("/");
+  return owner.globs.some(
     (pattern) => pattern.test(relative) || pattern.test(`./${relative}`),
   );
 }
@@ -299,6 +340,20 @@ async function main() {
   if (retainers.length) {
     fail.push(
       `${retainers.length} top-level statements in dist/esm keep a component that nothing imports (${retainers.slice(0, 3).join("; ")}): see packages/react/vite-plugins/shakable-components.mjs`,
+    );
+  }
+
+  // Vue's the same way: its calls that make a part are marked pure
+  // (packages/vue/vite-plugins/pure-calls.mjs), or KozmosButton, which reads
+  // the analytics provider through useKozmosAnalytics, keeps
+  // KozmosAnalyticsProvider beside it.
+  const VUE_ESM_DIR = path.join(VUE_PKG_DIR, "dist/esm");
+  const vueRetainers = fs.existsSync(VUE_ESM_DIR)
+    ? topLevelRetainers(VUE_ESM_DIR, parseAst, PURE_CALLS.imports)
+    : [];
+  if (vueRetainers.length) {
+    fail.push(
+      `${vueRetainers.length} top-level calls in @kozmos-ds/vue's dist/esm keep a part that nothing imports (${vueRetainers.slice(0, 3).join("; ")}): see packages/vue/vite-plugins/pure-calls.mjs`,
     );
   }
 
@@ -527,6 +582,35 @@ async function main() {
       `import * as bridge from ${JSON.stringify(VUE_BRIDGE)}; console.log(bridge);`,
       "vue_react_bridge",
     );
+    // Every Vue export bundled alone, as React's are: none over
+    // MAX_EXPORT_GZIP_KB (decision 227).
+    const vueExports =
+      (
+        await (
+          await rollup({
+            input: VUE_ENTRY,
+            external: isExternal,
+            cache,
+            plugins: [productionDefine],
+            onwarn: () => {},
+            treeshake: { moduleSideEffects },
+          })
+        ).generate({ format: "es" })
+      ).output[0].exports ?? [];
+    const vuePerExport: Array<[string, number]> = [];
+    for (const name of vueExports) {
+      const { gzip } = await cost(
+        `import { ${name} } from ${JSON.stringify(VUE_ENTRY)}; console.log(${name});`,
+        `vue_export_${vuePerExport.length}_${name}`,
+      );
+      vuePerExport.push([name, gzip]);
+    }
+    vuePerExport.sort((a, b) => b[1] - a[1]);
+    const vueButton = vuePerExport.find(([name]) => name === "KozmosButton");
+    const vueSorted = vuePerExport
+      .map(([, gzip]) => gzip)
+      .sort((a, b) => a - b);
+    const vueMedian = vueSorted[Math.floor(vueSorted.length / 2)] ?? 0;
     // The main entry draws no React: a bridge import in it would put the
     // bridge's cost, and React itself, in every Vue app. A dynamic
     // import() counts as much as a static one: the app's bundler still
@@ -545,7 +629,24 @@ async function main() {
     console.log(
       `./react-bridge:    ${kb(bridge.gzip).toFixed(2)} KB / ${MAX_VUE_BRIDGE_GZIP_KB.toFixed(2)} KB (${kb(bridge.raw).toFixed(2)} KB minified; React's parts, React and ReactDOM besides)`,
     );
+    console.log(
+      `Exports measured:  ${vuePerExport.length}, median ${kb(vueMedian).toFixed(2)} KB, the heaviest alone:`,
+    );
+    for (const [name, gzip] of vuePerExport.slice(0, 5)) {
+      console.log(
+        `  ${name.padEnd(28)} ${kb(gzip).toFixed(2)} KB / ${MAX_EXPORT_GZIP_KB.toFixed(2)} KB`,
+      );
+    }
+    console.log(
+      `KozmosButton alone: ${vueButton ? kb(vueButton[1]).toFixed(2) : "missing"} KB / ${MAX_VUE_BUTTON_GZIP_KB.toFixed(2)} KB`,
+    );
     console.log(`---------------------------------`);
+    if (!vueButton)
+      fail.push("KozmosButton is not a public export of @kozmos-ds/vue");
+    else if (kb(vueButton[1]) > MAX_VUE_BUTTON_GZIP_KB)
+      fail.push(
+        `KozmosButton alone costs ${kb(vueButton[1]).toFixed(2)} KB, over ${MAX_VUE_BUTTON_GZIP_KB} KB: @kozmos-ds/vue's ES build no longer tree-shakes`,
+      );
     if (vueImports.length)
       fail.push(
         `@kozmos-ds/vue's main entry imports ${vueImports.join(", ")}: React belongs in ./react-bridge alone`,
@@ -553,6 +654,18 @@ async function main() {
     if (kb(vue.gzip) > MAX_VUE_GZIP_KB)
       fail.push(
         `@kozmos-ds/vue's main entry costs ${kb(vue.gzip).toFixed(2)} KB, over ${MAX_VUE_GZIP_KB} KB`,
+      );
+    if (!vuePerExport.length)
+      fail.push("@kozmos-ds/vue's main entry was read as exporting nothing");
+    const vueOver = vuePerExport.filter(
+      ([, gzip]) => kb(gzip) > MAX_EXPORT_GZIP_KB,
+    );
+    if (vueOver.length)
+      fail.push(
+        `${vueOver.length} of ${vuePerExport.length} @kozmos-ds/vue exports cost over ${MAX_EXPORT_GZIP_KB} KB alone (${vueOver
+          .slice(0, 5)
+          .map(([name, gzip]) => `${name} ${kb(gzip).toFixed(2)}`)
+          .join(", ")}${vueOver.length > 5 ? ", …" : ""})`,
       );
     if (kb(bridge.gzip) > MAX_VUE_BRIDGE_GZIP_KB)
       fail.push(

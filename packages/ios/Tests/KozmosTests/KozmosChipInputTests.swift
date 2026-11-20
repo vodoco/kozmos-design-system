@@ -96,6 +96,142 @@ final class KozmosChipInputTests: XCTestCase {
         }
     }
 
+    // React's entry_added and entry_removed (GAP-234's follow-up): one
+    // entry_added per entry an edit adds, with its `value`, for a comma,
+    // a pasted list or Return, never for an entry already in the field; one
+    // entry_removed per entry removed, by Delete in the empty field or by a
+    // chip's remove; nothing while the field is read-only or disabled. Each
+    // test ends with an event the field sends, so each fails against a
+    // field that sends none.
+
+    @MainActor private final class Sent {
+        var events: [KozmosAnalyticsEvent] = []
+        /// Each event as `name value`, after checking it is ChipInput's.
+        var said: [String] {
+            events.map { event in
+                guard event.component == "ChipInput", case .string(let value)? = event.properties?["value"],
+                      event.properties?.count == 1 else {
+                    return "unexpected \(event.component) \(event.eventName) \(String(describing: event.properties))"
+                }
+                return "\(event.eventName) \(value)"
+            }
+        }
+    }
+
+    @MainActor private final class Lockable: ObservableObject {
+        @Published var values: [String]
+        @Published var readOnly = false
+        @Published var disabled = false
+        init(_ values: [String]) { self.values = values }
+    }
+
+    private struct TrackedHost: View {
+        @ObservedObject var held: Lockable
+        let sent: Sent
+        var body: some View {
+            KozmosChipInput(
+                values: $held.values,
+                label: "Anahtar kelimeler",
+                disabled: held.disabled,
+                readOnly: held.readOnly,
+                removeLabel: { "\($0) kaldır" }
+            )
+            .environment(\.kozmosAnalytics) { event in sent.events.append(event) }
+        }
+    }
+
+    /// Types `text` into the field as the keyboard or a paste does: the
+    /// field's whole new text, then its editing-changed action, called on
+    /// the coordinator itself (a hosted window's `sendActions` reaches no
+    /// target).
+    @MainActor private func type(_ text: String, into field: UITextField) async throws {
+        field.text = text
+        let coordinator = try XCTUnwrap(field.delegate as? KozmosChipInputTextField.Coordinator)
+        coordinator.edited(field)
+        try await Task.sleep(nanoseconds: 100_000_000)
+    }
+
+    @MainActor private func pressReturn(in field: UITextField) async throws {
+        _ = field.delegate?.textFieldShouldReturn?(field)
+        try await Task.sleep(nanoseconds: 100_000_000)
+    }
+
+    @MainActor func testEachEntryACommaAPasteOrReturnAddsSendsEntryAddedAndADuplicateNone() async throws {
+        let held = Lockable(["kahve"])
+        let sent = Sent()
+        try await inspect(TrackedHost(held: held, sent: sent)) { window in
+            let field = try XCTUnwrap(self.textField(in: window), "no UITextField in the field")
+            // A pasted list: çay and su are added, kahve is already there.
+            // (A UITextField keeps no line break; KozmosChipInputEdit's own
+            // tests split on them.)
+            try await self.type("çay, kahve,su,kola", into: field)
+            XCTAssertEqual(held.values, ["kahve", "çay", "su"])
+            XCTAssertEqual(sent.said, ["entry_added çay", "entry_added su"])
+            // Return on the duplicate left typed adds nothing and sends nothing.
+            try await self.pressReturn(in: field)
+            XCTAssertEqual(held.values, ["kahve", "çay", "su"])
+            XCTAssertEqual(sent.said, ["entry_added çay", "entry_added su"], "a duplicate was reported")
+            // A comma typed after one entry.
+            try await self.type("kola,", into: field)
+            // Return with the field holding only spaces leaves Return to the host.
+            try await self.type("   ", into: field)
+            try await self.pressReturn(in: field)
+            // Return adds what is typed.
+            try await self.type(" ayran ", into: field)
+            try await self.pressReturn(in: field)
+            XCTAssertEqual(held.values, ["kahve", "çay", "su", "kola", "ayran"])
+            XCTAssertEqual(sent.said, ["entry_added çay", "entry_added su", "entry_added kola", "entry_added ayran"])
+        }
+    }
+
+    @MainActor func testDeleteInTheEmptyFieldAndAChipsRemoveSendEntryRemoved() async throws {
+        let held = Lockable(["kahve", "çay", "su"])
+        let sent = Sent()
+        try await inspect(TrackedHost(held: held, sent: sent)) { window in
+            let field = try XCTUnwrap(self.textField(in: window), "no UITextField in the field")
+            field.deleteBackward()
+            try await Task.sleep(nanoseconds: 100_000_000)
+            XCTAssertEqual(held.values, ["kahve", "çay"])
+            let remove = try XCTUnwrap(
+                self.elements(window).first { $0.accessibilityLabel == "kahve kaldır" },
+                "no remove named kahve kaldır")
+            XCTAssertTrue(remove.accessibilityActivate(), "kahve's remove did not activate")
+            try await Task.sleep(nanoseconds: 100_000_000)
+            XCTAssertEqual(held.values, ["çay"])
+            XCTAssertEqual(sent.said, ["entry_removed su", "entry_removed kahve"])
+        }
+    }
+
+    @MainActor func testAReadOnlyOrDisabledFieldSendsNothing() async throws {
+        let held = Lockable(["kahve", "çay"])
+        let sent = Sent()
+        try await inspect(TrackedHost(held: held, sent: sent)) { window in
+            let field = try XCTUnwrap(self.textField(in: window), "no UITextField in the field")
+            for lock in [\Lockable.readOnly, \Lockable.disabled] {
+                held[keyPath: lock] = true
+                try await Task.sleep(nanoseconds: 200_000_000)
+                field.deleteBackward()
+                try await self.type("su,", into: field)
+                try await self.type("ayran", into: field)
+                try await self.pressReturn(in: field)
+                if let remove = self.elements(window).first(where: { $0.accessibilityLabel == "kahve kaldır" }) {
+                    _ = remove.accessibilityActivate()
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                }
+                XCTAssertEqual(held.values, ["kahve", "çay"], "\(lock) changed the entries")
+                XCTAssertEqual(sent.said, [], "\(lock) sent events")
+                held[keyPath: lock] = false
+                try await Task.sleep(nanoseconds: 200_000_000)
+            }
+            // Unlocked again, the same Delete removes and reports.
+            try await self.type("", into: field)
+            field.deleteBackward()
+            try await Task.sleep(nanoseconds: 100_000_000)
+            XCTAssertEqual(held.values, ["kahve"])
+            XCTAssertEqual(sent.said, ["entry_removed çay"])
+        }
+    }
+
     @MainActor private func textField(in view: UIView) -> UITextField? {
         if let field = view as? UITextField { return field }
         for child in view.subviews { if let field = textField(in: child) { return field } }

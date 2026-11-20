@@ -14,7 +14,7 @@ then follow a real component of the same shape:
 
 | Shape                                | Follow                                                                           |
 | ------------------------------------ | -------------------------------------------------------------------------------- |
-| Variants, with a `cva` recipe        | `packages/react/src/components/Badge/Badge.tsx`, `Tag/Tag.tsx`                   |
+| Variants, with a `cva` recipe        | `packages/react/src/recipes/badge.ts` (shared with Vue), `Tag/Tag.tsx`           |
 | Variants and emotion, with owned CSS | `packages/react/src/components/Button/Button.tsx`                                |
 | Compound, built on Radix             | `packages/react/src/components/Dialog/Dialog.tsx`, `Tabs/Tabs.tsx`               |
 | A form field: label, helper, error   | `packages/react/src/components/Input/Input.tsx`, `FieldWrapper/FieldWrapper.tsx` |

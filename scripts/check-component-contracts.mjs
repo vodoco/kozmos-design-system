@@ -197,6 +197,9 @@ const files = {
   reactCounter: "packages/react/src/components/Counter/Counter.tsx",
   reactCounterFigma: "packages/react/src/components/Counter/Counter.figma.tsx",
   reactBadge: "packages/react/src/components/Badge/Badge.tsx",
+  // Badge's and Counter's recipes, shared with Vue's KozmosBadge (wave V0b).
+  reactBadgeRecipe: "packages/react/src/recipes/badge.ts",
+  reactCounterRecipe: "packages/react/src/recipes/counter.ts",
   reactCategoryTile:
     "packages/react/src/components/CategoryTile/CategoryTile.tsx",
   reactCategoryField:
@@ -881,14 +884,14 @@ assertContains(
   "Android IconButton 44dp, 48dp for the large size",
 );
 assertContains(
-  files.reactCounter,
-  source.reactCounter,
+  files.reactCounterRecipe,
+  source.reactCounterRecipe,
   "h-5 min-w-5 px-1.5 text-xs",
   "React Counter default size class",
 );
 assertContains(
-  files.reactCounter,
-  source.reactCounter,
+  files.reactCounterRecipe,
+  source.reactCounterRecipe,
   "h-[18px] min-w-[18px] px-[5px] text-[11px]",
   "React Counter small size class",
 );
@@ -933,33 +936,33 @@ assertContains(
   "Counter Code Connect node ID",
 );
 assertContains(
-  files.reactBadge,
-  source.reactBadge,
+  files.reactBadgeRecipe,
+  source.reactBadgeRecipe,
   /default:\s*["']h-badge px-4["']/,
   "Badge default at the density's Badge height, Chip's 32 (decision 93)",
 );
 assertContains(
-  files.reactBadge,
-  source.reactBadge,
+  files.reactBadgeRecipe,
+  source.reactBadgeRecipe,
   /sm:\s*["']h-badge-sm px-3["']/,
   "Badge sm at the density's Badge height, Chip's 28 (decision 93)",
 );
 assertContains(
-  files.reactBadge,
-  source.reactBadge,
+  files.reactBadgeRecipe,
+  source.reactBadgeRecipe,
   /icon:\s*["']h-badge w-badge["']/,
   "Badge icon at the density's Badge height, square (decision 93)",
 );
 assertContains(
-  files.reactBadge,
-  source.reactBadge,
+  files.reactBadgeRecipe,
+  source.reactBadgeRecipe,
   /lg:\s*["']h-badge-lg px-8["']/,
   "Badge lg at the density's Badge height, Chip's 36 (decision 93)",
 );
 // A status, not a control (decision 93): no hover state on any variant.
 assertNotContains(
-  files.reactBadge,
-  source.reactBadge,
+  files.reactBadgeRecipe,
+  source.reactBadgeRecipe,
   "hover:",
   "Badge has no hover state (decision 93)",
 );
@@ -970,8 +973,8 @@ assertContains(
   "React Badge composes Counter",
 );
 assertContains(
-  files.reactBadge,
-  source.reactBadge,
+  files.reactBadgeRecipe,
+  source.reactBadgeRecipe,
   "gap-1 rounded-control",
   "React Badge uses 4px content gap",
 );
@@ -2157,11 +2160,21 @@ assertContains(
   "KozmosCounter = createVueWrapper(ReactCounter)",
   "Vue Counter wraps React Counter",
 );
+// Badge and Separator are Vue ports (wave V0b, packages/vue/PORTING.md).
+// Their bridge entries leave with GAP-230's bridge work: until then
+// packages/vue/test/ports.ts names them in LEAVING_BRIDGE, and
+// coverage.spec.ts fails on any other part exported from both entries.
 assertContains(
-  files.vueBridge,
-  source.vueBridge,
-  "KozmosBadge = createVueWrapper(ReactBadge)",
-  "Vue Badge wraps React Badge",
+  files.vueIndex,
+  source.vueIndex,
+  'export { KozmosBadge } from "./components/Badge/Badge"',
+  "Vue Badge exported as a Vue port",
+);
+assertContains(
+  files.vueIndex,
+  source.vueIndex,
+  'export { KozmosSeparator } from "./components/Separator/Separator"',
+  "Vue Separator exported as a Vue port",
 );
 assertContains(
   files.vueBridge,

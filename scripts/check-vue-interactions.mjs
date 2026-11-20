@@ -232,6 +232,40 @@ const INTERACTIONS = {
     return `${buttons.length} buttons, Tab after Tab in reading order, each pressed and hovered`;
   },
 
+  /**
+   * A bridged group and its bridged options, one React tree (GAP-230): Tab
+   * reaches the chosen option, a held arrow moves to the next and chooses
+   * it, and a click chooses another, each held by v-model.
+   */
+  async "radio-group"(page) {
+    const radios = controls(page, "[role=radio]");
+    const chosen = () => controls(page, "output").textContent();
+    assert.equal(await radios.count(), 3, "the group draws its three options");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await radios.nth(0).evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the chosen option (focus is on ${await focused(page)})`,
+    );
+    // Radix chooses the option an arrow moves to while the key is down.
+    await page.keyboard.down("ArrowDown");
+    await settle(page);
+    await page.keyboard.up("ArrowDown");
+    await settle(page);
+    assert.equal(
+      await radios.nth(1).getAttribute("aria-checked"),
+      "true",
+      "ArrowDown chooses the next option",
+    );
+    assert.equal(await chosen(), "Level 2", "v-model holds the option chosen");
+    await radios.nth(2).click();
+    await settle(page);
+    assert.equal(await chosen(), "Level 3", "a click chooses an option");
+    return "Tab to the chosen option, ArrowDown to the next, a click on the last, each held by v-model";
+  },
+
   /** Typing into the search field, its value held in Vue through the bridge. */
   async "search-typing"(page) {
     const field = controls(page, "input").first();

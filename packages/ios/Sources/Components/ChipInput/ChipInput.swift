@@ -69,7 +69,9 @@ public enum KozmosChipInputEdit {
 /// text, Delete in the empty field removes the last entry (from the
 /// on-screen keyboard too), and each chip has its own remove button, named
 /// by `removeLabel`. Each addition and removal is announced in the
-/// product's words.
+/// product's words, and sent to `\.kozmosAnalytics` as React's are:
+/// `entry_added` for each entry added and `entry_removed` for each entry
+/// removed, each with its `value`.
 public struct KozmosChipInput: View {
     @Binding public var values: [String]
     public let label: String?
@@ -86,6 +88,7 @@ public struct KozmosChipInput: View {
     public let duplicateLabel: (String) -> String
 
     @State private var text: String
+    @Environment(\.kozmosAnalytics) private var trackEvent
 
     public init(
         values: Binding<[String]>,
@@ -224,12 +227,14 @@ public struct KozmosChipInput: View {
         guard !locked, let last = values.last, let next = KozmosChipInputEdit.deletedInEmptyField(values) else { return }
         values = next
         announce(removedLabel(last))
+        trackRemoved(last)
     }
 
     private func remove(_ entry: String) {
         guard !locked else { return }
         values.removeAll { $0 == entry }
         announce(removedLabel(entry))
+        trackRemoved(entry)
     }
 
     private func apply(_ result: KozmosChipInputEdit.Result) {
@@ -240,6 +245,15 @@ public struct KozmosChipInput: View {
         } else if !result.added.isEmpty {
             announce(result.added.map(addedLabel).joined(separator: ", "))
         }
+        // React's entry_added: one per entry added, never for one already in the field.
+        for entry in result.added {
+            trackEvent(KozmosAnalyticsEvent(eventName: "entry_added", component: "ChipInput", properties: ["value": entry]))
+        }
+    }
+
+    /// React's entry_removed, for an entry removed by Delete or its chip's remove.
+    private func trackRemoved(_ entry: String) {
+        trackEvent(KozmosAnalyticsEvent(eventName: "entry_removed", component: "ChipInput", properties: ["value": entry]))
     }
 
     private func announce(_ words: String) {

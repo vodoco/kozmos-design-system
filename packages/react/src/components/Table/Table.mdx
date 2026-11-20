@@ -137,8 +137,9 @@ rows" and "Select row" by default.
 On SwiftUI, `KozmosTable(data, selection:)` draws each row's checkbox and a first row with the select-all box; the
 count is that box's value and is announced when it changes. On Compose, `KozmosTableRow(selected:, onSelectedChange:)`
 draws a row's checkbox and `KozmosTableSelectAllCell` the header's, with the count in a polite live region. Vue's
-bridge takes `v-model:selectedIds`; the rows are React's, given as `children` (GAP-016), until the context bridge
-(GAP-230) lets Vue compose them.
+bridge takes `v-model:selectedIds`; the rows are React's, given as `children` (GAP-016): the bridge draws a part made
+of parts as one React tree (GAP-230), but a `<table>` holds no box a Vue slot is drawn in, so Table's rows and cells
+are not bridged.
 
 <Canvas>
   <Story of={TableStories.Selectable} />
@@ -195,8 +196,8 @@ import { ref } from "vue"
 import { KozmosTable } from "@kozmos-ds/vue/react-bridge"
 
 // The selected rows' rowIds. The rows themselves are React's TableRow,
-// TableRowSelect and TableSelectAll, given as children (GAP-016), until the
-// context bridge (GAP-230) lets Vue compose them.
+// TableRowSelect and TableSelectAll, given as children (GAP-016): a <table>
+// holds no box a Vue slot is drawn in, so they are not bridged.
 const selected = ref([])
 </script>
 
@@ -348,8 +349,8 @@ export function FloorCounts() {
 import { KozmosTable } from "@kozmos-ds/vue/react-bridge"
 
 // The headers and cells are React's TableHead (onSort, sortDirection,
-// numeric) and TableCell (numeric), given as children (GAP-016), until the
-// context bridge (GAP-230) lets Vue compose them.
+// numeric) and TableCell (numeric), given as children (GAP-016): a <table>
+// holds no box a Vue slot is drawn in, so they are not bridged.
 </script>
 
 <template>

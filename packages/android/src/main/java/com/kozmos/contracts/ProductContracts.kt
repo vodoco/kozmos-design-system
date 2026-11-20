@@ -351,7 +351,57 @@ data class KozmosTravelEstimatePresentation(
      * minutes, so one estimate serves the list and the details card alike.
      * Null, a result shows [durationLabel], as before.
      */
-    val band: KozmosTravelTimeBand? = null
+    val band: KozmosTravelTimeBand? = null,
+    /**
+     * What the time includes besides the walk itself, in the order to say it
+     * (GAP-047): "Includes security (about 8 min)" on an after-security
+     * board, where a walk crosses the security queue.
+     *
+     * `KozmosPOIResultCard` draws each part's label under the travel time,
+     * and `KozmosPOIDetailPanel` under its action strip when Navigate carries
+     * the estimate: one line, [breakdownLabel], in the card's secondary text.
+     * Each card says it with the time, after it. The product chooses which
+     * parts to list and words each one; a part with an empty label is not
+     * drawn. Empty, nothing is drawn, as before. Mirrors
+     * `TravelEstimatePresentation.breakdown` on the web and SwiftUI.
+     */
+    val breakdown: List<KozmosTravelEstimatePartPresentation> = emptyList()
+) {
+    /**
+     * The breakdown as the cards draw and say it: each part's label, in
+     * order, joined by " · ", leaving out empty ones. Null when no part has
+     * words. The rule React's cards draw by.
+     */
+    val breakdownLabel: String?
+        get() = breakdown.map { it.label }.filter { it.isNotEmpty() }
+            .takeIf { it.isNotEmpty() }?.joinToString(" · ")
+}
+
+/**
+ * What one part of a travel time is (GAP-047). [Other] is a part Kozmos has
+ * no name for, a shuttle or a check-in queue: its label says what it is.
+ * Mirrors `TravelEstimatePartKind` on the web and SwiftUI.
+ */
+enum class KozmosTravelEstimatePartKind(val value: String) {
+    Walking("walking"),
+    SecurityQueue("securityQueue"),
+    LiftWait("liftWait"),
+    Other("other")
+}
+
+/**
+ * One part of a travel time: the walk, a security queue, a lift wait.
+ * Mirrors `TravelEstimatePartPresentation` on the web and SwiftUI.
+ */
+data class KozmosTravelEstimatePartPresentation(
+    val kind: KozmosTravelEstimatePartKind,
+    /** How long this part takes, in seconds, as the estimate's own time. */
+    val durationSeconds: Double,
+    /**
+     * Already localized, with the time in it: "Includes security (about
+     * 8 min)". What the card draws and TalkBack says.
+     */
+    val label: String
 )
 
 /**

@@ -54,16 +54,37 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 
 `@kozmos-ds/vue` is private and is not published to npm. Vue 3 Phase 0 is building
 it on Reka UI: its main entry holds the Vue parts (`KozmosThemeProvider`,
-`KozmosDensityScope` and `KozmosButton` so far), which draw the element their React
-counterparts draw, import no React and render on the server. The parts not yet
-ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount a React root inside
-each Vue wrapper: they need React and React DOM as well as Vue, and do not render on
-the server.
+`KozmosDensityScope`, `KozmosAnalyticsProvider`, `KozmosButton`, `KozmosBadge` and
+`KozmosSeparator` so far), which draw the element their React counterparts draw, import
+no React and render on the server. `packages/vue/PORTING.md` is how a part is ported.
+The parts not yet ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount
+the React parts inside Vue wrappers: they need React and React DOM as well as Vue,
+and do not render on the server.
+
+A bridged part in no other bridged part's slot is a React root. One in another's slot
+is drawn in that part's React tree, so a part made of parts (`KozmosRadioGroup` and its
+`KozmosRadioGroupItem`s, `KozmosSelect` and its trigger, content and items, Accordion,
+Card, Dialog, Drawer, Tabs, Tooltip and Toast with theirs, and `KozmosToaster` with
+`toast()`) works as it does in React. These Vue providers reach every bridged part
+inside them (GAP-230, decision 172):
+
+- `KozmosThemeProvider`: its theme, direction, density and tokens, as React's
+  `ThemeProvider` gives them, so what a bridged part draws in a portal (a dialog, a
+  popover, a toast) is drawn in the theme, and React's `useTheme().setTheme` sets the
+  Vue provider's theme;
+- `KozmosDensityScope`: its density;
+- `KozmosAnalyticsProvider`: the bridged parts' events join its batches.
+
+Every bridged root also has a Radix `TooltipProvider` of its own, so a `KozmosTooltip`
+needs none. Nothing else does: `DesignConfigProvider`'s configuration and reduced
+motion have no Vue provider yet, and a trigger cannot take a Vue element as its
+child (`as-child`), so it draws its own button. Write props in either case:
+`default-value` reaches React as `defaultValue` (GAP-238); `aria-*` and `data-*`
+pass as written.
 
 Vue snippets are internal reference examples, not instructions to install a
 released native Vue library. Only three component groups currently have stories;
-that is test coverage, not the total number of exported wrappers. Nested context,
-slots, events, two-way binding and teardown require separate adapter testing.
+that is test coverage, not the total number of exported wrappers.
 
 Maintainers can run `pnpm --filter @kozmos-ds/docs storybook:vue` to open the internal
 Vue harness on port 6007. It is intentionally absent from the public sidebar.

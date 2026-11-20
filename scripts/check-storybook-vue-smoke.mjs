@@ -37,7 +37,10 @@ try {
       `${story.id}: render error`,
     );
     const root = page.locator("#storybook-root");
-    await root.locator("button, input, [role], h1, h2, h3").first().waitFor();
+    // Something drawn and visible, whatever it is: a Badge is a plain <div>
+    // of text, as React's is, with no control, role or heading to wait for
+    // (CI waited 30 s on Badge's stories, 20 Nov).
+    await root.locator("*").first().waitFor();
     const size = await root.boundingBox();
     assert(
       size && size.width > 0 && size.height > 0,

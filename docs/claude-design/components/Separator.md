@@ -43,7 +43,7 @@ export function SeparatorExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `Omit<SeparatorPrimitive.SeparatorProps & React.RefAttributes<HTMLDivElement>, "ref">`.
 
 - `asChild`: `boolean`, optional.
-- `orientation`: `Orientation`, optional, default `'horizontal'`.
+- `orientation`: `Orientation`, optional, default `"horizontal"`.
 
   Either `vertical` or `horizontal`. Defaults to `horizontal`.
 
