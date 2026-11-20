@@ -568,6 +568,26 @@ export class MockNode {
     settleAutoLayout(this.parent || this);
   }
 
+  // A vector's shape. The Core Library opens with dynamic page loading, and
+  // there Figma refuses the synchronous setter: "in set_vectorNetwork: Cannot
+  // call with documentAccess: dynamic-page. Use node.setVectorNetworkAsync
+  // instead." The first Mixed Switch and ToggleButton failed so in the owner's
+  // Update of 20 Nov, while this stand-in took the setter. Now it refuses it
+  // as Figma does, and reads back what setVectorNetworkAsync wrote.
+  get vectorNetwork() {
+    return this._vectorNetwork === undefined ? null : this._vectorNetwork;
+  }
+
+  set vectorNetwork(_value) {
+    throw new Error(
+      "in set_vectorNetwork: Cannot call with documentAccess: dynamic-page. Use node.setVectorNetworkAsync instead.",
+    );
+  }
+
+  async setVectorNetworkAsync(value) {
+    this._vectorNetwork = value;
+  }
+
   get layoutPositioning() {
     return this._layoutPositioning;
   }

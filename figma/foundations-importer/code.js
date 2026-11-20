@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c43af8a04ebc";
+const PLUGIN_BUILD = "269d8b3ac483";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -61772,6 +61772,9 @@ function isTopLevelGeneratedAnatomyArtifact(node, componentName) {
   }
 
   const namesByComponent = {
+    // A track at the page's top level is never a Switch's: a failed Mixed
+    // variant left one beside the set (20 Nov).
+    Switch: ["Switch Track"],
     Accordion: [
       "Accordion Content",
       "Accordion Divider",
@@ -62624,7 +62627,7 @@ async function updateToggleButtonVariant(
   // label's colour. Every other state has none, and no gap.
   removeGeneratedButtonChild(component, "Mixed Dash", state !== "Mixed");
   if (state === "Mixed") {
-    const dash = syncMixedDash(
+    const dash = await syncMixedDash(
       component,
       config.foreground,
       config.foregroundFallback,
@@ -80640,8 +80643,8 @@ async function syncCheckboxMark(
     } else {
       mark =
         iconName === "minus"
-          ? createFallbackCheckboxDash(config, variableByName, stats)
-          : createFallbackCheckboxMark(config, variableByName, stats);
+          ? await createFallbackCheckboxDash(config, variableByName, stats)
+          : await createFallbackCheckboxMark(config, variableByName, stats);
     }
   }
   try {
@@ -80677,11 +80680,11 @@ async function syncCheckboxMark(
   control.appendChild(mark);
 }
 
-function createFallbackCheckboxMark(config, variableByName, stats) {
+async function createFallbackCheckboxMark(config, variableByName, stats) {
   const mark = figma.createVector();
   mark.name = "Checkbox Mark";
   mark.resize(16, 16);
-  mark.vectorNetwork = {
+  await applyVectorNetwork(mark, {
     vertices: [
       { x: 3.5, y: 8.25, strokeCap: "ROUND", strokeJoin: "ROUND" },
       { x: 6.75, y: 11.5, strokeCap: "ROUND", strokeJoin: "ROUND" },
@@ -80701,7 +80704,7 @@ function createFallbackCheckboxMark(config, variableByName, stats) {
         tangentEnd: { x: 0, y: 0 },
       },
     ],
-  };
+  });
   mark.fills = [];
   mark.strokes = [
     paintFromVariable(config.mark, config.markFallback, variableByName, stats),
@@ -80714,11 +80717,11 @@ function createFallbackCheckboxMark(config, variableByName, stats) {
 
 // React's Minus at 16: a line from 5 to 19 of its 24 across the middle,
 // stroked 2/24 of its size with round caps.
-function createFallbackCheckboxDash(config, variableByName, stats) {
+async function createFallbackCheckboxDash(config, variableByName, stats) {
   const mark = figma.createVector();
   mark.name = "Checkbox Mark";
   mark.resize(16, 16);
-  mark.vectorNetwork = {
+  await applyVectorNetwork(mark, {
     vertices: [
       { x: 10 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
       { x: 38 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
@@ -80731,7 +80734,7 @@ function createFallbackCheckboxDash(config, variableByName, stats) {
         tangentEnd: { x: 0, y: 0 },
       },
     ],
-  };
+  });
   mark.fills = [];
   mark.strokes = [
     paintFromVariable(config.mark, config.markFallback, variableByName, stats),
@@ -80941,7 +80944,7 @@ async function syncSwitchVariantChildren({
   // the thumb's colour (the theme foreground, white, on the theme fill).
   removeGeneratedButtonChild(track, "Mixed Dash", checked !== "Mixed");
   if (checked === "Mixed") {
-    const dash = syncMixedDash(
+    const dash = await syncMixedDash(
       track,
       config.thumbFill,
       config.thumbFillFallback,
@@ -81481,7 +81484,7 @@ async function syncRadioBoxVariantChildren({
       const iconComponent = await findKozmosIconSourceComponent("check");
       mark = iconComponent
         ? iconComponent.createInstance()
-        : createFallbackCheckboxMark(
+        : await createFallbackCheckboxMark(
             {
               mark: THEME_FILL_FOREGROUND.name,
               markFallback: THEME_FILL_FOREGROUND.fallback,
@@ -94428,7 +94431,13 @@ function radioConfig(checked, state) {
 // caps, in the given colour. Drawn once, in place, in `parent`, as "Mixed
 // Dash"; a Switch centres it in its track, a ToggleButton puts it before
 // its label.
-function syncMixedDash(parent, variableName, fallback, variableByName, stats) {
+async function syncMixedDash(
+  parent,
+  variableName,
+  fallback,
+  variableByName,
+  stats,
+) {
   let dash = directChildNamed(parent, "Mixed Dash");
   if (dash && dash.type !== "VECTOR") {
     dash.remove();
@@ -94440,7 +94449,10 @@ function syncMixedDash(parent, variableName, fallback, variableByName, stats) {
     parent.appendChild(dash);
   }
   dash.resize(16, 16);
-  dash.vectorNetwork = {
+  // Async: a file opened with dynamic page loading refuses the synchronous
+  // setter ("Cannot call with documentAccess: dynamic-page"), and the first
+  // Mixed variant of Switch and ToggleButton failed there (20 Nov).
+  await applyVectorNetwork(dash, {
     vertices: [
       { x: 10 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
       { x: 38 / 3, y: 8, strokeCap: "ROUND", strokeJoin: "ROUND" },
@@ -94453,7 +94465,7 @@ function syncMixedDash(parent, variableName, fallback, variableByName, stats) {
         tangentEnd: { x: 0, y: 0 },
       },
     ],
-  };
+  });
   dash.fills = [];
   dash.strokes = [
     paintFromVariable(variableName, fallback, variableByName, stats),
