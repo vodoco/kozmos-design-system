@@ -139,20 +139,20 @@ longer matches fails.
 
 React's parts report through `useKozmosAnalytics().trackEvent(component, eventName,
 properties)`. `docs/analytics-events.json` names each part's events. A port of a part that
-sends one calls the same function, from `src/analytics/analytics.ts`:
+sends one calls Vue's own `useKozmosAnalytics`, from the native `KozmosAnalyticsProvider`
+(GAP-230), as `KozmosButton` does:
 
 ```ts
-import { useKozmosAnalytics } from "../../analytics/analytics";
+import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
 // in setup:
 const { trackEvent } = useKozmosAnalytics();
 // where React's part calls it, with the same name and properties:
 trackEvent("Button", "button_clicked", { variant: props.variant ?? "default" });
 ```
 
-There is no Vue analytics provider yet: the hook injects
-`Symbol.for("@kozmos-ds/vue:analytics")`, and drops events without one, as React's does.
-The provider (GAP-230's bridge work, or a port of `AnalyticsProvider`) provides under that
-name and needs nothing else from the port. Badge and Separator send no event.
+Inside a `KozmosAnalyticsProvider` the event joins its batches, with the bridged parts'
+events; outside every provider it is dropped, as React's is. `test/parity/analytics.parity.spec.ts`
+holds the provider to React's batching. Badge and Separator send no event.
 
 ## 6. Accessibility
 

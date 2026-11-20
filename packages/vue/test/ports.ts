@@ -117,14 +117,7 @@ export const PORTS: Port[] = [
  * part the bridge exports that is not here, and on a name here that is not
  * both native and bridged.
  */
-export const LEAVING_BRIDGE: Record<string, string> = {
-  // Wave V0b: another agent owns src/react-bridge/ while it fixes the
-  // bridge's context (GAP-230). The wave's combined PR takes these out.
-  KozmosBadge:
-    "the native port landed in wave V0b; its bridge entry and the bridge specs' Badge cases leave with GAP-230's bridge work",
-  KozmosSeparator:
-    "the native port landed in wave V0b; its bridge entry and the bridge specs' Separator cases leave with GAP-230's bridge work",
-};
+export const LEAVING_BRIDGE: Record<string, string> = {};
 
 /**
  * Composables the main entry exports, with the React hook each answers to.

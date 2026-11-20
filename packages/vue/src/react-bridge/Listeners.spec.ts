@@ -772,7 +772,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosContainer: { slot: true },
   KozmosIcon: { props: { name: "search" } },
   KozmosCounter: { slot: true },
-  KozmosBadge: { slot: true },
   KozmosLabel: { slot: true },
   KozmosCard: { slot: true },
   KozmosSlider: {
@@ -825,7 +824,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosTimeline: { slot: true },
   KozmosPopover: { slot: true },
   KozmosAccordion: { slot: true },
-  KozmosSeparator: {},
   KozmosMapView: { slot: true },
   KozmosLocationPin: {},
   KozmosWayfindingCard: { slot: true },

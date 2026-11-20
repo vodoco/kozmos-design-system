@@ -1688,18 +1688,18 @@ describe("createVueWrapper's models", () => {
     ]);
   });
 
-  it("KozmosBadge with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
+  it("KozmosTag with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
     mount(() =>
       h(
-        Bridge.KozmosBadge,
-        { id: "badge", modelValue: "a", "onUpdate:modelValue": () => {} },
+        Bridge.KozmosTag,
+        { id: "tag", modelValue: "a", "onUpdate:modelValue": () => {} },
         { default: () => "New" },
       ),
     );
-    const badge = await until(() => $("[id=badge]"));
+    const tag = await until(() => $("[id=tag]"));
     await settle();
-    expect(badge.getAttributeNames()).not.toContain("modelvalue");
-    expect(heard()).toEqual([expect.stringContaining("Badge has no v-model")]);
+    expect(tag.getAttributeNames()).not.toContain("modelvalue");
+    expect(heard()).toEqual([expect.stringContaining("Tag has no v-model")]);
   });
 
   it("KozmosProgress with :model-value draws no value, and says to give React's :value instead, which it draws", async () => {
@@ -2405,7 +2405,7 @@ describe("attributes reach React alone", () => {
     props?: Record<string, unknown>;
     slot?: string;
   }[] = [
-    { name: "KozmosBadge", kind: "a plain element", slot: "New" },
+    { name: "KozmosTag", kind: "a plain element", slot: "New" },
     { name: "KozmosCard", kind: "a box drawing a Vue slot", slot: "Gate 4" },
     {
       name: "KozmosAlert",
@@ -2503,7 +2503,7 @@ describe("attributes reach React alone", () => {
     ],
   ] as const)("takes style as %s", async (_, style, name) => {
     const host = mount(() =>
-      h(Bridge.KozmosBadge, { id: "probe", style }, { default: () => "New" }),
+      h(Bridge.KozmosTag, { id: "probe", style }, { default: () => "New" }),
     );
     const { element } = await drawnByReact(host);
     expect(element.style.color).toBe("rgb(255, 0, 0)");
@@ -2513,7 +2513,7 @@ describe("attributes reach React alone", () => {
   it("keeps a declaration given !important, without it, and says so", async () => {
     const host = mount(() =>
       h(
-        Bridge.KozmosBadge,
+        Bridge.KozmosTag,
         {
           id: "probe",
           style:
@@ -2527,7 +2527,7 @@ describe("attributes reach React alone", () => {
     expect(element.style.columnRuleColor).toBe("rgb(0, 0, 255)");
     expect(heard()).toEqual([
       expect.stringContaining(
-        "Badge's style color is given to React without !important",
+        "Tag's style color is given to React without !important",
       ),
     ]);
   });

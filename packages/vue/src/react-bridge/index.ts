@@ -35,7 +35,6 @@ import {
   Container,
   Icon,
   Counter as ReactCounter,
-  Badge as ReactBadge,
   Label,
   Input as ReactInput,
   Textarea,
@@ -84,7 +83,6 @@ import {
   PopoverAnchor,
   PopoverContent,
   Accordion,
-  Separator,
   MapView,
   LocationPin,
   WayfindingCard,
@@ -382,7 +380,6 @@ export const KozmosHeading = createVueWrapper(Heading);
 export const KozmosContainer = createVueWrapper(Container);
 export const KozmosIcon = createVueWrapper(Icon);
 export const KozmosCounter = createVueWrapper(ReactCounter);
-export const KozmosBadge = createVueWrapper(ReactBadge);
 export const KozmosLabel = createVueWrapper(Label);
 export const KozmosCard = createVueWrapper(Card);
 // Null is where the slider starts: its default, else its own fallback.
@@ -521,7 +518,6 @@ export const KozmosAccordion = createVueWrapper(Accordion, {
     empty: ({ type }) => (type === "multiple" ? [] : ""),
   },
 });
-export const KozmosSeparator = createVueWrapper(Separator);
 export const KozmosMapView = createVueWrapper(MapView);
 export const KozmosLocationPin = createVueWrapper(LocationPin);
 export const KozmosWayfindingCard = createVueWrapper(WayfindingCard);

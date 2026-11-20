@@ -153,14 +153,14 @@ describe("every prop React's types name reaches React by its name, in either cas
 
 describe("the names the bridge keeps", () => {
   it("passes aria-* and data-* as they are", async () => {
-    const given = await givenTo(Bridge.KozmosBadge, KozmosReact.Badge, {
+    const given = await givenTo(Bridge.KozmosTag, KozmosReact.Tag, {
       "aria-label": "Two new",
-      "data-test-id": "badge",
+      "data-test-id": "tag",
       "aria-describedby": "note",
     });
     expect(given).toMatchObject({
       "aria-label": "Two new",
-      "data-test-id": "badge",
+      "data-test-id": "tag",
       "aria-describedby": "note",
     });
     expect(given).not.toHaveProperty("ariaLabel");
