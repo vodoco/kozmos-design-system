@@ -129,6 +129,28 @@ convention that avoids variant explosion:
   search, a 48 circle whose ring is a 2.5 band of the six data colours around a
   43 disc, with a 16 stars-01 icon; Disabled, the disc `Disabled/fill` and the
   icon `Disabled/foreground`, the ring as it is. Run Curated Icons first.
+- **The assistant** (GAP-206), five sets in this order, each after the sets it
+  holds instances of. **UserMessage** — `Content` of Default (React has no
+  variant): the visitor's bubble at the end of a 328 turn, the theme fill under
+  the theme foreground, 16 across and 12 down on the container radius, its
+  words 14/20 sizing themselves up to 85 % of the turn and wrapping there
+  (their max width); `Message Text`. **AIMessage** — `Status` of Complete,
+  Streaming (three 6 dots in the theme's 600, 4 apart, before the words) and
+  TimedOut (`Timed Out Text` in the muted foreground): the same bubble in
+  bg-card with a 1 border-border; `Message Text`, and `Show Action Card` over
+  an `Action Card Slot`. **AIMessageList** — `Content` of Conversation,
+  Streaming and TimedOut: the thread 360 wide, 16 inside and between, its turns
+  live, exposed AIMessage and UserMessage instances. **AIInputBar** — `State`
+  of Empty, Filled and Disabled by `VoiceState` of Off, Idle, Connecting, Listening,
+  Speaking, Unavailable and Error (decision 22): the 44 pill field, the 44
+  microphone and send, a live IconButton with send-01; `Placeholder Text` and
+  `Value Text`. **AICompanionPanel** — `Content` of the thread's three: 360 by
+  560, the header (stars-01 mark, `Title Text`, the close, a live IconButton
+  in the neutral outline shown by `Show Close`), a `Banner Slot` shown by
+  `Show Banner`, a live AIMessageList and AIInputBar. Run Curated Icons
+  (send-01, microphone-01, microphone-off-01 and volume-max are UI icons,
+  decision 121) and IconButton first; an Update of IconButton is followed by
+  AIInputBar and AICompanionPanel, which tint the swapped icons again.
 - **CategoryField** — `Tint` of Theme and the taxonomy's eight category colours:
   the search field's form once a category is chosen, 48 tall with a 28 icon, a
   15/20 label, a 22 count pill (`Show Count`) and a 32 clear. Run Curated Icons

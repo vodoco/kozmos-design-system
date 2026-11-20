@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "156122f6e684";
+const PLUGIN_BUILD = "d2005e0ef40d";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1867,6 +1867,11 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   List: 360,
   Table: 520,
   AISearchButton: 260,
+  UserMessage: 260,
+  AIMessage: 420,
+  AIMessageList: 520,
+  AIInputBar: 900,
+  AICompanionPanel: 680,
   AdaptiveMapShell: 520,
   BrowseCategoriesPanel: 460,
   CategoryField: 260,
@@ -2027,6 +2032,11 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     title: "Product / SDK",
     components: [
       "AISearchButton",
+      "UserMessage",
+      "AIMessage",
+      "AIMessageList",
+      "AIInputBar",
+      "AICompanionPanel",
       "AdaptiveMapShell",
       "BrowseCategoriesPanel",
       "CategoryField",
@@ -2484,6 +2494,127 @@ const COMPONENT_DOCS = [
     accessibility: [
       "The button shows an icon alone; label names it for assistive technology.",
       "The turn honours reduced motion in the product; nothing here moves.",
+    ],
+  },
+  {
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    category: "Product / SDK",
+    summary:
+      "UserMessage is the visitor's turn in the assistant's thread: the theme fill at the turn's end.",
+    usage: ["Use inside AIMessageList, after the assistant's turn it answers."],
+    api: [
+      "Message Text maps to children.",
+      "The words wrap at 85 % of the turn, as React's max-width draws them.",
+      "speakerLabel is read before the words and draws nothing.",
+    ],
+    properties: ["Content: Default", "Message Text"],
+    accessibility: [
+      "Side and fill tell the visitor's turn from the assistant's; speakerLabel says it to a screen reader.",
+    ],
+  },
+  {
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    category: "Product / SDK",
+    summary:
+      "AIMessage is the assistant's turn: an outlined bubble, and the action card under it.",
+    usage: [
+      "Use Streaming while a reply arrives: its acknowledgement is the first visible response (Story 10).",
+      "Use TimedOut at the ten-second stop.",
+      "Show Action Card for an answer that carries results.",
+    ],
+    api: [
+      "Status maps to status.",
+      "Message Text maps to children; Timed Out Text to timedOutLabel.",
+      "Show Action Card shows Action Card Slot, actionCard.",
+      "trailing is the product's control and is not drawn.",
+    ],
+    properties: [
+      "Status: Complete, Streaming, TimedOut",
+      "Message Text",
+      "Timed Out Text",
+      "Show Action Card",
+      "Action Card Slot",
+    ],
+    accessibility: [
+      "speakerLabel and streamingLabel are read, never drawn.",
+      "The dots are decoration; the thread's log announces the reply.",
+    ],
+  },
+  {
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    category: "Product / SDK",
+    summary:
+      "AIMessageList is the assistant's thread: its turns, 16 apart, in a scrolling log.",
+    usage: [
+      "Use inside AICompanionPanel, above AIInputBar.",
+      "Pick a Content for the thread's moment; edit each turn's words on its exposed instance.",
+    ],
+    api: [
+      "children are AIMessage and UserMessage instances.",
+      "label names the log and draws nothing; followLatest is behaviour.",
+    ],
+    properties: ["Content: Conversation, Streaming, TimedOut"],
+    accessibility: [
+      "It is a polite log: replies are announced without moving focus.",
+    ],
+  },
+  {
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    category: "Product / SDK",
+    summary:
+      "AIInputBar is the assistant's question field, with send and, when the product has a voice model, the microphone.",
+    usage: [
+      "Use Empty until there is something to ask: send is disabled.",
+      "Use Disabled offline (Story 3 AC1).",
+      "Pick a VoiceState only for a product with a voice model; Off draws no microphone.",
+    ],
+    api: [
+      "State maps to value and disabled.",
+      "VoiceState maps to voiceState; Off to no onVoiceStart.",
+      "Placeholder Text maps to placeholder; Value Text to value.",
+      "Send is a live IconButton with send-01.",
+    ],
+    properties: [
+      "State: Empty, Filled, Disabled",
+      "VoiceState: Off, Idle, Connecting, Listening, Speaking, Unavailable, Error",
+      "Placeholder Text",
+      "Value Text",
+    ],
+    accessibility: [
+      "Every voice state is announced in words, and the empty field says it while live.",
+      "Unavailable stays focusable and inert.",
+    ],
+  },
+  {
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    category: "Product / SDK",
+    summary:
+      "AICompanionPanel is the assistant surface: a header, an optional banner, the thread and the input bar.",
+    usage: [
+      "Use over the search sheet; closing it returns the visitor to the search they left.",
+      "Show Banner for the Story 14 notice or an offline EmptyState.",
+      "Turn Show Close off where nothing can close it (Story 18).",
+    ],
+    api: [
+      "Title Text maps to title; Show Close to onClose; Show Banner and Banner Slot to banner.",
+      "Content picks the thread's Content; the thread and the bar are exposed instances.",
+      "open, titleLevel and the focus handlers are behaviour.",
+    ],
+    properties: [
+      "Content: Conversation, Streaming, TimedOut",
+      "Title Text",
+      "Show Close",
+      "Show Banner",
+      "Banner Slot",
+    ],
+    accessibility: [
+      "It is a region named by its title, and takes focus when the visitor opens it.",
+      "Escape closes it when it has onClose.",
     ],
   },
   {
@@ -6368,6 +6499,34 @@ const IMPORTER_UI_ICON_DEFINITIONS = [
     description:
       "More, the overflow menu: MapEditToolbar's item (CLOUD-UI-005).",
   },
+  {
+    name: "send-01",
+    figmaName: "send-01",
+    category: "Communication",
+    componentKey: "ef162fc80c9b5028b296b6f50ad7a61cc93d4068",
+    description: "Send: AIInputBar's send (GAP-206).",
+  },
+  {
+    name: "microphone-01",
+    figmaName: "microphone-01",
+    category: "Media & devices",
+    componentKey: "8eaff829e64150cdd67a5b8253d5bc2ce1613e36",
+    description: "Start or end a voice conversation: AIInputBar (GAP-206).",
+  },
+  {
+    name: "microphone-off-01",
+    figmaName: "microphone-off-01",
+    category: "Media & devices",
+    componentKey: "8ec9b00079eb0ccbd1efcb8ffbaaec8e4017d50d",
+    description: "Voice unavailable or failed: AIInputBar (GAP-206).",
+  },
+  {
+    name: "volume-max",
+    figmaName: "volume-max",
+    category: "Media & devices",
+    componentKey: "c8ebc8ec2f83fef56a7b9f509be4056486056a60",
+    description: "The assistant speaking: AIInputBar (GAP-206).",
+  },
 ];
 /** Every Pointr icon the importer imports: the registry's, then the UI's. */
 function importerPointrIconDefinitions() {
@@ -7479,6 +7638,138 @@ const COMPONENT_FLOAT_TOKENS = [
   {
     name: "AISearchButton/icon/size",
     value: AI_SEARCH_BUTTON_ICON_SIZE,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  // GAP-206: the assistant's turns, thread, input bar and panel, as React
+  // draws them (px-4 py-3, gap-2, gap-1, h-1.5, rounded-container, border).
+  {
+    name: "AIMessage/bubble/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessage/bubble/padding/y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessage/bubble/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "AIMessage/bubble/stroke/width",
+    value: 1,
+    alias: "Border Width/sm",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "AIMessage/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessage/dots/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  { name: "AIMessage/dot/size", value: 6, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "AIMessageList/padding",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessageList/gap",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/padding/y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/field/min-height",
+    value: 44,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AIInputBar/field/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/field/padding/y",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  { name: "AIInputBar/control/size", value: 44, scopes: ["WIDTH_HEIGHT"] },
+  { name: "AIInputBar/icon/size", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "AICompanionPanel/width/default",
+    value: 360,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AICompanionPanel/height/default",
+    value: 560,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AICompanionPanel/header/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/header/padding/y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/header/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/banner/padding/top",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/mark/size",
+    value: 32,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AICompanionPanel/mark/icon/size",
+    value: 16,
     scopes: ["WIDTH_HEIGHT"],
   },
   { name: "MapView/width/default", value: 480, scopes: ["WIDTH_HEIGHT"] },
@@ -12753,7 +13044,14 @@ const SETS_THAT_OVERRIDE_INSIDE = {
   // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
   // each tinted again after the swap.
   // PageHeader's Info: info-circle (GAP-036).
-  IconButton: ["TourStep", "Card", "PageHeader"],
+  // The assistant's send (send-01) and close (x-close), GAP-206.
+  IconButton: [
+    "TourStep",
+    "Card",
+    "PageHeader",
+    "AIInputBar",
+    "AICompanionPanel",
+  ],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -12931,6 +13229,12 @@ const CORE_UPDATE_SEQUENCE = [
 // updating them one at a time tedious.
 const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["AISearchButton", updateAISearchButtonComponent],
+  // The assistant (GAP-206): each after the sets it holds instances of.
+  ["UserMessage", updateUserMessageComponent],
+  ["AIMessage", updateAIMessageComponent],
+  ["AIMessageList", updateAIMessageListComponent],
+  ["AIInputBar", updateAIInputBarComponent],
+  ["AICompanionPanel", updateAICompanionPanelComponent],
   ["AdaptiveMapShell", updateAdaptiveMapShellComponent],
   ["CategoryTile", updateCategoryTileComponent],
   ["BrowseCategoriesPanel", updateBrowseCategoriesPanelComponent],
@@ -13252,6 +13556,21 @@ function additionalComponentActionHandlers() {
     "build-ai-search-button": buildAISearchButtonComponent,
     "update-ai-search-button": updateAISearchButtonComponent,
     "rebuild-ai-search-button": rebuildAISearchButtonComponent,
+    "build-user-message": buildUserMessageComponent,
+    "update-user-message": updateUserMessageComponent,
+    "rebuild-user-message": rebuildUserMessageComponent,
+    "build-ai-message": buildAIMessageComponent,
+    "update-ai-message": updateAIMessageComponent,
+    "rebuild-ai-message": rebuildAIMessageComponent,
+    "build-ai-message-list": buildAIMessageListComponent,
+    "update-ai-message-list": updateAIMessageListComponent,
+    "rebuild-ai-message-list": rebuildAIMessageListComponent,
+    "build-ai-input-bar": buildAIInputBarComponent,
+    "update-ai-input-bar": updateAIInputBarComponent,
+    "rebuild-ai-input-bar": rebuildAIInputBarComponent,
+    "build-ai-companion-panel": buildAICompanionPanelComponent,
+    "update-ai-companion-panel": updateAICompanionPanelComponent,
+    "rebuild-ai-companion-panel": rebuildAICompanionPanelComponent,
     "build-poi-media-gallery": buildPOIMediaGalleryComponent,
     "update-poi-media-gallery": updatePOIMediaGalleryComponent,
     "rebuild-poi-media-gallery": rebuildPOIMediaGalleryComponent,
@@ -20021,6 +20340,37 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "AISearchButton") {
     return {
       State: AI_SEARCH_BUTTON_STATES,
+    };
+  }
+
+  if (canonicalName === "UserMessage") {
+    return {
+      Content: USER_MESSAGE_CONTENT,
+    };
+  }
+
+  if (canonicalName === "AIMessage") {
+    return {
+      Status: AI_MESSAGE_STATUSES,
+    };
+  }
+
+  if (canonicalName === "AIMessageList") {
+    return {
+      Content: AI_MESSAGE_LIST_CONTENT,
+    };
+  }
+
+  if (canonicalName === "AIInputBar") {
+    return {
+      State: AI_INPUT_BAR_STATES,
+      VoiceState: AI_INPUT_BAR_VOICES,
+    };
+  }
+
+  if (canonicalName === "AICompanionPanel") {
+    return {
+      Content: AI_COMPANION_PANEL_CONTENT,
     };
   }
 
@@ -54635,6 +54985,1610 @@ async function rebuildAISearchButtonComponent() {
     componentName: "AISearchButton",
     componentSetName: "AISearchButton",
     build: buildAISearchButtonComponent,
+  });
+}
+
+// --- The assistant's parts (GAP-206) -----------------------------------------
+//
+// UserMessage, AIMessage, AIMessageList, AIInputBar and AICompanionPanel, as
+// React draws them (packages/react/src/components/<Name>), one set each, in
+// the order Update All Product / SDK runs them: a set after every set it holds
+// an instance of. The thread is the SDK's 360 frame, the stories' own, its
+// turns 328 wide inside 16 of padding, and a bubble at most 85 % of its turn.
+//
+// A bubble hugs its words up to 85 % of its turn, then they wrap, as CSS's
+// max-width draws it: in Figma, words that size themselves under a max width
+// (an auto-layout child's maxWidth), in a bubble that hugs them. UserMessage
+// has no variant in React; its set has the one, Content=Default.
+const USER_MESSAGE_CONTENT = ["Default"];
+const AI_MESSAGE_STATUSES = ["Complete", "Streaming", "TimedOut"];
+const AI_MESSAGE_LIST_CONTENT = ["Conversation", "Streaming", "TimedOut"];
+const AI_INPUT_BAR_STATES = ["Empty", "Filled", "Disabled"];
+// AIInputBar's voiceState (decision 22), and Off: no onVoiceStart, so no
+// microphone at all.
+const AI_INPUT_BAR_VOICES = [
+  "Off",
+  "Idle",
+  "Connecting",
+  "Listening",
+  "Speaking",
+  "Unavailable",
+  "Error",
+];
+const AI_COMPANION_PANEL_CONTENT = ["Conversation", "Streaming", "TimedOut"];
+
+const AI_PANEL_WIDTH = 360;
+const AI_PANEL_HEIGHT = 560;
+const AI_THREAD_PADDING = 16;
+const AI_THREAD_GAP = 16;
+/** A turn, w-full in the thread: the panel less the thread's padding. */
+const AI_TURN_WIDTH = AI_PANEL_WIDTH - 2 * AI_THREAD_PADDING;
+/** The bubble's max-w-[85%] of its turn. */
+const AI_BUBBLE_MAX_WIDTH = Math.floor(AI_TURN_WIDTH * 0.85);
+const AI_BUBBLE_PADDING_X = 16;
+const AI_BUBBLE_PADDING_Y = 12;
+const AI_BUBBLE_STROKE = 1;
+/** The words' width inside a bubble at its widest, stroke included. */
+const AI_BUBBLE_TEXT_WIDTH =
+  AI_BUBBLE_MAX_WIDTH - 2 * AI_BUBBLE_PADDING_X - 2 * AI_BUBBLE_STROKE;
+const AI_MESSAGE_GAP = 8;
+const AI_STREAMING_DOT = 6;
+const AI_STREAMING_DOT_GAP = 4;
+/** The dots' me-2. */
+const AI_STREAMING_DOTS_END = 8;
+const AI_INPUT_BAR_PADDING_X = 16;
+const AI_INPUT_BAR_PADDING_Y = 12;
+const AI_INPUT_BAR_GAP = 8;
+const AI_INPUT_FIELD_HEIGHT = 44;
+const AI_INPUT_FIELD_PADDING_X = 16;
+const AI_INPUT_FIELD_PADDING_Y = 8;
+const AI_CONTROL_SIZE = 44;
+const AI_CONTROL_ICON_SIZE = 20;
+const AI_PANEL_HEADER_PADDING_X = 16;
+const AI_PANEL_HEADER_PADDING_Y = 12;
+const AI_PANEL_HEADER_GAP = 8;
+const AI_PANEL_MARK_SIZE = 32;
+const AI_PANEL_MARK_ICON_SIZE = 16;
+const AI_PANEL_BANNER_PADDING_TOP = 16;
+const AI_ACTION_CARD_SLOT = "Action Card Slot";
+const AI_PANEL_BANNER_SLOT = "Banner Slot";
+
+const AI_WORDS = {
+  greeting:
+    "Hello! What are you looking for? Describe it in your own words, like “somewhere quiet to work.”",
+  question: "Where is the nearest accessible restroom?",
+  answer: "The closest accessible restroom is on the second floor.",
+  answerFull:
+    "The closest accessible restroom is on the second floor, 2 minutes away.",
+  acknowledgement: "Looking through this building…",
+  timedOut: "The assistant did not reply in time.",
+  placeholder: "Ask anything",
+  value: "Somewhere quiet to work",
+  title: "Assistant",
+};
+
+// The words an empty field shows while a conversation is live: React's
+// voiceConnectingLabel, voiceListeningLabel and voiceSpeakingLabel.
+const AI_INPUT_BAR_VOICE_WORDS = {
+  Connecting: "Connecting…",
+  Listening: "Listening…",
+  Speaking: "Assistant is speaking…",
+};
+
+const AI_CARD_FILL = { name: "Surface/0", fallback: "#FFFFFF" };
+const AI_EDGE = { name: "Border/Subtle", fallback: "#C7CAD1" };
+const AI_INK = { name: "Colors/foreground/0", fallback: "#000000" };
+const AI_MUTED_INK = { name: "Colors/foreground/400", fallback: "#5D626F" };
+const AI_MUTED_FILL = { name: "Colors/background/100", fallback: "#E3E4E8" };
+const AI_PRIMARY = { name: "Colors/theme/600", fallback: "#1051E8" };
+const AI_PANEL_FILL = { name: "Colors/background/0", fallback: "#FFFFFF" };
+// The close's outline, neutral (decision 73): the neutral emotion's ink, as
+// its edge and its X. Emotion/neutral/text is foreground/400 in both themes,
+// as the neutral Secondary Buttons ink React's outline draws, and is scoped to
+// strokes, which that one is not.
+const AI_NEUTRAL_OUTLINE_INK = {
+  name: "Emotion/neutral/text",
+  fallback: "#5D626F",
+};
+
+function aiPaint(token, variableByName, stats) {
+  return paintFromVariable(token.name, token.fallback, variableByName, stats);
+}
+
+/** Two axes' values from a variant name, or null when either is unknown. */
+function aiTwoAxisValues(name, firstAxis, firstValues, secondAxis, seconds) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (
+    firstValues.indexOf(values[firstAxis]) === -1 ||
+    seconds.indexOf(values[secondAxis]) === -1
+  ) {
+    return null;
+  }
+  return { value: values[firstAxis], second: values[secondAxis] };
+}
+
+/**
+ * A variant's root, as productSdkVariantRoot sets it, keeping `kept`: the
+ * slots an Update carries over, so a designer's content and the slot property
+ * Code Connect reads keep their ids.
+ */
+function aiVariantRoot(component, componentName, variantName, options, kept) {
+  component.name = variantName;
+  component.layoutMode =
+    options.direction === "horizontal" ? "HORIZONTAL" : "VERTICAL";
+  component.primaryAxisSizingMode = options.primarySizing || "FIXED";
+  component.counterAxisSizingMode = options.counterSizing || "FIXED";
+  component.primaryAxisAlignItems = options.primaryAlign || "MIN";
+  component.counterAxisAlignItems = options.counterAlign || "MIN";
+  component.itemSpacing = options.spacing || 0;
+  const padding = options.padding || 0;
+  component.paddingLeft =
+    typeof options.paddingX === "number" ? options.paddingX : padding;
+  component.paddingRight =
+    typeof options.paddingX === "number" ? options.paddingX : padding;
+  component.paddingTop =
+    typeof options.paddingY === "number" ? options.paddingY : padding;
+  component.paddingBottom =
+    typeof options.paddingY === "number" ? options.paddingY : padding;
+  component.resizeWithoutConstraints(options.width, options.height);
+  component.clipsContent = options.clip === true;
+  component.fills = [];
+  component.strokes = [];
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.opacity = 1;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", componentName);
+  removeDirectChildrenExceptMany(component, kept || []);
+  return component;
+}
+
+/** The slot `slotName` drawn in `component` before, lifted out to be kept. */
+function aiReusableSlot(component, slotName, owner, stats) {
+  const slots = extractReusableSlotsByName(component, [slotName], stats, owner);
+  return reusableSlotNamed(slots, slotName);
+}
+
+/**
+ * A bubble: the turn's words on the container radius, 16 across and 12 down,
+ * hugging them up to 85 % of the turn. `edge` is the assistant's 1 border;
+ * the visitor's bubble has none.
+ */
+function aiBubble({ name, fill, edge, variableByName, stats }) {
+  const bubble = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: AI_STREAMING_DOTS_END,
+    paddingLeft: AI_BUBBLE_PADDING_X,
+    paddingRight: AI_BUBBLE_PADDING_X,
+    paddingTop: AI_BUBBLE_PADDING_Y,
+    paddingBottom: AI_BUBBLE_PADDING_Y,
+  });
+  bubble.cornerRadius = KOZMOS_RADIUS.container;
+  bubble.fills = [aiPaint(fill, variableByName, stats)];
+  if (edge) {
+    bubble.strokes = [aiPaint(edge, variableByName, stats)];
+    bubble.strokeWeight = AI_BUBBLE_STROKE;
+    bindFloatVariable(
+      bubble,
+      "strokeWeight",
+      "AIMessage/bubble/stroke/width",
+      variableByName,
+      stats,
+    );
+  }
+  for (const [property, token] of [
+    ["paddingLeft", "AIMessage/bubble/padding/x"],
+    ["paddingRight", "AIMessage/bubble/padding/x"],
+    ["paddingTop", "AIMessage/bubble/padding/y"],
+    ["paddingBottom", "AIMessage/bubble/padding/y"],
+    ["topLeftRadius", "AIMessage/bubble/radius"],
+    ["topRightRadius", "AIMessage/bubble/radius"],
+    ["bottomLeftRadius", "AIMessage/bubble/radius"],
+    ["bottomRightRadius", "AIMessage/bubble/radius"],
+  ]) {
+    bindFloatVariable(bubble, property, token, variableByName, stats);
+  }
+  setNodePropertyIfSupported(bubble, "maxWidth", AI_BUBBLE_MAX_WIDTH);
+  bubble.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-bubble");
+  return bubble;
+}
+
+/**
+ * A turn's words, 14/20, sizing themselves up to the bubble's widest less
+ * `reserved` (the streaming dots), and wrapping there. Call once the words
+ * are in the bubble: a max width holds only on an auto-layout child.
+ */
+async function aiTurnText({
+  name,
+  characters,
+  ink,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const text = await productSdkText({
+    name,
+    characters,
+    styleKey: "cardDescription",
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: ink.name,
+    colorFallback: ink.fallback,
+    variableByName,
+    stats,
+    wrap: true,
+  });
+  setTextAutoResize(text, "WIDTH_AND_HEIGHT");
+  text.textAlignVertical = "TOP";
+  return text;
+}
+
+/** The words in their bubble, held under its widest less `reserved`. */
+function aiHoldTurnText(text, reserved, owner, stats) {
+  const most = AI_BUBBLE_TEXT_WIDTH - (reserved || 0);
+  if (!setNodePropertyIfSupported(text, "maxWidth", most)) {
+    pushUniqueWarning(
+      stats,
+      `ai-turn-max-width:${owner}`,
+      `${owner}: this Figma runtime took no max width on ${text.name}, so a long turn runs on one line past the bubble's 85 %.`,
+    );
+  }
+}
+
+// --- UserMessage ---------------------------------------------------------------
+
+// The visitor's turn, as React's UserMessage draws it: a row as wide as the
+// turn with the bubble at its end, the theme fill under the theme foreground
+// (decision 59), no edge. The speaker's name is screen-reader text, drawn
+// nowhere. Message Text is its children.
+
+async function createUserMessageVariant(args) {
+  const component = figma.createComponent();
+  await updateUserMessageVariant(component, args);
+  return component;
+}
+
+function parseUserMessageVariantName(name) {
+  return productSdkVariantValues(name, "Content", USER_MESSAGE_CONTENT);
+}
+
+async function updateUserMessageVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const kept = firstDescendantTextCharactersByName(component, "Message Text");
+  aiVariantRoot(component, "UserMessage", `Content=${value}`, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "MAX",
+    width: AI_TURN_WIDTH,
+    height: 44,
+  });
+  const bubble = aiBubble({
+    name: "Bubble",
+    fill: THEME_FILL,
+    edge: null,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(component, bubble, "HUG", "HUG");
+  const text = await aiTurnText({
+    name: "Message Text",
+    characters: kept || AI_WORDS.question,
+    ink: THEME_FILL_FOREGROUND,
+    fonts,
+    variableByName,
+    stats,
+  });
+  bubble.appendChild(text);
+  aiHoldTurnText(text, 0, "UserMessage", stats);
+}
+
+function configureUserMessageProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Message Text",
+    "Message Text",
+    AI_WORDS.question,
+    stats,
+  );
+}
+
+const USER_MESSAGE_DESCRIPTION = [
+  "Kozmos UserMessage generated from the React UserMessage API (GAP-206): the visitor's turn in the assistant's thread.",
+  "Message Text maps to children. The bubble is the theme fill under the theme foreground (decision 59), at the turn's end, on the container radius, 16 across and 12 down, at most 85 % of the turn.",
+  "The words size themselves up to the bubble's 85 % and wrap there, as React's max-width draws them. React has no variant; the set has the one, Content=Default.",
+  "speakerLabel is read before the words and never drawn.",
+];
+
+async function buildUserMessageComponent() {
+  return buildSingleAxisComponent({
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    axisName: "Content",
+    values: USER_MESSAGE_CONTENT,
+    x: 80,
+    y: 15100,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createUserMessageVariant,
+    configureProperties: configureUserMessageProperties,
+    autoReorganize: true,
+    description: USER_MESSAGE_DESCRIPTION,
+  });
+}
+
+async function updateUserMessageComponent() {
+  return updateSingleAxisComponent({
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    axisName: "Content",
+    values: USER_MESSAGE_CONTENT,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createUserMessageVariant,
+    updateVariant: updateUserMessageVariant,
+    parseVariantName: parseUserMessageVariantName,
+    configureProperties: configureUserMessageProperties,
+    autoReorganize: true,
+    description: USER_MESSAGE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildUserMessageComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    build: buildUserMessageComponent,
+  });
+}
+
+// --- AIMessage -----------------------------------------------------------------
+
+// The assistant's turn, as React's AIMessage draws it: a column as wide as the
+// turn, 8 apart, the bubble at its start, outlined (bg-card, border-border)
+// with the words in the foreground, and the action card under it. Streaming
+// puts three 6 dots in the theme's 600, 4 apart, 8 before the words (the
+// acknowledgement arrives with them, Story 10); TimedOut draws
+// timedOutLabel in the muted foreground. The action card is a slot, shown by
+// Show Action Card, off as React's actionCard is until it is given one.
+
+async function createAIMessageVariant(args) {
+  const component = figma.createComponent();
+  await updateAIMessageVariant(component, args);
+  return component;
+}
+
+function parseAIMessageVariantName(name) {
+  return productSdkVariantValues(name, "Status", AI_MESSAGE_STATUSES);
+}
+
+function aiStreamingDots(variableByName, stats) {
+  const dots = productSdkFrame("Streaming Dots", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: AI_STREAMING_DOT_GAP,
+  });
+  bindFloatVariable(
+    dots,
+    "itemSpacing",
+    "AIMessage/dots/gap",
+    variableByName,
+    stats,
+  );
+  for (let index = 1; index <= 3; index += 1) {
+    const dot = figma.createEllipse();
+    dot.name = `Dot ${index}`;
+    dot.resize(AI_STREAMING_DOT, AI_STREAMING_DOT);
+    dot.fills = [aiPaint(AI_PRIMARY, variableByName, stats)];
+    dot.strokes = [];
+    bindSizeVariables(
+      dot,
+      "AIMessage/dot/size",
+      "AIMessage/dot/size",
+      variableByName,
+      stats,
+    );
+    dots.appendChild(dot);
+  }
+  return dots;
+}
+
+async function updateAIMessageVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const status = value;
+  const kept = {
+    message: firstDescendantTextCharactersByName(component, "Message Text"),
+    timedOut: firstDescendantTextCharactersByName(component, "Timed Out Text"),
+  };
+  const slot = aiReusableSlot(
+    component,
+    AI_ACTION_CARD_SLOT,
+    "AIMessage",
+    stats,
+  );
+  aiVariantRoot(
+    component,
+    "AIMessage",
+    `Status=${status}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: AI_MESSAGE_GAP,
+      width: AI_TURN_WIDTH,
+      height: 44,
+    },
+    slot ? [slot] : [],
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "AIMessage/gap",
+    variableByName,
+    stats,
+  );
+
+  const row = productSdkFrame("Message Row", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: AI_MESSAGE_GAP,
+    width: AI_TURN_WIDTH,
+    height: 44,
+  });
+  bindFloatVariable(row, "itemSpacing", "AIMessage/gap", variableByName, stats);
+  component.insertChild(0, row);
+  setLayoutSizingHorizontal(row, "FILL");
+  setLayoutSizingVertical(row, "HUG");
+
+  const bubble = aiBubble({
+    name: "Bubble",
+    fill: AI_CARD_FILL,
+    edge: AI_EDGE,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(row, bubble, "HUG", "HUG");
+
+  const streaming = status === "Streaming";
+  if (streaming) bubble.appendChild(aiStreamingDots(variableByName, stats));
+  const timedOut = status === "TimedOut";
+  const text = await aiTurnText({
+    name: timedOut ? "Timed Out Text" : "Message Text",
+    characters: timedOut
+      ? kept.timedOut || AI_WORDS.timedOut
+      : kept.message || AI_WORDS.answer,
+    ink: timedOut ? AI_MUTED_INK : AI_INK,
+    fonts,
+    variableByName,
+    stats,
+  });
+  bubble.appendChild(text);
+  aiHoldTurnText(
+    text,
+    streaming
+      ? 3 * AI_STREAMING_DOT + 2 * AI_STREAMING_DOT_GAP + AI_STREAMING_DOTS_END
+      : 0,
+    "AIMessage",
+    stats,
+  );
+
+  // The action card: a frame Show Action Card drives, holding the slot. A
+  // property drives no node inside a slot, and the slot is the one node a
+  // slot property binds to (Card's header actions, GAP-169).
+  const card = productSdkFrame("Action Card", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    width: AI_TURN_WIDTH,
+    height: 72,
+  });
+  card.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-action-card");
+  component.appendChild(card);
+  setLayoutSizingHorizontal(card, "FILL");
+  const shell = createOrReuseShellSlot({
+    component,
+    reusableSlot: slot,
+    ownerName: "AIMessage",
+    stats,
+    slotName: AI_ACTION_CARD_SLOT,
+    width: AI_TURN_WIDTH,
+    height: 72,
+    layoutMode: "VERTICAL",
+    itemSpacing: 8,
+  });
+  card.appendChild(shell.node);
+  setLayoutSizingHorizontal(shell.node, "FILL");
+  setNodePropertyIfSupported(shell.node, "counterAxisSizingMode", "FIXED");
+  setNodePropertyIfSupported(shell.node, "primaryAxisSizingMode", "AUTO");
+  if (!shell.reusedContent) {
+    const placeholder = await productSdkSlot({
+      name: "ActionCard Placeholder",
+      label: "ActionCard",
+      width: AI_TURN_WIDTH,
+      height: 72,
+      fonts,
+      variableByName,
+      stats,
+      muted: true,
+      parentRadius: KOZMOS_RADIUS.container,
+      inset: 0,
+    });
+    shell.node.appendChild(placeholder);
+    setLayoutSizingHorizontal(placeholder, "FILL");
+  }
+  card.visible = false;
+}
+
+function configureAIMessageProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Message Text",
+    "Message Text",
+    AI_WORDS.answer,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Timed Out Text",
+    "Timed Out Text",
+    AI_WORDS.timedOut,
+    stats,
+  );
+  configureSharedSlotProperties(componentSet, [AI_ACTION_CARD_SLOT], stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Action Card",
+    "Show Action Card",
+    false,
+    stats,
+  );
+}
+
+const AI_MESSAGE_DESCRIPTION = [
+  "Kozmos AIMessage generated from the React AIMessage API (GAP-206): the assistant's turn in the thread.",
+  "Status maps to status: Complete, Streaming (three dots in the theme's 600 before the acknowledgement, Story 10) and TimedOut (timedOutLabel in the muted foreground, the ten-second stop).",
+  "Message Text maps to children; Timed Out Text to timedOutLabel. Show Action Card shows Action Card Slot, actionCard: an ActionCard holding results.",
+  "The bubble is bg-card with a 1 border-border on the container radius, 16 across and 12 down; its words size themselves up to 85 % of the turn and wrap there.",
+  "trailing is the product's control beside the bubble, and is not drawn; speakerLabel, streamingLabel are read, never drawn.",
+];
+
+async function buildAIMessageComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    axisName: "Status",
+    values: AI_MESSAGE_STATUSES,
+    x: 80,
+    y: 15300,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createAIMessageVariant,
+    configureProperties: configureAIMessageProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_DESCRIPTION,
+  });
+}
+
+async function updateAIMessageComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    axisName: "Status",
+    values: AI_MESSAGE_STATUSES,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createAIMessageVariant,
+    updateVariant: updateAIMessageVariant,
+    parseVariantName: parseAIMessageVariantName,
+    configureProperties: configureAIMessageProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAIMessageComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    build: buildAIMessageComponent,
+  });
+}
+
+// --- AIMessageList -------------------------------------------------------------
+
+// The thread, as React's AIMessageList draws it: a column the panel's width,
+// 16 inside and 16 between its turns, which are live AIMessage and UserMessage
+// instances, exposed so each turn's words are edited from the thread. Content
+// is the stories': a conversation whose answer carries its action card, a
+// reply streaming, and one that timed out. It scrolls in the product; here it
+// is as tall as its turns.
+
+const AI_MESSAGE_LIST_TURNS = {
+  Conversation: [
+    { set: "AIMessage", status: "Complete", words: AI_WORDS.greeting },
+    { set: "UserMessage", words: AI_WORDS.question },
+    {
+      set: "AIMessage",
+      status: "Complete",
+      words: AI_WORDS.answerFull,
+      actionCard: true,
+    },
+  ],
+  Streaming: [
+    { set: "UserMessage", words: AI_WORDS.question },
+    {
+      set: "AIMessage",
+      status: "Streaming",
+      words: AI_WORDS.acknowledgement,
+    },
+  ],
+  TimedOut: [
+    { set: "UserMessage", words: AI_WORDS.question },
+    { set: "AIMessage", status: "TimedOut" },
+  ],
+};
+
+async function createAIMessageListVariant(args) {
+  const component = figma.createComponent();
+  await updateAIMessageListVariant(component, args);
+  return component;
+}
+
+function parseAIMessageListVariantName(name) {
+  return productSdkVariantValues(name, "Content", AI_MESSAGE_LIST_CONTENT);
+}
+
+/** One turn: a live instance of its set, or a placeholder naming the Build. */
+async function aiThreadTurn(turn, index, owner, stats) {
+  const name = `Turn ${index + 1}`;
+  const created = await createNestedComponentInstance({
+    componentSetName: turn.set,
+    variantProperties:
+      turn.set === "AIMessage"
+        ? { Status: turn.status }
+        : { Content: "Default" },
+    name,
+    role: "ai-thread-turn",
+    stats,
+  });
+  if (!created) {
+    return createMissingNestedComponentNode(
+      name,
+      `Build ${turn.set} before updating ${owner}.`,
+      stats,
+    );
+  }
+  const instance = created.instance;
+  if (turn.words) {
+    setInstanceTextProperty(
+      instance,
+      created.componentSet,
+      "Message Text",
+      turn.words,
+      stats,
+    );
+  }
+  if (turn.actionCard) {
+    setInstanceBooleanProperty(
+      instance,
+      created.componentSet,
+      "Show Action Card",
+      true,
+      stats,
+    );
+  }
+  try {
+    // Exposed, so a turn's words and card are edited from the thread: a
+    // set's property cannot drive text inside a nested instance.
+    instance.isExposedInstance = true;
+  } catch (_error) {
+    // Older Figma runtimes may not support exposing nested instances.
+  }
+  return instance;
+}
+
+async function updateAIMessageListVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  aiVariantRoot(component, "AIMessageList", `Content=${value}`, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: AI_THREAD_GAP,
+    padding: AI_THREAD_PADDING,
+    width: AI_PANEL_WIDTH,
+    height: 200,
+    clip: true,
+  });
+  for (const [property, token] of [
+    ["itemSpacing", "AIMessageList/gap"],
+    ["paddingLeft", "AIMessageList/padding"],
+    ["paddingRight", "AIMessageList/padding"],
+    ["paddingTop", "AIMessageList/padding"],
+    ["paddingBottom", "AIMessageList/padding"],
+  ]) {
+    bindFloatVariable(component, property, token, variableByName, stats);
+  }
+  const turns = AI_MESSAGE_LIST_TURNS[value] || [];
+  for (let index = 0; index < turns.length; index += 1) {
+    const turn = await aiThreadTurn(
+      turns[index],
+      index,
+      "AIMessageList",
+      stats,
+    );
+    component.appendChild(turn);
+    setLayoutSizingHorizontal(turn, "FILL");
+  }
+}
+
+function configureAIMessageListProperties() {
+  // No property of its own: the turns are exposed instances, and label is
+  // what assistive technology hears, drawn nowhere.
+}
+
+const AI_MESSAGE_LIST_DESCRIPTION = [
+  "Kozmos AIMessageList generated from the React AIMessageList API (GAP-206): the assistant's thread.",
+  "Content is the stories' threads: a Conversation whose answer carries its action card, a reply Streaming, and one TimedOut. children are the turns, live AIMessage and UserMessage instances, exposed so their words are edited here.",
+  "The panel's width, 16 inside and 16 between turns. In the product it fills the panel and scrolls, following the newest turn (followLatest); label names the log for assistive technology and is not drawn.",
+];
+
+async function buildAIMessageListComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    axisName: "Content",
+    values: AI_MESSAGE_LIST_CONTENT,
+    x: 80,
+    y: 15700,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAIMessageListVariant,
+    configureProperties: configureAIMessageListProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_LIST_DESCRIPTION,
+  });
+}
+
+async function updateAIMessageListComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    axisName: "Content",
+    values: AI_MESSAGE_LIST_CONTENT,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAIMessageListVariant,
+    updateVariant: updateAIMessageListVariant,
+    parseVariantName: parseAIMessageListVariantName,
+    configureProperties: configureAIMessageListProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_LIST_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAIMessageListComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    build: buildAIMessageListComponent,
+  });
+}
+
+// --- AIInputBar ----------------------------------------------------------------
+
+// The question's field, as React's AIInputBar draws it: a row the panel's
+// width, 16 across and 12 down, 8 apart, a 1 edge above it. The field is a
+// pill at least 44 tall, 16 across and 8 down, bg-card with border-border,
+// its words 14/20 (the muted foreground for the placeholder); Disabled is the
+// Input family's muted fill (row 59). Send is a live IconButton, the default
+// variant on the pill radius with send-01 at 20, disabled until there is
+// something to ask. Voice (decision 22) puts the microphone between the two: a
+// 44 circle, bordered on the card at Idle; the themed emotion's surface in a
+// primary edge while Connecting (the loading arc), Listening (microphone-01)
+// and Speaking (volume-max); the danger emotion's outline at Error; the
+// field's disabled look at Unavailable and, unless live, when Disabled
+// (microphone-off-01). While live, the empty field says where the
+// conversation is.
+
+async function createAIInputBarVariant(args) {
+  const component = figma.createComponent();
+  await updateAIInputBarVariant(component, args);
+  return component;
+}
+
+function parseAIInputBarVariantName(name) {
+  return aiTwoAxisValues(
+    name,
+    "State",
+    AI_INPUT_BAR_STATES,
+    "VoiceState",
+    AI_INPUT_BAR_VOICES,
+  );
+}
+
+function aiVoiceIsLive(voice) {
+  return (
+    voice === "Connecting" || voice === "Listening" || voice === "Speaking"
+  );
+}
+
+/** The microphone's look for a voice state, as React's class list draws it. */
+function aiVoiceLook(voice, disabled) {
+  const live = aiVoiceIsLive(voice);
+  if (voice === "Unavailable" || (disabled && !live)) {
+    return {
+      fill: AI_MUTED_FILL,
+      edge: AI_EDGE,
+      ink: AI_MUTED_INK,
+      icon: "microphone-off-01",
+    };
+  }
+  if (live) {
+    return {
+      fill: { name: "Emotion/themed/surface", fallback: "#E7EEFD" },
+      edge: AI_PRIMARY,
+      ink: { name: "Emotion/themed/onSurface", fallback: "#0D44C2" },
+      icon:
+        voice === "Connecting"
+          ? null
+          : voice === "Speaking"
+            ? "volume-max"
+            : "microphone-01",
+    };
+  }
+  if (voice === "Error") {
+    const danger = { name: "Emotion/danger/text", fallback: "#B01736" };
+    return {
+      fill: AI_CARD_FILL,
+      edge: danger,
+      ink: danger,
+      icon: "microphone-off-01",
+    };
+  }
+  return {
+    fill: AI_CARD_FILL,
+    edge: AI_EDGE,
+    ink: AI_INK,
+    icon: "microphone-01",
+  };
+}
+
+/**
+ * The system's loading arc, as Notice's progress mark draws it: three
+ * quarters of a circle from 12 o'clock, radius 9 and 2 thick on the icons'
+ * 24 grid, here at 20 in the control's ink. A frame cannot turn; code turns
+ * it, and stills it under reduced motion.
+ */
+function aiLoadingArc(ink, size, variableByName, stats) {
+  const box = productSdkFrame("Loading Arc", {
+    width: size,
+    height: size,
+  });
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(size, size);
+  const outer = (size * 10) / 24;
+  const arc = figma.createEllipse();
+  arc.name = "Arc";
+  arc.resize(2 * outer, 2 * outer);
+  arc.x = size / 2 - outer;
+  arc.y = size / 2 - outer;
+  arc.arcData = {
+    startingAngle: -Math.PI / 2,
+    endingAngle: Math.PI,
+    innerRadius: 0.8,
+  };
+  arc.strokes = [];
+  arc.fills = [aiPaint(ink, variableByName, stats)];
+  box.appendChild(arc);
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-loading-arc");
+  return box;
+}
+
+async function aiVoiceButton(voice, disabled, variableByName, stats) {
+  const look = aiVoiceLook(voice, disabled);
+  const button = productSdkFrame("Voice Button", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: AI_CONTROL_SIZE,
+    height: AI_CONTROL_SIZE,
+  });
+  button.cornerRadius = KOZMOS_RADIUS.pill;
+  button.fills = [aiPaint(look.fill, variableByName, stats)];
+  button.strokes = [aiPaint(look.edge, variableByName, stats)];
+  button.strokeWeight = 1;
+  bindSizeVariables(
+    button,
+    "AIInputBar/control/size",
+    "AIInputBar/control/size",
+    variableByName,
+    stats,
+  );
+  markControlSurface(button);
+  if (look.icon) {
+    const source = await findImporterIconSource(look.icon, "AIInputBar", stats);
+    if (source) {
+      const icon = createIconSlotInstance(
+        source,
+        look.ink.name,
+        look.ink.fallback,
+        variableByName,
+        stats,
+        AI_CONTROL_ICON_SIZE,
+        "AIInputBar/icon/size",
+      );
+      scaleIconStrokes(icon, AI_CONTROL_ICON_SIZE);
+      appendWithSizing(button, icon, "FIXED", "FIXED");
+    }
+  } else {
+    button.appendChild(
+      aiLoadingArc(look.ink, AI_CONTROL_ICON_SIZE, variableByName, stats),
+    );
+  }
+  return button;
+}
+
+/**
+ * An IconButton the assistant holds, with its icon swapped in and tinted
+ * again: the swap replaces the layer the variant's tint was laid on, so the
+ * glyph would draw in its source's black. CORE_UPDATE_SEQUENCE runs IconButton
+ * before Product / SDK, and SETS_THAT_OVERRIDE_INSIDE lists these sets after
+ * it. `ink` is the variant's own unless given (the close's neutral outline).
+ */
+async function aiIconButton({
+  name,
+  role,
+  variant,
+  state,
+  iconName,
+  ink,
+  owner,
+  variableByName,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: variant, Size: "Default", State: state },
+    name,
+    role,
+    stats,
+  });
+  if (!created) {
+    return createMissingNestedComponentNode(
+      name,
+      `Build IconButton before updating ${owner}.`,
+      stats,
+    );
+  }
+  const button = created.instance;
+  const glyph = await findImporterIconSource(iconName, owner, stats);
+  if (
+    glyph &&
+    setInstanceSwapProperty(
+      button,
+      created.componentSet,
+      BUTTON_ICON_PROPERTY,
+      glyph.id,
+      stats,
+    )
+  ) {
+    const config = buttonConfig(variant, state);
+    retintAIIconButtonIcon(
+      button,
+      ink || {
+        name: config.foreground,
+        fallback: config.foregroundFallback,
+      },
+      owner,
+      variableByName,
+      stats,
+    );
+  }
+  return button;
+}
+
+function retintAIIconButtonIcon(button, ink, owner, variableByName, stats) {
+  // The layer the Icon property drives, whatever the swap made of its name.
+  const icon =
+    button.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          BUTTON_ICON_PROPERTY,
+    ) ||
+    button.findOne(
+      (node) => node.type === "INSTANCE" && node.name === BUTTON_ICON_PROPERTY,
+    );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      `ai-icon-button:${owner}:${button.name}`,
+      `${owner}: ${button.name} has no Icon layer to tint after the swap.`,
+    );
+    return;
+  }
+  // h-5 w-5: 20, where IconButton's own icon is 16.
+  icon.resize(AI_CONTROL_ICON_SIZE, AI_CONTROL_ICON_SIZE);
+  applyIconColorOverrides(icon, ink.name, ink.fallback, variableByName, stats);
+  scaleIconStrokes(icon, AI_CONTROL_ICON_SIZE);
+}
+
+async function updateAIInputBarVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const voice = second || "Off";
+  const disabled = state === "Disabled";
+  const filled = state === "Filled";
+  const live = aiVoiceIsLive(voice);
+  const kept = {
+    value: firstDescendantTextCharactersByName(component, "Value Text"),
+    placeholder: firstDescendantTextCharactersByName(
+      component,
+      "Placeholder Text",
+    ),
+  };
+  aiVariantRoot(
+    component,
+    "AIInputBar",
+    `State=${state}, VoiceState=${voice}`,
+    {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: AI_INPUT_BAR_GAP,
+      paddingX: AI_INPUT_BAR_PADDING_X,
+      paddingY: AI_INPUT_BAR_PADDING_Y,
+      width: AI_PANEL_WIDTH,
+      height: 69,
+    },
+  );
+  // border-t: the edge above the bar only.
+  component.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  component.strokeWeight = 1;
+  component.strokeTopWeight = 1;
+  component.strokeBottomWeight = 0;
+  component.strokeLeftWeight = 0;
+  component.strokeRightWeight = 0;
+  for (const [property, token] of [
+    ["itemSpacing", "AIInputBar/gap"],
+    ["paddingLeft", "AIInputBar/padding/x"],
+    ["paddingRight", "AIInputBar/padding/x"],
+    ["paddingTop", "AIInputBar/padding/y"],
+    ["paddingBottom", "AIInputBar/padding/y"],
+  ]) {
+    bindFloatVariable(component, property, token, variableByName, stats);
+  }
+
+  const field = productSdkFrame("Field", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: AI_INPUT_FIELD_PADDING_X,
+    paddingRight: AI_INPUT_FIELD_PADDING_X,
+    paddingTop: AI_INPUT_FIELD_PADDING_Y,
+    paddingBottom: AI_INPUT_FIELD_PADDING_Y,
+    width: 200,
+    height: AI_INPUT_FIELD_HEIGHT,
+  });
+  field.cornerRadius = KOZMOS_RADIUS.pill;
+  field.fills = [
+    aiPaint(disabled ? AI_MUTED_FILL : AI_CARD_FILL, variableByName, stats),
+  ];
+  field.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  field.strokeWeight = 1;
+  for (const [property, token] of [
+    ["height", "AIInputBar/field/min-height"],
+    ["paddingLeft", "AIInputBar/field/padding/x"],
+    ["paddingRight", "AIInputBar/field/padding/x"],
+    ["paddingTop", "AIInputBar/field/padding/y"],
+    ["paddingBottom", "AIInputBar/field/padding/y"],
+  ]) {
+    bindFloatVariable(field, property, token, variableByName, stats);
+  }
+  component.appendChild(field);
+  setLayoutSizingHorizontal(field, "FILL");
+  setLayoutSizingVertical(field, "FIXED");
+
+  // The words: the visitor's, or the placeholder — the live state's words in
+  // an empty field while a conversation is live. Each its own layer, as one
+  // property paints one default over every node it binds.
+  const wordsLayer =
+    filled && !disabled
+      ? {
+          name: "Value Text",
+          characters: kept.value || AI_WORDS.value,
+          ink: AI_INK,
+        }
+      : live
+        ? {
+            name: "Voice Text",
+            characters: AI_INPUT_BAR_VOICE_WORDS[voice],
+            ink: AI_MUTED_INK,
+          }
+        : {
+            name: "Placeholder Text",
+            characters: kept.placeholder || AI_WORDS.placeholder,
+            ink: AI_MUTED_INK,
+          };
+  const words = await productSdkText({
+    name: wordsLayer.name,
+    characters: wordsLayer.characters,
+    styleKey: "cardDescription",
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: wordsLayer.ink.name,
+    colorFallback: wordsLayer.ink.fallback,
+    variableByName,
+    stats,
+    width: 120,
+  });
+  field.appendChild(words);
+  setHorizontalFillTextSizing(words);
+  setTextAutoResize(words, "TRUNCATE");
+
+  if (voice !== "Off") {
+    component.appendChild(
+      await aiVoiceButton(voice, disabled, variableByName, stats),
+    );
+  }
+
+  const canSend = filled && !disabled;
+  const send = await aiIconButton({
+    name: "Send",
+    role: "ai-input-bar-send",
+    variant: "Default",
+    state: canSend ? "Default" : "Disabled",
+    iconName: "send-01",
+    owner: "AIInputBar",
+    variableByName,
+    stats,
+  });
+  // React's rounded-pill on the send.
+  setNodePropertyIfSupported(send, "cornerRadius", KOZMOS_RADIUS.pill);
+  appendWithSizing(component, send, "FIXED", "FIXED");
+}
+
+function configureAIInputBarProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Placeholder Text",
+    "Placeholder Text",
+    AI_WORDS.placeholder,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Value Text",
+    "Value Text",
+    AI_WORDS.value,
+    stats,
+  );
+}
+
+const AI_INPUT_BAR_DESCRIPTION = [
+  "Kozmos AIInputBar generated from the React AIInputBar API (GAP-206): the question's field, at the foot of the assistant.",
+  "State: Empty (value empty, send disabled), Filled (value, send enabled) and Disabled (disabled: the field's muted fill, the microphone unavailable unless a conversation is live).",
+  "VoiceState maps to voiceState (decision 22), Off to no onVoiceStart: Idle, Connecting (the loading arc), Listening, Speaking (volume-max), Unavailable and Error (microphone-off-01). While live the empty field shows voiceConnectingLabel, voiceListeningLabel or voiceSpeakingLabel.",
+  "Placeholder Text maps to placeholder; Value Text to value. Send is a live IconButton, the default variant on the pill radius with send-01; sendLabel, inputLabel and the voice labels are read, never drawn.",
+];
+
+async function buildAIInputBarComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    axisName: "State",
+    values: AI_INPUT_BAR_STATES,
+    axis2Name: "VoiceState",
+    axis2Values: AI_INPUT_BAR_VOICES,
+    x: 80,
+    y: 16100,
+    xStep: AI_PANEL_WIDTH + 40,
+    yStep: 110,
+    createVariant: createAIInputBarVariant,
+    configureProperties: configureAIInputBarProperties,
+    autoReorganize: true,
+    description: AI_INPUT_BAR_DESCRIPTION,
+  });
+}
+
+async function updateAIInputBarComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    axisName: "State",
+    values: AI_INPUT_BAR_STATES,
+    axis2Name: "VoiceState",
+    axis2Values: AI_INPUT_BAR_VOICES,
+    xStep: AI_PANEL_WIDTH + 40,
+    yStep: 110,
+    createVariant: createAIInputBarVariant,
+    updateVariant: updateAIInputBarVariant,
+    parseVariantName: parseAIInputBarVariantName,
+    configureProperties: configureAIInputBarProperties,
+    autoReorganize: true,
+    description: AI_INPUT_BAR_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAIInputBarComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    build: buildAIInputBarComponent,
+  });
+}
+
+// --- AICompanionPanel ----------------------------------------------------------
+
+// The assistant surface, as React's AICompanionPanel draws it in the stories'
+// 360 by 560 frame: bg-background, the header (16 across, 12 down, 8 apart, a
+// 1 edge under it): the stars-01 mark at 16 in the theme's 600 in a 32
+// bordered circle, the title 16/24 semibold, and the close, a live IconButton
+// in the neutral outline (decision 73) with x-close at 20; the banner under it
+// (16 across, 16 above, 12 below, an edge under it), a slot Show Banner shows;
+// then the thread, a live AIMessageList filling the height, and a live
+// AIInputBar. Content picks the thread's Content; the thread and the bar are
+// exposed, so their states are picked from the panel.
+
+async function createAICompanionPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateAICompanionPanelVariant(component, args);
+  return component;
+}
+
+function parseAICompanionPanelVariantName(name) {
+  return productSdkVariantValues(name, "Content", AI_COMPANION_PANEL_CONTENT);
+}
+
+/** A frame with a 1 edge under it, as React's border-b draws one. */
+function aiEdgeBelow(frame, variableByName, stats) {
+  frame.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  frame.strokeWeight = 1;
+  frame.strokeTopWeight = 0;
+  frame.strokeBottomWeight = 1;
+  frame.strokeLeftWeight = 0;
+  frame.strokeRightWeight = 0;
+}
+
+async function aiNestedPart(componentSetName, variantProperties, owner, stats) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name: componentSetName,
+    role: "ai-panel-part",
+    stats,
+  });
+  if (!created) {
+    return createMissingNestedComponentNode(
+      componentSetName,
+      `Build ${componentSetName} before updating ${owner}.`,
+      stats,
+    );
+  }
+  try {
+    // Exposed, so the thread's and the bar's states are picked here.
+    created.instance.isExposedInstance = true;
+  } catch (_error) {
+    // Older Figma runtimes may not support exposing nested instances.
+  }
+  return created.instance;
+}
+
+async function aiPanelHeader(
+  component,
+  keptTitle,
+  variableByName,
+  fonts,
+  stats,
+) {
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: AI_PANEL_HEADER_GAP,
+    paddingLeft: AI_PANEL_HEADER_PADDING_X,
+    paddingRight: AI_PANEL_HEADER_PADDING_X,
+    paddingTop: AI_PANEL_HEADER_PADDING_Y,
+    paddingBottom: AI_PANEL_HEADER_PADDING_Y,
+    width: AI_PANEL_WIDTH,
+    height: 69,
+  });
+  aiEdgeBelow(header, variableByName, stats);
+  for (const [property, token] of [
+    ["itemSpacing", "AICompanionPanel/header/gap"],
+    ["paddingLeft", "AICompanionPanel/header/padding/x"],
+    ["paddingRight", "AICompanionPanel/header/padding/x"],
+    ["paddingTop", "AICompanionPanel/header/padding/y"],
+    ["paddingBottom", "AICompanionPanel/header/padding/y"],
+  ]) {
+    bindFloatVariable(header, property, token, variableByName, stats);
+  }
+  component.appendChild(header);
+  setLayoutSizingHorizontal(header, "FILL");
+  setLayoutSizingVertical(header, "HUG");
+
+  const mark = productSdkFrame("Mark", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: AI_PANEL_MARK_SIZE,
+    height: AI_PANEL_MARK_SIZE,
+  });
+  mark.cornerRadius = KOZMOS_RADIUS.pill;
+  mark.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  mark.strokeWeight = 1;
+  bindSizeVariables(
+    mark,
+    "AICompanionPanel/mark/size",
+    "AICompanionPanel/mark/size",
+    variableByName,
+    stats,
+  );
+  const stars = await productSdkIconInstance({
+    iconName: "stars-01",
+    token: AI_PRIMARY,
+    size: AI_PANEL_MARK_ICON_SIZE,
+    sizeToken: "AICompanionPanel/mark/icon/size",
+    variableByName,
+    stats,
+    owner: "AICompanionPanel",
+  });
+  if (stars) appendWithSizing(mark, stars, "FIXED", "FIXED");
+  appendWithSizing(header, mark, "FIXED", "FIXED");
+
+  const title = await productSdkText({
+    name: "Title Text",
+    characters: keptTitle || AI_WORDS.title,
+    styleKey: "cardTitle",
+    fonts,
+    bold: true,
+    fontSize: 16,
+    lineHeight: 24,
+    colorToken: AI_INK.name,
+    colorFallback: AI_INK.fallback,
+    variableByName,
+    stats,
+    width: 200,
+  });
+  header.appendChild(title);
+  setHorizontalFillTextSizing(title);
+  setTextAutoResize(title, "TRUNCATE");
+
+  const close = await aiIconButton({
+    name: "Close",
+    role: "ai-companion-panel-close",
+    variant: "Outline",
+    state: "Default",
+    iconName: "x-close",
+    ink: AI_NEUTRAL_OUTLINE_INK,
+    owner: "AICompanionPanel",
+    variableByName,
+    stats,
+  });
+  if (close.type === "INSTANCE") {
+    // The neutral outline's edge, on the instance itself.
+    close.strokes = [aiPaint(AI_NEUTRAL_OUTLINE_INK, variableByName, stats)];
+  }
+  appendWithSizing(header, close, "FIXED", "FIXED");
+}
+
+async function updateAICompanionPanelVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  // The title is read before the header is drawn again.
+  const keptTitle = firstDescendantTextCharactersByName(
+    component,
+    "Title Text",
+  );
+  const slot = aiReusableSlot(
+    component,
+    AI_PANEL_BANNER_SLOT,
+    "AICompanionPanel",
+    stats,
+  );
+  aiVariantRoot(
+    component,
+    "AICompanionPanel",
+    `Content=${value}`,
+    {
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      width: AI_PANEL_WIDTH,
+      height: AI_PANEL_HEIGHT,
+      clip: true,
+    },
+    slot ? [slot] : [],
+  );
+  component.fills = [aiPaint(AI_PANEL_FILL, variableByName, stats)];
+  bindSizeVariables(
+    component,
+    "AICompanionPanel/width/default",
+    "AICompanionPanel/height/default",
+    variableByName,
+    stats,
+  );
+
+  await aiPanelHeader(component, keptTitle, variableByName, fonts, stats);
+
+  const banner = productSdkFrame("Banner", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    paddingLeft: AI_PANEL_HEADER_PADDING_X,
+    paddingRight: AI_PANEL_HEADER_PADDING_X,
+    paddingTop: AI_PANEL_BANNER_PADDING_TOP,
+    paddingBottom: AI_PANEL_HEADER_PADDING_Y,
+    width: AI_PANEL_WIDTH,
+    height: 85,
+  });
+  aiEdgeBelow(banner, variableByName, stats);
+  for (const [property, token] of [
+    ["paddingLeft", "AICompanionPanel/header/padding/x"],
+    ["paddingRight", "AICompanionPanel/header/padding/x"],
+    ["paddingTop", "AICompanionPanel/banner/padding/top"],
+    ["paddingBottom", "AICompanionPanel/header/padding/y"],
+  ]) {
+    bindFloatVariable(banner, property, token, variableByName, stats);
+  }
+  banner.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-companion-banner");
+  component.appendChild(banner);
+  setLayoutSizingHorizontal(banner, "FILL");
+  const shell = createOrReuseShellSlot({
+    component,
+    reusableSlot: slot,
+    ownerName: "AICompanionPanel",
+    stats,
+    slotName: AI_PANEL_BANNER_SLOT,
+    width: AI_TURN_WIDTH,
+    height: 56,
+    layoutMode: "VERTICAL",
+    itemSpacing: 8,
+  });
+  banner.appendChild(shell.node);
+  setLayoutSizingHorizontal(shell.node, "FILL");
+  setNodePropertyIfSupported(shell.node, "counterAxisSizingMode", "FIXED");
+  setNodePropertyIfSupported(shell.node, "primaryAxisSizingMode", "AUTO");
+  if (!shell.reusedContent) {
+    const placeholder = await productSdkSlot({
+      name: "Banner Placeholder",
+      label: "Notice or EmptyState",
+      width: AI_TURN_WIDTH,
+      height: 56,
+      fonts,
+      variableByName,
+      stats,
+      muted: true,
+      parentRadius: KOZMOS_RADIUS.container,
+      inset: 0,
+    });
+    shell.node.appendChild(placeholder);
+    setLayoutSizingHorizontal(placeholder, "FILL");
+  }
+  banner.visible = false;
+
+  const thread = await aiNestedPart(
+    "AIMessageList",
+    { Content: value },
+    "AICompanionPanel",
+    stats,
+  );
+  component.appendChild(thread);
+  setLayoutSizingHorizontal(thread, "FILL");
+  setLayoutSizingVertical(thread, "FILL");
+
+  const input = await aiNestedPart(
+    "AIInputBar",
+    { State: "Empty", VoiceState: "Off" },
+    "AICompanionPanel",
+    stats,
+  );
+  component.appendChild(input);
+  setLayoutSizingHorizontal(input, "FILL");
+}
+
+function configureAICompanionPanelProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    AI_WORDS.title,
+    stats,
+  );
+  // onClose is optional (Story 18): no handler, no close.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Close",
+    "Show Close",
+    true,
+    stats,
+  );
+  configureSharedSlotProperties(componentSet, [AI_PANEL_BANNER_SLOT], stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Banner",
+    "Show Banner",
+    false,
+    stats,
+  );
+}
+
+const AI_COMPANION_PANEL_DESCRIPTION = [
+  "Kozmos AICompanionPanel generated from the React AICompanionPanel API (GAP-206): the assistant surface, 360 by 560 as the stories frame it.",
+  "Title Text maps to title; Show Close to onClose (the close is a live IconButton, the neutral outline with x-close, decision 73); Show Banner shows Banner Slot, banner: the Story 14 notice or an offline EmptyState.",
+  "Content picks the thread: Conversation, Streaming and TimedOut, the stories'. children are a live AIMessageList, filling the height, and a live AIInputBar, both exposed so their states are picked here.",
+  "open, titleLevel, closeLabel and the focus handlers are behaviour and are not drawn.",
+];
+
+async function buildAICompanionPanelComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    axisName: "Content",
+    values: AI_COMPANION_PANEL_CONTENT,
+    x: 80,
+    y: 17000,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAICompanionPanelVariant,
+    configureProperties: configureAICompanionPanelProperties,
+    autoReorganize: true,
+    description: AI_COMPANION_PANEL_DESCRIPTION,
+  });
+}
+
+async function updateAICompanionPanelComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    axisName: "Content",
+    values: AI_COMPANION_PANEL_CONTENT,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAICompanionPanelVariant,
+    updateVariant: updateAICompanionPanelVariant,
+    parseVariantName: parseAICompanionPanelVariantName,
+    configureProperties: configureAICompanionPanelProperties,
+    autoReorganize: true,
+    description: AI_COMPANION_PANEL_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAICompanionPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    build: buildAICompanionPanelComponent,
   });
 }
 
