@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  travelEstimateBreakdownLabel,
   travelTimeTone,
   type POIAttributeKind,
   type POIAvailability,
@@ -239,6 +240,9 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     const band = result.travelEstimate?.band;
     const bandLabel =
       band && (travelTimeBandLabels?.[band] ?? travelTimeBandLabel[band]);
+    // What the time includes, "Includes security (about 8 min)", from the
+    // estimate's breakdown (GAP-047): drawn under the time and said after it.
+    const breakdownLabel = travelEstimateBreakdownLabel(result.travelEstimate);
     const unavailableId = `${id}-unavailable`;
     const languageNotListedId = `${id}-language-not-listed`;
     const describedBy =
@@ -568,6 +572,13 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                     )}
                   >
                     {bandLabel || result.travelEstimate.durationLabel}
+                  </span>
+                )}
+                {breakdownLabel && (
+                  // Secondary text, as the location line is, kept narrow so
+                  // the name keeps the row: longer words wrap, at the end.
+                  <span className="kozmos-poi-result-breakdown -mt-1.5 block max-w-32 text-end text-xs text-muted-foreground">
+                    {breakdownLabel}
                   </span>
                 )}
               </span>

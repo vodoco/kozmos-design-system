@@ -553,6 +553,19 @@ interface TravelEstimatePresentation {
    * Absent, a result shows `durationLabel`, as before.
    */
   band?: TravelTimeBand;
+  /**
+   * What the time includes besides the walk itself, in the order to say it
+   * (GAP-047): "Includes security (about 8 min)" on an after-security board,
+   * where a walk crosses the security queue.
+   *
+   * POIResultCard draws each part's `label` under the travel time, and
+   * POIDetailPanel under its action strip when Navigate carries the
+   * estimate: one line, the labels joined by " · ", in the card's secondary
+   * text. Each card says it with the time, after it. The product chooses
+   * which parts to list and words each one; a part with an empty label is
+   * not drawn. Absent or empty, nothing is drawn, as before.
+   */
+  breakdown?: readonly TravelEstimatePartPresentation[];
 }
 ```
 
@@ -664,4 +677,42 @@ From `@kozmos-ds/product-contracts`.
  * kind is still a service.
  */
 type POIAttributeKind = "service" | "dietary" | "accessibility" | "restriction";
+```
+
+### TravelEstimatePartPresentation
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/**
+ * One part of a travel time: the walk, a security queue, a lift wait.
+ * SwiftUI and Compose have the same shape,
+ * `KozmosTravelEstimatePartPresentation`.
+ */
+interface TravelEstimatePartPresentation {
+  kind: TravelEstimatePartKind;
+  /** How long this part takes, in seconds, as the estimate's own time. */
+  durationSeconds: number;
+  /**
+   * Already localized, with the time in it: "Includes security (about
+   * 8 min)". What the card draws and a screen reader says.
+   */
+  label: string;
+}
+```
+
+### TravelEstimatePartKind
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/**
+ * What one part of a travel time is (GAP-047). `other` is a part Kozmos has
+ * no name for, a shuttle or a check-in queue: its label says what it is.
+ */
+type TravelEstimatePartKind =
+  | "walking"
+  | "securityQueue"
+  | "liftWait"
+  | "other";
 ```

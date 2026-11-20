@@ -173,6 +173,14 @@ the estimate. Information chips/tags are non-interactive, with a 32px minimum
 height, ~13px/16px type, 16px corners and room to grow for wrapped/zoomed text.
 They are not 44px action targets.
 
+What the estimate includes, its `breakdown` (GAP-047), is drawn as one line under the action
+strip when Navigate carries the estimate: "Includes security (about 8 min)", the parts' labels
+joined by " · ", in the card's muted colour. Navigate says it after its time and distance ("Go
+12 min 400 m Includes security (about 8 min)"), and the line itself is hidden from assistive
+technology so it is heard once; on iOS it follows the estimate in Go's value, on Android in its
+state. Without Navigate, or without a breakdown, nothing more is drawn or said.
+`POIResultCard`'s "What a travel time includes" has the shape and the snippets on every platform.
+
 Group items, services and tags accept optional `iconName`: a name or alias in the
 Kozmos icon registry, a wayfinding glyph by the kebab case of its export name
 (`elevator-up`, `security-control`, `shuttle`: all 23 in DirectionStep's Glyph Atlas),

@@ -225,6 +225,13 @@ public struct KozmosPOIResultCard: View {
         return travelTimeBandLabels[band] ?? Self.englishLabel(band)
     }
 
+    /// What the time includes, "Includes security (about 8 min)", from the
+    /// estimate's breakdown (GAP-047): drawn under the time and said after
+    /// it. Nil when there is none, and then nothing more is drawn.
+    var breakdownText: String? {
+        result.travelEstimate?.breakdownLabel
+    }
+
     /// Nearby in the success emotion's Text role, which reads at 4.5:1 or
     /// more on the card in both themes; every other band, and the exact
     /// minutes, in the card's text colour. The word is Nearby, so the colour
@@ -348,6 +355,7 @@ public struct KozmosPOIResultCard: View {
             summaryText.map { KozmosSpokenPhrase($0, lang: result.summaryLanguage) },
             plain(poi.availabilityLabel),
             plain(travelTimeText),
+            plain(breakdownText),
             plain(available ? nil : result.unavailableReason),
             plain(languageDisclosure)
         ]
@@ -480,6 +488,19 @@ public struct KozmosPOIResultCard: View {
                             Text(travelTimeText)
                                 .font(KozmosTypography.subheadline)
                                 .foregroundColor(travelTimeColor)
+                        }
+
+                        if let breakdownText {
+                            // Secondary text, as the location line is, kept
+                            // narrow so the name keeps the row: longer words
+                            // wrap, at the end, as on the web (GAP-047).
+                            Text(breakdownText)
+                                .font(KozmosTypography.caption)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground400)
+                                .multilineTextAlignment(.trailing)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: KozmosDimensions.primitivesLayoutSpacing1000, alignment: .trailing)
+                                .padding(.top, -KozmosDimensions.primitivesLayoutSpacing75)
                         }
                     }
                 }
