@@ -2077,6 +2077,14 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "RouteProgressRail",
       "ClientAppBanner",
       "LanguageSwitcher",
+      // GAP-206: the map and route parts.
+      "MapStatusPill",
+      "MapAttribution",
+      "MapInfoPanel",
+      "POIResultGroup",
+      "RouteLocationField",
+      "RouteSetupPanel",
+      "ArrivalPanel",
     ],
   },
   {
@@ -2717,6 +2725,181 @@ const COMPONENT_DOCS = [
       "Preview and Active never show both actions, so there is no ambiguous control.",
       "Both strings arrive already localized from product code.",
       "The bar must not cover the renderer attribution.",
+    ],
+  },
+  // GAP-206: the map and route parts.
+  {
+    componentName: "MapStatusPill",
+    componentSetName: "MapStatusPill",
+    category: "Product / SDK",
+    summary:
+      "MapStatusPill is one map status in a compact pill over the map, in one of five tones (decision 39).",
+    usage: [
+      "Use Progress while the SDK works (Calculating Precise Position, Preparing Content), Success when it is done (Established, Up-to-date).",
+      "Use Danger for a failure, the mark alone in the danger colour; Warning for Turn Back, the amber fill under black words.",
+      "Use Neutral for words with nothing to mark. Swap the nested mark for the product's icon (No Bluetooth, Walking).",
+    ],
+    api: [
+      "Tone maps to tone (neutral, progress, success, danger, warning).",
+      "Status Text maps to children; Show Mark off is icon={null}.",
+      "live chooses how a change is announced and draws nothing.",
+    ],
+    properties: [
+      "Tone: Neutral, Progress, Success, Danger, Warning",
+      "Status Text, Show Mark",
+    ],
+    accessibility: [
+      "The mark is never announced: the words say the status.",
+      "Turn Back's pair, Emotion/alert/fill under Emotion/alert/onFill, reads 10.56:1 in light and 13.14:1 in dark.",
+      "The pill is a polite live region by default, so a change never cuts across an instruction.",
+    ],
+  },
+  {
+    componentName: "MapAttribution",
+    componentSetName: "MapAttribution",
+    category: "Product / SDK",
+    summary:
+      "MapAttribution shows the map's credits and, independently, the Pointr brand.",
+    usage: [
+      "Use Map over the map canvas, in the attribution's own colour; Surface on an opaque background.",
+      "Credits are the host's, in its order; the brand is optional and never replaces them.",
+    ],
+    api: [
+      "Appearance maps to appearance (map, surface).",
+      "Credit Text and Credit Text 2 map to credits[].label; Show Brand maps to showBrand.",
+    ],
+    properties: [
+      "Appearance: Map, Surface",
+      "Credit Text, Credit Text 2, Show Brand",
+    ],
+    accessibility: [
+      "The region is named by label.",
+      "A credit line wider than its room scrolls, and only then takes a tab stop.",
+      "On the map the credits carry a halo in code, so they read over any basemap.",
+    ],
+  },
+  {
+    componentName: "MapInfoPanel",
+    componentSetName: "MapInfoPanel",
+    category: "Product / SDK",
+    summary:
+      "MapInfoPanel is the map's information: an introduction, FAQs, credits, links and versions.",
+    usage: [
+      "Use Default for the full panel, ExpandedFAQ with one answer open, Minimal for a title alone.",
+      "All content is the host's and localized; nothing is inferred.",
+    ],
+    api: [
+      "Content maps to the content given: Default, ExpandedFAQ (expandedFAQ), Minimal.",
+      "Title Text maps to content.title, Introduction Text to content.introduction, Show Brand to brand.",
+      "The FAQ is an Accordion instance, the support link a Link, the close a ghost IconButton.",
+    ],
+    properties: [
+      "Content: Default, ExpandedFAQ, Minimal",
+      "Title Text, Introduction Text, Show Brand",
+    ],
+    accessibility: [
+      "The panel is labelled by its title.",
+      "The close is named by closeLabel.",
+      "FAQ answers keep their line breaks.",
+    ],
+  },
+  {
+    componentName: "POIResultGroup",
+    componentSetName: "POIResultGroup",
+    category: "Product / SDK",
+    summary:
+      "POIResultGroup folds the branches of one venue behind its representative.",
+    usage: [
+      "Use Collapsed to show the representative and the count of the rest; Expanded for every member and Hide.",
+      "The members are ordinary POIResultCard rows, so a grouped result acts as an ungrouped one.",
+    ],
+    api: [
+      "State maps to expanded (Collapsed, Expanded).",
+      "Show More Text maps to showMoreLabel(hidden), Hide Text to hideLabel.",
+      "Each member is a POIResultCard Row instance from items.",
+    ],
+    properties: ["State: Collapsed, Expanded", "Show More Text, Hide Text"],
+    accessibility: [
+      "The toggle names the count still hidden and controls the list (aria-controls, aria-expanded).",
+      "The group is named by label.",
+    ],
+  },
+  {
+    componentName: "RouteLocationField",
+    componentSetName: "RouteLocationField",
+    category: "Product / SDK",
+    summary:
+      "RouteLocationField searches for a route's place, or shows the place resolved.",
+    usage: [
+      "Use Search, Loading, Empty and Error while the host searches; Resolved once a place is chosen.",
+      "The place's identity is the host's, never the typed words.",
+    ],
+    api: [
+      "State maps to location and status: Search, Loading, Empty, Error, Resolved.",
+      "Label Text maps to label; Location Text and Description Text to location.label and location.description.",
+      "The search is a Combobox instance; the actions are ghost Buttons.",
+    ],
+    properties: [
+      "State: Search, Loading, Empty, Error, Resolved",
+      "Label Text, Location Text, Description Text, Show Description",
+    ],
+    accessibility: [
+      "The search is named by label, and its status words are its helper text.",
+      "Each action names its field: Change Destination, Cancel Destination.",
+    ],
+  },
+  {
+    componentName: "RouteSetupPanel",
+    componentSetName: "RouteSetupPanel",
+    category: "Product / SDK",
+    summary:
+      "RouteSetupPanel holds a route's place fields and continues once the host says they are ready.",
+    usage: [
+      "Use Incomplete until every point is resolved, Ready to continue, Pending while the host works.",
+      "Use Hosted inside a sheet, Standalone when the panel draws its own surface.",
+    ],
+    api: [
+      "State maps to ready and pending; Presentation to presentation.",
+      "Title Text maps to title, Description Text to description.",
+      "The fields are RouteLocationField instances; Continue is a Button, the close an outline IconButton.",
+    ],
+    properties: [
+      "State: Incomplete, Ready, Pending",
+      "Presentation: Hosted, Standalone",
+      "Title Text, Description Text, Show Description",
+    ],
+    accessibility: [
+      "The section is labelled by its title.",
+      "Continue is disabled, not hidden, until the route is ready, and busy while pending.",
+      "The close stays available while pending.",
+    ],
+  },
+  {
+    componentName: "ArrivalPanel",
+    componentSetName: "ArrivalPanel",
+    category: "Product / SDK",
+    summary:
+      "ArrivalPanel confirms the arrival the host has detected, with the journey as travelled.",
+    usage: [
+      "Use Default once the host confirms arrival; Pending while it finishes navigation.",
+      "Use Hosted inside a sheet, Standalone when the panel draws its own surface.",
+      "Show the actual time and distance only, never an estimate.",
+    ],
+    api: [
+      "State maps to pending; Presentation to presentation.",
+      "Title Text, Destination Text, Location Text and Message Text map to title, destination, locationText and message.",
+      "Duration Text and Distance Text map to actualDurationText and actualDistanceText, with their labels.",
+      "Done is a Button (doneLabel).",
+    ],
+    properties: [
+      "State: Default, Pending",
+      "Presentation: Hosted, Standalone",
+      "Title Text, Destination Text, Location Text, Message Text, Duration Text, Distance Text",
+      "Show Image, Show Location, Show Message, Show Metrics",
+    ],
+    accessibility: [
+      "The panel does not announce or dismiss itself: the host does.",
+      "Done is disabled and busy while pending.",
     ],
   },
   {
@@ -12963,8 +13146,18 @@ const SETS_THAT_OVERRIDE_INSIDE = {
   // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
   // each tinted again after the swap.
   // PageHeader's Info: info-circle (GAP-036).
-  // ClientAppBanner's Dismiss: x-close (GAP-206).
-  IconButton: ["TourStep", "Card", "PageHeader", "ClientAppBanner"],
+  // GAP-206: ClientAppBanner's Dismiss, and MapInfoPanel's and
+  // RouteSetupPanel's close: x-close, tinted again after the swap.
+  IconButton: [
+    "TourStep",
+    "Card",
+    "PageHeader",
+    "ClientAppBanner",
+    "MapInfoPanel",
+    "RouteSetupPanel",
+  ],
+  // GAP-206: RouteLocationField hides its search's own label.
+  Combobox: ["RouteLocationField"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -13171,6 +13364,16 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["Itinerary", updateItineraryComponent],
   ["ManoeuvreCard", updateManoeuvreCardComponent],
   ["RouteProgressRail", updateRouteProgressRailComponent],
+  // GAP-206. Each after the sets it holds: Core's, run first, then
+  // POIResultCard before POIResultGroup and RouteLocationField before
+  // RouteSetupPanel.
+  ["MapStatusPill", updateMapStatusPillComponent],
+  ["MapAttribution", updateMapAttributionComponent],
+  ["MapInfoPanel", updateMapInfoPanelComponent],
+  ["POIResultGroup", updatePOIResultGroupComponent],
+  ["RouteLocationField", updateRouteLocationFieldComponent],
+  ["RouteSetupPanel", updateRouteSetupPanelComponent],
+  ["ArrivalPanel", updateArrivalPanelComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
   // GAP-206: each holds live Core Buttons (ClientAppBanner an IconButton
@@ -13500,6 +13703,27 @@ function additionalComponentActionHandlers() {
     "build-route-preview-panel": buildRoutePreviewPanelComponent,
     "update-route-preview-panel": updateRoutePreviewPanelComponent,
     "rebuild-route-preview-panel": rebuildRoutePreviewPanelComponent,
+    "build-map-status-pill": buildMapStatusPillComponent,
+    "update-map-status-pill": updateMapStatusPillComponent,
+    "rebuild-map-status-pill": rebuildMapStatusPillComponent,
+    "build-map-attribution": buildMapAttributionComponent,
+    "update-map-attribution": updateMapAttributionComponent,
+    "rebuild-map-attribution": rebuildMapAttributionComponent,
+    "build-map-info-panel": buildMapInfoPanelComponent,
+    "update-map-info-panel": updateMapInfoPanelComponent,
+    "rebuild-map-info-panel": rebuildMapInfoPanelComponent,
+    "build-poi-result-group": buildPOIResultGroupComponent,
+    "update-poi-result-group": updatePOIResultGroupComponent,
+    "rebuild-poi-result-group": rebuildPOIResultGroupComponent,
+    "build-route-location-field": buildRouteLocationFieldComponent,
+    "update-route-location-field": updateRouteLocationFieldComponent,
+    "rebuild-route-location-field": rebuildRouteLocationFieldComponent,
+    "build-route-setup-panel": buildRouteSetupPanelComponent,
+    "update-route-setup-panel": updateRouteSetupPanelComponent,
+    "rebuild-route-setup-panel": rebuildRouteSetupPanelComponent,
+    "build-arrival-panel": buildArrivalPanelComponent,
+    "update-arrival-panel": updateArrivalPanelComponent,
+    "rebuild-arrival-panel": rebuildArrivalPanelComponent,
     "build-route-summary": buildRouteSummaryComponent,
     "update-route-summary": updateRouteSummaryComponent,
     "rebuild-route-summary": rebuildRouteSummaryComponent,
@@ -20273,6 +20497,51 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "POIResultList") {
     return {
       Content: POI_RESULT_LIST_CONTENT,
+    };
+  }
+
+  // GAP-206: the map and route parts.
+  if (canonicalName === "MapStatusPill") {
+    return {
+      Tone: MAP_STATUS_PILL_TONES,
+    };
+  }
+
+  if (canonicalName === "MapAttribution") {
+    return {
+      Appearance: MAP_ATTRIBUTION_APPEARANCES,
+    };
+  }
+
+  if (canonicalName === "MapInfoPanel") {
+    return {
+      Content: MAP_INFO_PANEL_CONTENT,
+    };
+  }
+
+  if (canonicalName === "POIResultGroup") {
+    return {
+      State: POI_RESULT_GROUP_STATES,
+    };
+  }
+
+  if (canonicalName === "RouteLocationField") {
+    return {
+      State: ROUTE_LOCATION_FIELD_STATES,
+    };
+  }
+
+  if (canonicalName === "RouteSetupPanel") {
+    return {
+      State: ROUTE_SETUP_PANEL_STATES,
+      Presentation: MAP_PART_PRESENTATIONS,
+    };
+  }
+
+  if (canonicalName === "ArrivalPanel") {
+    return {
+      State: ARRIVAL_PANEL_STATES,
+      Presentation: MAP_PART_PRESENTATIONS,
     };
   }
 
@@ -56985,6 +57254,1916 @@ async function rebuildRouteSummaryComponent() {
     componentName: "RouteSummary",
     componentSetName: "RouteSummary",
     build: buildRouteSummaryComponent,
+  });
+}
+
+// --- GAP-206: the map and route parts ----------------------------------------
+//
+// Seven SDK parts that had no Figma set, so Dev Mode showed no Kozmos code for
+// them: MapStatusPill, MapAttribution, MapInfoPanel, POIResultGroup,
+// RouteLocationField, RouteSetupPanel and ArrivalPanel. Each is drawn as its
+// React part draws it, from the same tokens, and every Kozmos part it holds is
+// an instance of that part's own set, exposed so the designer reaches its
+// properties: Button, IconButton, Spinner, Accordion, Link, Combobox,
+// POIResultCard and RouteLocationField. Those sets run before these: Core's
+// first, then POIResultCard and RouteLocationField earlier in Update All
+// Product / SDK.
+
+const MAP_STATUS_PILL_TONES = [
+  "Neutral",
+  "Progress",
+  "Success",
+  "Danger",
+  "Warning",
+];
+const MAP_ATTRIBUTION_APPEARANCES = ["Map", "Surface"];
+const MAP_INFO_PANEL_CONTENT = ["Default", "ExpandedFAQ", "Minimal"];
+const POI_RESULT_GROUP_STATES = ["Collapsed", "Expanded"];
+const ROUTE_LOCATION_FIELD_STATES = [
+  "Search",
+  "Loading",
+  "Empty",
+  "Error",
+  "Resolved",
+];
+const ROUTE_SETUP_PANEL_STATES = ["Incomplete", "Ready", "Pending"];
+const ARRIVAL_PANEL_STATES = ["Default", "Pending"];
+// Hosted (the default) is content for a sheet that owns the surface;
+// Standalone draws its own: the solid surface, the panel corner, 16 inside and
+// the overlay shadow (surfaceClass("solid") rounded-panel p-4 shadow-overlay).
+const MAP_PART_PRESENTATIONS = ["Hosted", "Standalone"];
+
+const MAP_STATUS_PILL_TEXT = "Preparing Content";
+const MAP_ATTRIBUTION_WIDTH = 240;
+const MAP_INFO_PANEL_WIDTH = 384;
+const POI_RESULT_GROUP_WIDTH = 380;
+const ROUTE_LOCATION_FIELD_WIDTH = 360;
+const MAP_PART_PANEL_WIDTH = 360;
+const MAP_PART_CLOSE_ICON = 16;
+
+const MAP_PART_INK = { name: "Colors/foreground/0", fallback: "#000000" };
+// .kozmos-muted-text and text-muted-foreground: foreground/400.
+const MAP_PART_MUTED = { name: "Colors/foreground/400", fallback: "#5D626F" };
+
+/**
+ * A text in the parts' type scale: Text's own styles (text.<Size>.<Weight>),
+ * so Apply Text Styles finds them; the size and line height are the fallback.
+ */
+async function mapPartText({
+  name,
+  characters,
+  size,
+  weight,
+  token,
+  variableByName,
+  fonts,
+  stats,
+  width,
+  wrap,
+}) {
+  const metrics = textMetrics(size);
+  const text = await productSdkText({
+    name,
+    characters,
+    styleKey: textStyleKeyForText(size, weight || "Normal"),
+    fonts,
+    bold: weight === "Semibold" || weight === "Medium",
+    fontSize: metrics.fontSize,
+    lineHeight: metrics.lineHeight,
+    colorToken: token.name,
+    colorFallback: token.fallback,
+    variableByName,
+    stats,
+    width,
+    wrap: wrap !== false,
+  });
+  return text;
+}
+
+/**
+ * An instance of another Kozmos set, exposed so its own properties are in
+ * reach on this part's instance (a parent's property cannot drive a node
+ * inside it); a named placeholder and a warning while that set is missing.
+ */
+async function mapPartInstance({
+  owner,
+  setName,
+  variant,
+  name,
+  textProperties,
+  booleanProperties,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName: setName,
+    variantProperties: variant,
+    name,
+    stats,
+  });
+  if (!created) {
+    return {
+      node: createMissingNestedComponentNode(
+        name,
+        `Build ${setName} before updating ${owner}.`,
+        stats,
+      ),
+      componentSet: null,
+    };
+  }
+  const instance = created.instance;
+  for (const key of Object.keys(textProperties || {})) {
+    setInstanceTextProperty(
+      instance,
+      created.componentSet,
+      key,
+      textProperties[key],
+      stats,
+    );
+  }
+  for (const key of Object.keys(booleanProperties || {})) {
+    setInstanceBooleanProperty(
+      instance,
+      created.componentSet,
+      key,
+      booleanProperties[key],
+      stats,
+    );
+  }
+  try {
+    instance.isExposedInstance = true;
+  } catch (_error) {
+    // Older runtimes do not expose nested instances; the instance still draws.
+  }
+  return { node: instance, componentSet: created.componentSet };
+}
+
+/** A default Button, the full width, as React's `w-full` Button. */
+async function mapPartFullWidthButton(
+  parent,
+  owner,
+  name,
+  label,
+  disabled,
+  stats,
+) {
+  const button = await mapPartInstance({
+    owner,
+    setName: "Button",
+    variant: {
+      Variant: "Default",
+      Size: "Default",
+      State: disabled ? "Disabled" : "Default",
+    },
+    name,
+    textProperties: { "Label Text": label },
+    stats,
+  });
+  appendWithSizing(parent, button.node, "FILL", null);
+  return button.node;
+}
+
+/** A ghost Button with its words, as React's `variant="ghost"` actions. */
+async function mapPartGhostButton(owner, name, label, stats) {
+  const button = await mapPartInstance({
+    owner,
+    setName: "Button",
+    variant: { Variant: "Ghost", Size: "Default", State: "Default" },
+    name,
+    textProperties: { "Label Text": label },
+    stats,
+  });
+  return button.node;
+}
+
+/**
+ * The close: an IconButton showing x-close. Swapping its Icon replaces the
+ * layer its tint was laid on, so the swapped-in mark is tinted again for the
+ * IconButton's variant, and its stroke drawn at React's 2 × 16 / 24, as
+ * TourStep's Close is. IconButton is in SETS_THAT_OVERRIDE_INSIDE for these.
+ */
+async function mapPartCloseButton(owner, variant, variableByName, stats) {
+  const close = await mapPartInstance({
+    owner,
+    setName: "IconButton",
+    variant: { Variant: variant, Size: "Default", State: "Default" },
+    name: "Close Button",
+    stats,
+  });
+  if (!close.componentSet) return close.node;
+  const glyph = await findKozmosIconSourceComponent("x-close");
+  if (!glyph) {
+    stats.warnings.push(
+      `${owner}: icon "x-close" was not found on the Icons page.`,
+    );
+    return close.node;
+  }
+  if (
+    setInstanceSwapProperty(
+      close.node,
+      close.componentSet,
+      BUTTON_ICON_PROPERTY,
+      glyph.id,
+      stats,
+    )
+  ) {
+    retintMapPartCloseIcon(close.node, variant, owner, variableByName, stats);
+  }
+  return close.node;
+}
+
+function retintMapPartCloseIcon(
+  instance,
+  variant,
+  owner,
+  variableByName,
+  stats,
+) {
+  const config = buttonConfig(variant, "Default");
+  // The layer the Icon property drives, whatever the swap made of its name.
+  const icon =
+    instance.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          BUTTON_ICON_PROPERTY,
+    ) ||
+    instance.findOne(
+      (node) => node.type === "INSTANCE" && node.name === BUTTON_ICON_PROPERTY,
+    );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "map-part-close-icon:" + owner,
+      `${owner}: Close has no Icon layer to tint after the swap.`,
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+  scaleIconStrokes(icon, MAP_PART_CLOSE_ICON);
+}
+
+/** Hosted or Standalone: the sheet's surface, or one of its own. */
+function mapPartPresentation(component, presentation, variableByName, stats) {
+  if (presentation === "Standalone") {
+    component.fills = [
+      paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    ];
+    component.cornerRadius = KOZMOS_RADIUS.panel;
+    component.effects = [elevationEffect("overlay")];
+  } else {
+    component.fills = [];
+    component.cornerRadius = KOZMOS_RADIUS.none;
+    component.effects = [];
+  }
+  component.strokes = [];
+}
+
+function mapPartPresentationValue(second) {
+  return MAP_PART_PRESENTATIONS.indexOf(second) === -1 ? "Hosted" : second;
+}
+
+function parseMapPartTwoAxisName(name, axisName, values) {
+  const base = productSdkVariantValues(name, axisName, values);
+  if (!base) return null;
+  // A variant drawn before the axis existed reads as Hosted, React's default.
+  const second = variantAxisValue(name, "Presentation") || "Hosted";
+  if (MAP_PART_PRESENTATIONS.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+function mapPartSetConfig(name, values, extra) {
+  return Object.assign(
+    {
+      componentName: name,
+      componentSetName: name,
+      axisName: Object.keys(expectedVariantAxesForComponentSetName(name))[0],
+      values,
+      x: 80,
+      y: 17600,
+      xStep: 440,
+      autoReorganize: true,
+    },
+    extra,
+  );
+}
+
+// --- MapStatusPill (decision 39) ---------------------------------------------
+
+/**
+ * Each tone's surface, words and mark, as owned-map-controls.css draws them:
+ * the page's own surface under foreground/300 words; Progress the system's
+ * arc (the Spinner, theme 600: Emotion/themed/text); Success a check, and the
+ * words, in Emotion/success/text; Danger a warning triangle in
+ * Emotion/danger/text with the words ink; Warning — Turn Back — the named pair
+ * Emotion/alert/fill under Emotion/alert/onFill, bright amber under black in
+ * both themes, and no mark: the SDK's U-turn arrow is in no library Kozmos
+ * reads, so React's Turn Back draws none rather than a stand-in (its story
+ * passes icon={null}), and onFill is scoped to fills, not an icon's strokes.
+ */
+function mapStatusPillTone(tone) {
+  const surface = { name: "Colors/background/0", fallback: "#FFFFFF" };
+  const words = { name: "Colors/foreground/300", fallback: "#464A53" };
+  if (tone === "Progress") {
+    return { surface, words, mark: "spinner" };
+  }
+  if (tone === "Success") {
+    const ink = { name: "Emotion/success/text", fallback: "#14653D" };
+    return { surface, words: ink, mark: "check", markToken: ink };
+  }
+  if (tone === "Danger") {
+    return {
+      surface,
+      words,
+      mark: "alert-triangle",
+      markToken: { name: "Emotion/danger/text", fallback: "#B01736" },
+    };
+  }
+  if (tone === "Warning") {
+    return {
+      surface: { name: "Emotion/alert/fill", fallback: "#F9A707" },
+      words: { name: "Emotion/alert/onFill", fallback: "#000000" },
+      mark: null,
+    };
+  }
+  return { surface, words, mark: null };
+}
+
+async function createMapStatusPillVariant(args) {
+  const component = figma.createComponent();
+  await updateMapStatusPillVariant(component, args);
+  return component;
+}
+
+function parseMapStatusPillVariantName(name) {
+  return productSdkVariantValues(name, "Tone", MAP_STATUS_PILL_TONES);
+}
+
+async function updateMapStatusPillVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const tone = mapStatusPillTone(value);
+  // The map controls' surface (decision 40): opaque, the Control corner, no
+  // edge, their shadow; at least 48 tall, 8 above and below, 12 at the sides,
+  // the mark 8 from the words.
+  productSdkVariantRoot(component, "MapStatusPill", "Tone=" + value, {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+    width: 200,
+    height: 48,
+  });
+  component.minHeight = 48;
+  component.fills = [
+    paintFromVariable(
+      tone.surface.name,
+      tone.surface.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.strokes = [];
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.effects = [elevationEffect("floating")];
+
+  if (tone.mark) {
+    const mark = productSdkFrame("Mark", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      width: 24,
+      height: 24,
+    });
+    if (tone.mark === "spinner") {
+      const spinner = await mapPartInstance({
+        owner: "MapStatusPill",
+        setName: "Spinner",
+        variant: { Size: "Medium" },
+        name: "Spinner",
+        stats,
+      });
+      mark.appendChild(spinner.node);
+    } else {
+      const icon = await productSdkIconInstance({
+        iconName: tone.mark,
+        token: tone.markToken,
+        size: 24,
+        variableByName,
+        stats,
+        owner: "MapStatusPill",
+      });
+      if (icon) {
+        icon.name = "Mark Icon";
+        mark.appendChild(icon);
+      }
+    }
+    appendWithSizing(component, mark, "FIXED", "FIXED");
+  }
+
+  // The SDK's words: regular, the type scale's 13 on its 16.
+  const words = await productSdkText({
+    name: "Status Words",
+    characters: MAP_STATUS_PILL_TEXT,
+    styleKey: null,
+    fonts,
+    bold: false,
+    fontSize: 13,
+    lineHeight: 16,
+    colorToken: tone.words.name,
+    colorFallback: tone.words.fallback,
+    variableByName,
+    stats,
+    width: 160,
+  });
+  words.textAutoResize = "WIDTH_AND_HEIGHT";
+  appendWithSizing(component, words, "HUG", "HUG");
+}
+
+function configureMapStatusPillProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Status Words",
+    "Status Text",
+    MAP_STATUS_PILL_TEXT,
+    stats,
+  );
+  configureNamedBooleanProperty(componentSet, "Mark", "Show Mark", true, stats);
+}
+
+const MAP_STATUS_PILL_DESCRIPTION = [
+  "Kozmos MapStatusPill generated from the React MapStatusPill API (decision 39).",
+  "Tone maps to tone: Neutral, Progress, Success, Danger, Warning.",
+  "Status Text maps to children; Show Mark off is icon={null}. The mark is a nested instance: swap it for the product's icon (icon).",
+  "Warning is Turn Back: Emotion/alert/fill under Emotion/alert/onFill, amber under black in both themes, with no mark, as React's Turn Back (icon={null}).",
+  "live (polite, assertive, off) is announcement only and draws nothing.",
+];
+
+async function buildMapStatusPillComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("MapStatusPill", MAP_STATUS_PILL_TONES, {
+      xStep: 360,
+      createVariant: createMapStatusPillVariant,
+      configureProperties: configureMapStatusPillProperties,
+      description: MAP_STATUS_PILL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateMapStatusPillComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("MapStatusPill", MAP_STATUS_PILL_TONES, {
+      xStep: 360,
+      createVariant: createMapStatusPillVariant,
+      updateVariant: updateMapStatusPillVariant,
+      parseVariantName: parseMapStatusPillVariantName,
+      configureProperties: configureMapStatusPillProperties,
+      description: MAP_STATUS_PILL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildMapStatusPillComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapStatusPill",
+    componentSetName: "MapStatusPill",
+    build: buildMapStatusPillComponent,
+  });
+}
+
+// --- MapAttribution ----------------------------------------------------------
+
+async function createMapAttributionVariant(args) {
+  const component = figma.createComponent();
+  await updateMapAttributionVariant(component, args);
+  return component;
+}
+
+function parseMapAttributionVariantName(name) {
+  return productSdkVariantValues(
+    name,
+    "Appearance",
+    MAP_ATTRIBUTION_APPEARANCES,
+  );
+}
+
+async function updateMapAttributionVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const surface = value === "Surface";
+  // Map: transparent, 8 at the sides and above (px-2 pt-2); Surface: the
+  // page's background, 8 all round (bg-background p-2). Both on the Control
+  // corner, centred, the brand 4 over the credits (mb-1).
+  productSdkVariantRoot(component, "MapAttribution", "Appearance=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 4,
+    paddingLeft: 8,
+    paddingRight: 8,
+    paddingTop: 8,
+    paddingBottom: surface ? 8 : 0,
+    width: MAP_ATTRIBUTION_WIDTH,
+    height: 64,
+  });
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.strokes = [];
+  component.fills = surface
+    ? [
+        paintFromVariable(
+          "Colors/background/0",
+          "#FFFFFF",
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+
+  // The bundled Pointr logo, 98 by 34; a product's own brand replaces it.
+  const brand = await productSdkSlot({
+    name: "Brand Slot",
+    label: "Pointr",
+    width: 98,
+    height: 34,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: 8,
+  });
+  appendWithSizing(component, brand, "FIXED", "FIXED");
+
+  // One line of credits, 4 apart, each 10 on 12: on the map in the
+  // attribution's own colour (Map attribution/text; its halo is a text shadow
+  // Figma cannot bind, so it is not drawn), on the surface in the ink. A
+  // credit with an address is a Link, underlined.
+  const ink = surface
+    ? MAP_PART_INK
+    : { name: "Map attribution/text", fallback: "#000000" };
+  const credits = productSdkFrame("Credits", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 4,
+  });
+  for (const [name, characters, linked] of [
+    ["Credit", "© Example venue", true],
+    ["Credit 2", "© OpenStreetMap", false],
+  ]) {
+    const credit = await productSdkText({
+      name,
+      characters,
+      styleKey: null,
+      fonts,
+      bold: false,
+      fontSize: 10,
+      lineHeight: 12,
+      colorToken: ink.name,
+      colorFallback: ink.fallback,
+      variableByName,
+      stats,
+      width: 80,
+    });
+    credit.textAutoResize = "WIDTH_AND_HEIGHT";
+    if (linked) credit.textDecoration = "UNDERLINE";
+    appendWithSizing(credits, credit, "HUG", "HUG");
+  }
+  appendWithSizing(component, credits, "HUG", "HUG");
+}
+
+function configureMapAttributionProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Credit",
+    "Credit Text",
+    "© Example venue",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Credit 2",
+    "Credit Text 2",
+    "© OpenStreetMap",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Brand Slot",
+    "Show Brand",
+    true,
+    stats,
+  );
+}
+
+const MAP_ATTRIBUTION_DESCRIPTION = [
+  "Kozmos MapAttribution generated from the React MapAttribution API.",
+  "Appearance maps to appearance: Map (transparent, the attribution colour) or Surface (the page's background).",
+  "Credit Text and Credit Text 2 map to credits[].label, in order; the first is drawn as a credit with an href, underlined.",
+  "Show Brand maps to showBrand; Brand Slot is the bundled Pointr logo, or brand.",
+  "label names the region for assistive technology and draws nothing.",
+];
+
+async function buildMapAttributionComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("MapAttribution", MAP_ATTRIBUTION_APPEARANCES, {
+      createVariant: createMapAttributionVariant,
+      configureProperties: configureMapAttributionProperties,
+      description: MAP_ATTRIBUTION_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateMapAttributionComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("MapAttribution", MAP_ATTRIBUTION_APPEARANCES, {
+      createVariant: createMapAttributionVariant,
+      updateVariant: updateMapAttributionVariant,
+      parseVariantName: parseMapAttributionVariantName,
+      configureProperties: configureMapAttributionProperties,
+      description: MAP_ATTRIBUTION_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildMapAttributionComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapAttribution",
+    componentSetName: "MapAttribution",
+    build: buildMapAttributionComponent,
+  });
+}
+
+// --- MapInfoPanel ------------------------------------------------------------
+
+async function createMapInfoPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateMapInfoPanelVariant(component, args);
+  return component;
+}
+
+function parseMapInfoPanelVariantName(name) {
+  return productSdkVariantValues(name, "Content", MAP_INFO_PANEL_CONTENT);
+}
+
+async function updateMapInfoPanelVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const minimal = value === "Minimal";
+  const inner = MAP_INFO_PANEL_WIDTH - 48;
+  // .kozmos-map-info-panel: the background, 24 inside, 16 between.
+  productSdkVariantRoot(component, "MapInfoPanel", "Content=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 16,
+    padding: 24,
+    width: MAP_INFO_PANEL_WIDTH,
+    height: 480,
+  });
+  component.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [];
+  component.cornerRadius = KOZMOS_RADIUS.none;
+
+  // The heading keeps 40 clear at its end for the close (pe-10).
+  const heading = productSdkFrame("Heading", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 16,
+    paddingRight: 40,
+    width: inner,
+    height: 28,
+  });
+  const brand = await productSdkSlot({
+    name: "Brand Slot",
+    label: "Brand",
+    width: 160,
+    height: 48,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: 0,
+  });
+  appendWithSizing(heading, brand, "FIXED", "FIXED");
+  const title = await mapPartText({
+    name: "Panel Title",
+    characters: "About this map",
+    size: "XLarge",
+    weight: "Semibold",
+    token: MAP_PART_INK,
+    variableByName,
+    fonts,
+    stats,
+    width: inner - 40,
+  });
+  appendWithSizing(heading, title, "FILL", "HUG");
+  appendWithSizing(component, heading, "FILL", "HUG");
+
+  if (!minimal) {
+    const introduction = await mapPartText({
+      name: "Introduction",
+      characters:
+        "Explore the venue and find the places and services you need.",
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    });
+    appendWithSizing(component, introduction, "FILL", "HUG");
+
+    const faq = productSdkFrame("FAQ", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: inner,
+      height: 80,
+    });
+    const faqHeading = await mapPartText({
+      name: "FAQ Heading",
+      characters: "Frequently asked questions",
+      size: "Small",
+      weight: "Semibold",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    });
+    appendWithSizing(faq, faqHeading, "FILL", "HUG");
+    const accordion = await mapPartInstance({
+      owner: "MapInfoPanel",
+      setName: "Accordion",
+      variant: {
+        Variant: "Default",
+        State: value === "ExpandedFAQ" ? "Open" : "Closed",
+      },
+      name: "FAQ Accordion",
+      textProperties: {
+        "Trigger Text": "How do I change floors?",
+        "Content Text": "Open the floor selector and choose a level.",
+      },
+      booleanProperties: { "Show Label": false, "Show Icon": false },
+      stats,
+    });
+    appendWithSizing(faq, accordion.node, "FILL", null);
+    appendWithSizing(component, faq, "FILL", "HUG");
+
+    // The footer: 32 above it, 12 between its rows.
+    const footer = productSdkFrame("Footer", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 12,
+      paddingTop: 32,
+      width: inner,
+      height: 120,
+    });
+    const copyright = productSdkFrame("Copyright", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: inner,
+      height: 48,
+    });
+    appendWithSizing(
+      copyright,
+      await mapPartText({
+        name: "Copyright Heading",
+        characters: "Copyright",
+        size: "Small",
+        weight: "Semibold",
+        token: MAP_PART_MUTED,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(
+      copyright,
+      await mapPartText({
+        name: "Credit Line",
+        characters: "Indoor map data © Example venue",
+        size: "Small",
+        token: MAP_PART_INK,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(footer, copyright, "FILL", "HUG");
+    const link = await mapPartInstance({
+      owner: "MapInfoPanel",
+      setName: "Link",
+      variant: { Variant: "Default", State: "Default" },
+      name: "Support Link",
+      textProperties: { "Link Text": "Contact support" },
+      stats,
+    });
+    appendWithSizing(footer, link.node, "HUG", null);
+    appendWithSizing(
+      footer,
+      await mapPartText({
+        name: "Version Line",
+        characters: "App version: Example",
+        size: "XS",
+        token: MAP_PART_MUTED,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(component, footer, "FILL", "HUG");
+  }
+
+  // The close: a ghost icon Button, 16 from the top and the end, out of the
+  // flow (.kozmos-map-info-close).
+  const close = await mapPartCloseButton(
+    "MapInfoPanel",
+    "Ghost",
+    variableByName,
+    stats,
+  );
+  component.appendChild(close);
+  placeAbsolute(close, MAP_INFO_PANEL_WIDTH - 16 - 44, 16);
+  try {
+    close.constraints = { horizontal: "MAX", vertical: "MIN" };
+  } catch (_error) {
+    // A missing-set placeholder keeps the default constraints.
+  }
+}
+
+function configureMapInfoPanelProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Panel Title",
+    "Title Text",
+    "About this map",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Introduction",
+    "Introduction Text",
+    "Explore the venue and find the places and services you need.",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Brand Slot",
+    "Show Brand",
+    false,
+    stats,
+  );
+}
+
+const MAP_INFO_PANEL_DESCRIPTION = [
+  "Kozmos MapInfoPanel generated from the React MapInfoPanel API.",
+  "Content: Default (introduction, FAQ, credits, links and versions), ExpandedFAQ (expandedFAQ set), Minimal (a title alone).",
+  "Title Text maps to content.title, Introduction Text to content.introduction; Show Brand to brand.",
+  "The FAQ is Accordion, the support link Link, the close a ghost IconButton: each an instance of its own set, edited on the instance.",
+  "closeLabel names the close for assistive technology and draws nothing.",
+];
+
+async function buildMapInfoPanelComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("MapInfoPanel", MAP_INFO_PANEL_CONTENT, {
+      xStep: 440,
+      createVariant: createMapInfoPanelVariant,
+      configureProperties: configureMapInfoPanelProperties,
+      description: MAP_INFO_PANEL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateMapInfoPanelComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("MapInfoPanel", MAP_INFO_PANEL_CONTENT, {
+      xStep: 440,
+      createVariant: createMapInfoPanelVariant,
+      updateVariant: updateMapInfoPanelVariant,
+      parseVariantName: parseMapInfoPanelVariantName,
+      configureProperties: configureMapInfoPanelProperties,
+      description: MAP_INFO_PANEL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildMapInfoPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapInfoPanel",
+    componentSetName: "MapInfoPanel",
+    build: buildMapInfoPanelComponent,
+  });
+}
+
+// --- POIResultGroup ----------------------------------------------------------
+
+async function createPOIResultGroupVariant(args) {
+  const component = figma.createComponent();
+  await updatePOIResultGroupVariant(component, args);
+  return component;
+}
+
+function parsePOIResultGroupVariantName(name) {
+  return productSdkVariantValues(name, "State", POI_RESULT_GROUP_STATES);
+}
+
+function poiResultGroupDivider(variableByName, stats) {
+  const rule = productSdkFrame("Divider", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    width: POI_RESULT_GROUP_WIDTH - 2,
+    height: 1,
+  });
+  rule.fills = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  return rule;
+}
+
+async function updatePOIResultGroupVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const expanded = value === "Expanded";
+  // The container draws the edge and the members none, a divider between
+  // them: rounded-control border border-border bg-card, clipped.
+  productSdkVariantRoot(component, "POIResultGroup", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 0,
+    width: POI_RESULT_GROUP_WIDTH,
+    height: 200,
+    clip: true,
+  });
+  component.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  component.strokeWeight = 1;
+  component.cornerRadius = KOZMOS_RADIUS.control;
+
+  // The representative, then, open, the rest: each an ordinary
+  // POIResultCard row.
+  const members = expanded ? 3 : 1;
+  for (let index = 0; index < members; index += 1) {
+    if (index > 0) {
+      appendWithSizing(
+        component,
+        poiResultGroupDivider(variableByName, stats),
+        "FILL",
+        "FIXED",
+      );
+    }
+    const member = await mapPartInstance({
+      owner: "POIResultGroup",
+      setName: "POIResultCard",
+      variant: { State: "Default", Appearance: "Row" },
+      name: index === 0 ? "Representative" : `Member ${index + 1}`,
+      stats,
+    });
+    appendWithSizing(component, member.node, "FILL", null);
+  }
+
+  // The toggle: the muted fill under a divider, 12 by 16, its words 14
+  // medium in the muted ink beside a 16 chevron, which turns over open.
+  appendWithSizing(
+    component,
+    poiResultGroupDivider(variableByName, stats),
+    "FILL",
+    "FIXED",
+  );
+  const toggle = productSdkFrame("Toggle", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    spacing: 6,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    width: POI_RESULT_GROUP_WIDTH - 2,
+    height: 44,
+  });
+  toggle.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  const words = await mapPartText({
+    name: expanded ? "Hide Words" : "Show More Words",
+    characters: expanded ? "Hide" : "Show 2 more",
+    size: "Small",
+    weight: "Medium",
+    token: MAP_PART_MUTED,
+    variableByName,
+    fonts,
+    stats,
+    width: 120,
+    wrap: false,
+  });
+  words.textAutoResize = "WIDTH_AND_HEIGHT";
+  appendWithSizing(toggle, words, "HUG", "HUG");
+  const chevron = await productSdkIconInstance({
+    iconName: expanded ? "chevron-up" : "chevron-down",
+    token: MAP_PART_MUTED,
+    size: 16,
+    variableByName,
+    stats,
+    owner: "POIResultGroup",
+  });
+  if (chevron) {
+    chevron.name = "Chevron";
+    appendWithSizing(toggle, chevron, "FIXED", "FIXED");
+  }
+  appendWithSizing(component, toggle, "FILL", "HUG");
+}
+
+function configurePOIResultGroupProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Show More Words",
+    "Show More Text",
+    "Show 2 more",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Hide Words",
+    "Hide Text",
+    "Hide",
+    stats,
+  );
+}
+
+const POI_RESULT_GROUP_DESCRIPTION = [
+  "Kozmos POIResultGroup generated from the React POIResultGroup API.",
+  "State maps to expanded: Collapsed shows collapsedCount (1) members and the count of the rest, Expanded every member and Hide.",
+  "Each member is a POIResultCard Row instance, edited on the instance; items[0] is the representative.",
+  "Show More Text maps to showMoreLabel(hidden), Hide Text to hideLabel.",
+  "label names the group for assistive technology and draws nothing.",
+];
+
+async function buildPOIResultGroupComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("POIResultGroup", POI_RESULT_GROUP_STATES, {
+      createVariant: createPOIResultGroupVariant,
+      configureProperties: configurePOIResultGroupProperties,
+      description: POI_RESULT_GROUP_DESCRIPTION,
+    }),
+  );
+}
+
+async function updatePOIResultGroupComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("POIResultGroup", POI_RESULT_GROUP_STATES, {
+      createVariant: createPOIResultGroupVariant,
+      updateVariant: updatePOIResultGroupVariant,
+      parseVariantName: parsePOIResultGroupVariantName,
+      configureProperties: configurePOIResultGroupProperties,
+      description: POI_RESULT_GROUP_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildPOIResultGroupComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "POIResultGroup",
+    componentSetName: "POIResultGroup",
+    build: buildPOIResultGroupComponent,
+  });
+}
+
+// --- RouteLocationField ------------------------------------------------------
+
+/** The words React shows under the search for each status (statusText). */
+const ROUTE_LOCATION_FIELD_MESSAGES = {
+  Loading: "Searching locations…",
+  Empty: "No locations found",
+  Error: "Locations are unavailable",
+};
+
+async function createRouteLocationFieldVariant(args) {
+  const component = figma.createComponent();
+  await updateRouteLocationFieldVariant(component, args);
+  return component;
+}
+
+function parseRouteLocationFieldVariantName(name) {
+  return productSdkVariantValues(name, "State", ROUTE_LOCATION_FIELD_STATES);
+}
+
+/**
+ * The search is Combobox, whose own label React leaves unseen (it names the
+ * field by aria-label and draws the label in the row above, beside the
+ * field's actions). So the instance's Label Text is hidden: an override
+ * inside Combobox, which is why Combobox is in SETS_THAT_OVERRIDE_INSIDE.
+ */
+function hideRouteLocationComboboxLabel(instance, stats) {
+  const label = instance.findOne(
+    (node) => node.type === "TEXT" && node.name === "Label Text",
+  );
+  if (!label) {
+    pushUniqueWarning(
+      stats,
+      "route-location-combobox-label",
+      "RouteLocationField: the Combobox has no Label Text to hide.",
+    );
+    return;
+  }
+  label.visible = false;
+}
+
+async function updateRouteLocationFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const resolved = value === "Resolved";
+  const inner = ROUTE_LOCATION_FIELD_WIDTH - (resolved ? 26 : 0);
+  productSdkVariantRoot(component, "RouteLocationField", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 8,
+    padding: resolved ? 12 : 0,
+    width: ROUTE_LOCATION_FIELD_WIDTH,
+    height: 120,
+  });
+  component.fills = [];
+  component.effects = [];
+  // A resolved place sits in its own box: rounded-control, the border, 12
+  // inside, its words 8 apart.
+  component.strokes = resolved
+    ? [paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats)]
+    : [];
+  component.strokeWeight = resolved ? 1 : 0;
+  component.cornerRadius = resolved ? KOZMOS_RADIUS.control : 0;
+
+  // The label, 14 in the muted ink, at the start of a row whose end holds
+  // the field's action.
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "SPACE_BETWEEN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: inner,
+    height: 44,
+  });
+  const label = await mapPartText({
+    name: "Field Label",
+    characters: "Destination",
+    size: "Small",
+    token: MAP_PART_MUTED,
+    variableByName,
+    fonts,
+    stats,
+    width: 160,
+  });
+  appendWithSizing(header, label, "FILL", "HUG");
+  const message = ROUTE_LOCATION_FIELD_MESSAGES[value];
+  if (resolved) {
+    appendWithSizing(
+      header,
+      await mapPartGhostButton(
+        "RouteLocationField",
+        "Clear Location Button",
+        "Clear location",
+        stats,
+      ),
+      "HUG",
+      null,
+    );
+  } else if (message) {
+    // A query is typed: React offers to clear it.
+    appendWithSizing(
+      header,
+      await mapPartGhostButton(
+        "RouteLocationField",
+        "Clear Search Button",
+        "Clear search",
+        stats,
+      ),
+      "HUG",
+      null,
+    );
+  }
+  appendWithSizing(component, header, "FILL", "HUG");
+
+  if (resolved) {
+    const place = productSdkFrame("Place", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 0,
+      width: inner,
+      height: 44,
+    });
+    appendWithSizing(
+      place,
+      await mapPartText({
+        name: "Location Name",
+        characters: "Main Lobby",
+        size: "Base",
+        weight: "Semibold",
+        token: MAP_PART_INK,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(
+      place,
+      await mapPartText({
+        name: "Location Description",
+        characters: "Ground Floor",
+        size: "Small",
+        token: MAP_PART_MUTED,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(component, place, "FILL", "HUG");
+    return;
+  }
+
+  const combobox = await mapPartInstance({
+    owner: "RouteLocationField",
+    setName: "Combobox",
+    variant: {
+      State: "Default",
+      Status: value === "Error" ? "Error" : "Default",
+      Content: "Closed",
+    },
+    name: "Search",
+    textProperties: Object.assign(
+      { "Placeholder Text": "Search for a place" },
+      message ? { "Helper Text": message } : {},
+    ),
+    booleanProperties: { "Show Helper Text": Boolean(message) },
+    stats,
+  });
+  if (combobox.componentSet) {
+    hideRouteLocationComboboxLabel(combobox.node, stats);
+  }
+  appendWithSizing(component, combobox.node, "FILL", null);
+}
+
+function configureRouteLocationFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Field Label",
+    "Label Text",
+    "Destination",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Location Name",
+    "Location Text",
+    "Main Lobby",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Location Description",
+    "Description Text",
+    "Ground Floor",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Location Description",
+    "Show Description",
+    true,
+    stats,
+  );
+}
+
+const ROUTE_LOCATION_FIELD_DESCRIPTION = [
+  "Kozmos RouteLocationField generated from the React RouteLocationField API.",
+  "State maps to location and status: Search (no location, idle or ready), Loading, Empty, Error, and Resolved (location set).",
+  "Label Text maps to label; Location Text to location.label, Description Text to location.description (Show Description).",
+  "The search is a Combobox instance, its own label hidden as React's is; Placeholder Text is placeholder and Helper Text the status's statusText.",
+  "Clear search, Clear location (clearLabel) and, with onEdit, Change (changeLabel) are ghost Buttons, edited on the instance.",
+];
+
+async function buildRouteLocationFieldComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("RouteLocationField", ROUTE_LOCATION_FIELD_STATES, {
+      xStep: 420,
+      createVariant: createRouteLocationFieldVariant,
+      configureProperties: configureRouteLocationFieldProperties,
+      description: ROUTE_LOCATION_FIELD_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateRouteLocationFieldComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("RouteLocationField", ROUTE_LOCATION_FIELD_STATES, {
+      xStep: 420,
+      createVariant: createRouteLocationFieldVariant,
+      updateVariant: updateRouteLocationFieldVariant,
+      parseVariantName: parseRouteLocationFieldVariantName,
+      configureProperties: configureRouteLocationFieldProperties,
+      description: ROUTE_LOCATION_FIELD_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildRouteLocationFieldComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "RouteLocationField",
+    componentSetName: "RouteLocationField",
+    build: buildRouteLocationFieldComponent,
+  });
+}
+
+// --- RouteSetupPanel ---------------------------------------------------------
+
+async function createRouteSetupPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateRouteSetupPanelVariant(component, args);
+  return component;
+}
+
+function parseRouteSetupPanelVariantName(name) {
+  return parseMapPartTwoAxisName(name, "State", ROUTE_SETUP_PANEL_STATES);
+}
+
+async function updateRouteSetupPanelVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const presentation = mapPartPresentationValue(second);
+  const standalone = presentation === "Standalone";
+  const inner = MAP_PART_PANEL_WIDTH - (standalone ? 32 : 0);
+  productSdkVariantRoot(
+    component,
+    "RouteSetupPanel",
+    `State=${value}, Presentation=${presentation}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 16,
+      padding: standalone ? 16 : 0,
+      width: MAP_PART_PANEL_WIDTH,
+      height: 400,
+    },
+  );
+  mapPartPresentation(component, presentation, variableByName, stats);
+
+  // The title, 20 semibold, and the outline close at its end.
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 12,
+    width: inner,
+    height: 44,
+  });
+  appendWithSizing(
+    header,
+    await mapPartText({
+      name: "Panel Title",
+      characters: "Set up a route",
+      size: "XLarge",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner - 56,
+    }),
+    "FILL",
+    "HUG",
+  );
+  header.appendChild(
+    await mapPartCloseButton(
+      "RouteSetupPanel",
+      "Outline",
+      variableByName,
+      stats,
+    ),
+  );
+  appendWithSizing(component, header, "FILL", "HUG");
+
+  appendWithSizing(
+    component,
+    await mapPartText({
+      name: "Panel Description",
+      characters: "Choose where your route starts and ends.",
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    }),
+    "FILL",
+    "HUG",
+  );
+
+  // children: the route's places, each a RouteLocationField. Ready and
+  // Pending have both resolved; Incomplete is still searching for the end.
+  const locations = productSdkFrame("Locations", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 12,
+    width: inner,
+    height: 200,
+  });
+  for (const [name, label, resolved] of [
+    ["Start Field", "Start", true],
+    ["Destination Field", "Destination", value !== "Incomplete"],
+  ]) {
+    const field = await mapPartInstance({
+      owner: "RouteSetupPanel",
+      setName: "RouteLocationField",
+      variant: { State: resolved ? "Resolved" : "Search" },
+      name,
+      textProperties: { "Label Text": label },
+      stats,
+    });
+    appendWithSizing(locations, field.node, "FILL", null);
+  }
+  appendWithSizing(component, locations, "FILL", "HUG");
+
+  // Continue: a default Button, disabled until the host says every point is
+  // resolved, and while it is pending.
+  await mapPartFullWidthButton(
+    component,
+    "RouteSetupPanel",
+    "Continue Button",
+    "Continue",
+    value !== "Ready",
+    stats,
+  );
+}
+
+function configureRouteSetupPanelProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Panel Title",
+    "Title Text",
+    "Set up a route",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Panel Description",
+    "Description Text",
+    "Choose where your route starts and ends.",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Panel Description",
+    "Show Description",
+    true,
+    stats,
+  );
+}
+
+const ROUTE_SETUP_PANEL_DESCRIPTION = [
+  "Kozmos RouteSetupPanel generated from the React RouteSetupPanel API.",
+  "State maps to ready and pending: Incomplete (ready false), Ready, Pending (pending: Continue stays disabled while the host works).",
+  "Presentation maps to presentation: Hosted (the sheet owns the surface) or Standalone (the solid surface, the panel corner, the overlay shadow).",
+  "Title Text maps to title, Description Text to description (Show Description).",
+  "The places are RouteLocationField instances (children); Continue is a Button (continueLabel), the close an outline IconButton (closeLabel).",
+];
+
+function routeSetupPanelSetConfig(extra) {
+  return mapPartSetConfig(
+    "RouteSetupPanel",
+    ROUTE_SETUP_PANEL_STATES,
+    Object.assign(
+      {
+        axis2Name: "Presentation",
+        axis2Values: MAP_PART_PRESENTATIONS,
+        xStep: 420,
+        yStep: 620,
+      },
+      extra,
+    ),
+  );
+}
+
+async function buildRouteSetupPanelComponent() {
+  return buildSingleAxisComponent(
+    routeSetupPanelSetConfig({
+      createVariant: createRouteSetupPanelVariant,
+      configureProperties: configureRouteSetupPanelProperties,
+      description: ROUTE_SETUP_PANEL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateRouteSetupPanelComponent() {
+  return updateSingleAxisComponent(
+    routeSetupPanelSetConfig({
+      createVariant: createRouteSetupPanelVariant,
+      updateVariant: updateRouteSetupPanelVariant,
+      parseVariantName: parseRouteSetupPanelVariantName,
+      configureProperties: configureRouteSetupPanelProperties,
+      description: ROUTE_SETUP_PANEL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildRouteSetupPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "RouteSetupPanel",
+    componentSetName: "RouteSetupPanel",
+    build: buildRouteSetupPanelComponent,
+  });
+}
+
+// --- ArrivalPanel ------------------------------------------------------------
+
+async function createArrivalPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateArrivalPanelVariant(component, args);
+  return component;
+}
+
+function parseArrivalPanelVariantName(name) {
+  return parseMapPartTwoAxisName(name, "State", ARRIVAL_PANEL_STATES);
+}
+
+async function arrivalMetric(name, label, value, variableByName, fonts, stats) {
+  const metric = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    spacing: 0,
+  });
+  appendWithSizing(
+    metric,
+    await mapPartText({
+      name: name + " Label",
+      characters: label,
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: 140,
+      wrap: false,
+    }),
+    "HUG",
+    "HUG",
+  );
+  appendWithSizing(
+    metric,
+    await mapPartText({
+      name: name + " Value",
+      characters: value,
+      size: "Base",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: 140,
+      wrap: false,
+    }),
+    "HUG",
+    "HUG",
+  );
+  for (const child of metric.children)
+    child.textAutoResize = "WIDTH_AND_HEIGHT";
+  return metric;
+}
+
+async function updateArrivalPanelVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const presentation = mapPartPresentationValue(second);
+  const standalone = presentation === "Standalone";
+  const inner = MAP_PART_PANEL_WIDTH - (standalone ? 32 : 0);
+  productSdkVariantRoot(
+    component,
+    "ArrivalPanel",
+    `State=${value}, Presentation=${presentation}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 16,
+      padding: standalone ? 16 : 0,
+      width: MAP_PART_PANEL_WIDTH,
+      height: 360,
+    },
+  );
+  mapPartPresentation(component, presentation, variableByName, stats);
+
+  appendWithSizing(
+    component,
+    await mapPartText({
+      name: "Arrival Title",
+      characters: "You've arrived",
+      size: "XLarge",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    }),
+    "FILL",
+    "HUG",
+  );
+
+  // The destination: its 48 picture, then its name and where it is.
+  const destination = productSdkFrame("Destination", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 12,
+    width: inner,
+    height: 48,
+  });
+  // DestinationImage: 48, rounded-control, the border, bg-muted; with no
+  // picture, the map pin at 20 in the ink.
+  const image = productSdkFrame("Destination Image", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: 48,
+    height: 48,
+  });
+  image.cornerRadius = KOZMOS_RADIUS.control;
+  image.clipsContent = true;
+  image.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  image.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  image.strokeWeight = 1;
+  const pin = await productSdkIconInstance({
+    iconName: "marker-pin-01",
+    token: MAP_PART_INK,
+    size: 20,
+    variableByName,
+    stats,
+    owner: "ArrivalPanel",
+  });
+  if (pin) {
+    pin.name = "Pin";
+    appendWithSizing(image, pin, "FIXED", "FIXED");
+  }
+  appendWithSizing(destination, image, "FIXED", "FIXED");
+  const words = productSdkFrame("Destination Words", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 0,
+    width: inner - 60,
+    height: 44,
+  });
+  appendWithSizing(
+    words,
+    await mapPartText({
+      name: "Destination Name",
+      characters: "Gate B12",
+      size: "Base",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner - 60,
+    }),
+    "FILL",
+    "HUG",
+  );
+  appendWithSizing(
+    words,
+    await mapPartText({
+      name: "Destination Location",
+      characters: "Terminal 2, Level 1",
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner - 60,
+    }),
+    "FILL",
+    "HUG",
+  );
+  appendWithSizing(destination, words, "FILL", "HUG");
+  appendWithSizing(component, destination, "FILL", "HUG");
+
+  appendWithSizing(
+    component,
+    await mapPartText({
+      name: "Arrival Message",
+      characters: "Your gate opens 40 minutes before departure.",
+      size: "Base",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    }),
+    "FILL",
+    "HUG",
+  );
+
+  // The journey as travelled, never an estimate: each a muted label over
+  // its value, 16 apart.
+  const metrics = productSdkFrame("Metrics", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 16,
+    width: inner,
+    height: 44,
+  });
+  metrics.appendChild(
+    await arrivalMetric(
+      "Duration",
+      "Journey time",
+      "6 min",
+      variableByName,
+      fonts,
+      stats,
+    ),
+  );
+  metrics.appendChild(
+    await arrivalMetric(
+      "Distance",
+      "Distance travelled",
+      "202 m",
+      variableByName,
+      fonts,
+      stats,
+    ),
+  );
+  appendWithSizing(component, metrics, "FILL", "HUG");
+
+  // Done: a default Button the full width, disabled while the host finishes.
+  await mapPartFullWidthButton(
+    component,
+    "ArrivalPanel",
+    "Done Button",
+    "Done",
+    value === "Pending",
+    stats,
+  );
+}
+
+const ARRIVAL_PANEL_TEXT_PROPERTIES = [
+  ["Arrival Title", "Title Text", "You've arrived"],
+  ["Destination Name", "Destination Text", "Gate B12"],
+  ["Destination Location", "Location Text", "Terminal 2, Level 1"],
+  [
+    "Arrival Message",
+    "Message Text",
+    "Your gate opens 40 minutes before departure.",
+  ],
+  ["Duration Label", "Duration Label Text", "Journey time"],
+  ["Duration Value", "Duration Text", "6 min"],
+  ["Distance Label", "Distance Label Text", "Distance travelled"],
+  ["Distance Value", "Distance Text", "202 m"],
+];
+
+const ARRIVAL_PANEL_BOOLEAN_PROPERTIES = [
+  ["Destination Image", "Show Image", true],
+  ["Destination Location", "Show Location", true],
+  ["Arrival Message", "Show Message", false],
+  ["Metrics", "Show Metrics", true],
+];
+
+function configureArrivalPanelProperties(componentSet, stats) {
+  for (const [node, property, value] of ARRIVAL_PANEL_TEXT_PROPERTIES) {
+    configureNamedTextProperty(componentSet, node, property, value, stats);
+  }
+  for (const [node, property, value] of ARRIVAL_PANEL_BOOLEAN_PROPERTIES) {
+    configureNamedBooleanProperty(componentSet, node, property, value, stats);
+  }
+}
+
+const ARRIVAL_PANEL_DESCRIPTION = [
+  "Kozmos ArrivalPanel generated from the React ArrivalPanel API.",
+  "State maps to pending: Pending disables Done while the host finishes navigation.",
+  "Presentation maps to presentation: Hosted (the sheet owns the surface) or Standalone (the solid surface, the panel corner, the overlay shadow).",
+  "Title Text, Destination Text, Location Text and Message Text map to title, destination, locationText and message; the metrics to actualDurationText, actualDistanceText and their labels.",
+  "Show Image is destinationImage, Show Location locationText, Show Message message, Show Metrics either actual value: each optional in code.",
+  "Done is a default Button (doneLabel), edited on the instance.",
+];
+
+function arrivalPanelSetConfig(extra) {
+  return mapPartSetConfig(
+    "ArrivalPanel",
+    ARRIVAL_PANEL_STATES,
+    Object.assign(
+      {
+        axis2Name: "Presentation",
+        axis2Values: MAP_PART_PRESENTATIONS,
+        xStep: 420,
+        yStep: 520,
+      },
+      extra,
+    ),
+  );
+}
+
+async function buildArrivalPanelComponent() {
+  return buildSingleAxisComponent(
+    arrivalPanelSetConfig({
+      createVariant: createArrivalPanelVariant,
+      configureProperties: configureArrivalPanelProperties,
+      description: ARRIVAL_PANEL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateArrivalPanelComponent() {
+  return updateSingleAxisComponent(
+    arrivalPanelSetConfig({
+      createVariant: createArrivalPanelVariant,
+      updateVariant: updateArrivalPanelVariant,
+      parseVariantName: parseArrivalPanelVariantName,
+      configureProperties: configureArrivalPanelProperties,
+      description: ARRIVAL_PANEL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildArrivalPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ArrivalPanel",
+    componentSetName: "ArrivalPanel",
+    build: buildArrivalPanelComponent,
   });
 }
 

@@ -195,6 +195,33 @@ convention that avoids variant explosion:
 - **WayfindingCard** — `Content` of Basic and Titled. Compose route content into
   the slot instead of extending this set.
 
+The map and route parts (GAP-206) hold instances of other Kozmos sets, so they
+run after them: Core's sets first, then POIResultCard before POIResultGroup and
+RouteLocationField before RouteSetupPanel, as Update All Product / SDK does.
+
+- **MapStatusPill** — `Tone` of Neutral, Progress, Success, Danger and Warning
+  (decision 39): the map controls' surface, 48 tall, the 13/16 words in
+  foreground/300. Progress is a nested Spinner; Success a check and the words
+  in Emotion/success/text; Danger a warning triangle in Emotion/danger/text;
+  Warning, Turn Back, Emotion/alert/fill under Emotion/alert/onFill. Status Text
+  and Show Mark.
+- **MapAttribution** — `Appearance` of Map and Surface: the brand slot over one
+  line of 10/12 credits, in Map attribution/text on the map (its halo is a
+  text shadow Figma cannot bind) and the ink on the surface.
+- **MapInfoPanel** — `Content` of Default, ExpandedFAQ and Minimal: the
+  title, the introduction, an Accordion FAQ, the credits, a Link and the
+  versions, with a ghost IconButton close.
+- **POIResultGroup** — `State` of Collapsed and Expanded: POIResultCard Row
+  instances under one edge, divided, over the Show more or Hide toggle.
+- **RouteLocationField** — `State` of Search, Loading, Empty, Error and
+  Resolved: the label over a Combobox (its own label hidden, as React's is)
+  or the resolved place in its box, with a ghost Button action.
+- **RouteSetupPanel** — `State` of Incomplete, Ready and Pending by
+  `Presentation` of Hosted and Standalone: two RouteLocationField instances
+  and the Continue Button, disabled until Ready.
+- **ArrivalPanel** — `State` of Default and Pending by `Presentation` of
+  Hosted and Standalone: the destination, the journey as travelled and Done.
+
 Use **Update** rather than **Build** after the first pass so the Code Connect node
 IDs stay stable, exactly as with Core sets.
 

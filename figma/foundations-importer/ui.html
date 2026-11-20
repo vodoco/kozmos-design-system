@@ -1206,6 +1206,13 @@
                 <option value="routeProgressRail">RouteProgressRail</option>
                 <option value="clientAppBanner">ClientAppBanner</option>
                 <option value="languageSwitcher">LanguageSwitcher</option>
+                <option value="mapStatusPill">MapStatusPill</option>
+                <option value="mapAttribution">MapAttribution</option>
+                <option value="mapInfoPanel">MapInfoPanel</option>
+                <option value="poiResultGroup">POIResultGroup</option>
+                <option value="routeLocationField">RouteLocationField</option>
+                <option value="routeSetupPanel">RouteSetupPanel</option>
+                <option value="arrivalPanel">ArrivalPanel</option>
               </optgroup>
               <optgroup label="Platform / Form-Factor">
                 <option value="dynamicIsland">DynamicIsland</option>
@@ -1630,6 +1637,55 @@
           update: "update-route-preview-panel",
           rebuild: "rebuild-route-preview-panel",
           hint: "Build creates RoutePreviewPanel across the five RouteReadiness statuses; only Ready lists route options. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        mapStatusPill: {
+          label: "MapStatusPill",
+          build: "build-map-status-pill",
+          update: "update-map-status-pill",
+          rebuild: "rebuild-map-status-pill",
+          hint: "Build creates MapStatusPill (decision 39) with Tone Neutral, Progress, Success, Danger and Warning: the map controls' surface, 13/16 words in foreground/300; Progress a nested Spinner, Success a check and its words in Emotion/success/text, Danger a triangle in Emotion/danger/text, Warning (Turn Back) Emotion/alert/fill under Emotion/alert/onFill. Status Text and Show Mark. Build Spinner and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        mapAttribution: {
+          label: "MapAttribution",
+          build: "build-map-attribution",
+          update: "update-map-attribution",
+          rebuild: "rebuild-map-attribution",
+          hint: "Build creates MapAttribution with Appearance Map (transparent, Map attribution/text) and Surface (the page background): the brand slot over a line of two 10/12 credits. Credit Text, Credit Text 2 and Show Brand. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        mapInfoPanel: {
+          label: "MapInfoPanel",
+          build: "build-map-info-panel",
+          update: "update-map-info-panel",
+          rebuild: "rebuild-map-info-panel",
+          hint: "Build creates MapInfoPanel with Content Default, ExpandedFAQ and Minimal: the title, introduction, an Accordion FAQ, credits, a Link and versions, and a ghost IconButton close. Build Accordion, Link and IconButton and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        poiResultGroup: {
+          label: "POIResultGroup",
+          build: "build-poi-result-group",
+          update: "update-poi-result-group",
+          rebuild: "rebuild-poi-result-group",
+          hint: "Build creates POIResultGroup with State Collapsed and Expanded: POIResultCard Row members under one edge, divided, over the Show more / Hide toggle. Build POIResultCard and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        routeLocationField: {
+          label: "RouteLocationField",
+          build: "build-route-location-field",
+          update: "update-route-location-field",
+          rebuild: "rebuild-route-location-field",
+          hint: "Build creates RouteLocationField with State Search, Loading, Empty, Error and Resolved: a Combobox search under the field's label, or the resolved place in its box, each with its ghost Button action. Build Combobox and Button first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        routeSetupPanel: {
+          label: "RouteSetupPanel",
+          build: "build-route-setup-panel",
+          update: "update-route-setup-panel",
+          rebuild: "rebuild-route-setup-panel",
+          hint: "Build creates RouteSetupPanel with State Incomplete, Ready and Pending by Presentation Hosted and Standalone: the title and an outline IconButton close, two RouteLocationField instances and the Continue Button. Build RouteLocationField, Button and IconButton and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        arrivalPanel: {
+          label: "ArrivalPanel",
+          build: "build-arrival-panel",
+          update: "update-arrival-panel",
+          rebuild: "rebuild-arrival-panel",
+          hint: "Build creates ArrivalPanel with State Default and Pending by Presentation Hosted and Standalone: the title, the destination with its picture, the message, the journey as travelled and the Done Button. Build Button and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         routeSummary: {
           label: "RouteSummary",
