@@ -242,8 +242,9 @@ else for (const k of [...dividerOffenders.keys()].sort()) fail(`plugin: ${k}`);
 
 // 3c. the web draws its dividers with the same role
 for (const [file, needle, label] of [
+  // Separator's classes are its recipe's, shared with Vue's KozmosSeparator.
   [
-    "packages/react/src/components/Separator/Separator.tsx",
+    "packages/react/src/recipes/separator.ts",
     "bg-border",
     "Separator",
   ],
