@@ -11280,7 +11280,13 @@ const topLeftOf = (set) =>
 // they are there, each an empty component. The file's variables and fonts
 // stand in as they do in the Stepper replay; what is measured is which nodes
 // Update keeps, renames and adds, and what it declares.
-async function replayUpdate(setName, oldNames, update, extraPages = []) {
+async function replayUpdate(
+  setName,
+  oldNames,
+  update,
+  extraPages = [],
+  seed = null,
+) {
   const livePage = new MockNode("PAGE", "Components");
   const liveSet = new MockNode("COMPONENT_SET", setName);
   const oldIds = {};
@@ -11290,6 +11296,8 @@ async function replayUpdate(setName, oldNames, update, extraPages = []) {
     oldIds[name] = variant.id;
   }
   livePage.appendChild(liveSet);
+  // What an earlier, failed run left on the page beside the set.
+  if (seed) seed(livePage);
   const setId = liveSet.id;
   const updatePlugin = loadPlugin({
     pluginPath: PLUGIN,
@@ -11307,6 +11315,7 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
   const byId = new Map(liveSet.children.map((child) => [child.id, child]));
   return {
     result,
+    livePage,
     liveSet,
     setId,
     kept: oldNames.map((name) => byId.get(oldIds[name])),
@@ -17248,6 +17257,38 @@ section("GAP-162: the controls draw a description, and Switch its state");
       ),
     `ToggleButton: Update keeps its 24 variants, ids and names and adds the 6 Mixed ones (${toggleReplay.result.variantsUpdated} updated, ${toggleReplay.result.variantsCreated} created)`,
   );
+
+  // The owner's Update of 20 Nov: the first Mixed Switch and ToggleButton
+  // failed on the synchronous vectorNetwork setter, which a file opened with
+  // dynamic page loading refuses (the stand-in now refuses it too), and each
+  // attempt left its half-made Mixed variant and a "Switch Track" on the page
+  // beside the set. The next Update clears both and adds every Mixed variant.
+  const leftovers = (page) => {
+    const track = new MockNode("FRAME", "Switch Track");
+    track.setSharedPluginData("kozmos_ds_importer", "kind", "switch-track");
+    page.appendChild(track);
+    const half = new MockNode("COMPONENT", "Checked=Mixed, State=Default");
+    half.setSharedPluginData("kozmos_ds_importer", "kind", "component-variant");
+    half.setSharedPluginData("kozmos_ds_importer", "component", "Switch");
+    page.appendChild(half);
+  };
+  const switchNames = [];
+  for (const checked of ["Unchecked", "Checked"])
+    for (const state of ["Default", "Disabled", "Error"])
+      switchNames.push(`Checked=${checked}, State=${state}`);
+  const cleaned = await withAutoLayout(() =>
+    replayUpdate("Switch", switchNames, "updateSwitchComponent", [], leftovers),
+  );
+  const besideSet = cleaned.livePage.children
+    .filter((node) => node !== cleaned.liveSet)
+    .map((node) => node.name);
+  ok(
+    besideSet.length === 0 &&
+      ["Default", "Disabled", "Error"].every((state) =>
+        cleaned.names.includes(`Checked=Mixed, State=${state}`),
+      ),
+    `Switch: Update clears a failed run's loose Mixed variant and Switch Track, and adds the 3 Mixed variants (left beside the set: ${besideSet.join(", ") || "nothing"})`,
+  );
 }
 
 // --- Decision 132's fields: Search's clear, NumberInput's unit, Slider's readout ---
@@ -21368,6 +21409,17 @@ section(
       media.children.indexOf(close) > media.children.indexOf(band),
     ),
     `Media: the close in the dialog's corner, 24 in, on the surface with the subtle edge, above the band, not in the header (${close && `${close.parent && close.parent.name} ${close.x},${close.y}`})`,
+  );
+  // On the dialog's own corner the close is still a control, which keeps its
+  // own corner: tagged so, the nested-radius check (CI's --strict run over the
+  // live file) leaves it alone. Untagged, it read the 8 close 24 inside the
+  // 20 dialog as a panel off by 12 and failed every branch (20 Nov).
+  ok(
+    Boolean(
+      close &&
+      close.getSharedPluginData(plugin.RUN_NAMESPACE, "surface") === "control",
+    ),
+    `Media: the close on the dialog's corner is tagged a control surface (${close && (close.getSharedPluginData(plugin.RUN_NAMESPACE, "surface") || "untagged")})`,
   );
   const basic = await paintDialog("Basic");
   ok(
