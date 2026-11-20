@@ -387,6 +387,73 @@ describe("POIDetailPanel", () => {
     expect(screen.queryByText(/Nearby/)).not.toBeInTheDocument();
   });
 
+  it("draws what Navigate's estimate includes under the strip and says it with Go (GAP-047)", () => {
+    const details = {
+      ...restaurantDetails,
+      travelEstimate: {
+        durationSeconds: 720,
+        durationLabel: "12 min",
+        distanceLabel: "400 m",
+        breakdown: [
+          {
+            kind: "securityQueue" as const,
+            durationSeconds: 480,
+            label: "Includes security (about 8 min)",
+          },
+        ],
+      },
+    };
+    const { container, rerender } = render(
+      <POIDetailPanel
+        poi={restaurantPOI}
+        details={details}
+        actionLabels={labels}
+        onAction={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Go 12 min 400 m Includes security (about 8 min)",
+      }),
+    ).toBeVisible();
+    const line = container.querySelector(".kozmos-poi-estimate-breakdown");
+    expect(line).toHaveTextContent("Includes security (about 8 min)");
+    // Said once, with Go's time, not again as a line of its own.
+    expect(line).toHaveAttribute("aria-hidden", "true");
+
+    // Without Navigate there is no estimate to qualify, so no line.
+    rerender(
+      <POIDetailPanel
+        poi={{ ...restaurantPOI, actions: ["share"] }}
+        details={details}
+        actionLabels={labels}
+        onAction={vi.fn()}
+      />,
+    );
+    expect(
+      container.querySelector(".kozmos-poi-estimate-breakdown"),
+    ).toBeNull();
+
+    // Without a breakdown, Go and the strip are as before.
+    rerender(
+      <POIDetailPanel
+        poi={restaurantPOI}
+        details={{
+          ...details,
+          travelEstimate: { ...details.travelEstimate, breakdown: [] },
+        }}
+        actionLabels={labels}
+        onAction={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Go 12 min 400 m" }),
+    ).toBeVisible();
+    expect(
+      container.querySelector(".kozmos-poi-estimate-breakdown"),
+    ).toBeNull();
+  });
+
   it("emits supplementary capabilities independently of legacy actions", () => {
     const onSupplementaryAction = vi.fn();
     render(

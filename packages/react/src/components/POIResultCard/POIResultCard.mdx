@@ -513,3 +513,180 @@ travelTimeBandLabels = bandLabels
 }
 `}
 />
+
+## What a travel time includes
+
+A travel time can say what it holds besides the walk (GAP-047): on an after-security board, a walk
+from landside crosses the security queue, and the card says "Includes security (about 8 min)" under
+the time. The estimate carries it as `breakdown`, a list of `TravelEstimatePartPresentation`: each
+part's `kind` (`walking`, `securityQueue`, `liftWait`, or `other` for a part Kozmos has no name
+for), its `durationSeconds`, and its `label`, already localized with the time in it.
+
+- **What is drawn.** One line under the travel time, the parts' labels in the order given, joined
+  by " · ", in the card's secondary text: small, at the row's end, and wrapping within 128px so
+  the name keeps the row. The product chooses which parts to list; a part with an empty label is
+  not drawn. SwiftUI's and Compose's estimates give the line as `breakdownLabel`.
+- **What is said.** The line is part of the row's words, after the travel time: "…, 12 min,
+  Includes security (about 8 min)". A `selectionLabel` replaces the row's words, so it must include
+  the line itself if it is wanted.
+- **The details card** draws the same line under its action strip when Navigate carries the
+  estimate, and Navigate says it after its time and distance; the line itself is not said again.
+- **Without a breakdown**, or with one whose parts have no words, the card draws and says what it
+  did before.
+
+<PlatformSnippets
+    react={`
+import { POIResultCard } from "@kozmos-ds/react";
+import type {
+  POIPresentation,
+  POIResultPresentation,
+} from "@kozmos-ds/product-contracts";
+
+export function AfterSecurityResult({
+  poi,
+  result,
+  total,
+  security,
+  onSelect,
+}: {
+  poi: POIPresentation;
+  result: POIResultPresentation;
+  // The whole time, the queue included, and the queue's part of it, each in
+  // the visitor's words: "12 min", "Includes security (about 8 min)".
+  total: { seconds: number; label: string };
+  security: { seconds: number; label: string };
+  onSelect: (poiId: string) => void;
+}) {
+  return (
+    <POIResultCard
+      poi={poi}
+      result={{
+        ...result,
+        travelEstimate: {
+          durationSeconds: total.seconds,
+          durationLabel: total.label,
+          // Drawn under the time and said after it.
+          breakdown: [
+            {
+              kind: "securityQueue",
+              durationSeconds: security.seconds,
+              label: security.label,
+            },
+          ],
+        },
+      }}
+      onSelect={onSelect}
+    />
+  );
+}
+    `}
+    vue={`
+<script setup>
+import { KozmosPOIResultCard } from "@kozmos-ds/vue/react-bridge"
+
+const poi = { id: "pret", name: "Pret A Manger", floorLabel: "Departures", media: [], actions: ["navigate"] }
+// The whole time, the queue included; the line under it says what it holds.
+const result = {
+  poiId: "pret",
+  resultIndex: 1,
+  selected: false,
+  featured: false,
+  travelEstimate: {
+    durationSeconds: 720,
+    durationLabel: "12 min",
+    breakdown: [
+      { kind: "securityQueue", durationSeconds: 480, label: "Includes security (about 8 min)" },
+    ],
+  },
+}
+</script>
+
+<template>
+  <KozmosPOIResultCard :poi="poi" :result="result" @select="() => {}" />
+</template>
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The whole time, the queue included, and the queue's part of it, each in
+// the visitor's words: "12 min", "Includes security (about 8 min)".
+struct AfterSecurityResult: View {
+    let poi: KozmosPOIPresentation
+    // The result's number, counted from 1: the one its map marker shows.
+    let number: Int
+    let totalSeconds: Double
+    let totalLabel: String
+    let securitySeconds: Double
+    let securityLabel: String
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        KozmosPOIResultCard(
+            poi: poi,
+            result: KozmosPOIResultPresentation(
+                poiId: poi.id,
+                resultIndex: number,
+                travelEstimate: KozmosTravelEstimatePresentation(
+                    durationSeconds: totalSeconds,
+                    durationLabel: totalLabel,
+                    // Drawn under the time and said after it.
+                    breakdown: [
+                        KozmosTravelEstimatePartPresentation(
+                            kind: .securityQueue,
+                            durationSeconds: securitySeconds,
+                            label: securityLabel
+                        )
+                    ]
+                )
+            ),
+            onSelect: onSelect
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poiresultcard.KozmosPOIResultCard
+import com.kozmos.contracts.KozmosPOIPresentation
+import com.kozmos.contracts.KozmosPOIResultPresentation
+import com.kozmos.contracts.KozmosTravelEstimatePartKind
+import com.kozmos.contracts.KozmosTravelEstimatePartPresentation
+import com.kozmos.contracts.KozmosTravelEstimatePresentation
+
+// The whole time, the queue included, and the queue's part of it, each in
+// the visitor's words: "12 min", "Includes security (about 8 min)".
+@Composable
+fun AfterSecurityResult(
+    poi: KozmosPOIPresentation,
+    // The result's number, counted from 1: the one its map marker shows.
+    number: Int,
+    totalSeconds: Double,
+    totalLabel: String,
+    securitySeconds: Double,
+    securityLabel: String,
+    onSelect: (String) -> Unit
+) {
+    KozmosPOIResultCard(
+        poi = poi,
+        result = KozmosPOIResultPresentation(
+            poiId = poi.id,
+            resultIndex = number,
+            travelEstimate = KozmosTravelEstimatePresentation(
+                durationSeconds = totalSeconds,
+                durationLabel = totalLabel,
+                // Drawn under the time and said after it.
+                breakdown = listOf(
+                    KozmosTravelEstimatePartPresentation(
+                        kind = KozmosTravelEstimatePartKind.SecurityQueue,
+                        durationSeconds = securitySeconds,
+                        label = securityLabel
+                    )
+                )
+            )
+        ),
+        onSelect = onSelect
+    )
+}
+`}
+/>

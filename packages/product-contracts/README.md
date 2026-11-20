@@ -54,6 +54,30 @@ Compose (`KozmosTravelTimeBand.forDuration`) have the same rule, and all three
 are tested against one table, `tests/travel-time-bands.txt`. The words are the
 card's, in English until a product passes its own.
 
+A travel time can also say what it includes (GAP-047): `breakdown`, its parts
+in the order to say them, each a `kind` (`walking`, `securityQueue`,
+`liftWait` or `other`), its `durationSeconds` and its `label`, already
+localized with the time in it. POIResultCard draws the labels under the time,
+and POIDetailPanel under its action strip, as one line, the labels joined by
+" · "; SwiftUI's and Compose's estimates give that line as `breakdownLabel`.
+
+```ts
+import type { TravelEstimatePresentation } from "@kozmos-ds/product-contracts";
+
+export const afterSecurity: TravelEstimatePresentation = {
+  durationSeconds: 720,
+  durationLabel: "12 min",
+  // Drawn under the time: "Includes security (about 8 min)".
+  breakdown: [
+    {
+      kind: "securityQueue",
+      durationSeconds: 480,
+      label: "Includes security (about 8 min)",
+    },
+  ],
+};
+```
+
 ## Buildings and sites
 
 `BuildingPresentation` and `SitePresentation` are the building and the site a

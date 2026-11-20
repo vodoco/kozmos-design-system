@@ -667,6 +667,76 @@ describe("POIResultCard", () => {
     });
   });
 
+  describe("what a travel time includes (GAP-047)", () => {
+    it("draws the breakdown under the time and says it after the time", () => {
+      render(
+        <POIResultCard
+          poi={poi}
+          result={{
+            ...result,
+            travelEstimate: {
+              durationSeconds: 720,
+              durationLabel: "12 min",
+              breakdown: [
+                {
+                  kind: "securityQueue",
+                  durationSeconds: 480,
+                  label: "Includes security (about 8 min)",
+                },
+                { kind: "liftWait", durationSeconds: 60, label: "" },
+                {
+                  kind: "liftWait",
+                  durationSeconds: 90,
+                  label: "lift wait 2 min",
+                },
+              ],
+            },
+          }}
+          onSelect={vi.fn()}
+        />,
+      );
+      const line = screen.getByText(
+        "Includes security (about 8 min) · lift wait 2 min",
+      );
+      expect(line).toBeVisible();
+      expect(line).toHaveClass("kozmos-poi-result-breakdown");
+      // After the time in the row's words, so it is heard with it.
+      expect(screen.getByText("12 min").compareDocumentPosition(line)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(screen.getByRole("button").textContent).toMatch(
+        /12 min\s*Includes security \(about 8 min\) · lift wait 2 min$/,
+      );
+    });
+
+    it("draws nothing more without a breakdown, an empty one, or one with no words", () => {
+      const { container, rerender } = render(
+        <POIResultCard poi={poi} result={result} onSelect={vi.fn()} />,
+      );
+      expect(
+        container.querySelector(".kozmos-poi-result-breakdown"),
+      ).toBeNull();
+      for (const breakdown of [
+        [],
+        [{ kind: "walking" as const, durationSeconds: 180, label: "" }],
+      ]) {
+        rerender(
+          <POIResultCard
+            poi={poi}
+            result={{
+              ...result,
+              travelEstimate: { ...result.travelEstimate!, breakdown },
+            }}
+            onSelect={vi.fn()}
+          />,
+        );
+        expect(
+          container.querySelector(".kozmos-poi-result-breakdown"),
+        ).toBeNull();
+      }
+    });
+  });
+
   describe("the tab: Featured, the number, or a quiet badge (GAP-054)", () => {
     // Olcay, 2026-09-29: quick access numbers its results as its pins are
     // numbered; one tab per card, Featured over the number over the badge;

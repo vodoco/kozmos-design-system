@@ -233,6 +233,9 @@ fun KozmosPOIDetailPanel(
     val rowActions = poi.actions.filterNot { it in HeaderToggleActions }
     val supplementaryActions = details.supplementaryActions
     val hostActions = details.hostActions
+    // What Navigate's estimate includes (GAP-047): only when Navigate carries
+    // the estimate; null otherwise, and then nothing more is drawn.
+    val estimateBreakdown = if (KozmosPOIAction.Navigate in rowActions) details.travelEstimate?.breakdownLabel else null
 
     Surface(
         modifier = modifier
@@ -352,7 +355,8 @@ fun KozmosPOIDetailPanel(
                                 state = actionStates[action],
                                 loadingLabel = loadingLabel,
                                 primary = navigate,
-                                estimate = if (navigate) details.travelEstimate else null
+                                estimate = if (navigate) details.travelEstimate else null,
+                                estimateDetail = if (navigate) estimateBreakdown else null
                             )
                         }
                         // After the POI's own, as on iOS and the web; with no
@@ -378,6 +382,20 @@ fun KozmosPOIDetailPanel(
                                 iconName = item.iconName?.takeIf { knownIconVector(it) != null }
                             )
                         }
+                    }
+                }
+
+                // What Navigate's estimate includes (GAP-047), in the card's
+                // muted colour, as the level line is. Said with Go's time,
+                // so left out of semantics around its text rather than heard
+                // twice.
+                estimateBreakdown?.let { line ->
+                    Box(Modifier.fillMaxWidth().clearAndSetSemantics { }) {
+                        Text(
+                            text = line,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = kozmosMutedForeground()
+                        )
                     }
                 }
 
@@ -695,6 +713,8 @@ private fun StripButton(
     loadingLabel: String,
     primary: Boolean = false,
     estimate: KozmosTravelEstimatePresentation? = null,
+    /** Said after the estimate, not drawn in the button: what it includes (GAP-047), drawn under the strip. */
+    estimateDetail: String? = null,
     available: Boolean = true,
     /** A Kozmos icon Kozmos draws, before the label: a host action's. */
     iconName: String? = null
@@ -717,7 +737,8 @@ private fun StripButton(
                 if (loading) {
                     stateDescription = loadingLabel
                 } else if (estimateParts != null) {
-                    stateDescription = estimateParts.joinToString(", ")
+                    stateDescription = (estimateParts + listOfNotNull(estimateDetail?.takeIf { it.isNotEmpty() }))
+                        .joinToString(", ")
                 }
             },
         variant = if (primary || pressed) KozmosButtonVariant.Default else KozmosButtonVariant.Outline,

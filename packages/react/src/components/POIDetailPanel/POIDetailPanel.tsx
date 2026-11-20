@@ -7,7 +7,11 @@ import type {
 } from "@kozmos-ds/product-contracts";
 import { NavigationPointer01 as Navigation, X } from "@kozmos-ds/icons";
 import { Bookmark, Heart, isKozmosIconKey } from "@kozmos-ds/icons";
-import { cn, poiLocationLabel } from "../../utils";
+import {
+  cn,
+  poiLocationLabel,
+  travelEstimateBreakdownLabel,
+} from "../../utils";
 import { impliedLive } from "../../utils/live-region";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 import { Button } from "../Button";
@@ -170,6 +174,11 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
     const locationLabel = poiLocationLabel(poi);
     const actions = poi.actions.filter((action) => !isToggle(action));
     const hostActions = details?.hostActions ?? [];
+    // What the Navigate estimate includes (GAP-047): drawn under the strip
+    // and said with the button's estimate, so only when Navigate carries it.
+    const breakdownLabel = actions.includes("navigate")
+      ? travelEstimateBreakdownLabel(details?.travelEstimate)
+      : undefined;
     const SectionHeading = titleLevel === 2 ? "h3" : "h4";
     const hasRestriction =
       poi.accessRestrictions !== undefined &&
@@ -308,6 +317,7 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
                             actionLabels[action],
                             estimate.durationLabel,
                             estimate.distanceLabel,
+                            breakdownLabel,
                           ]
                             .filter(Boolean)
                             .join(" ")
@@ -369,6 +379,13 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
                 );
               })}
             </div>
+          )}
+          {breakdownLabel && (
+            // Said as part of Navigate's name, after its time, so hidden here
+            // rather than heard twice.
+            <p aria-hidden="true" className="kozmos-poi-estimate-breakdown">
+              {breakdownLabel}
+            </p>
           )}
           {poi.actions.map((action) => (
             <ActionMessage key={action} state={actionStates[action]} />
