@@ -107,7 +107,15 @@ const MIN_ESM_MODULES = 50;
 // half kilobyte, the step React's later budgets take (8.5, 30.5). On 6 Nov
 // 2026 the main entry measured 2.69 KB here, and 110% of that, rounded up
 // to the half, is 3. Raise it only with the measurement that justifies it.
-const MAX_VUE_GZIP_KB = 3;
+//
+// Decision 227 (owner, 20 Nov 2026): during the Vue track the main entry
+// follows React's model instead, sized for the core. Its first two ports
+// (Badge, Separator, #590) took it to 3.66 KB, and the core adds about 85
+// parts on Reka UI: the whole entry stays under 75 KB (React's 120 holds
+// about 140 parts), and every export alone under React's own 9 KB
+// (MAX_EXPORT_GZIP_KB), so no one import pulls in the rest. Re-measured and
+// re-sized when the core is done.
+const MAX_VUE_GZIP_KB = 75;
 // ./react-bridge, on a line of its own: it mounts React's parts, and an app
 // that imports it pays for @kozmos-ds/react, React and ReactDOM besides,
 // which are its peers and left out here as Vue's are. Its own code measured
@@ -120,7 +128,14 @@ const MAX_VUE_GZIP_KB = 3;
 // prop names alone gzip to about 700 B; 110% of either figure, to the half,
 // is 11.5. It never counts towards the main entry's, which must not import it
 // (packages/vue/test/react-free.spec.ts).
-const MAX_VUE_BRIDGE_GZIP_KB = 11.5;
+//
+// Decision 228 (owner, 20 Nov 2026): 13.5. GAP-230's context bridge (#591)
+// measured 12.67 KB: 0.58 for drawing a compound as one React tree with the
+// Vue providers' values, and 1.08 for its 42 sub-part wrappers (Select,
+// Dialog, Tabs, Toast and the rest). The bridge only shrinks from here, as
+// parts become native: each Vue wave lowers this line to the wave's
+// measurement plus half a kilobyte, until the bridge is retired.
+const MAX_VUE_BRIDGE_GZIP_KB = 13.5;
 // @kozmos-ds/react/dashboard, on lines of its own (decision 183, owner, 13 Nov
 // 2026): Pointr Cloud's Dashboard modules ship from that entry and its sheet,
 // dashboard.css, so an SDK or Core product pays nothing for them; the main
@@ -527,6 +542,30 @@ async function main() {
       `import * as bridge from ${JSON.stringify(VUE_BRIDGE)}; console.log(bridge);`,
       "vue_react_bridge",
     );
+    // Every Vue export bundled alone, as React's are: none over
+    // MAX_EXPORT_GZIP_KB (decision 227).
+    const vueExports =
+      (
+        await (
+          await rollup({
+            input: VUE_ENTRY,
+            external: isExternal,
+            cache,
+            plugins: [productionDefine],
+            onwarn: () => {},
+            treeshake: { moduleSideEffects },
+          })
+        ).generate({ format: "es" })
+      ).output[0].exports ?? [];
+    const vuePerExport: Array<[string, number]> = [];
+    for (const name of vueExports) {
+      const { gzip } = await cost(
+        `import { ${name} } from ${JSON.stringify(VUE_ENTRY)}; console.log(${name});`,
+        `vue_export_${vuePerExport.length}_${name}`,
+      );
+      vuePerExport.push([name, gzip]);
+    }
+    vuePerExport.sort((a, b) => b[1] - a[1]);
     // The main entry draws no React: a bridge import in it would put the
     // bridge's cost, and React itself, in every Vue app. A dynamic
     // import() counts as much as a static one: the app's bundler still
@@ -545,6 +584,14 @@ async function main() {
     console.log(
       `./react-bridge:    ${kb(bridge.gzip).toFixed(2)} KB / ${MAX_VUE_BRIDGE_GZIP_KB.toFixed(2)} KB (${kb(bridge.raw).toFixed(2)} KB minified; React's parts, React and ReactDOM besides)`,
     );
+    console.log(
+      `Exports measured:  ${vuePerExport.length}, the heaviest alone:`,
+    );
+    for (const [name, gzip] of vuePerExport.slice(0, 5)) {
+      console.log(
+        `  ${name.padEnd(28)} ${kb(gzip).toFixed(2)} KB / ${MAX_EXPORT_GZIP_KB.toFixed(2)} KB`,
+      );
+    }
     console.log(`---------------------------------`);
     if (vueImports.length)
       fail.push(
@@ -553,6 +600,18 @@ async function main() {
     if (kb(vue.gzip) > MAX_VUE_GZIP_KB)
       fail.push(
         `@kozmos-ds/vue's main entry costs ${kb(vue.gzip).toFixed(2)} KB, over ${MAX_VUE_GZIP_KB} KB`,
+      );
+    if (!vuePerExport.length)
+      fail.push("@kozmos-ds/vue's main entry was read as exporting nothing");
+    const vueOver = vuePerExport.filter(
+      ([, gzip]) => kb(gzip) > MAX_EXPORT_GZIP_KB,
+    );
+    if (vueOver.length)
+      fail.push(
+        `${vueOver.length} of ${vuePerExport.length} @kozmos-ds/vue exports cost over ${MAX_EXPORT_GZIP_KB} KB alone (${vueOver
+          .slice(0, 5)
+          .map(([name, gzip]) => `${name} ${kb(gzip).toFixed(2)}`)
+          .join(", ")}${vueOver.length > 5 ? ", …" : ""})`,
       );
     if (kb(bridge.gzip) > MAX_VUE_BRIDGE_GZIP_KB)
       fail.push(

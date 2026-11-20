@@ -99,7 +99,8 @@ GAP-151's sections, GAP-268 and GAP-269 are released in 0.16.0; GAP-217 and GAP-
 and GAP-274 to GAP-276 are in 0.17.0, as is GAP-016 on `next`; and its GAP-244, an option's media, is new here as
 **GAP-282** (decision 215). The repository's own findings of 17 and 18 Nov add **GAP-280** (native FileUpload's
 limits) and **GAP-281** (button colours copied, not referenced), and the 0.17.0 work of 18 Nov adds **GAP-283** to
-**GAP-285** and decisions 217 to 226. The next free ID is **GAP-286**, and the next free decision **227**.
+**GAP-285** and decisions 217 to 226; the Vue track of 20 Nov adds decisions 227 and 228. The next free ID is **GAP-286**, and
+the next free decision **229**.
 
 Previous intake: **Kozmos Design System Gaps (9).md**, exported from Claude Design on 2026-11-09 and compared with
 the 2026-11-05 intake below. Source SHA-256:
@@ -1707,6 +1708,12 @@ camera control, branding/provider policy and product ranking in their host adapt
     - an enabled item has black words (foreground 0) over a foreground 400 icon;
     - the chosen tool is drawn in the theme ink with no fill;
     - a disabled item has no fill, in foreground 500 (4.24:1 light, 5.65:1 dark).
+  - **227, Vue's bundle follows React's model (20 Nov):** during the Vue track `@kozmos-ds/vue`'s main entry is held
+    to 75 KB for every export at once (it was 3 KB, set when it held three parts; the first two ports took it to 3.66),
+    and each export alone to React's own 9 KB. Re-measured and re-sized when the core is done.
+  - **228, the Vue bridge's budget only falls (20 Nov):** `@kozmos-ds/vue/react-bridge` is held to 13.5 KB (11.5
+    before the context bridge, GAP-230, which measured 12.67). Each Vue wave lowers it to the wave's measurement plus
+    half a kilobyte, until the bridge is retired.
   - Also on 26 Oct: GAP-045 is closed as won't do, and the Coachmark, GAP-157, closes with TourStep, which with no
     `stepCount` is the coachmark (GAP-188, #422).
   - Also on 1 Nov: Vue 3 (GAP-016, GAP-148) starts after 0.16.0, as a track of its own alongside Cloud (moved on
