@@ -61,11 +61,19 @@ const surface = (words: string) =>
 
 describe("KozmosAnalyticsProvider", () => {
   const batches: KozmosAnalyticsEvent[][] = [];
-  const provider = (...children: ReturnType<typeof h>[]) =>
+  // Ten milliseconds keeps most tests quick; the one that counts batches
+  // passes a window a slow runner cannot split (CI split it at 10, 20 Nov).
+  const provider = (
+    ...children: ReturnType<typeof h>[]
+  ): ReturnType<typeof h> => providerWithin(10, ...children);
+  const providerWithin = (
+    batchDelayMs: number,
+    ...children: ReturnType<typeof h>[]
+  ) =>
     h(
       KozmosAnalyticsProvider,
       {
-        batchDelayMs: 10,
+        batchDelayMs,
         onDispatch: (events: KozmosAnalyticsEvent[]) => batches.push(events),
       },
       () => children,
@@ -80,7 +88,8 @@ describe("KozmosAnalyticsProvider", () => {
   it("hears a bridged part's events, and a native part's, in one batch", async () => {
     batches.length = 0;
     mount(() =>
-      provider(
+      providerWithin(
+        1000,
         h(Bridge.KozmosCheckbox, { "aria-label": "Step-free" }),
         h(KozmosButton, null, () => "Save"),
       ),

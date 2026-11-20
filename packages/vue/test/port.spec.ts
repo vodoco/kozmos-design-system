@@ -39,7 +39,10 @@ function scratch() {
 const file = (plan: ReturnType<typeof planPort>, name: string) =>
   plan.files.find((f) => f.file === name)?.content ?? "";
 
-describe("port <Name>", () => {
+// Each plan reads React's built types, which takes seconds on CI's runners:
+// "refuses a name React does not export" timed out at Vitest's 5 s there
+// (20 Nov), as the react-dom event table did before #527 gave it 30 s.
+describe("port <Name>", { timeout: 30_000 }, () => {
   it("refuses a part that is already native", () => {
     expect(() => planPort("Button", scratch())).toThrow(PortRefusal);
     expect(() => planPort("Button", scratch())).toThrow(/already native/);

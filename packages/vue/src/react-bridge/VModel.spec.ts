@@ -356,7 +356,14 @@ const PARTS: Part[] = [
     },
     start: { x: 0, y: 0, width: 0.375, height: 0.5 },
     before: "0%",
-    field: () => $("[role=application]"),
+    // The frame once its image is placed, not merely in the page: on React 18
+    // a key pressed before the cropper lays out its image was lost, and
+    // onCrop was never called (main's CI, 20 Nov). Nobody presses a key in
+    // the instant a part mounts.
+    field: () =>
+      ($("[role=application] img") as HTMLElement | null)?.style.left
+        ? $("[role=application]")
+        : null,
     change: (frame) => press(frame, "ArrowRight"),
     next: { x: 0.375 * 0.1, y: 0, width: 0.375, height: 0.5 },
     shown: () =>
