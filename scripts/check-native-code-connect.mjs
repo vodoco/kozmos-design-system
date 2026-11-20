@@ -97,7 +97,7 @@ const label = platform === "android" ? "Compose" : "SwiftUI";
 const problems = nativeCodeConnectProblems(platform, docs, declared);
 if (problems.length) {
   console.error(
-    `${problems.length} of ${docs.length} ${label} Code Connect snippets name code that does not exist:`,
+    `${problems.length} of ${docs.length} ${label} Code Connect snippets are wrong:`,
   );
   for (const { doc, message } of problems)
     console.error(`  ${doc.component} (${where(doc)}): ${message}`);

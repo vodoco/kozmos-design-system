@@ -58,7 +58,7 @@ struct KozmosPageHeaderConnect: FigmaConnect {
             },
             info: {
                 if self.showInfo {
-                    KozmosIconButton(iconName: "info-circle") {}
+                    KozmosIconButton(iconName: "info.circle") {}
                         .accessibilityLabel("About this page")
                 }
             },
