@@ -54,8 +54,9 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 
 `@kozmos-ds/vue` is private and is not published to npm. Vue 3 Phase 0 is building
 it on Reka UI: its main entry holds the Vue parts (`KozmosThemeProvider`,
-`KozmosDensityScope`, `KozmosAnalyticsProvider` and `KozmosButton` so far), which draw
-the element their React counterparts draw, import no React and render on the server.
+`KozmosDensityScope`, `KozmosAnalyticsProvider`, `KozmosButton`, `KozmosBadge` and
+`KozmosSeparator` so far), which draw the element their React counterparts draw, import
+no React and render on the server. `packages/vue/PORTING.md` is how a part is ported.
 The parts not yet ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount
 the React parts inside Vue wrappers: they need React and React DOM as well as Vue,
 and do not render on the server.

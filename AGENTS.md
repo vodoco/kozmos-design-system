@@ -24,7 +24,7 @@ Figma library they come from. This file is what a coding agent needs before chan
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `packages/{react,styles,tokens,icons,product-contracts}` | the npm packages; tokens start in `packages/tokens/src`, the stylesheet in `packages/styles/src` |
 | `packages/ios`, `packages/android`                       | SwiftUI and Compose                                                                              |
-| `packages/vue`                                           | Kozmos for Vue 3 on Reka UI; unported parts in ./react-bridge                                    |
+| `packages/vue`                                           | Kozmos for Vue 3 on Reka UI; unported parts in ./react-bridge; `PORTING.md` ports one            |
 | `apps/docs`                                              | Storybook: stories, docs pages, and `stories/examples/`                                          |
 | `apps/site`                                              | the website; its `GAPS.md` lists what Kozmos cannot do yet                                       |
 | `apps/` (the rest)                                       | playgrounds, the Pointr QA app and a product prototype                                           |

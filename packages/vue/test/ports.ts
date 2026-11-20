@@ -90,7 +90,41 @@ export const PORTS: Port[] = [
       dispatch: "parity/analytics.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosBadge",
+    react: "Badge",
+    stories: "components/Badge/Badge.stories.tsx",
+    elsewhere: {
+      Icon: "parity/badge.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSeparator",
+    react: "Separator",
+    stories: "components/Separator/Separator.stories.tsx",
+    elsewhere: {
+      Default: "parity/separator.parity.spec.ts",
+    },
+    drawnIn: "parity/separator.parity.spec.ts",
+    sample: { orientation: "vertical", decorative: false },
+  },
 ];
+
+/**
+ * Native parts the bridge still exports, by their Vue name, with why: one
+ * name is one component, so each leaves `src/react-bridge/index.ts` when its
+ * port lands (PORTING.md, step 9). `coverage.spec.ts` fails on a native
+ * part the bridge exports that is not here, and on a name here that is not
+ * both native and bridged.
+ */
+export const LEAVING_BRIDGE: Record<string, string> = {
+  // Wave V0b: another agent owns src/react-bridge/ while it fixes the
+  // bridge's context (GAP-230). The wave's combined PR takes these out.
+  KozmosBadge:
+    "the native port landed in wave V0b; its bridge entry and the bridge specs' Badge cases leave with GAP-230's bridge work",
+  KozmosSeparator:
+    "the native port landed in wave V0b; its bridge entry and the bridge specs' Separator cases leave with GAP-230's bridge work",
+};
 
 /**
  * Composables the main entry exports, with the React hook each answers to.
