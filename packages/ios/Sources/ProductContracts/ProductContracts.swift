@@ -345,7 +345,7 @@ public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
 
     /// The breakdown as the cards draw and say it: each part's label, in
     /// order, joined by " · ", leaving out empty ones. Nil when no part has
-    /// words. The web's `travelEstimateBreakdownLabel`.
+    /// words. The rule React's cards draw by.
     public var breakdownLabel: String? {
         let labels = (breakdown ?? []).map(\.label).filter { !$0.isEmpty }
         return labels.isEmpty ? nil : labels.joined(separator: " · ")

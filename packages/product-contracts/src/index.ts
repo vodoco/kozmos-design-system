@@ -206,7 +206,8 @@ export interface TravelEstimatePresentation {
    * estimate: one line, the labels joined by " · ", in the card's secondary
    * text. Each card says it with the time, after it. The product chooses
    * which parts to list and words each one; a part with an empty label is
-   * not drawn. Absent or empty, nothing is drawn, as before.
+   * not drawn. Absent or empty, nothing is drawn, as before. SwiftUI's and
+   * Compose's estimates name that line `breakdownLabel`.
    */
   breakdown?: readonly TravelEstimatePartPresentation[];
 }
@@ -235,21 +236,6 @@ export interface TravelEstimatePartPresentation {
    * 8 min)". What the card draws and a screen reader says.
    */
   label: string;
-}
-
-/**
- * The breakdown as the cards draw and say it: each part's label, in order,
- * joined by " · ", leaving out empty ones. Undefined when no part has words,
- * and then nothing is drawn. SwiftUI and Compose have the same rule as the
- * estimate's `breakdownLabel`.
- */
-export function travelEstimateBreakdownLabel(
-  estimate: Pick<TravelEstimatePresentation, "breakdown"> | undefined,
-): string | undefined {
-  const labels = (estimate?.breakdown ?? [])
-    .map((part) => part.label)
-    .filter(Boolean);
-  return labels.length ? labels.join(" · ") : undefined;
 }
 
 /**

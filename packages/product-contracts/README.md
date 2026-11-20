@@ -27,7 +27,7 @@ import type {
 ```
 
 Almost all of the package is types, so `import type` is all most of it needs.
-Its first rule is how a result list shows a walk (decision 50): `travelTimeBand`
+Its one rule is how a result list shows a walk (decision 50): `travelTimeBand`
 turns the walking time a product already has into the band the list draws, and
 `travelTimeTone` says which colour a band is drawn in.
 
@@ -58,9 +58,8 @@ A travel time can also say what it includes (GAP-047): `breakdown`, its parts
 in the order to say them, each a `kind` (`walking`, `securityQueue`,
 `liftWait` or `other`), its `durationSeconds` and its `label`, already
 localized with the time in it. POIResultCard draws the labels under the time,
-and POIDetailPanel under its action strip; `travelEstimateBreakdownLabel` gives
-that one line, the labels joined by " · ", and SwiftUI's and Compose's
-estimates have the same rule as `breakdownLabel`.
+and POIDetailPanel under its action strip, as one line, the labels joined by
+" · "; SwiftUI's and Compose's estimates give that line as `breakdownLabel`.
 
 ```ts
 import type { TravelEstimatePresentation } from "@kozmos-ds/product-contracts";

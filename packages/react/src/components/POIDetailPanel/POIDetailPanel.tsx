@@ -1,14 +1,17 @@
 import React from "react";
-import {
-  travelEstimateBreakdownLabel,
-  type POIAction,
-  type POIDetailsPresentation,
-  type POIPresentation,
-  type POISupplementaryAction,
+import type {
+  POIAction,
+  POIDetailsPresentation,
+  POIPresentation,
+  POISupplementaryAction,
 } from "@kozmos-ds/product-contracts";
 import { NavigationPointer01 as Navigation, X } from "@kozmos-ds/icons";
 import { Bookmark, Heart, isKozmosIconKey } from "@kozmos-ds/icons";
-import { cn, poiLocationLabel } from "../../utils";
+import {
+  cn,
+  poiLocationLabel,
+  travelEstimateBreakdownLabel,
+} from "../../utils";
 import { impliedLive } from "../../utils/live-region";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 import { Button } from "../Button";

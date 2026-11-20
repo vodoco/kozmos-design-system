@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-import {
-  travelEstimateBreakdownLabel,
-  type TravelEstimatePresentation,
-} from "../src/index";
+import type { TravelEstimatePresentation } from "@kozmos-ds/product-contracts";
+import { travelEstimateBreakdownLabel } from "../utils";
 
 /**
  * GAP-047: a travel time says what it includes. The cards draw one line, the
- * parts' labels joined by " · "; SwiftUI's and Compose's `breakdownLabel`
- * hold the same rule, tested with the same cases.
+ * parts' labels joined by " · ". The rule is React's own, not a contracts
+ * export; SwiftUI's and Compose's `breakdownLabel` hold the same rule,
+ * tested with the same cases.
  */
 const estimate: TravelEstimatePresentation = {
   durationSeconds: 720,

@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  travelEstimateBreakdownLabel,
   travelTimeTone,
   type POIAttributeKind,
   type POIAvailability,
@@ -14,7 +13,11 @@ import {
   NavigationPointer01,
   type KozmosIconComponent,
 } from "@kozmos-ds/icons";
-import { cn, poiLocationLabel } from "../../utils";
+import {
+  cn,
+  poiLocationLabel,
+  travelEstimateBreakdownLabel,
+} from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button/Button";
 import { WithoutGenericClick } from "../../utils/generic-click";

@@ -370,7 +370,7 @@ data class KozmosTravelEstimatePresentation(
     /**
      * The breakdown as the cards draw and say it: each part's label, in
      * order, joined by " · ", leaving out empty ones. Null when no part has
-     * words. The web's `travelEstimateBreakdownLabel`.
+     * words. The rule React's cards draw by.
      */
     val breakdownLabel: String?
         get() = breakdown.map { it.label }.filter { it.isNotEmpty() }

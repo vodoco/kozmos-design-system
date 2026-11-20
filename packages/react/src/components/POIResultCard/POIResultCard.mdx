@@ -525,8 +525,7 @@ for), its `durationSeconds`, and its `label`, already localized with the time in
 - **What is drawn.** One line under the travel time, the parts' labels in the order given, joined
   by " · ", in the card's secondary text: small, at the row's end, and wrapping within 128px so
   the name keeps the row. The product chooses which parts to list; a part with an empty label is
-  not drawn. `travelEstimateBreakdownLabel(estimate)` from `@kozmos-ds/product-contracts` gives the
-  line, and the estimate's `breakdownLabel` on iOS and Android.
+  not drawn. SwiftUI's and Compose's estimates give the line as `breakdownLabel`.
 - **What is said.** The line is part of the row's words, after the travel time: "…, 12 min,
   Includes security (about 8 min)". A `selectionLabel` replaces the row's words, so it must include
   the line itself if it is wanted.

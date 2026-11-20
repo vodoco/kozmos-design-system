@@ -630,7 +630,8 @@ interface TravelEstimatePresentation {
    * estimate: one line, the labels joined by " · ", in the card's secondary
    * text. Each card says it with the time, after it. The product chooses
    * which parts to list and words each one; a part with an empty label is
-   * not drawn. Absent or empty, nothing is drawn, as before.
+   * not drawn. Absent or empty, nothing is drawn, as before. SwiftUI's and
+   * Compose's estimates name that line `breakdownLabel`.
    */
   breakdown?: readonly TravelEstimatePartPresentation[];
 }

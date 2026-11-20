@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
+import type { TravelEstimatePresentation } from "@kozmos-ds/product-contracts";
 
 /**
  * The design system's own scales, taught to tailwind-merge.
@@ -121,4 +122,21 @@ export function poiLocationLabel(poi: {
   buildingLabel?: string;
 }): string {
   return [poi.floorLabel, poi.buildingLabel].filter(Boolean).join(" · ");
+}
+
+/**
+ * What a travel time includes, as POIResultCard and POIDetailPanel draw and
+ * say it (GAP-047): each part's label, in order, joined by " · ", leaving
+ * out empty ones. Undefined when no part has words, and then nothing is
+ * drawn. SwiftUI's and Compose's estimates have the same rule as
+ * `breakdownLabel`. Internal: the contracts' runtime API stays the
+ * travel-time rule alone.
+ */
+export function travelEstimateBreakdownLabel(
+  estimate: Pick<TravelEstimatePresentation, "breakdown"> | undefined,
+): string | undefined {
+  const labels = (estimate?.breakdown ?? [])
+    .map((part) => part.label)
+    .filter(Boolean);
+  return labels.length ? labels.join(" · ") : undefined;
 }
