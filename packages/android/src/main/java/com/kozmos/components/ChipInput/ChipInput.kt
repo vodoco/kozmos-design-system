@@ -44,6 +44,8 @@ import com.kozmos.components.chip.KozmosChip
 import com.kozmos.components.chip.KozmosChipGroup
 import com.kozmos.components.combobox.selectionFieldColors
 import com.kozmos.components.input.KozmosInputStatus
+import com.kozmos.providers.KozmosAnalyticsEvent
+import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -114,7 +116,10 @@ object KozmosChipInputEdit {
  * empty field removes the last entry; each chip has its own remove, named
  * by [removeLabel]. What is added or removed is said politely, in the
  * product's words: [addedLabel], [removedLabel], and [duplicateLabel] for
- * an entry typed again, which is not added and whose text stays.
+ * an entry typed again, which is not added and whose text stays. Each is
+ * sent to [LocalKozmosAnalytics] as React's are: `entry_added` for each
+ * entry added and `entry_removed` for each entry removed, each with its
+ * `value`.
  */
 @Composable
 fun KozmosChipInput(
@@ -134,6 +139,7 @@ fun KozmosChipInput(
     removedLabel: (String) -> String = { "$it removed" },
     duplicateLabel: (String) -> String = { "$it is already added" }
 ) {
+    val trackEvent = LocalKozmosAnalytics.current
     var text by rememberSaveable { mutableStateOf("") }
     // What the polite region says; every other message ends in a no-break
     // space, so the same words twice in a row are a change TalkBack reads.
@@ -157,12 +163,22 @@ fun KozmosChipInput(
             result.duplicate != null -> say(duplicateLabel(result.duplicate))
             result.added.isNotEmpty() -> say(result.added.joinToString(", ") { addedLabel(it) })
         }
+        // React's entry_added: one per entry added, never for one already in the field.
+        result.added.forEach { entry ->
+            trackEvent(KozmosAnalyticsEvent(component = "ChipInput", eventName = "entry_added", properties = mapOf("value" to entry)))
+        }
+    }
+
+    /** React's entry_removed, for an entry removed by Backspace or its chip's remove. */
+    fun trackRemoved(entry: String) {
+        trackEvent(KozmosAnalyticsEvent(component = "ChipInput", eventName = "entry_removed", properties = mapOf("value" to entry)))
     }
 
     fun remove(entry: String) {
         if (locked) return
         onValuesChange(values.filterNot { it == entry })
         say(removedLabel(entry))
+        trackRemoved(entry)
     }
 
     fun removeLast(): Boolean {
@@ -171,6 +187,7 @@ fun KozmosChipInput(
         val last = values.last()
         onValuesChange(next)
         say(removedLabel(last))
+        trackRemoved(last)
         return true
     }
 

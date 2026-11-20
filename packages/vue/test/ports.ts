@@ -80,7 +80,44 @@ export const PORTS: Port[] = [
       SubtleEmotions: "parity/button.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosAnalyticsProvider",
+    react: "AnalyticsProvider",
+    stories: null,
+    drawnIn: "parity/analytics.parity.spec.ts",
+    sample: { children: "Reported" },
+    events: {
+      dispatch: "parity/analytics.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosBadge",
+    react: "Badge",
+    stories: "components/Badge/Badge.stories.tsx",
+    elsewhere: {
+      Icon: "parity/badge.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSeparator",
+    react: "Separator",
+    stories: "components/Separator/Separator.stories.tsx",
+    elsewhere: {
+      Default: "parity/separator.parity.spec.ts",
+    },
+    drawnIn: "parity/separator.parity.spec.ts",
+    sample: { orientation: "vertical", decorative: false },
+  },
 ];
+
+/**
+ * Native parts the bridge still exports, by their Vue name, with why: one
+ * name is one component, so each leaves `src/react-bridge/index.ts` when its
+ * port lands (PORTING.md, step 9). `coverage.spec.ts` fails on a native
+ * part the bridge exports that is not here, and on a name here that is not
+ * both native and bridged.
+ */
+export const LEAVING_BRIDGE: Record<string, string> = {};
 
 /**
  * Composables the main entry exports, with the React hook each answers to.
@@ -89,6 +126,7 @@ export const PORTS: Port[] = [
  */
 export const COMPOSABLES: { vue: string; react: string }[] = [
   { vue: "useTheme", react: "useTheme" },
+  { vue: "useKozmosAnalytics", react: "useKozmosAnalytics" },
 ];
 
 export const REPOSITORY = path.resolve(__dirname, "../../..");

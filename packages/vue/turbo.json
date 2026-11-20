@@ -7,6 +7,7 @@
         "src/**",
         "package.json",
         "vite.config.*",
+        "vite-plugins/**",
         "tsconfig*.json",
         "$TURBO_ROOT$/packages/react/src/recipes/**",
         "$TURBO_ROOT$/packages/react/src/utils.ts"
@@ -20,6 +21,7 @@
         "scripts/**",
         "package.json",
         "vite.config.*",
+        "vite-plugins/**",
         "tsconfig*.json",
         "$TURBO_ROOT$/packages/react/src/**/*.stories.tsx",
         "$TURBO_ROOT$/packages/react/src/recipes/**",

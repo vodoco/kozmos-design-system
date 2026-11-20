@@ -1,6 +1,5 @@
-import { KozmosButton } from "../../";
+import { KozmosBadge, KozmosButton } from "../../";
 import {
-  KozmosBadge,
   KozmosMapOverlay,
   KozmosPOICard,
   KozmosTag,

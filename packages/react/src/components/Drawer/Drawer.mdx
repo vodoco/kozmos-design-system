@@ -140,12 +140,43 @@ export function Example({ onSave }: { onSave: (name: string) => void }) {
   `}
   vue={`
 <script setup>
-import { KozmosDrawer } from "@kozmos-ds/vue/react-bridge"
-// @kozmos-ds/vue wraps the Drawer root only: it has no DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription or DrawerFooter, so it cannot draw a drawer yet.
+import { ref } from "vue"
+import { KozmosButton } from "@kozmos-ds/vue"
+import {
+  KozmosDrawer,
+  KozmosDrawerContent,
+  KozmosDrawerDescription,
+  KozmosDrawerFooter,
+  KozmosDrawerHeader,
+  KozmosDrawerTitle,
+  KozmosInput,
+} from "@kozmos-ds/vue/react-bridge"
+// v-model:open opens it from a KozmosButton: a bridged trigger cannot take
+// a Vue element as its child (as-child), so it would draw a button of its own.
+const emit = defineEmits(["save"])
+const open = ref(false)
+const name = ref("Ground floor")
+function save() {
+  emit("save", name.value)
+  open.value = false
+}
 </script>
 
 <template>
-  <KozmosDrawer />
+  <KozmosButton @click="open = true">Manage layer</KozmosButton>
+  <KozmosDrawer v-model:open="open">
+    <KozmosDrawerContent side="right">
+      <KozmosDrawerHeader>
+        <KozmosDrawerTitle>Manage layer</KozmosDrawerTitle>
+        <KozmosDrawerDescription>Update the layer name.</KozmosDrawerDescription>
+      </KozmosDrawerHeader>
+      <KozmosInput v-model="name" label="Layer name" />
+      <KozmosDrawerFooter>
+        <KozmosButton variant="outline" @click="open = false">Cancel</KozmosButton>
+        <KozmosButton @click="save">Save changes</KozmosButton>
+      </KozmosDrawerFooter>
+    </KozmosDrawerContent>
+  </KozmosDrawer>
 </template>
   `}
   swift={`

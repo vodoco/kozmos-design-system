@@ -177,6 +177,20 @@ public struct KozmosPOIDetailPanel: View {
                     // prototype's place card peeks at its header and Go.
                     actionButtons.padding(.bottom, 16).kozmosPanelPeekAnchor()
                 }
+                if let estimateBreakdown {
+                    // What Navigate's estimate includes (GAP-047), in the
+                    // card's muted colour, as the level line is: half the
+                    // strip's padding above it, the strip's own below. Said
+                    // with Go's time, so hidden here rather than heard twice.
+                    Text(estimateBreakdown)
+                        .font(KozmosTypography.subheadline)
+                        .foregroundColor(kozmosMutedForeground(on: textSurface))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16).padding(.top, -8).padding(.bottom, 16)
+                        .accessibilityHidden(true)
+                        .accessibilityIdentifier("poi-estimate-breakdown")
+                }
                 messages
                 if !details.visibleSummary.isEmpty {
                     POIDetailSummary(items: details.visibleSummary)
@@ -363,6 +377,14 @@ public struct KozmosPOIDetailPanel: View {
         }
     }
 
+    /// What Navigate's estimate includes, "Includes security (about 8 min)"
+    /// (GAP-047): only when Navigate carries the estimate. Nil otherwise, and
+    /// then nothing more is drawn.
+    var estimateBreakdown: String? {
+        guard stripActions.contains(.navigate) else { return nil }
+        return details.travelEstimate?.breakdownLabel
+    }
+
     private var actionButtons: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
@@ -374,6 +396,7 @@ public struct KozmosPOIDetailPanel: View {
                         estimate: action == .navigate ? details.travelEstimate.map {
                             [$0.durationLabel, $0.distanceLabel].compactMap { $0 }.joined(separator: " · ")
                         } : nil,
+                        estimateDetail: action == .navigate ? estimateBreakdown : nil,
                         primary: action == .navigate,
                         loadingLabel: loadingLabel,
                         state: actionStates[action] ?? .init()
@@ -437,6 +460,9 @@ struct POIDetailActionButton: View {
     let systemImage: String?
     var iconName: String? = nil
     var estimate: String? = nil
+    /// Said after the estimate, not drawn in the button: what it includes
+    /// (GAP-047), drawn under the strip.
+    var estimateDetail: String? = nil
     var primary = false
     var iconOnly = false
     var loadingLabel = "Loading"
@@ -444,6 +470,11 @@ struct POIDetailActionButton: View {
     let action: () -> Void
 
     private var filled: Bool { primary || state.pressed }
+    /// The estimate as VoiceOver says it: the time and distance, then what
+    /// the time includes. Without a detail, the estimate as before.
+    var spokenEstimate: String {
+        [estimate, estimateDetail].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
+    }
     private var foreground: Color {
         filled ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
                : KozmosColors.primitivesColorsForeground100
@@ -486,7 +517,7 @@ struct POIDetailActionButton: View {
         .buttonStyle(.plain)
         .disabled(state.disabled || state.loading)
         .accessibilityLabel(label)
-        .accessibilityValue(state.loading ? Text(loadingLabel) : Text(estimate ?? ""))
+        .accessibilityValue(state.loading ? Text(loadingLabel) : Text(spokenEstimate))
         .accessibilityAddTraits(state.pressed ? [.isSelected] : [])
     }
 }

@@ -1,5 +1,6 @@
 import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
+import { counterVariants, formatCounterText } from "../../recipes/counter";
 import { cn } from "../../utils";
 import {
   EMOTION_FILLED_CLASSES,
@@ -7,30 +8,9 @@ import {
   type Emotion,
 } from "../../utils/emotion";
 
-export const counterVariants = cva(
-  "inline-flex items-center justify-center rounded-pill font-semibold leading-none tabular-nums",
-  {
-    variants: {
-      tone: {
-        neutral: "bg-secondary text-secondary-foreground",
-        // The theme fill and the theme foreground, white in both themes:
-        // foreground/1000 turned black on it in the dark (decision 59).
-        brand: "bg-theme-fill text-theme-fill-foreground",
-        destructive:
-          "bg-destructive text-[var(--primitives-colors-foreground-1000)]",
-        inverse: "bg-background text-foreground",
-      },
-      size: {
-        sm: "h-[18px] min-w-[18px] px-[5px] text-[11px]",
-        default: "h-5 min-w-5 px-1.5 text-xs",
-      },
-    },
-    defaultVariants: {
-      tone: "neutral",
-      size: "default",
-    },
-  },
-);
+// The recipe is shared with Vue's KozmosBadge (recipes/counter.ts); it stays
+// exported from here, where it always was.
+export { counterVariants } from "../../recipes/counter";
 
 export interface CounterProps
   extends
@@ -53,12 +33,7 @@ export function formatCounterValue(value: React.ReactNode) {
     return value;
   }
 
-  const text = String(value).trim();
-  if (text.startsWith("(") && text.endsWith(")")) {
-    return text.slice(1, -1).trim();
-  }
-
-  return text;
+  return formatCounterText(value);
 }
 
 export const Counter = React.forwardRef<HTMLSpanElement, CounterProps>(

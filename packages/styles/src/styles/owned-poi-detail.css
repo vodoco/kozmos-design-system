@@ -237,6 +237,18 @@
     line-height: calc(var(--primitives-typography-line-height-50) * 1rem / 16);
     font-weight: normal;
   }
+  /* What Navigate's estimate includes (GAP-047), under the strip in the
+     card's muted colour, as the level line is: half the strip's padding
+     above it, the strip's own below. */
+  .kozmos-poi-estimate-breakdown {
+    @apply text-sm;
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
+    margin: -0.5rem 0 0;
+    padding: 0 1rem 1rem;
+  }
   .kozmos-poi-summary {
     display: grid;
     grid-auto-flow: column;
