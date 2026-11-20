@@ -1176,6 +1176,11 @@
               </optgroup>
               <optgroup label="Product / SDK">
                 <option value="aiSearchButton">AISearchButton</option>
+                <option value="userMessage">UserMessage</option>
+                <option value="aiMessage">AIMessage</option>
+                <option value="aiMessageList">AIMessageList</option>
+                <option value="aiInputBar">AIInputBar</option>
+                <option value="aiCompanionPanel">AICompanionPanel</option>
                 <option value="adaptiveMapShell">AdaptiveMapShell</option>
                 <option value="browseCategoriesPanel">
                   BrowseCategoriesPanel
@@ -1791,6 +1796,41 @@
           update: "update-ai-search-button",
           rebuild: "rebuild-ai-search-button",
           hint: "Build creates AISearchButton — the search row's AI search, the prototype's — with Default and Disabled states: a 48 circle whose ring is a 2.5 band of the six data colours around a 43 disc, a 16 icon swapped from the Icons page. Run Curated Icons first (stars-01). Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        userMessage: {
+          label: "UserMessage",
+          build: "build-user-message",
+          update: "update-user-message",
+          rebuild: "rebuild-user-message",
+          hint: "Build creates UserMessage (GAP-206), the visitor's turn: the theme fill under the theme foreground at the turn's end, 16 across and 12 down on the container radius, its words wrapping at 85 % of a 328 turn, with a Message Text property. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiMessage: {
+          label: "AIMessage",
+          build: "build-ai-message",
+          update: "update-ai-message",
+          rebuild: "rebuild-ai-message",
+          hint: "Build creates AIMessage (GAP-206), the assistant's turn: an outlined bubble (bg-card, border-border) in Complete, Streaming (three theme dots) and TimedOut Status variants, with Message Text, Timed Out Text, and Show Action Card over an Action Card Slot. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiMessageList: {
+          label: "AIMessageList",
+          build: "build-ai-message-list",
+          update: "update-ai-message-list",
+          rebuild: "rebuild-ai-message-list",
+          hint: "Build creates AIMessageList (GAP-206) after UserMessage and AIMessage: the thread, 360 wide, 16 inside and between, its turns live instances in Conversation, Streaming and TimedOut Content variants. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiInputBar: {
+          label: "AIInputBar",
+          build: "build-ai-input-bar",
+          update: "update-ai-input-bar",
+          rebuild: "rebuild-ai-input-bar",
+          hint: "Build creates AIInputBar (GAP-206) after IconButton and Curated Icons (send-01, microphone-01, microphone-off-01, volume-max): the pill field and a live IconButton send, in Empty, Filled and Disabled States by VoiceState (Off, Idle, Connecting, Listening, Speaking, Unavailable, Error), with Placeholder Text and Value Text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiCompanionPanel: {
+          label: "AICompanionPanel",
+          build: "build-ai-companion-panel",
+          update: "update-ai-companion-panel",
+          rebuild: "rebuild-ai-companion-panel",
+          hint: "Build creates AICompanionPanel (GAP-206) after AIMessageList, AIInputBar, IconButton and Curated Icons: the 360 by 560 assistant surface, its header (stars-01 mark, Title Text, a neutral outline IconButton close shown by Show Close), a Banner Slot shown by Show Banner, a live AIMessageList and AIInputBar, in Conversation, Streaming and TimedOut Content variants. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         adaptiveMapShell: {
           label: "AdaptiveMapShell",

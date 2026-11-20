@@ -1412,6 +1412,8 @@ section("A set runs after the sets it reaches into");
     retintPageHeaderInfoIcon: ["IconButton", "PageHeader"],
     // GAP-206: ClientAppBanner's Dismiss, x-close, tinted again after the swap.
     retintClientAppBannerDismissIcon: ["IconButton", "ClientAppBanner"],
+    // GAP-206: AIInputBar's send-01 and AICompanionPanel's x-close.
+    retintAIIconButtonIcon: ["IconButton", ["AIInputBar", "AICompanionPanel"]],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
@@ -1469,8 +1471,8 @@ section("A set runs after the sets it reaches into");
     // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
       [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
-        "Card,ClientAppBanner,MapInfoPanel,PageHeader,RouteSetupPanel,TourStep",
-      `after IconButton: TourStep, Card, PageHeader, ClientAppBanner, MapInfoPanel and RouteSetupPanel (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+        "AICompanionPanel,AIInputBar,Card,ClientAppBanner,MapInfoPanel,PageHeader,RouteSetupPanel,TourStep",
+      `after IconButton: TourStep, Card, PageHeader, ClientAppBanner, MapInfoPanel, RouteSetupPanel, AIInputBar and AICompanionPanel (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -13532,6 +13534,11 @@ section(
     "divider",
     "ruler",
     "dots-horizontal",
+    // AIInputBar's send and microphone (GAP-206).
+    "send-01",
+    "microphone-01",
+    "microphone-off-01",
+    "volume-max",
   ];
   const controlsPages = () => {
     const [components, icons] = pages();
@@ -24684,6 +24691,816 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
       map.SETS_THAT_OVERRIDE_INSIDE.IconButton.includes("RouteSetupPanel") &&
       map.SETS_THAT_OVERRIDE_INSIDE.Combobox.includes("RouteLocationField"),
     "IconButton names MapInfoPanel and RouteSetupPanel, Combobox RouteLocationField, as sets that override inside them",
+  );
+}
+
+// --- GAP-206: the assistant's parts ---------------------------------------------
+
+// UserMessage, AIMessage, AIMessageList, AIInputBar and AICompanionPanel, in a
+// file of their own: the Icons page with the glyphs they draw and an IconButton
+// set whose Icon swaps, as Build IconButton leaves it. Each set is painted,
+// combined and configured as Build does, in Update All Product / SDK's order,
+// so the thread and the panel nest the sets painted before them.
+const aiIconNames = [
+  "search-md",
+  "stars-01",
+  "x-close",
+  "send-01",
+  "microphone-01",
+  "microphone-off-01",
+  "volume-max",
+];
+const aiComponents = new MockNode("PAGE", "Components");
+const aiIcons = new MockNode("PAGE", "Icons");
+const aiGlyph = {};
+for (const name of aiIconNames) {
+  aiGlyph[name] = mockIconComponent(name);
+  aiIcons.appendChild(aiGlyph[name]);
+}
+const aiIconButtonLooks = [];
+for (const variant of ["Default", "Outline"])
+  for (const state of ["Default", "Disabled"])
+    aiIconButtonLooks.push({
+      properties: { Variant: variant, Size: "Default", State: state },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(44, 44);
+        node.cornerRadius = 16;
+        const icon = aiGlyph["search-md"].createInstance();
+        icon.name = "Icon";
+        icon.resize(16, 16);
+        icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+        node.appendChild(icon);
+      },
+    });
+const aiIconButtonSet = mockComponentSet("IconButton", aiIconButtonLooks);
+aiIconButtonSet.componentPropertyDefinitions = {
+  "Icon#2:0": {
+    type: "INSTANCE_SWAP",
+    defaultValue: aiGlyph["search-md"].id,
+  },
+};
+aiComponents.appendChild(aiIconButtonSet);
+const aiFigma = createFigmaMock({ pages: [aiComponents, aiIcons] });
+const ai = loadPlugin({ pluginPath: PLUGIN, figma: aiFigma });
+const aiTokens = payloadVariables(
+  (ai.COMPONENT_FLOAT_TOKENS || []).map((token) => token.name),
+);
+const aiFloats = new Map(
+  (ai.COMPONENT_FLOAT_TOKENS || []).map((token) => [token.name, token]),
+);
+/** The variable `field` is bound to, by name, or null. */
+const aiBound = (node, field) => {
+  const alias = node && node.boundVariables && node.boundVariables[field];
+  return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+};
+/** A component float token's value, through its aliases' own values. */
+const aiValueOf = (name) =>
+  aiFloats.has(name) ? aiFloats.get(name).value : undefined;
+const aiFill = (node) => node && node.fills && boundVariableName(node.fills[0]);
+const aiStroke = (node) =>
+  node && node.strokes && boundVariableName(node.strokes[0]);
+const aiChildNames = (node) =>
+  node ? node.children.map((child) => child.name).join(",") : "none";
+const aiTextOf = (node, name) => node && named(node, name);
+/** A set's property of `type` named `base`, or null. */
+const aiProperty = (set, base, type) =>
+  Object.keys(set.componentPropertyDefinitions || {}).find(
+    (key) =>
+      key.split("#")[0] === base &&
+      set.componentPropertyDefinitions[key].type === type,
+  ) || null;
+/**
+ * Every layer under `set` whose `field` reference is `key`. A slot's field is
+ * the plugin's to choose (slotPropertyReferenceKeyForNode), so "slot" reads
+ * any reference to the key.
+ */
+const aiRefs = (set, field, key) =>
+  set.findAll(
+    (node) =>
+      node.componentPropertyReferences &&
+      (field === "slot"
+        ? Object.values(node.componentPropertyReferences).includes(key) &&
+          node.type === "SLOT"
+        : node.componentPropertyReferences[field] === key),
+  );
+
+/**
+ * Paint every combination of a set, combine and configure it as Build does.
+ * Returns the set, its variants and every warning the run left.
+ */
+async function aiBuild(name, values, seconds, update, configure) {
+  const variants = [];
+  const warnings = [];
+  if (typeof update !== "function") return { set: null, variants, warnings };
+  for (const value of values)
+    for (const second of seconds || [null]) {
+      const component = aiFigma.createComponent();
+      const stats = freshStats();
+      await withAutoLayout(() =>
+        update(component, {
+          value,
+          second,
+          variableByName: aiTokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
+      warnings.push(...stats.warnings);
+      variants.push(component);
+    }
+  const set = aiFigma.combineAsVariants(variants, aiComponents);
+  set.name = name;
+  const stats = freshStats();
+  if (typeof configure === "function") await configure(set, stats);
+  warnings.push(...stats.warnings);
+  return { set, variants, warnings };
+}
+
+/** The set in the Product / SDK run, its section, its docs and its axes. */
+function aiRegistered(name, axes) {
+  const sequence = (ai.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(
+    ([entry]) => entry,
+  );
+  ok(
+    JSON.stringify(
+      ai.expectedVariantAxesForComponentSetName &&
+        ai.expectedVariantAxesForComponentSetName(name),
+    ) === JSON.stringify(axes) &&
+      sequence.includes(name) &&
+      (ai.PRODUCT_SDK_UPDATE_SEQUENCE || []).some(
+        ([entry, update]) =>
+          entry === name && update === ai[`update${name}Component`],
+      ) &&
+      (ai.COMPONENT_PAGE_LAYOUT_SECTIONS || []).some(
+        (entry) =>
+          entry.title === "Product / SDK" && entry.components.includes(name),
+      ) &&
+      (ai.COMPONENT_DOCS || []).some(
+        (entry) => entry.componentSetName === name,
+      ),
+    `${name}: axes ${JSON.stringify(axes)}, in Update All Product / SDK, the Product / SDK section and the docs`,
+  );
+  return sequence;
+}
+
+/** A bubble as React draws one: 16 across, 12 down, the container radius. */
+function aiBubbleIsReacts(bubble) {
+  return Boolean(
+    bubble &&
+    bubble.layoutMode === "HORIZONTAL" &&
+    bubble.paddingLeft === 16 &&
+    bubble.paddingRight === 16 &&
+    bubble.paddingTop === 12 &&
+    bubble.paddingBottom === 12 &&
+    aiBound(bubble, "paddingLeft") === "AIMessage/bubble/padding/x" &&
+    aiBound(bubble, "paddingTop") === "AIMessage/bubble/padding/y" &&
+    aiValueOf("AIMessage/bubble/padding/x") === 16 &&
+    aiValueOf("AIMessage/bubble/padding/y") === 12 &&
+    bubble.cornerRadius === 20 &&
+    aiBound(bubble, "topLeftRadius") === "AIMessage/bubble/radius" &&
+    aiBound(bubble, "bottomRightRadius") === "AIMessage/bubble/radius" &&
+    aiValueOf("AIMessage/bubble/radius") === 20 &&
+    bubble.maxWidth === 278,
+  );
+}
+
+/** A turn's words: 14/20, sizing themselves up to `most`, then wrapping. */
+function aiWordsAre(text, ink, most) {
+  return Boolean(
+    text &&
+    text.type === "TEXT" &&
+    text.fontSize === 14 &&
+    text.lineHeight &&
+    text.lineHeight.value === 20 &&
+    aiFill(text) === ink &&
+    text.textAutoResize === "WIDTH_AND_HEIGHT" &&
+    text.maxWidth === most,
+  );
+}
+
+section("GAP-206: UserMessage draws the visitor's turn");
+const aiUser = await aiBuild(
+  "UserMessage",
+  ai.USER_MESSAGE_CONTENT || [],
+  null,
+  ai.updateUserMessageVariant,
+  ai.configureUserMessageProperties,
+);
+{
+  aiRegistered("UserMessage", { Content: ["Default"] });
+  ok(
+    aiUser.variants.length === 1 &&
+      aiUser.variants[0].name === "Content=Default",
+    `UserMessage: one variant, Content=Default, as React has none (${aiUser.variants.map((v) => v.name).join(", ")})`,
+  );
+  for (const variant of aiUser.variants) {
+    const bubble = named(variant, "Bubble");
+    const text = aiTextOf(bubble, "Message Text");
+    ok(
+      variant.width === 328 &&
+        variant.layoutMode === "HORIZONTAL" &&
+        variant.primaryAxisAlignItems === "MAX" &&
+        aiChildNames(variant) === "Bubble",
+      `UserMessage ${variant.name}: a 328 turn with its bubble at the end (${variant.width}, ${variant.primaryAxisAlignItems}, ${aiChildNames(variant)})`,
+    );
+    ok(
+      aiBubbleIsReacts(bubble) &&
+        aiFill(bubble) === "Primary Buttons/themed/button/background/idle" &&
+        bubble.strokes.length === 0,
+      `UserMessage ${variant.name}: the bubble is the theme fill, no edge, 16 and 12 inside, radius 20, at most 278 (${aiFill(bubble)}, ${bubble && bubble.maxWidth})`,
+    );
+    ok(
+      aiWordsAre(
+        text,
+        "Primary Buttons/themed/button/foreground/content/idle",
+        244,
+      ),
+      `UserMessage ${variant.name}: the words 14/20 in the theme foreground, sizing themselves up to 244 (${text && `${text.fontSize}/${text.lineHeight && text.lineHeight.value} ${text.textAutoResize} ${text.maxWidth} ${aiFill(text)}`})`,
+    );
+  }
+  const message = aiUser.set && aiProperty(aiUser.set, "Message Text", "TEXT");
+  ok(
+    message &&
+      aiRefs(aiUser.set, "characters", message).length === 1 &&
+      propertiesBoundToNoLayer(aiUser.set).length === 0,
+    `UserMessage: Message Text drives the words, and no property is bound to nothing (${aiUser.set && propertiesBoundToNoLayer(aiUser.set).join(", ")})`,
+  );
+  ok(
+    aiUser.warnings.length === 0,
+    `UserMessage: no warning (${aiUser.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AIMessage draws the assistant's turn");
+const aiMessage = await aiBuild(
+  "AIMessage",
+  ai.AI_MESSAGE_STATUSES || [],
+  null,
+  ai.updateAIMessageVariant,
+  ai.configureAIMessageProperties,
+);
+{
+  const sequence = aiRegistered("AIMessage", {
+    Status: ["Complete", "Streaming", "TimedOut"],
+  });
+  ok(
+    aiMessage.variants.length === 3,
+    `AIMessage: three statuses (${aiMessage.variants.length})`,
+  );
+  for (const variant of aiMessage.variants) {
+    const parsed =
+      typeof ai.parseAIMessageVariantName === "function" &&
+      ai.parseAIMessageVariantName(variant.name);
+    const status = parsed && parsed.value;
+    const row = named(variant, "Message Row");
+    const bubble = row && named(row, "Bubble");
+    const timedOut = status === "TimedOut";
+    const streaming = status === "Streaming";
+    ok(
+      variant.width === 328 &&
+        variant.itemSpacing === 8 &&
+        aiBound(variant, "itemSpacing") === "AIMessage/gap" &&
+        aiValueOf("AIMessage/gap") === 8 &&
+        aiChildNames(variant) === "Message Row,Action Card",
+      `AIMessage ${variant.name}: a 328 column, 8 apart, the row then the action card (${variant.width}, ${variant.itemSpacing}, ${aiChildNames(variant)})`,
+    );
+    ok(
+      aiBubbleIsReacts(bubble) &&
+        aiFill(bubble) === "Surface/0" &&
+        aiStroke(bubble) === "Border/Subtle" &&
+        bubble.strokeWeight === 1 &&
+        aiBound(bubble, "strokeWeight") === "AIMessage/bubble/stroke/width",
+      `AIMessage ${variant.name}: the bubble is bg-card with a 1 border-border, 16 and 12 inside, radius 20, at most 278 (${aiFill(bubble)}, ${aiStroke(bubble)} ${bubble && bubble.strokeWeight}, ${bubble && bubble.maxWidth})`,
+    );
+    const words = aiTextOf(
+      bubble,
+      timedOut ? "Timed Out Text" : "Message Text",
+    );
+    ok(
+      aiWordsAre(
+        words,
+        timedOut ? "Colors/foreground/400" : "Colors/foreground/0",
+        // The dots: three 6, 4 apart, and 8 before the words.
+        streaming ? 244 - (3 * 6 + 2 * 4 + 8) : 244,
+      ) &&
+        !(timedOut && aiTextOf(bubble, "Message Text")) &&
+        (!timedOut ||
+          words.characters === "The assistant did not reply in time."),
+      `AIMessage ${variant.name}: ${timedOut ? "timedOutLabel in the muted foreground" : "the words in the foreground"}, 14/20 (${words && `${words.name} ${aiFill(words)} ${words.textAutoResize} ${words.maxWidth}`})`,
+    );
+    const dots = bubble && named(bubble, "Streaming Dots");
+    ok(
+      streaming
+        ? Boolean(
+            dots &&
+            bubble.children[0] === dots &&
+            bubble.itemSpacing === 8 &&
+            dots.itemSpacing === 4 &&
+            aiBound(dots, "itemSpacing") === "AIMessage/dots/gap" &&
+            dots.children.length === 3 &&
+            dots.children.every(
+              (dot) =>
+                dot.type === "ELLIPSE" &&
+                dot.width === 6 &&
+                dot.height === 6 &&
+                aiBound(dot, "width") === "AIMessage/dot/size" &&
+                aiFill(dot) === "Colors/theme/600",
+            ),
+          )
+        : !dots,
+      `AIMessage ${variant.name}: ${streaming ? "three 6 dots in the theme's 600, 4 apart, 8 before the words" : "no dots"} (${dots ? aiChildNames(dots) : "none"})`,
+    );
+    const card = named(variant, "Action Card");
+    const slot = card && named(card, "Action Card Slot");
+    ok(
+      card &&
+        card.visible === false &&
+        slot &&
+        slot.type === "SLOT" &&
+        slot.width === 328,
+      `AIMessage ${variant.name}: the action card hidden, holding a 328 slot (${card && card.visible}, ${slot && slot.type} ${slot && slot.width})`,
+    );
+  }
+  if (aiMessage.set) {
+    const show = aiProperty(aiMessage.set, "Show Action Card", "BOOLEAN");
+    const slot = aiProperty(aiMessage.set, "Action Card Slot", "SLOT");
+    const message = aiProperty(aiMessage.set, "Message Text", "TEXT");
+    const timedOut = aiProperty(aiMessage.set, "Timed Out Text", "TEXT");
+    ok(
+      show &&
+        aiMessage.set.componentPropertyDefinitions[show].defaultValue ===
+          false &&
+        aiRefs(aiMessage.set, "visible", show).length === 3 &&
+        slot &&
+        aiRefs(aiMessage.set, "slot", slot).length === 3 &&
+        message &&
+        aiRefs(aiMessage.set, "characters", message).length === 2 &&
+        timedOut &&
+        aiRefs(aiMessage.set, "characters", timedOut).length === 1 &&
+        propertiesBoundToNoLayer(aiMessage.set).length === 0,
+      `AIMessage: Show Action Card (off) shows the three cards, Action Card Slot binds their slots, Message Text two turns' words and Timed Out Text one; none bound to nothing (${Object.keys(aiMessage.set.componentPropertyDefinitions).join(", ")})`,
+    );
+  } else ok(false, "AIMessage has a painter");
+  ok(
+    sequence.indexOf("UserMessage") !== -1 &&
+      sequence.indexOf("UserMessage") < sequence.indexOf("AIMessage"),
+    "UserMessage, then AIMessage, in Update All Product / SDK",
+  );
+  ok(
+    aiMessage.warnings.length === 0,
+    `AIMessage: no warning (${aiMessage.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AIMessageList draws the thread from live turns");
+const aiList = await aiBuild(
+  "AIMessageList",
+  ai.AI_MESSAGE_LIST_CONTENT || [],
+  null,
+  ai.updateAIMessageListVariant,
+  ai.configureAIMessageListProperties,
+);
+{
+  const sequence = aiRegistered("AIMessageList", {
+    Content: ["Conversation", "Streaming", "TimedOut"],
+  });
+  const wanted = {
+    "Content=Conversation": [
+      ["AIMessage", "Status=Complete"],
+      ["UserMessage", "Content=Default"],
+      ["AIMessage", "Status=Complete"],
+    ],
+    "Content=Streaming": [
+      ["UserMessage", "Content=Default"],
+      ["AIMessage", "Status=Streaming"],
+    ],
+    "Content=TimedOut": [
+      ["UserMessage", "Content=Default"],
+      ["AIMessage", "Status=TimedOut"],
+    ],
+  };
+  ok(aiList.variants.length === 3, "AIMessageList: three threads");
+  for (const variant of aiList.variants) {
+    ok(
+      variant.width === 360 &&
+        variant.layoutMode === "VERTICAL" &&
+        variant.paddingLeft === 16 &&
+        variant.paddingTop === 16 &&
+        variant.itemSpacing === 16 &&
+        aiBound(variant, "paddingLeft") === "AIMessageList/padding" &&
+        aiBound(variant, "itemSpacing") === "AIMessageList/gap" &&
+        aiValueOf("AIMessageList/padding") === 16 &&
+        aiValueOf("AIMessageList/gap") === 16 &&
+        variant.clipsContent === true,
+      `AIMessageList ${variant.name}: 360 wide, 16 inside and 16 between, clipped (${variant.width}, ${variant.paddingLeft}, ${variant.itemSpacing})`,
+    );
+    const turns = variant.children;
+    const want = wanted[variant.name] || [];
+    ok(
+      turns.length === want.length &&
+        turns.every(
+          (turn, index) =>
+            turn.type === "INSTANCE" &&
+            turn.mainComponent &&
+            turn.mainComponent.parent &&
+            turn.mainComponent.parent.name === want[index][0] &&
+            turn.mainComponent.name === want[index][1] &&
+            turn.isExposedInstance === true &&
+            turn.layoutSizingHorizontal === "FILL" &&
+            turn.width === 328,
+        ),
+      `AIMessageList ${variant.name}: ${want.map((entry) => `${entry[0]} (${entry[1]})`).join(", ")}, live, exposed and 328 wide (${turns.map((turn) => `${turn.type} ${turn.mainComponent && turn.mainComponent.parent && turn.mainComponent.parent.name} ${turn.mainComponent && turn.mainComponent.name} ${turn.width}`).join(" | ")})`,
+    );
+  }
+  const conversation = aiList.variants[0];
+  if (conversation && conversation.children.length === 3) {
+    const [greeting, question, answer] = conversation.children;
+    const words = (turn) =>
+      (turn.findOne((node) => node.name === "Message Text") || {}).characters;
+    const showKey =
+      aiMessage.set && aiProperty(aiMessage.set, "Show Action Card", "BOOLEAN");
+    ok(
+      /^Hello! What are you looking for\?/.test(words(greeting) || "") &&
+        words(question) === "Where is the nearest accessible restroom?" &&
+        /2 minutes away\.$/.test(words(answer) || "") &&
+        showKey &&
+        answer.componentProperties[showKey] === true &&
+        greeting.componentProperties[showKey] === undefined,
+      `AIMessageList Conversation: the stories' words through each turn's Message Text, and the answer's Show Action Card on (${words(greeting)} | ${words(question)} | ${words(answer)} | ${showKey && answer.componentProperties[showKey]})`,
+    );
+  } else ok(false, "AIMessageList Conversation: three turns");
+  ok(
+    sequence.indexOf("AIMessage") < sequence.indexOf("AIMessageList") &&
+      sequence.indexOf("UserMessage") < sequence.indexOf("AIMessageList"),
+    "AIMessageList runs after AIMessage and UserMessage",
+  );
+  ok(
+    aiList.warnings.length === 0,
+    `AIMessageList: no warning (${aiList.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AIInputBar draws the field, the microphone and send");
+const aiInput = await aiBuild(
+  "AIInputBar",
+  ai.AI_INPUT_BAR_STATES || [],
+  ai.AI_INPUT_BAR_VOICES || [],
+  ai.updateAIInputBarVariant,
+  ai.configureAIInputBarProperties,
+);
+{
+  const sequence = aiRegistered("AIInputBar", {
+    State: ["Empty", "Filled", "Disabled"],
+    VoiceState: [
+      "Off",
+      "Idle",
+      "Connecting",
+      "Listening",
+      "Speaking",
+      "Unavailable",
+      "Error",
+    ],
+  });
+  ok(
+    aiInput.variants.length === 21,
+    `AIInputBar: three states by seven voices (${aiInput.variants.length})`,
+  );
+  // React's microphone, state by state: fill, edge, ink, glyph (null: the arc).
+  const themed = [
+    "Emotion/themed/surface",
+    "Colors/theme/600",
+    "Emotion/themed/onSurface",
+  ];
+  const off = [
+    "Colors/background/100",
+    "Border/Subtle",
+    "Colors/foreground/400",
+  ];
+  const looks = {
+    Idle: [
+      "Surface/0",
+      "Border/Subtle",
+      "Colors/foreground/0",
+      "microphone-01",
+    ],
+    Connecting: [...themed, null],
+    Listening: [...themed, "microphone-01"],
+    Speaking: [...themed, "volume-max"],
+    Unavailable: [...off, "microphone-off-01"],
+    Error: [
+      "Surface/0",
+      "Emotion/danger/text",
+      "Emotion/danger/text",
+      "microphone-off-01",
+    ],
+  };
+  const liveWords = {
+    Connecting: "Connecting…",
+    Listening: "Listening…",
+    Speaking: "Assistant is speaking…",
+  };
+  for (const variant of aiInput.variants) {
+    const parsed =
+      typeof ai.parseAIInputBarVariantName === "function" &&
+      ai.parseAIInputBarVariantName(variant.name);
+    const [state, voice] = [parsed && parsed.value, parsed && parsed.second];
+    const live = voice in liveWords;
+    ok(
+      variant.width === 360 &&
+        variant.layoutMode === "HORIZONTAL" &&
+        variant.counterAxisAlignItems === "CENTER" &&
+        variant.paddingLeft === 16 &&
+        variant.paddingTop === 12 &&
+        variant.itemSpacing === 8 &&
+        aiBound(variant, "paddingLeft") === "AIInputBar/padding/x" &&
+        aiBound(variant, "paddingTop") === "AIInputBar/padding/y" &&
+        aiBound(variant, "itemSpacing") === "AIInputBar/gap" &&
+        aiStroke(variant) === "Border/Subtle" &&
+        variant.strokeTopWeight === 1 &&
+        variant.strokeBottomWeight === 0 &&
+        variant.strokeLeftWeight === 0 &&
+        variant.strokeRightWeight === 0 &&
+        aiChildNames(variant) ===
+          (voice === "Off" ? "Field,Send" : "Field,Voice Button,Send"),
+      `AIInputBar ${variant.name}: 360 wide, 16 and 12 inside, 8 apart, an edge above it only; the field${voice === "Off" ? "" : ", the microphone"} and send (${aiChildNames(variant)}; ${variant.strokeTopWeight}/${variant.strokeBottomWeight})`,
+    );
+    const field = named(variant, "Field");
+    ok(
+      field &&
+        field.height === 44 &&
+        aiBound(field, "height") === "AIInputBar/field/min-height" &&
+        aiValueOf("AIInputBar/field/min-height") === 44 &&
+        field.paddingLeft === 16 &&
+        field.paddingTop === 8 &&
+        aiBound(field, "paddingLeft") === "AIInputBar/field/padding/x" &&
+        aiBound(field, "paddingTop") === "AIInputBar/field/padding/y" &&
+        field.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+        aiStroke(field) === "Border/Subtle" &&
+        aiFill(field) ===
+          (state === "Disabled" ? "Colors/background/100" : "Surface/0") &&
+        field.layoutSizingHorizontal === "FILL",
+      `AIInputBar ${variant.name}: the field a 44 pill, 16 and 8 inside, ${state === "Disabled" ? "the muted fill" : "bg-card"} (${field && `${field.height} ${field.paddingLeft}/${field.paddingTop} ${aiFill(field)}`})`,
+    );
+    const wordsName =
+      state === "Filled"
+        ? "Value Text"
+        : live
+          ? "Voice Text"
+          : "Placeholder Text";
+    const words = field && field.children[0];
+    ok(
+      words &&
+        field.children.length === 1 &&
+        words.name === wordsName &&
+        words.fontSize === 14 &&
+        aiFill(words) ===
+          (state === "Filled"
+            ? "Colors/foreground/0"
+            : "Colors/foreground/400") &&
+        (wordsName !== "Voice Text" || words.characters === liveWords[voice]),
+      `AIInputBar ${variant.name}: the field shows ${wordsName}${wordsName === "Voice Text" ? ` "${liveWords[voice]}"` : ""} (${words && `${words.name} "${words.characters}" ${aiFill(words)}`})`,
+    );
+    const mic = named(variant, "Voice Button");
+    if (voice !== "Off") {
+      const look =
+        state === "Disabled" && !live
+          ? [...off, "microphone-off-01"]
+          : looks[voice];
+      const glyph = mic && mic.findOne((node) => node.name === "Icon");
+      const arc = mic && named(mic, "Arc");
+      ok(
+        mic &&
+          mic.width === 44 &&
+          mic.height === 44 &&
+          aiBound(mic, "width") === "AIInputBar/control/size" &&
+          mic.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+          aiFill(mic) === look[0] &&
+          aiStroke(mic) === look[1] &&
+          (look[3]
+            ? glyph &&
+              glyph.type === "INSTANCE" &&
+              glyph.mainComponent === aiGlyph[look[3]] &&
+              glyph.width === 20 &&
+              aiStroke(glyph.findOne((node) => node.type === "VECTOR")) ===
+                look[2]
+            : !glyph &&
+              arc &&
+              arc.arcData &&
+              arc.arcData.endingAngle === Math.PI &&
+              aiFill(arc) === look[2]),
+        `AIInputBar ${variant.name}: the microphone a 44 circle, ${look[0]} in ${look[1]}, ${look[3] || "the loading arc"} at 20 in ${look[2]} (${mic && `${aiFill(mic)} ${aiStroke(mic)} ${glyph ? glyph.mainComponent && glyph.mainComponent.name : arc ? "arc" : "nothing"}`})`,
+      );
+    }
+    const send = named(variant, "Send");
+    const sendState = state === "Filled" ? "Default" : "Disabled";
+    const sendIcon =
+      send &&
+      send.findOne(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent === "Icon#2:0",
+      );
+    const sendInk =
+      typeof ai.buttonConfig === "function" &&
+      ai.buttonConfig("Default", sendState).foreground;
+    ok(
+      send &&
+        send.type === "INSTANCE" &&
+        send.mainComponent &&
+        send.mainComponent.parent === aiIconButtonSet &&
+        send.mainComponent.name ===
+          `Variant=Default, Size=Default, State=${sendState}` &&
+        send.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+        sendIcon &&
+        sendIcon.mainComponent === aiGlyph["send-01"] &&
+        sendIcon.width === 20 &&
+        aiStroke(sendIcon.findOne((node) => node.type === "VECTOR")) ===
+          sendInk,
+      `AIInputBar ${variant.name}: send is IconButton's default, ${sendState}, on the pill radius, send-01 at 20 in ${sendInk} (${send && send.mainComponent && send.mainComponent.name}, ${sendIcon && sendIcon.mainComponent && sendIcon.mainComponent.name} ${sendIcon && sendIcon.width})`,
+    );
+  }
+  if (aiInput.set) {
+    const placeholder = aiProperty(aiInput.set, "Placeholder Text", "TEXT");
+    const value = aiProperty(aiInput.set, "Value Text", "TEXT");
+    ok(
+      placeholder &&
+        aiRefs(aiInput.set, "characters", placeholder).length === 8 &&
+        value &&
+        aiRefs(aiInput.set, "characters", value).length === 7 &&
+        propertiesBoundToNoLayer(aiInput.set).length === 0,
+      `AIInputBar: Placeholder Text drives the eight placeholders, Value Text the seven values; none bound to nothing (${placeholder && aiRefs(aiInput.set, "characters", placeholder).length}, ${value && aiRefs(aiInput.set, "characters", value).length})`,
+    );
+  } else ok(false, "AIInputBar has a painter");
+  ok(
+    sequence.indexOf("AIInputBar") !== -1,
+    "AIInputBar is in Update All Product / SDK",
+  );
+  ok(
+    aiInput.warnings.length === 0,
+    `AIInputBar: no warning (${aiInput.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AICompanionPanel draws the assistant surface");
+const aiPanel = await aiBuild(
+  "AICompanionPanel",
+  ai.AI_COMPANION_PANEL_CONTENT || [],
+  null,
+  ai.updateAICompanionPanelVariant,
+  ai.configureAICompanionPanelProperties,
+);
+{
+  const sequence = aiRegistered("AICompanionPanel", {
+    Content: ["Conversation", "Streaming", "TimedOut"],
+  });
+  ok(aiPanel.variants.length === 3, "AICompanionPanel: three threads");
+  for (const variant of aiPanel.variants) {
+    const content = variant.name.replace("Content=", "");
+    ok(
+      variant.width === 360 &&
+        variant.height === 560 &&
+        aiBound(variant, "width") === "AICompanionPanel/width/default" &&
+        aiBound(variant, "height") === "AICompanionPanel/height/default" &&
+        aiFill(variant) === "Colors/background/0" &&
+        variant.clipsContent === true &&
+        aiChildNames(variant) === "Header,Banner,AIMessageList,AIInputBar",
+      `AICompanionPanel ${variant.name}: 360 by 560 on bg-background: the header, the banner, the thread, the input (${variant.width}×${variant.height}, ${aiChildNames(variant)})`,
+    );
+    const header = named(variant, "Header");
+    ok(
+      header &&
+        header.paddingLeft === 16 &&
+        header.paddingTop === 12 &&
+        header.itemSpacing === 8 &&
+        aiBound(header, "paddingLeft") ===
+          "AICompanionPanel/header/padding/x" &&
+        aiBound(header, "paddingTop") === "AICompanionPanel/header/padding/y" &&
+        aiBound(header, "itemSpacing") === "AICompanionPanel/header/gap" &&
+        aiStroke(header) === "Border/Subtle" &&
+        header.strokeBottomWeight === 1 &&
+        header.strokeTopWeight === 0 &&
+        aiChildNames(header) === "Mark,Title Text,Close",
+      `AICompanionPanel ${variant.name}: the header 16 across, 12 down, 8 apart, an edge under it: the mark, the title, the close (${header && `${header.paddingLeft}/${header.paddingTop} ${aiChildNames(header)}`})`,
+    );
+    const mark = header && named(header, "Mark");
+    const stars = mark && named(mark, "Icon");
+    ok(
+      mark &&
+        mark.width === 32 &&
+        aiBound(mark, "width") === "AICompanionPanel/mark/size" &&
+        mark.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+        aiStroke(mark) === "Border/Subtle" &&
+        stars &&
+        stars.mainComponent === aiGlyph["stars-01"] &&
+        stars.width === 16 &&
+        aiStroke(stars.findOne((node) => node.type === "VECTOR")) ===
+          "Colors/theme/600",
+      `AICompanionPanel ${variant.name}: the mark a 32 bordered circle, stars-01 at 16 in the theme's 600 (${mark && mark.width}, ${stars && stars.mainComponent && stars.mainComponent.name})`,
+    );
+    const title = header && named(header, "Title Text");
+    ok(
+      title &&
+        title.characters === "Assistant" &&
+        title.fontSize === 16 &&
+        title.lineHeight.value === 24 &&
+        title.fontName === FONTS.medium &&
+        aiFill(title) === "Colors/foreground/0" &&
+        title.layoutSizingHorizontal === "FILL",
+      `AICompanionPanel ${variant.name}: the title 16/24 semibold in the foreground, filling the header (${title && `${title.fontSize}/${title.lineHeight.value} ${title.fontName && title.fontName.style}`})`,
+    );
+    const close = header && named(header, "Close");
+    const x =
+      close &&
+      close.findOne(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent === "Icon#2:0",
+      );
+    ok(
+      close &&
+        close.type === "INSTANCE" &&
+        close.mainComponent &&
+        close.mainComponent.parent === aiIconButtonSet &&
+        close.mainComponent.name ===
+          "Variant=Outline, Size=Default, State=Default" &&
+        aiStroke(close) === "Emotion/neutral/text" &&
+        x &&
+        x.mainComponent === aiGlyph["x-close"] &&
+        x.width === 20 &&
+        aiStroke(x.findOne((node) => node.type === "VECTOR")) ===
+          "Emotion/neutral/text",
+      `AICompanionPanel ${variant.name}: the close is IconButton's outline, neutral (decision 73), x-close at 20 (${close && close.mainComponent && close.mainComponent.name}, ${aiStroke(close)}, ${x && x.mainComponent && x.mainComponent.name})`,
+    );
+    const banner = named(variant, "Banner");
+    const bannerSlot = banner && named(banner, "Banner Slot");
+    ok(
+      banner &&
+        banner.visible === false &&
+        banner.paddingTop === 16 &&
+        banner.paddingBottom === 12 &&
+        aiBound(banner, "paddingTop") ===
+          "AICompanionPanel/banner/padding/top" &&
+        banner.strokeBottomWeight === 1 &&
+        bannerSlot &&
+        bannerSlot.type === "SLOT",
+      `AICompanionPanel ${variant.name}: the banner hidden, 16 above and 12 below with an edge under it, holding a slot (${banner && `${banner.visible} ${banner.paddingTop}/${banner.paddingBottom}`}, ${bannerSlot && bannerSlot.type})`,
+    );
+    const thread = named(variant, "AIMessageList");
+    const input = named(variant, "AIInputBar");
+    ok(
+      thread &&
+        thread.type === "INSTANCE" &&
+        thread.mainComponent &&
+        thread.mainComponent.parent === aiList.set &&
+        thread.mainComponent.name === `Content=${content}` &&
+        thread.isExposedInstance === true &&
+        thread.layoutSizingVertical === "FILL" &&
+        thread.layoutSizingHorizontal === "FILL" &&
+        input &&
+        input.type === "INSTANCE" &&
+        input.mainComponent &&
+        input.mainComponent.parent === aiInput.set &&
+        input.mainComponent.name === "State=Empty, VoiceState=Off" &&
+        input.isExposedInstance === true &&
+        input.layoutSizingHorizontal === "FILL",
+      `AICompanionPanel ${variant.name}: a live AIMessageList (${content}) filling the height, and a live AIInputBar (Empty, Off), both exposed (${thread && thread.mainComponent && thread.mainComponent.name}, ${input && input.mainComponent && input.mainComponent.name})`,
+    );
+  }
+  if (aiPanel.set) {
+    const defs = aiPanel.set.componentPropertyDefinitions;
+    const title = aiProperty(aiPanel.set, "Title Text", "TEXT");
+    const close = aiProperty(aiPanel.set, "Show Close", "BOOLEAN");
+    const banner = aiProperty(aiPanel.set, "Show Banner", "BOOLEAN");
+    const slot = aiProperty(aiPanel.set, "Banner Slot", "SLOT");
+    ok(
+      title &&
+        aiRefs(aiPanel.set, "characters", title).length === 3 &&
+        close &&
+        defs[close].defaultValue === true &&
+        aiRefs(aiPanel.set, "visible", close).every(
+          (node) => node.name === "Close",
+        ) &&
+        aiRefs(aiPanel.set, "visible", close).length === 3 &&
+        banner &&
+        defs[banner].defaultValue === false &&
+        aiRefs(aiPanel.set, "visible", banner).length === 3 &&
+        slot &&
+        aiRefs(aiPanel.set, "slot", slot).length === 3 &&
+        propertiesBoundToNoLayer(aiPanel.set).length === 0,
+      `AICompanionPanel: Title Text, Show Close (on) on the close, Show Banner (off) on the banner and Banner Slot on its slot, in all three; none bound to nothing (${Object.keys(defs).join(", ")})`,
+    );
+  } else ok(false, "AICompanionPanel has a painter");
+  ok(
+    sequence.indexOf("AIMessageList") < sequence.indexOf("AICompanionPanel") &&
+      sequence.indexOf("AIInputBar") < sequence.indexOf("AICompanionPanel"),
+    "AICompanionPanel runs after AIMessageList and AIInputBar",
+  );
+  ok(
+    aiPanel.warnings.length === 0,
+    `AICompanionPanel: no warning (${aiPanel.warnings.join("; ")})`,
   );
 }
 

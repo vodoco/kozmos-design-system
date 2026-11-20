@@ -39,11 +39,11 @@ token was declined, so this is not a gap to close.
 | Variations that are compositional only    | 64     |
 | Components with variant gaps — iOS        | 16/68  |
 | Components with variant gaps — Android    | 16/68  |
-| Components with variant gaps — Figma      | 21/68  |
+| Components with variant gaps — Figma      | 24/68  |
 | Components with variant gaps — Vue        | 11/68  |
 | Components absent entirely — iOS          | 10/132 |
 | Components absent entirely — Android      | 9/132  |
-| Components absent entirely — Figma        | 14/132 |
+| Components absent entirely — Figma        | 16/132 |
 | Components absent entirely — Vue          | 23/132 |
 
 <!-- /generated:headline -->
@@ -66,12 +66,10 @@ component gains an axis on one platform before another.
 AIInputBar
   - ios: component/set absent
   - android: component/set absent
-  - figma: component/set absent
   - vue: component absent
 AIMessage
   - ios: component/set absent
   - android: component/set absent
-  - figma: component/set absent
   - vue: component absent
 AdaptiveMapShell
   - ios missing axes -> panelSizing (fraction, content)
@@ -81,6 +79,7 @@ Alert
   - ios missing axes -> live (off, polite, assertive)
   - android missing axes -> live (off, polite, assertive)
 ArrivalPanel
+  - figma: component/set absent
   - vue: component absent
 BottomNavigation
   - ios missing axes -> density (default, compact)
@@ -115,12 +114,14 @@ List
 ManoeuvreCard
   - vue: component absent
 MapAttribution
+  - figma: component/set absent
   - vue: component absent
 MapControlButton
   - figma missing axes -> emphasis (tinted, filled); labelPlacement (inline, stacked)
 MapControlsGroup
   - figma missing axes -> locationLabelPlacement (inline, stacked)
 MapStatusPill
+  - figma: component/set absent
   - vue: component absent
 MapView
   - ios missing axes -> variant (framed, fill)
@@ -131,11 +132,13 @@ Notice
 POIResultCard
   - figma missing axes -> presentationStyle (legacy, sdk)
 RouteLocationField
+  - figma: component/set absent
   - vue: component absent
 RouteProgressRail
   - figma missing axes -> appearance (theme, gradient); positionMode (static, live); motion (none, directional)
   - vue: component absent
 RouteSetupPanel
+  - figma: component/set absent
   - vue: component absent
 Stepper
   - ios missing axes -> variant (numbered, dots)
@@ -236,9 +239,9 @@ AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, La
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, TourStep, UserMessage.
 
-### Figma — 14 of 132
+### Figma — 16 of 132
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, ClientAppBanner, FieldWrapper, Icon, LanguageSwitcher, NavigationAnnouncer, Surface, ThemeProvider, UserMessage.
+ActionCard, ArrivalPanel, Calendar, ClientAppBanner, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, POIResultGroup, RouteLocationField, RouteSetupPanel, Surface, ThemeProvider.
 
 ### Vue — 23 of 132
 

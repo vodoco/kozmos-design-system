@@ -131,6 +131,19 @@ const UI_GLYPH_NATIVES = {
   "pencil-01": {
     none: "A Card header's actions are the product's own (GAP-169): no Kozmos part draws pencil-01 here.",
   },
+  // AIInputBar's (GAP-206): the assistant is React only until GAP-141.
+  "send-01": {
+    none: "AIInputBar's send (GAP-206): no SwiftUI or Compose part draws it until the assistant goes native (GAP-141).",
+  },
+  "microphone-01": {
+    none: "AIInputBar's microphone (GAP-206): no SwiftUI or Compose part draws it until the assistant goes native (GAP-141).",
+  },
+  "microphone-off-01": {
+    none: "AIInputBar's microphone, unavailable (GAP-206): no SwiftUI or Compose part draws it until the assistant goes native (GAP-141).",
+  },
+  "volume-max": {
+    none: "AIInputBar's microphone, speaking (GAP-206): no SwiftUI or Compose part draws it until the assistant goes native (GAP-141).",
+  },
 };
 const DASHBOARD_ONLY =
   "MapEditToolbar's (CLOUD-UI-005), a Dashboard module: web only (decision 183).";
