@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TravelEstimatePresentation } from "@kozmos-ds/product-contracts";
-import { travelEstimateBreakdownLabel } from "../utils";
+import { travelEstimateBreakdownLabel } from "../utils/travel-estimate";
 
 /**
  * GAP-047: a travel time says what it includes. The cards draw one line, the

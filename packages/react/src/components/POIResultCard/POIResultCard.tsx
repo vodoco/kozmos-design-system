@@ -13,11 +13,8 @@ import {
   NavigationPointer01,
   type KozmosIconComponent,
 } from "@kozmos-ds/icons";
-import {
-  cn,
-  poiLocationLabel,
-  travelEstimateBreakdownLabel,
-} from "../../utils";
+import { cn, poiLocationLabel } from "../../utils";
+import { travelEstimateBreakdownLabel } from "../../utils/travel-estimate";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button/Button";
 import { WithoutGenericClick } from "../../utils/generic-click";

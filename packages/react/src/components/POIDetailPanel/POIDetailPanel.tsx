@@ -7,11 +7,8 @@ import type {
 } from "@kozmos-ds/product-contracts";
 import { NavigationPointer01 as Navigation, X } from "@kozmos-ds/icons";
 import { Bookmark, Heart, isKozmosIconKey } from "@kozmos-ds/icons";
-import {
-  cn,
-  poiLocationLabel,
-  travelEstimateBreakdownLabel,
-} from "../../utils";
+import { cn, poiLocationLabel } from "../../utils";
+import { travelEstimateBreakdownLabel } from "../../utils/travel-estimate";
 import { impliedLive } from "../../utils/live-region";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 import { Button } from "../Button";
