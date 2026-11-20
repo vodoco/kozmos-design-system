@@ -6,7 +6,7 @@ A read-only block of code (GAP-216, decision 225): MAP-619's merged unit shows a
 
 - **Import:** `import { CodeBlock } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-codeblock--docs>
 
 ## Example

@@ -62,7 +62,7 @@ figma.connect(TreeParentItemRow, parentUrl, {
     // GAP-277: Checkable draws the box, and Checked is its check. Mixed
     // (decision 211, GAP-279) is checked="mixed", Checkbox's dash.
     checked: figma.boolean("Checkable", {
-      true: figma.boolean("Mixed", {
+      true: figma.boolean<"mixed", boolean>("Mixed", {
         true: "mixed",
         false: figma.boolean("Checked"),
       }),
@@ -140,7 +140,7 @@ figma.connect(TreeChildItemRow, childUrl, {
     // GAP-277: Checkable draws the box, and Checked is its check. Mixed
     // (decision 211, GAP-279) is checked="mixed", Checkbox's dash.
     checked: figma.boolean("Checkable", {
-      true: figma.boolean("Mixed", {
+      true: figma.boolean<"mixed", boolean>("Mixed", {
         true: "mixed",
         false: figma.boolean("Checked"),
       }),
@@ -215,7 +215,7 @@ figma.connect(TreeItemRow, itemUrl, {
     // GAP-277: Checkable draws the box, and Checked is its check. Mixed
     // (decision 211, GAP-279) is checked="mixed", Checkbox's dash.
     checked: figma.boolean("Checkable", {
-      true: figma.boolean("Mixed", {
+      true: figma.boolean<"mixed", boolean>("Mixed", {
         true: "mixed",
         false: figma.boolean("Checked"),
       }),
