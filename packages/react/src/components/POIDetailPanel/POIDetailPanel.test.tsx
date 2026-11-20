@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { NavigationPointer01 } from "@kozmos-ds/icons";
 import type { POIAction, POIPresentation } from "@kozmos-ds/product-contracts";
 import { describe, expect, it, vi } from "vitest";
 import { POIDetailPanel } from "./POIDetailPanel";
@@ -59,8 +60,12 @@ describe("POIDetailPanel", () => {
     );
     const go = screen.getByRole("button", { name: "Go" });
     expect(go.querySelector("svg")).toHaveAttribute("fill", "none");
-    expect(go.querySelector("path")?.getAttribute("d")).toMatch(
-      /^M3\.41345 10\.7445/,
+    // NavigationPointer01, read from the icons package itself rather than a
+    // copy of its path: a regenerated library traces the same shape from
+    // another point (19 Nov).
+    const { container: pointer } = render(<NavigationPointer01 />);
+    expect(go.querySelector("path")?.getAttribute("d")).toBe(
+      pointer.querySelector("path")!.getAttribute("d"),
     );
     for (const name of ["Share", "Order", "Book", "Call"])
       expect(
