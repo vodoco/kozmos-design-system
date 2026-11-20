@@ -21410,6 +21410,17 @@ section(
     ),
     `Media: the close in the dialog's corner, 24 in, on the surface with the subtle edge, above the band, not in the header (${close && `${close.parent && close.parent.name} ${close.x},${close.y}`})`,
   );
+  // On the dialog's own corner the close is still a control, which keeps its
+  // own corner: tagged so, the nested-radius check (CI's --strict run over the
+  // live file) leaves it alone. Untagged, it read the 8 close 24 inside the
+  // 20 dialog as a panel off by 12 and failed every branch (20 Nov).
+  ok(
+    Boolean(
+      close &&
+      close.getSharedPluginData(plugin.RUN_NAMESPACE, "surface") === "control",
+    ),
+    `Media: the close on the dialog's corner is tagged a control surface (${close && (close.getSharedPluginData(plugin.RUN_NAMESPACE, "surface") || "untagged")})`,
+  );
   const basic = await paintDialog("Basic");
   ok(
     Boolean(

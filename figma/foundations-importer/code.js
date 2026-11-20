@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "269d8b3ac483";
+const PLUGIN_BUILD = "3a90c24da157";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -80055,6 +80055,10 @@ async function syncInlineCloseButton({
   icon.x = (size - iconSize) / 2;
   icon.y = (size - iconSize) / 2;
   close.appendChild(icon);
+  // An icon button, so a control: it keeps its own corner wherever it sits.
+  // Dialog's Media variant puts it straight on the dialog's corner, where the
+  // nested-radius check read it as a panel off the concentric ideal (20 Nov).
+  markControlSurface(close);
   return close;
 }
 
