@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "71d9d414cc7c";
+const PLUGIN_BUILD = "e7dcd2cc993a";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -59344,6 +59344,11 @@ async function mapPartInstance({
   } catch (_error) {
     // Older runtimes do not expose nested instances; the instance still draws.
   }
+  // A Button or IconButton keeps its own corner wherever it sits: tagged a
+  // control, the nested-radius check leaves it alone. RouteSetupPanel's
+  // Continue and ArrivalPanel's Done, 16 in from the Standalone panel's 24
+  // corner, failed it on the live file after their first Build (21 Nov).
+  if (CONTROL_COMPONENT_SETS.has(setName)) markControlSurface(instance);
   return { node: instance, componentSet: created.componentSet };
 }
 

@@ -24603,6 +24603,17 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
         panel,
         name === "ArrivalPanel" ? "Done Button" : "Continue Button",
       );
+      // The action is a control, which keeps its own corner: 16 in from the
+      // Standalone panel's 24, it failed the live file's nested-radius check
+      // untagged (21 Nov).
+      ok(
+        Boolean(
+          action &&
+          action.getSharedPluginData(plugin.RUN_NAMESPACE, "surface") ===
+            "control",
+        ),
+        `${name} ${state} ${presentation}: its ${action && action.name} is tagged a control surface (${action ? action.getSharedPluginData(plugin.RUN_NAMESPACE, "surface") || "untagged" : "missing"})`,
+      );
       const title = named(
         panel,
         name === "ArrivalPanel" ? "Arrival Title" : "Panel Title",
