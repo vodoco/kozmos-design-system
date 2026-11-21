@@ -629,7 +629,7 @@ There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack
 
 ## 7. Vue/Web Components Issues
 
-Vue is being built: `@kozmos-ds/vue` is private (Vue 3 Phase 0; unported parts mount their React components through `@kozmos-ds/vue/react-bridge`), not a package to install yet, and there are no Lit Web Components. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
+Vue is being built: `@kozmos-ds/vue` (Vue 3 Phase 0; unported parts mount their React components through `@kozmos-ds/vue/react-bridge`) is published only as prereleases on npm's `next` tag (`<styles version>-next.<n>`, never `latest`), from its first `next` release, and there are no Lit Web Components. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 

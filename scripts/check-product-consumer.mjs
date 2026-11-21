@@ -117,7 +117,25 @@ try {
   );
   console.log(`Product consumer: ${product}\nIsolated install: ${work}`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"]);
-  for (const name of Object.keys(localPackages)) {
+  // Every public package is packed and offered as an override, but a product
+  // installs only those it depends on: a React product never installs
+  // @kozmos-ds/vue. What it names directly must be installed; whatever is
+  // installed, directly or not, must be the packed distribution.
+  const direct = new Set(
+    ["dependencies", "devDependencies"].flatMap((group) =>
+      Object.keys(manifest[group] ?? {}).filter((name) => localPackages[name]),
+    ),
+  );
+  const installed = Object.keys(localPackages).filter((name) =>
+    fs.existsSync(path.join(app, "node_modules", name)),
+  );
+  for (const name of direct)
+    assert(
+      installed.includes(name),
+      `${name} is a direct dependency of ${product} but was not installed`,
+    );
+  assert(installed.length > 0, `${product} installed no Kozmos package`);
+  for (const name of installed) {
     const resolved = fs.realpathSync(path.join(app, "node_modules", name));
     assert(
       resolved.startsWith(`${app}${path.sep}`),
@@ -153,7 +171,7 @@ try {
         status: "build-verified",
         authenticatedIntegration: "not-tested",
         routingAcceptance: "not-tested",
-        packages: Object.keys(localPackages),
+        packages: installed,
       },
       null,
       2,

@@ -221,6 +221,31 @@ export function componentFacts(api, entry) {
   return facts;
 }
 
+/** `names`' exports, resolved from a module in `dir`: name → Set, or absent. */
+function exportsFrom(dir, names) {
+  const file = path.join(dir, "__kozmos-packages.ts");
+  const source = `${names.map((name, i) => `import * as p${i} from ${JSON.stringify(name)};`).join("\n")}\nexport {};\n`;
+  const program = ts.createProgram({
+    rootNames: [file],
+    options: compilerOptions,
+    host: hostWith(new Map([[file, source]])),
+  });
+  const checker = program.getTypeChecker();
+  const imports = program
+    .getSourceFile(file)
+    .statements.filter(ts.isImportDeclaration);
+  const found = new Map();
+  imports.forEach((statement, i) => {
+    const symbol = checker.getSymbolAtLocation(statement.moduleSpecifier);
+    if (symbol)
+      found.set(
+        names[i],
+        new Set(checker.getExportsOfModule(symbol).map((s) => s.name)),
+      );
+  });
+  return found;
+}
+
 /** The public packages of the workspace, from their manifests. */
 export function publicPackages(root) {
   const packages = new Map();
@@ -255,30 +280,24 @@ export function readPackageExports(root) {
   const names = [...packages.keys()].filter((name) =>
     hasModule(packages.get(name)),
   );
-  const file = path.join(exampleDirectory(root), "__kozmos-packages.ts");
-  const source = `${names.map((name, i) => `import * as p${i} from ${JSON.stringify(name)};`).join("\n")}\nexport {};\n`;
-  const program = ts.createProgram({
-    rootNames: [file],
-    options: compilerOptions,
-    host: hostWith(new Map([[file, source]])),
-  });
-  const checker = program.getTypeChecker();
-  const imports = program
-    .getSourceFile(file)
-    .statements.filter(ts.isImportDeclaration);
+  // From packages/react, as an app with React installs it. A package React
+  // cannot reach (@kozmos-ds/vue, which needs Vue and is no dependency of
+  // React's) is read from its own folder instead, by its own name, as
+  // bundler resolution lets a package import itself.
+  const fromReact = exportsFrom(exampleDirectory(root), names);
   const result = new Map();
-  imports.forEach((statement, i) => {
-    const symbol = checker.getSymbolAtLocation(statement.moduleSpecifier);
-    result.set(names[i], {
-      ...packages.get(names[i]),
-      exports: symbol
-        ? new Set(checker.getExportsOfModule(symbol).map((s) => s.name))
-        : null,
-      unknown: symbol
+  for (const name of names) {
+    const exports =
+      fromReact.get(name) ??
+      exportsFrom(path.join(root, packages.get(name).dir), [name]).get(name);
+    result.set(name, {
+      ...packages.get(name),
+      exports: exports ?? null,
+      unknown: exports
         ? null
-        : `${names[i]} does not resolve from packages/react; build it first`,
+        : `${name} does not resolve from packages/react or its own folder; build it first`,
     });
-  });
+  }
   for (const [name, entry] of packages)
     if (!hasModule(entry))
       result.set(name, { ...entry, exports: new Set(), unknown: null });
