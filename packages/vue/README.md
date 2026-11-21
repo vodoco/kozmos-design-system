@@ -1,7 +1,14 @@
 # @kozmos-ds/vue
 
-Kozmos for Vue 3, on Reka UI (Vue 3 Phase 0, decision 76). Private until its first `next` release
-(decision 162).
+Kozmos for Vue 3, on Reka UI (Vue 3 Phase 0, decision 76). It ships as prereleases on npm's `next` tag,
+one after each Vue porting wave, and never on `latest` (decision 162):
+
+```bash
+npm install @kozmos-ds/vue@next vue
+```
+
+A version reads `<styles version>-next.<n>`: `0.17.0-next.2` is the third built on `@kozmos-ds/styles`
+and `@kozmos-ds/react` 0.17.0, which it pins exactly (it installs that stylesheet itself). React is needed only for the bridge, below.
 
 ## Two entries
 
@@ -74,12 +81,27 @@ A part drawn in a compound's tree is given only the providers that sit between i
 part.
 
 ```vue
-<KozmosThemeProvider theme="dark" density="compact">
-  <KozmosAnalyticsProvider @dispatch="send">
-    <KozmosCheckbox aria-label="Step-free" />  <!-- reports checkbox_toggled -->
-    <KozmosButton>Save</KozmosButton>          <!-- reports button_clicked -->
-  </KozmosAnalyticsProvider>
-</KozmosThemeProvider>
+<script setup lang="ts">
+import {
+  KozmosAnalyticsProvider,
+  KozmosButton,
+  KozmosThemeProvider,
+  type KozmosAnalyticsEvent,
+} from "@kozmos-ds/vue";
+import { KozmosCheckbox } from "@kozmos-ds/vue/react-bridge";
+const send = (events: KozmosAnalyticsEvent[]) => console.log(events);
+</script>
+
+<template>
+  <KozmosThemeProvider theme="dark" density="compact">
+    <KozmosAnalyticsProvider @dispatch="send">
+      <!-- reports checkbox_toggled -->
+      <KozmosCheckbox aria-label="Step-free" />
+      <!-- reports button_clicked -->
+      <KozmosButton>Save</KozmosButton>
+    </KozmosAnalyticsProvider>
+  </KozmosThemeProvider>
+</template>
 ```
 
 **Props in either case (GAP-238).** An attribute in kebab-case reaches React by its camelCase name, as

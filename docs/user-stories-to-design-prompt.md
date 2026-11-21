@@ -86,8 +86,8 @@ not in git — the account running Figma needs access to `Yj4O8p6Y9h2Sa9zJVoAiVY
 
 As of 2026-09-21 the registry has nothing: `npm view @kozmos-ds/react` is a 404, and `release.yml`
 skips publish while `NPM_TOKEN` is unset. When that changes, a consumer installs
-`@kozmos-ds/react @kozmos-ds/tokens @kozmos-ds/icons @kozmos-ds/product-contracts` (`@kozmos-ds/vue` is private
-and not published), imports `@kozmos-ds/react/dist/style.css`, wraps the app in `ThemeProvider`, and
+`@kozmos-ds/react @kozmos-ds/tokens @kozmos-ds/icons @kozmos-ds/product-contracts` (`@kozmos-ds/vue` ships
+only as `next` prereleases), imports `@kozmos-ds/react/dist/style.css`, wraps the app in `ThemeProvider`, and
 reads the READMEs that ship in the packages. In a prototype under `apps/`, the only line that
 changes is `"@kozmos-ds/react": "workspace:*"` → the published version. Everything else in this
 brief is unchanged, because the docs, the manifest and the Figma library live in the repository

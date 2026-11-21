@@ -25,6 +25,31 @@ const FILES = [
   "scripts/release/changeset-required.mjs",
 ];
 
+/**
+ * `files` with every module they import by a relative path, followed to the
+ * end, so the fixture runs the scripts as this checkout has them: until 21
+ * Nov the list named changeset-required.mjs alone, and its new import of
+ * ./policy.mjs failed both changeset tests with ERR_MODULE_NOT_FOUND.
+ */
+export function withLocalImports(
+  files,
+  read = (file) => fs.readFileSync(path.join(root, file), "utf8"),
+) {
+  const seen = new Set();
+  const queue = [...files];
+  while (queue.length) {
+    const file = queue.shift();
+    if (seen.has(file)) continue;
+    seen.add(file);
+    if (!/\.[cm]?js$/.test(file)) continue;
+    for (const [, specifier] of read(file).matchAll(
+      /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["'](\.\.?\/[^"']+)["']/g,
+    ))
+      queue.push(path.posix.join(path.posix.dirname(file), specifier));
+  }
+  return [...seen];
+}
+
 function scratch(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-ci-local-"));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -46,7 +71,7 @@ function repository(t) {
   git("init", "-q", "-b", "main");
   git("config", "user.email", "test@example.com");
   git("config", "user.name", "test");
-  for (const file of FILES)
+  for (const file of withLocalImports(FILES))
     write(file, fs.readFileSync(path.join(root, file), "utf8"));
   fs.symlinkSync(
     path.join(root, "node_modules"),
@@ -722,4 +747,21 @@ test("a step that writes to $GITHUB_STEP_SUMMARY, $GITHUB_ENV and $GITHUB_OUTPUT
   const run = ciLocal(dir);
   assert.equal(run.status, 0, run.log);
   assert.match(run.log, /PASS\s+Writes Its Files/, run.log);
+});
+
+test("the fixture carries every module its scripts import by a relative path", () => {
+  const files = withLocalImports(FILES);
+  assert.ok(files.includes("scripts/release/policy.mjs"), files.join(", "));
+  const fake = {
+    "a.mjs": 'import { b } from "./lib/b.mjs";\nimport fs from "node:fs";',
+    "lib/b.mjs": 'export * from "../c.mjs";\nawait import("./d.mjs");',
+    "c.mjs": "",
+    "lib/d.mjs": 'import "./b.mjs";',
+  };
+  assert.deepEqual(withLocalImports(["a.mjs"], (file) => fake[file]).sort(), [
+    "a.mjs",
+    "c.mjs",
+    "lib/b.mjs",
+    "lib/d.mjs",
+  ]);
 });

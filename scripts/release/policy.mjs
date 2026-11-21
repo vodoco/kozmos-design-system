@@ -153,6 +153,46 @@ export function fixedGroupsFrom(configText) {
   );
 }
 
+/**
+ * The packages that publish only as prereleases on `next`, each with the
+ * package its version is built on. @kozmos-ds/vue goes out on `next` after
+ * each Vue porting wave and never on `latest` (the owner's plan of 19-20 Nov
+ * 2026, decision 162). Its version is `<styles version>-next.<n>`: it pins
+ * @kozmos-ds/styles exactly (and @kozmos-ds/react, a peer of its bridge),
+ * so the version says which stylesheet and React it was built against, and no
+ * future stable version can equal it. Changesets would bump a prerelease to
+ * its release (0.17.0-next.0 plus a patch is 0.17.0), so these packages are in
+ * `.changeset/config.json`'s `ignore`, and versioned by hand.
+ */
+export const NEXT_ONLY = Object.freeze({
+  "@kozmos-ds/vue": "@kozmos-ds/styles",
+});
+const NEXT_PRERELEASE = /^(\d+\.\d+\.\d+)-next\.(0|[1-9]\d*)$/;
+
+/** Refuses a next-only package planned on `latest`, or at a version off its channel. */
+function validateChannel(item, tag, manifests) {
+  const base = NEXT_ONLY[item.name];
+  if (!base) return;
+  assert.equal(
+    tag,
+    "next",
+    `${item.name} publishes on next only, never ${tag}`,
+  );
+  const baseVersion = manifests.find((p) => p.name === base)?.version;
+  const match = NEXT_PRERELEASE.exec(item.version);
+  assert.ok(
+    match,
+    `${item.name}@${item.version} is not a next prerelease: it must be ` +
+      `<${base} version>-next.<n>, such as ${baseVersion}-next.0`,
+  );
+  assert.equal(
+    match[1],
+    baseVersion,
+    `${item.name}@${item.version} is built on ${base} ${baseVersion}: ` +
+      `set it to ${baseVersion}-next.0`,
+  );
+}
+
 export function validatePlan(
   plan,
   manifests,
@@ -194,6 +234,7 @@ export function validatePlan(
       item.version,
       "A canonical semver is required",
     );
+    validateChannel(item, plan.tag, manifests);
     if (plan.tag === "latest")
       assert.equal(
         semver.prerelease(item.version),

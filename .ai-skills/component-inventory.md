@@ -5,13 +5,14 @@
 
 ## Packages
 
-| package                        | version |
-| ------------------------------ | ------- |
-| `@kozmos-ds/icons`             | 0.10.0  |
-| `@kozmos-ds/product-contracts` | 0.10.0  |
-| `@kozmos-ds/react`             | 0.16.0  |
-| `@kozmos-ds/styles`            | 0.16.0  |
-| `@kozmos-ds/tokens`            | 0.9.0   |
+| package                        | version       |
+| ------------------------------ | ------------- |
+| `@kozmos-ds/icons`             | 0.10.0        |
+| `@kozmos-ds/product-contracts` | 0.10.0        |
+| `@kozmos-ds/react`             | 0.16.0        |
+| `@kozmos-ds/styles`            | 0.16.0        |
+| `@kozmos-ds/tokens`            | 0.9.0         |
+| `@kozmos-ds/vue`               | 0.16.0-next.0 |
 
 These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose
 (`packages/android`) are used from a checkout and are not published.
