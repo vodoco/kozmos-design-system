@@ -30,11 +30,13 @@
 | `@kozmos-ds/icons`                      | npm      | `release.yml`                            |
 | `@kozmos-ds/product-contracts`          | npm      | `release.yml`                            |
 | `@kozmos-ds/tokens`                     | npm      | `release.yml`                            |
+| `@kozmos-ds/vue`                        | npm      | `release.yml`, on `next` only            |
 | Swift package `Kozmos` (`packages/ios`) | none     | Not published; source in this repository |
 | Compose library (`packages/android`)    | none     | Not published; source in this repository |
 
-Every other workspace package is private and never published: `@kozmos-ds/vue`, `@kozmos-ds/docs`
-and the apps.
+`@kozmos-ds/vue` publishes only as a prerelease on npm's `next` tag, in a plan of its own after
+React's release (docs/release-process.md, "The `next` channel"). Every other workspace package is
+private and never published: `@kozmos-ds/docs` and the apps.
 
 ### Publishing Flow
 

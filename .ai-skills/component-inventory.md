@@ -7,17 +7,19 @@
 
 | package                        | version       |
 | ------------------------------ | ------------- |
-| `@kozmos-ds/icons`             | 0.10.0        |
-| `@kozmos-ds/product-contracts` | 0.10.0        |
-| `@kozmos-ds/react`             | 0.16.0        |
-| `@kozmos-ds/styles`            | 0.16.0        |
-| `@kozmos-ds/tokens`            | 0.9.0         |
-| `@kozmos-ds/vue`               | 0.16.0-next.0 |
+| `@kozmos-ds/icons`             | 0.11.0        |
+| `@kozmos-ds/product-contracts` | 0.11.0        |
+| `@kozmos-ds/react`             | 0.17.0        |
+| `@kozmos-ds/styles`            | 0.17.0        |
+| `@kozmos-ds/tokens`            | 0.10.0        |
+| `@kozmos-ds/vue`               | 0.17.0-next.0 |
 
-These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose
-(`packages/android`) are used from a checkout and are not published.
-`@kozmos-ds/vue` exists in the workspace but is **private**: Kozmos for Vue 3,
-being built on Reka UI (Vue 3 Phase 0), and not yet something to install.
+These are the public packages. All but `@kozmos-ds/vue` publish on npm's
+`latest` tag. `@kozmos-ds/vue`, Kozmos for Vue 3 on Reka UI, publishes only
+as a prerelease on `next` (`npm install @kozmos-ds/vue@next`): its ported
+parts are Vue's own, and the rest mount from React through its `./react-bridge`.
+SwiftUI (`packages/ios`) and Compose (`packages/android`) are used from a
+checkout and are not published.
 There is no React Native package.
 
 ## Components (140)
