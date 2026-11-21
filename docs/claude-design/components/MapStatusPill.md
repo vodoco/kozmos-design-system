@@ -6,7 +6,7 @@ One status on the map, drawn as a compact pill in one of five tones (decision 39
 
 - **Import:** `import { MapStatusPill } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-mapstatuspill--docs>
 
 ## Example

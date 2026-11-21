@@ -6,7 +6,7 @@ Express's Client App Banner (GAP-127): a short promotion for the customer's own 
 
 - **Import:** `import { ClientAppBanner } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-clientappbanner--docs>
 
 ## Example

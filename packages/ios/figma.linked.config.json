@@ -228,7 +228,25 @@
       "Sources/Components/DynamicIsland/DynamicIsland.figma.swift",
       "Sources/Components/DynamicIsland/DynamicIsland.swift",
       "Sources/Components/FeedbackCard/FeedbackCard.figma.swift",
-      "Sources/Components/FeedbackCard/FeedbackCard.swift"
+      "Sources/Components/FeedbackCard/FeedbackCard.swift",
+      "Sources/Components/MapStatusPill/MapStatusPill.figma.swift",
+      "Sources/Components/MapStatusPill/MapStatusPill.swift",
+      "Sources/Components/MapAttribution/MapAttribution.figma.swift",
+      "Sources/Components/MapAttribution/MapAttribution.swift",
+      "Sources/Components/MapInfoPanel/MapInfoPanel.figma.swift",
+      "Sources/Components/MapInfoPanel/MapInfoPanel.swift",
+      "Sources/Components/POIResultGroup/POIResultGroup.figma.swift",
+      "Sources/Components/POIResultGroup/POIResultGroup.swift",
+      "Sources/Components/RouteLocationField/RouteLocationField.figma.swift",
+      "Sources/Components/RouteLocationField/RouteLocationField.swift",
+      "Sources/Components/RouteSetupPanel/RouteSetupPanel.figma.swift",
+      "Sources/Components/RouteSetupPanel/RouteSetupPanel.swift",
+      "Sources/Components/ArrivalPanel/ArrivalPanel.figma.swift",
+      "Sources/Components/ArrivalPanel/ArrivalPanel.swift",
+      "Sources/Components/ClientAppBanner/ClientAppBanner.figma.swift",
+      "Sources/Components/ClientAppBanner/ClientAppBanner.swift",
+      "Sources/Components/Surface/Surface.figma.swift",
+      "Sources/KozmosSurface.swift"
     ]
   }
 }

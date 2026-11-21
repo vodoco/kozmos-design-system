@@ -6,7 +6,7 @@ A language control built from Kozmos Select, in React today. SwiftUI and Compose
 
 - **Import:** `import { LanguageSwitcher } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-languageswitcher--docs>
 
 ## Example

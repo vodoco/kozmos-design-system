@@ -6,7 +6,7 @@ A month grid to choose a day or a range in, one month or two side by side (decis
 
 - **Import:** `import { Calendar } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-calendar--docs>
 
 ## Example
