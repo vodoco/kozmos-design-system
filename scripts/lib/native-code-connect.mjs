@@ -50,6 +50,19 @@ export function nativeCodeConnectProblems(platform, docs, declared) {
           message: `${component || "(no component)"}: no type or function of that name in packages/ios/Sources`,
         });
       }
+      // An SF Symbol parameter given a Kozmos icon name draws nothing:
+      // `KozmosIconButton(iconName:)` hands it to `Image(systemName:)`, and
+      // SF Symbols are dotted (`info.circle`), never hyphenated like Kozmos's
+      // (`info-circle`). PageHeader's snippet drew an empty button (20 Nov).
+      const text = JSON.stringify(doc);
+      for (const match of text.matchAll(
+        /\b(iconName|systemImage|systemName):\s*\\"([a-z0-9]+(?:-[a-z0-9]+)+)\\"/g,
+      )) {
+        problems.push({
+          doc,
+          message: `${match[1]}: "${match[2]}" is a Kozmos icon name, not an SF Symbol, so it draws nothing (use the SF Symbol, e.g. "${match[2].replace(/-/g, ".")}" for KozmosIcon's mapping)`,
+        });
+      }
     }
   }
   return problems;
