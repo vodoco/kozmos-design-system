@@ -96,6 +96,19 @@ const INTENTIONAL = {
     figma:
       "off | polite | assertive is role and aria-live: whether a screen reader interrupts for the notice. There is nothing to draw, and a designer picking it from a variant menu would be choosing something they cannot see. The iOS and Android gap is real and stays in the report: neither native Alert announces at all today.",
   },
+  // GAP-206: the map and route parts' Figma sets.
+  "MapStatusPill.live": {
+    figma:
+      "off | polite | assertive is the pill's role and aria-live, as Alert's: whether a screen reader interrupts. Nothing draws differently, so a variant would be a choice the designer cannot see.",
+  },
+  "RouteLocationField.filterMode": {
+    figma:
+      "Whether the field filters the host's options itself or keeps the host's own ranking. Every value draws the same field; the difference is which options arrive.",
+  },
+  "RouteLocationField.status": {
+    figma:
+      "Modelled in the set's State axis with location (GAP-206): Search is idle and ready, which draw alike until the list opens; Loading, Empty and Error draw their words under the search; Resolved is a location set, which React draws whatever the status.",
+  },
   "Tree.activationMode": {
     figma:
       "What a click does — select the row, toggle it open, or both. Every value renders the same tree; the difference is in what happens next, which a static component set cannot hold.",
