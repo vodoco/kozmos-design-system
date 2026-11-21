@@ -8,9 +8,11 @@ import com.figma.code.connect.Figma
 import com.figma.code.connect.FigmaConnect
 import com.figma.code.connect.FigmaProperty
 import com.figma.code.connect.FigmaType
+import com.kozmos.components.KozmosEmotion
 import com.kozmos.components.breadcrumb.KozmosBreadcrumb
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.iconbutton.KozmosIconButton
+import com.kozmos.components.tag.KozmosTag
 
 // GAP-036: the PageHeader set. Its node id is the set built in the live file
 // (2446:23074).
@@ -31,6 +33,14 @@ class KozmosPageHeaderConnect {
     @FigmaProperty(FigmaType.Text, "Title Text")
     val title: String = "Settings"
 
+    // Decision 210: a node beside the title and outside its heading, drawn
+    // as a status Tag in the alert emotion, on the overload that takes it.
+    @FigmaProperty(FigmaType.Boolean, "Show Title Addon")
+    val showTitleAddon: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Addon Text")
+    val addonText: String = "Changes Awaiting Publish"
+
     @FigmaProperty(FigmaType.Text, "Description Text")
     val descriptionText: String = "Manage the site's map, its levels and who can edit them."
 
@@ -50,6 +60,11 @@ class KozmosPageHeaderConnect {
     fun ComponentExample() {
         KozmosPageHeader(
             title = title,
+            titleAddon = if (showTitleAddon) {
+                { KozmosTag(text = addonText, emotion = KozmosEmotion.Alert) }
+            } else {
+                null
+            },
             description = if (showDescription) descriptionText else null,
             tone = tone,
             size = size,

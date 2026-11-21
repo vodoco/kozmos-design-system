@@ -17,25 +17,41 @@ const emptyStateTextProps = {
     ],
     false: undefined,
   }),
+  // GAP-213, decision 194: an emotion's card. None is no card.
+  tone: figma.enum("Tone", {
+    None: undefined,
+    Themed: "themed",
+    Neutral: "neutral",
+    Success: "success",
+    Danger: "danger",
+    Informative: "informative",
+    Alert: "alert",
+  }),
 };
 
 figma.connect(EmptyState, emptyStateUrl, {
   variant: { Content: "Basic" },
   props: emptyStateTextProps,
-  example: ({ description, list, title }) => (
-    <EmptyState description={description} list={list} title={title} />
+  example: ({ description, list, title, tone }) => (
+    <EmptyState
+      description={description}
+      list={list}
+      title={title}
+      tone={tone}
+    />
   ),
 });
 
 figma.connect(EmptyState, emptyStateUrl, {
   variant: { Content: "Icon" },
   props: emptyStateTextProps,
-  example: ({ description, list, title }) => (
+  example: ({ description, list, title, tone }) => (
     <EmptyState
       description={description}
       icon={<Search className="h-8 w-8" />}
       list={list}
       title={title}
+      tone={tone}
     />
   ),
 });
@@ -46,13 +62,14 @@ figma.connect(EmptyState, emptyStateUrl, {
     ...emptyStateTextProps,
     action: figma.children(["Action"]),
   },
-  example: ({ action, description, list, title }) => (
+  example: ({ action, description, list, title, tone }) => (
     <EmptyState
       action={action}
       description={description}
       icon={<Search className="h-8 w-8" />}
       list={list}
       title={title}
+      tone={tone}
     />
   ),
 });

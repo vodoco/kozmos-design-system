@@ -20,12 +20,21 @@ class KozmosTooltipConnect {
         "Left" to KozmosTooltipSide.Left
     )
 
+    // Decision 192: Inverse is the dark tooltip, Pointr Cloud's info and
+    // guidance bubbles.
+    @FigmaProperty(FigmaType.Enum, "Tone")
+    val tone: KozmosTooltipTone = Figma.mapping(
+        "Default" to KozmosTooltipTone.Default,
+        "Inverse" to KozmosTooltipTone.Inverse
+    )
+
     @Composable
     fun ComponentExample() {
         KozmosTooltip(
             tooltip = contentText,
             side = side,
-            visible = true
+            visible = true,
+            tone = tone
         ) {
             Text("Hover me")
         }

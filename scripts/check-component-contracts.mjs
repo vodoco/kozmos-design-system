@@ -1684,8 +1684,14 @@ assertContains(
 assertContains(
   files.reactTooltipFigma,
   source.reactTooltipFigma,
-  "<TooltipContent side={side}>{children}</TooltipContent>",
+  "<TooltipContent side={side} tone={tone}>",
   "Tooltip Code Connect content composition",
+);
+assertContains(
+  files.reactTooltipFigma,
+  source.reactTooltipFigma,
+  'tone: figma.enum("Tone", {',
+  "Tooltip Code Connect tone mapping (decision 192)",
 );
 assertContains(
   files.reactTooltip,
@@ -1774,7 +1780,7 @@ assertContains(
 assertContains(
   files.reactTableFigma,
   source.reactTableFigma,
-  "<Table framed",
+  /<Table\s+framed\b/,
   "Table Code Connect framed, as Figma draws it (decision 159)",
 );
 assertContains(

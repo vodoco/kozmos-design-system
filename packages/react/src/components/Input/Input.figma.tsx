@@ -206,3 +206,38 @@ figma.connect(Input, inputUrl, {
     />
   ),
 });
+
+// GAP-212, decision 224: a pencil at the field's end that calls onEdit, for
+// a read-only value with an editor elsewhere.
+figma.connect(Input, inputUrl, {
+  variant: { Action: "Edit" },
+  props: inputProps,
+  example: ({
+    autoFocus,
+    disabled,
+    helperText,
+    label,
+    mixed,
+    mixedLabel,
+    onResetMixed,
+    resetMixedLabel,
+    placeholder,
+    readOnly,
+    status,
+  }) => (
+    <Input
+      autoFocus={autoFocus}
+      disabled={disabled}
+      helperText={helperText}
+      label={label}
+      mixed={mixed}
+      onResetMixed={onResetMixed}
+      mixedLabel={mixedLabel}
+      resetMixedLabel={resetMixedLabel}
+      placeholder={placeholder}
+      readOnly={readOnly}
+      status={status}
+      action={{ kind: "edit", onEdit: () => {} }}
+    />
+  ),
+});

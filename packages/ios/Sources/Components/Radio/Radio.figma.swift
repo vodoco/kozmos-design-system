@@ -22,8 +22,9 @@ struct KozmosRadioConnect: FigmaConnect {
     )
     var checked: String = "unchecked"
 
-    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
-    // put it in the library: the dry run reads the live file.
+    // Decision 191: the group's "Multiple values" line.
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
 
     @FigmaString("Label Text")
     var label: String = "Option"
@@ -46,7 +47,7 @@ struct KozmosRadioConnect: FigmaConnect {
     var descriptionText: String = "Description"
 
     var body: some View {
-        KozmosRadioGroup(mixed: self.checked == "mixed") {
+        KozmosRadioGroup(mixed: self.checked == "mixed", mixedLabel: self.mixedLabel) {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,
@@ -76,8 +77,9 @@ struct KozmosRadioCardConnect: FigmaConnect {
     )
     var checked: String = "unchecked"
 
-    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
-    // put it in the library: the dry run reads the live file.
+    // Decision 191: the group's "Multiple values" line.
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
 
     @FigmaString("Label Text")
     var label: String = "Satellite"
@@ -104,7 +106,7 @@ struct KozmosRadioCardConnect: FigmaConnect {
     var showMedia: Bool = true
 
     var body: some View {
-        KozmosRadioGroup(mixed: self.checked == "mixed") {
+        KozmosRadioGroup(mixed: self.checked == "mixed", mixedLabel: self.mixedLabel) {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,
@@ -139,8 +141,9 @@ struct KozmosRadioTileConnect: FigmaConnect {
     )
     var checked: String = "unchecked"
 
-    // Decision 191: Mixed Text is mapped once the owner's plugin Update has
-    // put it in the library: the dry run reads the live file.
+    // Decision 191: the group's "Multiple values" line.
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
 
     @FigmaString("Label Text")
     var label: String = "Fade"
@@ -167,7 +170,7 @@ struct KozmosRadioTileConnect: FigmaConnect {
     var showMedia: Bool = true
 
     var body: some View {
-        KozmosRadioGroup(mixed: self.checked == "mixed") {
+        KozmosRadioGroup(mixed: self.checked == "mixed", mixedLabel: self.mixedLabel) {
             KozmosRadioGroupItem(
                 value: "option",
                 label: self.label,

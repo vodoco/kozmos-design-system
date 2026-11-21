@@ -99,11 +99,15 @@ figma.connect(
         Readonly: false,
         Mixed: false,
       }),
-      // GAP-255: a field of a multi-selection whose values differ. Reset
-      // Mixed, Mixed Text and Reset Mixed Text are mapped once the owner's
-      // plugin Update has put them in the library: the dry run reads the
-      // live file, which has none of them before it.
+      // GAP-255: a field of a multi-selection whose values differ, and its
+      // way back once edited.
       mixed: figma.enum("State", { Mixed: true }),
+      onResetMixed: figma.boolean("Reset Mixed", {
+        true: () => {},
+        false: undefined,
+      }),
+      mixedLabel: figma.string("Mixed Text"),
+      resetMixedLabel: figma.string("Reset Mixed Text"),
       status: figma.enum("Status", {
         Default: "default",
         Error: "error",
@@ -128,6 +132,9 @@ figma.connect(
     },
     example: ({
       mixed,
+      mixedLabel,
+      onResetMixed,
+      resetMixedLabel,
       autoFocus,
       defaultOpen,
       disabled,
@@ -155,6 +162,9 @@ figma.connect(
         startLabel={startLabel}
         status={status}
         mixed={mixed}
+        mixedLabel={mixedLabel}
+        onResetMixed={onResetMixed}
+        resetMixedLabel={resetMixedLabel}
       />
     ),
   },

@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 116 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 120 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 108 Core SwiftUI and 108 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 112 Core SwiftUI and 112 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -15918,9 +15918,9 @@
       "stories": 132,
       "tests": 132,
       "exported": 132,
-      "codeConnectFiles": 105,
+      "codeConnectFiles": 109,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 105
+      "codeConnectLinked": 109
     },
     "firstBatch": [
       "Accordion",
@@ -15941,6 +15941,8 @@
       "CategoryTile",
       "Checkbox",
       "Chip",
+      "ChipInput",
+      "CodeBlock",
       "ColorPicker",
       "Combobox",
       "Container",
@@ -15948,6 +15950,7 @@
       "Counter",
       "DatePicker",
       "DateRangePicker",
+      "DescriptionList",
       "Dialog",
       "DirectionStep",
       "Drawer",
@@ -16013,6 +16016,7 @@
       "Slider",
       "Spinner",
       "SplitButton",
+      "SpriteIcon",
       "Stack",
       "Stepper",
       "Switch",
@@ -16420,7 +16424,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Avatar"],
-          "mappedProps": [],
+          "mappedProps": ["size"],
           "unmappedProps": []
         },
         "props": [
@@ -16932,7 +16936,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Chip"],
-          "mappedProps": ["disabled", "selected", "size", "variant"],
+          "mappedProps": ["disabled", "emotion", "selected", "size", "variant"],
           "unmappedProps": []
         },
         "props": [
@@ -16966,14 +16970,22 @@
         "test": "packages/react/src/components/ChipInput/ChipInput.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/ChipInput/ChipInput.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2572-68659",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["ChipInput"],
+          "mappedProps": [
+            "defaultValue",
+            "disabled",
+            "error",
+            "helperText",
+            "label",
+            "placeholder",
+            "readOnly"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -17050,14 +17062,14 @@
         "test": "packages/react/src/components/CodeBlock/CodeBlock.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/CodeBlock/CodeBlock.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2572-68538",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["CodeBlock"],
+          "mappedProps": ["code", "copyable", "label", "wrap"],
           "unmappedProps": []
         },
         "props": [
@@ -17323,7 +17335,9 @@
             "helperText",
             "label",
             "mixed",
+            "mixedLabel",
             "readOnly",
+            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []
@@ -17390,7 +17404,9 @@
             "helperText",
             "label",
             "mixed",
+            "mixedLabel",
             "readOnly",
+            "resetMixedLabel",
             "startLabel",
             "status"
           ],
@@ -17452,14 +17468,14 @@
         "test": "packages/react/src/components/DescriptionList/DescriptionList.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/DescriptionList/DescriptionList.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2572-68523",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["DescriptionList"],
+          "mappedProps": ["layout"],
           "unmappedProps": []
         },
         "props": [
@@ -17489,7 +17505,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Dialog", "DialogContent"],
-          "mappedProps": [],
+          "mappedProps": ["size"],
           "unmappedProps": []
         },
         "props": [
@@ -17629,7 +17645,14 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["EmptyState"],
-          "mappedProps": ["action", "description", "icon", "list", "title"],
+          "mappedProps": [
+            "action",
+            "description",
+            "icon",
+            "list",
+            "title",
+            "tone"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -17778,7 +17801,8 @@
             "maxSize",
             "multiple",
             "preview",
-            "status"
+            "status",
+            "variant"
           ],
           "unmappedProps": []
         },
@@ -18812,9 +18836,11 @@
             "helperText",
             "label",
             "mixed",
+            "mixedLabel",
             "options",
             "placeholder",
             "readOnly",
+            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []
@@ -19157,6 +19183,7 @@
             "info",
             "size",
             "title",
+            "titleAddon",
             "tone"
           ],
           "unmappedProps": []
@@ -20210,6 +20237,7 @@
             "error",
             "items",
             "mixed",
+            "mixedLabel",
             "size"
           ],
           "unmappedProps": []
@@ -20262,7 +20290,8 @@
             "mixed",
             "mixedLabel",
             "open",
-            "resetMixedLabel"
+            "resetMixedLabel",
+            "variant"
           ],
           "unmappedProps": []
         },
@@ -20565,14 +20594,14 @@
         "test": "packages/react/src/components/SpriteIcon/SpriteIcon.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/SpriteIcon/SpriteIcon.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2572-68551",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["SpriteIcon"],
+          "mappedProps": ["name", "size", "sprite"],
           "unmappedProps": []
         },
         "props": [
@@ -20754,7 +20783,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Table"],
-          "mappedProps": ["framed"],
+          "mappedProps": ["defaultSelectedIds", "framed", "selectable"],
           "unmappedProps": []
         },
         "props": [
@@ -21015,7 +21044,9 @@
             "helperText",
             "label",
             "mixed",
+            "mixedLabel",
             "readOnly",
+            "resetMixedLabel",
             "status"
           ],
           "unmappedProps": []
@@ -21142,7 +21173,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Tooltip", "TooltipContent"],
-          "mappedProps": ["side"],
+          "mappedProps": ["side", "tone"],
           "unmappedProps": []
         },
         "props": [
@@ -21243,6 +21274,7 @@
             "meta",
             "metaPlacement",
             "name",
+            "rowFill",
             "selected"
           ],
           "unmappedProps": []
