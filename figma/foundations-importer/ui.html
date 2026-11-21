@@ -1089,6 +1089,7 @@
                 <option value="pageHeader">PageHeader</option>
                 <option value="scrollArea">ScrollArea</option>
                 <option value="stack">Stack</option>
+                <option value="surface">Surface</option>
               </optgroup>
               <optgroup label="Data display">
                 <option value="list">List</option>
@@ -1098,6 +1099,7 @@
                 <option value="descriptionList">DescriptionList</option>
                 <option value="codeBlock">CodeBlock</option>
                 <option value="personaMark">PersonaMark</option>
+                <option value="actionCard">ActionCard</option>
                 <option value="table">Table</option>
                 <option value="timeline">Timeline</option>
                 <option value="tree">Tree</option>
@@ -1147,6 +1149,7 @@
                 <option value="otpInput">OTPInput</option>
                 <option value="datePicker">DatePicker</option>
                 <option value="dateRangePicker">DateRangePicker</option>
+                <option value="calendar">Calendar</option>
                 <option value="timePicker">TimePicker</option>
                 <option value="fileUpload">FileUpload</option>
                 <option value="imageCropper">ImageCropper</option>
@@ -1173,6 +1176,11 @@
               </optgroup>
               <optgroup label="Product / SDK">
                 <option value="aiSearchButton">AISearchButton</option>
+                <option value="userMessage">UserMessage</option>
+                <option value="aiMessage">AIMessage</option>
+                <option value="aiMessageList">AIMessageList</option>
+                <option value="aiInputBar">AIInputBar</option>
+                <option value="aiCompanionPanel">AICompanionPanel</option>
                 <option value="adaptiveMapShell">AdaptiveMapShell</option>
                 <option value="browseCategoriesPanel">
                   BrowseCategoriesPanel
@@ -1201,6 +1209,15 @@
                 <option value="itinerary">Itinerary</option>
                 <option value="manoeuvreCard">ManoeuvreCard</option>
                 <option value="routeProgressRail">RouteProgressRail</option>
+                <option value="clientAppBanner">ClientAppBanner</option>
+                <option value="languageSwitcher">LanguageSwitcher</option>
+                <option value="mapStatusPill">MapStatusPill</option>
+                <option value="mapAttribution">MapAttribution</option>
+                <option value="mapInfoPanel">MapInfoPanel</option>
+                <option value="poiResultGroup">POIResultGroup</option>
+                <option value="routeLocationField">RouteLocationField</option>
+                <option value="routeSetupPanel">RouteSetupPanel</option>
+                <option value="arrivalPanel">ArrivalPanel</option>
               </optgroup>
               <optgroup label="Platform / Form-Factor">
                 <option value="dynamicIsland">DynamicIsland</option>
@@ -1626,6 +1643,55 @@
           rebuild: "rebuild-route-preview-panel",
           hint: "Build creates RoutePreviewPanel across the five RouteReadiness statuses; only Ready lists route options. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
+        mapStatusPill: {
+          label: "MapStatusPill",
+          build: "build-map-status-pill",
+          update: "update-map-status-pill",
+          rebuild: "rebuild-map-status-pill",
+          hint: "Build creates MapStatusPill (decision 39) with Tone Neutral, Progress, Success, Danger and Warning: the map controls' surface, 13/16 words in foreground/300; Progress a nested Spinner, Success a check and its words in Emotion/success/text, Danger a triangle in Emotion/danger/text, Warning (Turn Back) Emotion/alert/fill under Emotion/alert/onFill. Status Text and Show Mark. Build Spinner and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        mapAttribution: {
+          label: "MapAttribution",
+          build: "build-map-attribution",
+          update: "update-map-attribution",
+          rebuild: "rebuild-map-attribution",
+          hint: "Build creates MapAttribution with Appearance Map (transparent, Map attribution/text) and Surface (the page background): the brand slot over a line of two 10/12 credits. Credit Text, Credit Text 2 and Show Brand. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        mapInfoPanel: {
+          label: "MapInfoPanel",
+          build: "build-map-info-panel",
+          update: "update-map-info-panel",
+          rebuild: "rebuild-map-info-panel",
+          hint: "Build creates MapInfoPanel with Content Default, ExpandedFAQ and Minimal: the title, introduction, an Accordion FAQ, credits, a Link and versions, and a ghost IconButton close. Build Accordion, Link and IconButton and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        poiResultGroup: {
+          label: "POIResultGroup",
+          build: "build-poi-result-group",
+          update: "update-poi-result-group",
+          rebuild: "rebuild-poi-result-group",
+          hint: "Build creates POIResultGroup with State Collapsed and Expanded: POIResultCard Row members under one edge, divided, over the Show more / Hide toggle. Build POIResultCard and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        routeLocationField: {
+          label: "RouteLocationField",
+          build: "build-route-location-field",
+          update: "update-route-location-field",
+          rebuild: "rebuild-route-location-field",
+          hint: "Build creates RouteLocationField with State Search, Loading, Empty, Error and Resolved: a Combobox search under the field's label, or the resolved place in its box, each with its ghost Button action. Build Combobox and Button first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        routeSetupPanel: {
+          label: "RouteSetupPanel",
+          build: "build-route-setup-panel",
+          update: "update-route-setup-panel",
+          rebuild: "rebuild-route-setup-panel",
+          hint: "Build creates RouteSetupPanel with State Incomplete, Ready and Pending by Presentation Hosted and Standalone: the title and an outline IconButton close, two RouteLocationField instances and the Continue Button. Build RouteLocationField, Button and IconButton and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        arrivalPanel: {
+          label: "ArrivalPanel",
+          build: "build-arrival-panel",
+          update: "update-arrival-panel",
+          rebuild: "rebuild-arrival-panel",
+          hint: "Build creates ArrivalPanel with State Default and Pending by Presentation Hosted and Standalone: the title, the destination with its picture, the message, the journey as travelled and the Done Button. Build Button and run Curated Icons first. Update All Product / SDK updates it too. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
         routeSummary: {
           label: "RouteSummary",
           build: "build-route-summary",
@@ -1730,6 +1796,41 @@
           update: "update-ai-search-button",
           rebuild: "rebuild-ai-search-button",
           hint: "Build creates AISearchButton — the search row's AI search, the prototype's — with Default and Disabled states: a 48 circle whose ring is a 2.5 band of the six data colours around a 43 disc, a 16 icon swapped from the Icons page. Run Curated Icons first (stars-01). Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        userMessage: {
+          label: "UserMessage",
+          build: "build-user-message",
+          update: "update-user-message",
+          rebuild: "rebuild-user-message",
+          hint: "Build creates UserMessage (GAP-206), the visitor's turn: the theme fill under the theme foreground at the turn's end, 16 across and 12 down on the container radius, its words wrapping at 85 % of a 328 turn, with a Message Text property. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiMessage: {
+          label: "AIMessage",
+          build: "build-ai-message",
+          update: "update-ai-message",
+          rebuild: "rebuild-ai-message",
+          hint: "Build creates AIMessage (GAP-206), the assistant's turn: an outlined bubble (bg-card, border-border) in Complete, Streaming (three theme dots) and TimedOut Status variants, with Message Text, Timed Out Text, and Show Action Card over an Action Card Slot. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiMessageList: {
+          label: "AIMessageList",
+          build: "build-ai-message-list",
+          update: "update-ai-message-list",
+          rebuild: "rebuild-ai-message-list",
+          hint: "Build creates AIMessageList (GAP-206) after UserMessage and AIMessage: the thread, 360 wide, 16 inside and between, its turns live instances in Conversation, Streaming and TimedOut Content variants. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiInputBar: {
+          label: "AIInputBar",
+          build: "build-ai-input-bar",
+          update: "update-ai-input-bar",
+          rebuild: "rebuild-ai-input-bar",
+          hint: "Build creates AIInputBar (GAP-206) after IconButton and Curated Icons (send-01, microphone-01, microphone-off-01, volume-max): the pill field and a live IconButton send, in Empty, Filled and Disabled States by VoiceState (Off, Idle, Connecting, Listening, Speaking, Unavailable, Error), with Placeholder Text and Value Text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        aiCompanionPanel: {
+          label: "AICompanionPanel",
+          build: "build-ai-companion-panel",
+          update: "update-ai-companion-panel",
+          rebuild: "rebuild-ai-companion-panel",
+          hint: "Build creates AICompanionPanel (GAP-206) after AIMessageList, AIInputBar, IconButton and Curated Icons: the 360 by 560 assistant surface, its header (stars-01 mark, Title Text, a neutral outline IconButton close shown by Show Close), a Banner Slot shown by Show Banner, a live AIMessageList and AIInputBar, in Conversation, Streaming and TimedOut Content variants. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         adaptiveMapShell: {
           label: "AdaptiveMapShell",
@@ -2395,6 +2496,42 @@
           update: "update-alert",
           rebuild: "rebuild-alert",
           hint: "Build creates Alert with Variant axis plus editable Title and Description text. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        // GAP-206: the sets that had no Figma node.
+        surface: {
+          label: "Surface",
+          build: "build-surface",
+          update: "update-surface",
+          rebuild: "rebuild-surface",
+          hint: "Build creates Surface (GAP-206) with Solid and Glass Variant variants, as its stories draw it: the Container corner, 16 inside, the floating elevation and a Content Slot. Solid is the background with the subtle edge; Glass the glass colour at 70 % over a 20 background blur, with a white edge at 20 %. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        actionCard: {
+          label: "ActionCard",
+          build: "build-action-card",
+          update: "update-action-card",
+          rebuild: "rebuild-action-card",
+          hint: "Build creates ActionCard (GAP-206) with Titled and Basic Content variants: an assistant turn's rich content, an optional Title Text in Text XS semibold over a Content Slot, 8 apart, with no surface. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        calendar: {
+          label: "Calendar",
+          build: "build-calendar",
+          update: "update-calendar",
+          rebuild: "rebuild-calendar",
+          hint: "Build creates Calendar (GAP-206) with Mode (Single, Range) by Months (One, Two): May 2026 in en-US, today the 22nd, the 25th or the 21st to the 25th chosen, 36 days (40 in a range) 4 apart, with no surface. Run Curated Icons first for the month chevrons. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        clientAppBanner: {
+          label: "ClientAppBanner",
+          build: "build-client-app-banner",
+          update: "update-client-app-banner",
+          rebuild: "rebuild-client-app-banner",
+          hint: "Build creates ClientAppBanner (GAP-206) with Wide and Narrow Layout variants: the promotion, the app's 48 icon (its initial until filled), name and description, a live Button and a live IconButton dismiss on the solid surface. Build Button and IconButton and run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        languageSwitcher: {
+          label: "LanguageSwitcher",
+          build: "build-language-switcher",
+          update: "update-language-switcher",
+          rebuild: "rebuild-language-switcher",
+          hint: "Build creates LanguageSwitcher (GAP-206) with Default, Pending, Failed and Disabled State variants: the closed 48 trigger with the language's native name, the pending line, or the error with a live ghost Retry Button. Build Button and run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         notice: {
           label: "Notice",

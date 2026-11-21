@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "156122f6e684";
+const PLUGIN_BUILD = "71d9d414cc7c";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -819,6 +819,23 @@ const NOTICE_DESCRIPTION = [
   "Summary maps to Notice.summary; Detail, shown by Show Detail, to its children.",
   "Show Icon off is icon={null}; Show Action shows Notice.action, a Button under the text.",
 ];
+// GAP-206: the sets that gave React's Surface, ActionCard, Calendar,
+// ClientAppBanner and LanguageSwitcher no Figma node, so Dev Mode showed no
+// Kozmos code for them. Each axis is the React prop or story it draws.
+//
+// Surface's `variant`: the solid surface (the default) or glass.
+const SURFACE_VARIANTS = ["Solid", "Glass"];
+// ActionCard's `title`: given (its story's "2 results") or left out.
+const ACTION_CARD_CONTENT = ["Titled", "Basic"];
+// Calendar's `mode` and `months`: one day or a range, in one month or two.
+const CALENDAR_MODES = ["Single", "Range"];
+const CALENDAR_MONTHS = ["One", "Two"];
+// ClientAppBanner's two layouts: wide enough, the action beside the words
+// (its Default story, 560); narrow, under them and as wide (Narrow, 320).
+const CLIENT_APP_BANNER_LAYOUTS = ["Wide", "Narrow"];
+// LanguageSwitcher's stories: Default; Pending (`pending`); Failed (`error`
+// with `onRetry`); Disabled (`disabled`, or nothing else to choose).
+const LANGUAGE_SWITCHER_STATES = ["Default", "Pending", "Failed", "Disabled"];
 // How much room an empty state takes. Default pads 32 and fills its region,
 // which is right when the empty state IS the screen; Compact is for a slot
 // that already draws a box round it. Measured on the web, the same content
@@ -1867,6 +1884,11 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   List: 360,
   Table: 520,
   AISearchButton: 260,
+  UserMessage: 260,
+  AIMessage: 420,
+  AIMessageList: 520,
+  AIInputBar: 900,
+  AICompanionPanel: 680,
   AdaptiveMapShell: 520,
   BrowseCategoriesPanel: 460,
   CategoryField: 260,
@@ -1954,6 +1976,9 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   Textarea: 760,
   Alert: 260,
   Notice: 700,
+  Surface: 360,
+  ActionCard: 360,
+  Calendar: 700,
   Stepper: 420,
   Progress: 260,
   Skeleton: 260,
@@ -1986,6 +2011,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "PageHeader",
       "ScrollArea",
       "Stack",
+      "Surface",
     ],
   },
   {
@@ -2005,6 +2031,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Tree",
       "Timeline",
       "PersonaMark",
+      "ActionCard",
     ],
   },
   {
@@ -2027,6 +2054,11 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
     title: "Product / SDK",
     components: [
       "AISearchButton",
+      "UserMessage",
+      "AIMessage",
+      "AIMessageList",
+      "AIInputBar",
+      "AICompanionPanel",
       "AdaptiveMapShell",
       "BrowseCategoriesPanel",
       "CategoryField",
@@ -2053,6 +2085,16 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Itinerary",
       "ManoeuvreCard",
       "RouteProgressRail",
+      "ClientAppBanner",
+      "LanguageSwitcher",
+      // GAP-206: the map and route parts.
+      "MapStatusPill",
+      "MapAttribution",
+      "MapInfoPanel",
+      "POIResultGroup",
+      "RouteLocationField",
+      "RouteSetupPanel",
+      "ArrivalPanel",
     ],
   },
   {
@@ -2106,6 +2148,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "Listbox",
       "DatePicker",
       "DateRangePicker",
+      "Calendar",
       "TimePicker",
       "FileUpload",
       "ImageCropper",
@@ -2487,6 +2530,127 @@ const COMPONENT_DOCS = [
     ],
   },
   {
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    category: "Product / SDK",
+    summary:
+      "UserMessage is the visitor's turn in the assistant's thread: the theme fill at the turn's end.",
+    usage: ["Use inside AIMessageList, after the assistant's turn it answers."],
+    api: [
+      "Message Text maps to children.",
+      "The words wrap at 85 % of the turn, as React's max-width draws them.",
+      "speakerLabel is read before the words and draws nothing.",
+    ],
+    properties: ["Content: Default", "Message Text"],
+    accessibility: [
+      "Side and fill tell the visitor's turn from the assistant's; speakerLabel says it to a screen reader.",
+    ],
+  },
+  {
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    category: "Product / SDK",
+    summary:
+      "AIMessage is the assistant's turn: an outlined bubble, and the action card under it.",
+    usage: [
+      "Use Streaming while a reply arrives: its acknowledgement is the first visible response (Story 10).",
+      "Use TimedOut at the ten-second stop.",
+      "Show Action Card for an answer that carries results.",
+    ],
+    api: [
+      "Status maps to status.",
+      "Message Text maps to children; Timed Out Text to timedOutLabel.",
+      "Show Action Card shows Action Card Slot, actionCard.",
+      "trailing is the product's control and is not drawn.",
+    ],
+    properties: [
+      "Status: Complete, Streaming, TimedOut",
+      "Message Text",
+      "Timed Out Text",
+      "Show Action Card",
+      "Action Card Slot",
+    ],
+    accessibility: [
+      "speakerLabel and streamingLabel are read, never drawn.",
+      "The dots are decoration; the thread's log announces the reply.",
+    ],
+  },
+  {
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    category: "Product / SDK",
+    summary:
+      "AIMessageList is the assistant's thread: its turns, 16 apart, in a scrolling log.",
+    usage: [
+      "Use inside AICompanionPanel, above AIInputBar.",
+      "Pick a Content for the thread's moment; edit each turn's words on its exposed instance.",
+    ],
+    api: [
+      "children are AIMessage and UserMessage instances.",
+      "label names the log and draws nothing; followLatest is behaviour.",
+    ],
+    properties: ["Content: Conversation, Streaming, TimedOut"],
+    accessibility: [
+      "It is a polite log: replies are announced without moving focus.",
+    ],
+  },
+  {
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    category: "Product / SDK",
+    summary:
+      "AIInputBar is the assistant's question field, with send and, when the product has a voice model, the microphone.",
+    usage: [
+      "Use Empty until there is something to ask: send is disabled.",
+      "Use Disabled offline (Story 3 AC1).",
+      "Pick a VoiceState only for a product with a voice model; Off draws no microphone.",
+    ],
+    api: [
+      "State maps to value and disabled.",
+      "VoiceState maps to voiceState; Off to no onVoiceStart.",
+      "Placeholder Text maps to placeholder; Value Text to value.",
+      "Send is a live IconButton with send-01.",
+    ],
+    properties: [
+      "State: Empty, Filled, Disabled",
+      "VoiceState: Off, Idle, Connecting, Listening, Speaking, Unavailable, Error",
+      "Placeholder Text",
+      "Value Text",
+    ],
+    accessibility: [
+      "Every voice state is announced in words, and the empty field says it while live.",
+      "Unavailable stays focusable and inert.",
+    ],
+  },
+  {
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    category: "Product / SDK",
+    summary:
+      "AICompanionPanel is the assistant surface: a header, an optional banner, the thread and the input bar.",
+    usage: [
+      "Use over the search sheet; closing it returns the visitor to the search they left.",
+      "Show Banner for the Story 14 notice or an offline EmptyState.",
+      "Turn Show Close off where nothing can close it (Story 18).",
+    ],
+    api: [
+      "Title Text maps to title; Show Close to onClose; Show Banner and Banner Slot to banner.",
+      "Content picks the thread's Content; the thread and the bar are exposed instances.",
+      "open, titleLevel and the focus handlers are behaviour.",
+    ],
+    properties: [
+      "Content: Conversation, Streaming, TimedOut",
+      "Title Text",
+      "Show Close",
+      "Show Banner",
+      "Banner Slot",
+    ],
+    accessibility: [
+      "It is a region named by its title, and takes focus when the visitor opens it.",
+      "Escape closes it when it has onClose.",
+    ],
+  },
+  {
     componentName: "CategoryField",
     componentSetName: "CategoryField",
     category: "Product / SDK",
@@ -2692,6 +2856,181 @@ const COMPONENT_DOCS = [
       "Preview and Active never show both actions, so there is no ambiguous control.",
       "Both strings arrive already localized from product code.",
       "The bar must not cover the renderer attribution.",
+    ],
+  },
+  // GAP-206: the map and route parts.
+  {
+    componentName: "MapStatusPill",
+    componentSetName: "MapStatusPill",
+    category: "Product / SDK",
+    summary:
+      "MapStatusPill is one map status in a compact pill over the map, in one of five tones (decision 39).",
+    usage: [
+      "Use Progress while the SDK works (Calculating Precise Position, Preparing Content), Success when it is done (Established, Up-to-date).",
+      "Use Danger for a failure, the mark alone in the danger colour; Warning for Turn Back, the amber fill under black words.",
+      "Use Neutral for words with nothing to mark. Swap the nested mark for the product's icon (No Bluetooth, Walking).",
+    ],
+    api: [
+      "Tone maps to tone (neutral, progress, success, danger, warning).",
+      "Status Text maps to children; Show Mark off is icon={null}.",
+      "live chooses how a change is announced and draws nothing.",
+    ],
+    properties: [
+      "Tone: Neutral, Progress, Success, Danger, Warning",
+      "Status Text, Show Mark",
+    ],
+    accessibility: [
+      "The mark is never announced: the words say the status.",
+      "Turn Back's pair, Emotion/alert/fill under Emotion/alert/onFill, reads 10.56:1 in light and 13.14:1 in dark.",
+      "The pill is a polite live region by default, so a change never cuts across an instruction.",
+    ],
+  },
+  {
+    componentName: "MapAttribution",
+    componentSetName: "MapAttribution",
+    category: "Product / SDK",
+    summary:
+      "MapAttribution shows the map's credits and, independently, the Pointr brand.",
+    usage: [
+      "Use Map over the map canvas, in the attribution's own colour; Surface on an opaque background.",
+      "Credits are the host's, in its order; the brand is optional and never replaces them.",
+    ],
+    api: [
+      "Appearance maps to appearance (map, surface).",
+      "Credit Text and Credit Text 2 map to credits[].label; Show Brand maps to showBrand.",
+    ],
+    properties: [
+      "Appearance: Map, Surface",
+      "Credit Text, Credit Text 2, Show Brand",
+    ],
+    accessibility: [
+      "The region is named by label.",
+      "A credit line wider than its room scrolls, and only then takes a tab stop.",
+      "On the map the credits carry a halo in code, so they read over any basemap.",
+    ],
+  },
+  {
+    componentName: "MapInfoPanel",
+    componentSetName: "MapInfoPanel",
+    category: "Product / SDK",
+    summary:
+      "MapInfoPanel is the map's information: an introduction, FAQs, credits, links and versions.",
+    usage: [
+      "Use Default for the full panel, ExpandedFAQ with one answer open, Minimal for a title alone.",
+      "All content is the host's and localized; nothing is inferred.",
+    ],
+    api: [
+      "Content maps to the content given: Default, ExpandedFAQ (expandedFAQ), Minimal.",
+      "Title Text maps to content.title, Introduction Text to content.introduction, Show Brand to brand.",
+      "The FAQ is an Accordion instance, the support link a Link, the close a ghost IconButton.",
+    ],
+    properties: [
+      "Content: Default, ExpandedFAQ, Minimal",
+      "Title Text, Introduction Text, Show Brand",
+    ],
+    accessibility: [
+      "The panel is labelled by its title.",
+      "The close is named by closeLabel.",
+      "FAQ answers keep their line breaks.",
+    ],
+  },
+  {
+    componentName: "POIResultGroup",
+    componentSetName: "POIResultGroup",
+    category: "Product / SDK",
+    summary:
+      "POIResultGroup folds the branches of one venue behind its representative.",
+    usage: [
+      "Use Collapsed to show the representative and the count of the rest; Expanded for every member and Hide.",
+      "The members are ordinary POIResultCard rows, so a grouped result acts as an ungrouped one.",
+    ],
+    api: [
+      "State maps to expanded (Collapsed, Expanded).",
+      "Show More Text maps to showMoreLabel(hidden), Hide Text to hideLabel.",
+      "Each member is a POIResultCard Row instance from items.",
+    ],
+    properties: ["State: Collapsed, Expanded", "Show More Text, Hide Text"],
+    accessibility: [
+      "The toggle names the count still hidden and controls the list (aria-controls, aria-expanded).",
+      "The group is named by label.",
+    ],
+  },
+  {
+    componentName: "RouteLocationField",
+    componentSetName: "RouteLocationField",
+    category: "Product / SDK",
+    summary:
+      "RouteLocationField searches for a route's place, or shows the place resolved.",
+    usage: [
+      "Use Search, Loading, Empty and Error while the host searches; Resolved once a place is chosen.",
+      "The place's identity is the host's, never the typed words.",
+    ],
+    api: [
+      "State maps to location and status: Search, Loading, Empty, Error, Resolved.",
+      "Label Text maps to label; Location Text and Description Text to location.label and location.description.",
+      "The search is a Combobox instance; the actions are ghost Buttons.",
+    ],
+    properties: [
+      "State: Search, Loading, Empty, Error, Resolved",
+      "Label Text, Location Text, Description Text, Show Description",
+    ],
+    accessibility: [
+      "The search is named by label, and its status words are its helper text.",
+      "Each action names its field: Change Destination, Cancel Destination.",
+    ],
+  },
+  {
+    componentName: "RouteSetupPanel",
+    componentSetName: "RouteSetupPanel",
+    category: "Product / SDK",
+    summary:
+      "RouteSetupPanel holds a route's place fields and continues once the host says they are ready.",
+    usage: [
+      "Use Incomplete until every point is resolved, Ready to continue, Pending while the host works.",
+      "Use Hosted inside a sheet, Standalone when the panel draws its own surface.",
+    ],
+    api: [
+      "State maps to ready and pending; Presentation to presentation.",
+      "Title Text maps to title, Description Text to description.",
+      "The fields are RouteLocationField instances; Continue is a Button, the close an outline IconButton.",
+    ],
+    properties: [
+      "State: Incomplete, Ready, Pending",
+      "Presentation: Hosted, Standalone",
+      "Title Text, Description Text, Show Description",
+    ],
+    accessibility: [
+      "The section is labelled by its title.",
+      "Continue is disabled, not hidden, until the route is ready, and busy while pending.",
+      "The close stays available while pending.",
+    ],
+  },
+  {
+    componentName: "ArrivalPanel",
+    componentSetName: "ArrivalPanel",
+    category: "Product / SDK",
+    summary:
+      "ArrivalPanel confirms the arrival the host has detected, with the journey as travelled.",
+    usage: [
+      "Use Default once the host confirms arrival; Pending while it finishes navigation.",
+      "Use Hosted inside a sheet, Standalone when the panel draws its own surface.",
+      "Show the actual time and distance only, never an estimate.",
+    ],
+    api: [
+      "State maps to pending; Presentation to presentation.",
+      "Title Text, Destination Text, Location Text and Message Text map to title, destination, locationText and message.",
+      "Duration Text and Distance Text map to actualDurationText and actualDistanceText, with their labels.",
+      "Done is a Button (doneLabel).",
+    ],
+    properties: [
+      "State: Default, Pending",
+      "Presentation: Hosted, Standalone",
+      "Title Text, Destination Text, Location Text, Message Text, Duration Text, Distance Text",
+      "Show Image, Show Location, Show Message, Show Metrics",
+    ],
+    accessibility: [
+      "The panel does not announce or dismiss itself: the host does.",
+      "Done is disabled and busy while pending.",
     ],
   },
   {
@@ -3197,6 +3536,55 @@ const COMPONENT_DOCS = [
       "The code renders an ordered list; the current step carries aria-current.",
       "Marks are decorative: assistive technology hears the instruction.",
       "The current step is set apart by weight as well as colour.",
+    ],
+  },
+  // GAP-206: the Product / SDK sets that had no Figma node.
+  {
+    componentName: "ClientAppBanner",
+    componentSetName: "ClientAppBanner",
+    category: "Product / SDK",
+    summary:
+      "ClientAppBanner is Express's Client App Banner: the customer's promotion, the app's icon, name and description, one action and a dismiss, for AdaptiveMapShell's topBar (GAP-206, GAP-127).",
+    usage: [
+      "Use in AdaptiveMapShell's topBar; it brings its own surface.",
+      "Every word is the customer's, set in Pointr Cloud in the visitor's language.",
+      "Fill App Icon with the app's icon; its initial stands in until it loads.",
+    ],
+    api: [
+      "Layout is how the width falls: Wide puts the action beside the words, Narrow under them.",
+      "Promotion Text, App Name Text and Description Text map to promotionText, appName and description; the Action's Label Text to actionLabel.",
+      "Show Dismiss maps to onDismiss.",
+    ],
+    properties: [
+      "Layout: Wide, Narrow",
+      "Promotion Text, App Name Text, Description Text, Initial Text, Show Promotion, Show Description, Show Dismiss",
+    ],
+    accessibility: [
+      "In code the banner is a region named by the app; it reads the promotion, the name and the description, then the action, then dismiss.",
+      "The icon is decoration beside the name unless appIconAlt names it; dismiss is a 44 target named by dismissLabel.",
+    ],
+  },
+  {
+    componentName: "LanguageSwitcher",
+    componentSetName: "LanguageSwitcher",
+    category: "Product / SDK",
+    summary:
+      "LanguageSwitcher is the map's language control: the committed language's native name on a 48 trigger, pending, failed with a retry, or unavailable (GAP-206, SDK-UI-003).",
+    usage: [
+      "Place it at the map's bottom start; on phones the SDK hides it.",
+      "Name each language in its own language, never with a flag.",
+    ],
+    api: [
+      "State maps to pending (Pending), error with onRetry (Failed) and disabled (Disabled).",
+      "Language Text is the selected language's label; Pending Text is pendingLabel; Error Text is error.",
+    ],
+    properties: [
+      "State: Default, Pending, Failed, Disabled",
+      "Language Text, Pending Text, Error Text",
+    ],
+    accessibility: [
+      "The trigger is named by its label and the language; pending keeps focus, busy and aria-disabled.",
+      "Pending is a polite status and a failure an assertive alert.",
     ],
   },
   {
@@ -5704,6 +6092,67 @@ const COMPONENT_DOCS = [
       "Text and marks take the tone's text role, 4.5:1 on the tinted fill in Light and Dark.",
     ],
   },
+  // GAP-206: the five sets that had no Figma node.
+  {
+    componentName: "Surface",
+    componentSetName: "Surface",
+    category: "Layout",
+    summary:
+      "Surface is what a card or panel is made of: the solid surface, or glass that lets the map show through (GAP-206).",
+    usage: [
+      "Use Solid by default; choose Glass per surface, over a map or imagery.",
+      "The corner, padding and elevation are the caller's: these are its stories' (Container corner, 16 inside, floating).",
+      "Put the content in the Content Slot.",
+    ],
+    api: [
+      "Variant maps to Surface.variant: Solid is solid, Glass is glass.",
+      "Content Slot maps to children.",
+    ],
+    properties: ["Variant: Solid, Glass", "Content Slot"],
+    accessibility: [
+      "Surface is a box with no role of its own; what it holds keeps its names.",
+      "With transparency reduced, code draws glass as the plain colour.",
+    ],
+  },
+  {
+    componentName: "ActionCard",
+    componentSetName: "ActionCard",
+    category: "Data display",
+    summary:
+      "ActionCard holds the rich content of an assistant turn — a result list, a result card, a hand-off — under an optional title (GAP-206).",
+    usage: [
+      "Use inside an assistant turn, for what the assistant found or hands off.",
+      "Put the result parts themselves in the Content Slot: ActionCard draws no surface and no result of its own.",
+    ],
+    api: [
+      "Content maps to title: Titled gives it (Title Text), Basic leaves it out.",
+      "Content Slot maps to children.",
+    ],
+    properties: ["Content: Titled, Basic", "Title Text", "Content Slot"],
+    accessibility: [
+      "The title is a paragraph read before the content; ActionCard is non-interactive.",
+    ],
+  },
+  {
+    componentName: "Calendar",
+    componentSetName: "Calendar",
+    category: "Inputs",
+    summary:
+      "Calendar is the month grid to choose a day or a range in, one month or two side by side (GAP-206, decision 104).",
+    usage: [
+      "Use DatePicker or DateRangePicker for a field that opens one; place Calendar itself on a page or Card.",
+      "Range chooses its two ends; Two shows two months side by side.",
+    ],
+    api: [
+      "Mode maps to mode: Single (the default) or Range. Months maps to months: One or Two.",
+      "The days drawn are an example: in code they follow value, month, min, max and locale.",
+    ],
+    properties: ["Mode: Single, Range", "Months: One, Two"],
+    accessibility: [
+      "In code each month is a grid; the arrows, Home, End, Page Up and Page Down move between days, and Enter or Space chooses.",
+      "Every day is named in full, today is marked current, and chosen days are selected.",
+    ],
+  },
   {
     componentName: "EmptyState",
     componentSetName: "EmptyState",
@@ -6367,6 +6816,34 @@ const IMPORTER_UI_ICON_DEFINITIONS = [
     componentKey: "4c3adc5d6e726fe219837c9bee42d022433d8074",
     description:
       "More, the overflow menu: MapEditToolbar's item (CLOUD-UI-005).",
+  },
+  {
+    name: "send-01",
+    figmaName: "send-01",
+    category: "Communication",
+    componentKey: "ef162fc80c9b5028b296b6f50ad7a61cc93d4068",
+    description: "Send: AIInputBar's send (GAP-206).",
+  },
+  {
+    name: "microphone-01",
+    figmaName: "microphone-01",
+    category: "Media & devices",
+    componentKey: "8eaff829e64150cdd67a5b8253d5bc2ce1613e36",
+    description: "Start or end a voice conversation: AIInputBar (GAP-206).",
+  },
+  {
+    name: "microphone-off-01",
+    figmaName: "microphone-off-01",
+    category: "Media & devices",
+    componentKey: "8ec9b00079eb0ccbd1efcb8ffbaaec8e4017d50d",
+    description: "Voice unavailable or failed: AIInputBar (GAP-206).",
+  },
+  {
+    name: "volume-max",
+    figmaName: "volume-max",
+    category: "Media & devices",
+    componentKey: "c8ebc8ec2f83fef56a7b9f509be4056486056a60",
+    description: "The assistant speaking: AIInputBar (GAP-206).",
   },
 ];
 /** Every Pointr icon the importer imports: the registry's, then the UI's. */
@@ -7479,6 +7956,138 @@ const COMPONENT_FLOAT_TOKENS = [
   {
     name: "AISearchButton/icon/size",
     value: AI_SEARCH_BUTTON_ICON_SIZE,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  // GAP-206: the assistant's turns, thread, input bar and panel, as React
+  // draws them (px-4 py-3, gap-2, gap-1, h-1.5, rounded-container, border).
+  {
+    name: "AIMessage/bubble/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessage/bubble/padding/y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessage/bubble/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  {
+    name: "AIMessage/bubble/stroke/width",
+    value: 1,
+    alias: "Border Width/sm",
+    scopes: ["STROKE_FLOAT"],
+  },
+  {
+    name: "AIMessage/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessage/dots/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  { name: "AIMessage/dot/size", value: 6, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "AIMessageList/padding",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIMessageList/gap",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/padding/y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/field/min-height",
+    value: 44,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AIInputBar/field/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AIInputBar/field/padding/y",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  { name: "AIInputBar/control/size", value: 44, scopes: ["WIDTH_HEIGHT"] },
+  { name: "AIInputBar/icon/size", value: 20, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "AICompanionPanel/width/default",
+    value: 360,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AICompanionPanel/height/default",
+    value: 560,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AICompanionPanel/header/padding/x",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/header/padding/y",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/header/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/banner/padding/top",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "AICompanionPanel/mark/size",
+    value: 32,
+    scopes: ["WIDTH_HEIGHT"],
+  },
+  {
+    name: "AICompanionPanel/mark/icon/size",
+    value: 16,
     scopes: ["WIDTH_HEIGHT"],
   },
   { name: "MapView/width/default", value: 480, scopes: ["WIDTH_HEIGHT"] },
@@ -10762,6 +11371,81 @@ const COMPONENT_FLOAT_TOKENS = [
     alias: "Button/icon/size",
     scopes: ["WIDTH_HEIGHT"],
   },
+  // GAP-206: Surface as its stories draw it, rounded-container p-4 at 320.
+  { name: "Surface/width/default", value: 320, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Surface/padding",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Surface/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  // GAP-206: ActionCard, flex-col gap-2, as wide as the turn it sits in.
+  { name: "ActionCard/width/default", value: 320, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "ActionCard/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  // GAP-206: Calendar's owned CSS (owned-calendar.css): a 2.25rem day, 2.5rem
+  // in a range, 4 apart; 8 from the header to the days, 12 between months; a
+  // 2rem month button with a 1rem chevron.
+  { name: "Calendar/day/size", value: 36, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Calendar/day/size/range", value: 40, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "Calendar/gap",
+    value: 4,
+    alias: "Layout/spacing/50",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Calendar/month/gap",
+    value: 8,
+    alias: "Layout/spacing/100",
+    scopes: ["GAP"],
+  },
+  {
+    name: "Calendar/months/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  { name: "Calendar/nav/size", value: 32, scopes: ["WIDTH_HEIGHT"] },
+  { name: "Calendar/icon/size", value: 16, scopes: ["WIDTH_HEIGHT"] },
+  // GAP-206: ClientAppBanner's owned CSS (owned-client-app-banner.css): 16
+  // inside, 12 between its parts, a 48 icon, the Container corner.
+  {
+    name: "ClientAppBanner/padding",
+    value: 16,
+    alias: "Layout/spacing/200",
+    scopes: ["GAP"],
+  },
+  {
+    name: "ClientAppBanner/gap",
+    value: 12,
+    alias: "Layout/spacing/150",
+    scopes: ["GAP"],
+  },
+  { name: "ClientAppBanner/icon/size", value: 48, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "ClientAppBanner/radius",
+    value: 20,
+    alias: "Radius/Container",
+    scopes: ["CORNER_RADIUS"],
+  },
+  // GAP-206: LanguageSwitcher's trigger, h-12 min-w-32.
+  { name: "LanguageSwitcher/height", value: 48, scopes: ["WIDTH_HEIGHT"] },
+  {
+    name: "LanguageSwitcher/min-width",
+    value: 128,
+    scopes: ["WIDTH_HEIGHT"],
+  },
   { name: "Alert/width/default", value: 360, scopes: ["WIDTH_HEIGHT"] },
   {
     name: "Alert/padding",
@@ -12753,7 +13437,21 @@ const SETS_THAT_OVERRIDE_INSIDE = {
   // TourStep's Close: x-close, and Card's header action: the pencil (GAP-169),
   // each tinted again after the swap.
   // PageHeader's Info: info-circle (GAP-036).
-  IconButton: ["TourStep", "Card", "PageHeader"],
+  // GAP-206: ClientAppBanner's Dismiss, MapInfoPanel's and RouteSetupPanel's
+  // close (x-close), and the assistant's send (send-01) and close (x-close),
+  // each tinted again after the swap.
+  IconButton: [
+    "TourStep",
+    "Card",
+    "PageHeader",
+    "ClientAppBanner",
+    "MapInfoPanel",
+    "RouteSetupPanel",
+    "AIInputBar",
+    "AICompanionPanel",
+  ],
+  // GAP-206: RouteLocationField hides its search's own label.
+  Combobox: ["RouteLocationField"],
   CategoryTile: ["BrowseCategoriesPanel"],
   NavigationItem: ["Navbar", "Sidebar"],
 };
@@ -12886,6 +13584,7 @@ const CORE_UPDATE_SEQUENCE = [
   ["Listbox", updateListboxComponent],
   ["DatePicker", updateDatePickerComponent],
   ["DateRangePicker", updateDateRangePickerComponent],
+  ["Calendar", updateCalendarComponent],
   ["TimePicker", updateTimePickerComponent],
   ["FileUpload", updateFileUploadComponent],
   ["ImageCropper", updateImageCropperComponent],
@@ -12903,6 +13602,8 @@ const CORE_UPDATE_SEQUENCE = [
   ["Avatar", updateAvatarComponent],
   ["Alert", updateAlertComponent],
   ["Notice", updateNoticeComponent],
+  ["Surface", updateSurfaceComponent],
+  ["ActionCard", updateActionCardComponent],
   ["EmptyState", updateEmptyStateComponent],
   ["Toast", updateToastComponent],
   ["Tag", updateTagComponent],
@@ -12931,6 +13632,12 @@ const CORE_UPDATE_SEQUENCE = [
 // updating them one at a time tedious.
 const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["AISearchButton", updateAISearchButtonComponent],
+  // The assistant (GAP-206): each after the sets it holds instances of.
+  ["UserMessage", updateUserMessageComponent],
+  ["AIMessage", updateAIMessageComponent],
+  ["AIMessageList", updateAIMessageListComponent],
+  ["AIInputBar", updateAIInputBarComponent],
+  ["AICompanionPanel", updateAICompanionPanelComponent],
   ["AdaptiveMapShell", updateAdaptiveMapShellComponent],
   ["CategoryTile", updateCategoryTileComponent],
   ["BrowseCategoriesPanel", updateBrowseCategoriesPanelComponent],
@@ -12957,8 +13664,22 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["Itinerary", updateItineraryComponent],
   ["ManoeuvreCard", updateManoeuvreCardComponent],
   ["RouteProgressRail", updateRouteProgressRailComponent],
+  // GAP-206. Each after the sets it holds: Core's, run first, then
+  // POIResultCard before POIResultGroup and RouteLocationField before
+  // RouteSetupPanel.
+  ["MapStatusPill", updateMapStatusPillComponent],
+  ["MapAttribution", updateMapAttributionComponent],
+  ["MapInfoPanel", updateMapInfoPanelComponent],
+  ["POIResultGroup", updatePOIResultGroupComponent],
+  ["RouteLocationField", updateRouteLocationFieldComponent],
+  ["RouteSetupPanel", updateRouteSetupPanelComponent],
+  ["ArrivalPanel", updateArrivalPanelComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
+  // GAP-206: each holds live Core Buttons (ClientAppBanner an IconButton
+  // too), which the Core run draws first.
+  ["ClientAppBanner", updateClientAppBannerComponent],
+  ["LanguageSwitcher", updateLanguageSwitcherComponent],
   // Dashboard modules (decision 183) ride this run: they share no painter
   // with Core, and a lane of one needs no button of its own.
   ["BrandLoader", updateBrandLoaderComponent],
@@ -13161,6 +13882,21 @@ function additionalComponentActionHandlers() {
     "build-persona-mark": buildPersonaMarkComponent,
     "update-persona-mark": updatePersonaMarkComponent,
     "rebuild-persona-mark": rebuildPersonaMarkComponent,
+    "build-surface": buildSurfaceComponent,
+    "update-surface": updateSurfaceComponent,
+    "rebuild-surface": rebuildSurfaceComponent,
+    "build-action-card": buildActionCardComponent,
+    "update-action-card": updateActionCardComponent,
+    "rebuild-action-card": rebuildActionCardComponent,
+    "build-calendar": buildCalendarComponent,
+    "update-calendar": updateCalendarComponent,
+    "rebuild-calendar": rebuildCalendarComponent,
+    "build-client-app-banner": buildClientAppBannerComponent,
+    "update-client-app-banner": updateClientAppBannerComponent,
+    "rebuild-client-app-banner": rebuildClientAppBannerComponent,
+    "build-language-switcher": buildLanguageSwitcherComponent,
+    "update-language-switcher": updateLanguageSwitcherComponent,
+    "rebuild-language-switcher": rebuildLanguageSwitcherComponent,
     "build-page-header": buildPageHeaderComponent,
     "update-page-header": updatePageHeaderComponent,
     "rebuild-page-header": rebuildPageHeaderComponent,
@@ -13252,6 +13988,21 @@ function additionalComponentActionHandlers() {
     "build-ai-search-button": buildAISearchButtonComponent,
     "update-ai-search-button": updateAISearchButtonComponent,
     "rebuild-ai-search-button": rebuildAISearchButtonComponent,
+    "build-user-message": buildUserMessageComponent,
+    "update-user-message": updateUserMessageComponent,
+    "rebuild-user-message": rebuildUserMessageComponent,
+    "build-ai-message": buildAIMessageComponent,
+    "update-ai-message": updateAIMessageComponent,
+    "rebuild-ai-message": rebuildAIMessageComponent,
+    "build-ai-message-list": buildAIMessageListComponent,
+    "update-ai-message-list": updateAIMessageListComponent,
+    "rebuild-ai-message-list": rebuildAIMessageListComponent,
+    "build-ai-input-bar": buildAIInputBarComponent,
+    "update-ai-input-bar": updateAIInputBarComponent,
+    "rebuild-ai-input-bar": rebuildAIInputBarComponent,
+    "build-ai-companion-panel": buildAICompanionPanelComponent,
+    "update-ai-companion-panel": updateAICompanionPanelComponent,
+    "rebuild-ai-companion-panel": rebuildAICompanionPanelComponent,
     "build-poi-media-gallery": buildPOIMediaGalleryComponent,
     "update-poi-media-gallery": updatePOIMediaGalleryComponent,
     "rebuild-poi-media-gallery": rebuildPOIMediaGalleryComponent,
@@ -13267,6 +14018,27 @@ function additionalComponentActionHandlers() {
     "build-route-preview-panel": buildRoutePreviewPanelComponent,
     "update-route-preview-panel": updateRoutePreviewPanelComponent,
     "rebuild-route-preview-panel": rebuildRoutePreviewPanelComponent,
+    "build-map-status-pill": buildMapStatusPillComponent,
+    "update-map-status-pill": updateMapStatusPillComponent,
+    "rebuild-map-status-pill": rebuildMapStatusPillComponent,
+    "build-map-attribution": buildMapAttributionComponent,
+    "update-map-attribution": updateMapAttributionComponent,
+    "rebuild-map-attribution": rebuildMapAttributionComponent,
+    "build-map-info-panel": buildMapInfoPanelComponent,
+    "update-map-info-panel": updateMapInfoPanelComponent,
+    "rebuild-map-info-panel": rebuildMapInfoPanelComponent,
+    "build-poi-result-group": buildPOIResultGroupComponent,
+    "update-poi-result-group": updatePOIResultGroupComponent,
+    "rebuild-poi-result-group": rebuildPOIResultGroupComponent,
+    "build-route-location-field": buildRouteLocationFieldComponent,
+    "update-route-location-field": updateRouteLocationFieldComponent,
+    "rebuild-route-location-field": rebuildRouteLocationFieldComponent,
+    "build-route-setup-panel": buildRouteSetupPanelComponent,
+    "update-route-setup-panel": updateRouteSetupPanelComponent,
+    "rebuild-route-setup-panel": rebuildRouteSetupPanelComponent,
+    "build-arrival-panel": buildArrivalPanelComponent,
+    "update-arrival-panel": updateArrivalPanelComponent,
+    "rebuild-arrival-panel": rebuildArrivalPanelComponent,
     "build-route-summary": buildRouteSummaryComponent,
     "update-route-summary": updateRouteSummaryComponent,
     "rebuild-route-summary": rebuildRouteSummaryComponent,
@@ -20024,6 +20796,37 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "UserMessage") {
+    return {
+      Content: USER_MESSAGE_CONTENT,
+    };
+  }
+
+  if (canonicalName === "AIMessage") {
+    return {
+      Status: AI_MESSAGE_STATUSES,
+    };
+  }
+
+  if (canonicalName === "AIMessageList") {
+    return {
+      Content: AI_MESSAGE_LIST_CONTENT,
+    };
+  }
+
+  if (canonicalName === "AIInputBar") {
+    return {
+      State: AI_INPUT_BAR_STATES,
+      VoiceState: AI_INPUT_BAR_VOICES,
+    };
+  }
+
+  if (canonicalName === "AICompanionPanel") {
+    return {
+      Content: AI_COMPANION_PANEL_CONTENT,
+    };
+  }
+
   if (canonicalName === "POIMediaGallery") {
     return {
       Content: POI_MEDIA_GALLERY_CONTENT,
@@ -20040,6 +20843,51 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "POIResultList") {
     return {
       Content: POI_RESULT_LIST_CONTENT,
+    };
+  }
+
+  // GAP-206: the map and route parts.
+  if (canonicalName === "MapStatusPill") {
+    return {
+      Tone: MAP_STATUS_PILL_TONES,
+    };
+  }
+
+  if (canonicalName === "MapAttribution") {
+    return {
+      Appearance: MAP_ATTRIBUTION_APPEARANCES,
+    };
+  }
+
+  if (canonicalName === "MapInfoPanel") {
+    return {
+      Content: MAP_INFO_PANEL_CONTENT,
+    };
+  }
+
+  if (canonicalName === "POIResultGroup") {
+    return {
+      State: POI_RESULT_GROUP_STATES,
+    };
+  }
+
+  if (canonicalName === "RouteLocationField") {
+    return {
+      State: ROUTE_LOCATION_FIELD_STATES,
+    };
+  }
+
+  if (canonicalName === "RouteSetupPanel") {
+    return {
+      State: ROUTE_SETUP_PANEL_STATES,
+      Presentation: MAP_PART_PRESENTATIONS,
+    };
+  }
+
+  if (canonicalName === "ArrivalPanel") {
+    return {
+      State: ARRIVAL_PANEL_STATES,
+      Presentation: MAP_PART_PRESENTATIONS,
     };
   }
 
@@ -20542,6 +21390,38 @@ function expectedVariantAxesForComponentSetName(name) {
   if (canonicalName === "PersonaMark") {
     return {
       Form: PERSONA_MARK_FORMS,
+    };
+  }
+
+  // GAP-206.
+  if (canonicalName === "Surface") {
+    return {
+      Variant: SURFACE_VARIANTS,
+    };
+  }
+
+  if (canonicalName === "ActionCard") {
+    return {
+      Content: ACTION_CARD_CONTENT,
+    };
+  }
+
+  if (canonicalName === "Calendar") {
+    return {
+      Mode: CALENDAR_MODES,
+      Months: CALENDAR_MONTHS,
+    };
+  }
+
+  if (canonicalName === "ClientAppBanner") {
+    return {
+      Layout: CLIENT_APP_BANNER_LAYOUTS,
+    };
+  }
+
+  if (canonicalName === "LanguageSwitcher") {
+    return {
+      State: LANGUAGE_SWITCHER_STATES,
     };
   }
 
@@ -27330,6 +28210,10 @@ function inferTextStyleKeyForComponentText(text, componentSet) {
   }
   if (setName === "Notice") {
     return textName === "Summary" ? "alertTitle" : "alertDescription";
+  }
+  {
+    const gap206 = gap206TextStyleKey(setName, textName);
+    if (gap206) return gap206;
   }
   if (setName === "EmptyState") {
     return textName === "Title Text"
@@ -54638,6 +55522,1610 @@ async function rebuildAISearchButtonComponent() {
   });
 }
 
+// --- The assistant's parts (GAP-206) -----------------------------------------
+//
+// UserMessage, AIMessage, AIMessageList, AIInputBar and AICompanionPanel, as
+// React draws them (packages/react/src/components/<Name>), one set each, in
+// the order Update All Product / SDK runs them: a set after every set it holds
+// an instance of. The thread is the SDK's 360 frame, the stories' own, its
+// turns 328 wide inside 16 of padding, and a bubble at most 85 % of its turn.
+//
+// A bubble hugs its words up to 85 % of its turn, then they wrap, as CSS's
+// max-width draws it: in Figma, words that size themselves under a max width
+// (an auto-layout child's maxWidth), in a bubble that hugs them. UserMessage
+// has no variant in React; its set has the one, Content=Default.
+const USER_MESSAGE_CONTENT = ["Default"];
+const AI_MESSAGE_STATUSES = ["Complete", "Streaming", "TimedOut"];
+const AI_MESSAGE_LIST_CONTENT = ["Conversation", "Streaming", "TimedOut"];
+const AI_INPUT_BAR_STATES = ["Empty", "Filled", "Disabled"];
+// AIInputBar's voiceState (decision 22), and Off: no onVoiceStart, so no
+// microphone at all.
+const AI_INPUT_BAR_VOICES = [
+  "Off",
+  "Idle",
+  "Connecting",
+  "Listening",
+  "Speaking",
+  "Unavailable",
+  "Error",
+];
+const AI_COMPANION_PANEL_CONTENT = ["Conversation", "Streaming", "TimedOut"];
+
+const AI_PANEL_WIDTH = 360;
+const AI_PANEL_HEIGHT = 560;
+const AI_THREAD_PADDING = 16;
+const AI_THREAD_GAP = 16;
+/** A turn, w-full in the thread: the panel less the thread's padding. */
+const AI_TURN_WIDTH = AI_PANEL_WIDTH - 2 * AI_THREAD_PADDING;
+/** The bubble's max-w-[85%] of its turn. */
+const AI_BUBBLE_MAX_WIDTH = Math.floor(AI_TURN_WIDTH * 0.85);
+const AI_BUBBLE_PADDING_X = 16;
+const AI_BUBBLE_PADDING_Y = 12;
+const AI_BUBBLE_STROKE = 1;
+/** The words' width inside a bubble at its widest, stroke included. */
+const AI_BUBBLE_TEXT_WIDTH =
+  AI_BUBBLE_MAX_WIDTH - 2 * AI_BUBBLE_PADDING_X - 2 * AI_BUBBLE_STROKE;
+const AI_MESSAGE_GAP = 8;
+const AI_STREAMING_DOT = 6;
+const AI_STREAMING_DOT_GAP = 4;
+/** The dots' me-2. */
+const AI_STREAMING_DOTS_END = 8;
+const AI_INPUT_BAR_PADDING_X = 16;
+const AI_INPUT_BAR_PADDING_Y = 12;
+const AI_INPUT_BAR_GAP = 8;
+const AI_INPUT_FIELD_HEIGHT = 44;
+const AI_INPUT_FIELD_PADDING_X = 16;
+const AI_INPUT_FIELD_PADDING_Y = 8;
+const AI_CONTROL_SIZE = 44;
+const AI_CONTROL_ICON_SIZE = 20;
+const AI_PANEL_HEADER_PADDING_X = 16;
+const AI_PANEL_HEADER_PADDING_Y = 12;
+const AI_PANEL_HEADER_GAP = 8;
+const AI_PANEL_MARK_SIZE = 32;
+const AI_PANEL_MARK_ICON_SIZE = 16;
+const AI_PANEL_BANNER_PADDING_TOP = 16;
+const AI_ACTION_CARD_SLOT = "Action Card Slot";
+const AI_PANEL_BANNER_SLOT = "Banner Slot";
+
+const AI_WORDS = {
+  greeting:
+    "Hello! What are you looking for? Describe it in your own words, like “somewhere quiet to work.”",
+  question: "Where is the nearest accessible restroom?",
+  answer: "The closest accessible restroom is on the second floor.",
+  answerFull:
+    "The closest accessible restroom is on the second floor, 2 minutes away.",
+  acknowledgement: "Looking through this building…",
+  timedOut: "The assistant did not reply in time.",
+  placeholder: "Ask anything",
+  value: "Somewhere quiet to work",
+  title: "Assistant",
+};
+
+// The words an empty field shows while a conversation is live: React's
+// voiceConnectingLabel, voiceListeningLabel and voiceSpeakingLabel.
+const AI_INPUT_BAR_VOICE_WORDS = {
+  Connecting: "Connecting…",
+  Listening: "Listening…",
+  Speaking: "Assistant is speaking…",
+};
+
+const AI_CARD_FILL = { name: "Surface/0", fallback: "#FFFFFF" };
+const AI_EDGE = { name: "Border/Subtle", fallback: "#C7CAD1" };
+const AI_INK = { name: "Colors/foreground/0", fallback: "#000000" };
+const AI_MUTED_INK = { name: "Colors/foreground/400", fallback: "#5D626F" };
+const AI_MUTED_FILL = { name: "Colors/background/100", fallback: "#E3E4E8" };
+const AI_PRIMARY = { name: "Colors/theme/600", fallback: "#1051E8" };
+const AI_PANEL_FILL = { name: "Colors/background/0", fallback: "#FFFFFF" };
+// The close's outline, neutral (decision 73): the neutral emotion's ink, as
+// its edge and its X. Emotion/neutral/text is foreground/400 in both themes,
+// as the neutral Secondary Buttons ink React's outline draws, and is scoped to
+// strokes, which that one is not.
+const AI_NEUTRAL_OUTLINE_INK = {
+  name: "Emotion/neutral/text",
+  fallback: "#5D626F",
+};
+
+function aiPaint(token, variableByName, stats) {
+  return paintFromVariable(token.name, token.fallback, variableByName, stats);
+}
+
+/** Two axes' values from a variant name, or null when either is unknown. */
+function aiTwoAxisValues(name, firstAxis, firstValues, secondAxis, seconds) {
+  const values = {};
+  for (const part of name.split(",")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    values[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+  }
+  if (
+    firstValues.indexOf(values[firstAxis]) === -1 ||
+    seconds.indexOf(values[secondAxis]) === -1
+  ) {
+    return null;
+  }
+  return { value: values[firstAxis], second: values[secondAxis] };
+}
+
+/**
+ * A variant's root, as productSdkVariantRoot sets it, keeping `kept`: the
+ * slots an Update carries over, so a designer's content and the slot property
+ * Code Connect reads keep their ids.
+ */
+function aiVariantRoot(component, componentName, variantName, options, kept) {
+  component.name = variantName;
+  component.layoutMode =
+    options.direction === "horizontal" ? "HORIZONTAL" : "VERTICAL";
+  component.primaryAxisSizingMode = options.primarySizing || "FIXED";
+  component.counterAxisSizingMode = options.counterSizing || "FIXED";
+  component.primaryAxisAlignItems = options.primaryAlign || "MIN";
+  component.counterAxisAlignItems = options.counterAlign || "MIN";
+  component.itemSpacing = options.spacing || 0;
+  const padding = options.padding || 0;
+  component.paddingLeft =
+    typeof options.paddingX === "number" ? options.paddingX : padding;
+  component.paddingRight =
+    typeof options.paddingX === "number" ? options.paddingX : padding;
+  component.paddingTop =
+    typeof options.paddingY === "number" ? options.paddingY : padding;
+  component.paddingBottom =
+    typeof options.paddingY === "number" ? options.paddingY : padding;
+  component.resizeWithoutConstraints(options.width, options.height);
+  component.clipsContent = options.clip === true;
+  component.fills = [];
+  component.strokes = [];
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.opacity = 1;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", componentName);
+  removeDirectChildrenExceptMany(component, kept || []);
+  return component;
+}
+
+/** The slot `slotName` drawn in `component` before, lifted out to be kept. */
+function aiReusableSlot(component, slotName, owner, stats) {
+  const slots = extractReusableSlotsByName(component, [slotName], stats, owner);
+  return reusableSlotNamed(slots, slotName);
+}
+
+/**
+ * A bubble: the turn's words on the container radius, 16 across and 12 down,
+ * hugging them up to 85 % of the turn. `edge` is the assistant's 1 border;
+ * the visitor's bubble has none.
+ */
+function aiBubble({ name, fill, edge, variableByName, stats }) {
+  const bubble = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: AI_STREAMING_DOTS_END,
+    paddingLeft: AI_BUBBLE_PADDING_X,
+    paddingRight: AI_BUBBLE_PADDING_X,
+    paddingTop: AI_BUBBLE_PADDING_Y,
+    paddingBottom: AI_BUBBLE_PADDING_Y,
+  });
+  bubble.cornerRadius = KOZMOS_RADIUS.container;
+  bubble.fills = [aiPaint(fill, variableByName, stats)];
+  if (edge) {
+    bubble.strokes = [aiPaint(edge, variableByName, stats)];
+    bubble.strokeWeight = AI_BUBBLE_STROKE;
+    bindFloatVariable(
+      bubble,
+      "strokeWeight",
+      "AIMessage/bubble/stroke/width",
+      variableByName,
+      stats,
+    );
+  }
+  for (const [property, token] of [
+    ["paddingLeft", "AIMessage/bubble/padding/x"],
+    ["paddingRight", "AIMessage/bubble/padding/x"],
+    ["paddingTop", "AIMessage/bubble/padding/y"],
+    ["paddingBottom", "AIMessage/bubble/padding/y"],
+    ["topLeftRadius", "AIMessage/bubble/radius"],
+    ["topRightRadius", "AIMessage/bubble/radius"],
+    ["bottomLeftRadius", "AIMessage/bubble/radius"],
+    ["bottomRightRadius", "AIMessage/bubble/radius"],
+  ]) {
+    bindFloatVariable(bubble, property, token, variableByName, stats);
+  }
+  setNodePropertyIfSupported(bubble, "maxWidth", AI_BUBBLE_MAX_WIDTH);
+  bubble.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-bubble");
+  return bubble;
+}
+
+/**
+ * A turn's words, 14/20, sizing themselves up to the bubble's widest less
+ * `reserved` (the streaming dots), and wrapping there. Call once the words
+ * are in the bubble: a max width holds only on an auto-layout child.
+ */
+async function aiTurnText({
+  name,
+  characters,
+  ink,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const text = await productSdkText({
+    name,
+    characters,
+    styleKey: "cardDescription",
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: ink.name,
+    colorFallback: ink.fallback,
+    variableByName,
+    stats,
+    wrap: true,
+  });
+  setTextAutoResize(text, "WIDTH_AND_HEIGHT");
+  text.textAlignVertical = "TOP";
+  return text;
+}
+
+/** The words in their bubble, held under its widest less `reserved`. */
+function aiHoldTurnText(text, reserved, owner, stats) {
+  const most = AI_BUBBLE_TEXT_WIDTH - (reserved || 0);
+  if (!setNodePropertyIfSupported(text, "maxWidth", most)) {
+    pushUniqueWarning(
+      stats,
+      `ai-turn-max-width:${owner}`,
+      `${owner}: this Figma runtime took no max width on ${text.name}, so a long turn runs on one line past the bubble's 85 %.`,
+    );
+  }
+}
+
+// --- UserMessage ---------------------------------------------------------------
+
+// The visitor's turn, as React's UserMessage draws it: a row as wide as the
+// turn with the bubble at its end, the theme fill under the theme foreground
+// (decision 59), no edge. The speaker's name is screen-reader text, drawn
+// nowhere. Message Text is its children.
+
+async function createUserMessageVariant(args) {
+  const component = figma.createComponent();
+  await updateUserMessageVariant(component, args);
+  return component;
+}
+
+function parseUserMessageVariantName(name) {
+  return productSdkVariantValues(name, "Content", USER_MESSAGE_CONTENT);
+}
+
+async function updateUserMessageVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const kept = firstDescendantTextCharactersByName(component, "Message Text");
+  aiVariantRoot(component, "UserMessage", `Content=${value}`, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "MAX",
+    width: AI_TURN_WIDTH,
+    height: 44,
+  });
+  const bubble = aiBubble({
+    name: "Bubble",
+    fill: THEME_FILL,
+    edge: null,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(component, bubble, "HUG", "HUG");
+  const text = await aiTurnText({
+    name: "Message Text",
+    characters: kept || AI_WORDS.question,
+    ink: THEME_FILL_FOREGROUND,
+    fonts,
+    variableByName,
+    stats,
+  });
+  bubble.appendChild(text);
+  aiHoldTurnText(text, 0, "UserMessage", stats);
+}
+
+function configureUserMessageProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Message Text",
+    "Message Text",
+    AI_WORDS.question,
+    stats,
+  );
+}
+
+const USER_MESSAGE_DESCRIPTION = [
+  "Kozmos UserMessage generated from the React UserMessage API (GAP-206): the visitor's turn in the assistant's thread.",
+  "Message Text maps to children. The bubble is the theme fill under the theme foreground (decision 59), at the turn's end, on the container radius, 16 across and 12 down, at most 85 % of the turn.",
+  "The words size themselves up to the bubble's 85 % and wrap there, as React's max-width draws them. React has no variant; the set has the one, Content=Default.",
+  "speakerLabel is read before the words and never drawn.",
+];
+
+async function buildUserMessageComponent() {
+  return buildSingleAxisComponent({
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    axisName: "Content",
+    values: USER_MESSAGE_CONTENT,
+    x: 80,
+    y: 15100,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createUserMessageVariant,
+    configureProperties: configureUserMessageProperties,
+    autoReorganize: true,
+    description: USER_MESSAGE_DESCRIPTION,
+  });
+}
+
+async function updateUserMessageComponent() {
+  return updateSingleAxisComponent({
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    axisName: "Content",
+    values: USER_MESSAGE_CONTENT,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createUserMessageVariant,
+    updateVariant: updateUserMessageVariant,
+    parseVariantName: parseUserMessageVariantName,
+    configureProperties: configureUserMessageProperties,
+    autoReorganize: true,
+    description: USER_MESSAGE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildUserMessageComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "UserMessage",
+    componentSetName: "UserMessage",
+    build: buildUserMessageComponent,
+  });
+}
+
+// --- AIMessage -----------------------------------------------------------------
+
+// The assistant's turn, as React's AIMessage draws it: a column as wide as the
+// turn, 8 apart, the bubble at its start, outlined (bg-card, border-border)
+// with the words in the foreground, and the action card under it. Streaming
+// puts three 6 dots in the theme's 600, 4 apart, 8 before the words (the
+// acknowledgement arrives with them, Story 10); TimedOut draws
+// timedOutLabel in the muted foreground. The action card is a slot, shown by
+// Show Action Card, off as React's actionCard is until it is given one.
+
+async function createAIMessageVariant(args) {
+  const component = figma.createComponent();
+  await updateAIMessageVariant(component, args);
+  return component;
+}
+
+function parseAIMessageVariantName(name) {
+  return productSdkVariantValues(name, "Status", AI_MESSAGE_STATUSES);
+}
+
+function aiStreamingDots(variableByName, stats) {
+  const dots = productSdkFrame("Streaming Dots", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: AI_STREAMING_DOT_GAP,
+  });
+  bindFloatVariable(
+    dots,
+    "itemSpacing",
+    "AIMessage/dots/gap",
+    variableByName,
+    stats,
+  );
+  for (let index = 1; index <= 3; index += 1) {
+    const dot = figma.createEllipse();
+    dot.name = `Dot ${index}`;
+    dot.resize(AI_STREAMING_DOT, AI_STREAMING_DOT);
+    dot.fills = [aiPaint(AI_PRIMARY, variableByName, stats)];
+    dot.strokes = [];
+    bindSizeVariables(
+      dot,
+      "AIMessage/dot/size",
+      "AIMessage/dot/size",
+      variableByName,
+      stats,
+    );
+    dots.appendChild(dot);
+  }
+  return dots;
+}
+
+async function updateAIMessageVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const status = value;
+  const kept = {
+    message: firstDescendantTextCharactersByName(component, "Message Text"),
+    timedOut: firstDescendantTextCharactersByName(component, "Timed Out Text"),
+  };
+  const slot = aiReusableSlot(
+    component,
+    AI_ACTION_CARD_SLOT,
+    "AIMessage",
+    stats,
+  );
+  aiVariantRoot(
+    component,
+    "AIMessage",
+    `Status=${status}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: AI_MESSAGE_GAP,
+      width: AI_TURN_WIDTH,
+      height: 44,
+    },
+    slot ? [slot] : [],
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "AIMessage/gap",
+    variableByName,
+    stats,
+  );
+
+  const row = productSdkFrame("Message Row", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: AI_MESSAGE_GAP,
+    width: AI_TURN_WIDTH,
+    height: 44,
+  });
+  bindFloatVariable(row, "itemSpacing", "AIMessage/gap", variableByName, stats);
+  component.insertChild(0, row);
+  setLayoutSizingHorizontal(row, "FILL");
+  setLayoutSizingVertical(row, "HUG");
+
+  const bubble = aiBubble({
+    name: "Bubble",
+    fill: AI_CARD_FILL,
+    edge: AI_EDGE,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(row, bubble, "HUG", "HUG");
+
+  const streaming = status === "Streaming";
+  if (streaming) bubble.appendChild(aiStreamingDots(variableByName, stats));
+  const timedOut = status === "TimedOut";
+  const text = await aiTurnText({
+    name: timedOut ? "Timed Out Text" : "Message Text",
+    characters: timedOut
+      ? kept.timedOut || AI_WORDS.timedOut
+      : kept.message || AI_WORDS.answer,
+    ink: timedOut ? AI_MUTED_INK : AI_INK,
+    fonts,
+    variableByName,
+    stats,
+  });
+  bubble.appendChild(text);
+  aiHoldTurnText(
+    text,
+    streaming
+      ? 3 * AI_STREAMING_DOT + 2 * AI_STREAMING_DOT_GAP + AI_STREAMING_DOTS_END
+      : 0,
+    "AIMessage",
+    stats,
+  );
+
+  // The action card: a frame Show Action Card drives, holding the slot. A
+  // property drives no node inside a slot, and the slot is the one node a
+  // slot property binds to (Card's header actions, GAP-169).
+  const card = productSdkFrame("Action Card", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    width: AI_TURN_WIDTH,
+    height: 72,
+  });
+  card.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-action-card");
+  component.appendChild(card);
+  setLayoutSizingHorizontal(card, "FILL");
+  const shell = createOrReuseShellSlot({
+    component,
+    reusableSlot: slot,
+    ownerName: "AIMessage",
+    stats,
+    slotName: AI_ACTION_CARD_SLOT,
+    width: AI_TURN_WIDTH,
+    height: 72,
+    layoutMode: "VERTICAL",
+    itemSpacing: 8,
+  });
+  card.appendChild(shell.node);
+  setLayoutSizingHorizontal(shell.node, "FILL");
+  setNodePropertyIfSupported(shell.node, "counterAxisSizingMode", "FIXED");
+  setNodePropertyIfSupported(shell.node, "primaryAxisSizingMode", "AUTO");
+  if (!shell.reusedContent) {
+    const placeholder = await productSdkSlot({
+      name: "ActionCard Placeholder",
+      label: "ActionCard",
+      width: AI_TURN_WIDTH,
+      height: 72,
+      fonts,
+      variableByName,
+      stats,
+      muted: true,
+      parentRadius: KOZMOS_RADIUS.container,
+      inset: 0,
+    });
+    shell.node.appendChild(placeholder);
+    setLayoutSizingHorizontal(placeholder, "FILL");
+  }
+  card.visible = false;
+}
+
+function configureAIMessageProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Message Text",
+    "Message Text",
+    AI_WORDS.answer,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Timed Out Text",
+    "Timed Out Text",
+    AI_WORDS.timedOut,
+    stats,
+  );
+  configureSharedSlotProperties(componentSet, [AI_ACTION_CARD_SLOT], stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Action Card",
+    "Show Action Card",
+    false,
+    stats,
+  );
+}
+
+const AI_MESSAGE_DESCRIPTION = [
+  "Kozmos AIMessage generated from the React AIMessage API (GAP-206): the assistant's turn in the thread.",
+  "Status maps to status: Complete, Streaming (three dots in the theme's 600 before the acknowledgement, Story 10) and TimedOut (timedOutLabel in the muted foreground, the ten-second stop).",
+  "Message Text maps to children; Timed Out Text to timedOutLabel. Show Action Card shows Action Card Slot, actionCard: an ActionCard holding results.",
+  "The bubble is bg-card with a 1 border-border on the container radius, 16 across and 12 down; its words size themselves up to 85 % of the turn and wrap there.",
+  "trailing is the product's control beside the bubble, and is not drawn; speakerLabel, streamingLabel are read, never drawn.",
+];
+
+async function buildAIMessageComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    axisName: "Status",
+    values: AI_MESSAGE_STATUSES,
+    x: 80,
+    y: 15300,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createAIMessageVariant,
+    configureProperties: configureAIMessageProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_DESCRIPTION,
+  });
+}
+
+async function updateAIMessageComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    axisName: "Status",
+    values: AI_MESSAGE_STATUSES,
+    xStep: AI_TURN_WIDTH + 40,
+    createVariant: createAIMessageVariant,
+    updateVariant: updateAIMessageVariant,
+    parseVariantName: parseAIMessageVariantName,
+    configureProperties: configureAIMessageProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAIMessageComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AIMessage",
+    componentSetName: "AIMessage",
+    build: buildAIMessageComponent,
+  });
+}
+
+// --- AIMessageList -------------------------------------------------------------
+
+// The thread, as React's AIMessageList draws it: a column the panel's width,
+// 16 inside and 16 between its turns, which are live AIMessage and UserMessage
+// instances, exposed so each turn's words are edited from the thread. Content
+// is the stories': a conversation whose answer carries its action card, a
+// reply streaming, and one that timed out. It scrolls in the product; here it
+// is as tall as its turns.
+
+const AI_MESSAGE_LIST_TURNS = {
+  Conversation: [
+    { set: "AIMessage", status: "Complete", words: AI_WORDS.greeting },
+    { set: "UserMessage", words: AI_WORDS.question },
+    {
+      set: "AIMessage",
+      status: "Complete",
+      words: AI_WORDS.answerFull,
+      actionCard: true,
+    },
+  ],
+  Streaming: [
+    { set: "UserMessage", words: AI_WORDS.question },
+    {
+      set: "AIMessage",
+      status: "Streaming",
+      words: AI_WORDS.acknowledgement,
+    },
+  ],
+  TimedOut: [
+    { set: "UserMessage", words: AI_WORDS.question },
+    { set: "AIMessage", status: "TimedOut" },
+  ],
+};
+
+async function createAIMessageListVariant(args) {
+  const component = figma.createComponent();
+  await updateAIMessageListVariant(component, args);
+  return component;
+}
+
+function parseAIMessageListVariantName(name) {
+  return productSdkVariantValues(name, "Content", AI_MESSAGE_LIST_CONTENT);
+}
+
+/** One turn: a live instance of its set, or a placeholder naming the Build. */
+async function aiThreadTurn(turn, index, owner, stats) {
+  const name = `Turn ${index + 1}`;
+  const created = await createNestedComponentInstance({
+    componentSetName: turn.set,
+    variantProperties:
+      turn.set === "AIMessage"
+        ? { Status: turn.status }
+        : { Content: "Default" },
+    name,
+    role: "ai-thread-turn",
+    stats,
+  });
+  if (!created) {
+    return createMissingNestedComponentNode(
+      name,
+      `Build ${turn.set} before updating ${owner}.`,
+      stats,
+    );
+  }
+  const instance = created.instance;
+  if (turn.words) {
+    setInstanceTextProperty(
+      instance,
+      created.componentSet,
+      "Message Text",
+      turn.words,
+      stats,
+    );
+  }
+  if (turn.actionCard) {
+    setInstanceBooleanProperty(
+      instance,
+      created.componentSet,
+      "Show Action Card",
+      true,
+      stats,
+    );
+  }
+  try {
+    // Exposed, so a turn's words and card are edited from the thread: a
+    // set's property cannot drive text inside a nested instance.
+    instance.isExposedInstance = true;
+  } catch (_error) {
+    // Older Figma runtimes may not support exposing nested instances.
+  }
+  return instance;
+}
+
+async function updateAIMessageListVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  aiVariantRoot(component, "AIMessageList", `Content=${value}`, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: AI_THREAD_GAP,
+    padding: AI_THREAD_PADDING,
+    width: AI_PANEL_WIDTH,
+    height: 200,
+    clip: true,
+  });
+  for (const [property, token] of [
+    ["itemSpacing", "AIMessageList/gap"],
+    ["paddingLeft", "AIMessageList/padding"],
+    ["paddingRight", "AIMessageList/padding"],
+    ["paddingTop", "AIMessageList/padding"],
+    ["paddingBottom", "AIMessageList/padding"],
+  ]) {
+    bindFloatVariable(component, property, token, variableByName, stats);
+  }
+  const turns = AI_MESSAGE_LIST_TURNS[value] || [];
+  for (let index = 0; index < turns.length; index += 1) {
+    const turn = await aiThreadTurn(
+      turns[index],
+      index,
+      "AIMessageList",
+      stats,
+    );
+    component.appendChild(turn);
+    setLayoutSizingHorizontal(turn, "FILL");
+  }
+}
+
+function configureAIMessageListProperties() {
+  // No property of its own: the turns are exposed instances, and label is
+  // what assistive technology hears, drawn nowhere.
+}
+
+const AI_MESSAGE_LIST_DESCRIPTION = [
+  "Kozmos AIMessageList generated from the React AIMessageList API (GAP-206): the assistant's thread.",
+  "Content is the stories' threads: a Conversation whose answer carries its action card, a reply Streaming, and one TimedOut. children are the turns, live AIMessage and UserMessage instances, exposed so their words are edited here.",
+  "The panel's width, 16 inside and 16 between turns. In the product it fills the panel and scrolls, following the newest turn (followLatest); label names the log for assistive technology and is not drawn.",
+];
+
+async function buildAIMessageListComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    axisName: "Content",
+    values: AI_MESSAGE_LIST_CONTENT,
+    x: 80,
+    y: 15700,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAIMessageListVariant,
+    configureProperties: configureAIMessageListProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_LIST_DESCRIPTION,
+  });
+}
+
+async function updateAIMessageListComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    axisName: "Content",
+    values: AI_MESSAGE_LIST_CONTENT,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAIMessageListVariant,
+    updateVariant: updateAIMessageListVariant,
+    parseVariantName: parseAIMessageListVariantName,
+    configureProperties: configureAIMessageListProperties,
+    autoReorganize: true,
+    description: AI_MESSAGE_LIST_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAIMessageListComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AIMessageList",
+    componentSetName: "AIMessageList",
+    build: buildAIMessageListComponent,
+  });
+}
+
+// --- AIInputBar ----------------------------------------------------------------
+
+// The question's field, as React's AIInputBar draws it: a row the panel's
+// width, 16 across and 12 down, 8 apart, a 1 edge above it. The field is a
+// pill at least 44 tall, 16 across and 8 down, bg-card with border-border,
+// its words 14/20 (the muted foreground for the placeholder); Disabled is the
+// Input family's muted fill (row 59). Send is a live IconButton, the default
+// variant on the pill radius with send-01 at 20, disabled until there is
+// something to ask. Voice (decision 22) puts the microphone between the two: a
+// 44 circle, bordered on the card at Idle; the themed emotion's surface in a
+// primary edge while Connecting (the loading arc), Listening (microphone-01)
+// and Speaking (volume-max); the danger emotion's outline at Error; the
+// field's disabled look at Unavailable and, unless live, when Disabled
+// (microphone-off-01). While live, the empty field says where the
+// conversation is.
+
+async function createAIInputBarVariant(args) {
+  const component = figma.createComponent();
+  await updateAIInputBarVariant(component, args);
+  return component;
+}
+
+function parseAIInputBarVariantName(name) {
+  return aiTwoAxisValues(
+    name,
+    "State",
+    AI_INPUT_BAR_STATES,
+    "VoiceState",
+    AI_INPUT_BAR_VOICES,
+  );
+}
+
+function aiVoiceIsLive(voice) {
+  return (
+    voice === "Connecting" || voice === "Listening" || voice === "Speaking"
+  );
+}
+
+/** The microphone's look for a voice state, as React's class list draws it. */
+function aiVoiceLook(voice, disabled) {
+  const live = aiVoiceIsLive(voice);
+  if (voice === "Unavailable" || (disabled && !live)) {
+    return {
+      fill: AI_MUTED_FILL,
+      edge: AI_EDGE,
+      ink: AI_MUTED_INK,
+      icon: "microphone-off-01",
+    };
+  }
+  if (live) {
+    return {
+      fill: { name: "Emotion/themed/surface", fallback: "#E7EEFD" },
+      edge: AI_PRIMARY,
+      ink: { name: "Emotion/themed/onSurface", fallback: "#0D44C2" },
+      icon:
+        voice === "Connecting"
+          ? null
+          : voice === "Speaking"
+            ? "volume-max"
+            : "microphone-01",
+    };
+  }
+  if (voice === "Error") {
+    const danger = { name: "Emotion/danger/text", fallback: "#B01736" };
+    return {
+      fill: AI_CARD_FILL,
+      edge: danger,
+      ink: danger,
+      icon: "microphone-off-01",
+    };
+  }
+  return {
+    fill: AI_CARD_FILL,
+    edge: AI_EDGE,
+    ink: AI_INK,
+    icon: "microphone-01",
+  };
+}
+
+/**
+ * The system's loading arc, as Notice's progress mark draws it: three
+ * quarters of a circle from 12 o'clock, radius 9 and 2 thick on the icons'
+ * 24 grid, here at 20 in the control's ink. A frame cannot turn; code turns
+ * it, and stills it under reduced motion.
+ */
+function aiLoadingArc(ink, size, variableByName, stats) {
+  const box = productSdkFrame("Loading Arc", {
+    width: size,
+    height: size,
+  });
+  box.layoutMode = "NONE";
+  box.resizeWithoutConstraints(size, size);
+  const outer = (size * 10) / 24;
+  const arc = figma.createEllipse();
+  arc.name = "Arc";
+  arc.resize(2 * outer, 2 * outer);
+  arc.x = size / 2 - outer;
+  arc.y = size / 2 - outer;
+  arc.arcData = {
+    startingAngle: -Math.PI / 2,
+    endingAngle: Math.PI,
+    innerRadius: 0.8,
+  };
+  arc.strokes = [];
+  arc.fills = [aiPaint(ink, variableByName, stats)];
+  box.appendChild(arc);
+  box.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-loading-arc");
+  return box;
+}
+
+async function aiVoiceButton(voice, disabled, variableByName, stats) {
+  const look = aiVoiceLook(voice, disabled);
+  const button = productSdkFrame("Voice Button", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: AI_CONTROL_SIZE,
+    height: AI_CONTROL_SIZE,
+  });
+  button.cornerRadius = KOZMOS_RADIUS.pill;
+  button.fills = [aiPaint(look.fill, variableByName, stats)];
+  button.strokes = [aiPaint(look.edge, variableByName, stats)];
+  button.strokeWeight = 1;
+  bindSizeVariables(
+    button,
+    "AIInputBar/control/size",
+    "AIInputBar/control/size",
+    variableByName,
+    stats,
+  );
+  markControlSurface(button);
+  if (look.icon) {
+    const source = await findImporterIconSource(look.icon, "AIInputBar", stats);
+    if (source) {
+      const icon = createIconSlotInstance(
+        source,
+        look.ink.name,
+        look.ink.fallback,
+        variableByName,
+        stats,
+        AI_CONTROL_ICON_SIZE,
+        "AIInputBar/icon/size",
+      );
+      scaleIconStrokes(icon, AI_CONTROL_ICON_SIZE);
+      appendWithSizing(button, icon, "FIXED", "FIXED");
+    }
+  } else {
+    button.appendChild(
+      aiLoadingArc(look.ink, AI_CONTROL_ICON_SIZE, variableByName, stats),
+    );
+  }
+  return button;
+}
+
+/**
+ * An IconButton the assistant holds, with its icon swapped in and tinted
+ * again: the swap replaces the layer the variant's tint was laid on, so the
+ * glyph would draw in its source's black. CORE_UPDATE_SEQUENCE runs IconButton
+ * before Product / SDK, and SETS_THAT_OVERRIDE_INSIDE lists these sets after
+ * it. `ink` is the variant's own unless given (the close's neutral outline).
+ */
+async function aiIconButton({
+  name,
+  role,
+  variant,
+  state,
+  iconName,
+  ink,
+  owner,
+  variableByName,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: variant, Size: "Default", State: state },
+    name,
+    role,
+    stats,
+  });
+  if (!created) {
+    return createMissingNestedComponentNode(
+      name,
+      `Build IconButton before updating ${owner}.`,
+      stats,
+    );
+  }
+  const button = created.instance;
+  const glyph = await findImporterIconSource(iconName, owner, stats);
+  if (
+    glyph &&
+    setInstanceSwapProperty(
+      button,
+      created.componentSet,
+      BUTTON_ICON_PROPERTY,
+      glyph.id,
+      stats,
+    )
+  ) {
+    const config = buttonConfig(variant, state);
+    retintAIIconButtonIcon(
+      button,
+      ink || {
+        name: config.foreground,
+        fallback: config.foregroundFallback,
+      },
+      owner,
+      variableByName,
+      stats,
+    );
+  }
+  return button;
+}
+
+function retintAIIconButtonIcon(button, ink, owner, variableByName, stats) {
+  // The layer the Icon property drives, whatever the swap made of its name.
+  const icon =
+    button.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          BUTTON_ICON_PROPERTY,
+    ) ||
+    button.findOne(
+      (node) => node.type === "INSTANCE" && node.name === BUTTON_ICON_PROPERTY,
+    );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      `ai-icon-button:${owner}:${button.name}`,
+      `${owner}: ${button.name} has no Icon layer to tint after the swap.`,
+    );
+    return;
+  }
+  // h-5 w-5: 20, where IconButton's own icon is 16.
+  icon.resize(AI_CONTROL_ICON_SIZE, AI_CONTROL_ICON_SIZE);
+  applyIconColorOverrides(icon, ink.name, ink.fallback, variableByName, stats);
+  scaleIconStrokes(icon, AI_CONTROL_ICON_SIZE);
+}
+
+async function updateAIInputBarVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const state = value;
+  const voice = second || "Off";
+  const disabled = state === "Disabled";
+  const filled = state === "Filled";
+  const live = aiVoiceIsLive(voice);
+  const kept = {
+    value: firstDescendantTextCharactersByName(component, "Value Text"),
+    placeholder: firstDescendantTextCharactersByName(
+      component,
+      "Placeholder Text",
+    ),
+  };
+  aiVariantRoot(
+    component,
+    "AIInputBar",
+    `State=${state}, VoiceState=${voice}`,
+    {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "AUTO",
+      counterAlign: "CENTER",
+      spacing: AI_INPUT_BAR_GAP,
+      paddingX: AI_INPUT_BAR_PADDING_X,
+      paddingY: AI_INPUT_BAR_PADDING_Y,
+      width: AI_PANEL_WIDTH,
+      height: 69,
+    },
+  );
+  // border-t: the edge above the bar only.
+  component.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  component.strokeWeight = 1;
+  component.strokeTopWeight = 1;
+  component.strokeBottomWeight = 0;
+  component.strokeLeftWeight = 0;
+  component.strokeRightWeight = 0;
+  for (const [property, token] of [
+    ["itemSpacing", "AIInputBar/gap"],
+    ["paddingLeft", "AIInputBar/padding/x"],
+    ["paddingRight", "AIInputBar/padding/x"],
+    ["paddingTop", "AIInputBar/padding/y"],
+    ["paddingBottom", "AIInputBar/padding/y"],
+  ]) {
+    bindFloatVariable(component, property, token, variableByName, stats);
+  }
+
+  const field = productSdkFrame("Field", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: AI_INPUT_FIELD_PADDING_X,
+    paddingRight: AI_INPUT_FIELD_PADDING_X,
+    paddingTop: AI_INPUT_FIELD_PADDING_Y,
+    paddingBottom: AI_INPUT_FIELD_PADDING_Y,
+    width: 200,
+    height: AI_INPUT_FIELD_HEIGHT,
+  });
+  field.cornerRadius = KOZMOS_RADIUS.pill;
+  field.fills = [
+    aiPaint(disabled ? AI_MUTED_FILL : AI_CARD_FILL, variableByName, stats),
+  ];
+  field.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  field.strokeWeight = 1;
+  for (const [property, token] of [
+    ["height", "AIInputBar/field/min-height"],
+    ["paddingLeft", "AIInputBar/field/padding/x"],
+    ["paddingRight", "AIInputBar/field/padding/x"],
+    ["paddingTop", "AIInputBar/field/padding/y"],
+    ["paddingBottom", "AIInputBar/field/padding/y"],
+  ]) {
+    bindFloatVariable(field, property, token, variableByName, stats);
+  }
+  component.appendChild(field);
+  setLayoutSizingHorizontal(field, "FILL");
+  setLayoutSizingVertical(field, "FIXED");
+
+  // The words: the visitor's, or the placeholder — the live state's words in
+  // an empty field while a conversation is live. Each its own layer, as one
+  // property paints one default over every node it binds.
+  const wordsLayer =
+    filled && !disabled
+      ? {
+          name: "Value Text",
+          characters: kept.value || AI_WORDS.value,
+          ink: AI_INK,
+        }
+      : live
+        ? {
+            name: "Voice Text",
+            characters: AI_INPUT_BAR_VOICE_WORDS[voice],
+            ink: AI_MUTED_INK,
+          }
+        : {
+            name: "Placeholder Text",
+            characters: kept.placeholder || AI_WORDS.placeholder,
+            ink: AI_MUTED_INK,
+          };
+  const words = await productSdkText({
+    name: wordsLayer.name,
+    characters: wordsLayer.characters,
+    styleKey: "cardDescription",
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: wordsLayer.ink.name,
+    colorFallback: wordsLayer.ink.fallback,
+    variableByName,
+    stats,
+    width: 120,
+  });
+  field.appendChild(words);
+  setHorizontalFillTextSizing(words);
+  setTextAutoResize(words, "TRUNCATE");
+
+  if (voice !== "Off") {
+    component.appendChild(
+      await aiVoiceButton(voice, disabled, variableByName, stats),
+    );
+  }
+
+  const canSend = filled && !disabled;
+  const send = await aiIconButton({
+    name: "Send",
+    role: "ai-input-bar-send",
+    variant: "Default",
+    state: canSend ? "Default" : "Disabled",
+    iconName: "send-01",
+    owner: "AIInputBar",
+    variableByName,
+    stats,
+  });
+  // React's rounded-pill on the send.
+  setNodePropertyIfSupported(send, "cornerRadius", KOZMOS_RADIUS.pill);
+  appendWithSizing(component, send, "FIXED", "FIXED");
+}
+
+function configureAIInputBarProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Placeholder Text",
+    "Placeholder Text",
+    AI_WORDS.placeholder,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Value Text",
+    "Value Text",
+    AI_WORDS.value,
+    stats,
+  );
+}
+
+const AI_INPUT_BAR_DESCRIPTION = [
+  "Kozmos AIInputBar generated from the React AIInputBar API (GAP-206): the question's field, at the foot of the assistant.",
+  "State: Empty (value empty, send disabled), Filled (value, send enabled) and Disabled (disabled: the field's muted fill, the microphone unavailable unless a conversation is live).",
+  "VoiceState maps to voiceState (decision 22), Off to no onVoiceStart: Idle, Connecting (the loading arc), Listening, Speaking (volume-max), Unavailable and Error (microphone-off-01). While live the empty field shows voiceConnectingLabel, voiceListeningLabel or voiceSpeakingLabel.",
+  "Placeholder Text maps to placeholder; Value Text to value. Send is a live IconButton, the default variant on the pill radius with send-01; sendLabel, inputLabel and the voice labels are read, never drawn.",
+];
+
+async function buildAIInputBarComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    axisName: "State",
+    values: AI_INPUT_BAR_STATES,
+    axis2Name: "VoiceState",
+    axis2Values: AI_INPUT_BAR_VOICES,
+    x: 80,
+    y: 16100,
+    xStep: AI_PANEL_WIDTH + 40,
+    yStep: 110,
+    createVariant: createAIInputBarVariant,
+    configureProperties: configureAIInputBarProperties,
+    autoReorganize: true,
+    description: AI_INPUT_BAR_DESCRIPTION,
+  });
+}
+
+async function updateAIInputBarComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    axisName: "State",
+    values: AI_INPUT_BAR_STATES,
+    axis2Name: "VoiceState",
+    axis2Values: AI_INPUT_BAR_VOICES,
+    xStep: AI_PANEL_WIDTH + 40,
+    yStep: 110,
+    createVariant: createAIInputBarVariant,
+    updateVariant: updateAIInputBarVariant,
+    parseVariantName: parseAIInputBarVariantName,
+    configureProperties: configureAIInputBarProperties,
+    autoReorganize: true,
+    description: AI_INPUT_BAR_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAIInputBarComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AIInputBar",
+    componentSetName: "AIInputBar",
+    build: buildAIInputBarComponent,
+  });
+}
+
+// --- AICompanionPanel ----------------------------------------------------------
+
+// The assistant surface, as React's AICompanionPanel draws it in the stories'
+// 360 by 560 frame: bg-background, the header (16 across, 12 down, 8 apart, a
+// 1 edge under it): the stars-01 mark at 16 in the theme's 600 in a 32
+// bordered circle, the title 16/24 semibold, and the close, a live IconButton
+// in the neutral outline (decision 73) with x-close at 20; the banner under it
+// (16 across, 16 above, 12 below, an edge under it), a slot Show Banner shows;
+// then the thread, a live AIMessageList filling the height, and a live
+// AIInputBar. Content picks the thread's Content; the thread and the bar are
+// exposed, so their states are picked from the panel.
+
+async function createAICompanionPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateAICompanionPanelVariant(component, args);
+  return component;
+}
+
+function parseAICompanionPanelVariantName(name) {
+  return productSdkVariantValues(name, "Content", AI_COMPANION_PANEL_CONTENT);
+}
+
+/** A frame with a 1 edge under it, as React's border-b draws one. */
+function aiEdgeBelow(frame, variableByName, stats) {
+  frame.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  frame.strokeWeight = 1;
+  frame.strokeTopWeight = 0;
+  frame.strokeBottomWeight = 1;
+  frame.strokeLeftWeight = 0;
+  frame.strokeRightWeight = 0;
+}
+
+async function aiNestedPart(componentSetName, variantProperties, owner, stats) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name: componentSetName,
+    role: "ai-panel-part",
+    stats,
+  });
+  if (!created) {
+    return createMissingNestedComponentNode(
+      componentSetName,
+      `Build ${componentSetName} before updating ${owner}.`,
+      stats,
+    );
+  }
+  try {
+    // Exposed, so the thread's and the bar's states are picked here.
+    created.instance.isExposedInstance = true;
+  } catch (_error) {
+    // Older Figma runtimes may not support exposing nested instances.
+  }
+  return created.instance;
+}
+
+async function aiPanelHeader(
+  component,
+  keptTitle,
+  variableByName,
+  fonts,
+  stats,
+) {
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: AI_PANEL_HEADER_GAP,
+    paddingLeft: AI_PANEL_HEADER_PADDING_X,
+    paddingRight: AI_PANEL_HEADER_PADDING_X,
+    paddingTop: AI_PANEL_HEADER_PADDING_Y,
+    paddingBottom: AI_PANEL_HEADER_PADDING_Y,
+    width: AI_PANEL_WIDTH,
+    height: 69,
+  });
+  aiEdgeBelow(header, variableByName, stats);
+  for (const [property, token] of [
+    ["itemSpacing", "AICompanionPanel/header/gap"],
+    ["paddingLeft", "AICompanionPanel/header/padding/x"],
+    ["paddingRight", "AICompanionPanel/header/padding/x"],
+    ["paddingTop", "AICompanionPanel/header/padding/y"],
+    ["paddingBottom", "AICompanionPanel/header/padding/y"],
+  ]) {
+    bindFloatVariable(header, property, token, variableByName, stats);
+  }
+  component.appendChild(header);
+  setLayoutSizingHorizontal(header, "FILL");
+  setLayoutSizingVertical(header, "HUG");
+
+  const mark = productSdkFrame("Mark", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: AI_PANEL_MARK_SIZE,
+    height: AI_PANEL_MARK_SIZE,
+  });
+  mark.cornerRadius = KOZMOS_RADIUS.pill;
+  mark.strokes = [aiPaint(AI_EDGE, variableByName, stats)];
+  mark.strokeWeight = 1;
+  bindSizeVariables(
+    mark,
+    "AICompanionPanel/mark/size",
+    "AICompanionPanel/mark/size",
+    variableByName,
+    stats,
+  );
+  const stars = await productSdkIconInstance({
+    iconName: "stars-01",
+    token: AI_PRIMARY,
+    size: AI_PANEL_MARK_ICON_SIZE,
+    sizeToken: "AICompanionPanel/mark/icon/size",
+    variableByName,
+    stats,
+    owner: "AICompanionPanel",
+  });
+  if (stars) appendWithSizing(mark, stars, "FIXED", "FIXED");
+  appendWithSizing(header, mark, "FIXED", "FIXED");
+
+  const title = await productSdkText({
+    name: "Title Text",
+    characters: keptTitle || AI_WORDS.title,
+    styleKey: "cardTitle",
+    fonts,
+    bold: true,
+    fontSize: 16,
+    lineHeight: 24,
+    colorToken: AI_INK.name,
+    colorFallback: AI_INK.fallback,
+    variableByName,
+    stats,
+    width: 200,
+  });
+  header.appendChild(title);
+  setHorizontalFillTextSizing(title);
+  setTextAutoResize(title, "TRUNCATE");
+
+  const close = await aiIconButton({
+    name: "Close",
+    role: "ai-companion-panel-close",
+    variant: "Outline",
+    state: "Default",
+    iconName: "x-close",
+    ink: AI_NEUTRAL_OUTLINE_INK,
+    owner: "AICompanionPanel",
+    variableByName,
+    stats,
+  });
+  if (close.type === "INSTANCE") {
+    // The neutral outline's edge, on the instance itself.
+    close.strokes = [aiPaint(AI_NEUTRAL_OUTLINE_INK, variableByName, stats)];
+  }
+  appendWithSizing(header, close, "FIXED", "FIXED");
+}
+
+async function updateAICompanionPanelVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  // The title is read before the header is drawn again.
+  const keptTitle = firstDescendantTextCharactersByName(
+    component,
+    "Title Text",
+  );
+  const slot = aiReusableSlot(
+    component,
+    AI_PANEL_BANNER_SLOT,
+    "AICompanionPanel",
+    stats,
+  );
+  aiVariantRoot(
+    component,
+    "AICompanionPanel",
+    `Content=${value}`,
+    {
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      width: AI_PANEL_WIDTH,
+      height: AI_PANEL_HEIGHT,
+      clip: true,
+    },
+    slot ? [slot] : [],
+  );
+  component.fills = [aiPaint(AI_PANEL_FILL, variableByName, stats)];
+  bindSizeVariables(
+    component,
+    "AICompanionPanel/width/default",
+    "AICompanionPanel/height/default",
+    variableByName,
+    stats,
+  );
+
+  await aiPanelHeader(component, keptTitle, variableByName, fonts, stats);
+
+  const banner = productSdkFrame("Banner", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    paddingLeft: AI_PANEL_HEADER_PADDING_X,
+    paddingRight: AI_PANEL_HEADER_PADDING_X,
+    paddingTop: AI_PANEL_BANNER_PADDING_TOP,
+    paddingBottom: AI_PANEL_HEADER_PADDING_Y,
+    width: AI_PANEL_WIDTH,
+    height: 85,
+  });
+  aiEdgeBelow(banner, variableByName, stats);
+  for (const [property, token] of [
+    ["paddingLeft", "AICompanionPanel/header/padding/x"],
+    ["paddingRight", "AICompanionPanel/header/padding/x"],
+    ["paddingTop", "AICompanionPanel/banner/padding/top"],
+    ["paddingBottom", "AICompanionPanel/header/padding/y"],
+  ]) {
+    bindFloatVariable(banner, property, token, variableByName, stats);
+  }
+  banner.setSharedPluginData(RUN_NAMESPACE, "kind", "ai-companion-banner");
+  component.appendChild(banner);
+  setLayoutSizingHorizontal(banner, "FILL");
+  const shell = createOrReuseShellSlot({
+    component,
+    reusableSlot: slot,
+    ownerName: "AICompanionPanel",
+    stats,
+    slotName: AI_PANEL_BANNER_SLOT,
+    width: AI_TURN_WIDTH,
+    height: 56,
+    layoutMode: "VERTICAL",
+    itemSpacing: 8,
+  });
+  banner.appendChild(shell.node);
+  setLayoutSizingHorizontal(shell.node, "FILL");
+  setNodePropertyIfSupported(shell.node, "counterAxisSizingMode", "FIXED");
+  setNodePropertyIfSupported(shell.node, "primaryAxisSizingMode", "AUTO");
+  if (!shell.reusedContent) {
+    const placeholder = await productSdkSlot({
+      name: "Banner Placeholder",
+      label: "Notice or EmptyState",
+      width: AI_TURN_WIDTH,
+      height: 56,
+      fonts,
+      variableByName,
+      stats,
+      muted: true,
+      parentRadius: KOZMOS_RADIUS.container,
+      inset: 0,
+    });
+    shell.node.appendChild(placeholder);
+    setLayoutSizingHorizontal(placeholder, "FILL");
+  }
+  banner.visible = false;
+
+  const thread = await aiNestedPart(
+    "AIMessageList",
+    { Content: value },
+    "AICompanionPanel",
+    stats,
+  );
+  component.appendChild(thread);
+  setLayoutSizingHorizontal(thread, "FILL");
+  setLayoutSizingVertical(thread, "FILL");
+
+  const input = await aiNestedPart(
+    "AIInputBar",
+    { State: "Empty", VoiceState: "Off" },
+    "AICompanionPanel",
+    stats,
+  );
+  component.appendChild(input);
+  setLayoutSizingHorizontal(input, "FILL");
+}
+
+function configureAICompanionPanelProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    AI_WORDS.title,
+    stats,
+  );
+  // onClose is optional (Story 18): no handler, no close.
+  configureNamedBooleanProperty(
+    componentSet,
+    "Close",
+    "Show Close",
+    true,
+    stats,
+  );
+  configureSharedSlotProperties(componentSet, [AI_PANEL_BANNER_SLOT], stats);
+  configureNamedBooleanProperty(
+    componentSet,
+    "Banner",
+    "Show Banner",
+    false,
+    stats,
+  );
+}
+
+const AI_COMPANION_PANEL_DESCRIPTION = [
+  "Kozmos AICompanionPanel generated from the React AICompanionPanel API (GAP-206): the assistant surface, 360 by 560 as the stories frame it.",
+  "Title Text maps to title; Show Close to onClose (the close is a live IconButton, the neutral outline with x-close, decision 73); Show Banner shows Banner Slot, banner: the Story 14 notice or an offline EmptyState.",
+  "Content picks the thread: Conversation, Streaming and TimedOut, the stories'. children are a live AIMessageList, filling the height, and a live AIInputBar, both exposed so their states are picked here.",
+  "open, titleLevel, closeLabel and the focus handlers are behaviour and are not drawn.",
+];
+
+async function buildAICompanionPanelComponent() {
+  return buildSingleAxisComponent({
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    axisName: "Content",
+    values: AI_COMPANION_PANEL_CONTENT,
+    x: 80,
+    y: 17000,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAICompanionPanelVariant,
+    configureProperties: configureAICompanionPanelProperties,
+    autoReorganize: true,
+    description: AI_COMPANION_PANEL_DESCRIPTION,
+  });
+}
+
+async function updateAICompanionPanelComponent() {
+  return updateSingleAxisComponent({
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    axisName: "Content",
+    values: AI_COMPANION_PANEL_CONTENT,
+    xStep: AI_PANEL_WIDTH + 40,
+    createVariant: createAICompanionPanelVariant,
+    updateVariant: updateAICompanionPanelVariant,
+    parseVariantName: parseAICompanionPanelVariantName,
+    configureProperties: configureAICompanionPanelProperties,
+    autoReorganize: true,
+    description: AI_COMPANION_PANEL_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildAICompanionPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "AICompanionPanel",
+    componentSetName: "AICompanionPanel",
+    build: buildAICompanionPanelComponent,
+  });
+}
+
 // --- CategoryField ---------------------------------------------------------
 
 /**
@@ -56716,6 +59204,1916 @@ async function rebuildRouteSummaryComponent() {
     componentName: "RouteSummary",
     componentSetName: "RouteSummary",
     build: buildRouteSummaryComponent,
+  });
+}
+
+// --- GAP-206: the map and route parts ----------------------------------------
+//
+// Seven SDK parts that had no Figma set, so Dev Mode showed no Kozmos code for
+// them: MapStatusPill, MapAttribution, MapInfoPanel, POIResultGroup,
+// RouteLocationField, RouteSetupPanel and ArrivalPanel. Each is drawn as its
+// React part draws it, from the same tokens, and every Kozmos part it holds is
+// an instance of that part's own set, exposed so the designer reaches its
+// properties: Button, IconButton, Spinner, Accordion, Link, Combobox,
+// POIResultCard and RouteLocationField. Those sets run before these: Core's
+// first, then POIResultCard and RouteLocationField earlier in Update All
+// Product / SDK.
+
+const MAP_STATUS_PILL_TONES = [
+  "Neutral",
+  "Progress",
+  "Success",
+  "Danger",
+  "Warning",
+];
+const MAP_ATTRIBUTION_APPEARANCES = ["Map", "Surface"];
+const MAP_INFO_PANEL_CONTENT = ["Default", "ExpandedFAQ", "Minimal"];
+const POI_RESULT_GROUP_STATES = ["Collapsed", "Expanded"];
+const ROUTE_LOCATION_FIELD_STATES = [
+  "Search",
+  "Loading",
+  "Empty",
+  "Error",
+  "Resolved",
+];
+const ROUTE_SETUP_PANEL_STATES = ["Incomplete", "Ready", "Pending"];
+const ARRIVAL_PANEL_STATES = ["Default", "Pending"];
+// Hosted (the default) is content for a sheet that owns the surface;
+// Standalone draws its own: the solid surface, the panel corner, 16 inside and
+// the overlay shadow (surfaceClass("solid") rounded-panel p-4 shadow-overlay).
+const MAP_PART_PRESENTATIONS = ["Hosted", "Standalone"];
+
+const MAP_STATUS_PILL_TEXT = "Preparing Content";
+const MAP_ATTRIBUTION_WIDTH = 240;
+const MAP_INFO_PANEL_WIDTH = 384;
+const POI_RESULT_GROUP_WIDTH = 380;
+const ROUTE_LOCATION_FIELD_WIDTH = 360;
+const MAP_PART_PANEL_WIDTH = 360;
+const MAP_PART_CLOSE_ICON = 16;
+
+const MAP_PART_INK = { name: "Colors/foreground/0", fallback: "#000000" };
+// .kozmos-muted-text and text-muted-foreground: foreground/400.
+const MAP_PART_MUTED = { name: "Colors/foreground/400", fallback: "#5D626F" };
+
+/**
+ * A text in the parts' type scale: Text's own styles (text.<Size>.<Weight>),
+ * so Apply Text Styles finds them; the size and line height are the fallback.
+ */
+async function mapPartText({
+  name,
+  characters,
+  size,
+  weight,
+  token,
+  variableByName,
+  fonts,
+  stats,
+  width,
+  wrap,
+}) {
+  const metrics = textMetrics(size);
+  const text = await productSdkText({
+    name,
+    characters,
+    styleKey: textStyleKeyForText(size, weight || "Normal"),
+    fonts,
+    bold: weight === "Semibold" || weight === "Medium",
+    fontSize: metrics.fontSize,
+    lineHeight: metrics.lineHeight,
+    colorToken: token.name,
+    colorFallback: token.fallback,
+    variableByName,
+    stats,
+    width,
+    wrap: wrap !== false,
+  });
+  return text;
+}
+
+/**
+ * An instance of another Kozmos set, exposed so its own properties are in
+ * reach on this part's instance (a parent's property cannot drive a node
+ * inside it); a named placeholder and a warning while that set is missing.
+ */
+async function mapPartInstance({
+  owner,
+  setName,
+  variant,
+  name,
+  textProperties,
+  booleanProperties,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName: setName,
+    variantProperties: variant,
+    name,
+    stats,
+  });
+  if (!created) {
+    return {
+      node: createMissingNestedComponentNode(
+        name,
+        `Build ${setName} before updating ${owner}.`,
+        stats,
+      ),
+      componentSet: null,
+    };
+  }
+  const instance = created.instance;
+  for (const key of Object.keys(textProperties || {})) {
+    setInstanceTextProperty(
+      instance,
+      created.componentSet,
+      key,
+      textProperties[key],
+      stats,
+    );
+  }
+  for (const key of Object.keys(booleanProperties || {})) {
+    setInstanceBooleanProperty(
+      instance,
+      created.componentSet,
+      key,
+      booleanProperties[key],
+      stats,
+    );
+  }
+  try {
+    instance.isExposedInstance = true;
+  } catch (_error) {
+    // Older runtimes do not expose nested instances; the instance still draws.
+  }
+  return { node: instance, componentSet: created.componentSet };
+}
+
+/** A default Button, the full width, as React's `w-full` Button. */
+async function mapPartFullWidthButton(
+  parent,
+  owner,
+  name,
+  label,
+  disabled,
+  stats,
+) {
+  const button = await mapPartInstance({
+    owner,
+    setName: "Button",
+    variant: {
+      Variant: "Default",
+      Size: "Default",
+      State: disabled ? "Disabled" : "Default",
+    },
+    name,
+    textProperties: { "Label Text": label },
+    stats,
+  });
+  appendWithSizing(parent, button.node, "FILL", null);
+  return button.node;
+}
+
+/** A ghost Button with its words, as React's `variant="ghost"` actions. */
+async function mapPartGhostButton(owner, name, label, stats) {
+  const button = await mapPartInstance({
+    owner,
+    setName: "Button",
+    variant: { Variant: "Ghost", Size: "Default", State: "Default" },
+    name,
+    textProperties: { "Label Text": label },
+    stats,
+  });
+  return button.node;
+}
+
+/**
+ * The close: an IconButton showing x-close. Swapping its Icon replaces the
+ * layer its tint was laid on, so the swapped-in mark is tinted again for the
+ * IconButton's variant, and its stroke drawn at React's 2 × 16 / 24, as
+ * TourStep's Close is. IconButton is in SETS_THAT_OVERRIDE_INSIDE for these.
+ */
+async function mapPartCloseButton(owner, variant, variableByName, stats) {
+  const close = await mapPartInstance({
+    owner,
+    setName: "IconButton",
+    variant: { Variant: variant, Size: "Default", State: "Default" },
+    name: "Close Button",
+    stats,
+  });
+  if (!close.componentSet) return close.node;
+  const glyph = await findKozmosIconSourceComponent("x-close");
+  if (!glyph) {
+    stats.warnings.push(
+      `${owner}: icon "x-close" was not found on the Icons page.`,
+    );
+    return close.node;
+  }
+  if (
+    setInstanceSwapProperty(
+      close.node,
+      close.componentSet,
+      BUTTON_ICON_PROPERTY,
+      glyph.id,
+      stats,
+    )
+  ) {
+    retintMapPartCloseIcon(close.node, variant, owner, variableByName, stats);
+  }
+  return close.node;
+}
+
+function retintMapPartCloseIcon(
+  instance,
+  variant,
+  owner,
+  variableByName,
+  stats,
+) {
+  const config = buttonConfig(variant, "Default");
+  // The layer the Icon property drives, whatever the swap made of its name.
+  const icon =
+    instance.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          BUTTON_ICON_PROPERTY,
+    ) ||
+    instance.findOne(
+      (node) => node.type === "INSTANCE" && node.name === BUTTON_ICON_PROPERTY,
+    );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "map-part-close-icon:" + owner,
+      `${owner}: Close has no Icon layer to tint after the swap.`,
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+  scaleIconStrokes(icon, MAP_PART_CLOSE_ICON);
+}
+
+/** Hosted or Standalone: the sheet's surface, or one of its own. */
+function mapPartPresentation(component, presentation, variableByName, stats) {
+  if (presentation === "Standalone") {
+    component.fills = [
+      paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    ];
+    component.cornerRadius = KOZMOS_RADIUS.panel;
+    component.effects = [elevationEffect("overlay")];
+  } else {
+    component.fills = [];
+    component.cornerRadius = KOZMOS_RADIUS.none;
+    component.effects = [];
+  }
+  component.strokes = [];
+}
+
+function mapPartPresentationValue(second) {
+  return MAP_PART_PRESENTATIONS.indexOf(second) === -1 ? "Hosted" : second;
+}
+
+function parseMapPartTwoAxisName(name, axisName, values) {
+  const base = productSdkVariantValues(name, axisName, values);
+  if (!base) return null;
+  // A variant drawn before the axis existed reads as Hosted, React's default.
+  const second = variantAxisValue(name, "Presentation") || "Hosted";
+  if (MAP_PART_PRESENTATIONS.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+function mapPartSetConfig(name, values, extra) {
+  return Object.assign(
+    {
+      componentName: name,
+      componentSetName: name,
+      axisName: Object.keys(expectedVariantAxesForComponentSetName(name))[0],
+      values,
+      x: 80,
+      y: 17600,
+      xStep: 440,
+      autoReorganize: true,
+    },
+    extra,
+  );
+}
+
+// --- MapStatusPill (decision 39) ---------------------------------------------
+
+/**
+ * Each tone's surface, words and mark, as owned-map-controls.css draws them:
+ * the page's own surface under foreground/300 words; Progress the system's
+ * arc (the Spinner, theme 600: Emotion/themed/text); Success a check, and the
+ * words, in Emotion/success/text; Danger a warning triangle in
+ * Emotion/danger/text with the words ink; Warning — Turn Back — the named pair
+ * Emotion/alert/fill under Emotion/alert/onFill, bright amber under black in
+ * both themes, and no mark: the SDK's U-turn arrow is in no library Kozmos
+ * reads, so React's Turn Back draws none rather than a stand-in (its story
+ * passes icon={null}), and onFill is scoped to fills, not an icon's strokes.
+ */
+function mapStatusPillTone(tone) {
+  const surface = { name: "Colors/background/0", fallback: "#FFFFFF" };
+  const words = { name: "Colors/foreground/300", fallback: "#464A53" };
+  if (tone === "Progress") {
+    return { surface, words, mark: "spinner" };
+  }
+  if (tone === "Success") {
+    const ink = { name: "Emotion/success/text", fallback: "#14653D" };
+    return { surface, words: ink, mark: "check", markToken: ink };
+  }
+  if (tone === "Danger") {
+    return {
+      surface,
+      words,
+      mark: "alert-triangle",
+      markToken: { name: "Emotion/danger/text", fallback: "#B01736" },
+    };
+  }
+  if (tone === "Warning") {
+    return {
+      surface: { name: "Emotion/alert/fill", fallback: "#F9A707" },
+      words: { name: "Emotion/alert/onFill", fallback: "#000000" },
+      mark: null,
+    };
+  }
+  return { surface, words, mark: null };
+}
+
+async function createMapStatusPillVariant(args) {
+  const component = figma.createComponent();
+  await updateMapStatusPillVariant(component, args);
+  return component;
+}
+
+function parseMapStatusPillVariantName(name) {
+  return productSdkVariantValues(name, "Tone", MAP_STATUS_PILL_TONES);
+}
+
+async function updateMapStatusPillVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const tone = mapStatusPillTone(value);
+  // The map controls' surface (decision 40): opaque, the Control corner, no
+  // edge, their shadow; at least 48 tall, 8 above and below, 12 at the sides,
+  // the mark 8 from the words.
+  productSdkVariantRoot(component, "MapStatusPill", "Tone=" + value, {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+    width: 200,
+    height: 48,
+  });
+  component.minHeight = 48;
+  component.fills = [
+    paintFromVariable(
+      tone.surface.name,
+      tone.surface.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  component.strokes = [];
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.effects = [elevationEffect("floating")];
+
+  if (tone.mark) {
+    const mark = productSdkFrame("Mark", {
+      direction: "horizontal",
+      primarySizing: "FIXED",
+      counterSizing: "FIXED",
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
+      width: 24,
+      height: 24,
+    });
+    if (tone.mark === "spinner") {
+      const spinner = await mapPartInstance({
+        owner: "MapStatusPill",
+        setName: "Spinner",
+        variant: { Size: "Medium" },
+        name: "Spinner",
+        stats,
+      });
+      mark.appendChild(spinner.node);
+    } else {
+      const icon = await productSdkIconInstance({
+        iconName: tone.mark,
+        token: tone.markToken,
+        size: 24,
+        variableByName,
+        stats,
+        owner: "MapStatusPill",
+      });
+      if (icon) {
+        icon.name = "Mark Icon";
+        mark.appendChild(icon);
+      }
+    }
+    appendWithSizing(component, mark, "FIXED", "FIXED");
+  }
+
+  // The SDK's words: regular, the type scale's 13 on its 16.
+  const words = await productSdkText({
+    name: "Status Words",
+    characters: MAP_STATUS_PILL_TEXT,
+    styleKey: null,
+    fonts,
+    bold: false,
+    fontSize: 13,
+    lineHeight: 16,
+    colorToken: tone.words.name,
+    colorFallback: tone.words.fallback,
+    variableByName,
+    stats,
+    width: 160,
+  });
+  words.textAutoResize = "WIDTH_AND_HEIGHT";
+  appendWithSizing(component, words, "HUG", "HUG");
+}
+
+function configureMapStatusPillProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Status Words",
+    "Status Text",
+    MAP_STATUS_PILL_TEXT,
+    stats,
+  );
+  configureNamedBooleanProperty(componentSet, "Mark", "Show Mark", true, stats);
+}
+
+const MAP_STATUS_PILL_DESCRIPTION = [
+  "Kozmos MapStatusPill generated from the React MapStatusPill API (decision 39).",
+  "Tone maps to tone: Neutral, Progress, Success, Danger, Warning.",
+  "Status Text maps to children; Show Mark off is icon={null}. The mark is a nested instance: swap it for the product's icon (icon).",
+  "Warning is Turn Back: Emotion/alert/fill under Emotion/alert/onFill, amber under black in both themes, with no mark, as React's Turn Back (icon={null}).",
+  "live (polite, assertive, off) is announcement only and draws nothing.",
+];
+
+async function buildMapStatusPillComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("MapStatusPill", MAP_STATUS_PILL_TONES, {
+      xStep: 360,
+      createVariant: createMapStatusPillVariant,
+      configureProperties: configureMapStatusPillProperties,
+      description: MAP_STATUS_PILL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateMapStatusPillComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("MapStatusPill", MAP_STATUS_PILL_TONES, {
+      xStep: 360,
+      createVariant: createMapStatusPillVariant,
+      updateVariant: updateMapStatusPillVariant,
+      parseVariantName: parseMapStatusPillVariantName,
+      configureProperties: configureMapStatusPillProperties,
+      description: MAP_STATUS_PILL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildMapStatusPillComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapStatusPill",
+    componentSetName: "MapStatusPill",
+    build: buildMapStatusPillComponent,
+  });
+}
+
+// --- MapAttribution ----------------------------------------------------------
+
+async function createMapAttributionVariant(args) {
+  const component = figma.createComponent();
+  await updateMapAttributionVariant(component, args);
+  return component;
+}
+
+function parseMapAttributionVariantName(name) {
+  return productSdkVariantValues(
+    name,
+    "Appearance",
+    MAP_ATTRIBUTION_APPEARANCES,
+  );
+}
+
+async function updateMapAttributionVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const surface = value === "Surface";
+  // Map: transparent, 8 at the sides and above (px-2 pt-2); Surface: the
+  // page's background, 8 all round (bg-background p-2). Both on the Control
+  // corner, centred, the brand 4 over the credits (mb-1).
+  productSdkVariantRoot(component, "MapAttribution", "Appearance=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    spacing: 4,
+    paddingLeft: 8,
+    paddingRight: 8,
+    paddingTop: 8,
+    paddingBottom: surface ? 8 : 0,
+    width: MAP_ATTRIBUTION_WIDTH,
+    height: 64,
+  });
+  component.cornerRadius = KOZMOS_RADIUS.control;
+  component.strokes = [];
+  component.fills = surface
+    ? [
+        paintFromVariable(
+          "Colors/background/0",
+          "#FFFFFF",
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+
+  // The bundled Pointr logo, 98 by 34; a product's own brand replaces it.
+  const brand = await productSdkSlot({
+    name: "Brand Slot",
+    label: "Pointr",
+    width: 98,
+    height: 34,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: 8,
+  });
+  appendWithSizing(component, brand, "FIXED", "FIXED");
+
+  // One line of credits, 4 apart, each 10 on 12: on the map in the
+  // attribution's own colour (Map attribution/text; its halo is a text shadow
+  // Figma cannot bind, so it is not drawn), on the surface in the ink. A
+  // credit with an address is a Link, underlined.
+  const ink = surface
+    ? MAP_PART_INK
+    : { name: "Map attribution/text", fallback: "#000000" };
+  const credits = productSdkFrame("Credits", {
+    direction: "horizontal",
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 4,
+  });
+  for (const [name, characters, linked] of [
+    ["Credit", "© Example venue", true],
+    ["Credit 2", "© OpenStreetMap", false],
+  ]) {
+    const credit = await productSdkText({
+      name,
+      characters,
+      styleKey: null,
+      fonts,
+      bold: false,
+      fontSize: 10,
+      lineHeight: 12,
+      colorToken: ink.name,
+      colorFallback: ink.fallback,
+      variableByName,
+      stats,
+      width: 80,
+    });
+    credit.textAutoResize = "WIDTH_AND_HEIGHT";
+    if (linked) credit.textDecoration = "UNDERLINE";
+    appendWithSizing(credits, credit, "HUG", "HUG");
+  }
+  appendWithSizing(component, credits, "HUG", "HUG");
+}
+
+function configureMapAttributionProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Credit",
+    "Credit Text",
+    "© Example venue",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Credit 2",
+    "Credit Text 2",
+    "© OpenStreetMap",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Brand Slot",
+    "Show Brand",
+    true,
+    stats,
+  );
+}
+
+const MAP_ATTRIBUTION_DESCRIPTION = [
+  "Kozmos MapAttribution generated from the React MapAttribution API.",
+  "Appearance maps to appearance: Map (transparent, the attribution colour) or Surface (the page's background).",
+  "Credit Text and Credit Text 2 map to credits[].label, in order; the first is drawn as a credit with an href, underlined.",
+  "Show Brand maps to showBrand; Brand Slot is the bundled Pointr logo, or brand.",
+  "label names the region for assistive technology and draws nothing.",
+];
+
+async function buildMapAttributionComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("MapAttribution", MAP_ATTRIBUTION_APPEARANCES, {
+      createVariant: createMapAttributionVariant,
+      configureProperties: configureMapAttributionProperties,
+      description: MAP_ATTRIBUTION_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateMapAttributionComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("MapAttribution", MAP_ATTRIBUTION_APPEARANCES, {
+      createVariant: createMapAttributionVariant,
+      updateVariant: updateMapAttributionVariant,
+      parseVariantName: parseMapAttributionVariantName,
+      configureProperties: configureMapAttributionProperties,
+      description: MAP_ATTRIBUTION_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildMapAttributionComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapAttribution",
+    componentSetName: "MapAttribution",
+    build: buildMapAttributionComponent,
+  });
+}
+
+// --- MapInfoPanel ------------------------------------------------------------
+
+async function createMapInfoPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateMapInfoPanelVariant(component, args);
+  return component;
+}
+
+function parseMapInfoPanelVariantName(name) {
+  return productSdkVariantValues(name, "Content", MAP_INFO_PANEL_CONTENT);
+}
+
+async function updateMapInfoPanelVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const minimal = value === "Minimal";
+  const inner = MAP_INFO_PANEL_WIDTH - 48;
+  // .kozmos-map-info-panel: the background, 24 inside, 16 between.
+  productSdkVariantRoot(component, "MapInfoPanel", "Content=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 16,
+    padding: 24,
+    width: MAP_INFO_PANEL_WIDTH,
+    height: 480,
+  });
+  component.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [];
+  component.cornerRadius = KOZMOS_RADIUS.none;
+
+  // The heading keeps 40 clear at its end for the close (pe-10).
+  const heading = productSdkFrame("Heading", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 16,
+    paddingRight: 40,
+    width: inner,
+    height: 28,
+  });
+  const brand = await productSdkSlot({
+    name: "Brand Slot",
+    label: "Brand",
+    width: 160,
+    height: 48,
+    fonts,
+    variableByName,
+    stats,
+    muted: true,
+    parentRadius: KOZMOS_RADIUS.control,
+    inset: 0,
+  });
+  appendWithSizing(heading, brand, "FIXED", "FIXED");
+  const title = await mapPartText({
+    name: "Panel Title",
+    characters: "About this map",
+    size: "XLarge",
+    weight: "Semibold",
+    token: MAP_PART_INK,
+    variableByName,
+    fonts,
+    stats,
+    width: inner - 40,
+  });
+  appendWithSizing(heading, title, "FILL", "HUG");
+  appendWithSizing(component, heading, "FILL", "HUG");
+
+  if (!minimal) {
+    const introduction = await mapPartText({
+      name: "Introduction",
+      characters:
+        "Explore the venue and find the places and services you need.",
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    });
+    appendWithSizing(component, introduction, "FILL", "HUG");
+
+    const faq = productSdkFrame("FAQ", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: inner,
+      height: 80,
+    });
+    const faqHeading = await mapPartText({
+      name: "FAQ Heading",
+      characters: "Frequently asked questions",
+      size: "Small",
+      weight: "Semibold",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    });
+    appendWithSizing(faq, faqHeading, "FILL", "HUG");
+    const accordion = await mapPartInstance({
+      owner: "MapInfoPanel",
+      setName: "Accordion",
+      variant: {
+        Variant: "Default",
+        State: value === "ExpandedFAQ" ? "Open" : "Closed",
+      },
+      name: "FAQ Accordion",
+      textProperties: {
+        "Trigger Text": "How do I change floors?",
+        "Content Text": "Open the floor selector and choose a level.",
+      },
+      booleanProperties: { "Show Label": false, "Show Icon": false },
+      stats,
+    });
+    appendWithSizing(faq, accordion.node, "FILL", null);
+    appendWithSizing(component, faq, "FILL", "HUG");
+
+    // The footer: 32 above it, 12 between its rows.
+    const footer = productSdkFrame("Footer", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 12,
+      paddingTop: 32,
+      width: inner,
+      height: 120,
+    });
+    const copyright = productSdkFrame("Copyright", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 8,
+      width: inner,
+      height: 48,
+    });
+    appendWithSizing(
+      copyright,
+      await mapPartText({
+        name: "Copyright Heading",
+        characters: "Copyright",
+        size: "Small",
+        weight: "Semibold",
+        token: MAP_PART_MUTED,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(
+      copyright,
+      await mapPartText({
+        name: "Credit Line",
+        characters: "Indoor map data © Example venue",
+        size: "Small",
+        token: MAP_PART_INK,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(footer, copyright, "FILL", "HUG");
+    const link = await mapPartInstance({
+      owner: "MapInfoPanel",
+      setName: "Link",
+      variant: { Variant: "Default", State: "Default" },
+      name: "Support Link",
+      textProperties: { "Link Text": "Contact support" },
+      stats,
+    });
+    appendWithSizing(footer, link.node, "HUG", null);
+    appendWithSizing(
+      footer,
+      await mapPartText({
+        name: "Version Line",
+        characters: "App version: Example",
+        size: "XS",
+        token: MAP_PART_MUTED,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(component, footer, "FILL", "HUG");
+  }
+
+  // The close: a ghost icon Button, 16 from the top and the end, out of the
+  // flow (.kozmos-map-info-close).
+  const close = await mapPartCloseButton(
+    "MapInfoPanel",
+    "Ghost",
+    variableByName,
+    stats,
+  );
+  component.appendChild(close);
+  placeAbsolute(close, MAP_INFO_PANEL_WIDTH - 16 - 44, 16);
+  try {
+    close.constraints = { horizontal: "MAX", vertical: "MIN" };
+  } catch (_error) {
+    // A missing-set placeholder keeps the default constraints.
+  }
+}
+
+function configureMapInfoPanelProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Panel Title",
+    "Title Text",
+    "About this map",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Introduction",
+    "Introduction Text",
+    "Explore the venue and find the places and services you need.",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Brand Slot",
+    "Show Brand",
+    false,
+    stats,
+  );
+}
+
+const MAP_INFO_PANEL_DESCRIPTION = [
+  "Kozmos MapInfoPanel generated from the React MapInfoPanel API.",
+  "Content: Default (introduction, FAQ, credits, links and versions), ExpandedFAQ (expandedFAQ set), Minimal (a title alone).",
+  "Title Text maps to content.title, Introduction Text to content.introduction; Show Brand to brand.",
+  "The FAQ is Accordion, the support link Link, the close a ghost IconButton: each an instance of its own set, edited on the instance.",
+  "closeLabel names the close for assistive technology and draws nothing.",
+];
+
+async function buildMapInfoPanelComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("MapInfoPanel", MAP_INFO_PANEL_CONTENT, {
+      xStep: 440,
+      createVariant: createMapInfoPanelVariant,
+      configureProperties: configureMapInfoPanelProperties,
+      description: MAP_INFO_PANEL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateMapInfoPanelComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("MapInfoPanel", MAP_INFO_PANEL_CONTENT, {
+      xStep: 440,
+      createVariant: createMapInfoPanelVariant,
+      updateVariant: updateMapInfoPanelVariant,
+      parseVariantName: parseMapInfoPanelVariantName,
+      configureProperties: configureMapInfoPanelProperties,
+      description: MAP_INFO_PANEL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildMapInfoPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "MapInfoPanel",
+    componentSetName: "MapInfoPanel",
+    build: buildMapInfoPanelComponent,
+  });
+}
+
+// --- POIResultGroup ----------------------------------------------------------
+
+async function createPOIResultGroupVariant(args) {
+  const component = figma.createComponent();
+  await updatePOIResultGroupVariant(component, args);
+  return component;
+}
+
+function parsePOIResultGroupVariantName(name) {
+  return productSdkVariantValues(name, "State", POI_RESULT_GROUP_STATES);
+}
+
+function poiResultGroupDivider(variableByName, stats) {
+  const rule = productSdkFrame("Divider", {
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    width: POI_RESULT_GROUP_WIDTH - 2,
+    height: 1,
+  });
+  rule.fills = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  return rule;
+}
+
+async function updatePOIResultGroupVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const expanded = value === "Expanded";
+  // The container draws the edge and the members none, a divider between
+  // them: rounded-control border border-border bg-card, clipped.
+  productSdkVariantRoot(component, "POIResultGroup", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 0,
+    width: POI_RESULT_GROUP_WIDTH,
+    height: 200,
+    clip: true,
+  });
+  component.fills = [
+    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  component.strokeWeight = 1;
+  component.cornerRadius = KOZMOS_RADIUS.control;
+
+  // The representative, then, open, the rest: each an ordinary
+  // POIResultCard row.
+  const members = expanded ? 3 : 1;
+  for (let index = 0; index < members; index += 1) {
+    if (index > 0) {
+      appendWithSizing(
+        component,
+        poiResultGroupDivider(variableByName, stats),
+        "FILL",
+        "FIXED",
+      );
+    }
+    const member = await mapPartInstance({
+      owner: "POIResultGroup",
+      setName: "POIResultCard",
+      variant: { State: "Default", Appearance: "Row" },
+      name: index === 0 ? "Representative" : `Member ${index + 1}`,
+      stats,
+    });
+    appendWithSizing(component, member.node, "FILL", null);
+  }
+
+  // The toggle: the muted fill under a divider, 12 by 16, its words 14
+  // medium in the muted ink beside a 16 chevron, which turns over open.
+  appendWithSizing(
+    component,
+    poiResultGroupDivider(variableByName, stats),
+    "FILL",
+    "FIXED",
+  );
+  const toggle = productSdkFrame("Toggle", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    spacing: 6,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    width: POI_RESULT_GROUP_WIDTH - 2,
+    height: 44,
+  });
+  toggle.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  const words = await mapPartText({
+    name: expanded ? "Hide Words" : "Show More Words",
+    characters: expanded ? "Hide" : "Show 2 more",
+    size: "Small",
+    weight: "Medium",
+    token: MAP_PART_MUTED,
+    variableByName,
+    fonts,
+    stats,
+    width: 120,
+    wrap: false,
+  });
+  words.textAutoResize = "WIDTH_AND_HEIGHT";
+  appendWithSizing(toggle, words, "HUG", "HUG");
+  const chevron = await productSdkIconInstance({
+    iconName: expanded ? "chevron-up" : "chevron-down",
+    token: MAP_PART_MUTED,
+    size: 16,
+    variableByName,
+    stats,
+    owner: "POIResultGroup",
+  });
+  if (chevron) {
+    chevron.name = "Chevron";
+    appendWithSizing(toggle, chevron, "FIXED", "FIXED");
+  }
+  appendWithSizing(component, toggle, "FILL", "HUG");
+}
+
+function configurePOIResultGroupProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Show More Words",
+    "Show More Text",
+    "Show 2 more",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Hide Words",
+    "Hide Text",
+    "Hide",
+    stats,
+  );
+}
+
+const POI_RESULT_GROUP_DESCRIPTION = [
+  "Kozmos POIResultGroup generated from the React POIResultGroup API.",
+  "State maps to expanded: Collapsed shows collapsedCount (1) members and the count of the rest, Expanded every member and Hide.",
+  "Each member is a POIResultCard Row instance, edited on the instance; items[0] is the representative.",
+  "Show More Text maps to showMoreLabel(hidden), Hide Text to hideLabel.",
+  "label names the group for assistive technology and draws nothing.",
+];
+
+async function buildPOIResultGroupComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("POIResultGroup", POI_RESULT_GROUP_STATES, {
+      createVariant: createPOIResultGroupVariant,
+      configureProperties: configurePOIResultGroupProperties,
+      description: POI_RESULT_GROUP_DESCRIPTION,
+    }),
+  );
+}
+
+async function updatePOIResultGroupComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("POIResultGroup", POI_RESULT_GROUP_STATES, {
+      createVariant: createPOIResultGroupVariant,
+      updateVariant: updatePOIResultGroupVariant,
+      parseVariantName: parsePOIResultGroupVariantName,
+      configureProperties: configurePOIResultGroupProperties,
+      description: POI_RESULT_GROUP_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildPOIResultGroupComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "POIResultGroup",
+    componentSetName: "POIResultGroup",
+    build: buildPOIResultGroupComponent,
+  });
+}
+
+// --- RouteLocationField ------------------------------------------------------
+
+/** The words React shows under the search for each status (statusText). */
+const ROUTE_LOCATION_FIELD_MESSAGES = {
+  Loading: "Searching locations…",
+  Empty: "No locations found",
+  Error: "Locations are unavailable",
+};
+
+async function createRouteLocationFieldVariant(args) {
+  const component = figma.createComponent();
+  await updateRouteLocationFieldVariant(component, args);
+  return component;
+}
+
+function parseRouteLocationFieldVariantName(name) {
+  return productSdkVariantValues(name, "State", ROUTE_LOCATION_FIELD_STATES);
+}
+
+/**
+ * The search is Combobox, whose own label React leaves unseen (it names the
+ * field by aria-label and draws the label in the row above, beside the
+ * field's actions). So the instance's Label Text is hidden: an override
+ * inside Combobox, which is why Combobox is in SETS_THAT_OVERRIDE_INSIDE.
+ */
+function hideRouteLocationComboboxLabel(instance, stats) {
+  const label = instance.findOne(
+    (node) => node.type === "TEXT" && node.name === "Label Text",
+  );
+  if (!label) {
+    pushUniqueWarning(
+      stats,
+      "route-location-combobox-label",
+      "RouteLocationField: the Combobox has no Label Text to hide.",
+    );
+    return;
+  }
+  label.visible = false;
+}
+
+async function updateRouteLocationFieldVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const resolved = value === "Resolved";
+  const inner = ROUTE_LOCATION_FIELD_WIDTH - (resolved ? 26 : 0);
+  productSdkVariantRoot(component, "RouteLocationField", "State=" + value, {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 8,
+    padding: resolved ? 12 : 0,
+    width: ROUTE_LOCATION_FIELD_WIDTH,
+    height: 120,
+  });
+  component.fills = [];
+  component.effects = [];
+  // A resolved place sits in its own box: rounded-control, the border, 12
+  // inside, its words 8 apart.
+  component.strokes = resolved
+    ? [paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats)]
+    : [];
+  component.strokeWeight = resolved ? 1 : 0;
+  component.cornerRadius = resolved ? KOZMOS_RADIUS.control : 0;
+
+  // The label, 14 in the muted ink, at the start of a row whose end holds
+  // the field's action.
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    primaryAlign: "SPACE_BETWEEN",
+    counterAlign: "CENTER",
+    spacing: 8,
+    width: inner,
+    height: 44,
+  });
+  const label = await mapPartText({
+    name: "Field Label",
+    characters: "Destination",
+    size: "Small",
+    token: MAP_PART_MUTED,
+    variableByName,
+    fonts,
+    stats,
+    width: 160,
+  });
+  appendWithSizing(header, label, "FILL", "HUG");
+  const message = ROUTE_LOCATION_FIELD_MESSAGES[value];
+  if (resolved) {
+    appendWithSizing(
+      header,
+      await mapPartGhostButton(
+        "RouteLocationField",
+        "Clear Location Button",
+        "Clear location",
+        stats,
+      ),
+      "HUG",
+      null,
+    );
+  } else if (message) {
+    // A query is typed: React offers to clear it.
+    appendWithSizing(
+      header,
+      await mapPartGhostButton(
+        "RouteLocationField",
+        "Clear Search Button",
+        "Clear search",
+        stats,
+      ),
+      "HUG",
+      null,
+    );
+  }
+  appendWithSizing(component, header, "FILL", "HUG");
+
+  if (resolved) {
+    const place = productSdkFrame("Place", {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 0,
+      width: inner,
+      height: 44,
+    });
+    appendWithSizing(
+      place,
+      await mapPartText({
+        name: "Location Name",
+        characters: "Main Lobby",
+        size: "Base",
+        weight: "Semibold",
+        token: MAP_PART_INK,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(
+      place,
+      await mapPartText({
+        name: "Location Description",
+        characters: "Ground Floor",
+        size: "Small",
+        token: MAP_PART_MUTED,
+        variableByName,
+        fonts,
+        stats,
+        width: inner,
+      }),
+      "FILL",
+      "HUG",
+    );
+    appendWithSizing(component, place, "FILL", "HUG");
+    return;
+  }
+
+  const combobox = await mapPartInstance({
+    owner: "RouteLocationField",
+    setName: "Combobox",
+    variant: {
+      State: "Default",
+      Status: value === "Error" ? "Error" : "Default",
+      Content: "Closed",
+    },
+    name: "Search",
+    textProperties: Object.assign(
+      { "Placeholder Text": "Search for a place" },
+      message ? { "Helper Text": message } : {},
+    ),
+    booleanProperties: { "Show Helper Text": Boolean(message) },
+    stats,
+  });
+  if (combobox.componentSet) {
+    hideRouteLocationComboboxLabel(combobox.node, stats);
+  }
+  appendWithSizing(component, combobox.node, "FILL", null);
+}
+
+function configureRouteLocationFieldProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Field Label",
+    "Label Text",
+    "Destination",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Location Name",
+    "Location Text",
+    "Main Lobby",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Location Description",
+    "Description Text",
+    "Ground Floor",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Location Description",
+    "Show Description",
+    true,
+    stats,
+  );
+}
+
+const ROUTE_LOCATION_FIELD_DESCRIPTION = [
+  "Kozmos RouteLocationField generated from the React RouteLocationField API.",
+  "State maps to location and status: Search (no location, idle or ready), Loading, Empty, Error, and Resolved (location set).",
+  "Label Text maps to label; Location Text to location.label, Description Text to location.description (Show Description).",
+  "The search is a Combobox instance, its own label hidden as React's is; Placeholder Text is placeholder and Helper Text the status's statusText.",
+  "Clear search, Clear location (clearLabel) and, with onEdit, Change (changeLabel) are ghost Buttons, edited on the instance.",
+];
+
+async function buildRouteLocationFieldComponent() {
+  return buildSingleAxisComponent(
+    mapPartSetConfig("RouteLocationField", ROUTE_LOCATION_FIELD_STATES, {
+      xStep: 420,
+      createVariant: createRouteLocationFieldVariant,
+      configureProperties: configureRouteLocationFieldProperties,
+      description: ROUTE_LOCATION_FIELD_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateRouteLocationFieldComponent() {
+  return updateSingleAxisComponent(
+    mapPartSetConfig("RouteLocationField", ROUTE_LOCATION_FIELD_STATES, {
+      xStep: 420,
+      createVariant: createRouteLocationFieldVariant,
+      updateVariant: updateRouteLocationFieldVariant,
+      parseVariantName: parseRouteLocationFieldVariantName,
+      configureProperties: configureRouteLocationFieldProperties,
+      description: ROUTE_LOCATION_FIELD_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildRouteLocationFieldComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "RouteLocationField",
+    componentSetName: "RouteLocationField",
+    build: buildRouteLocationFieldComponent,
+  });
+}
+
+// --- RouteSetupPanel ---------------------------------------------------------
+
+async function createRouteSetupPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateRouteSetupPanelVariant(component, args);
+  return component;
+}
+
+function parseRouteSetupPanelVariantName(name) {
+  return parseMapPartTwoAxisName(name, "State", ROUTE_SETUP_PANEL_STATES);
+}
+
+async function updateRouteSetupPanelVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const presentation = mapPartPresentationValue(second);
+  const standalone = presentation === "Standalone";
+  const inner = MAP_PART_PANEL_WIDTH - (standalone ? 32 : 0);
+  productSdkVariantRoot(
+    component,
+    "RouteSetupPanel",
+    `State=${value}, Presentation=${presentation}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 16,
+      padding: standalone ? 16 : 0,
+      width: MAP_PART_PANEL_WIDTH,
+      height: 400,
+    },
+  );
+  mapPartPresentation(component, presentation, variableByName, stats);
+
+  // The title, 20 semibold, and the outline close at its end.
+  const header = productSdkFrame("Header", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 12,
+    width: inner,
+    height: 44,
+  });
+  appendWithSizing(
+    header,
+    await mapPartText({
+      name: "Panel Title",
+      characters: "Set up a route",
+      size: "XLarge",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner - 56,
+    }),
+    "FILL",
+    "HUG",
+  );
+  header.appendChild(
+    await mapPartCloseButton(
+      "RouteSetupPanel",
+      "Outline",
+      variableByName,
+      stats,
+    ),
+  );
+  appendWithSizing(component, header, "FILL", "HUG");
+
+  appendWithSizing(
+    component,
+    await mapPartText({
+      name: "Panel Description",
+      characters: "Choose where your route starts and ends.",
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    }),
+    "FILL",
+    "HUG",
+  );
+
+  // children: the route's places, each a RouteLocationField. Ready and
+  // Pending have both resolved; Incomplete is still searching for the end.
+  const locations = productSdkFrame("Locations", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 12,
+    width: inner,
+    height: 200,
+  });
+  for (const [name, label, resolved] of [
+    ["Start Field", "Start", true],
+    ["Destination Field", "Destination", value !== "Incomplete"],
+  ]) {
+    const field = await mapPartInstance({
+      owner: "RouteSetupPanel",
+      setName: "RouteLocationField",
+      variant: { State: resolved ? "Resolved" : "Search" },
+      name,
+      textProperties: { "Label Text": label },
+      stats,
+    });
+    appendWithSizing(locations, field.node, "FILL", null);
+  }
+  appendWithSizing(component, locations, "FILL", "HUG");
+
+  // Continue: a default Button, disabled until the host says every point is
+  // resolved, and while it is pending.
+  await mapPartFullWidthButton(
+    component,
+    "RouteSetupPanel",
+    "Continue Button",
+    "Continue",
+    value !== "Ready",
+    stats,
+  );
+}
+
+function configureRouteSetupPanelProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Panel Title",
+    "Title Text",
+    "Set up a route",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Panel Description",
+    "Description Text",
+    "Choose where your route starts and ends.",
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Panel Description",
+    "Show Description",
+    true,
+    stats,
+  );
+}
+
+const ROUTE_SETUP_PANEL_DESCRIPTION = [
+  "Kozmos RouteSetupPanel generated from the React RouteSetupPanel API.",
+  "State maps to ready and pending: Incomplete (ready false), Ready, Pending (pending: Continue stays disabled while the host works).",
+  "Presentation maps to presentation: Hosted (the sheet owns the surface) or Standalone (the solid surface, the panel corner, the overlay shadow).",
+  "Title Text maps to title, Description Text to description (Show Description).",
+  "The places are RouteLocationField instances (children); Continue is a Button (continueLabel), the close an outline IconButton (closeLabel).",
+];
+
+function routeSetupPanelSetConfig(extra) {
+  return mapPartSetConfig(
+    "RouteSetupPanel",
+    ROUTE_SETUP_PANEL_STATES,
+    Object.assign(
+      {
+        axis2Name: "Presentation",
+        axis2Values: MAP_PART_PRESENTATIONS,
+        xStep: 420,
+        yStep: 620,
+      },
+      extra,
+    ),
+  );
+}
+
+async function buildRouteSetupPanelComponent() {
+  return buildSingleAxisComponent(
+    routeSetupPanelSetConfig({
+      createVariant: createRouteSetupPanelVariant,
+      configureProperties: configureRouteSetupPanelProperties,
+      description: ROUTE_SETUP_PANEL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateRouteSetupPanelComponent() {
+  return updateSingleAxisComponent(
+    routeSetupPanelSetConfig({
+      createVariant: createRouteSetupPanelVariant,
+      updateVariant: updateRouteSetupPanelVariant,
+      parseVariantName: parseRouteSetupPanelVariantName,
+      configureProperties: configureRouteSetupPanelProperties,
+      description: ROUTE_SETUP_PANEL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildRouteSetupPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "RouteSetupPanel",
+    componentSetName: "RouteSetupPanel",
+    build: buildRouteSetupPanelComponent,
+  });
+}
+
+// --- ArrivalPanel ------------------------------------------------------------
+
+async function createArrivalPanelVariant(args) {
+  const component = figma.createComponent();
+  await updateArrivalPanelVariant(component, args);
+  return component;
+}
+
+function parseArrivalPanelVariantName(name) {
+  return parseMapPartTwoAxisName(name, "State", ARRIVAL_PANEL_STATES);
+}
+
+async function arrivalMetric(name, label, value, variableByName, fonts, stats) {
+  const metric = productSdkFrame(name, {
+    primarySizing: "AUTO",
+    counterSizing: "AUTO",
+    spacing: 0,
+  });
+  appendWithSizing(
+    metric,
+    await mapPartText({
+      name: name + " Label",
+      characters: label,
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: 140,
+      wrap: false,
+    }),
+    "HUG",
+    "HUG",
+  );
+  appendWithSizing(
+    metric,
+    await mapPartText({
+      name: name + " Value",
+      characters: value,
+      size: "Base",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: 140,
+      wrap: false,
+    }),
+    "HUG",
+    "HUG",
+  );
+  for (const child of metric.children)
+    child.textAutoResize = "WIDTH_AND_HEIGHT";
+  return metric;
+}
+
+async function updateArrivalPanelVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const presentation = mapPartPresentationValue(second);
+  const standalone = presentation === "Standalone";
+  const inner = MAP_PART_PANEL_WIDTH - (standalone ? 32 : 0);
+  productSdkVariantRoot(
+    component,
+    "ArrivalPanel",
+    `State=${value}, Presentation=${presentation}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 16,
+      padding: standalone ? 16 : 0,
+      width: MAP_PART_PANEL_WIDTH,
+      height: 360,
+    },
+  );
+  mapPartPresentation(component, presentation, variableByName, stats);
+
+  appendWithSizing(
+    component,
+    await mapPartText({
+      name: "Arrival Title",
+      characters: "You've arrived",
+      size: "XLarge",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    }),
+    "FILL",
+    "HUG",
+  );
+
+  // The destination: its 48 picture, then its name and where it is.
+  const destination = productSdkFrame("Destination", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "CENTER",
+    spacing: 12,
+    width: inner,
+    height: 48,
+  });
+  // DestinationImage: 48, rounded-control, the border, bg-muted; with no
+  // picture, the map pin at 20 in the ink.
+  const image = productSdkFrame("Destination Image", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: 48,
+    height: 48,
+  });
+  image.cornerRadius = KOZMOS_RADIUS.control;
+  image.clipsContent = true;
+  image.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  image.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  image.strokeWeight = 1;
+  const pin = await productSdkIconInstance({
+    iconName: "marker-pin-01",
+    token: MAP_PART_INK,
+    size: 20,
+    variableByName,
+    stats,
+    owner: "ArrivalPanel",
+  });
+  if (pin) {
+    pin.name = "Pin";
+    appendWithSizing(image, pin, "FIXED", "FIXED");
+  }
+  appendWithSizing(destination, image, "FIXED", "FIXED");
+  const words = productSdkFrame("Destination Words", {
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 0,
+    width: inner - 60,
+    height: 44,
+  });
+  appendWithSizing(
+    words,
+    await mapPartText({
+      name: "Destination Name",
+      characters: "Gate B12",
+      size: "Base",
+      weight: "Semibold",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner - 60,
+    }),
+    "FILL",
+    "HUG",
+  );
+  appendWithSizing(
+    words,
+    await mapPartText({
+      name: "Destination Location",
+      characters: "Terminal 2, Level 1",
+      size: "Small",
+      token: MAP_PART_MUTED,
+      variableByName,
+      fonts,
+      stats,
+      width: inner - 60,
+    }),
+    "FILL",
+    "HUG",
+  );
+  appendWithSizing(destination, words, "FILL", "HUG");
+  appendWithSizing(component, destination, "FILL", "HUG");
+
+  appendWithSizing(
+    component,
+    await mapPartText({
+      name: "Arrival Message",
+      characters: "Your gate opens 40 minutes before departure.",
+      size: "Base",
+      token: MAP_PART_INK,
+      variableByName,
+      fonts,
+      stats,
+      width: inner,
+    }),
+    "FILL",
+    "HUG",
+  );
+
+  // The journey as travelled, never an estimate: each a muted label over
+  // its value, 16 apart.
+  const metrics = productSdkFrame("Metrics", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 16,
+    width: inner,
+    height: 44,
+  });
+  metrics.appendChild(
+    await arrivalMetric(
+      "Duration",
+      "Journey time",
+      "6 min",
+      variableByName,
+      fonts,
+      stats,
+    ),
+  );
+  metrics.appendChild(
+    await arrivalMetric(
+      "Distance",
+      "Distance travelled",
+      "202 m",
+      variableByName,
+      fonts,
+      stats,
+    ),
+  );
+  appendWithSizing(component, metrics, "FILL", "HUG");
+
+  // Done: a default Button the full width, disabled while the host finishes.
+  await mapPartFullWidthButton(
+    component,
+    "ArrivalPanel",
+    "Done Button",
+    "Done",
+    value === "Pending",
+    stats,
+  );
+}
+
+const ARRIVAL_PANEL_TEXT_PROPERTIES = [
+  ["Arrival Title", "Title Text", "You've arrived"],
+  ["Destination Name", "Destination Text", "Gate B12"],
+  ["Destination Location", "Location Text", "Terminal 2, Level 1"],
+  [
+    "Arrival Message",
+    "Message Text",
+    "Your gate opens 40 minutes before departure.",
+  ],
+  ["Duration Label", "Duration Label Text", "Journey time"],
+  ["Duration Value", "Duration Text", "6 min"],
+  ["Distance Label", "Distance Label Text", "Distance travelled"],
+  ["Distance Value", "Distance Text", "202 m"],
+];
+
+const ARRIVAL_PANEL_BOOLEAN_PROPERTIES = [
+  ["Destination Image", "Show Image", true],
+  ["Destination Location", "Show Location", true],
+  ["Arrival Message", "Show Message", false],
+  ["Metrics", "Show Metrics", true],
+];
+
+function configureArrivalPanelProperties(componentSet, stats) {
+  for (const [node, property, value] of ARRIVAL_PANEL_TEXT_PROPERTIES) {
+    configureNamedTextProperty(componentSet, node, property, value, stats);
+  }
+  for (const [node, property, value] of ARRIVAL_PANEL_BOOLEAN_PROPERTIES) {
+    configureNamedBooleanProperty(componentSet, node, property, value, stats);
+  }
+}
+
+const ARRIVAL_PANEL_DESCRIPTION = [
+  "Kozmos ArrivalPanel generated from the React ArrivalPanel API.",
+  "State maps to pending: Pending disables Done while the host finishes navigation.",
+  "Presentation maps to presentation: Hosted (the sheet owns the surface) or Standalone (the solid surface, the panel corner, the overlay shadow).",
+  "Title Text, Destination Text, Location Text and Message Text map to title, destination, locationText and message; the metrics to actualDurationText, actualDistanceText and their labels.",
+  "Show Image is destinationImage, Show Location locationText, Show Message message, Show Metrics either actual value: each optional in code.",
+  "Done is a default Button (doneLabel), edited on the instance.",
+];
+
+function arrivalPanelSetConfig(extra) {
+  return mapPartSetConfig(
+    "ArrivalPanel",
+    ARRIVAL_PANEL_STATES,
+    Object.assign(
+      {
+        axis2Name: "Presentation",
+        axis2Values: MAP_PART_PRESENTATIONS,
+        xStep: 420,
+        yStep: 520,
+      },
+      extra,
+    ),
+  );
+}
+
+async function buildArrivalPanelComponent() {
+  return buildSingleAxisComponent(
+    arrivalPanelSetConfig({
+      createVariant: createArrivalPanelVariant,
+      configureProperties: configureArrivalPanelProperties,
+      description: ARRIVAL_PANEL_DESCRIPTION,
+    }),
+  );
+}
+
+async function updateArrivalPanelComponent() {
+  return updateSingleAxisComponent(
+    arrivalPanelSetConfig({
+      createVariant: createArrivalPanelVariant,
+      updateVariant: updateArrivalPanelVariant,
+      parseVariantName: parseArrivalPanelVariantName,
+      configureProperties: configureArrivalPanelProperties,
+      description: ARRIVAL_PANEL_DESCRIPTION.concat([
+        "Updated in place to preserve the Code Connect node ID.",
+      ]),
+    }),
+  );
+}
+
+async function rebuildArrivalPanelComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ArrivalPanel",
+    componentSetName: "ArrivalPanel",
+    build: buildArrivalPanelComponent,
   });
 }
 
@@ -74737,6 +79135,1616 @@ function configureNoticeProperties(componentSet, stats) {
     "Show Action",
     false,
     stats,
+  );
+}
+
+// --- GAP-206: Surface, ActionCard, Calendar, ClientAppBanner, LanguageSwitcher
+
+// The five sets GAP-206 found without a Figma node, each drawn as its React
+// stories draw it. They share these helpers and nothing else.
+
+/** A frame that lays out and paints nothing until told to. */
+function gap206Frame(name, direction) {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = direction;
+  frame.primaryAxisSizingMode = "AUTO";
+  frame.counterAxisSizingMode = "AUTO";
+  frame.primaryAxisAlignItems = "MIN";
+  frame.counterAxisAlignItems = "MIN";
+  frame.itemSpacing = 0;
+  frame.paddingLeft = 0;
+  frame.paddingRight = 0;
+  frame.paddingTop = 0;
+  frame.paddingBottom = 0;
+  frame.fills = [];
+  frame.strokes = [];
+  frame.clipsContent = false;
+  return frame;
+}
+
+/** The variant itself, stamped as a generated variant of `owner`. */
+function gap206VariantRoot(component, owner, name, direction) {
+  component.name = name;
+  component.layoutMode = direction;
+  component.primaryAxisSizingMode = "AUTO";
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisAlignItems = "MIN";
+  component.counterAxisAlignItems = "MIN";
+  component.itemSpacing = 0;
+  component.paddingLeft = 0;
+  component.paddingRight = 0;
+  component.paddingTop = 0;
+  component.paddingBottom = 0;
+  component.fills = [];
+  component.strokes = [];
+  component.effects = [];
+  component.opacity = 1;
+  component.clipsContent = false;
+  component.cornerRadius = KOZMOS_RADIUS.none;
+  component.setSharedPluginData(RUN_NAMESPACE, "kind", "component-variant");
+  component.setSharedPluginData(RUN_NAMESPACE, "component", owner);
+}
+
+/**
+ * A line of React's Text: its size and weight from the Text styles, in a
+ * colour role. The style key is kept on the layer, so Apply Text Styles
+ * attaches the same style (gap206TextStyleKey).
+ */
+async function gap206Text({
+  name,
+  characters,
+  size,
+  weight,
+  ink,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const metrics = textMetrics(size);
+  const key = textStyleKeyForText(size, weight);
+  const text = figma.createText();
+  text.name = name;
+  text.fontName = textFontForWeight(weight, fonts);
+  text.fontSize = metrics.fontSize;
+  text.lineHeight = { unit: "PIXELS", value: metrics.lineHeight };
+  text.characters = characters;
+  await applyTextStyleToNodeAsync(text, key, stats);
+  text.fills = [
+    paintFromVariable(ink.name, ink.fallback, variableByName, stats),
+  ];
+  text.setSharedPluginData(RUN_NAMESPACE, "text-style", key);
+  return text;
+}
+
+const GAP206_INK = {
+  foreground: { name: "Colors/foreground/0", fallback: "#000000" },
+  muted: { name: "Colors/foreground/400", fallback: "#5D626F" },
+  danger: { name: "Emotion/danger/text", fallback: "#B01736" },
+};
+
+/** The Text style each GAP-206 set's words take, by layer name. */
+const GAP206_TEXT_STYLES = {
+  ActionCard: { "Title Text": ["XS", "Semibold"] },
+  Calendar: {
+    "Title Text": ["Small", "Medium"],
+    "Weekday Text": ["XS", "Normal"],
+    "Day Text": ["Small", "Normal"],
+  },
+  ClientAppBanner: {
+    "Promotion Text": ["XS", "Medium"],
+    "App Name Text": ["Base", "Semibold"],
+    "Description Text": ["Small", "Normal"],
+    "Initial Text": ["Large", "Semibold"],
+  },
+  LanguageSwitcher: {
+    "Language Text": ["Small", "Normal"],
+    "Pending Text": ["Small", "Normal"],
+    "Error Text": ["Small", "Normal"],
+  },
+};
+
+function gap206TextStyleKey(setName, textName) {
+  const styles = GAP206_TEXT_STYLES[setName];
+  const style = styles && styles[textName];
+  return style ? textStyleKeyForText(style[0], style[1]) : null;
+}
+
+/** A Core part placed live, or a marked placeholder that says to build it. */
+async function gap206NestedInstance({
+  componentSetName,
+  variantProperties,
+  name,
+  role,
+  owner,
+  stats,
+}) {
+  const created = await createNestedComponentInstance({
+    componentSetName,
+    variantProperties,
+    name,
+    role,
+    stats,
+  });
+  if (!created) {
+    return {
+      node: createMissingNestedComponentNode(
+        name,
+        `Build ${componentSetName} before updating ${owner}.`,
+        stats,
+      ),
+      componentSet: null,
+    };
+  }
+  return { node: created.instance, componentSet: created.componentSet };
+}
+
+/** A live Button with its words, as React's <Button>. */
+async function gap206Button({ variant, label, name, role, owner, stats }) {
+  const placed = await gap206NestedInstance({
+    componentSetName: "Button",
+    variantProperties: { Variant: variant, Size: "Default", State: "Default" },
+    name,
+    role,
+    owner,
+    stats,
+  });
+  if (placed.componentSet) {
+    setInstanceTextProperty(
+      placed.node,
+      placed.componentSet,
+      "Label Text",
+      label,
+      stats,
+    );
+  }
+  markControlSurface(placed.node);
+  return placed.node;
+}
+
+/**
+ * Layers out of the flow that stand for the box itself (a glass fill, an
+ * edge): the box's size once it hugs its content, and a warning if not.
+ */
+function holdGap206Layers(component, names, owner, stats) {
+  for (const name of names) {
+    const layer = directChildNamed(component, name);
+    if (!layer) continue;
+    layer.x = 0;
+    layer.y = 0;
+    layer.resizeWithoutConstraints(component.width, component.height);
+    if (
+      Math.abs(layer.width - component.width) > 0.5 ||
+      Math.abs(layer.height - component.height) > 0.5
+    ) {
+      stats.warnings.push(
+        `${owner}: ${name} is ${layer.width} by ${layer.height} in a ${component.width} by ${component.height} box.`,
+      );
+    }
+  }
+}
+
+/** A 1 edge laid inside a box as a layer of its own, at a strength. */
+function insertGap206Edge(component, { name, token, opacity, radius }, at) {
+  const edge = figma.createRectangle();
+  edge.name = name;
+  edge.resize(component.width, component.height);
+  edge.cornerRadius = radius;
+  edge.fills = [];
+  setTranslucentTokenPaint(
+    edge,
+    "strokes",
+    token,
+    opacity,
+    at.variableByName,
+    at.stats,
+  );
+  edge.strokeWeight = 1;
+  edge.strokeAlign = "INSIDE";
+  edge.setSharedPluginData(RUN_NAMESPACE, "role", "translucent-token-layer");
+  component.insertChild(Math.min(1, component.children.length), edge);
+  edge.layoutPositioning = "ABSOLUTE";
+  edge.x = 0;
+  edge.y = 0;
+  edge.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
+  return edge;
+}
+
+async function rebuildGap206Component(componentName, build) {
+  return rebuildGeneratedComponentSet({
+    componentName,
+    componentSetName: componentName,
+    build,
+  });
+}
+
+// --- Surface ----------------------------------------------------------------
+
+// GAP-206: React's Surface, the material a card or panel is made of
+// (`variant`). Drawn as its stories draw it, rounded-container p-4 at 320
+// with the floating elevation: a 20 corner, 16 inside, a Content Slot for
+// what it holds. Solid is Colors/background/0 with the Border/Subtle edge
+// (.kozmos-surface-solid). Glass is the glass colour, Colors/background/0 (white
+// in Light, black in Dark, as --kozmos-glass-rgb), at Effect/glass/opacity's
+// 0.7, what is behind it blurred by Effect/glass/blur's 20, and its edge
+// Effect/glass/border/color at Effect/glass/border/opacity's 0.2
+// (.kozmos-surface-glass). A strength on a bound colour does not hold
+// (setTranslucentTokenPaint), so Glass's fill and both edges are layers of
+// their own; Solid's edge is a layer too, so every variant lays its edge out
+// the same way. Figma has no backdrop saturation: Effect/glass/saturation is
+// code's alone. The shape is the caller's in code; a designer may change the
+// corner on an instance.
+const SURFACE_WIDTH = 320;
+const SURFACE_PADDING = 16;
+const SURFACE_GLASS = {
+  fill: { name: "Colors/background/0", fallback: "#FFFFFF" },
+  opacity: 0.7,
+  blur: 20,
+  edge: { name: "Effect/glass/border/color", fallback: "#FFFFFF" },
+  edgeOpacity: 0.2,
+};
+const SURFACE_DESCRIPTION = [
+  "Kozmos Surface component set generated from React Surface API (GAP-206).",
+  "Variant maps to Surface.variant: Solid is solid (the default), Glass is glass.",
+  "Content Slot maps to children. The corner, padding and elevation are its stories' (rounded-container p-4 shadow-floating): in code they are the caller's className.",
+  "Glass draws the glass colour at Effect/glass/opacity over a background blur of Effect/glass/blur, with its edge at Effect/glass/border/opacity; backdrop saturation is code's alone.",
+];
+
+async function createSurfaceVariant({ value, variableByName, fonts, stats }) {
+  const component = figma.createComponent();
+  await updateSurfaceVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseSurfaceVariantName(name) {
+  return parseSingleAxisVariantName(name, "Variant", SURFACE_VARIANTS);
+}
+
+async function updateSurfaceVariant(
+  component,
+  { value, variableByName, stats },
+) {
+  const variant = SURFACE_VARIANTS.indexOf(value) === -1 ? "Solid" : value;
+  const glass = variant === "Glass";
+  gap206VariantRoot(component, "Surface", `Variant=${variant}`, "VERTICAL");
+  component.counterAxisSizingMode = "FIXED";
+  component.paddingLeft = SURFACE_PADDING;
+  component.paddingRight = SURFACE_PADDING;
+  component.paddingTop = SURFACE_PADDING;
+  component.paddingBottom = SURFACE_PADDING;
+  component.resizeWithoutConstraints(SURFACE_WIDTH, 120);
+  component.cornerRadius = KOZMOS_RADIUS.container;
+  component.setSharedPluginData(RUN_NAMESPACE, "surface-variant", variant);
+  component.fills = glass
+    ? []
+    : [
+        paintFromVariable(
+          "Colors/background/0",
+          "#FFFFFF",
+          variableByName,
+          stats,
+        ),
+      ];
+  component.effects = glass
+    ? [
+        elevationEffect("floating"),
+        {
+          type: "BACKGROUND_BLUR",
+          blurType: "NORMAL",
+          radius: SURFACE_GLASS.blur,
+          visible: true,
+        },
+      ]
+    : [elevationEffect("floating")];
+
+  removeDirectChildrenNamed(component, [
+    "Glass Fill",
+    "Surface Edge",
+    "Content Slot",
+  ]);
+  const slot = appendComponentContentSlot({
+    component,
+    height: 24,
+    ownerName: "Surface",
+    parent: component,
+    slotName: "Content Slot",
+    stats,
+    width: SURFACE_WIDTH - 2 * SURFACE_PADDING,
+  });
+  setVerticalStackFillChildSizing(slot);
+
+  if (glass) {
+    insertTranslucentTokenLayer(component, {
+      name: "Glass Fill",
+      token: SURFACE_GLASS.fill,
+      opacity: SURFACE_GLASS.opacity,
+      cornerRadius: KOZMOS_RADIUS.container,
+      variableByName,
+      stats,
+    });
+  }
+  insertGap206Edge(
+    component,
+    {
+      name: "Surface Edge",
+      token: glass
+        ? SURFACE_GLASS.edge
+        : { name: "Border/Subtle", fallback: "#C7CAD1" },
+      opacity: glass ? SURFACE_GLASS.edgeOpacity : 1,
+      radius: KOZMOS_RADIUS.container,
+    },
+    { variableByName, stats },
+  );
+  // The edge sits over the fill and under the content.
+  if (glass)
+    component.insertChild(1, directChildNamed(component, "Surface Edge"));
+  else component.insertChild(0, directChildNamed(component, "Surface Edge"));
+
+  bindFloatVariable(
+    component,
+    "width",
+    "Surface/width/default",
+    variableByName,
+    stats,
+  );
+  for (const side of [
+    "paddingLeft",
+    "paddingRight",
+    "paddingTop",
+    "paddingBottom",
+  ]) {
+    bindFloatVariable(
+      component,
+      side,
+      "Surface/padding",
+      variableByName,
+      stats,
+    );
+  }
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "Surface/radius",
+    variableByName,
+    stats,
+  );
+  holdGap206Layers(component, ["Glass Fill", "Surface Edge"], "Surface", stats);
+}
+
+function configureSurfaceProperties(componentSet, stats) {
+  configureSharedSlotProperties(componentSet, ["Content Slot"], stats);
+}
+
+async function buildSurfaceComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Surface",
+    componentSetName: "Surface",
+    axisName: "Variant",
+    values: SURFACE_VARIANTS,
+    x: 80,
+    y: 10560,
+    xStep: 360,
+    createVariant: createSurfaceVariant,
+    configureProperties: configureSurfaceProperties,
+    description: SURFACE_DESCRIPTION,
+  });
+}
+
+async function updateSurfaceComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Surface",
+    componentSetName: "Surface",
+    axisName: "Variant",
+    values: SURFACE_VARIANTS,
+    xStep: 360,
+    createVariant: createSurfaceVariant,
+    updateVariant: updateSurfaceVariant,
+    parseVariantName: parseSurfaceVariantName,
+    configureProperties: configureSurfaceProperties,
+    description: SURFACE_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildSurfaceComponent() {
+  return rebuildGap206Component("Surface", buildSurfaceComponent);
+}
+
+// --- ActionCard -------------------------------------------------------------
+
+// GAP-206: React's ActionCard, what an assistant turn holds besides its words
+// (a POIResultList, a POIResultCard, a hand-off): a column 8 apart (gap-2),
+// its title, when given, in Text XS semibold muted (text-xs font-semibold
+// text-muted-foreground), over a Content Slot. It draws no surface: what it
+// holds brings its own. Titled is its story's "2 results"; Basic has none.
+const ACTION_CARD_WIDTH = 320;
+const ACTION_CARD_GAP = 8;
+const ACTION_CARD_SAMPLE_TITLE = "2 results";
+const ACTION_CARD_DESCRIPTION = [
+  "Kozmos ActionCard component set generated from React ActionCard API (GAP-206).",
+  "Content maps to title: Titled gives it (Title Text), Basic leaves it out.",
+  "Content Slot maps to children: a POIResultList, a POIResultCard or a hand-off, each its own part. ActionCard draws no surface.",
+];
+
+async function createActionCardVariant({
+  value,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateActionCardVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseActionCardVariantName(name) {
+  return parseSingleAxisVariantName(name, "Content", ACTION_CARD_CONTENT);
+}
+
+async function updateActionCardVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const content = ACTION_CARD_CONTENT.indexOf(value) === -1 ? "Titled" : value;
+  gap206VariantRoot(component, "ActionCard", `Content=${content}`, "VERTICAL");
+  component.counterAxisSizingMode = "FIXED";
+  component.itemSpacing = ACTION_CARD_GAP;
+  component.resizeWithoutConstraints(ACTION_CARD_WIDTH, 40);
+  removeDirectChildrenNamed(component, ["Title Text", "Content Slot"]);
+  if (content === "Titled") {
+    const title = await gap206Text({
+      name: "Title Text",
+      characters: ACTION_CARD_SAMPLE_TITLE,
+      size: "XS",
+      weight: "Semibold",
+      ink: GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(component, title, "FILL", null);
+    setTextAutoResize(title, "HEIGHT");
+  }
+  const slot = appendComponentContentSlot({
+    component,
+    height: 64,
+    ownerName: "ActionCard",
+    parent: component,
+    slotName: "Content Slot",
+    stats,
+    width: ACTION_CARD_WIDTH,
+  });
+  setVerticalStackFillChildSizing(slot);
+  bindFloatVariable(
+    component,
+    "width",
+    "ActionCard/width/default",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ActionCard/gap",
+    variableByName,
+    stats,
+  );
+}
+
+function configureActionCardProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Title Text",
+    "Title Text",
+    ACTION_CARD_SAMPLE_TITLE,
+    stats,
+  );
+  configureSharedSlotProperties(componentSet, ["Content Slot"], stats);
+}
+
+async function buildActionCardComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ActionCard",
+    componentSetName: "ActionCard",
+    axisName: "Content",
+    values: ACTION_CARD_CONTENT,
+    x: 80,
+    y: 7420,
+    xStep: 360,
+    createVariant: createActionCardVariant,
+    configureProperties: configureActionCardProperties,
+    description: ACTION_CARD_DESCRIPTION,
+  });
+}
+
+async function updateActionCardComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ActionCard",
+    componentSetName: "ActionCard",
+    axisName: "Content",
+    values: ACTION_CARD_CONTENT,
+    xStep: 360,
+    createVariant: createActionCardVariant,
+    updateVariant: updateActionCardVariant,
+    parseVariantName: parseActionCardVariantName,
+    configureProperties: configureActionCardProperties,
+    description: ACTION_CARD_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildActionCardComponent() {
+  return rebuildGap206Component("ActionCard", buildActionCardComponent);
+}
+
+// --- Calendar ---------------------------------------------------------------
+
+// GAP-206: React's Calendar (decision 104), the month grid DatePicker opens,
+// drawn as its stories draw it, in en-US with today the 22nd of May 2026: no
+// surface of its own (DatePicker's Popover or a Card brings one). Each month
+// is a column 8 apart (Calendar/month/gap): its header, 32 tall, the month's
+// title in Text Small medium and, on the last month, the previous and next
+// month buttons, 32 squares 4 apart with a 16 chevron in Colors/foreground/400;
+// then the weekdays, Text XS in Colors/foreground/400 over 4 more; then six
+// weeks of days, 4 apart each way (Calendar/gap). A day is 36 square (40 in a
+// range), the Control corner, its number in Text Small: today on
+// Colors/background/100; the chosen day, or a range's two ends, on the theme
+// fill in its foreground; the days between on Colors/theme/100; the days of
+// the months either side in Colors/foreground/400. Two months sit 12 apart
+// (Calendar/months/gap). Disabled (the whole grid at half strength) and
+// unavailable days (as the months either side) are not variants.
+const CALENDAR_EXAMPLE = {
+  year: 2026,
+  monthIndex: 4,
+  today: 22,
+  single: 25,
+  range: [21, 25],
+};
+const CALENDAR_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const CALENDAR_MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const CALENDAR_GAP = 4;
+const CALENDAR_MONTH_GAP = 8;
+const CALENDAR_MONTHS_GAP = 12;
+const CALENDAR_HEADER_HEIGHT = 32;
+const CALENDAR_NAV_SIZE = 32;
+const CALENDAR_ICON = 16;
+const CALENDAR_WEEKDAY_HEIGHT = 20;
+const CALENDAR_DESCRIPTION = [
+  "Kozmos Calendar component set generated from React Calendar API (GAP-206, decision 104).",
+  "Mode maps to mode: Single (the default) or Range. Months maps to months: One (the default) or Two.",
+  "Drawn in en-US, May 2026, today the 22nd; Single chooses the 25th, Range the 21st to the 25th. The days, months and week's first day are code's, from locale.",
+  "It draws no surface: DatePicker opens it in a Popover, and a page can set it on a Card. disabled (half strength) and unavailable days are not variants.",
+];
+
+/** A day's edge in a range, or a single chosen day, is 40; otherwise 36. */
+function calendarDaySize(mode) {
+  return mode === "Range" ? 40 : 36;
+}
+
+/** Six weeks from the Sunday on or before the 1st, as React's monthGrid. */
+function calendarMonthCells(year, monthIndex) {
+  const first = Date.UTC(year, monthIndex, 1);
+  const lead = new Date(first).getUTCDay();
+  const cells = [];
+  for (let index = 0; index < 42; index += 1) {
+    const date = new Date(first + (index - lead) * 86400000);
+    cells.push({
+      day: date.getUTCDate(),
+      outside: date.getUTCMonth() !== monthIndex,
+    });
+  }
+  return cells;
+}
+
+/** What a day of the example draws: outside, chosen, between, today or plain. */
+function calendarDayState(mode, cell, inExampleMonth) {
+  if (cell.outside) return "Outside";
+  if (!inExampleMonth) return "Default";
+  if (mode === "Range") {
+    const [start, end] = CALENDAR_EXAMPLE.range;
+    if (cell.day === start || cell.day === end) return "Selected";
+    if (cell.day > start && cell.day < end) return "InRange";
+  } else if (cell.day === CALENDAR_EXAMPLE.single) {
+    return "Selected";
+  }
+  return cell.day === CALENDAR_EXAMPLE.today ? "Today" : "Default";
+}
+
+const CALENDAR_DAY_PAINT = {
+  Default: { fill: null, ink: GAP206_INK.foreground },
+  Outside: { fill: null, ink: GAP206_INK.muted },
+  Today: {
+    fill: { name: "Colors/background/100", fallback: "#E3E4E8" },
+    ink: GAP206_INK.foreground,
+  },
+  InRange: {
+    fill: { name: "Colors/theme/100", fallback: "#D2E0FC" },
+    ink: GAP206_INK.foreground,
+  },
+  Selected: { fill: THEME_FILL, ink: THEME_FILL_FOREGROUND },
+};
+
+const CALENDAR_DAY_LAYER_NAMES = {
+  Default: "Day",
+  Outside: "Outside Day",
+  Today: "Today Day",
+  InRange: "In Range Day",
+  Selected: "Selected Day",
+};
+
+async function createCalendarVariant({
+  value,
+  second,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateCalendarVariant(component, {
+    value,
+    second,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseCalendarVariantName(name) {
+  const base = parseSingleAxisVariantName(name, "Mode", CALENDAR_MODES);
+  if (!base) return null;
+  const second = variantAxisValue(name, "Months") || "One";
+  if (CALENDAR_MONTHS.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+async function calendarDay({
+  mode,
+  cell,
+  state,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const size = calendarDaySize(mode);
+  const paint = CALENDAR_DAY_PAINT[state];
+  const day = gap206Frame(CALENDAR_DAY_LAYER_NAMES[state], "HORIZONTAL");
+  day.primaryAxisSizingMode = "FIXED";
+  day.counterAxisSizingMode = "FIXED";
+  day.primaryAxisAlignItems = "CENTER";
+  day.counterAxisAlignItems = "CENTER";
+  day.resizeWithoutConstraints(size, size);
+  day.cornerRadius = KOZMOS_RADIUS.control;
+  day.fills = paint.fill
+    ? [
+        paintFromVariable(
+          paint.fill.name,
+          paint.fill.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
+    : [];
+  day.setSharedPluginData(RUN_NAMESPACE, "kind", "calendar-day");
+  day.setSharedPluginData(RUN_NAMESPACE, "calendar-state", state);
+  const sizeToken =
+    mode === "Range" ? "Calendar/day/size/range" : "Calendar/day/size";
+  bindFloatVariable(day, "width", sizeToken, variableByName, stats);
+  bindFloatVariable(day, "height", sizeToken, variableByName, stats);
+  const label = await gap206Text({
+    name: "Day Text",
+    characters: String(cell.day),
+    size: "Small",
+    weight: "Normal",
+    ink: paint.ink,
+    fonts,
+    variableByName,
+    stats,
+  });
+  label.textAlignHorizontal = "CENTER";
+  day.appendChild(label);
+  return day;
+}
+
+async function calendarNavButton(name, iconName, variableByName, stats) {
+  const button = gap206Frame(name, "HORIZONTAL");
+  button.primaryAxisSizingMode = "FIXED";
+  button.counterAxisSizingMode = "FIXED";
+  button.primaryAxisAlignItems = "CENTER";
+  button.counterAxisAlignItems = "CENTER";
+  button.resizeWithoutConstraints(CALENDAR_NAV_SIZE, CALENDAR_NAV_SIZE);
+  button.cornerRadius = KOZMOS_RADIUS.control;
+  bindFloatVariable(
+    button,
+    "width",
+    "Calendar/nav/size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    button,
+    "height",
+    "Calendar/nav/size",
+    variableByName,
+    stats,
+  );
+  const icon = await createFixedIconInstance(
+    iconName,
+    GAP206_INK.muted.name,
+    GAP206_INK.muted.fallback,
+    variableByName,
+    stats,
+    CALENDAR_ICON,
+    "Calendar/icon/size",
+  );
+  icon.name = "Icon";
+  scaleIconStrokes(icon, CALENDAR_ICON);
+  button.appendChild(icon);
+  return button;
+}
+
+async function calendarMonth({
+  mode,
+  offset,
+  last,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const size = calendarDaySize(mode);
+  const width = 7 * size + 6 * CALENDAR_GAP;
+  const monthIndex = CALENDAR_EXAMPLE.monthIndex + offset;
+  const month = gap206Frame(`Month ${offset + 1}`, "VERTICAL");
+  month.counterAxisSizingMode = "FIXED";
+  month.itemSpacing = CALENDAR_MONTH_GAP;
+  month.resizeWithoutConstraints(width, 300);
+  bindFloatVariable(
+    month,
+    "itemSpacing",
+    "Calendar/month/gap",
+    variableByName,
+    stats,
+  );
+
+  const header = gap206Frame("Calendar Header", "HORIZONTAL");
+  header.primaryAxisSizingMode = "FIXED";
+  header.counterAxisSizingMode = "FIXED";
+  header.counterAxisAlignItems = "CENTER";
+  header.itemSpacing = 8;
+  header.resizeWithoutConstraints(width, CALENDAR_HEADER_HEIGHT);
+  const title = await gap206Text({
+    name: "Title Text",
+    characters: `${CALENDAR_MONTH_NAMES[monthIndex]} ${CALENDAR_EXAMPLE.year}`,
+    size: "Small",
+    weight: "Medium",
+    ink: GAP206_INK.foreground,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(header, title, "FILL", null);
+  if (last) {
+    const nav = gap206Frame("Calendar Navigation", "HORIZONTAL");
+    nav.counterAxisAlignItems = "CENTER";
+    nav.itemSpacing = CALENDAR_GAP;
+    nav.appendChild(
+      await calendarNavButton(
+        "Previous Month",
+        "chevron-left",
+        variableByName,
+        stats,
+      ),
+    );
+    nav.appendChild(
+      await calendarNavButton(
+        "Next Month",
+        "chevron-right",
+        variableByName,
+        stats,
+      ),
+    );
+    header.appendChild(nav);
+  }
+  appendWithSizing(month, header, "FILL", null);
+
+  const grid = gap206Frame("Calendar Grid", "VERTICAL");
+  grid.itemSpacing = CALENDAR_GAP;
+  bindFloatVariable(grid, "itemSpacing", "Calendar/gap", variableByName, stats);
+  const weekdays = gap206Frame("Weekdays", "HORIZONTAL");
+  weekdays.itemSpacing = CALENDAR_GAP;
+  weekdays.paddingBottom = CALENDAR_GAP;
+  for (const name of CALENDAR_WEEKDAYS) {
+    const label = await gap206Text({
+      name: "Weekday Text",
+      characters: name,
+      size: "XS",
+      weight: "Normal",
+      ink: GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    setTextAutoResize(label, "NONE");
+    label.resizeWithoutConstraints(size, CALENDAR_WEEKDAY_HEIGHT);
+    label.textAlignHorizontal = "CENTER";
+    label.textAlignVertical = "CENTER";
+    weekdays.appendChild(label);
+  }
+  grid.appendChild(weekdays);
+  const cells = calendarMonthCells(CALENDAR_EXAMPLE.year, monthIndex);
+  for (let week = 0; week < 6; week += 1) {
+    const row = gap206Frame(`Week ${week + 1}`, "HORIZONTAL");
+    row.itemSpacing = CALENDAR_GAP;
+    bindFloatVariable(
+      row,
+      "itemSpacing",
+      "Calendar/gap",
+      variableByName,
+      stats,
+    );
+    for (const cell of cells.slice(week * 7, week * 7 + 7)) {
+      row.appendChild(
+        await calendarDay({
+          mode,
+          cell,
+          state: calendarDayState(mode, cell, offset === 0),
+          variableByName,
+          fonts,
+          stats,
+        }),
+      );
+    }
+    grid.appendChild(row);
+  }
+  appendWithSizing(month, grid, "FILL", null);
+  return month;
+}
+
+async function updateCalendarVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const mode = CALENDAR_MODES.indexOf(value) === -1 ? "Single" : value;
+  const months = CALENDAR_MONTHS.indexOf(second) === -1 ? "One" : second;
+  const count = months === "Two" ? 2 : 1;
+  gap206VariantRoot(
+    component,
+    "Calendar",
+    `Mode=${mode}, Months=${months}`,
+    "HORIZONTAL",
+  );
+  component.itemSpacing = CALENDAR_MONTHS_GAP;
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "Calendar/months/gap",
+    variableByName,
+    stats,
+  );
+  removeDirectChildren(component);
+  for (let offset = 0; offset < count; offset += 1) {
+    component.appendChild(
+      await calendarMonth({
+        mode,
+        offset,
+        last: offset === count - 1,
+        variableByName,
+        fonts,
+        stats,
+      }),
+    );
+  }
+}
+
+// Calendar has no component property: its days are code's, from the value,
+// the month shown and the locale.
+function configureCalendarProperties() {}
+
+async function buildCalendarComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Calendar",
+    componentSetName: "Calendar",
+    axisName: "Mode",
+    values: CALENDAR_MODES,
+    axis2Name: "Months",
+    axis2Values: CALENDAR_MONTHS,
+    x: 80,
+    y: 20400,
+    xStep: 680,
+    yStep: 360,
+    createVariant: createCalendarVariant,
+    configureProperties: configureCalendarProperties,
+    description: CALENDAR_DESCRIPTION,
+  });
+}
+
+async function updateCalendarComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Calendar",
+    componentSetName: "Calendar",
+    axisName: "Mode",
+    values: CALENDAR_MODES,
+    axis2Name: "Months",
+    axis2Values: CALENDAR_MONTHS,
+    xStep: 680,
+    yStep: 360,
+    createVariant: createCalendarVariant,
+    updateVariant: updateCalendarVariant,
+    parseVariantName: parseCalendarVariantName,
+    configureProperties: configureCalendarProperties,
+    description: CALENDAR_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildCalendarComponent() {
+  return rebuildGap206Component("Calendar", buildCalendarComponent);
+}
+
+// --- ClientAppBanner --------------------------------------------------------
+
+// GAP-206 (GAP-127): React's ClientAppBanner, Express's Client App Banner for
+// AdaptiveMapShell's topBar, as owned-client-app-banner.css lays it out. Its
+// own surface: Colors/background/0 with the Border/Subtle edge laid out with
+// the content (the CSS's border), the Container corner and the floating
+// elevation; 16 inside (ClientAppBanner/padding) and 12 between its parts
+// (ClientAppBanner/gap). The icon is 48 square (ClientAppBanner/icon/size)
+// with the Control corner and the subtle edge, the app's initial, Text Large
+// semibold, on Colors/background/100: the icon itself is the customer's
+// image, which a designer fills the App Icon frame with. Beside it, 2 apart,
+// the promotion (Text XS medium, muted), the app's name (Text Base semibold)
+// and its description (Text Small, muted, two lines at most). The action is a
+// live Button; Wide puts it beside the words, Narrow under the icon and the
+// words, as wide as both. Dismiss is a live IconButton, Ghost at Large (a 44
+// target with a 20 icon), x-close, pulled 12 into the padding at the top end
+// as React's negative margins pull it, 4 inside the edge: the banner's top
+// and end padding are 4, and the words' column takes the other 12 itself.
+const CLIENT_APP_BANNER_WIDTHS = { Wide: 560, Narrow: 320 };
+const CLIENT_APP_BANNER_PADDING = 16;
+const CLIENT_APP_BANNER_GAP = 12;
+const CLIENT_APP_BANNER_ICON = 48;
+const CLIENT_APP_BANNER_DISMISS_INSET = 4;
+const CLIENT_APP_BANNER_DISMISS_ICON = 20;
+const CLIENT_APP_BANNER_SAMPLE = {
+  promotion: "Get the app",
+  appName: "Northfield Airport",
+  description:
+    "Live gate changes, step-free routes and your boarding pass, on your phone.",
+  action: "Open",
+};
+const CLIENT_APP_BANNER_DESCRIPTION = [
+  "Kozmos ClientAppBanner component set generated from React ClientAppBanner API (GAP-206, GAP-127).",
+  "Layout is how the width falls: Wide puts the action beside the words, Narrow under them; code wraps it by itself.",
+  "Promotion Text maps to promotionText, App Name Text to appName, Description Text to description (two lines at most); Show Promotion and Show Description off leave them out.",
+  "The action is a live Button whose Label Text is actionLabel; Show Dismiss is onDismiss, a live IconButton named by dismissLabel.",
+  "Initial Text stands in for appIconSrc until it loads: fill App Icon with the customer's image.",
+];
+
+async function createClientAppBannerVariant({
+  value,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateClientAppBannerVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseClientAppBannerVariantName(name) {
+  return parseSingleAxisVariantName(name, "Layout", CLIENT_APP_BANNER_LAYOUTS);
+}
+
+async function clientAppBannerIcon(variableByName, fonts, stats) {
+  const icon = gap206Frame("App Icon", "HORIZONTAL");
+  icon.primaryAxisSizingMode = "FIXED";
+  icon.counterAxisSizingMode = "FIXED";
+  icon.primaryAxisAlignItems = "CENTER";
+  icon.counterAxisAlignItems = "CENTER";
+  icon.resizeWithoutConstraints(CLIENT_APP_BANNER_ICON, CLIENT_APP_BANNER_ICON);
+  icon.cornerRadius = KOZMOS_RADIUS.control;
+  icon.clipsContent = true;
+  icon.fills = [
+    paintFromVariable(
+      "Colors/background/100",
+      "#E3E4E8",
+      variableByName,
+      stats,
+    ),
+  ];
+  icon.strokes = [
+    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
+  ];
+  icon.strokeWeight = 1;
+  icon.strokeAlign = "INSIDE";
+  keepStrokeOutOfLayout(icon);
+  icon.setSharedPluginData(RUN_NAMESPACE, "kind", "client-app-banner-icon");
+  bindFloatVariable(
+    icon,
+    "width",
+    "ClientAppBanner/icon/size",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    icon,
+    "height",
+    "ClientAppBanner/icon/size",
+    variableByName,
+    stats,
+  );
+  const initial = await gap206Text({
+    name: "Initial Text",
+    characters: Array.from(CLIENT_APP_BANNER_SAMPLE.appName.trim())[0],
+    size: "Large",
+    weight: "Semibold",
+    ink: GAP206_INK.foreground,
+    fonts,
+    variableByName,
+    stats,
+  });
+  initial.textAlignHorizontal = "CENTER";
+  icon.appendChild(initial);
+  return icon;
+}
+
+async function clientAppBannerWords(variableByName, fonts, stats) {
+  const words = gap206Frame("Words", "VERTICAL");
+  words.itemSpacing = 2;
+  const lines = [
+    ["Promotion Text", CLIENT_APP_BANNER_SAMPLE.promotion, "XS", "Medium"],
+    ["App Name Text", CLIENT_APP_BANNER_SAMPLE.appName, "Base", "Semibold"],
+    [
+      "Description Text",
+      CLIENT_APP_BANNER_SAMPLE.description,
+      "Small",
+      "Normal",
+    ],
+  ];
+  for (const [name, characters, size, weight] of lines) {
+    const text = await gap206Text({
+      name,
+      characters,
+      size,
+      weight,
+      ink: name === "App Name Text" ? GAP206_INK.foreground : GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(words, text, "FILL", null);
+    if (name === "Description Text") {
+      // Two lines at most: truncate, then hug, then clamp.
+      setNodePropertyIfSupported(text, "textTruncation", "ENDING");
+      setTextAutoResize(text, "HEIGHT");
+      setNodePropertyIfSupported(text, "maxLines", 2);
+    } else {
+      setTextAutoResize(text, "HEIGHT");
+    }
+  }
+  return words;
+}
+
+/**
+ * Dismiss is IconButton's Ghost at Large with its Icon swapped to x-close.
+ * The swap replaces the layer the IconButton tinted, so the Ghost's tint and
+ * the 20 icon's stroke are laid again, as TourStep's Close does.
+ */
+function retintClientAppBannerDismissIcon(instance, variableByName, stats) {
+  const config = buttonConfig("Ghost", "Default");
+  const icon =
+    instance.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          BUTTON_ICON_PROPERTY,
+    ) ||
+    instance.findOne(
+      (node) => node.type === "INSTANCE" && node.name === BUTTON_ICON_PROPERTY,
+    );
+  if (!icon) {
+    pushUniqueWarning(
+      stats,
+      "client-app-banner-dismiss-icon",
+      "ClientAppBanner: Dismiss has no Icon layer to tint after the swap.",
+    );
+    return;
+  }
+  applyIconColorOverrides(
+    icon,
+    config.foreground,
+    config.foregroundFallback,
+    variableByName,
+    stats,
+  );
+  scaleIconStrokes(icon, CLIENT_APP_BANNER_DISMISS_ICON);
+}
+
+async function clientAppBannerDismiss(variableByName, stats) {
+  const placed = await gap206NestedInstance({
+    componentSetName: "IconButton",
+    variantProperties: { Variant: "Ghost", Size: "Large", State: "Default" },
+    name: "Dismiss",
+    role: "client-app-banner-dismiss",
+    owner: "ClientAppBanner",
+    stats,
+  });
+  if (placed.componentSet) {
+    const glyph = await findKozmosIconSourceComponent("x-close");
+    if (
+      glyph &&
+      setInstanceSwapProperty(
+        placed.node,
+        placed.componentSet,
+        BUTTON_ICON_PROPERTY,
+        glyph.id,
+        stats,
+      )
+    ) {
+      retintClientAppBannerDismissIcon(placed.node, variableByName, stats);
+    } else if (!glyph) {
+      stats.warnings.push(
+        'ClientAppBanner: icon "x-close" was not found on the Icons page.',
+      );
+    }
+  }
+  markControlSurface(placed.node);
+  return placed.node;
+}
+
+async function updateClientAppBannerVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const layout =
+    CLIENT_APP_BANNER_LAYOUTS.indexOf(value) === -1 ? "Wide" : value;
+  const narrow = layout === "Narrow";
+  const width = CLIENT_APP_BANNER_WIDTHS[layout];
+  const pull = CLIENT_APP_BANNER_PADDING - CLIENT_APP_BANNER_DISMISS_INSET;
+  gap206VariantRoot(
+    component,
+    "ClientAppBanner",
+    `Layout=${layout}`,
+    "HORIZONTAL",
+  );
+  component.counterAxisSizingMode = "AUTO";
+  component.primaryAxisSizingMode = "FIXED";
+  component.itemSpacing = CLIENT_APP_BANNER_GAP;
+  component.paddingLeft = CLIENT_APP_BANNER_PADDING;
+  component.paddingBottom = CLIENT_APP_BANNER_PADDING;
+  component.paddingTop = CLIENT_APP_BANNER_DISMISS_INSET;
+  component.paddingRight = CLIENT_APP_BANNER_DISMISS_INSET;
+  component.resizeWithoutConstraints(width, 120);
+  productSdkSurface(component, KOZMOS_RADIUS.container, variableByName, stats);
+  component.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  component.strokeAlign = "INSIDE";
+  // The CSS border is laid out with the content: 16 inside the edge.
+  setNodePropertyIfSupported(component, "strokesIncludedInLayout", true);
+  component.effects = [elevationEffect("floating")];
+  bindFloatVariable(
+    component,
+    "itemSpacing",
+    "ClientAppBanner/gap",
+    variableByName,
+    stats,
+  );
+  for (const side of ["paddingLeft", "paddingBottom"]) {
+    bindFloatVariable(
+      component,
+      side,
+      "ClientAppBanner/padding",
+      variableByName,
+      stats,
+    );
+  }
+  bindFloatVariable(
+    component,
+    "cornerRadius",
+    "ClientAppBanner/radius",
+    variableByName,
+    stats,
+  );
+  removeDirectChildren(component);
+
+  // The icon and the words, then the action: beside them, or under both.
+  const body = gap206Frame("Body", narrow ? "VERTICAL" : "HORIZONTAL");
+  body.paddingTop = pull;
+  body.itemSpacing = CLIENT_APP_BANNER_GAP;
+  body.counterAxisAlignItems = narrow ? "MIN" : "CENTER";
+  const head = gap206Frame("Head", "HORIZONTAL");
+  head.itemSpacing = CLIENT_APP_BANNER_GAP;
+  head.appendChild(await clientAppBannerIcon(variableByName, fonts, stats));
+  appendWithSizing(
+    head,
+    await clientAppBannerWords(variableByName, fonts, stats),
+    "FILL",
+    null,
+  );
+  appendWithSizing(component, body, "FILL", null);
+  appendWithSizing(body, head, "FILL", null);
+  const action = await gap206Button({
+    variant: "Default",
+    label: CLIENT_APP_BANNER_SAMPLE.action,
+    name: "Action",
+    role: "client-app-banner-action",
+    owner: "ClientAppBanner",
+    stats,
+  });
+  appendWithSizing(body, action, narrow ? "FILL" : null, null);
+  component.appendChild(await clientAppBannerDismiss(variableByName, stats));
+}
+
+function configureClientAppBannerProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Promotion Text",
+    "Promotion Text",
+    CLIENT_APP_BANNER_SAMPLE.promotion,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "App Name Text",
+    "App Name Text",
+    CLIENT_APP_BANNER_SAMPLE.appName,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Description Text",
+    "Description Text",
+    CLIENT_APP_BANNER_SAMPLE.description,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Initial Text",
+    "Initial Text",
+    Array.from(CLIENT_APP_BANNER_SAMPLE.appName.trim())[0],
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Promotion Text",
+    "Show Promotion",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Description Text",
+    "Show Description",
+    true,
+    stats,
+  );
+  configureNamedBooleanProperty(
+    componentSet,
+    "Dismiss",
+    "Show Dismiss",
+    true,
+    stats,
+  );
+}
+
+async function buildClientAppBannerComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ClientAppBanner",
+    componentSetName: "ClientAppBanner",
+    axisName: "Layout",
+    values: CLIENT_APP_BANNER_LAYOUTS,
+    x: 80,
+    y: 15300,
+    xStep: 600,
+    createVariant: createClientAppBannerVariant,
+    configureProperties: configureClientAppBannerProperties,
+    autoReorganize: true,
+    description: CLIENT_APP_BANNER_DESCRIPTION,
+  });
+}
+
+async function updateClientAppBannerComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ClientAppBanner",
+    componentSetName: "ClientAppBanner",
+    axisName: "Layout",
+    values: CLIENT_APP_BANNER_LAYOUTS,
+    xStep: 600,
+    createVariant: createClientAppBannerVariant,
+    updateVariant: updateClientAppBannerVariant,
+    parseVariantName: parseClientAppBannerVariantName,
+    configureProperties: configureClientAppBannerProperties,
+    autoReorganize: true,
+    description: CLIENT_APP_BANNER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildClientAppBannerComponent() {
+  return rebuildGap206Component(
+    "ClientAppBanner",
+    buildClientAppBannerComponent,
+  );
+}
+
+// --- LanguageSwitcher -------------------------------------------------------
+
+// GAP-206 (SDK-UI-003): React's LanguageSwitcher, the map's language control,
+// closed, as its stories draw it. The trigger is Select's (decision: the closed
+// select is a field with a caret) at the SDK's touch size: 48 tall
+// (LanguageSwitcher/height), at least 128 wide (LanguageSwitcher/min-width),
+// 12 across, the Control corner, Colors/background/0 with no edge and map
+// chrome's floating elevation, the committed language's native name in Text
+// Small and Select's 16 chevron-down in Colors/foreground/400. Pending and
+// Disabled draw the trigger at half strength; Pending says so 8 under it in
+// Text Small muted. Failed says why 8 under it in Text Small in
+// Emotion/danger/text, over a live ghost Button, Retry. The open list is
+// Select's and the host's: it is not drawn here.
+const LANGUAGE_SWITCHER_WIDTH = 240;
+const LANGUAGE_SWITCHER_HEIGHT = 48;
+const LANGUAGE_SWITCHER_GAP = 8;
+const LANGUAGE_SWITCHER_SAMPLE = {
+  language: "English",
+  pending: "Changing language…",
+  error: "Language could not be changed.",
+  retry: "Retry",
+};
+const LANGUAGE_SWITCHER_DESCRIPTION = [
+  "Kozmos LanguageSwitcher component set generated from React LanguageSwitcher API (GAP-206, SDK-UI-003).",
+  "State maps to Default; Pending to pending (Pending Text is pendingLabel); Failed to error (Error Text) with onRetry (the Retry Button's Label Text is retryLabel); Disabled to disabled.",
+  "Language Text is the committed language's native name, from languages and selectedLocale.",
+  "The open list is Select's: products draw Select's open state for it. On phones the SDK hides the control.",
+];
+
+async function createLanguageSwitcherVariant({
+  value,
+  variableByName,
+  fonts,
+  stats,
+}) {
+  const component = figma.createComponent();
+  await updateLanguageSwitcherVariant(component, {
+    value,
+    variableByName,
+    fonts,
+    stats,
+  });
+  return component;
+}
+
+function parseLanguageSwitcherVariantName(name) {
+  return parseSingleAxisVariantName(name, "State", LANGUAGE_SWITCHER_STATES);
+}
+
+async function languageSwitcherTrigger(variableByName, fonts, stats) {
+  const trigger = gap206Frame("Trigger", "HORIZONTAL");
+  trigger.primaryAxisSizingMode = "FIXED";
+  trigger.counterAxisSizingMode = "FIXED";
+  trigger.primaryAxisAlignItems = "SPACE_BETWEEN";
+  trigger.counterAxisAlignItems = "CENTER";
+  trigger.itemSpacing = LANGUAGE_SWITCHER_GAP;
+  trigger.paddingLeft = 12;
+  trigger.paddingRight = 12;
+  trigger.resizeWithoutConstraints(
+    LANGUAGE_SWITCHER_WIDTH,
+    LANGUAGE_SWITCHER_HEIGHT,
+  );
+  trigger.cornerRadius = KOZMOS_RADIUS.control;
+  trigger.fills = [
+    paintFromVariable("Colors/background/0", "#FFFFFF", variableByName, stats),
+  ];
+  trigger.effects = [elevationEffect("floating")];
+  trigger.setSharedPluginData(
+    RUN_NAMESPACE,
+    "kind",
+    "language-switcher-trigger",
+  );
+  markControlSurface(trigger);
+  bindFloatVariable(
+    trigger,
+    "height",
+    "LanguageSwitcher/height",
+    variableByName,
+    stats,
+  );
+  bindFloatVariable(
+    trigger,
+    "minWidth",
+    "LanguageSwitcher/min-width",
+    variableByName,
+    stats,
+  );
+  const language = await gap206Text({
+    name: "Language Text",
+    characters: LANGUAGE_SWITCHER_SAMPLE.language,
+    size: "Small",
+    weight: "Normal",
+    ink: GAP206_INK.foreground,
+    fonts,
+    variableByName,
+    stats,
+  });
+  appendWithSizing(trigger, language, "FILL", null);
+  setTextAutoResize(language, "TRUNCATE");
+  const icon = await createFixedIconInstance(
+    "chevron-down",
+    GAP206_INK.muted.name,
+    GAP206_INK.muted.fallback,
+    variableByName,
+    stats,
+    16,
+    "Select/icon/size",
+  );
+  icon.name = "Chevron";
+  trigger.appendChild(icon);
+  return trigger;
+}
+
+async function updateLanguageSwitcherVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const state =
+    LANGUAGE_SWITCHER_STATES.indexOf(value) === -1 ? "Default" : value;
+  gap206VariantRoot(
+    component,
+    "LanguageSwitcher",
+    `State=${state}`,
+    "VERTICAL",
+  );
+  component.counterAxisSizingMode = "FIXED";
+  component.resizeWithoutConstraints(
+    LANGUAGE_SWITCHER_WIDTH,
+    LANGUAGE_SWITCHER_HEIGHT,
+  );
+  removeDirectChildren(component);
+  const trigger = await languageSwitcherTrigger(variableByName, fonts, stats);
+  appendWithSizing(component, trigger, "FILL", null);
+  trigger.opacity = state === "Pending" || state === "Disabled" ? 0.5 : 1;
+
+  if (state === "Pending") {
+    const row = gap206Frame("Pending Row", "VERTICAL");
+    row.paddingTop = LANGUAGE_SWITCHER_GAP;
+    const pending = await gap206Text({
+      name: "Pending Text",
+      characters: LANGUAGE_SWITCHER_SAMPLE.pending,
+      size: "Small",
+      weight: "Normal",
+      ink: GAP206_INK.muted,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(row, pending, "FILL", null);
+    setTextAutoResize(pending, "HEIGHT");
+    appendWithSizing(component, row, "FILL", null);
+  }
+  if (state === "Failed") {
+    const row = gap206Frame("Error Row", "VERTICAL");
+    row.paddingTop = LANGUAGE_SWITCHER_GAP;
+    const error = await gap206Text({
+      name: "Error Text",
+      characters: LANGUAGE_SWITCHER_SAMPLE.error,
+      size: "Small",
+      weight: "Normal",
+      ink: GAP206_INK.danger,
+      fonts,
+      variableByName,
+      stats,
+    });
+    appendWithSizing(row, error, "FILL", null);
+    setTextAutoResize(error, "HEIGHT");
+    row.appendChild(
+      await gap206Button({
+        variant: "Ghost",
+        label: LANGUAGE_SWITCHER_SAMPLE.retry,
+        name: "Retry",
+        role: "language-switcher-retry",
+        owner: "LanguageSwitcher",
+        stats,
+      }),
+    );
+    appendWithSizing(component, row, "FILL", null);
+  }
+}
+
+function configureLanguageSwitcherProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Language Text",
+    "Language Text",
+    LANGUAGE_SWITCHER_SAMPLE.language,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Pending Text",
+    "Pending Text",
+    LANGUAGE_SWITCHER_SAMPLE.pending,
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Error Text",
+    "Error Text",
+    LANGUAGE_SWITCHER_SAMPLE.error,
+    stats,
+  );
+}
+
+async function buildLanguageSwitcherComponent() {
+  return buildSingleAxisComponent({
+    componentName: "LanguageSwitcher",
+    componentSetName: "LanguageSwitcher",
+    axisName: "State",
+    values: LANGUAGE_SWITCHER_STATES,
+    x: 80,
+    y: 15600,
+    xStep: 280,
+    createVariant: createLanguageSwitcherVariant,
+    configureProperties: configureLanguageSwitcherProperties,
+    autoReorganize: true,
+    description: LANGUAGE_SWITCHER_DESCRIPTION,
+  });
+}
+
+async function updateLanguageSwitcherComponent() {
+  return updateSingleAxisComponent({
+    componentName: "LanguageSwitcher",
+    componentSetName: "LanguageSwitcher",
+    axisName: "State",
+    values: LANGUAGE_SWITCHER_STATES,
+    xStep: 280,
+    createVariant: createLanguageSwitcherVariant,
+    updateVariant: updateLanguageSwitcherVariant,
+    parseVariantName: parseLanguageSwitcherVariantName,
+    configureProperties: configureLanguageSwitcherProperties,
+    autoReorganize: true,
+    description: LANGUAGE_SWITCHER_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildLanguageSwitcherComponent() {
+  return rebuildGap206Component(
+    "LanguageSwitcher",
+    buildLanguageSwitcherComponent,
   );
 }
 

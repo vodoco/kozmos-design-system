@@ -20,10 +20,9 @@ const shared = {
     Mixed: "",
   }),
   // Decision 191: an option of a mixed group, unchosen, with the group's
-  // "Multiple values" line under it. Mixed Text is mapped once the owner's
-  // plugin Update has put it in the library: the dry run reads the live
-  // file, which has none before it.
+  // "Multiple values" line, Mixed Text, under it.
   mixed: figma.enum("Checked", { Mixed: true }),
+  mixedLabel: figma.string("Mixed Text"),
   disabled: figma.enum("State", {
     Default: false,
     Disabled: true,
@@ -45,8 +44,20 @@ const shared = {
 figma.connect(RadioGroupItem, RADIO_URL, {
   variant: { Variant: "Default" },
   props: shared,
-  example: ({ defaultValue, disabled, error, label, description, mixed }) => (
-    <RadioGroup defaultValue={defaultValue} mixed={mixed}>
+  example: ({
+    defaultValue,
+    disabled,
+    error,
+    label,
+    description,
+    mixed,
+    mixedLabel,
+  }) => (
+    <RadioGroup
+      defaultValue={defaultValue}
+      mixed={mixed}
+      mixedLabel={mixedLabel}
+    >
       <RadioGroupItem
         value="option"
         disabled={disabled}
@@ -76,8 +87,13 @@ figma.connect(RadioGroupItem, RADIO_URL, {
     description,
     media,
     mixed,
+    mixedLabel,
   }) => (
-    <RadioGroup defaultValue={defaultValue} mixed={mixed}>
+    <RadioGroup
+      defaultValue={defaultValue}
+      mixed={mixed}
+      mixedLabel={mixedLabel}
+    >
       <RadioGroupItem
         value="option"
         variant="card"
@@ -109,8 +125,13 @@ figma.connect(RadioGroupItem, RADIO_URL, {
     description,
     media,
     mixed,
+    mixedLabel,
   }) => (
-    <RadioGroup defaultValue={defaultValue} mixed={mixed}>
+    <RadioGroup
+      defaultValue={defaultValue}
+      mixed={mixed}
+      mixedLabel={mixedLabel}
+    >
       <RadioGroupItem
         value="option"
         variant="tile"

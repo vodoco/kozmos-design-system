@@ -5,10 +5,12 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.figma.code.connect.Figma
 import com.figma.code.connect.FigmaConnect
 import com.figma.code.connect.FigmaProperty
 import com.figma.code.connect.FigmaType
 import com.figma.code.connect.FigmaVariant
+import com.kozmos.components.KozmosEmotion
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonVariant
 
@@ -34,12 +36,25 @@ class KozmosEmptyStateBasicConnect {
     @FigmaProperty(FigmaType.Text, "List Item 3 Text")
     val item3: String = "Search by another name or an ID"
 
+    // GAP-213, decision 194: an emotion's card. None is no card.
+    @FigmaProperty(FigmaType.Enum, "Tone")
+    val tone: KozmosEmotion? = Figma.mapping(
+        "None" to null,
+        "Themed" to KozmosEmotion.Themed,
+        "Neutral" to KozmosEmotion.Neutral,
+        "Success" to KozmosEmotion.Success,
+        "Danger" to KozmosEmotion.Danger,
+        "Informative" to KozmosEmotion.Informative,
+        "Alert" to KozmosEmotion.Alert
+    )
+
     @Composable
     fun ComponentExample() {
         KozmosEmptyState(
             title = title,
             description = description,
-            list = if (showList) listOf(item1, item2, item3) else emptyList()
+            list = if (showList) listOf(item1, item2, item3) else emptyList(),
+            tone = tone
         )
     }
 }
@@ -66,12 +81,25 @@ class KozmosEmptyStateIconConnect {
     @FigmaProperty(FigmaType.Text, "List Item 3 Text")
     val item3: String = "Search by another name or an ID"
 
+    // GAP-213, decision 194: an emotion's card. None is no card.
+    @FigmaProperty(FigmaType.Enum, "Tone")
+    val tone: KozmosEmotion? = Figma.mapping(
+        "None" to null,
+        "Themed" to KozmosEmotion.Themed,
+        "Neutral" to KozmosEmotion.Neutral,
+        "Success" to KozmosEmotion.Success,
+        "Danger" to KozmosEmotion.Danger,
+        "Informative" to KozmosEmotion.Informative,
+        "Alert" to KozmosEmotion.Alert
+    )
+
     @Composable
     fun ComponentExample() {
         KozmosEmptyState(
             title = title,
             description = description,
             list = if (showList) listOf(item1, item2, item3) else emptyList(),
+            tone = tone,
             icon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             }
@@ -101,12 +129,25 @@ class KozmosEmptyStateActionConnect {
     @FigmaProperty(FigmaType.Text, "List Item 3 Text")
     val item3: String = "Search by another name or an ID"
 
+    // GAP-213, decision 194: an emotion's card. None is no card.
+    @FigmaProperty(FigmaType.Enum, "Tone")
+    val tone: KozmosEmotion? = Figma.mapping(
+        "None" to null,
+        "Themed" to KozmosEmotion.Themed,
+        "Neutral" to KozmosEmotion.Neutral,
+        "Success" to KozmosEmotion.Success,
+        "Danger" to KozmosEmotion.Danger,
+        "Informative" to KozmosEmotion.Informative,
+        "Alert" to KozmosEmotion.Alert
+    )
+
     @Composable
     fun ComponentExample() {
         KozmosEmptyState(
             title = title,
             description = description,
             list = if (showList) listOf(item1, item2, item3) else emptyList(),
+            tone = tone,
             icon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },

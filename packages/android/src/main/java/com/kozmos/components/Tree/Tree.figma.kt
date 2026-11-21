@@ -80,6 +80,19 @@ class KozmosTreeParentItemConnect {
     @FigmaProperty(FigmaType.Boolean, "Disclosure End")
     val disclosureEnd: Boolean = false
 
+    // Decision 211, GAP-279: Mixed is the box's dash, a parent some but not
+    // all of whose rows are checked; turn Checked off and Mixed on.
+    @FigmaProperty(FigmaType.Boolean, "Mixed")
+    val mixed: Boolean = false
+
+    // GAP-217: Band draws the selected and hover fills as a band across the
+    // row's full width.
+    @FigmaProperty(FigmaType.Enum, "RowFill")
+    val rowFill: KozmosTreeRowFill = Figma.mapping(
+        "Inset" to KozmosTreeRowFill.Inset,
+        "Band" to KozmosTreeRowFill.Band
+    )
+
     @Composable
     fun ComponentExample() {
         TreeItem(
@@ -89,7 +102,9 @@ class KozmosTreeParentItemConnect {
             divided = divided,
             metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline,
             checked = if (checkable) checked else null,
-            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start
+            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start,
+            mixed = mixed,
+            rowFill = rowFill
         )
     }
 }
@@ -133,6 +148,19 @@ class KozmosTreeChildItemConnect {
     @FigmaProperty(FigmaType.Boolean, "Disclosure End")
     val disclosureEnd: Boolean = false
 
+    // Decision 211, GAP-279: Mixed is the box's dash, a parent some but not
+    // all of whose rows are checked; turn Checked off and Mixed on.
+    @FigmaProperty(FigmaType.Boolean, "Mixed")
+    val mixed: Boolean = false
+
+    // GAP-217: Band draws the selected and hover fills as a band across the
+    // row's full width.
+    @FigmaProperty(FigmaType.Enum, "RowFill")
+    val rowFill: KozmosTreeRowFill = Figma.mapping(
+        "Inset" to KozmosTreeRowFill.Inset,
+        "Band" to KozmosTreeRowFill.Band
+    )
+
     @Composable
     fun ComponentExample() {
         TreeItem(
@@ -142,7 +170,9 @@ class KozmosTreeChildItemConnect {
             divided = divided,
             metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline,
             checked = if (checkable) checked else null,
-            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start
+            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start,
+            mixed = mixed,
+            rowFill = rowFill
         )
     }
 }
@@ -186,6 +216,19 @@ class KozmosTreeItemConnect {
     @FigmaProperty(FigmaType.Boolean, "Disclosure End")
     val disclosureEnd: Boolean = false
 
+    // Decision 211, GAP-279: Mixed is the box's dash, a parent some but not
+    // all of whose rows are checked; turn Checked off and Mixed on.
+    @FigmaProperty(FigmaType.Boolean, "Mixed")
+    val mixed: Boolean = false
+
+    // GAP-217: Band draws the selected and hover fills as a band across the
+    // row's full width.
+    @FigmaProperty(FigmaType.Enum, "RowFill")
+    val rowFill: KozmosTreeRowFill = Figma.mapping(
+        "Inset" to KozmosTreeRowFill.Inset,
+        "Band" to KozmosTreeRowFill.Band
+    )
+
     @Composable
     fun ComponentExample() {
         TreeItem(
@@ -195,7 +238,9 @@ class KozmosTreeItemConnect {
             divided = divided,
             metaPlacement = if (metaBelow) KozmosTreeMetaPlacement.Below else KozmosTreeMetaPlacement.Inline,
             checked = if (checkable) checked else null,
-            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start
+            disclosurePosition = if (disclosureEnd) KozmosTreeDisclosurePosition.End else KozmosTreeDisclosurePosition.Start,
+            mixed = mixed,
+            rowFill = rowFill
         )
     }
 }

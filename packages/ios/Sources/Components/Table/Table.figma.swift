@@ -57,6 +57,13 @@ struct KozmosTableConnect: FigmaConnect {
     @FigmaString("Row 3 Cell 3 Text")
     var row3Cell3: String = "May 21"
 
+    // GAP-171: Selectable is the selecting table, its select-all box and a
+    // box at each row's start, the last row selected as Figma draws it.
+    // Sortable and Numeric Column are not mapped: KozmosTableCell has no
+    // sort arrow and no end alignment, so SwiftUI has no API for either.
+    @FigmaBoolean("Selectable")
+    var selectable: Bool = false
+
     var body: some View {
         VStack(spacing: KozmosDimensions.primitivesLayoutSpacing0) {
             KozmosTableRow {
@@ -65,14 +72,30 @@ struct KozmosTableConnect: FigmaConnect {
                 KozmosTableCell(self.header3)
             }
 
-            KozmosTable(rows) { row in
-                AnyView(
-                    KozmosTableRow {
-                        KozmosTableCell(row.first)
-                        KozmosTableCell(row.second)
-                        KozmosTableCell(row.third)
-                    }
-                )
+            if self.selectable {
+                KozmosTable(
+                    rows,
+                    selection: .constant(["row-3"]),
+                    rowSelectLabel: { row in "Select \(row.first)" }
+                ) { row in
+                    AnyView(
+                        KozmosTableRow {
+                            KozmosTableCell(row.first)
+                            KozmosTableCell(row.second)
+                            KozmosTableCell(row.third)
+                        }
+                    )
+                }
+            } else {
+                KozmosTable(rows) { row in
+                    AnyView(
+                        KozmosTableRow {
+                            KozmosTableCell(row.first)
+                            KozmosTableCell(row.second)
+                            KozmosTableCell(row.third)
+                        }
+                    )
+                }
             }
         }
     }

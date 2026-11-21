@@ -22,6 +22,12 @@ figma.connect(
         Dropzone: false,
         Files: true,
         Preview: false,
+        Button: false,
+      }),
+      // GAP-274: an outline Button-sized trigger in place of the drop area,
+      // its words Browse Text.
+      variant: figma.enum("Content", {
+        Button: "button",
       }),
       // GAP-270: one image, shown with Change and Remove.
       preview: figma.enum("Content", {
@@ -50,6 +56,7 @@ figma.connect(
       multiple,
       preview,
       status,
+      variant,
     }) => (
       <FileUpload
         accept=".jpg,.png,.pdf"
@@ -64,6 +71,7 @@ figma.connect(
         multiple={multiple}
         preview={preview}
         status={status}
+        variant={variant}
       />
     ),
   },

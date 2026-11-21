@@ -1410,9 +1410,17 @@ section("A set runs after the sets it reaches into");
     retintCardHeaderActionIcon: ["IconButton", "Card"],
     // GAP-036: PageHeader's info-circle, tinted again after the swap.
     retintPageHeaderInfoIcon: ["IconButton", "PageHeader"],
+    // GAP-206: ClientAppBanner's Dismiss, x-close, tinted again after the swap.
+    retintClientAppBannerDismissIcon: ["IconButton", "ClientAppBanner"],
+    // GAP-206: AIInputBar's send-01 and AICompanionPanel's x-close.
+    retintAIIconButtonIcon: ["IconButton", ["AIInputBar", "AICompanionPanel"]],
     // One helper, every shell that composes a navigation row: the writer is a
     // list, not a name.
     retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
+    // GAP-206: the closes' x-close, tinted again after the swap, and the
+    // search's own label, hidden.
+    retintMapPartCloseIcon: ["IconButton", ["MapInfoPanel", "RouteSetupPanel"]],
+    hideRouteLocationComboboxLabel: ["Combobox", "RouteLocationField"],
   };
   ok(
     [...writersFound].sort().join(",") ===
@@ -1463,8 +1471,8 @@ section("A set runs after the sets it reaches into");
     // Both, or the set an Update of IconButton leaves out loses its re-tint.
     ok(
       [...plugin.setsToUpdateAfter(["IconButton"])].sort().join(",") ===
-        "Card,PageHeader,TourStep",
-      `after IconButton: TourStep, Card and PageHeader (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
+        "AICompanionPanel,AIInputBar,Card,ClientAppBanner,MapInfoPanel,PageHeader,RouteSetupPanel,TourStep",
+      `after IconButton: TourStep, Card, PageHeader, ClientAppBanner, MapInfoPanel, RouteSetupPanel, AIInputBar and AICompanionPanel (${plugin.setsToUpdateAfter(["IconButton"]).join(", ")})`,
     );
   } else ok(false, "setsToUpdateAfter is reachable");
   if (typeof plugin.noteSetsToUpdateNext === "function") {
@@ -3006,6 +3014,750 @@ loadButtonFonts = async () => (${JSON.stringify(FONTS)});
 // until 2026-11-01 this section read what the painter wrote, every assertion
 // passed, and the Build drew labels out of their buttons, words out of the
 // instruction and "2 of 4" over a full bar.
+section(
+  "GAP-206: Surface, ActionCard, Calendar, ClientAppBanner and LanguageSwitcher sets",
+);
+{
+  const ready =
+    [
+      "updateSurfaceVariant",
+      "updateActionCardVariant",
+      "updateCalendarVariant",
+      "updateClientAppBannerVariant",
+      "updateLanguageSwitcherVariant",
+    ].every((fn) => typeof plugin[fn] === "function") &&
+    [
+      "SURFACE_VARIANTS",
+      "ACTION_CARD_CONTENT",
+      "CALENDAR_MODES",
+      "CALENDAR_MONTHS",
+      "CLIENT_APP_BANNER_LAYOUTS",
+      "LANGUAGE_SWITCHER_STATES",
+    ].every((name) => Array.isArray(plugin[name]));
+  ok(ready, "GAP-206's five painters and their axes are reachable");
+
+  // Registered everywhere a set is: its bulk run, the actions the UI sends,
+  // the Components page, the audit's axes and its docs.
+  const axesOf = (name) =>
+    typeof plugin.expectedVariantAxesForComponentSetName === "function"
+      ? JSON.stringify(plugin.expectedVariantAxesForComponentSetName(name))
+      : null;
+  const AXES = {
+    Surface: { Variant: ["Solid", "Glass"] },
+    ActionCard: { Content: ["Titled", "Basic"] },
+    Calendar: { Mode: ["Single", "Range"], Months: ["One", "Two"] },
+    ClientAppBanner: { Layout: ["Wide", "Narrow"] },
+    LanguageSwitcher: {
+      State: ["Default", "Pending", "Failed", "Disabled"],
+    },
+  };
+  const KEBAB = {
+    Surface: "surface",
+    ActionCard: "action-card",
+    Calendar: "calendar",
+    ClientAppBanner: "client-app-banner",
+    LanguageSwitcher: "language-switcher",
+  };
+  const RUN = {
+    Surface: "core",
+    ActionCard: "core",
+    Calendar: "core",
+    ClientAppBanner: "product",
+    LanguageSwitcher: "product",
+  };
+  const core = (plugin.CORE_UPDATE_SEQUENCE || []).map(([name]) => name);
+  const product = (plugin.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(
+    ([name]) => name,
+  );
+  const handlers =
+    typeof plugin.additionalComponentActionHandlers === "function"
+      ? plugin.additionalComponentActionHandlers()
+      : {};
+  const { names, axes } = expectations();
+  const docs = (plugin.COMPONENT_DOCS || []).map((doc) => doc.componentSetName);
+  for (const [name, expected] of Object.entries(AXES)) {
+    const run = RUN[name] === "core" ? core : product;
+    ok(
+      axesOf(name) === JSON.stringify(expected) &&
+        JSON.stringify(axes[name]) === JSON.stringify(expected),
+      `${name}'s axes are ${JSON.stringify(expected)}, and figma:verify reads the same (${axesOf(name)})`,
+    );
+    ok(
+      run.includes(name) &&
+        ["build", "update", "rebuild"].every(
+          (verb) => typeof handlers[`${verb}-${KEBAB[name]}`] === "function",
+        ) &&
+        names.includes(name) &&
+        docs.includes(name),
+      `${name} is in the ${RUN[name] === "core" ? "Core" : "Product / SDK"} run, has its build, update and rebuild actions, a place on the Components page and its docs`,
+    );
+  }
+  // Each nested part's set is updated before the set that holds it.
+  ok(
+    ["Button", "IconButton"].every(
+      (inner) => core.includes(inner) && !product.includes(inner),
+    ) &&
+      product.includes("ClientAppBanner") &&
+      product.includes("LanguageSwitcher"),
+    "Button and IconButton are Core, so the Core run draws them before ClientAppBanner and LanguageSwitcher hold them",
+  );
+
+  // The file: Button's Default and Ghost with their label, IconButton's Ghost
+  // at Large tinting its Icon in the Ghost's ink, and the icons the sets use.
+  const ghostInk = "Secondary Buttons/themed/button/foreground/content/idle";
+  const plus = mockIconComponent("plus");
+  const close = mockIconComponent("x-close");
+  const button = mockComponentSet(
+    "Button",
+    ["Default", "Ghost"].map((variant) => ({
+      properties: { Variant: variant, Size: "Default", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.resize(80, 44);
+        const label = new MockNode("TEXT", "Label Text");
+        label.fontSize = 14;
+        label.lineHeight = { unit: "PIXELS", value: 20 };
+        label.characters = "Button";
+        label.componentPropertyReferences = { characters: "Label Text#1:0" };
+        node.appendChild(label);
+      },
+    })),
+  );
+  button.componentPropertyDefinitions = {
+    "Label Text#1:0": { type: "TEXT", defaultValue: "Button" },
+  };
+  const iconButton = mockComponentSet("IconButton", [
+    {
+      properties: { Variant: "Ghost", Size: "Large", State: "Default" },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(44, 44);
+        const icon = plus.createInstance();
+        icon.name = "Icon";
+        icon.resize(20, 20);
+        icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+        node.appendChild(icon);
+      },
+    },
+  ]);
+  iconButton.componentPropertyDefinitions = {
+    "Icon#2:0": { type: "INSTANCE_SWAP", defaultValue: plus.id },
+  };
+  const components = new MockNode("PAGE", "Components");
+  for (const set of [button, iconButton]) components.appendChild(set);
+  const icons = new MockNode("PAGE", "Icons");
+  for (const icon of [
+    plus,
+    close,
+    mockIconComponent("chevron-left"),
+    mockIconComponent("chevron-right"),
+    mockIconComponent("chevron-down"),
+  ])
+    icons.appendChild(icon);
+  const fileFigma = createFigmaMock({ pages: [components, icons] });
+  const file = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: fileFigma,
+    append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  const tokens = payloadVariables(
+    (plugin.COMPONENT_FLOAT_TOKENS || [])
+      .map((token) => token.name)
+      .concat([
+        ...variableByName.keys(),
+        "Effect/glass/border/color",
+        "Emotion/danger/text",
+        ghostInk,
+      ]),
+  );
+  // The glass numbers the painter writes are the tokens' Light values.
+  const payload = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  );
+  const tokenValue = (figmaName) => {
+    const variable = payload.variables.find((v) => v.figmaName === figmaName);
+    return variable ? variable.values.light.value : undefined;
+  };
+  const bound = (node, field) => {
+    const alias = node && node.boundVariables && node.boundVariables[field];
+    return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+  };
+  const fillOf = (node) => node && node.fills && node.fills[0];
+  const order = (node) => (node ? node.children.map((n) => n.name) : []);
+  const draw = async (painter, args) => {
+    const component = fileFigma.createComponent();
+    const stats = freshStats();
+    await withAutoLayout(() =>
+      file[painter](component, {
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+        ...args,
+      }),
+    );
+    return { component, stats };
+  };
+  const floating = (effect) =>
+    Boolean(
+      effect &&
+      effect.type === "DROP_SHADOW" &&
+      effect.offset.y === 4 &&
+      effect.radius === 8 &&
+      Math.abs(effect.color.a - 0.1) < 1e-9,
+    );
+
+  // --- Surface: solid, or glass ----------------------------------------------
+  const glassOpacity = tokenValue("Effect/glass/opacity");
+  const glassBlur = tokenValue("Effect/glass/blur");
+  const glassEdge = tokenValue("Effect/glass/border/opacity");
+  for (const variant of ready ? plugin.SURFACE_VARIANTS : []) {
+    const glass = variant === "Glass";
+    const { component: c } = await draw("updateSurfaceVariant", {
+      value: variant,
+    });
+    const at = `Surface ${variant}`;
+    ok(
+      c.name === `Variant=${variant}` &&
+        file.parseSurfaceVariantName(c.name).value === variant,
+      `${at}: named Variant=${variant}, and reads back as itself (${c.name})`,
+    );
+    ok(
+      c.width === 320 &&
+        c.layoutMode === "VERTICAL" &&
+        [c.paddingLeft, c.paddingRight, c.paddingTop, c.paddingBottom].every(
+          (pad) => pad === 16,
+        ) &&
+        c.cornerRadius === 20 &&
+        bound(c, "width") === "Surface/width/default" &&
+        bound(c, "paddingTop") === "Surface/padding" &&
+        bound(c, "paddingLeft") === "Surface/padding" &&
+        bound(c, "cornerRadius") === "Surface/radius" &&
+        c.strokes.length === 0,
+      `${at}: 320 wide, 16 inside, the Container corner, each bound, no stroke of its own (${[c.width, c.paddingTop, c.cornerRadius, bound(c, "paddingTop")].join(", ")})`,
+    );
+    const expected = glass
+      ? ["Glass Fill", "Surface Edge", "Content Slot"]
+      : ["Surface Edge", "Content Slot"];
+    ok(
+      JSON.stringify(order(c)) === JSON.stringify(expected),
+      `${at}: ${expected.join(", ")} (${order(c).join(", ")})`,
+    );
+    const edge = named(c, "Surface Edge");
+    const edgeToken = glass ? "Effect/glass/border/color" : "Border/Subtle";
+    const edgeStrength = glass ? glassEdge : 1;
+    ok(
+      edge &&
+        edge.fills.length === 0 &&
+        edge.strokes.length === 1 &&
+        boundVariableName(edge.strokes[0]) === edgeToken &&
+        Math.abs(edge.opacity - edgeStrength) < 1e-6 &&
+        edge.strokeWeight === 1 &&
+        edge.strokeAlign === "INSIDE" &&
+        edge.cornerRadius === 20 &&
+        edge.layoutPositioning === "ABSOLUTE" &&
+        edge.width === c.width &&
+        edge.height === c.height,
+      `${at}: its edge is ${edgeToken} at ${edgeStrength}, 1 inside, a layer the surface's size (${edge && [boundVariableName(edge.strokes[0]), edge.opacity, edge.width, edge.height].join(", ")})`,
+    );
+    if (glass) {
+      const blur = c.effects.find((e) => e.type === "BACKGROUND_BLUR");
+      ok(
+        c.fills.length === 0 &&
+          isWash(
+            c,
+            "Glass Fill",
+            "Colors/background/0",
+            0.7,
+            c.width,
+            c.height,
+          ) &&
+          Math.abs(glassOpacity - 0.7) < 1e-6 &&
+          named(c, "Glass Fill").cornerRadius === 20 &&
+          typeof glassOpacity === "number",
+        `${at}: the glass colour, Colors/background/0, at Effect/glass/opacity's ${glassOpacity}, a layer of its own (${named(c, "Glass Fill") && named(c, "Glass Fill").opacity})`,
+      );
+      ok(
+        c.effects.length === 2 &&
+          floating(c.effects[0]) &&
+          blur &&
+          blur.radius === glassBlur &&
+          blur.visible === true,
+        `${at}: the floating elevation and a background blur of Effect/glass/blur's ${glassBlur} (${JSON.stringify(c.effects.map((e) => [e.type, e.radius]))})`,
+      );
+    } else {
+      ok(
+        c.fills.length === 1 &&
+          boundVariableName(fillOf(c)) === "Colors/background/0" &&
+          c.effects.length === 1 &&
+          floating(c.effects[0]),
+        `${at}: Colors/background/0 and the floating elevation (${boundVariableName(fillOf(c))}, ${c.effects.length})`,
+      );
+    }
+    await withAutoLayout(() =>
+      file.updateSurfaceVariant(c, {
+        value: variant,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    );
+    ok(
+      JSON.stringify(order(c)) === JSON.stringify(expected),
+      `${at}: an Update keeps ${expected.join(", ")} once (${order(c).join(", ")})`,
+    );
+  }
+
+  // --- ActionCard: a title over the content ----------------------------------
+  for (const content of ready ? plugin.ACTION_CARD_CONTENT : []) {
+    const { component: c } = await draw("updateActionCardVariant", {
+      value: content,
+    });
+    const at = `ActionCard ${content}`;
+    const titled = content === "Titled";
+    const expected = titled ? ["Title Text", "Content Slot"] : ["Content Slot"];
+    const title = named(c, "Title Text");
+    ok(
+      c.name === `Content=${content}` &&
+        file.parseActionCardVariantName(c.name).value === content &&
+        JSON.stringify(order(c)) === JSON.stringify(expected),
+      `${at}: named Content=${content}, ${expected.join(", ")} (${order(c).join(", ")})`,
+    );
+    ok(
+      c.width === 320 &&
+        c.layoutMode === "VERTICAL" &&
+        c.itemSpacing === 8 &&
+        bound(c, "itemSpacing") === "ActionCard/gap" &&
+        bound(c, "width") === "ActionCard/width/default" &&
+        c.fills.length === 0 &&
+        c.strokes.length === 0 &&
+        c.effects.length === 0,
+      `${at}: a column 8 apart (ActionCard/gap), 320 wide, with no surface (${c.itemSpacing}, ${bound(c, "itemSpacing")}, ${c.fills.length})`,
+    );
+    if (titled) {
+      ok(
+        title &&
+          title.characters === "2 results" &&
+          title.fontSize === 12 &&
+          title.lineHeight.value === 16 &&
+          boundVariableName(fillOf(title)) === "Colors/foreground/400" &&
+          title.getSharedPluginData("kozmos_ds_importer", "text-style") ===
+            "text.XS.Semibold" &&
+          file.gap206TextStyleKey("ActionCard", "Title Text") ===
+            "text.XS.Semibold",
+        `${at}: "2 results" in Text XS semibold, muted (${title && [title.fontSize, boundVariableName(fillOf(title))].join(", ")})`,
+      );
+    }
+  }
+
+  // --- Calendar: a day or a range, one month or two --------------------------
+  const MAY_OUTSIDE = 11; // 26-30 April before, 1-6 June after
+  const JUNE_OUTSIDE = 12; // 31 May before, 1-11 July after
+  const days = (month, layer) =>
+    month ? month.findAll((n) => n.name === layer) : [];
+  for (const mode of ready ? plugin.CALENDAR_MODES : []) {
+    for (const months of ready ? plugin.CALENDAR_MONTHS : []) {
+      const { component: c } = await draw("updateCalendarVariant", {
+        value: mode,
+        second: months,
+      });
+      const at = `Calendar ${mode}/${months}`;
+      const size = mode === "Range" ? 40 : 36;
+      const sizeToken =
+        mode === "Range" ? "Calendar/day/size/range" : "Calendar/day/size";
+      const count = months === "Two" ? 2 : 1;
+      const expectedMonths = count === 2 ? ["Month 1", "Month 2"] : ["Month 1"];
+      ok(
+        c.name === `Mode=${mode}, Months=${months}` &&
+          JSON.stringify(file.parseCalendarVariantName(c.name)) ===
+            JSON.stringify({ value: mode, second: months }) &&
+          JSON.stringify(order(c)) === JSON.stringify(expectedMonths) &&
+          c.layoutMode === "HORIZONTAL" &&
+          c.itemSpacing === 12 &&
+          bound(c, "itemSpacing") === "Calendar/months/gap" &&
+          c.fills.length === 0 &&
+          c.strokes.length === 0 &&
+          c.effects.length === 0,
+        `${at}: ${expectedMonths.join(", ")} 12 apart, with no surface (${c.name}; ${order(c).join(", ")})`,
+      );
+      c.children.forEach((month, index) => {
+        const last = index === count - 1;
+        const where = `${at} / ${month.name}`;
+        const header = named(month, "Calendar Header");
+        const title = header && named(header, "Title Text");
+        const nav = header && named(header, "Calendar Navigation");
+        ok(
+          month.width === 7 * size + 6 * 4 &&
+            month.itemSpacing === 8 &&
+            bound(month, "itemSpacing") === "Calendar/month/gap" &&
+            JSON.stringify(order(month)) ===
+              JSON.stringify(["Calendar Header", "Calendar Grid"]) &&
+            header.height === 32 &&
+            title.characters === (index === 0 ? "May 2026" : "June 2026") &&
+            title.fontSize === 14 &&
+            title.fontName.style === "Medium" &&
+            boundVariableName(fillOf(title)) === "Colors/foreground/0",
+          `${where}: ${7 * size + 24} wide, its 32 header 8 above the days, "${title && title.characters}" in Text Small medium`,
+        );
+        const buttons = nav ? nav.children : [];
+        ok(
+          last
+            ? nav &&
+                JSON.stringify(order(nav)) ===
+                  JSON.stringify(["Previous Month", "Next Month"]) &&
+                nav.itemSpacing === 4 &&
+                buttons.every((b) => {
+                  const icon = named(b, "Icon");
+                  const vector =
+                    icon && icon.findOne((n) => n.type === "VECTOR");
+                  return (
+                    b.width === 32 &&
+                    b.height === 32 &&
+                    b.cornerRadius === 16 &&
+                    b.fills.length === 0 &&
+                    bound(b, "width") === "Calendar/nav/size" &&
+                    icon.width === 16 &&
+                    vector &&
+                    boundVariableName(vector.strokes[0]) ===
+                      "Colors/foreground/400"
+                  );
+                }) &&
+                buttons[0].findOne((n) => n.name === "Icon").mainComponent
+                  .name === "Icon / chevron-left" &&
+                buttons[1].findOne((n) => n.name === "Icon").mainComponent
+                  .name === "Icon / chevron-right"
+            : !nav,
+          last
+            ? `${where}: the month buttons, 32 squares 4 apart, a 16 chevron in Colors/foreground/400`
+            : `${where}: no month buttons; the last month carries them`,
+        );
+        const grid = named(month, "Calendar Grid");
+        const weekdays = grid && named(grid, "Weekdays");
+        const weeks = grid ? grid.children.slice(1) : [];
+        ok(
+          grid &&
+            grid.itemSpacing === 4 &&
+            bound(grid, "itemSpacing") === "Calendar/gap" &&
+            weekdays &&
+            weekdays.paddingBottom === 4 &&
+            weekdays.children.map((t) => t.characters).join(",") ===
+              "Sun,Mon,Tue,Wed,Thu,Fri,Sat" &&
+            weekdays.children.every(
+              (t) =>
+                t.width === size &&
+                t.fontSize === 12 &&
+                boundVariableName(fillOf(t)) === "Colors/foreground/400",
+            ) &&
+            weeks.length === 6 &&
+            weeks.every(
+              (row) =>
+                row.children.length === 7 &&
+                row.itemSpacing === 4 &&
+                bound(row, "itemSpacing") === "Calendar/gap",
+            ),
+          `${where}: Sun to Sat in Text XS muted, 4 over six weeks of seven days 4 apart`,
+        );
+        const all = weeks.flatMap((row) => row.children);
+        ok(
+          all.length === 42 &&
+            all.every(
+              (day) =>
+                day.width === size &&
+                day.height === size &&
+                day.cornerRadius === 16 &&
+                bound(day, "width") === sizeToken &&
+                bound(day, "height") === sizeToken &&
+                named(day, "Day Text").fontSize === 14,
+            ),
+          `${where}: every day ${size} square (${sizeToken}), the Control corner, its number in Text Small`,
+        );
+        const numbers = (layer) =>
+          days(month, layer)
+            .map((day) => named(day, "Day Text").characters)
+            .join(",");
+        const outside = days(month, "Outside Day");
+        ok(
+          outside.length === (index === 0 ? MAY_OUTSIDE : JUNE_OUTSIDE) &&
+            outside.every(
+              (day) =>
+                day.fills.length === 0 &&
+                boundVariableName(fillOf(named(day, "Day Text"))) ===
+                  "Colors/foreground/400",
+            ) &&
+            all[0] === outside[0],
+          `${where}: the weeks start on the Sunday before the 1st, and the ${outside.length} days of the months either side are muted`,
+        );
+        if (index === 1) {
+          ok(
+            numbers("Selected Day") === "" &&
+              numbers("In Range Day") === "" &&
+              numbers("Today Day") === "",
+            `${where}: nothing chosen and no today in June`,
+          );
+          return;
+        }
+        const selected = days(month, "Selected Day");
+        ok(
+          numbers("Selected Day") === (mode === "Range" ? "21,25" : "25") &&
+            selected.every(
+              (day) =>
+                boundVariableName(fillOf(day)) === plugin.THEME_FILL.name &&
+                boundVariableName(fillOf(named(day, "Day Text"))) ===
+                  plugin.THEME_FILL_FOREGROUND.name,
+            ),
+          `${where}: ${mode === "Range" ? "the range's ends, the 21st and 25th," : "the 25th"} on the theme fill in its foreground (${numbers("Selected Day")})`,
+        );
+        ok(
+          mode === "Range"
+            ? numbers("In Range Day") === "22,23,24" &&
+                days(month, "In Range Day").every(
+                  (day) =>
+                    boundVariableName(fillOf(day)) === "Colors/theme/100" &&
+                    boundVariableName(fillOf(named(day, "Day Text"))) ===
+                      "Colors/foreground/0",
+                ) &&
+                numbers("Today Day") === ""
+            : numbers("In Range Day") === "" &&
+                numbers("Today Day") === "22" &&
+                boundVariableName(fillOf(days(month, "Today Day")[0])) ===
+                  "Colors/background/100",
+          mode === "Range"
+            ? `${where}: the 22nd to the 24th on Colors/theme/100, today among them (${numbers("In Range Day")})`
+            : `${where}: today, the 22nd, on Colors/background/100 (${numbers("Today Day")})`,
+        );
+      });
+      await withAutoLayout(() =>
+        file.updateCalendarVariant(c, {
+          value: mode,
+          second: months,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats: freshStats(),
+        }),
+      );
+      ok(
+        JSON.stringify(order(c)) === JSON.stringify(expectedMonths),
+        `${at}: an Update keeps ${expectedMonths.join(", ")} once`,
+      );
+    }
+  }
+
+  // --- ClientAppBanner: wide and narrow --------------------------------------
+  for (const layout of ready ? plugin.CLIENT_APP_BANNER_LAYOUTS : []) {
+    const { component: c, stats } = await draw("updateClientAppBannerVariant", {
+      value: layout,
+    });
+    const at = `ClientAppBanner ${layout}`;
+    const narrow = layout === "Narrow";
+    const width = narrow ? 320 : 560;
+    ok(
+      c.name === `Layout=${layout}` &&
+        file.parseClientAppBannerVariantName(c.name).value === layout &&
+        JSON.stringify(order(c)) === JSON.stringify(["Body", "Dismiss"]),
+      `${at}: named Layout=${layout}; Body, Dismiss (${order(c).join(", ")})`,
+    );
+    ok(
+      c.width === width &&
+        c.layoutMode === "HORIZONTAL" &&
+        c.counterAxisAlignItems === "MIN" &&
+        c.itemSpacing === 12 &&
+        c.paddingLeft === 16 &&
+        c.paddingBottom === 16 &&
+        c.paddingTop === 4 &&
+        c.paddingRight === 4 &&
+        bound(c, "itemSpacing") === "ClientAppBanner/gap" &&
+        bound(c, "paddingLeft") === "ClientAppBanner/padding" &&
+        bound(c, "paddingBottom") === "ClientAppBanner/padding" &&
+        c.cornerRadius === 20 &&
+        bound(c, "cornerRadius") === "ClientAppBanner/radius",
+      `${at}: ${width} wide, 16 inside at the start and bottom and 4 at the top and end, where Dismiss is pulled in, 12 apart, the Container corner (${[c.width, c.paddingLeft, c.paddingTop, c.paddingRight, c.itemSpacing, c.cornerRadius].join(", ")})`,
+    );
+    ok(
+      boundVariableName(fillOf(c)) === "Colors/background/0" &&
+        c.strokes.length === 1 &&
+        boundVariableName(c.strokes[0]) === "Border/Subtle" &&
+        c.strokeWeight === 1 &&
+        c.strokesIncludedInLayout === true &&
+        c.effects.length === 1 &&
+        floating(c.effects[0]),
+      `${at}: the solid surface, its 1 subtle edge laid out with the content, the floating elevation`,
+    );
+    const body = named(c, "Body");
+    const head = body && named(body, "Head");
+    const icon = head && named(head, "App Icon");
+    const initial = icon && named(icon, "Initial Text");
+    ok(
+      body &&
+        body.layoutMode === (narrow ? "VERTICAL" : "HORIZONTAL") &&
+        body.paddingTop === 12 &&
+        body.itemSpacing === 12 &&
+        body.layoutSizingHorizontal === "FILL" &&
+        JSON.stringify(order(body)) === JSON.stringify(["Head", "Action"]) &&
+        JSON.stringify(order(head)) === JSON.stringify(["App Icon", "Words"]) &&
+        head.itemSpacing === 12,
+      `${at}: the icon and the words, then the action ${narrow ? "under them" : "beside them"}, 12 apart, the words' column 12 down to meet the padding (${body && [body.layoutMode, body.paddingTop].join(", ")})`,
+    );
+    ok(
+      icon &&
+        icon.width === 48 &&
+        icon.height === 48 &&
+        bound(icon, "width") === "ClientAppBanner/icon/size" &&
+        icon.cornerRadius === 16 &&
+        boundVariableName(fillOf(icon)) === "Colors/background/100" &&
+        boundVariableName(icon.strokes[0]) === "Border/Subtle" &&
+        icon.strokeAlign === "INSIDE" &&
+        initial.characters === "N" &&
+        initial.fontSize === 18 &&
+        boundVariableName(fillOf(initial)) === "Colors/foreground/0",
+      `${at}: a 48 icon, the Control corner and the subtle edge, the app's initial in Text Large on Colors/background/100 (${icon && [icon.width, icon.cornerRadius, initial && initial.characters].join(", ")})`,
+    );
+    const words = head && named(head, "Words");
+    const lines = words ? words.children : [];
+    ok(
+      words &&
+        words.itemSpacing === 2 &&
+        words.layoutSizingHorizontal === "FILL" &&
+        JSON.stringify(order(words)) ===
+          JSON.stringify([
+            "Promotion Text",
+            "App Name Text",
+            "Description Text",
+          ]) &&
+        lines[0].fontSize === 12 &&
+        boundVariableName(fillOf(lines[0])) === "Colors/foreground/400" &&
+        lines[1].fontSize === 16 &&
+        lines[1].characters === "Northfield Airport" &&
+        boundVariableName(fillOf(lines[1])) === "Colors/foreground/0" &&
+        lines[2].fontSize === 14 &&
+        boundVariableName(fillOf(lines[2])) === "Colors/foreground/400" &&
+        lines[2].textTruncation === "ENDING" &&
+        lines[2].maxLines === 2,
+      `${at}: the promotion (12, muted), the name (16), the description (14, muted, two lines at most), 2 apart (${lines.map((t) => t.fontSize).join(", ")}; maxLines ${lines[2] && lines[2].maxLines})`,
+    );
+    const action = body && named(body, "Action");
+    ok(
+      action &&
+        action.type === "INSTANCE" &&
+        action.mainComponent.name ===
+          "Variant=Default, Size=Default, State=Default" &&
+        action.componentProperties["Label Text#1:0"] === "Open" &&
+        (narrow
+          ? action.layoutSizingHorizontal === "FILL"
+          : action.layoutSizingHorizontal !== "FILL"),
+      `${at}: the action is a live Default Button, "Open", ${narrow ? "as wide as the words" : "its own width"} (${action && action.type}, ${action && action.layoutSizingHorizontal})`,
+    );
+    const dismiss = named(c, "Dismiss");
+    const glyph = dismiss && dismiss.findOne((n) => n.type === "INSTANCE");
+    const vector = glyph && glyph.findOne((n) => n.type === "VECTOR");
+    ok(
+      dismiss &&
+        dismiss.type === "INSTANCE" &&
+        dismiss.mainComponent.name ===
+          "Variant=Ghost, Size=Large, State=Default" &&
+        dismiss.componentProperties["Icon#2:0"] === close.id &&
+        vector &&
+        boundVariableName(vector.strokes[0]) === ghostInk &&
+        dismiss.getSharedPluginData("kozmos_ds_importer", "surface") ===
+          "control" &&
+        // React's -12 margins pull it to 4 inside the 1 edge.
+        Math.abs(dismiss.x - (width - 1 - 4 - 44)) < 0.5 &&
+        Math.abs(dismiss.y - (1 + 4)) < 0.5,
+      `${at}: Dismiss is IconButton's Ghost at Large with x-close, tinted again in the Ghost's ink, a control, 4 inside the edge at the top and the end (${dismiss && [dismiss.x, dismiss.y, vector && boundVariableName(vector.strokes[0])].join(", ")})`,
+    );
+    ok(
+      !stats.warnings.some((w) => /ClientAppBanner|Missing|missing/.test(w)),
+      `${at}: no warning (${stats.warnings.join("; ")})`,
+    );
+  }
+
+  // --- LanguageSwitcher: the closed control, in each of its states -----------
+  for (const state of ready ? plugin.LANGUAGE_SWITCHER_STATES : []) {
+    const { component: c } = await draw("updateLanguageSwitcherVariant", {
+      value: state,
+    });
+    const at = `LanguageSwitcher ${state}`;
+    const rows = {
+      Default: ["Trigger"],
+      Pending: ["Trigger", "Pending Row"],
+      Failed: ["Trigger", "Error Row"],
+      Disabled: ["Trigger"],
+    }[state];
+    ok(
+      c.name === `State=${state}` &&
+        file.parseLanguageSwitcherVariantName(c.name).value === state &&
+        JSON.stringify(order(c)) === JSON.stringify(rows) &&
+        c.width === 240 &&
+        c.fills.length === 0,
+      `${at}: named State=${state}; ${rows.join(", ")} (${order(c).join(", ")})`,
+    );
+    const trigger = named(c, "Trigger");
+    const language = trigger && named(trigger, "Language Text");
+    const chevron = trigger && named(trigger, "Chevron");
+    const dim = state === "Pending" || state === "Disabled";
+    ok(
+      trigger &&
+        trigger.height === 48 &&
+        trigger.width === 240 &&
+        bound(trigger, "height") === "LanguageSwitcher/height" &&
+        bound(trigger, "minWidth") === "LanguageSwitcher/min-width" &&
+        trigger.paddingLeft === 12 &&
+        trigger.paddingRight === 12 &&
+        trigger.cornerRadius === 16 &&
+        boundVariableName(fillOf(trigger)) === "Colors/background/0" &&
+        trigger.strokes.length === 0 &&
+        trigger.effects.length === 1 &&
+        floating(trigger.effects[0]) &&
+        trigger.opacity === (dim ? 0.5 : 1),
+      `${at}: a 48 trigger, 12 across, the Control corner, Colors/background/0 with no edge and the floating elevation, at ${dim ? "half" : "full"} strength (${trigger && [trigger.height, trigger.cornerRadius, trigger.opacity].join(", ")})`,
+    );
+    ok(
+      JSON.stringify(order(trigger)) ===
+        JSON.stringify(["Language Text", "Chevron"]) &&
+        language.characters === "English" &&
+        language.fontSize === 14 &&
+        boundVariableName(fillOf(language)) === "Colors/foreground/0" &&
+        chevron.mainComponent.name === "Icon / chevron-down" &&
+        chevron.width === 16,
+      `${at}: "English" in Text Small and Select's 16 chevron-down`,
+    );
+    if (state === "Pending") {
+      const row = named(c, "Pending Row");
+      const text = row && named(row, "Pending Text");
+      ok(
+        row.paddingTop === 8 &&
+          text.characters === "Changing language…" &&
+          text.fontSize === 14 &&
+          boundVariableName(fillOf(text)) === "Colors/foreground/400",
+        `${at}: "Changing language…" 8 under the trigger, in Text Small muted`,
+      );
+    }
+    if (state === "Failed") {
+      const row = named(c, "Error Row");
+      const text = row && named(row, "Error Text");
+      const retry = row && named(row, "Retry");
+      ok(
+        row.paddingTop === 8 &&
+          JSON.stringify(order(row)) ===
+            JSON.stringify(["Error Text", "Retry"]) &&
+          text.fontSize === 14 &&
+          boundVariableName(fillOf(text)) === "Emotion/danger/text" &&
+          retry.type === "INSTANCE" &&
+          retry.mainComponent.name ===
+            "Variant=Ghost, Size=Default, State=Default" &&
+          retry.componentProperties["Label Text#1:0"] === "Retry",
+        `${at}: the error in Emotion/danger/text 8 under the trigger, over a live ghost Button, "Retry"`,
+      );
+    }
+  }
+}
+
 section("TourStep (GAP-188, decision 136)");
 {
   const ready =
@@ -12782,6 +13534,11 @@ section(
     "divider",
     "ruler",
     "dots-horizontal",
+    // AIInputBar's send and microphone (GAP-206).
+    "send-01",
+    "microphone-01",
+    "microphone-off-01",
+    "volume-max",
   ];
   const controlsPages = () => {
     const [components, icons] = pages();
@@ -23343,6 +24100,1408 @@ section(
       `SplitButton after Update: every variant keeps its id, and Menu Open is off and shows the ${enabled} enabled variants' menus (${menus.length} menus, ${open || "no Menu Open"})`,
     );
   }
+}
+
+// --- GAP-206: the map and route parts --------------------------------------------
+
+// Seven SDK parts that had no Figma set: MapStatusPill, MapAttribution,
+// MapInfoPanel, POIResultGroup, RouteLocationField, RouteSetupPanel and
+// ArrivalPanel. The sets they hold are built first, by their own Builds, in a
+// file with every icon, as Update All runs them; then each part is built by its
+// own Build and painted with the payload's variables, and read: the tokens
+// React draws with, the sizes, the nested sets' variants, the properties and
+// the layers they drive.
+section("GAP-206: the map and route parts");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const mapIcons = new MockNode("PAGE", "Icons");
+  const registry = fs.readFileSync(
+    path.join(ROOT, "packages/icons/src/registry.ts"),
+    "utf8",
+  );
+  for (const match of registry
+    .slice(
+      registry.indexOf("export const kozmosIconNames = ["),
+      registry.indexOf("] as const"),
+    )
+    .matchAll(/^\s+"([a-z0-9-]+)",$/gm)) {
+    mapIcons.appendChild(mockIconComponent(match[1]));
+  }
+  const mapPage = new MockNode("PAGE", "Components");
+  const mapFigma = createFigmaMock({ pages: [mapPage, mapIcons] });
+  const map = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: mapFigma,
+    append: `
+ensureComponentRuntimeVariables = async () => new Map();
+loadButtonFonts = async () => (${JSON.stringify(FONTS)});
+`,
+  });
+  const parts = [
+    "MapStatusPill",
+    "MapAttribution",
+    "MapInfoPanel",
+    "POIResultGroup",
+    "RouteLocationField",
+    "RouteSetupPanel",
+    "ArrivalPanel",
+  ];
+  const held = [
+    "Button",
+    "IconButton",
+    "Spinner",
+    "Accordion",
+    "Link",
+    "Combobox",
+    "POIResultCard",
+  ];
+  const buildWarnings = {};
+  await withAutoLayout(async () => {
+    for (const name of [...held, ...parts]) {
+      const build = map[`build${name}Component`];
+      if (typeof build !== "function") continue;
+      const result = await build();
+      buildWarnings[name] = (result && result.warnings) || [];
+    }
+  });
+  const setOf = (name) => map.findComponentSetOnPage(mapPage, name);
+  const missing = parts.filter((name) => !setOf(name));
+  ok(
+    missing.length === 0,
+    `each part's Build draws its set (missing: ${missing.join(", ") || "none"})`,
+  );
+
+  // The sequence runs each after the sets it holds, and the page lists them.
+  const product = (map.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(([n]) => n);
+  const sdk = (map.COMPONENT_PAGE_LAYOUT_SECTIONS || []).find(
+    (entry) => entry.title === "Product / SDK",
+  );
+  ok(
+    parts.every((name) => product.includes(name)) &&
+      product.indexOf("POIResultCard") < product.indexOf("POIResultGroup") &&
+      product.indexOf("RouteLocationField") <
+        product.indexOf("RouteSetupPanel") &&
+      sdk &&
+      parts.every((name) => sdk.components.includes(name)) &&
+      parts.every((name) =>
+        (map.COMPONENT_DOCS || []).some((doc) => doc.componentSetName === name),
+      ),
+    `all seven in Update All Product / SDK after the sets they hold, in the Product / SDK section and documented (${product.filter((n) => parts.includes(n)).join(", ")})`,
+  );
+  const ui = fs.readFileSync(
+    path.join(path.dirname(PLUGIN), "ui.html"),
+    "utf8",
+  );
+  const slugs = [
+    "map-status-pill",
+    "map-attribution",
+    "map-info-panel",
+    "poi-result-group",
+    "route-location-field",
+    "route-setup-panel",
+    "arrival-panel",
+  ];
+  ok(
+    slugs.every(
+      (slug) =>
+        ui.includes(`build: "build-${slug}"`) &&
+        ui.includes(`update: "update-${slug}"`),
+    ),
+    "the panel offers each part's Build and Update",
+  );
+
+  // Every variant the axes name, and every property bound to a layer.
+  const wantAxes = {
+    MapStatusPill: {
+      Tone: ["Neutral", "Progress", "Success", "Danger", "Warning"],
+    },
+    MapAttribution: { Appearance: ["Map", "Surface"] },
+    MapInfoPanel: { Content: ["Default", "ExpandedFAQ", "Minimal"] },
+    POIResultGroup: { State: ["Collapsed", "Expanded"] },
+    RouteLocationField: {
+      State: ["Search", "Loading", "Empty", "Error", "Resolved"],
+    },
+    RouteSetupPanel: {
+      State: ["Incomplete", "Ready", "Pending"],
+      Presentation: ["Hosted", "Standalone"],
+    },
+    ArrivalPanel: {
+      State: ["Default", "Pending"],
+      Presentation: ["Hosted", "Standalone"],
+    },
+  };
+  const wantProperties = {
+    MapStatusPill: ["Status Text", "Show Mark"],
+    MapAttribution: ["Credit Text", "Credit Text 2", "Show Brand"],
+    MapInfoPanel: ["Title Text", "Introduction Text", "Show Brand"],
+    POIResultGroup: ["Show More Text", "Hide Text"],
+    RouteLocationField: [
+      "Label Text",
+      "Location Text",
+      "Description Text",
+      "Show Description",
+    ],
+    RouteSetupPanel: ["Title Text", "Description Text", "Show Description"],
+    ArrivalPanel: [
+      "Title Text",
+      "Destination Text",
+      "Location Text",
+      "Message Text",
+      "Duration Label Text",
+      "Duration Text",
+      "Distance Label Text",
+      "Distance Text",
+      "Show Image",
+      "Show Location",
+      "Show Message",
+      "Show Metrics",
+    ],
+  };
+  for (const name of parts) {
+    const set = setOf(name);
+    if (!set) continue;
+    const axes = wantAxes[name];
+    const combos = Object.entries(axes).reduce(
+      (all, [axis, values]) =>
+        all.flatMap((prefix) =>
+          values.map((value) => [...prefix, `${axis}=${value}`]),
+        ),
+      [[]],
+    );
+    const names = set.children.map((child) => child.name).sort();
+    const want = combos.map((parts) => parts.join(", ")).sort();
+    const definitions = set.componentPropertyDefinitions || {};
+    const declared = Object.keys(definitions)
+      .filter((key) => definitions[key].type !== "VARIANT")
+      .map((key) => key.split("#")[0])
+      .sort();
+    const unbound = propertiesBoundToNoLayer(set).map(
+      (key) => key.split("#")[0],
+    );
+    const warnings = (buildWarnings[name] || []).filter(
+      // A runtime with no variables paints fallbacks and says so.
+      (warning) => !/variable/i.test(warning),
+    );
+    ok(
+      JSON.stringify(map.expectedVariantAxesForComponentSetName(name)) ===
+        JSON.stringify(axes) &&
+        JSON.stringify(names) === JSON.stringify(want) &&
+        JSON.stringify(declared) ===
+          JSON.stringify([...wantProperties[name]].sort()) &&
+        unbound.length === 0 &&
+        warnings.length === 0,
+      `${name}: ${want.length} variants by ${Object.keys(axes).join(" × ")}; ${declared.join(", ")}, each driving a layer${unbound.length ? ` (unbound: ${unbound.join(", ")})` : ""}${warnings.length ? `; warnings: ${warnings.slice(0, 2).join(" | ")}` : ""}${JSON.stringify(names) !== JSON.stringify(want) ? `; variants ${names.join(" | ")}` : ""}`,
+    );
+  }
+
+  // Painted with the payload's variables, as Update paints in the file.
+  const paint = async (name, value, second) => {
+    const component = mapFigma.createComponent();
+    const stats = freshStats();
+    let error = null;
+    try {
+      await withAutoLayout(() =>
+        map[`update${name}Variant`](component, {
+          value,
+          second,
+          variableByName: tokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
+    } catch (caught) {
+      error = caught;
+    }
+    return { component, stats, error };
+  };
+  const bound = (paint) => paint && boundVariableName(paint);
+  const source = (node) =>
+    node && node.type === "INSTANCE" && node.mainComponent
+      ? `${node.mainComponent.parent && node.mainComponent.parent.name}/${node.mainComponent.name}`
+      : node
+        ? `${node.type} ${node.name}`
+        : "none";
+  const mark = (node) => {
+    const vector = node && node.findOne((child) => child.type === "VECTOR");
+    return vector && bound(vector.strokes[0]);
+  };
+  const clean = (name, value, result) =>
+    ok(
+      !result.error && result.stats.warnings.length === 0,
+      `${name} ${value}: painted, no warnings (${result.error ? result.error.message : result.stats.warnings.slice(0, 2).join(" | ")})`,
+    );
+
+  // MapStatusPill (decision 39): the map controls' surface, 48 at least,
+  // 8 by 12 inside, the mark 8 from 13/16 words; each tone's tokens.
+  const pillTones = {
+    Neutral: ["Colors/background/0", "Colors/foreground/300", null, null],
+    Progress: [
+      "Colors/background/0",
+      "Colors/foreground/300",
+      "Spinner/Size=Medium",
+      null,
+    ],
+    Success: [
+      "Colors/background/0",
+      "Emotion/success/text",
+      "check",
+      "Emotion/success/text",
+    ],
+    Danger: [
+      "Colors/background/0",
+      "Colors/foreground/300",
+      "alert-triangle",
+      "Emotion/danger/text",
+    ],
+    // Turn Back: no mark, as React's story draws it (icon={null}).
+    Warning: ["Emotion/alert/fill", "Emotion/alert/onFill", null, null],
+  };
+  for (const [tone, [surface, ink, glyph, glyphInk]] of Object.entries(
+    pillTones,
+  )) {
+    const result = await paint("MapStatusPill", tone);
+    clean("MapStatusPill", tone, result);
+    const pill = result.component;
+    const words = named(pill, "Status Words");
+    const box = named(pill, "Mark");
+    const inner = box && box.children[0];
+    const drawn = !box
+      ? null
+      : inner && inner.name === "Mark Icon"
+        ? inner.mainComponent.name.replace(/^Icon \/ /, "")
+        : inner && inner.type === "INSTANCE" && inner.mainComponent.parent
+          ? `${inner.mainComponent.parent.name}/${inner.mainComponent.name}`
+          : "?";
+    ok(
+      pill.name === `Tone=${tone}` &&
+        bound(pill.fills[0]) === surface &&
+        pill.strokes.length === 0 &&
+        pill.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        pill.effects.length === 1 &&
+        pill.minHeight === 48 &&
+        pill.paddingTop === 8 &&
+        pill.paddingLeft === 12 &&
+        pill.itemSpacing === 8 &&
+        words &&
+        words.fontSize === 13 &&
+        words.lineHeight.value === 16 &&
+        bound(words.fills[0]) === ink &&
+        (glyph === null
+          ? !box
+          : box.width === 24 &&
+            drawn === glyph &&
+            (glyphInk === null || mark(inner) === glyphInk)),
+      `MapStatusPill ${tone}: ${bound(pill.fills[0])} at the control radius, ${words && words.fontSize}/${words && words.lineHeight.value} words in ${words && bound(words.fills[0])}, mark ${drawn}${inner ? ` in ${mark(inner) || "its own"}` : ""}`,
+    );
+  }
+
+  // MapAttribution: Map transparent, its credits in the attribution's
+  // colour; Surface on the background, its credits ink. 10/12, the first
+  // underlined, the brand 98 by 34 over them.
+  for (const [appearance, fill, ink, bottom] of [
+    ["Map", null, "Map attribution/text", 0],
+    ["Surface", "Colors/background/0", "Colors/foreground/0", 8],
+  ]) {
+    const result = await paint("MapAttribution", appearance);
+    clean("MapAttribution", appearance, result);
+    const node = result.component;
+    const credits = named(node, "Credits");
+    const first = credits && named(credits, "Credit");
+    const second = credits && named(credits, "Credit 2");
+    const brand = named(node, "Brand Slot");
+    ok(
+      (fill === null
+        ? node.fills.length === 0
+        : bound(node.fills[0]) === fill) &&
+        node.paddingLeft === 8 &&
+        node.paddingTop === 8 &&
+        node.paddingBottom === bottom &&
+        node.counterAxisAlignItems === "CENTER" &&
+        node.children[0] === brand &&
+        brand.width === 98 &&
+        brand.height === 34 &&
+        first &&
+        second &&
+        [first, second].every(
+          (text) =>
+            text.fontSize === 10 &&
+            text.lineHeight.value === 12 &&
+            bound(text.fills[0]) === ink,
+        ) &&
+        first.textDecoration === "UNDERLINE" &&
+        second.textDecoration !== "UNDERLINE",
+      `MapAttribution ${appearance}: ${fill || "no fill"}, the brand over 10/12 credits in ${first && bound(first.fills[0])}, the linked one underlined`,
+    );
+  }
+
+  // MapInfoPanel: 384 wide on the background, 24 inside, 16 between; a
+  // 20/28 title; the FAQ an Accordion, open in ExpandedFAQ; the close a ghost
+  // IconButton showing x-close in its own tint, 16 from the top and the end.
+  for (const content of ["Default", "ExpandedFAQ", "Minimal"]) {
+    const result = await paint("MapInfoPanel", content);
+    clean("MapInfoPanel", content, result);
+    const panel = result.component;
+    const title = named(panel, "Panel Title");
+    const accordion = named(panel, "FAQ Accordion");
+    const close = named(panel, "Close Button");
+    const closeIcon =
+      close &&
+      close.findOne(
+        (node) =>
+          node.type === "INSTANCE" &&
+          node.componentPropertyReferences &&
+          String(
+            node.componentPropertyReferences.mainComponent || "",
+          ).startsWith("Icon#"),
+      );
+    const minimal = content === "Minimal";
+    ok(
+      panel.width === 384 &&
+        panel.paddingLeft === 24 &&
+        panel.itemSpacing === 16 &&
+        bound(panel.fills[0]) === "Colors/background/0" &&
+        title &&
+        title.fontSize === 20 &&
+        title.lineHeight.value === 28 &&
+        bound(title.fills[0]) === "Colors/foreground/0" &&
+        (minimal
+          ? !accordion &&
+            !named(panel, "Introduction") &&
+            !named(panel, "Footer")
+          : source(accordion) ===
+              `Accordion/Variant=Default, State=${content === "ExpandedFAQ" ? "Open" : "Closed"}` &&
+            accordion.isExposedInstance === true &&
+            source(named(panel, "Support Link")).startsWith("Link/") &&
+            named(panel, "Footer").paddingTop === 32) &&
+        source(close) ===
+          "IconButton/Variant=Ghost, Size=Default, State=Default" &&
+        close.layoutPositioning === "ABSOLUTE" &&
+        close.x === 384 - 16 - 44 &&
+        close.y === 16 &&
+        closeIcon &&
+        closeIcon.mainComponent.name.endsWith("x-close") &&
+        mark(closeIcon) === plugin.buttonConfig("Ghost", "Default").foreground,
+      `MapInfoPanel ${content}: 384 at 24, a 20/28 title, ${minimal ? "nothing else" : `FAQ ${source(accordion)}`}, close ${source(close)} at ${close && close.x},${close && close.y} showing ${closeIcon && closeIcon.mainComponent.name} in ${mark(closeIcon)}`,
+    );
+  }
+
+  // POIResultGroup: one edge, the control radius, clipped; POIResultCard
+  // rows, a divider between; the muted toggle, its words and chevron.
+  for (const [state, members, words, chevron] of [
+    ["Collapsed", 1, "Show 2 more", "chevron-down"],
+    ["Expanded", 3, "Hide", "chevron-up"],
+  ]) {
+    const result = await paint("POIResultGroup", state);
+    clean("POIResultGroup", state, result);
+    const group = result.component;
+    const rows = group.children.filter((child) => child.type === "INSTANCE");
+    const dividers = group.children.filter((child) => child.name === "Divider");
+    const toggle = named(group, "Toggle");
+    const text = toggle && toggle.findOne((node) => node.type === "TEXT");
+    const icon = toggle && named(toggle, "Chevron");
+    ok(
+      bound(group.strokes[0]) === "Border/Subtle" &&
+        group.strokeWeight === 1 &&
+        group.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+        group.clipsContent === true &&
+        bound(group.fills[0]) === "Surface/0" &&
+        rows.length === members &&
+        rows.every(
+          (row) =>
+            source(row) === "POIResultCard/State=Default, Appearance=Row" &&
+            row.isExposedInstance === true,
+        ) &&
+        dividers.length === members &&
+        dividers.every(
+          (rule) =>
+            rule.height === 1 && bound(rule.fills[0]) === "Border/Subtle",
+        ) &&
+        group.children[group.children.length - 1] === toggle &&
+        bound(toggle.fills[0]) === "Colors/background/100" &&
+        text.characters === words &&
+        text.fontSize === 14 &&
+        bound(text.fills[0]) === "Colors/foreground/400" &&
+        icon &&
+        icon.mainComponent.name.endsWith(chevron) &&
+        icon.width === 16,
+      `POIResultGroup ${state}: ${rows.length} POIResultCard rows, ${dividers.length} dividers, "${text && text.characters}" with ${icon && icon.mainComponent.name}`,
+    );
+  }
+
+  // RouteLocationField: the muted label over a Combobox whose own label is
+  // hidden, its status words its helper; Resolved, the place in a bordered
+  // box, 12 inside, its name 16 semibold over its description.
+  for (const [state, helper, status, action] of [
+    ["Search", null, "Default", null],
+    ["Loading", "Searching locations…", "Default", "Clear Search Button"],
+    ["Empty", "No locations found", "Default", "Clear Search Button"],
+    ["Error", "Locations are unavailable", "Error", "Clear Search Button"],
+    ["Resolved", null, null, "Clear Location Button"],
+  ]) {
+    const result = await paint("RouteLocationField", state);
+    clean("RouteLocationField", state, result);
+    const field = result.component;
+    const label = named(field, "Field Label");
+    const search = named(field, "Search");
+    const button = named(field, "Header").children[1];
+    const props = (search && search.componentProperties) || {};
+    const prop = (base) =>
+      Object.keys(props).find((key) => key.split("#")[0] === base);
+    const comboLabel =
+      search && search.findOne((node) => node.name === "Label Text");
+    const resolved = state === "Resolved";
+    const name = named(field, "Location Name");
+    const description = named(field, "Location Description");
+    ok(
+      label &&
+        label.fontSize === 14 &&
+        bound(label.fills[0]) === "Colors/foreground/400" &&
+        (action === null
+          ? !button
+          : button &&
+            button.name === action &&
+            source(button) ===
+              "Button/Variant=Ghost, Size=Default, State=Default") &&
+        (resolved
+          ? !search &&
+            bound(field.strokes[0]) === "Border/Subtle" &&
+            field.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+            field.paddingLeft === 12 &&
+            name.fontSize === 16 &&
+            bound(name.fills[0]) === "Colors/foreground/0" &&
+            description.fontSize === 14 &&
+            bound(description.fills[0]) === "Colors/foreground/400"
+          : field.strokes.length === 0 &&
+            source(search) ===
+              `Combobox/State=Default, Status=${status}, Content=Closed` &&
+            comboLabel &&
+            comboLabel.visible === false &&
+            props[prop("Show Helper Text")] === Boolean(helper) &&
+            (helper === null || props[prop("Helper Text")] === helper) &&
+            props[prop("Placeholder Text")] === "Search for a place"),
+      `RouteLocationField ${state}: ${resolved ? "the place in its box" : `${source(search)}, its label ${comboLabel && comboLabel.visible === false ? "hidden" : "shown"}, helper ${JSON.stringify(props[prop("Helper Text")] || null)}`}; action ${button ? button.name : "none"}`,
+    );
+  }
+
+  // RouteSetupPanel and ArrivalPanel: Hosted draws no surface, Standalone
+  // the solid one on the panel corner with the overlay shadow and 16 inside;
+  // the primary action a default Button the full width, disabled until ready
+  // and while pending.
+  for (const [name, state, fields, disabled] of [
+    ["RouteSetupPanel", "Incomplete", ["Resolved", "Search"], true],
+    ["RouteSetupPanel", "Ready", ["Resolved", "Resolved"], false],
+    ["RouteSetupPanel", "Pending", ["Resolved", "Resolved"], true],
+    ["ArrivalPanel", "Default", null, false],
+    ["ArrivalPanel", "Pending", null, true],
+  ]) {
+    for (const presentation of ["Hosted", "Standalone"]) {
+      const result = await paint(name, state, presentation);
+      clean(name, `${state} ${presentation}`, result);
+      const panel = result.component;
+      const standalone = presentation === "Standalone";
+      const action = named(
+        panel,
+        name === "ArrivalPanel" ? "Done Button" : "Continue Button",
+      );
+      const title = named(
+        panel,
+        name === "ArrivalPanel" ? "Arrival Title" : "Panel Title",
+      );
+      const surfaceOk = standalone
+        ? bound(panel.fills[0]) === "Surface/0" &&
+          panel.cornerRadius === plugin.KOZMOS_RADIUS.panel &&
+          panel.paddingLeft === 16 &&
+          panel.effects.length === 1 &&
+          panel.effects[0].radius === 16
+        : panel.fills.length === 0 &&
+          panel.paddingLeft === 0 &&
+          panel.effects.length === 0;
+      let partOk = false;
+      let detail = "";
+      if (name === "RouteSetupPanel") {
+        const locations = named(panel, "Locations");
+        const got = locations
+          ? locations.children.map((child) =>
+              child.mainComponent ? child.mainComponent.name : child.name,
+            )
+          : [];
+        const labels = locations
+          ? locations.children.map((child) => {
+              const key = Object.keys(child.componentProperties || {}).find(
+                (k) => k.split("#")[0] === "Label Text",
+              );
+              return key && child.componentProperties[key];
+            })
+          : [];
+        const close = named(panel, "Close Button");
+        partOk =
+          JSON.stringify(got) ===
+            JSON.stringify(fields.map((value) => `State=${value}`)) &&
+          locations.children.every(
+            (child) => child.mainComponent.parent.name === "RouteLocationField",
+          ) &&
+          labels.join() === "Start,Destination" &&
+          source(close) ===
+            "IconButton/Variant=Outline, Size=Default, State=Default";
+        detail = `fields ${got.join(" + ")} (${labels.join(", ")}), close ${source(close)}`;
+      } else {
+        const image = named(panel, "Destination Image");
+        const pin = image && named(image, "Pin");
+        const metrics = named(panel, "Metrics");
+        partOk =
+          image &&
+          image.width === 48 &&
+          image.cornerRadius === plugin.KOZMOS_RADIUS.control &&
+          bound(image.fills[0]) === "Colors/background/100" &&
+          bound(image.strokes[0]) === "Border/Subtle" &&
+          pin &&
+          pin.mainComponent.name.endsWith("marker-pin-01") &&
+          pin.width === 20 &&
+          metrics &&
+          metrics.itemSpacing === 16 &&
+          named(metrics, "Duration Value").characters === "6 min" &&
+          named(metrics, "Distance Value").characters === "202 m" &&
+          bound(named(metrics, "Duration Label").fills[0]) ===
+            "Colors/foreground/400";
+        detail = `the 48 picture with ${pin && pin.mainComponent.name}, the journey ${metrics ? "drawn" : "missing"}`;
+      }
+      ok(
+        panel.name === `State=${state}, Presentation=${presentation}` &&
+          panel.width === 360 &&
+          panel.itemSpacing === 16 &&
+          surfaceOk &&
+          title &&
+          title.fontSize === 20 &&
+          title.lineHeight.value === 28 &&
+          action &&
+          source(action) ===
+            `Button/Variant=Default, Size=Default, State=${disabled ? "Disabled" : "Default"}` &&
+          action.layoutSizingHorizontal === "FILL" &&
+          panel.children[panel.children.length - 1] === action &&
+          partOk,
+        `${name} ${state} ${presentation}: ${standalone ? "its own surface" : "the sheet's"}, ${source(action)} the full width; ${detail}`,
+      );
+    }
+  }
+
+  // Every writer inside a nested instance is in the map, so a bulk run
+  // updates the dependents after the sets they reach into.
+  ok(
+    map.SETS_THAT_OVERRIDE_INSIDE.IconButton.includes("MapInfoPanel") &&
+      map.SETS_THAT_OVERRIDE_INSIDE.IconButton.includes("RouteSetupPanel") &&
+      map.SETS_THAT_OVERRIDE_INSIDE.Combobox.includes("RouteLocationField"),
+    "IconButton names MapInfoPanel and RouteSetupPanel, Combobox RouteLocationField, as sets that override inside them",
+  );
+}
+
+// --- GAP-206: the assistant's parts ---------------------------------------------
+
+// UserMessage, AIMessage, AIMessageList, AIInputBar and AICompanionPanel, in a
+// file of their own: the Icons page with the glyphs they draw and an IconButton
+// set whose Icon swaps, as Build IconButton leaves it. Each set is painted,
+// combined and configured as Build does, in Update All Product / SDK's order,
+// so the thread and the panel nest the sets painted before them.
+const aiIconNames = [
+  "search-md",
+  "stars-01",
+  "x-close",
+  "send-01",
+  "microphone-01",
+  "microphone-off-01",
+  "volume-max",
+];
+const aiComponents = new MockNode("PAGE", "Components");
+const aiIcons = new MockNode("PAGE", "Icons");
+const aiGlyph = {};
+for (const name of aiIconNames) {
+  aiGlyph[name] = mockIconComponent(name);
+  aiIcons.appendChild(aiGlyph[name]);
+}
+const aiIconButtonLooks = [];
+for (const variant of ["Default", "Outline"])
+  for (const state of ["Default", "Disabled"])
+    aiIconButtonLooks.push({
+      properties: { Variant: variant, Size: "Default", State: state },
+      build: (node) => {
+        node.layoutMode = "HORIZONTAL";
+        node.primaryAxisSizingMode = "FIXED";
+        node.counterAxisSizingMode = "FIXED";
+        node.resize(44, 44);
+        node.cornerRadius = 16;
+        const icon = aiGlyph["search-md"].createInstance();
+        icon.name = "Icon";
+        icon.resize(16, 16);
+        icon.componentPropertyReferences = { mainComponent: "Icon#2:0" };
+        node.appendChild(icon);
+      },
+    });
+const aiIconButtonSet = mockComponentSet("IconButton", aiIconButtonLooks);
+aiIconButtonSet.componentPropertyDefinitions = {
+  "Icon#2:0": {
+    type: "INSTANCE_SWAP",
+    defaultValue: aiGlyph["search-md"].id,
+  },
+};
+aiComponents.appendChild(aiIconButtonSet);
+const aiFigma = createFigmaMock({ pages: [aiComponents, aiIcons] });
+const ai = loadPlugin({ pluginPath: PLUGIN, figma: aiFigma });
+const aiTokens = payloadVariables(
+  (ai.COMPONENT_FLOAT_TOKENS || []).map((token) => token.name),
+);
+const aiFloats = new Map(
+  (ai.COMPONENT_FLOAT_TOKENS || []).map((token) => [token.name, token]),
+);
+/** The variable `field` is bound to, by name, or null. */
+const aiBound = (node, field) => {
+  const alias = node && node.boundVariables && node.boundVariables[field];
+  return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+};
+/** A component float token's value, through its aliases' own values. */
+const aiValueOf = (name) =>
+  aiFloats.has(name) ? aiFloats.get(name).value : undefined;
+const aiFill = (node) => node && node.fills && boundVariableName(node.fills[0]);
+const aiStroke = (node) =>
+  node && node.strokes && boundVariableName(node.strokes[0]);
+const aiChildNames = (node) =>
+  node ? node.children.map((child) => child.name).join(",") : "none";
+const aiTextOf = (node, name) => node && named(node, name);
+/** A set's property of `type` named `base`, or null. */
+const aiProperty = (set, base, type) =>
+  Object.keys(set.componentPropertyDefinitions || {}).find(
+    (key) =>
+      key.split("#")[0] === base &&
+      set.componentPropertyDefinitions[key].type === type,
+  ) || null;
+/**
+ * Every layer under `set` whose `field` reference is `key`. A slot's field is
+ * the plugin's to choose (slotPropertyReferenceKeyForNode), so "slot" reads
+ * any reference to the key.
+ */
+const aiRefs = (set, field, key) =>
+  set.findAll(
+    (node) =>
+      node.componentPropertyReferences &&
+      (field === "slot"
+        ? Object.values(node.componentPropertyReferences).includes(key) &&
+          node.type === "SLOT"
+        : node.componentPropertyReferences[field] === key),
+  );
+
+/**
+ * Paint every combination of a set, combine and configure it as Build does.
+ * Returns the set, its variants and every warning the run left.
+ */
+async function aiBuild(name, values, seconds, update, configure) {
+  const variants = [];
+  const warnings = [];
+  if (typeof update !== "function") return { set: null, variants, warnings };
+  for (const value of values)
+    for (const second of seconds || [null]) {
+      const component = aiFigma.createComponent();
+      const stats = freshStats();
+      await withAutoLayout(() =>
+        update(component, {
+          value,
+          second,
+          variableByName: aiTokens.variableByName,
+          fonts: FONTS,
+          stats,
+        }),
+      );
+      warnings.push(...stats.warnings);
+      variants.push(component);
+    }
+  const set = aiFigma.combineAsVariants(variants, aiComponents);
+  set.name = name;
+  const stats = freshStats();
+  if (typeof configure === "function") await configure(set, stats);
+  warnings.push(...stats.warnings);
+  return { set, variants, warnings };
+}
+
+/** The set in the Product / SDK run, its section, its docs and its axes. */
+function aiRegistered(name, axes) {
+  const sequence = (ai.PRODUCT_SDK_UPDATE_SEQUENCE || []).map(
+    ([entry]) => entry,
+  );
+  ok(
+    JSON.stringify(
+      ai.expectedVariantAxesForComponentSetName &&
+        ai.expectedVariantAxesForComponentSetName(name),
+    ) === JSON.stringify(axes) &&
+      sequence.includes(name) &&
+      (ai.PRODUCT_SDK_UPDATE_SEQUENCE || []).some(
+        ([entry, update]) =>
+          entry === name && update === ai[`update${name}Component`],
+      ) &&
+      (ai.COMPONENT_PAGE_LAYOUT_SECTIONS || []).some(
+        (entry) =>
+          entry.title === "Product / SDK" && entry.components.includes(name),
+      ) &&
+      (ai.COMPONENT_DOCS || []).some(
+        (entry) => entry.componentSetName === name,
+      ),
+    `${name}: axes ${JSON.stringify(axes)}, in Update All Product / SDK, the Product / SDK section and the docs`,
+  );
+  return sequence;
+}
+
+/** A bubble as React draws one: 16 across, 12 down, the container radius. */
+function aiBubbleIsReacts(bubble) {
+  return Boolean(
+    bubble &&
+    bubble.layoutMode === "HORIZONTAL" &&
+    bubble.paddingLeft === 16 &&
+    bubble.paddingRight === 16 &&
+    bubble.paddingTop === 12 &&
+    bubble.paddingBottom === 12 &&
+    aiBound(bubble, "paddingLeft") === "AIMessage/bubble/padding/x" &&
+    aiBound(bubble, "paddingTop") === "AIMessage/bubble/padding/y" &&
+    aiValueOf("AIMessage/bubble/padding/x") === 16 &&
+    aiValueOf("AIMessage/bubble/padding/y") === 12 &&
+    bubble.cornerRadius === 20 &&
+    aiBound(bubble, "topLeftRadius") === "AIMessage/bubble/radius" &&
+    aiBound(bubble, "bottomRightRadius") === "AIMessage/bubble/radius" &&
+    aiValueOf("AIMessage/bubble/radius") === 20 &&
+    bubble.maxWidth === 278,
+  );
+}
+
+/** A turn's words: 14/20, sizing themselves up to `most`, then wrapping. */
+function aiWordsAre(text, ink, most) {
+  return Boolean(
+    text &&
+    text.type === "TEXT" &&
+    text.fontSize === 14 &&
+    text.lineHeight &&
+    text.lineHeight.value === 20 &&
+    aiFill(text) === ink &&
+    text.textAutoResize === "WIDTH_AND_HEIGHT" &&
+    text.maxWidth === most,
+  );
+}
+
+section("GAP-206: UserMessage draws the visitor's turn");
+const aiUser = await aiBuild(
+  "UserMessage",
+  ai.USER_MESSAGE_CONTENT || [],
+  null,
+  ai.updateUserMessageVariant,
+  ai.configureUserMessageProperties,
+);
+{
+  aiRegistered("UserMessage", { Content: ["Default"] });
+  ok(
+    aiUser.variants.length === 1 &&
+      aiUser.variants[0].name === "Content=Default",
+    `UserMessage: one variant, Content=Default, as React has none (${aiUser.variants.map((v) => v.name).join(", ")})`,
+  );
+  for (const variant of aiUser.variants) {
+    const bubble = named(variant, "Bubble");
+    const text = aiTextOf(bubble, "Message Text");
+    ok(
+      variant.width === 328 &&
+        variant.layoutMode === "HORIZONTAL" &&
+        variant.primaryAxisAlignItems === "MAX" &&
+        aiChildNames(variant) === "Bubble",
+      `UserMessage ${variant.name}: a 328 turn with its bubble at the end (${variant.width}, ${variant.primaryAxisAlignItems}, ${aiChildNames(variant)})`,
+    );
+    ok(
+      aiBubbleIsReacts(bubble) &&
+        aiFill(bubble) === "Primary Buttons/themed/button/background/idle" &&
+        bubble.strokes.length === 0,
+      `UserMessage ${variant.name}: the bubble is the theme fill, no edge, 16 and 12 inside, radius 20, at most 278 (${aiFill(bubble)}, ${bubble && bubble.maxWidth})`,
+    );
+    ok(
+      aiWordsAre(
+        text,
+        "Primary Buttons/themed/button/foreground/content/idle",
+        244,
+      ),
+      `UserMessage ${variant.name}: the words 14/20 in the theme foreground, sizing themselves up to 244 (${text && `${text.fontSize}/${text.lineHeight && text.lineHeight.value} ${text.textAutoResize} ${text.maxWidth} ${aiFill(text)}`})`,
+    );
+  }
+  const message = aiUser.set && aiProperty(aiUser.set, "Message Text", "TEXT");
+  ok(
+    message &&
+      aiRefs(aiUser.set, "characters", message).length === 1 &&
+      propertiesBoundToNoLayer(aiUser.set).length === 0,
+    `UserMessage: Message Text drives the words, and no property is bound to nothing (${aiUser.set && propertiesBoundToNoLayer(aiUser.set).join(", ")})`,
+  );
+  ok(
+    aiUser.warnings.length === 0,
+    `UserMessage: no warning (${aiUser.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AIMessage draws the assistant's turn");
+const aiMessage = await aiBuild(
+  "AIMessage",
+  ai.AI_MESSAGE_STATUSES || [],
+  null,
+  ai.updateAIMessageVariant,
+  ai.configureAIMessageProperties,
+);
+{
+  const sequence = aiRegistered("AIMessage", {
+    Status: ["Complete", "Streaming", "TimedOut"],
+  });
+  ok(
+    aiMessage.variants.length === 3,
+    `AIMessage: three statuses (${aiMessage.variants.length})`,
+  );
+  for (const variant of aiMessage.variants) {
+    const parsed =
+      typeof ai.parseAIMessageVariantName === "function" &&
+      ai.parseAIMessageVariantName(variant.name);
+    const status = parsed && parsed.value;
+    const row = named(variant, "Message Row");
+    const bubble = row && named(row, "Bubble");
+    const timedOut = status === "TimedOut";
+    const streaming = status === "Streaming";
+    ok(
+      variant.width === 328 &&
+        variant.itemSpacing === 8 &&
+        aiBound(variant, "itemSpacing") === "AIMessage/gap" &&
+        aiValueOf("AIMessage/gap") === 8 &&
+        aiChildNames(variant) === "Message Row,Action Card",
+      `AIMessage ${variant.name}: a 328 column, 8 apart, the row then the action card (${variant.width}, ${variant.itemSpacing}, ${aiChildNames(variant)})`,
+    );
+    ok(
+      aiBubbleIsReacts(bubble) &&
+        aiFill(bubble) === "Surface/0" &&
+        aiStroke(bubble) === "Border/Subtle" &&
+        bubble.strokeWeight === 1 &&
+        aiBound(bubble, "strokeWeight") === "AIMessage/bubble/stroke/width",
+      `AIMessage ${variant.name}: the bubble is bg-card with a 1 border-border, 16 and 12 inside, radius 20, at most 278 (${aiFill(bubble)}, ${aiStroke(bubble)} ${bubble && bubble.strokeWeight}, ${bubble && bubble.maxWidth})`,
+    );
+    const words = aiTextOf(
+      bubble,
+      timedOut ? "Timed Out Text" : "Message Text",
+    );
+    ok(
+      aiWordsAre(
+        words,
+        timedOut ? "Colors/foreground/400" : "Colors/foreground/0",
+        // The dots: three 6, 4 apart, and 8 before the words.
+        streaming ? 244 - (3 * 6 + 2 * 4 + 8) : 244,
+      ) &&
+        !(timedOut && aiTextOf(bubble, "Message Text")) &&
+        (!timedOut ||
+          words.characters === "The assistant did not reply in time."),
+      `AIMessage ${variant.name}: ${timedOut ? "timedOutLabel in the muted foreground" : "the words in the foreground"}, 14/20 (${words && `${words.name} ${aiFill(words)} ${words.textAutoResize} ${words.maxWidth}`})`,
+    );
+    const dots = bubble && named(bubble, "Streaming Dots");
+    ok(
+      streaming
+        ? Boolean(
+            dots &&
+            bubble.children[0] === dots &&
+            bubble.itemSpacing === 8 &&
+            dots.itemSpacing === 4 &&
+            aiBound(dots, "itemSpacing") === "AIMessage/dots/gap" &&
+            dots.children.length === 3 &&
+            dots.children.every(
+              (dot) =>
+                dot.type === "ELLIPSE" &&
+                dot.width === 6 &&
+                dot.height === 6 &&
+                aiBound(dot, "width") === "AIMessage/dot/size" &&
+                aiFill(dot) === "Colors/theme/600",
+            ),
+          )
+        : !dots,
+      `AIMessage ${variant.name}: ${streaming ? "three 6 dots in the theme's 600, 4 apart, 8 before the words" : "no dots"} (${dots ? aiChildNames(dots) : "none"})`,
+    );
+    const card = named(variant, "Action Card");
+    const slot = card && named(card, "Action Card Slot");
+    ok(
+      card &&
+        card.visible === false &&
+        slot &&
+        slot.type === "SLOT" &&
+        slot.width === 328,
+      `AIMessage ${variant.name}: the action card hidden, holding a 328 slot (${card && card.visible}, ${slot && slot.type} ${slot && slot.width})`,
+    );
+  }
+  if (aiMessage.set) {
+    const show = aiProperty(aiMessage.set, "Show Action Card", "BOOLEAN");
+    const slot = aiProperty(aiMessage.set, "Action Card Slot", "SLOT");
+    const message = aiProperty(aiMessage.set, "Message Text", "TEXT");
+    const timedOut = aiProperty(aiMessage.set, "Timed Out Text", "TEXT");
+    ok(
+      show &&
+        aiMessage.set.componentPropertyDefinitions[show].defaultValue ===
+          false &&
+        aiRefs(aiMessage.set, "visible", show).length === 3 &&
+        slot &&
+        aiRefs(aiMessage.set, "slot", slot).length === 3 &&
+        message &&
+        aiRefs(aiMessage.set, "characters", message).length === 2 &&
+        timedOut &&
+        aiRefs(aiMessage.set, "characters", timedOut).length === 1 &&
+        propertiesBoundToNoLayer(aiMessage.set).length === 0,
+      `AIMessage: Show Action Card (off) shows the three cards, Action Card Slot binds their slots, Message Text two turns' words and Timed Out Text one; none bound to nothing (${Object.keys(aiMessage.set.componentPropertyDefinitions).join(", ")})`,
+    );
+  } else ok(false, "AIMessage has a painter");
+  ok(
+    sequence.indexOf("UserMessage") !== -1 &&
+      sequence.indexOf("UserMessage") < sequence.indexOf("AIMessage"),
+    "UserMessage, then AIMessage, in Update All Product / SDK",
+  );
+  ok(
+    aiMessage.warnings.length === 0,
+    `AIMessage: no warning (${aiMessage.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AIMessageList draws the thread from live turns");
+const aiList = await aiBuild(
+  "AIMessageList",
+  ai.AI_MESSAGE_LIST_CONTENT || [],
+  null,
+  ai.updateAIMessageListVariant,
+  ai.configureAIMessageListProperties,
+);
+{
+  const sequence = aiRegistered("AIMessageList", {
+    Content: ["Conversation", "Streaming", "TimedOut"],
+  });
+  const wanted = {
+    "Content=Conversation": [
+      ["AIMessage", "Status=Complete"],
+      ["UserMessage", "Content=Default"],
+      ["AIMessage", "Status=Complete"],
+    ],
+    "Content=Streaming": [
+      ["UserMessage", "Content=Default"],
+      ["AIMessage", "Status=Streaming"],
+    ],
+    "Content=TimedOut": [
+      ["UserMessage", "Content=Default"],
+      ["AIMessage", "Status=TimedOut"],
+    ],
+  };
+  ok(aiList.variants.length === 3, "AIMessageList: three threads");
+  for (const variant of aiList.variants) {
+    ok(
+      variant.width === 360 &&
+        variant.layoutMode === "VERTICAL" &&
+        variant.paddingLeft === 16 &&
+        variant.paddingTop === 16 &&
+        variant.itemSpacing === 16 &&
+        aiBound(variant, "paddingLeft") === "AIMessageList/padding" &&
+        aiBound(variant, "itemSpacing") === "AIMessageList/gap" &&
+        aiValueOf("AIMessageList/padding") === 16 &&
+        aiValueOf("AIMessageList/gap") === 16 &&
+        variant.clipsContent === true,
+      `AIMessageList ${variant.name}: 360 wide, 16 inside and 16 between, clipped (${variant.width}, ${variant.paddingLeft}, ${variant.itemSpacing})`,
+    );
+    const turns = variant.children;
+    const want = wanted[variant.name] || [];
+    ok(
+      turns.length === want.length &&
+        turns.every(
+          (turn, index) =>
+            turn.type === "INSTANCE" &&
+            turn.mainComponent &&
+            turn.mainComponent.parent &&
+            turn.mainComponent.parent.name === want[index][0] &&
+            turn.mainComponent.name === want[index][1] &&
+            turn.isExposedInstance === true &&
+            turn.layoutSizingHorizontal === "FILL" &&
+            turn.width === 328,
+        ),
+      `AIMessageList ${variant.name}: ${want.map((entry) => `${entry[0]} (${entry[1]})`).join(", ")}, live, exposed and 328 wide (${turns.map((turn) => `${turn.type} ${turn.mainComponent && turn.mainComponent.parent && turn.mainComponent.parent.name} ${turn.mainComponent && turn.mainComponent.name} ${turn.width}`).join(" | ")})`,
+    );
+  }
+  const conversation = aiList.variants[0];
+  if (conversation && conversation.children.length === 3) {
+    const [greeting, question, answer] = conversation.children;
+    const words = (turn) =>
+      (turn.findOne((node) => node.name === "Message Text") || {}).characters;
+    const showKey =
+      aiMessage.set && aiProperty(aiMessage.set, "Show Action Card", "BOOLEAN");
+    ok(
+      /^Hello! What are you looking for\?/.test(words(greeting) || "") &&
+        words(question) === "Where is the nearest accessible restroom?" &&
+        /2 minutes away\.$/.test(words(answer) || "") &&
+        showKey &&
+        answer.componentProperties[showKey] === true &&
+        greeting.componentProperties[showKey] === undefined,
+      `AIMessageList Conversation: the stories' words through each turn's Message Text, and the answer's Show Action Card on (${words(greeting)} | ${words(question)} | ${words(answer)} | ${showKey && answer.componentProperties[showKey]})`,
+    );
+  } else ok(false, "AIMessageList Conversation: three turns");
+  ok(
+    sequence.indexOf("AIMessage") < sequence.indexOf("AIMessageList") &&
+      sequence.indexOf("UserMessage") < sequence.indexOf("AIMessageList"),
+    "AIMessageList runs after AIMessage and UserMessage",
+  );
+  ok(
+    aiList.warnings.length === 0,
+    `AIMessageList: no warning (${aiList.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AIInputBar draws the field, the microphone and send");
+const aiInput = await aiBuild(
+  "AIInputBar",
+  ai.AI_INPUT_BAR_STATES || [],
+  ai.AI_INPUT_BAR_VOICES || [],
+  ai.updateAIInputBarVariant,
+  ai.configureAIInputBarProperties,
+);
+{
+  const sequence = aiRegistered("AIInputBar", {
+    State: ["Empty", "Filled", "Disabled"],
+    VoiceState: [
+      "Off",
+      "Idle",
+      "Connecting",
+      "Listening",
+      "Speaking",
+      "Unavailable",
+      "Error",
+    ],
+  });
+  ok(
+    aiInput.variants.length === 21,
+    `AIInputBar: three states by seven voices (${aiInput.variants.length})`,
+  );
+  // React's microphone, state by state: fill, edge, ink, glyph (null: the arc).
+  const themed = [
+    "Emotion/themed/surface",
+    "Colors/theme/600",
+    "Emotion/themed/onSurface",
+  ];
+  const off = [
+    "Colors/background/100",
+    "Border/Subtle",
+    "Colors/foreground/400",
+  ];
+  const looks = {
+    Idle: [
+      "Surface/0",
+      "Border/Subtle",
+      "Colors/foreground/0",
+      "microphone-01",
+    ],
+    Connecting: [...themed, null],
+    Listening: [...themed, "microphone-01"],
+    Speaking: [...themed, "volume-max"],
+    Unavailable: [...off, "microphone-off-01"],
+    Error: [
+      "Surface/0",
+      "Emotion/danger/text",
+      "Emotion/danger/text",
+      "microphone-off-01",
+    ],
+  };
+  const liveWords = {
+    Connecting: "Connecting…",
+    Listening: "Listening…",
+    Speaking: "Assistant is speaking…",
+  };
+  for (const variant of aiInput.variants) {
+    const parsed =
+      typeof ai.parseAIInputBarVariantName === "function" &&
+      ai.parseAIInputBarVariantName(variant.name);
+    const [state, voice] = [parsed && parsed.value, parsed && parsed.second];
+    const live = voice in liveWords;
+    ok(
+      variant.width === 360 &&
+        variant.layoutMode === "HORIZONTAL" &&
+        variant.counterAxisAlignItems === "CENTER" &&
+        variant.paddingLeft === 16 &&
+        variant.paddingTop === 12 &&
+        variant.itemSpacing === 8 &&
+        aiBound(variant, "paddingLeft") === "AIInputBar/padding/x" &&
+        aiBound(variant, "paddingTop") === "AIInputBar/padding/y" &&
+        aiBound(variant, "itemSpacing") === "AIInputBar/gap" &&
+        aiStroke(variant) === "Border/Subtle" &&
+        variant.strokeTopWeight === 1 &&
+        variant.strokeBottomWeight === 0 &&
+        variant.strokeLeftWeight === 0 &&
+        variant.strokeRightWeight === 0 &&
+        aiChildNames(variant) ===
+          (voice === "Off" ? "Field,Send" : "Field,Voice Button,Send"),
+      `AIInputBar ${variant.name}: 360 wide, 16 and 12 inside, 8 apart, an edge above it only; the field${voice === "Off" ? "" : ", the microphone"} and send (${aiChildNames(variant)}; ${variant.strokeTopWeight}/${variant.strokeBottomWeight})`,
+    );
+    const field = named(variant, "Field");
+    ok(
+      field &&
+        field.height === 44 &&
+        aiBound(field, "height") === "AIInputBar/field/min-height" &&
+        aiValueOf("AIInputBar/field/min-height") === 44 &&
+        field.paddingLeft === 16 &&
+        field.paddingTop === 8 &&
+        aiBound(field, "paddingLeft") === "AIInputBar/field/padding/x" &&
+        aiBound(field, "paddingTop") === "AIInputBar/field/padding/y" &&
+        field.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+        aiStroke(field) === "Border/Subtle" &&
+        aiFill(field) ===
+          (state === "Disabled" ? "Colors/background/100" : "Surface/0") &&
+        field.layoutSizingHorizontal === "FILL",
+      `AIInputBar ${variant.name}: the field a 44 pill, 16 and 8 inside, ${state === "Disabled" ? "the muted fill" : "bg-card"} (${field && `${field.height} ${field.paddingLeft}/${field.paddingTop} ${aiFill(field)}`})`,
+    );
+    const wordsName =
+      state === "Filled"
+        ? "Value Text"
+        : live
+          ? "Voice Text"
+          : "Placeholder Text";
+    const words = field && field.children[0];
+    ok(
+      words &&
+        field.children.length === 1 &&
+        words.name === wordsName &&
+        words.fontSize === 14 &&
+        aiFill(words) ===
+          (state === "Filled"
+            ? "Colors/foreground/0"
+            : "Colors/foreground/400") &&
+        (wordsName !== "Voice Text" || words.characters === liveWords[voice]),
+      `AIInputBar ${variant.name}: the field shows ${wordsName}${wordsName === "Voice Text" ? ` "${liveWords[voice]}"` : ""} (${words && `${words.name} "${words.characters}" ${aiFill(words)}`})`,
+    );
+    const mic = named(variant, "Voice Button");
+    if (voice !== "Off") {
+      const look =
+        state === "Disabled" && !live
+          ? [...off, "microphone-off-01"]
+          : looks[voice];
+      const glyph = mic && mic.findOne((node) => node.name === "Icon");
+      const arc = mic && named(mic, "Arc");
+      ok(
+        mic &&
+          mic.width === 44 &&
+          mic.height === 44 &&
+          aiBound(mic, "width") === "AIInputBar/control/size" &&
+          mic.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+          aiFill(mic) === look[0] &&
+          aiStroke(mic) === look[1] &&
+          (look[3]
+            ? glyph &&
+              glyph.type === "INSTANCE" &&
+              glyph.mainComponent === aiGlyph[look[3]] &&
+              glyph.width === 20 &&
+              aiStroke(glyph.findOne((node) => node.type === "VECTOR")) ===
+                look[2]
+            : !glyph &&
+              arc &&
+              arc.arcData &&
+              arc.arcData.endingAngle === Math.PI &&
+              aiFill(arc) === look[2]),
+        `AIInputBar ${variant.name}: the microphone a 44 circle, ${look[0]} in ${look[1]}, ${look[3] || "the loading arc"} at 20 in ${look[2]} (${mic && `${aiFill(mic)} ${aiStroke(mic)} ${glyph ? glyph.mainComponent && glyph.mainComponent.name : arc ? "arc" : "nothing"}`})`,
+      );
+    }
+    const send = named(variant, "Send");
+    const sendState = state === "Filled" ? "Default" : "Disabled";
+    const sendIcon =
+      send &&
+      send.findOne(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent === "Icon#2:0",
+      );
+    const sendInk =
+      typeof ai.buttonConfig === "function" &&
+      ai.buttonConfig("Default", sendState).foreground;
+    ok(
+      send &&
+        send.type === "INSTANCE" &&
+        send.mainComponent &&
+        send.mainComponent.parent === aiIconButtonSet &&
+        send.mainComponent.name ===
+          `Variant=Default, Size=Default, State=${sendState}` &&
+        send.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+        sendIcon &&
+        sendIcon.mainComponent === aiGlyph["send-01"] &&
+        sendIcon.width === 20 &&
+        aiStroke(sendIcon.findOne((node) => node.type === "VECTOR")) ===
+          sendInk,
+      `AIInputBar ${variant.name}: send is IconButton's default, ${sendState}, on the pill radius, send-01 at 20 in ${sendInk} (${send && send.mainComponent && send.mainComponent.name}, ${sendIcon && sendIcon.mainComponent && sendIcon.mainComponent.name} ${sendIcon && sendIcon.width})`,
+    );
+  }
+  if (aiInput.set) {
+    const placeholder = aiProperty(aiInput.set, "Placeholder Text", "TEXT");
+    const value = aiProperty(aiInput.set, "Value Text", "TEXT");
+    ok(
+      placeholder &&
+        aiRefs(aiInput.set, "characters", placeholder).length === 8 &&
+        value &&
+        aiRefs(aiInput.set, "characters", value).length === 7 &&
+        propertiesBoundToNoLayer(aiInput.set).length === 0,
+      `AIInputBar: Placeholder Text drives the eight placeholders, Value Text the seven values; none bound to nothing (${placeholder && aiRefs(aiInput.set, "characters", placeholder).length}, ${value && aiRefs(aiInput.set, "characters", value).length})`,
+    );
+  } else ok(false, "AIInputBar has a painter");
+  ok(
+    sequence.indexOf("AIInputBar") !== -1,
+    "AIInputBar is in Update All Product / SDK",
+  );
+  ok(
+    aiInput.warnings.length === 0,
+    `AIInputBar: no warning (${aiInput.warnings.join("; ")})`,
+  );
+}
+
+section("GAP-206: AICompanionPanel draws the assistant surface");
+const aiPanel = await aiBuild(
+  "AICompanionPanel",
+  ai.AI_COMPANION_PANEL_CONTENT || [],
+  null,
+  ai.updateAICompanionPanelVariant,
+  ai.configureAICompanionPanelProperties,
+);
+{
+  const sequence = aiRegistered("AICompanionPanel", {
+    Content: ["Conversation", "Streaming", "TimedOut"],
+  });
+  ok(aiPanel.variants.length === 3, "AICompanionPanel: three threads");
+  for (const variant of aiPanel.variants) {
+    const content = variant.name.replace("Content=", "");
+    ok(
+      variant.width === 360 &&
+        variant.height === 560 &&
+        aiBound(variant, "width") === "AICompanionPanel/width/default" &&
+        aiBound(variant, "height") === "AICompanionPanel/height/default" &&
+        aiFill(variant) === "Colors/background/0" &&
+        variant.clipsContent === true &&
+        aiChildNames(variant) === "Header,Banner,AIMessageList,AIInputBar",
+      `AICompanionPanel ${variant.name}: 360 by 560 on bg-background: the header, the banner, the thread, the input (${variant.width}×${variant.height}, ${aiChildNames(variant)})`,
+    );
+    const header = named(variant, "Header");
+    ok(
+      header &&
+        header.paddingLeft === 16 &&
+        header.paddingTop === 12 &&
+        header.itemSpacing === 8 &&
+        aiBound(header, "paddingLeft") ===
+          "AICompanionPanel/header/padding/x" &&
+        aiBound(header, "paddingTop") === "AICompanionPanel/header/padding/y" &&
+        aiBound(header, "itemSpacing") === "AICompanionPanel/header/gap" &&
+        aiStroke(header) === "Border/Subtle" &&
+        header.strokeBottomWeight === 1 &&
+        header.strokeTopWeight === 0 &&
+        aiChildNames(header) === "Mark,Title Text,Close",
+      `AICompanionPanel ${variant.name}: the header 16 across, 12 down, 8 apart, an edge under it: the mark, the title, the close (${header && `${header.paddingLeft}/${header.paddingTop} ${aiChildNames(header)}`})`,
+    );
+    const mark = header && named(header, "Mark");
+    const stars = mark && named(mark, "Icon");
+    ok(
+      mark &&
+        mark.width === 32 &&
+        aiBound(mark, "width") === "AICompanionPanel/mark/size" &&
+        mark.cornerRadius === ai.KOZMOS_RADIUS.pill &&
+        aiStroke(mark) === "Border/Subtle" &&
+        stars &&
+        stars.mainComponent === aiGlyph["stars-01"] &&
+        stars.width === 16 &&
+        aiStroke(stars.findOne((node) => node.type === "VECTOR")) ===
+          "Colors/theme/600",
+      `AICompanionPanel ${variant.name}: the mark a 32 bordered circle, stars-01 at 16 in the theme's 600 (${mark && mark.width}, ${stars && stars.mainComponent && stars.mainComponent.name})`,
+    );
+    const title = header && named(header, "Title Text");
+    ok(
+      title &&
+        title.characters === "Assistant" &&
+        title.fontSize === 16 &&
+        title.lineHeight.value === 24 &&
+        title.fontName === FONTS.medium &&
+        aiFill(title) === "Colors/foreground/0" &&
+        title.layoutSizingHorizontal === "FILL",
+      `AICompanionPanel ${variant.name}: the title 16/24 semibold in the foreground, filling the header (${title && `${title.fontSize}/${title.lineHeight.value} ${title.fontName && title.fontName.style}`})`,
+    );
+    const close = header && named(header, "Close");
+    const x =
+      close &&
+      close.findOne(
+        (node) =>
+          node.componentPropertyReferences &&
+          node.componentPropertyReferences.mainComponent === "Icon#2:0",
+      );
+    ok(
+      close &&
+        close.type === "INSTANCE" &&
+        close.mainComponent &&
+        close.mainComponent.parent === aiIconButtonSet &&
+        close.mainComponent.name ===
+          "Variant=Outline, Size=Default, State=Default" &&
+        aiStroke(close) === "Emotion/neutral/text" &&
+        x &&
+        x.mainComponent === aiGlyph["x-close"] &&
+        x.width === 20 &&
+        aiStroke(x.findOne((node) => node.type === "VECTOR")) ===
+          "Emotion/neutral/text",
+      `AICompanionPanel ${variant.name}: the close is IconButton's outline, neutral (decision 73), x-close at 20 (${close && close.mainComponent && close.mainComponent.name}, ${aiStroke(close)}, ${x && x.mainComponent && x.mainComponent.name})`,
+    );
+    const banner = named(variant, "Banner");
+    const bannerSlot = banner && named(banner, "Banner Slot");
+    ok(
+      banner &&
+        banner.visible === false &&
+        banner.paddingTop === 16 &&
+        banner.paddingBottom === 12 &&
+        aiBound(banner, "paddingTop") ===
+          "AICompanionPanel/banner/padding/top" &&
+        banner.strokeBottomWeight === 1 &&
+        bannerSlot &&
+        bannerSlot.type === "SLOT",
+      `AICompanionPanel ${variant.name}: the banner hidden, 16 above and 12 below with an edge under it, holding a slot (${banner && `${banner.visible} ${banner.paddingTop}/${banner.paddingBottom}`}, ${bannerSlot && bannerSlot.type})`,
+    );
+    const thread = named(variant, "AIMessageList");
+    const input = named(variant, "AIInputBar");
+    ok(
+      thread &&
+        thread.type === "INSTANCE" &&
+        thread.mainComponent &&
+        thread.mainComponent.parent === aiList.set &&
+        thread.mainComponent.name === `Content=${content}` &&
+        thread.isExposedInstance === true &&
+        thread.layoutSizingVertical === "FILL" &&
+        thread.layoutSizingHorizontal === "FILL" &&
+        input &&
+        input.type === "INSTANCE" &&
+        input.mainComponent &&
+        input.mainComponent.parent === aiInput.set &&
+        input.mainComponent.name === "State=Empty, VoiceState=Off" &&
+        input.isExposedInstance === true &&
+        input.layoutSizingHorizontal === "FILL",
+      `AICompanionPanel ${variant.name}: a live AIMessageList (${content}) filling the height, and a live AIInputBar (Empty, Off), both exposed (${thread && thread.mainComponent && thread.mainComponent.name}, ${input && input.mainComponent && input.mainComponent.name})`,
+    );
+  }
+  if (aiPanel.set) {
+    const defs = aiPanel.set.componentPropertyDefinitions;
+    const title = aiProperty(aiPanel.set, "Title Text", "TEXT");
+    const close = aiProperty(aiPanel.set, "Show Close", "BOOLEAN");
+    const banner = aiProperty(aiPanel.set, "Show Banner", "BOOLEAN");
+    const slot = aiProperty(aiPanel.set, "Banner Slot", "SLOT");
+    ok(
+      title &&
+        aiRefs(aiPanel.set, "characters", title).length === 3 &&
+        close &&
+        defs[close].defaultValue === true &&
+        aiRefs(aiPanel.set, "visible", close).every(
+          (node) => node.name === "Close",
+        ) &&
+        aiRefs(aiPanel.set, "visible", close).length === 3 &&
+        banner &&
+        defs[banner].defaultValue === false &&
+        aiRefs(aiPanel.set, "visible", banner).length === 3 &&
+        slot &&
+        aiRefs(aiPanel.set, "slot", slot).length === 3 &&
+        propertiesBoundToNoLayer(aiPanel.set).length === 0,
+      `AICompanionPanel: Title Text, Show Close (on) on the close, Show Banner (off) on the banner and Banner Slot on its slot, in all three; none bound to nothing (${Object.keys(defs).join(", ")})`,
+    );
+  } else ok(false, "AICompanionPanel has a painter");
+  ok(
+    sequence.indexOf("AIMessageList") < sequence.indexOf("AICompanionPanel") &&
+      sequence.indexOf("AIInputBar") < sequence.indexOf("AICompanionPanel"),
+    "AICompanionPanel runs after AIMessageList and AIInputBar",
+  );
+  ok(
+    aiPanel.warnings.length === 0,
+    `AICompanionPanel: no warning (${aiPanel.warnings.join("; ")})`,
+  );
 }
 
 // --- Summary ---------------------------------------------------------------------

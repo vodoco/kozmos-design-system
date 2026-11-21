@@ -49,6 +49,22 @@ figma.connect(
       }),
       label: figma.string("Label Text"),
       placeholder: figma.string("Placeholder Text"),
+      // Decision 215, GAP-282: Show Media is each option's Sm Avatar, its
+      // initials the label's. GAP-260: Show Trailing is each option's muted
+      // words at its end, before the check.
+      media: figma.boolean("Show Media", { true: {}, false: undefined }),
+      option1Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 1 Trailing"),
+        false: undefined,
+      }),
+      option2Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 2 Trailing"),
+        false: undefined,
+      }),
+      option3Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 3 Trailing"),
+        false: undefined,
+      }),
       option1: figma.string("Option 1 Text"),
       option2: figma.string("Option 2 Text"),
       option3: figma.string("Option 3 Text"),
@@ -58,6 +74,10 @@ figma.connect(
       }),
     },
     example: ({
+      media,
+      option1Trailing,
+      option2Trailing,
+      option3Trailing,
       autoFocus,
       defaultInputValue,
       disabled,
@@ -85,9 +105,24 @@ figma.connect(
         mixedLabel={mixedLabel}
         resetMixedLabel={resetMixedLabel}
         options={[
-          { label: option1, value: "metro-station" },
-          { label: option2, value: "bus-stop" },
-          { label: option3, value: "bike-parking" },
+          {
+            label: option1,
+            media,
+            trailing: option1Trailing,
+            value: "metro-station",
+          },
+          {
+            label: option2,
+            media,
+            trailing: option2Trailing,
+            value: "bus-stop",
+          },
+          {
+            label: option3,
+            media,
+            trailing: option3Trailing,
+            value: "bike-parking",
+          },
         ]}
         placeholder={placeholder}
         readOnly={readOnly}
@@ -150,6 +185,22 @@ figma.connect(
       placeholder: figma.string("Placeholder Text"),
       group1: figma.string("Group 1 Text"),
       group2: figma.string("Group 2 Text"),
+      // Decision 215, GAP-282: Show Media is each option's Sm Avatar, its
+      // initials the label's. GAP-260: Show Trailing is each option's muted
+      // words at its end, before the check.
+      media: figma.boolean("Show Media", { true: {}, false: undefined }),
+      option1Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 1 Trailing"),
+        false: undefined,
+      }),
+      option2Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 2 Trailing"),
+        false: undefined,
+      }),
+      option3Trailing: figma.boolean("Show Trailing", {
+        true: figma.string("Option 3 Trailing"),
+        false: undefined,
+      }),
       option1: figma.string("Option 1 Text"),
       option2: figma.string("Option 2 Text"),
       option3: figma.string("Option 3 Text"),
@@ -159,6 +210,10 @@ figma.connect(
       }),
     },
     example: ({
+      media,
+      option1Trailing,
+      option2Trailing,
+      option3Trailing,
       autoFocus,
       defaultInputValue,
       disabled,
@@ -188,9 +243,27 @@ figma.connect(
         mixedLabel={mixedLabel}
         resetMixedLabel={resetMixedLabel}
         options={[
-          { group: group1, label: option1, value: "metro-station" },
-          { group: group1, label: option2, value: "bus-stop" },
-          { group: group2, label: option3, value: "bike-parking" },
+          {
+            group: group1,
+            label: option1,
+            media,
+            trailing: option1Trailing,
+            value: "metro-station",
+          },
+          {
+            group: group1,
+            label: option2,
+            media,
+            trailing: option2Trailing,
+            value: "bus-stop",
+          },
+          {
+            group: group2,
+            label: option3,
+            media,
+            trailing: option3Trailing,
+            value: "bike-parking",
+          },
         ]}
         placeholder={placeholder}
         readOnly={readOnly}

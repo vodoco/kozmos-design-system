@@ -6,7 +6,7 @@ One cell of a published MapLibre sprite atlas, drawn as published (GAP-150, deci
 
 - **Import:** `import { SpriteIcon } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-spriteicon--docs>
 
 ## Example

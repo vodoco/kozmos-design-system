@@ -59,11 +59,18 @@ figma.connect(TreeParentItemRow, parentUrl, {
       true: "below",
       false: undefined,
     }),
-    // GAP-277: Checkable draws the box, and Checked is its check.
+    // GAP-277: Checkable draws the box, and Checked is its check. Mixed
+    // (decision 211, GAP-279) is checked="mixed", Checkbox's dash.
     checked: figma.boolean("Checkable", {
-      true: figma.boolean("Checked"),
+      true: figma.boolean<"mixed", boolean>("Mixed", {
+        true: "mixed",
+        false: figma.boolean("Checked"),
+      }),
       false: undefined,
     }),
+    // GAP-217: Band draws the selected and hover fills as a band across the
+    // row's full width. Inset, the default, names no fill.
+    rowFill: figma.enum("RowFill", { Inset: undefined, Band: "band" }),
     disclosurePosition: figma.boolean("Disclosure End", {
       true: "end",
       false: undefined,
@@ -81,6 +88,7 @@ figma.connect(TreeParentItemRow, parentUrl, {
     meta,
     metaPlacement,
     name,
+    rowFill,
     selected,
   }) => (
     <TreeParentItemRow
@@ -95,6 +103,7 @@ figma.connect(TreeParentItemRow, parentUrl, {
       expanded={expanded}
       selected={selected}
       divided={divided}
+      rowFill={rowFill}
     />
   ),
 });
@@ -128,11 +137,18 @@ figma.connect(TreeChildItemRow, childUrl, {
       true: "below",
       false: undefined,
     }),
-    // GAP-277: Checkable draws the box, and Checked is its check.
+    // GAP-277: Checkable draws the box, and Checked is its check. Mixed
+    // (decision 211, GAP-279) is checked="mixed", Checkbox's dash.
     checked: figma.boolean("Checkable", {
-      true: figma.boolean("Checked"),
+      true: figma.boolean<"mixed", boolean>("Mixed", {
+        true: "mixed",
+        false: figma.boolean("Checked"),
+      }),
       false: undefined,
     }),
+    // GAP-217: Band draws the selected and hover fills as a band across the
+    // row's full width. Inset, the default, names no fill.
+    rowFill: figma.enum("RowFill", { Inset: undefined, Band: "band" }),
     disclosurePosition: figma.boolean("Disclosure End", {
       true: "end",
       false: undefined,
@@ -148,6 +164,7 @@ figma.connect(TreeChildItemRow, childUrl, {
     meta,
     metaPlacement,
     name,
+    rowFill,
     selected,
   }) => (
     <TreeChildItemRow
@@ -161,6 +178,7 @@ figma.connect(TreeChildItemRow, childUrl, {
       density={density}
       selected={selected}
       divided={divided}
+      rowFill={rowFill}
     />
   ),
 });
@@ -194,11 +212,18 @@ figma.connect(TreeItemRow, itemUrl, {
       true: "below",
       false: undefined,
     }),
-    // GAP-277: Checkable draws the box, and Checked is its check.
+    // GAP-277: Checkable draws the box, and Checked is its check. Mixed
+    // (decision 211, GAP-279) is checked="mixed", Checkbox's dash.
     checked: figma.boolean("Checkable", {
-      true: figma.boolean("Checked"),
+      true: figma.boolean<"mixed", boolean>("Mixed", {
+        true: "mixed",
+        false: figma.boolean("Checked"),
+      }),
       false: undefined,
     }),
+    // GAP-217: Band draws the selected and hover fills as a band across the
+    // row's full width. Inset, the default, names no fill.
+    rowFill: figma.enum("RowFill", { Inset: undefined, Band: "band" }),
     disclosurePosition: figma.boolean("Disclosure End", {
       true: "end",
       false: undefined,
@@ -218,6 +243,7 @@ figma.connect(TreeItemRow, itemUrl, {
     meta,
     metaPlacement,
     name,
+    rowFill,
     selected,
   }) => (
     <TreeItemRow
@@ -233,6 +259,7 @@ figma.connect(TreeItemRow, itemUrl, {
       expanded={expanded}
       selected={selected}
       divided={divided}
+      rowFill={rowFill}
     />
   ),
 });

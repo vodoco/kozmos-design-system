@@ -30,3 +30,21 @@ class KozmosFileUploadPreviewConnect {
         )
     }
 }
+
+// Content=Button: an outline Button-sized trigger in place of the drop area,
+// its words Browse Text (GAP-274).
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=444-12724")
+@FigmaVariant("Content", "Button")
+class KozmosFileUploadButtonConnect {
+    @FigmaProperty(FigmaType.Text, "Browse Text")
+    val browseLabel: String = "Choose file"
+
+    @Composable
+    fun ComponentExample() {
+        KozmosFileUpload(
+            browseLabel = browseLabel,
+            variant = KozmosFileUploadVariant.Button,
+            onFileSelected = {}
+        )
+    }
+}

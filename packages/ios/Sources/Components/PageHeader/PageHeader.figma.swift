@@ -30,6 +30,14 @@ struct KozmosPageHeaderConnect: FigmaConnect {
     @FigmaString("Title Text")
     var title: String = "Settings"
 
+    // Decision 210: a node beside the title and outside its heading, drawn
+    // as a status Tag in the alert emotion.
+    @FigmaBoolean("Show Title Addon")
+    var showTitleAddon: Bool = false
+
+    @FigmaString("Addon Text")
+    var addonText: String = "Changes Awaiting Publish"
+
     @FigmaBoolean("Description")
     var showDescription: Bool = true
 
@@ -68,5 +76,10 @@ struct KozmosPageHeaderConnect: FigmaConnect {
                 }
             }
         )
+        .titleAddon {
+            if self.showTitleAddon {
+                KozmosTag(self.addonText, emotion: .alert)
+            }
+        }
     }
 }

@@ -26,13 +26,30 @@ const chipProps = {
     Selected: false,
     Disabled: true,
   }),
+  // GAP-170, decision 200: one of Tag's six emotions, deciding the colour
+  // whatever the Variant. None is a chip in its variant's colours.
+  emotion: figma.enum("Emotion", {
+    None: undefined,
+    Themed: "themed",
+    Neutral: "neutral",
+    Success: "success",
+    Danger: "danger",
+    Informative: "informative",
+    Alert: "alert",
+  }),
 };
 
 figma.connect(Chip, chipUrl, {
   variant: { Removable: "False" },
   props: chipProps,
-  example: ({ children, disabled, selected, size, variant }) => (
-    <Chip disabled={disabled} selected={selected} size={size} variant={variant}>
+  example: ({ children, disabled, emotion, selected, size, variant }) => (
+    <Chip
+      disabled={disabled}
+      emotion={emotion}
+      selected={selected}
+      size={size}
+      variant={variant}
+    >
       {children}
     </Chip>
   ),
@@ -41,9 +58,10 @@ figma.connect(Chip, chipUrl, {
 figma.connect(Chip, chipUrl, {
   variant: { Removable: "True" },
   props: chipProps,
-  example: ({ children, disabled, selected, size, variant }) => (
+  example: ({ children, disabled, emotion, selected, size, variant }) => (
     <Chip
       disabled={disabled}
+      emotion={emotion}
       onRemove={() => {}}
       selected={selected}
       size={size}

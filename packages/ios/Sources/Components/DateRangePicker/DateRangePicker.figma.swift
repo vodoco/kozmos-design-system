@@ -38,8 +38,15 @@ struct KozmosDateRangePickerConnect: FigmaConnect {
     )
     var state: String = "default"
 
-    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
-    // the owner's plugin Update has put them in the library.
+    // GAP-255: its way back to the several values, once edited.
+    @FigmaBoolean("Reset Mixed")
+    var resetMixed: Bool = false
+
+    @FigmaString("Mixed Text")
+    var mixedLabel: String = "Multiple values"
+
+    @FigmaString("Reset Mixed Text")
+    var resetMixedLabel: String = "Reset to multiple values"
 
     @FigmaEnum(
         "Status",
@@ -73,7 +80,10 @@ struct KozmosDateRangePickerConnect: FigmaConnect {
             readOnly: self.state == "readonly",
             status: self.status,
             showsCalendarPreview: self.showsCalendarPreview,
-            mixed: self.state == "mixed"
+            mixed: self.state == "mixed",
+            mixedLabel: self.mixedLabel,
+            onResetMixed: self.resetMixed ? {} : nil,
+            resetMixedLabel: self.resetMixedLabel
         )
     }
 }

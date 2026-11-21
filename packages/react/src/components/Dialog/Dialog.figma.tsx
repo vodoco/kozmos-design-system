@@ -89,3 +89,53 @@ figma.connect(DialogContent, dialogUrl, {
     </Dialog>
   ),
 });
+
+// Decision 195, GAP-214: an illustration above the title, out to the
+// dialog's edges and top corners, DialogHeader's media with mediaBleed.
+figma.connect(DialogContent, dialogUrl, {
+  variant: { Content: "Media" },
+  props: {
+    title: figma.string("Title Text"),
+    description: figma.string("Description Text"),
+    body: figma.string("Body Text"),
+  },
+  example: ({ body, description, title }) => (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Open dialog</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader media={<img alt="" src="illustration.svg" />} mediaBleed>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <p>{body}</p>
+      </DialogContent>
+    </Dialog>
+  ),
+});
+
+// Decision 202, GAP-259: the window less 16 on each side, for media shown
+// large: DialogContent size="full".
+figma.connect(DialogContent, dialogUrl, {
+  variant: { Content: "Full" },
+  props: {
+    title: figma.string("Title Text"),
+    description: figma.string("Description Text"),
+    body: figma.string("Body Text"),
+  },
+  example: ({ body, description, title }) => (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Open dialog</Button>
+      </DialogTrigger>
+      <DialogContent size="full">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <p>{body}</p>
+      </DialogContent>
+    </Dialog>
+  ),
+});

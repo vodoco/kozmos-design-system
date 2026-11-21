@@ -21,8 +21,15 @@ class KozmosDatePickerConnect {
         "Mixed" to "mixed"
     )
 
-    // GAP-255: Reset Mixed, Mixed Text and Reset Mixed Text are mapped once
-    // the owner's plugin Update has put them in the library.
+    // GAP-255: its way back to the several values, once edited.
+    @FigmaProperty(FigmaType.Boolean, "Reset Mixed")
+    val resetMixed: Boolean = false
+
+    @FigmaProperty(FigmaType.Text, "Mixed Text")
+    val mixedLabel: String = "Multiple values"
+
+    @FigmaProperty(FigmaType.Text, "Reset Mixed Text")
+    val resetMixedLabel: String = "Reset to multiple values"
 
     @Composable
     fun ComponentExample() {
@@ -32,7 +39,10 @@ class KozmosDatePickerConnect {
             label = label,
             enabled = state != "disabled",
             readOnly = state == "readonly",
-            mixed = state == "mixed"
+            mixed = state == "mixed",
+            mixedLabel = mixedLabel,
+            onResetMixed = if (resetMixed) ({}) else null,
+            resetMixedLabel = resetMixedLabel
         )
     }
 }

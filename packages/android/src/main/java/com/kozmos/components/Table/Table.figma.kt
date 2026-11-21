@@ -50,28 +50,51 @@ class KozmosTableConnect {
     @FigmaProperty(FigmaType.Text, "Row 3 Cell 3 Text")
     val row3Cell3: String = "May 21"
 
+    // GAP-171: Selectable is the selecting table, the header's select-all
+    // box and a box at each row's start, the last row selected as Figma
+    // draws it. Sortable and Numeric Column are not mapped: the header and
+    // body cells have no sort arrow and no end alignment, so Compose has no
+    // API for either.
+    @FigmaProperty(FigmaType.Boolean, "Selectable")
+    val selectable: Boolean = false
+
     @Composable
     fun ComponentExample() {
         KozmosTable(
             header = {
                 KozmosTableRow {
+                    if (selectable) {
+                        KozmosTableSelectAllCell(selectedCount = 1, rowCount = 3, onSelectAllChange = {})
+                    }
                     KozmosTableHeaderCell(text = header1)
                     KozmosTableHeaderCell(text = header2)
                     KozmosTableHeaderCell(text = header3)
                 }
             }
         ) {
-            KozmosTableRow {
+            KozmosTableRow(
+                selected = false,
+                onSelectedChange = if (selectable) ({}) else null,
+                selectLabel = "Select $row1Cell1"
+            ) {
                 KozmosTableCell(text = row1Cell1)
                 KozmosTableCell(text = row1Cell2)
                 KozmosTableCell(text = row1Cell3)
             }
-            KozmosTableRow {
+            KozmosTableRow(
+                selected = false,
+                onSelectedChange = if (selectable) ({}) else null,
+                selectLabel = "Select $row2Cell1"
+            ) {
                 KozmosTableCell(text = row2Cell1)
                 KozmosTableCell(text = row2Cell2)
                 KozmosTableCell(text = row2Cell3)
             }
-            KozmosTableRow {
+            KozmosTableRow(
+                selected = selectable,
+                onSelectedChange = if (selectable) ({}) else null,
+                selectLabel = "Select $row3Cell1"
+            ) {
                 KozmosTableCell(text = row3Cell1)
                 KozmosTableCell(text = row3Cell2)
                 KozmosTableCell(text = row3Cell3)

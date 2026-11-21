@@ -37,6 +37,12 @@ figma.connect(
         Default: false,
         Error: true,
       }),
+      // Decision 151 (CLOUD-UI-009): Ghost is the borderless trigger, the
+      // map's level control. Default names no variant.
+      variant: figma.enum("Variant", {
+        Default: undefined,
+        Ghost: "ghost",
+      }),
       placeholder: figma.string("Placeholder Text"),
       open: figma.enum("Content", {
         Closed: undefined,
@@ -76,6 +82,7 @@ figma.connect(
       option3,
       placeholder,
       resetMixedLabel,
+      variant,
     }) => (
       <Select
         mixed={mixed}
@@ -84,7 +91,12 @@ figma.connect(
         open={open}
         resetMixedLabel={resetMixedLabel}
       >
-        <SelectTrigger autoFocus={autoFocus} disabled={disabled} error={error}>
+        <SelectTrigger
+          autoFocus={autoFocus}
+          disabled={disabled}
+          error={error}
+          variant={variant}
+        >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
