@@ -70,8 +70,8 @@ and compact density together measured 30.63 KB, with room for the next density g
 
 ### Package-Level Budgets
 
-`@kozmos-ds/react` has the four budgets above. `@kozmos-ds/vue` (private until Vue 3 Phase 0
-publishes it) has two, measured the same way, its dependencies (`vue`, `reka-ui` and the class
+`@kozmos-ds/react` has the four budgets above. `@kozmos-ds/vue` (prereleases on `next`
+only) has two, measured the same way, its dependencies (`vue`, `reka-ui` and the class
 helpers) left out as the app's own:
 
 | Measure                                                       | Budget  |

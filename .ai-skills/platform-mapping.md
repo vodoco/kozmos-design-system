@@ -16,8 +16,8 @@
 | Jetpack Compose (Android)  | `packages/android` | `import com.kozmos.components.button.KozmosButton` | From a checkout; not published |
 | Tokens                     | `packages/tokens`  | `@kozmos-ds/tokens` (CSS and JavaScript)           | npm: `@kozmos-ds/tokens`       |
 
-Vue is being built: `packages/vue` is private, Kozmos for Vue 3 on Reka UI, with unported parts
-mounted from React through its `react-bridge` entry; not a package to install yet. There is no React Native package. The mapping planned before the code, across
+Vue is being built: `packages/vue` is Kozmos for Vue 3 on Reka UI, with unported parts
+mounted from React through its `react-bridge` entry, published only as prereleases on npm's `next` tag (`<styles version>-next.<n>`, never `latest`), from its first `next` release. There is no React Native package. The mapping planned before the code, across
 more platforms, is kept as a proposal in
 [docs/proposals/platform-mapping-plan.md](../docs/proposals/platform-mapping-plan.md).
 

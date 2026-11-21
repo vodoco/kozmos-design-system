@@ -7,7 +7,7 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [],
+  "ignore": ["@kozmos-ds/vue", "@kozmos-ds/docs", "playground-vue"],
   "privatePackages": {
     "version": false,
     "tag": false

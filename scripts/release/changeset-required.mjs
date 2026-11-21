@@ -23,11 +23,13 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { NEXT_ONLY } from "./policy.mjs";
 
 const require = createRequire(import.meta.url);
 
-// The packages npm receives. iOS and Android ship through their own
-// channels, and every other workspace package is private.
+// The packages npm receives through Changesets. iOS and Android ship through
+// their own channels, @kozmos-ds/vue is versioned by hand on `next`
+// (handVersionedNamed below), and every other workspace package is private.
 export const PUBLISHED = {
   "@kozmos-ds/react": "packages/react",
   "@kozmos-ds/icons": "packages/icons",
@@ -450,6 +452,20 @@ export function missingChangesets({
     .map(([name, files]) => ({ name, files }));
 }
 
+/**
+ * The packages versioned by hand on `next` (release/policy.mjs's NEXT_ONLY)
+ * that `changesets` name. Changesets ignores them (.changeset/config.json), so
+ * such a changeset is never consumed, and every release plan refuses a
+ * pending changeset: one naming @kozmos-ds/vue would block every release.
+ * Its version is set in the plan's pull request, its notes in its CHANGELOG.
+ */
+export function handVersionedNamed(changesets) {
+  const named = new Set(
+    changesets.flatMap((changeset) => changeset.releases.map((r) => r.name)),
+  );
+  return Object.keys(NEXT_ONLY).filter((name) => named.has(name));
+}
+
 function git(...args) {
   return execFileSync("git", args, { encoding: "utf8" });
 }
@@ -494,6 +510,17 @@ function main() {
     exists: (file) => tracked.has(file),
     read: (file) => (tracked.has(file) ? git("show", `HEAD:${file}`) : null),
   });
+  const handVersioned = handVersionedNamed(changesets);
+  if (handVersioned.length > 0) {
+    console.error(
+      `A changeset names ${handVersioned.join(", ")}, which is versioned by hand on next ` +
+        "and which Changesets ignores, so the changeset would never be consumed and would " +
+        "block every release. Leave it out (an empty changeset when nothing else releases); " +
+        "its version and CHANGELOG are set in the pull request that plans its release " +
+        "(docs/release-process.md, the next channel).",
+    );
+    process.exit(1);
+  }
   const missing = missingChangesets({
     changedFiles,
     changesets,

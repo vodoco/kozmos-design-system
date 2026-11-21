@@ -564,3 +564,64 @@ test("the fixed groups are read from the changesets config", async () => {
   assert.deepEqual(fixedGroupsFrom(JSON.stringify({})), []);
   assert.deepEqual(fixedGroupsFrom(null), []);
 });
+
+// @kozmos-ds/vue's channel (the owner's plan of 19-20 Nov 2026): a prerelease
+// on `next` after each Vue wave, never `latest`, versioned by hand as
+// `<styles version>-next.<n>`, the stylesheet it pins exactly.
+const channel = [
+  { name: "@kozmos-ds/react", version: "0.17.0" },
+  { name: "@kozmos-ds/styles", version: "0.17.0" },
+  { name: "@kozmos-ds/vue", version: "0.17.0-next.3" },
+];
+const vuePlan = (version, tag = "next") => ({
+  schemaVersion: 1,
+  tag,
+  packages: [{ name: "@kozmos-ds/vue", version }],
+});
+const withVue = (version) =>
+  channel.map((p) => (p.name === "@kozmos-ds/vue" ? { ...p, version } : p));
+
+test("@kozmos-ds/vue is never planned on latest, at any version", () => {
+  validatePlan(vuePlan("0.17.0-next.3"), channel);
+  assert.throws(
+    () => validatePlan(vuePlan("0.17.0-next.3", "latest"), channel),
+    /@kozmos-ds\/vue publishes on next only, never latest/,
+  );
+  assert.throws(
+    () => validatePlan(vuePlan("0.17.0", "latest"), withVue("0.17.0")),
+    /@kozmos-ds\/vue publishes on next only, never latest/,
+  );
+});
+
+test("@kozmos-ds/vue on next is a -next.<n> prerelease of the styles version it pins", () => {
+  for (const version of ["0.17.0-next.0", "0.17.0-next.12"])
+    validatePlan(vuePlan(version), withVue(version));
+  for (const version of ["0.17.0", "0.17.0-beta.0", "0.17.0-next", "0.17.0-next.1.2"])
+    assert.throws(
+      () => validatePlan(vuePlan(version), withVue(version)),
+      /@kozmos-ds\/vue@\S+ is not a next prerelease/,
+    );
+  assert.throws(
+    () => validatePlan(vuePlan("0.16.0-next.4"), withVue("0.16.0-next.4")),
+    /@kozmos-ds\/vue@0\.16\.0-next\.4 is built on @kozmos-ds\/styles 0\.17\.0: set it to 0\.17\.0-next\.0/,
+  );
+});
+
+test("the workspace's @kozmos-ds/vue is public, on its channel, and outside Changesets", async () => {
+  const fs = await import("node:fs");
+  const { NEXT_ONLY } = await import("./policy.mjs");
+  const read = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
+  const config = read(".changeset/config.json");
+  assert.deepEqual(Object.keys(NEXT_ONLY), ["@kozmos-ds/vue"]);
+  for (const [name, base] of Object.entries(NEXT_ONLY)) {
+    const manifest = read(`packages/${name.split("/")[1]}/package.json`);
+    const pinned = read(`packages/${base.split("/")[1]}/package.json`);
+    assert.notEqual(manifest.private, true, `${name} is private`);
+    assert.equal(manifest.publishConfig?.tag, "next", `${name} must default to npm's next tag`);
+    // Changesets bumps a prerelease to its release (0.17.0-next.0 + patch is
+    // 0.17.0), so the package is in `ignore`, and versioned by hand.
+    assert.ok(config.ignore?.includes(name), `.changeset/config.json must ignore ${name}`);
+    // The version is what any plan naming it would carry.
+    validatePlan(vuePlan(manifest.version), [manifest, pinned]);
+  }
+});

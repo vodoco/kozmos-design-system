@@ -5,7 +5,11 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { missingChangesets, shippedPackage } from "./changeset-required.mjs";
+import {
+  handVersionedNamed,
+  missingChangesets,
+  shippedPackage,
+} from "./changeset-required.mjs";
 
 const script = fileURLToPath(
   new URL("./changeset-required.mjs", import.meta.url),
@@ -711,4 +715,17 @@ test("each consumer-facing package.json field needs a changeset; a version bump 
       `${label}\n${result.stdout}${result.stderr}`,
     );
   }
+});
+
+// @kozmos-ds/vue is versioned by hand on `next` (release/policy.mjs's
+// NEXT_ONLY), and Changesets ignores it: a changeset naming it would never be
+// consumed, and every release plan refuses a pending changeset.
+test("a changeset may not name a package versioned by hand on next", () => {
+  const vue = { name: "@kozmos-ds/vue", type: "patch" };
+  const react = { name: "@kozmos-ds/react", type: "patch" };
+  assert.deepEqual(handVersionedNamed([{ releases: [react] }, { releases: [] }]), []);
+  assert.deepEqual(handVersionedNamed([{ releases: [react, vue] }]), ["@kozmos-ds/vue"]);
+  assert.deepEqual(handVersionedNamed([{ releases: [vue] }, { releases: [vue] }]), [
+    "@kozmos-ds/vue",
+  ]);
 });
