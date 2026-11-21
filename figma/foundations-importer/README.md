@@ -51,6 +51,8 @@ Select **PersonaMark** and click **Build**. It creates `PersonaMark` (GAP-106), 
 
 Select **Skeleton** and click **Build** for loading placeholders. It creates Line, Block, and Circle shapes with variable-bound dimensions; runtime animation stays in React and product code.
 
+Select **Surface**, **ActionCard** and **Calendar** and click **Build** for the Core parts GAP-206 found without a set. `Surface` draws React's `Surface` as its stories do, the Container corner, 16 inside (`Surface/padding`), 320 wide and the floating elevation, with a `Content Slot`; its `Variant` axis is `Solid`, `Colors/background/0` with the `Border/Subtle` edge, or `Glass`, the glass colour (`Colors/background/0`, white in Light and black in Dark) at `Effect/glass/opacity`'s 0.7 over a background blur of `Effect/glass/blur`'s 20, with an `Effect/glass/border/color` edge at `Effect/glass/border/opacity`'s 0.2. The glass fill and every edge are layers of their own, since a strength on a bound colour does not hold; Figma has no backdrop saturation. `ActionCard` is an assistant turn's rich content: its `Content` axis is `Titled`, a `Title Text` in Text XS semibold muted 8 over a `Content Slot` (`ActionCard/gap`), or `Basic`, the slot alone; it draws no surface. `Calendar` is React's month grid (decision 104) with `Mode` (`Single`, `Range`) by `Months` (`One`, `Two`), drawn in en-US for May 2026 with today the 22nd: 36 days (40 in a range, `Calendar/day/size`, `Calendar/day/size/range`) 4 apart with the Control corner, the chosen day or a range's ends on the theme fill, the days between on `Colors/theme/100`, today on `Colors/background/100`, the months either side muted, and the month buttons on the last month. It has no surface and no component property. Run Curated Icons first for its chevrons.
+
 Select **Box** and click **Build** before heavier composition work. It creates Transparent, Surface, and Outlined examples with an editable `Content Slot`, sharing the same radius, padding, and boundary tokens used by Core surfaces.
 
 Select **Stack** and click **Build** after Box. It creates canonical Row and Column layout examples across Gap 2, 4, and 6; broader alignment, justification, and wrapping remain product-code choices for now to avoid variant explosion.
@@ -129,6 +131,28 @@ convention that avoids variant explosion:
   search, a 48 circle whose ring is a 2.5 band of the six data colours around a
   43 disc, with a 16 stars-01 icon; Disabled, the disc `Disabled/fill` and the
   icon `Disabled/foreground`, the ring as it is. Run Curated Icons first.
+- **The assistant** (GAP-206), five sets in this order, each after the sets it
+  holds instances of. **UserMessage** — `Content` of Default (React has no
+  variant): the visitor's bubble at the end of a 328 turn, the theme fill under
+  the theme foreground, 16 across and 12 down on the container radius, its
+  words 14/20 sizing themselves up to 85 % of the turn and wrapping there
+  (their max width); `Message Text`. **AIMessage** — `Status` of Complete,
+  Streaming (three 6 dots in the theme's 600, 4 apart, before the words) and
+  TimedOut (`Timed Out Text` in the muted foreground): the same bubble in
+  bg-card with a 1 border-border; `Message Text`, and `Show Action Card` over
+  an `Action Card Slot`. **AIMessageList** — `Content` of Conversation,
+  Streaming and TimedOut: the thread 360 wide, 16 inside and between, its turns
+  live, exposed AIMessage and UserMessage instances. **AIInputBar** — `State`
+  of Empty, Filled and Disabled by `VoiceState` of Off, Idle, Connecting, Listening,
+  Speaking, Unavailable and Error (decision 22): the 44 pill field, the 44
+  microphone and send, a live IconButton with send-01; `Placeholder Text` and
+  `Value Text`. **AICompanionPanel** — `Content` of the thread's three: 360 by
+  560, the header (stars-01 mark, `Title Text`, the close, a live IconButton
+  in the neutral outline shown by `Show Close`), a `Banner Slot` shown by
+  `Show Banner`, a live AIMessageList and AIInputBar. Run Curated Icons
+  (send-01, microphone-01, microphone-off-01 and volume-max are UI icons,
+  decision 121) and IconButton first; an Update of IconButton is followed by
+  AIInputBar and AICompanionPanel, which tint the swapped icons again.
 - **CategoryField** — `Tint` of Theme and the taxonomy's eight category colours:
   the search field's form once a category is chosen, 48 tall with a 28 icon, a
   15/20 label, a 22 count pill (`Show Count`) and a 32 clear. Run Curated Icons
@@ -164,6 +188,20 @@ convention that avoids variant explosion:
   Theme is the theme's 600 with everything on it in foreground/1000; Background
   the solid surface. Glass is not drawn yet. Two axes, through the single-axis
   builder's second axis, as POIResultCard's. Run Curated Icons first.
+- **ClientAppBanner** — `Layout` of Wide (560, the action beside the words)
+  and Narrow (320, the action under them, as wide): Express's Client App
+  Banner (GAP-206, GAP-127) on the solid surface with the Container corner and
+  the floating elevation, a 48 icon showing the app's initial (fill it with
+  the app's icon), `Promotion Text`, `App Name Text` and `Description Text`
+  (two lines at most), a live Button and a live IconButton dismiss with
+  x-close, pulled 4 inside the edge. `Show Promotion`, `Show Description` and
+  `Show Dismiss` turn them off. Build Button and IconButton and run Curated
+  Icons first.
+- **LanguageSwitcher** — `State` of Default, Pending, Failed and Disabled: the
+  map's closed language control (GAP-206, SDK-UI-003), Select's trigger at 48
+  with no edge and the floating elevation, `Language Text`; Pending and
+  Disabled at half strength, Pending with `Pending Text` under it, Failed with
+  `Error Text` and a live ghost Button, Retry. The open list is Select's.
 - **MapView** — `Content` of Empty and Overlay, plus editable attribution text.
   Figma models only the surface, its insets, and the overlay slot; the map canvas
   is renderer output and must not be drawn in Figma.
@@ -178,6 +216,33 @@ convention that avoids variant explosion:
   Foundations (a payload with `Map marker`) and Curated Icons first.
 - **WayfindingCard** — `Content` of Basic and Titled. Compose route content into
   the slot instead of extending this set.
+
+The map and route parts (GAP-206) hold instances of other Kozmos sets, so they
+run after them: Core's sets first, then POIResultCard before POIResultGroup and
+RouteLocationField before RouteSetupPanel, as Update All Product / SDK does.
+
+- **MapStatusPill** — `Tone` of Neutral, Progress, Success, Danger and Warning
+  (decision 39): the map controls' surface, 48 tall, the 13/16 words in
+  foreground/300. Progress is a nested Spinner; Success a check and the words
+  in Emotion/success/text; Danger a warning triangle in Emotion/danger/text;
+  Warning, Turn Back, Emotion/alert/fill under Emotion/alert/onFill. Status Text
+  and Show Mark.
+- **MapAttribution** — `Appearance` of Map and Surface: the brand slot over one
+  line of 10/12 credits, in Map attribution/text on the map (its halo is a
+  text shadow Figma cannot bind) and the ink on the surface.
+- **MapInfoPanel** — `Content` of Default, ExpandedFAQ and Minimal: the
+  title, the introduction, an Accordion FAQ, the credits, a Link and the
+  versions, with a ghost IconButton close.
+- **POIResultGroup** — `State` of Collapsed and Expanded: POIResultCard Row
+  instances under one edge, divided, over the Show more or Hide toggle.
+- **RouteLocationField** — `State` of Search, Loading, Empty, Error and
+  Resolved: the label over a Combobox (its own label hidden, as React's is)
+  or the resolved place in its box, with a ghost Button action.
+- **RouteSetupPanel** — `State` of Incomplete, Ready and Pending by
+  `Presentation` of Hosted and Standalone: two RouteLocationField instances
+  and the Continue Button, disabled until Ready.
+- **ArrivalPanel** — `State` of Default and Pending by `Presentation` of
+  Hosted and Standalone: the destination, the journey as travelled and Done.
 
 Use **Update** rather than **Build** after the first pass so the Code Connect node
 IDs stay stable, exactly as with Core sets.
