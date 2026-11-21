@@ -1,6 +1,6 @@
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { runFigmaConnect } from './lib/figma-connect-run.mjs';
 
 function findDotEnv(startDir) {
     let current = startDir;
@@ -64,10 +64,11 @@ const workspaceFile = findUp(process.cwd(), 'pnpm-workspace.yaml');
 const workspaceRoot = workspaceFile ? path.dirname(workspaceFile) : process.cwd();
 const parseArgs = normalizeParseArgs(process.argv.slice(2), workspaceRoot);
 
-const result = spawnSync('pnpm', ['--filter', '@kozmos-ds/react', 'exec', 'figma', 'connect', 'parse', ...parseArgs], {
-    stdio: 'inherit',
-    env,
-    cwd: workspaceRoot,
-});
-
-process.exit(result.status ?? 1);
+// Through the shared runner, so a file the CLI could not parse fails the run
+// instead of being left out of an exit 0.
+process.exit(
+    await runFigmaConnect('pnpm', ['--filter', '@kozmos-ds/react', 'exec', 'figma', 'connect', 'parse', ...parseArgs], {
+        env,
+        cwd: workspaceRoot,
+    }),
+);
