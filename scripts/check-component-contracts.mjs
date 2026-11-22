@@ -1976,8 +1976,50 @@ assertContains(
   // and Figma; decision 183: @kozmos-ds/react/dashboard), so their sets have
   // no SwiftUI or Compose snippet to map. Dev Mode shows a native label
   // React's snippet for them, whose import names the dashboard entry.
-  const webOnly = (filePath) =>
-    filePath.split(path.sep).join("/").includes("src/dashboard/");
+  // GAP-206 linked these parts' new sets on React; none has a SwiftUI or
+  // Compose part to map yet (the assistant's six and LanguageSwitcher wait
+  // for decision 70's natives, GAP-141; Calendar has none planned), so Dev
+  // Mode shows React's snippet on every label until one lands. The day a
+  // native part is added here, this list stops excusing it.
+  const REACT_ONLY_UNTIL_NATIVE = [
+    "AICompanionPanel",
+    "AIInputBar",
+    "AIMessage",
+    "AIMessageList",
+    "UserMessage",
+    "ActionCard",
+    "Calendar",
+    "LanguageSwitcher",
+  ];
+  const nativeSources = {
+    SwiftUI: (name) => `packages/ios/Sources/Components/${name}/${name}.swift`,
+    Compose: (name) =>
+      `packages/android/src/main/java/com/kozmos/components/${name}/${name}.kt`,
+  };
+  const grownNative = REACT_ONLY_UNTIL_NATIVE.flatMap((name) =>
+    Object.entries(nativeSources)
+      .filter(([, source]) => fs.existsSync(path.join(root, source(name))))
+      .map(
+        ([label, source]) => `${name} has a ${label} part (${source(name)})`,
+      ),
+  );
+  if (grownNative.length > 0) {
+    fail(
+      `These parts are excused from mapping every platform as React only, but now have a native part: map it and take them off REACT_ONLY_UNTIL_NATIVE:\n  ${grownNative.join("\n  ")}`,
+    );
+  }
+  const reactOnlyFiles = new Set(
+    REACT_ONLY_UNTIL_NATIVE.map(
+      (name) => `src/components/${name}/${name}.figma.tsx`,
+    ),
+  );
+  const webOnly = (filePath) => {
+    const posix = filePath.split(path.sep).join("/");
+    return (
+      posix.includes("src/dashboard/") ||
+      [...reactOnlyFiles].some((file) => posix.endsWith(file))
+    );
+  };
   const reactNodes = new Map(
     [...nodesOf(files.figmaLinked, "packages/react", ".figma.tsx")].filter(
       ([, filePath]) => !webOnly(filePath),

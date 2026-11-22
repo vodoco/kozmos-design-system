@@ -6,7 +6,7 @@ Text in, question out. A form, so Enter submits the way every other field does.
 
 - **Import:** `import { AIInputBar } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-aiinputbar--docs>
 
 ## Example

@@ -6,7 +6,7 @@ Rich content inside an assistant turn — a `POIResultList`, a `POIResultCard`, 
 
 - **Import:** `import { ActionCard } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-actioncard--docs>
 
 ## Example

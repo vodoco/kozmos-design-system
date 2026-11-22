@@ -10,6 +10,13 @@ import { spawn } from "node:child_process";
 export const TRANSIENT_FIGMA_FAILURE =
   /Failed to to fetch node info(?: \((?:429|5\d\d)\)|: TypeError: fetch failed)/;
 
+/**
+ * What Code Connect 1.4 prints for a file it could not parse: "❌ <file>". It
+ * then leaves the file out and still exits 0, and a dry run still says "All
+ * Code Connect files are valid", so a publish would drop the component unseen.
+ */
+export const UNPARSED_FILE = /^\u274c (.+)$/gmu;
+
 const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function runOnce(command, args, options, spawnImpl, out, err) {
@@ -57,7 +64,16 @@ export async function runFigmaConnect(
   let result;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     result = await runOnce(command, args, options, spawnImpl, stdout, stderr);
-    if (result.status === 0) return 0;
+    if (result.status === 0) {
+      const unparsed = [...result.output.matchAll(UNPARSED_FILE)].map(
+        (match) => match[1].trim(),
+      );
+      if (unparsed.length === 0) return 0;
+      log(
+        `Code Connect could not parse ${unparsed.length} file(s) and left them out, though it exited 0:\n${unparsed.map((file) => `- ${file}`).join("\n")}`,
+      );
+      return 1;
+    }
     if (!TRANSIENT_FIGMA_FAILURE.test(result.output) || attempt === attempts) {
       return result.status;
     }

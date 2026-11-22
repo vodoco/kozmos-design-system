@@ -37,11 +37,11 @@ token was declined, so this is not a gap to close.
 | Components scanned                        | 132    |
 | Declaring at least one React variant axis | 68     |
 | Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 16/68  |
+| Components with variant gaps — iOS        | 15/68  |
 | Components with variant gaps — Android    | 16/68  |
 | Components with variant gaps — Figma      | 18/68  |
 | Components with variant gaps — Vue        | 11/68  |
-| Components absent entirely — iOS          | 10/132 |
+| Components absent entirely — iOS          | 9/132  |
 | Components absent entirely — Android      | 9/132  |
 | Components absent entirely — Figma        | 4/132  |
 | Components absent entirely — Vue          | 23/132 |
@@ -139,7 +139,6 @@ Stepper
   - ios missing axes -> variant (numbered, dots)
   - android missing axes -> variant (numbered, dots)
 Surface
-  - ios: component/set absent
   - vue: component absent
 ThemeProvider
   - ios missing axes -> dir (ltr, rtl)
@@ -225,9 +224,9 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 10 of 132
+### iOS — 9 of 132
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, Surface, TourStep, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, LanguageSwitcher, TourStep, UserMessage.
 
 ### Android — 9 of 132
 

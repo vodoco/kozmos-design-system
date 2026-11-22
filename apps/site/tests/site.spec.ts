@@ -5116,7 +5116,7 @@ test.describe("components", () => {
       "Implemented",
       "Not yet",
       "Not yet",
-      "Not yet",
+      "Linked",
     ]);
     const utilities = page.getByRole("table", {
       name: `${componentIndex.lanes["code-only"].title} components by platform`,
@@ -5231,14 +5231,14 @@ test.describe("components", () => {
       ),
     ).toBeUndefined();
 
-    // Not on iOS or Android yet, and it says so.
+    // Not on iOS or Android yet, and it says so; its Figma set is linked (GAP-206).
     await page.goto("/components/ai-companion-panel");
     await hydrated(page);
     await expect(
       page
         .getByRole("table", { name: "Where AICompanionPanel exists" })
         .getByRole("cell"),
-    ).toHaveText(["Implemented", "Not yet", "Not yet", "Not yet"]);
+    ).toHaveText(["Implemented", "Not yet", "Not yet", "Linked"]);
 
     // No docs page in Storybook: its first story, and a line that says so.
     await page.goto("/components/category-field");

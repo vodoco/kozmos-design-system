@@ -224,7 +224,25 @@
       "src/main/java/com/kozmos/components/DynamicIsland/DynamicIsland.figma.kt",
       "src/main/java/com/kozmos/components/DynamicIsland/DynamicIsland.kt",
       "src/main/java/com/kozmos/components/FeedbackCard/FeedbackCard.figma.kt",
-      "src/main/java/com/kozmos/components/FeedbackCard/FeedbackCard.kt"
+      "src/main/java/com/kozmos/components/FeedbackCard/FeedbackCard.kt",
+      "src/main/java/com/kozmos/components/MapStatusPill/MapStatusPill.figma.kt",
+      "src/main/java/com/kozmos/components/MapStatusPill/MapStatusPill.kt",
+      "src/main/java/com/kozmos/components/MapAttribution/MapAttribution.figma.kt",
+      "src/main/java/com/kozmos/components/MapAttribution/MapAttribution.kt",
+      "src/main/java/com/kozmos/components/MapInfoPanel/MapInfoPanel.figma.kt",
+      "src/main/java/com/kozmos/components/MapInfoPanel/MapInfoPanel.kt",
+      "src/main/java/com/kozmos/components/POIResultGroup/POIResultGroup.figma.kt",
+      "src/main/java/com/kozmos/components/POIResultGroup/POIResultGroup.kt",
+      "src/main/java/com/kozmos/components/RouteLocationField/RouteLocationField.figma.kt",
+      "src/main/java/com/kozmos/components/RouteLocationField/RouteLocationField.kt",
+      "src/main/java/com/kozmos/components/RouteSetupPanel/RouteSetupPanel.figma.kt",
+      "src/main/java/com/kozmos/components/RouteSetupPanel/RouteSetupPanel.kt",
+      "src/main/java/com/kozmos/components/ArrivalPanel/ArrivalPanel.figma.kt",
+      "src/main/java/com/kozmos/components/ArrivalPanel/ArrivalPanel.kt",
+      "src/main/java/com/kozmos/components/ClientAppBanner/ClientAppBanner.figma.kt",
+      "src/main/java/com/kozmos/components/ClientAppBanner/ClientAppBanner.kt",
+      "src/main/java/com/kozmos/components/Surface/Surface.figma.kt",
+      "src/main/java/com/kozmos/components/Surface/Surface.kt"
     ]
   }
 }

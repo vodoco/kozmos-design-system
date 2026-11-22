@@ -6,7 +6,7 @@ Information about a map: host-provided introduction, optional branding, FAQs, co
 
 - **Import:** `import { MapInfo, MapInfoPanel } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-mapinfopanel--docs>
 
 ## Example

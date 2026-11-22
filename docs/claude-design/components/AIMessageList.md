@@ -6,7 +6,7 @@ The thread: `role="log"` with `aria-live="polite"`, because turns arrive over ti
 
 - **Import:** `import { AIMessageList } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React; not linked to Figma yet.
+- **Platforms:** React; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-aimessagelist--docs>
 
 ## Example
