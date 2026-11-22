@@ -147,6 +147,11 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    Claude Design page names React's; it reads the built types, so build React first).
    Review the manifests, changelogs and plan together. A first release of something new
    begins on `next`; the checked-in plan is never an implied choice of versions.
+   - **Cut the native snapshots by hand.** Changesets writes no SwiftUI or Compose changelog:
+     in `packages/ios/CHANGELOG.md` and `packages/android/CHANGELOG.md`, move what is under
+     "Unreleased" into a new `## <React's version> — repository snapshot` section and leave
+     "Unreleased" empty above it. `pnpm test:release` (`scripts/release/changelogs.test.mjs`)
+     fails until both have it, and Storybook's Guides/Releases shows them by these headings.
    - **React and styles are planned and released together.** `.changeset/config.json` puts
      `@kozmos-ds/react` and `@kozmos-ds/styles` in one changesets `fixed` group, so they
      version together, and react pins styles exactly. The plan lists both at one version or
@@ -1170,3 +1175,68 @@ the main entry and 12 from the Dashboard's), `dashboard.css` after `style.css`, 
 modules rendering from the bundle, 140 cards, 49 tokens added with their usage notes, and the design skill's shells
 rendering. Its tools first had to learn the second entry, as `docs/claude-design/README.md` describes the kit.
 Applying it needs Can edit on Pointr's artifact, and is Olcay's.
+
+### 0.17.0
+
+Published on 2026-11-22 from `ecdcdb3a39f8970ac37e8763ca98c8b5d902da11`, the version merge
+[#603](https://github.com/vodoco/kozmos-design-system/pull/603) (merged at 23:42 on 21 Nov). React 0.17.0 and
+`@kozmos-ds/styles` 0.17.0 move together, with tokens 0.10.0, icons 0.11.0 and product-contracts 0.11.0. It is the
+minor of the owner's 17 Nov rulings (decisions 188–211) and of decisions 215–228; the
+[gap register](product-design-gap-register.md#baseline-and-scope) lists what it released, and each row says
+"Released in 0.17.0" with its pull request. Thirty-nine changesets went into it. `@kozmos-ds/vue` moved to
+`0.17.0-next.0` in the same merge, as the `next` channel requires, and was not in this plan (below).
+
+The `npm-release` gate was approved under Olcay's authority for 0.17.0 only (dispatch and approve). It was not
+standing, and it is spent. Times are UTC.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.17.0, `@kozmos-ds/styles` 0.17.0, tokens 0.10.0, icons 0.11.0 and product-contracts 0.11.0 on npm `latest`. React pins styles 0.17.0, tokens 0.10.0, icons 0.11.0 and product-contracts 0.11.0 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Exact main-push CI      | [44963077479](https://github.com/vodoco/kozmos-design-system/actions/runs/44963077479), on `ecdcdb3a`, attempt 1, its 18 jobs green at 00:59 on 22 Nov. The other workflows on the commit succeeded: [Bundle Size Analysis](https://github.com/vodoco/kozmos-design-system/actions/runs/44963077496), [Visual Regression](https://github.com/vodoco/kozmos-design-system/actions/runs/44963077484), [Lighthouse CI](https://github.com/vodoco/kozmos-design-system/actions/runs/44963077564), [Site](https://github.com/vodoco/kozmos-design-system/actions/runs/44963077478) and [Pages](https://github.com/vodoco/kozmos-design-system/actions/runs/44963077630). #603's own Android job had failed once on the pull request, when Gradle could not download the Paparazzi plugin; its re-run passed. |
+| Preflight / publication | `pnpm release:preflight` against that run passed: `NPM_TOKEN` reachable only from the publish job on `main`, the 18 jobs green, the plan valid, none of the five versions on npm. [45006744086](https://github.com/vodoco/kozmos-design-system/actions/runs/45006744086), dispatched at 09:16, succeeded: guard and prepare approved the candidate, the `npm-release` deployment was approved, and publish ran from 09:19 to 09:33. Nothing merged to `main` between the preflight and the dispatch.                                                                                                                                                                                                                                                                                                    |
+| Registry readback       | All five are on `latest` at their versions, each with its SLSA provenance attestation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Installed consumer      | Clean installations of React 0.17.0 from the registry with React 18.3.1 and with React 19.3.1 exposed 308 exports from CJS and from the ESM entry, with styles 0.17.0, tokens 0.10.0, icons 0.11.0 and product-contracts 0.11.0 installed. `@kozmos-ds/react/dashboard` loads in both and exports its 12 names, none shared with the main entry. The published `style.css` of styles and of React are the same file, and both hold the release's new owned rules.                                                                                                                                                                                                                                                                                                                                       |
+| Tags / GitHub releases  | `pnpm release:tag --dry-run` first, then `@kozmos-ds/styles@0.17.0`, `@kozmos-ds/tokens@0.10.0`, `@kozmos-ds/icons@0.11.0`, `@kozmos-ds/product-contracts@0.11.0` and `@kozmos-ds/react@0.17.0` at `ecdcdb3a`, each with its GitHub Release, at 09:34. React 0.17.0 is Latest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+
+Change details: [React](../packages/react/CHANGELOG.md#0170), [styles](../packages/styles/CHANGELOG.md#0170),
+[tokens](../packages/tokens/CHANGELOG.md#0100), [icons](../packages/icons/CHANGELOG.md#0110),
+[product-contracts](../packages/product-contracts/CHANGELOG.md#0110), the
+[generated AI changelog](../.ai-skills/api-changelog.md) and, in Storybook, Guides/Releases. Upgrading from 0.16.0:
+
+- **A disabled Button is drawn from the disabled pair** (decision 197, GAP-218), at full strength, not at half
+  opacity, in every variant and emotion, and so is every part drawn as a Button. Every disabled Button's pixels change.
+- **Badge is a status badge on Chip's scale** (GAP-147, decision 93): 28, 32 and 36 tall at touch, where every size
+  was 44, with no hover states.
+- **DialogTitle sits closer to its description** (GAP-275), and the dividers of a divided Tree and of a Table skip a
+  selected row (decision 207, GAP-250).
+- **Breaking for Android XML resources only** (decision 206, GAP-237): tokens' Android resources write the layout
+  lengths as `<dimen>` in dp and the type scale in sp, where they were `<integer>` and `<string>`. An app reading
+  them as `@integer/` or `@string/` reads them as `@dimen/`.
+- **Product contracts:** `TravelEstimatePresentation.breakdown` is new and optional (GAP-047); without it the cards
+  draw what they drew.
+- Everything else is additive: new parts (DescriptionList, ChipInput, SpriteIcon), the mixed state on more controls,
+  Table's selection and sorting, Grid's virtualising, and the props the changelogs list.
+
+SwiftUI and Compose ship as source in the repository at this commit, not to a registry. Their changelogs cut no
+snapshot at 0.14.0, 0.15.x or 0.16.0; the 0.17.0 snapshot holds their changes since 0.13.0, and
+`scripts/release/changelogs.test.mjs` now fails a version PR that leaves the cut out.
+
+### `@kozmos-ds/vue` 0.17.0-next.0
+
+The first `@kozmos-ds/vue` on npm, on the `next` tag, published on 2026-11-22 from
+`910ada02c9a07beb77efcea666e6ecef036d8ca5`, its plan's merge
+[#604](https://github.com/vodoco/kozmos-design-system/pull/604) (merged at 11:48), after React 0.17.0's release
+(decisions 162 and 209). It pins `@kozmos-ds/styles` 0.17.0 exactly and names `@kozmos-ds/react` 0.17.0 as an
+optional peer, for `./react-bridge` alone. Its main entry holds six native parts: `KozmosThemeProvider`,
+`KozmosDensityScope`, `KozmosAnalyticsProvider`, `KozmosButton`, `KozmosBadge` and `KozmosSeparator`. The
+`npm-release` gate was approved under Olcay's standing approval for `@kozmos-ds/vue` on `next` (19 Nov). Times are
+UTC.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Version                 | `0.17.0-next.0` on npm `next`. `dependencies` pin `@kozmos-ds/styles` 0.17.0; `peerDependencies` name `@kozmos-ds/react` 0.17.0, React and React DOM optional, and Vue `^3.5.0`.                                                                                                                                                                                                                                                                                                                                |
+| Exact main-push CI      | [45019152803](https://github.com/vodoco/kozmos-design-system/actions/runs/45019152803), on `910ada02`, attempt 1, its 18 jobs green at 13:18. Bundle Size Analysis, Visual Regression, Lighthouse CI, Site and Pages on the commit succeeded.                                                                                                                                                                                                                                                                   |
+| Preflight / publication | `pnpm release:preflight` against that run passed, with the version not on npm. [45026880986](https://github.com/vodoco/kozmos-design-system/actions/runs/45026880986) succeeded: guard and prepare (the Vue-only install rendering a `KozmosButton` on the server, the bridge beside React 19, the README's `vue` blocks type-checked) approved the candidate, the `npm-release` deployment was approved, and publish ran from 13:22 to 13:25. Nothing merged to `main` between the preflight and the dispatch. |
+| Installed consumer      | `npm install @kozmos-ds/vue@next vue` into an empty project installed no React and `@kozmos-ds/styles` 0.17.0; the main entry exports its 8 names and renders a `KozmosButton` on the server. `npm audit signatures` verified the attestations of all 31 installed packages.                                                                                                                                                                                                                                    |
+| Tags / GitHub releases  | `pnpm release:tag --dry-run` first, then `@kozmos-ds/vue@0.17.0-next.0` at `910ada02`, a prerelease, never Latest.                                                                                                                                                                                                                                                                                                                                                                                              |
+| `latest` on npm         | As expected on a name's first publish (above), npm set `latest` to `0.17.0-next.0` too, so `npm install @kozmos-ds/vue` without a tag installs the prerelease until Vue's first stable release. Moving it is the owner's, with their npm login.                                                                                                                                                                                                                                                                 |
