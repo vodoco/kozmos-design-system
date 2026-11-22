@@ -1,11 +1,5 @@
 {
   "schemaVersion": 1,
-  "tag": "latest",
-  "packages": [
-    { "name": "@kozmos-ds/react", "version": "0.17.0" },
-    { "name": "@kozmos-ds/styles", "version": "0.17.0" },
-    { "name": "@kozmos-ds/tokens", "version": "0.10.0" },
-    { "name": "@kozmos-ds/icons", "version": "0.11.0" },
-    { "name": "@kozmos-ds/product-contracts", "version": "0.11.0" }
-  ]
+  "tag": "next",
+  "packages": [{ "name": "@kozmos-ds/vue", "version": "0.17.0-next.0" }]
 }

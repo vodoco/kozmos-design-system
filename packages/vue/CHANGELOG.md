@@ -1,5 +1,21 @@
 # @kozmos-ds/vue
 
+## 0.17.0-next.0
+
+The first `@kozmos-ds/vue` on npm, a prerelease on the `next` tag (decisions 162 and 209):
+`npm install @kozmos-ds/vue@next vue`. It is built on `@kozmos-ds/styles` and `@kozmos-ds/react`
+0.17.0 and pins both exactly; React is needed only for `@kozmos-ds/vue/react-bridge`.
+
+- **`@kozmos-ds/vue`**, native Vue 3 on Reka UI, with no React, rendering on the server:
+  `KozmosThemeProvider` (with `useTheme`), `KozmosDensityScope`, `KozmosAnalyticsProvider` (with
+  `useKozmosAnalytics`), `KozmosButton`, `KozmosBadge` and `KozmosSeparator`, each drawing the element its
+  React counterpart draws from the same recipes, held to React's by the API contract and DOM parity checks
+  (GAP-148).
+- **`@kozmos-ds/vue/react-bridge`**, a Vue wrapper for every React part not ported yet. A compound's
+  parts share one React tree, so a part in another's slot finds its context (GAP-230), and the Vue
+  providers reach the React parts (decision 172). `v-model` goes through the models each wrapper names, and
+  a listener reaches the React part when the part takes it (decision 168).
+
 ## 0.0.5
 
 ### Patch Changes
