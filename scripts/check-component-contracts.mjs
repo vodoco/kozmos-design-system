@@ -4654,8 +4654,14 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'Glass: {\n      background: "Colors/transparent/inverted/10",\n      foreground: "Colors/foreground/0"',
+  'Glass: {\n      foreground: "Colors/foreground/0"',
   "Glass Button foreground follows mode-aware text-foreground token",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  "function paintButtonGlass(",
+  "Glass Button's glass and edge are the glass tokens, as layers (GAP-229)",
 );
 assertContains(
   files.figma,
