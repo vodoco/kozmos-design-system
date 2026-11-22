@@ -234,6 +234,7 @@ const variableByName = mockVariables([
   "LocationPin/label/line-height",
   "Colors/transparent/inverted/10",
   "Border/bevel/top",
+  "Effect/glass/border/color",
   "Overlay/Scrim",
   // Decisions 202 and 203: Dialog's full size and media, and the display size.
   "Dialog/width/full",
@@ -8256,36 +8257,85 @@ section("A translucent token rides on the paint");
       textStyle: null,
       stats: freshStats(),
     });
-    const fill = glass.fills[0];
-    const stroke = glass.strokes[0];
+    // GAP-229, decision 208: Glass is painted as Surface's Glass and as
+    // React's .kozmos-button-glass, from the glass tokens, each a layer of
+    // its own — not the 10 % inverted fill and 50 % bevel it had, which no
+    // code drew.
+    const layer = (name) =>
+      (glass.children || []).find((child) => child.name === name);
+    const fill = layer("Glass Fill");
+    const edge = layer("Glass Edge");
     ok(
-      boundVariableName(fill) === "Colors/transparent/inverted/10" &&
-        near(fill.opacity, alphaOf("#FCFCFD1A")),
-      `Glass's fill is transparent/inverted/10 at its 10 % (${fill && fill.opacity})`,
+      glass.fills.length === 0 && glass.strokes.length === 0,
+      `Glass's frame paints no fill or stroke of its own (${glass.fills.length} fills, ${glass.strokes.length} strokes)`,
     );
     ok(
-      boundVariableName(stroke) === "Border/bevel/top" &&
-        near(stroke.opacity, alphaOf("#FFFFFF80")),
-      `Glass's bevel is Border/bevel/top at its 50 % (${stroke && stroke.opacity})`,
+      fill &&
+        boundVariableName(fill.fills[0]) === "Colors/background/0" &&
+        near(fill.opacity, 0.7) &&
+        fill.layoutPositioning === "ABSOLUTE" &&
+        glass.children.indexOf(fill) === 0,
+      `Glass's glass is Colors/background/0 at Effect/glass/opacity's 0.7, the back layer (${fill && boundVariableName(fill.fills[0])} at ${fill && fill.opacity})`,
     );
-    // The audit, as in Dark: the label (foreground/0, #FFFFFF) on the Glass
-    // fill over Surface/0 (#000000). Its paint reader takes the paint's
-    // opacity, as the file draws.
-    const context = plugin.createVariableContext([], []);
-    const read = plugin.solidPaintToRgba(fill, context, "Dark");
-    const onBlack = {
-      r: read.r * read.a,
-      g: read.g * read.a,
-      b: read.b * read.a,
-    };
-    const lin = (v) =>
-      v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-    const lum = (c) =>
-      0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
-    const darkRatio = (1 + 0.05) / (lum(onBlack) + 0.05);
     ok(
-      darkRatio >= 4.5,
-      `the audit reads Glass's label in Dark at 4.5 or more (${darkRatio.toFixed(2)})`,
+      edge &&
+        boundVariableName(edge.strokes[0]) === "Effect/glass/border/color" &&
+        near(edge.opacity, 0.2) &&
+        edge.strokeWeight === 1 &&
+        glass.children.indexOf(edge) === 1,
+      `Glass's edge is Effect/glass/border/color at Effect/glass/border/opacity's 0.2, over the glass (${edge && boundVariableName(edge.strokes[0])} at ${edge && edge.opacity})`,
+    );
+    ok(
+      glass.effects.some(
+        (effect) => effect.type === "BACKGROUND_BLUR" && effect.radius === 20,
+      ) && glass.effects.some((effect) => effect.type === "DROP_SHADOW"),
+      `Glass blurs what is behind it by Effect/glass/blur's 20 and keeps its overlay elevation (${glass.effects.map((effect) => effect.type).join(", ")})`,
+    );
+    const disabledGlass = await plugin.createButtonVariant({
+      variant: "Glass",
+      size: "Default",
+      state: "Disabled",
+      variableByName,
+      fonts: FONTS,
+      textStyle: null,
+      stats: freshStats(),
+    });
+    ok(
+      (disabledGlass.children || []).some((c) => c.name === "Glass Fill") &&
+        (disabledGlass.children || []).some((c) => c.name === "Glass Edge"),
+      "a disabled Glass keeps its glass and edge",
+    );
+    const iconGlass = await plugin.createIconButtonVariant({
+      variant: "Glass",
+      size: "Default",
+      state: "Default",
+      variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const iconEdge = (iconGlass.children || []).find(
+      (child) => child.name === "Glass Edge",
+    );
+    ok(
+      iconEdge &&
+        boundVariableName(iconEdge.strokes[0]) ===
+          "Effect/glass/border/color" &&
+        iconEdge.cornerRadius === iconGlass.width / 2,
+      `IconButton's Glass has the same edge, round (${iconEdge && iconEdge.cornerRadius} on ${iconGlass.width})`,
+    );
+    const solid = await plugin.createButtonVariant({
+      variant: "Default",
+      size: "Default",
+      state: "Default",
+      variableByName,
+      fonts: FONTS,
+      textStyle: null,
+      stats: freshStats(),
+    });
+    ok(
+      !(solid.children || []).some((c) => /^Glass /.test(c.name)) &&
+        solid.effects.length === 0,
+      "a variant that is not Glass has no glass layers and no effects",
     );
     // And the audit's traversal measures a Glass variant, in both modes,
     // rather than passing over it: that reading caught ed50a03a1912's Glass.
@@ -22329,18 +22379,16 @@ section(
   // so it never reads as an enabled grey ghost.
   const FILLED = ["Default", "Destructive", "Secondary", "Subtle", "Ghost"];
   // What a disabled variant stands on: the pair's fill under a filled one or
-  // a ghost, the page under an outline, nothing under link, glass under glass.
+  // a ghost, the page under an outline, nothing under link, and under glass
+  // its own glass and edge, which are layers (GAP-229), not the frame's paint.
   const groundOf = (variant) =>
     FILLED.includes(variant)
       ? { fill, fallback: "#E3E4E8", stroke: null }
       : variant === "Outline"
         ? { fill: "Surface/0", stroke: ink }
-        : variant === "Glass"
-          ? {
-              fill: "Colors/transparent/inverted/10",
-              stroke: "Border/bevel/top",
-            }
-          : { fill: null, stroke: null };
+        : { fill: null, stroke: null };
+  // Glass's layers are translucent by design: their strength is the token's.
+  const GLASS_LAYERS = new Set(["Glass Fill", "Glass Edge"]);
   const name = (paint) => (paint ? boundVariableName(paint) : null);
   // Every way a painted node can differ from the rules, as words.
   const differences = (node, variant, label) => {
@@ -22369,7 +22417,12 @@ section(
     }
     const dimmed = [node]
       .concat(node.findAll(() => true))
-      .filter((child) => child.opacity < 1 && child.name !== "Divider");
+      .filter(
+        (child) =>
+          child.opacity < 1 &&
+          child.name !== "Divider" &&
+          !GLASS_LAYERS.has(child.name),
+      );
     if (dimmed.length)
       out.push(
         `${label} dims ${dimmed.map((child) => `${child.name} ${child.opacity}`).join(", ")}`,
@@ -22438,7 +22491,7 @@ section(
       out.push(`${label} spinner ${name(spinner.strokes[0])}`);
     const dimmed = [node]
       .concat(node.findAll(() => true))
-      .filter((child) => child.opacity < 1);
+      .filter((child) => child.opacity < 1 && !GLASS_LAYERS.has(child.name));
     if (dimmed.length)
       out.push(
         `${label} dims ${dimmed.map((child) => `${child.name} ${child.opacity}`).join(", ")}`,
