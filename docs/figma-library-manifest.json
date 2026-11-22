@@ -19177,8 +19177,7 @@
             "label",
             "length",
             "readOnly",
-            "status",
-            "value"
+            "status"
           ],
           "unmappedProps": []
         },

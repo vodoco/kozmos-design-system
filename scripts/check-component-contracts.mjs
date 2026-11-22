@@ -6977,7 +6977,7 @@ assertContains(
 assertContains(
   files.reactTimelineFigma,
   source.reactTimelineFigma,
-  /node-id=660-4393[\s\S]*?figma\.enum\("Content"[\s\S]*?figma\.enum\("Density"[\s\S]*?figma\.string\("Item 1 Time"\)[\s\S]*?figma\.string\("Item 3 Description"\)[\s\S]*?<Timeline density=\{density\}>/,
+  /node-id=660-4393[\s\S]*?figma\.enum\("Density"[\s\S]*?figma\.string\("Item 1 Time"\)[\s\S]*?figma\.string\("Item 3 Description"\)[\s\S]*?variant: \{ Content: "Basic" \}[\s\S]*?<Timeline density=\{density\}>[\s\S]*?variant: \{ Content: "Detailed" \}[\s\S]*?<Timeline density=\{density\}>/,
   "React Timeline Code Connect links the real Timeline node and maps content, density, and item text",
 );
 assertContains(
@@ -9102,26 +9102,14 @@ for (const [filePath, content, label] of [
 assertContains(
   files.reactDateRangePickerFigma,
   source.reactDateRangePickerFigma,
-  "dateTextToIso",
-  "React DateRangePicker Code Connect normalizes display dates to ISO input values",
-);
-assertContains(
-  files.reactDateRangePickerFigma,
-  source.reactDateRangePickerFigma,
-  "MONTH_INDEX_BY_NAME",
-  "React DateRangePicker Code Connect parses generated month-name dates deterministically",
-);
-assertContains(
-  files.reactDateRangePickerFigma,
-  source.reactDateRangePickerFigma,
-  /formatIsoDate\(\s*parsed\.getFullYear\(\),\s*parsed\.getMonth\(\) \+ 1,\s*parsed\.getDate\(\),?\s*\)/,
-  "React DateRangePicker Code Connect keeps parsed fallback dates in local calendar days",
+  'defaultValue={{ end: "2026-05-25", start: "2026-05-21" }}',
+  "React DateRangePicker Code Connect gives the set's dates as ISO values",
 );
 assertNotContains(
   files.reactDateRangePickerFigma,
   source.reactDateRangePickerFigma,
-  "toISOString().slice(0, 10)",
-  "React DateRangePicker Code Connect must not shift display dates through UTC serialization",
+  "dateTextToIso",
+  "React DateRangePicker Code Connect calls no file-local helper: Dev Mode shows the call, never runs it",
 );
 assertContains(
   files.reactIndex,
@@ -9765,8 +9753,8 @@ assertContains(
 assertContains(
   files.reactStepperFigma,
   source.reactStepperFigma,
-  'figma.enum("Count"',
-  "React Stepper Code Connect maps count axis",
+  'steps: figma.enum("Count"',
+  "React Stepper Code Connect maps count axis to the steps array",
 );
 assertContains(
   files.reactStepperFigma,
@@ -9777,8 +9765,8 @@ assertContains(
 assertContains(
   files.reactStepperFigma,
   source.reactStepperFigma,
-  'figma.string("Step 1 Text")',
-  "React Stepper Code Connect maps step text",
+  /"8": \[\s*"Step 1",\s*"Step 2",\s*"Step 3",\s*"Step 4",\s*"Step 5",\s*"Step 6",\s*"Step 7",\s*"Step 8",?\s*\]/,
+  "React Stepper Code Connect names the steps as the set's Step N Text defaults (an array element is never substituted)",
 );
 assertContains(
   files.iosRatingFigma,
