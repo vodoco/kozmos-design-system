@@ -13,11 +13,20 @@ import {
 const tableUrl =
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=237-2547";
 
+// The header's TableSelectAll and each row's TableRowSelect are drawn only by
+// mappings, which Code Connect does not collect imports from: they are listed
+// here.
 figma.connect(Table, tableUrl, {
+  imports: [
+    "import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableRowSelect, TableSelectAll } from '@kozmos-ds/react';",
+  ],
   props: {
+    // Table has no density prop: Compact is the shorter rows' classes, mapped
+    // straight to className, as Code Connect substitutes a property only where
+    // the example uses it.
     density: figma.enum("Density", {
-      Default: "default",
-      Compact: "compact",
+      Default: undefined,
+      Compact: "[&_td]:py-2 [&_th]:h-10",
     }),
     header1: figma.string("Header 1 Text"),
     header2: figma.string("Header 2 Text"),
@@ -129,14 +138,11 @@ figma.connect(Table, tableUrl, {
     numericCell2,
     numericCell3,
   }) => {
-    const denseClassName =
-      density === "compact" ? "[&_td]:py-2 [&_th]:h-10" : undefined;
-
     // Figma draws the table framed (decision 159), as React's `framed` does.
     return (
       <Table
         framed
-        className={denseClassName}
+        className={density}
         selectable={selectable}
         defaultSelectedIds={defaultSelectedIds}
       >

@@ -9,7 +9,8 @@ figma.connect(
     props: {
       aspectRatio: figma.enum("Ratio", {
         Square: 1,
-        Landscape: 16 / 9,
+        // 16 / 9, written out: Code Connect keeps a literal, not an expression.
+        Landscape: 1.7777777777777777,
       }),
       showZoomControls: figma.boolean("Zoom Controls"),
     },

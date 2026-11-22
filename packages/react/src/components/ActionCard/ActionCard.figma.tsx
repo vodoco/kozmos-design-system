@@ -17,7 +17,7 @@ figma.connect(
         Titled: figma.string("Title Text"),
         Basic: undefined,
       }),
-      children: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
+      children: figma.slot("Content Slot"),
     },
     example: ({ title, children }) => (
       <ActionCard title={title}>{children}</ActionCard>

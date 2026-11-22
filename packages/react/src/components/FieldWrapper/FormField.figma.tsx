@@ -30,7 +30,7 @@ figma.connect(
       }),
       label: figma.string("Label Text"),
       optionalText: figma.string("Optional Text"),
-      children: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
+      children: figma.slot("Content Slot"),
     },
     example: ({
       children,

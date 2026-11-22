@@ -74,14 +74,13 @@ figma.connect(
       unit,
       valueText,
     }) => {
-      const defaultValue = Number(valueText);
-
+      // Value Text is the field's text, which the input's defaultValue takes
+      // as it is: Code Connect substitutes a property only where the example
+      // uses it, never through Number().
       return (
         <NumberInput
           autoFocus={autoFocus}
-          defaultValue={
-            Number.isFinite(defaultValue) ? defaultValue : undefined
-          }
+          defaultValue={valueText}
           disabled={disabled}
           helperText={helperText}
           label={label}

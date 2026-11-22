@@ -5,7 +5,10 @@ import { POICard } from "./POICard";
 const poiCardUrl =
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=1340-6879";
 
+// Full's Button is drawn only by a mapping, which Code Connect does not collect
+// imports from: it is listed here.
 figma.connect(POICard, poiCardUrl, {
+  imports: ["import { POICard, Button } from '@kozmos-ds/react';"],
   props: {
     title: figma.string("Title Text"),
     subtitle: figma.string("Subtitle Text"),

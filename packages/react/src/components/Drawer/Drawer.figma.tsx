@@ -26,7 +26,7 @@ figma.connect(DrawerContent, drawerUrl, {
     title: figma.string("Title Text"),
     description: figma.string("Description Text"),
     body: figma.string("Body Text"),
-    content: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
+    content: figma.slot("Content Slot"),
     actions: figma.children(["Secondary Action", "Primary Action"]),
   },
   example: ({

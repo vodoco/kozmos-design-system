@@ -10,7 +10,7 @@ figma.connect(Tree, treeUrl, {
       Default: "default",
       Compact: "compact",
     }),
-    children: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
+    children: figma.slot("Content Slot"),
   },
   example: ({ children, density }) => (
     <Tree ariaLabel="Map content" density={density}>

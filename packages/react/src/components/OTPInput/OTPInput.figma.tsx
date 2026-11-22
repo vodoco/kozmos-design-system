@@ -35,12 +35,9 @@ figma.connect(
         Success: "success",
       }),
       label: figma.string("Label Text"),
-      digit1: figma.string("Digit 1 Text"),
-      digit2: figma.string("Digit 2 Text"),
-      digit3: figma.string("Digit 3 Text"),
-      digit4: figma.string("Digit 4 Text"),
-      digit5: figma.string("Digit 5 Text"),
-      digit6: figma.string("Digit 6 Text"),
+      // Digit 1 Text through Digit 6 Text are the code a person types, not
+      // mapped: Code Connect substitutes a property only where the example
+      // uses it, so the six can never be joined into its one value.
       helperText: figma.boolean("Show Helper Text", {
         true: figma.string("Helper Text"),
         false: undefined,
@@ -48,35 +45,22 @@ figma.connect(
     },
     example: ({
       autoFocus,
-      digit1,
-      digit2,
-      digit3,
-      digit4,
-      digit5,
-      digit6,
       disabled,
       helperText,
       label,
       length,
       readOnly,
       status,
-    }) => {
-      const value = [digit1, digit2, digit3, digit4, digit5, digit6]
-        .slice(0, length)
-        .join("");
-
-      return (
-        <OTPInput
-          autoFocus={autoFocus}
-          disabled={disabled}
-          helperText={helperText}
-          label={label}
-          length={length}
-          readOnly={readOnly}
-          status={status}
-          value={value}
-        />
-      );
-    },
+    }) => (
+      <OTPInput
+        autoFocus={autoFocus}
+        disabled={disabled}
+        helperText={helperText}
+        label={label}
+        length={length}
+        readOnly={readOnly}
+        status={status}
+      />
+    ),
   },
 );

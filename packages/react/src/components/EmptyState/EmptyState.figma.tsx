@@ -1,5 +1,7 @@
 import figma from "@figma/code-connect";
-import { SearchMd as Search } from "@kozmos-ds/icons";
+// Figma's search-md, by its own name: Code Connect imports what the example
+// names, so an alias reached Dev Mode as an import of a "Search" icons lacks.
+import { SearchMd } from "@kozmos-ds/icons";
 import { EmptyState } from "./EmptyState";
 
 const emptyStateUrl =
@@ -8,12 +10,14 @@ const emptyStateUrl =
 const emptyStateTextProps = {
   title: figma.string("Title Text"),
   description: figma.string("Description Text"),
-  // GAP-165: what to try, under the description.
+  // GAP-165: what to try, under the description. Code Connect cannot put a
+  // property's words inside an array (it shows `undefined` for each), so the
+  // list is the set's default items, and List Item 1 to 3 Text are not read.
   list: figma.boolean("List", {
     true: [
-      figma.string("List Item 1 Text"),
-      figma.string("List Item 2 Text"),
-      figma.string("List Item 3 Text"),
+      "Check the building and level",
+      "Clear the type filters",
+      "Search by another name or an ID",
     ],
     false: undefined,
   }),
@@ -48,7 +52,7 @@ figma.connect(EmptyState, emptyStateUrl, {
   example: ({ description, list, title, tone }) => (
     <EmptyState
       description={description}
-      icon={<Search className="h-8 w-8" />}
+      icon={<SearchMd className="h-8 w-8" />}
       list={list}
       title={title}
       tone={tone}
@@ -66,7 +70,7 @@ figma.connect(EmptyState, emptyStateUrl, {
     <EmptyState
       action={action}
       description={description}
-      icon={<Search className="h-8 w-8" />}
+      icon={<SearchMd className="h-8 w-8" />}
       list={list}
       title={title}
       tone={tone}

@@ -4,15 +4,29 @@ import { Stepper } from "./Stepper";
 const stepperUrl =
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=512-39614";
 
+// Count is the steps array, one name per step. Step 1 Text through Step 8
+// Text cannot reach it: Code Connect substitutes a property in an object's
+// value or as an attribute, never as a bare element of an array, so the
+// steps are named as the set's defaults are, and the product names its own.
+// Current is currentStep as it is: the set has no Current past its Count.
 const stepperProps = {
-  count: figma.enum("Count", {
-    "2": 2,
-    "3": 3,
-    "4": 4,
-    "5": 5,
-    "6": 6,
-    "7": 7,
-    "8": 8,
+  steps: figma.enum("Count", {
+    "2": ["Step 1", "Step 2"],
+    "3": ["Step 1", "Step 2", "Step 3"],
+    "4": ["Step 1", "Step 2", "Step 3", "Step 4"],
+    "5": ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5"],
+    "6": ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6"],
+    "7": ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6", "Step 7"],
+    "8": [
+      "Step 1",
+      "Step 2",
+      "Step 3",
+      "Step 4",
+      "Step 5",
+      "Step 6",
+      "Step 7",
+      "Step 8",
+    ],
   }),
   currentStep: figma.enum("Current", {
     "1": 0,
@@ -24,77 +38,22 @@ const stepperProps = {
     "7": 6,
     "8": 7,
   }),
-  step1Text: figma.string("Step 1 Text"),
-  step2Text: figma.string("Step 2 Text"),
-  step3Text: figma.string("Step 3 Text"),
-  step4Text: figma.string("Step 4 Text"),
-  step5Text: figma.string("Step 5 Text"),
-  step6Text: figma.string("Step 6 Text"),
-  step7Text: figma.string("Step 7 Text"),
-  step8Text: figma.string("Step 8 Text"),
 };
 
 figma.connect(Stepper, stepperUrl, {
   variant: { Variant: "Numbered" },
   props: stepperProps,
-  example: ({
-    count,
-    currentStep,
-    step1Text,
-    step2Text,
-    step3Text,
-    step4Text,
-    step5Text,
-    step6Text,
-    step7Text,
-    step8Text,
-  }) => (
-    <Stepper
-      currentStep={Math.min(currentStep, count - 1)}
-      steps={[
-        step1Text,
-        step2Text,
-        step3Text,
-        step4Text,
-        step5Text,
-        step6Text,
-        step7Text,
-        step8Text,
-      ].slice(0, count)}
-    />
+  example: ({ currentStep, steps }) => (
+    <Stepper currentStep={currentStep} steps={steps} />
   ),
 });
 
-// GAP-191: a tour's progress. The step texts name the dots in code, where a
+// GAP-191: a tour's progress. The steps name the dots in code, where a
 // screen reader reads them; positionLabel's English default says "Step n of m".
 figma.connect(Stepper, stepperUrl, {
   variant: { Variant: "Dots" },
   props: stepperProps,
-  example: ({
-    count,
-    currentStep,
-    step1Text,
-    step2Text,
-    step3Text,
-    step4Text,
-    step5Text,
-    step6Text,
-    step7Text,
-    step8Text,
-  }) => (
-    <Stepper
-      variant="dots"
-      currentStep={Math.min(currentStep, count - 1)}
-      steps={[
-        step1Text,
-        step2Text,
-        step3Text,
-        step4Text,
-        step5Text,
-        step6Text,
-        step7Text,
-        step8Text,
-      ].slice(0, count)}
-    />
+  example: ({ currentStep, steps }) => (
+    <Stepper variant="dots" currentStep={currentStep} steps={steps} />
   ),
 });

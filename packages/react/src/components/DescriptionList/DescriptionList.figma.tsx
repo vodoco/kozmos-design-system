@@ -14,6 +14,12 @@ figma.connect(
   DescriptionList,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2572-68523",
   {
+    // Action's IconButton and icon are drawn only by a mapping, which Code
+    // Connect does not collect imports from: they are listed here.
+    imports: [
+      "import { DescriptionList, DescriptionListItem, IconButton } from '@kozmos-ds/react';",
+      "import { Copy01 } from '@kozmos-ds/icons';",
+    ],
     props: {
       layout: figma.enum("Layout", {
         Stack: "stack",

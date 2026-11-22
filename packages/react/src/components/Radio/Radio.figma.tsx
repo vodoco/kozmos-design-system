@@ -109,6 +109,12 @@ figma.connect(RadioGroupItem, RADIO_URL, {
 
 figma.connect(RadioGroupItem, RADIO_URL, {
   variant: { Variant: "Tile" },
+  // Show Media's Icon is drawn only by a mapping, which Code Connect does not
+  // collect imports from: they are listed here.
+  imports: [
+    "import { Icon, RadioGroup, RadioGroupItem } from '@kozmos-ds/react';",
+    "import { Map01 } from '@kozmos-ds/icons';",
+  ],
   props: {
     ...shared,
     // GAP-158: the tile's icon, shown or not.

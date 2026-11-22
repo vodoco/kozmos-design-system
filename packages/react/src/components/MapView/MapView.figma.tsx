@@ -9,7 +9,10 @@ const mapViewUrl =
 // example type-checks against it; Code Connect renders the name as written.
 declare const overlayContent: MapOverlayProps["children"];
 
+// Overlay's MapOverlay is drawn only by a mapping, which Code Connect does not
+// collect imports from: it is listed here.
 figma.connect(MapView, mapViewUrl, {
+  imports: ["import { MapView, MapOverlay } from '@kozmos-ds/react';"],
   props: {
     children: figma.enum("Content", {
       Empty: undefined,

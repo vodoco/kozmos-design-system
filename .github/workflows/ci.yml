@@ -375,6 +375,11 @@ jobs:
       - name: Parse React Code Connect
         run: pnpm figma:parse:linked
 
+      # Parse says a file is well formed, not that Dev Mode's snippet compiles:
+      # render every document as Figma does and type-check what it shows.
+      - name: Compile React Code Connect Snippets
+        run: pnpm figma:snippets:check
+
       - name: Verify React Code Connect
         env:
           FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
