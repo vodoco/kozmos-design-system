@@ -17,6 +17,7 @@ GitHub Releases.
    versions and the explicit `next` or `latest` npm tag. Only listed packages ship.
    Versions must match workspace manifests; private/unknown/duplicate packages and
    unversioned changesets are rejected. Prerelease versions cannot use `latest`.
+   `@kozmos-ds/vue` publishes on `next` only (below, "The `next` channel").
 2. A successful **main-push** run of `.github/workflows/ci.yml` for that exact SHA
    in this repository. Every job must have succeeded, including web and both native
    jobs. PR runs, skipped jobs, forks and unrelated workflows are not evidence.
@@ -177,6 +178,84 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    those claims with evidence, preserve open host/device/design acceptance, and verify the
    deployed site and Storybook separately. Use a documentation PR; do not bump packages again
    for status prose or edit generated API cards by hand.
+
+## The `next` channel: `@kozmos-ds/vue`
+
+`@kozmos-ds/vue` publishes only as a prerelease on npm's `next` tag, one after each Vue porting wave, and
+never on `latest` (the owner's plan of 19–20 Nov 2026, decision 162). It goes out through this same
+workflow, gate and approval; nothing about publishing is different. What is different is how it is
+versioned and planned, and each rule below is a refusal in `scripts/release/policy.mjs` (`NEXT_ONLY`),
+which the pre-flight, both release jobs and CI's `pnpm test:release:packages` all run.
+
+- **Its version is `<styles version>-next.<n>`**, such as `0.17.0-next.0`. It pins `@kozmos-ds/styles`
+  exactly (and `@kozmos-ds/react`, an optional peer for `./react-bridge` alone, exactly too: a
+  `workspace:*` range packs as the version), so the version says which stylesheet and React it was built
+  against. A `-next.` version can never equal a stable one, so it cannot collide with a future `latest`.
+  The plan refuses `@kozmos-ds/vue` on `latest` at any version, a version on `next` that is not
+  `X.Y.Z-next.N`, and an `X.Y.Z` that is not the workspace's styles version.
+- **Changesets does not version it.** `changeset version` would bump a prerelease to its release
+  (`0.17.0-next.0` plus a patch is `0.17.0`), so `.changeset/config.json` ignores it (and the two private
+  apps that depend on it, which Changesets requires). No changeset may name it: one would never be
+  consumed and would block every release, and `changeset-required.mjs` refuses it. Its version and its
+  `CHANGELOG.md` section are written by hand.
+- **When React and styles version, rebase it.** A version PR that moves styles to `0.17.0` must set
+  `packages/vue/package.json`'s `version` to `0.17.0-next.0` in the same PR; CI's `test:release:packages`
+  fails until it does, naming the version. Nothing is published by that alone.
+- **Its plan is its own**, with `"tag": "next"` and `@kozmos-ds/vue` alone, after React's release, never
+  in the same plan: one plan has one tag.
+- **Every changeset must be versioned first.** The plan refuses pending changesets, as for any release,
+  and it matters more here: Vue builds React's recipes in and pins styles exactly, so a Vue release from a
+  main whose styles or React has unreleased changes would ship against a stylesheet that lacks them. A
+  Vue wave that changes styles or React therefore needs their (`latest`) release first, which is the
+  owner's call each time; the standing approval covers `@kozmos-ds/vue` on `next` only.
+
+### Releasing a `next`
+
+1. **The plan PR** (after React's release, nothing pending in `.changeset/`): set
+   `packages/vue/package.json`'s `version` (`0.17.0-next.0` for the first built on 0.17.0, then
+   `-next.1`, `-next.2`… while styles stays at 0.17.0), add a `## <version>` section to
+   `packages/vue/CHANGELOG.md` (`pnpm release:tag` reads it for the GitHub Release), and write
+   `release/plan.json`:
+
+   ```json
+   {
+     "schemaVersion": 1,
+     "tag": "next",
+     "packages": [{ "name": "@kozmos-ds/vue", "version": "0.17.0-next.0" }]
+   }
+   ```
+
+   Rehearse it: `pnpm --filter "@kozmos-ds/vue..." build`, then
+   `cd packages/vue && npm pack --dry-run` for the file list, and `pnpm test:release:packages`.
+
+2. **Merge it**, wait for main's push CI on that SHA, and merge nothing else until the release is out.
+3. **`pnpm release:preflight <sha> <ci-run-id>`**, which prints the dispatch. The owner dispatches
+   `Release Kozmos System` with it (`sha`, `ci_run_id`, `confirmation: publish <sha>`) and approves
+   `npm-release`. The prepare job packs and tests the tarball (`check-package-install.mjs`: exactly the
+   files its exports reach, no source map, a Vue-only install with no React that renders a `KozmosButton`
+   on the server, the bridge beside React 19, its README's `vue` blocks type-checked); the publish job runs
+   `npm publish <tarball> --tag=next --provenance` and reads `next` back from the registry.
+4. **Check the registry:**
+
+   ```sh
+   npm view @kozmos-ds/vue dist-tags --json
+   npm view @kozmos-ds/vue@next version dependencies peerDependencies --json
+   npm audit signatures   # in a project that installed it: the provenance attestation
+   ```
+
+   `next` must name the new version, `dependencies` must pin `@kozmos-ds/styles` at its base version, and
+   `peerDependencies` must name that `@kozmos-ds/react` with React optional. Install it into an empty
+   project (`npm install @kozmos-ds/vue@next vue`) and confirm no React arrives. Then
+   `pnpm release:tag <sha> --dry-run`, and `pnpm release:tag <sha>`: the GitHub Release is a prerelease,
+   never Latest.
+
+**What the first one leaves on npm.** npm sets `latest` on a name's first publish whatever tag it is
+given (it did for all four names on 23 Sep), so after the first `next`, `latest` names
+`0.17.0-next.0` too, and stays there, since nothing ever publishes `@kozmos-ds/vue` on `latest`, until its
+first stable release; `npm install @kozmos-ds/vue` with no tag gets that prerelease. npm refuses to remove
+`latest`. Expect a `0.0.0-stage` placeholder too, as styles' first publish left. Both are the owner's to
+settle with their npm login. The token must hold publish rights on the whole `@kozmos-ds` scope to create
+the name, as for styles.
 
 ## Tags and GitHub Releases
 

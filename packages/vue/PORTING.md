@@ -216,7 +216,9 @@ Never hand-edit a generated file (AGENTS.md lists them).
 
 ## 11. Changeset
 
-`@kozmos-ds/vue` is private: it needs no changeset of its own. Moving a recipe changes
+`@kozmos-ds/vue` is versioned by hand on `next`, outside Changesets: no changeset may name it
+(`changeset-required.mjs` refuses one), and its version and CHANGELOG are set in the pull request that
+plans its next release (`docs/release-process.md`). Moving a recipe changes
 `@kozmos-ds/react`'s `src/`, so add a `patch` changeset for React saying its output is
 byte-identical (`.changeset/badge-separator-recipes-shared-with-vue.md`). If
 `@kozmos-ds/styles`' `style.css` changes (a Vue source draws a class nothing drew before),

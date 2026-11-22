@@ -181,17 +181,21 @@ for (const [name, version] of Object.entries(manifests).sort())
   lines.push(`| \`${name}\` | ${version} |`);
 lines.push("");
 lines.push(
-  "These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose",
+  "These are the public packages. All but `@kozmos-ds/vue` publish on npm's",
 );
 lines.push(
-  "(`packages/android`) are used from a checkout and are not published.",
+  "`latest` tag. `@kozmos-ds/vue`, Kozmos for Vue 3 on Reka UI, publishes only",
 );
 lines.push(
-  "`@kozmos-ds/vue` exists in the workspace but is **private**: Kozmos for Vue 3,",
+  "as a prerelease on `next` (`npm install @kozmos-ds/vue@next`): its ported",
 );
 lines.push(
-  "being built on Reka UI (Vue 3 Phase 0), and not yet something to install.",
+  "parts are Vue's own, and the rest mount from React through its `./react-bridge`.",
 );
+lines.push(
+  "SwiftUI (`packages/ios`) and Compose (`packages/android`) are used from a",
+);
+lines.push("checkout and are not published.");
 lines.push("There is no React Native package.");
 lines.push("");
 lines.push(`## Components (${directories.length})`);

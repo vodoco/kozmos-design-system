@@ -1,9 +1,30 @@
 {
   "name": "@kozmos-ds/vue",
-  "version": "0.0.5",
-  "private": true,
-  "description": "Kozmos for Vue 3, on Reka UI: parts that draw the element their React counterparts draw, from the same recipes, with no React. Parts not yet ported are in ./react-bridge, which mounts the React components. Private until Vue 3 Phase 0 publishes it on next.",
+  "version": "0.17.0-next.0",
+  "description": "Kozmos for Vue 3, on Reka UI: parts that draw the element their React counterparts draw, from the same recipes, with no React. Parts not yet ported are in ./react-bridge, which mounts the React components. Prereleases only, on npm's next tag.",
+  "keywords": [
+    "kozmos",
+    "design-system",
+    "vue",
+    "components",
+    "maps",
+    "wayfinding",
+    "accessibility"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system.git",
+    "directory": "packages/vue"
+  },
+  "homepage": "https://github.com/vodoco/kozmos-design-system/tree/main/packages/vue#readme",
+  "bugs": {
+    "url": "https://github.com/vodoco/kozmos-design-system/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
   "main": "dist/kozmos-vue.cjs",
   "module": "dist/kozmos-vue.mjs",
   "types": "dist/index.d.ts",
@@ -13,23 +34,34 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/kozmos-vue.mjs",
-      "require": "./dist/kozmos-vue.cjs"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/kozmos-vue.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/kozmos-vue.cjs"
+      }
     },
     "./react-bridge": {
-      "types": "./dist/react-bridge/index.d.ts",
-      "import": "./dist/react-bridge.mjs",
-      "require": "./dist/react-bridge.cjs"
+      "import": {
+        "types": "./dist/react-bridge/index.d.mts",
+        "default": "./dist/react-bridge.mjs"
+      },
+      "require": {
+        "types": "./dist/react-bridge/index.d.ts",
+        "default": "./dist/react-bridge.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "react-bridge/package.json"
   ],
   "scripts": {
     "bridge:takes": "node scripts/bridge-takes.mjs",
-    "build": "rm -rf dist .recipes-types && vite build && tsc -p tsconfig.recipes.json && vue-tsc -p tsconfig.declarations.json",
+    "build": "rm -rf dist .recipes-types && vite build && tsc -p tsconfig.recipes.json && vue-tsc -p tsconfig.declarations.json && node scripts/emit-esm-declarations.mjs",
     "dev": "vite build --watch",
     "lint": "eslint src test scripts vite-plugins vite.config.mts vitest.react18.config.mts",
     "port": "tsx scripts/port.ts",

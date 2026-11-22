@@ -1,0 +1,5 @@
+{
+  "main": "../dist/react-bridge.cjs",
+  "module": "../dist/react-bridge.mjs",
+  "types": "../dist/react-bridge/index.d.ts"
+}

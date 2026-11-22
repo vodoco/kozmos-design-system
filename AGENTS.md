@@ -9,7 +9,9 @@ Figma library they come from. This file is what a coding agent needs before chan
 - **npm**, under `@kozmos-ds`: `react` (the components, with a copy of the stylesheet), `styles`
   (the stylesheet, built from React's and Vue's sources), `tokens` (CSS, TS, Swift and Kotlin),
   `icons`, and `product-contracts` (the shapes a product passes the Product / SDK components).
-  These five are the only public packages; `@kozmos-ds/vue` is private.
+  These five publish through Changesets on `latest`. `vue` (Kozmos for Vue 3) ships only as
+  prereleases on npm's `next` tag, versioned by hand as `<styles version>-next.<n>`, after each Vue
+  porting wave; `docs/release-process.md` has the channel.
 - **SwiftUI** in `packages/ios` (library `Kozmos`) and **Compose** in `packages/android`
   (`com.kozmos`), used from a checkout: neither is published to a package registry yet.
 - **The website**, built from `apps/site`, publishes from `main` to

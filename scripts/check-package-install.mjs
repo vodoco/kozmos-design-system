@@ -34,7 +34,11 @@ import {
 import { parseArgs } from "node:util";
 import semver from "semver";
 import { writeCandidate } from "./release/candidate.mjs";
-import { unexpectedFiles } from "./release/tarball-files.mjs";
+import {
+  EXACT_TARBALLS,
+  exportClosure,
+  unexpectedFiles,
+} from "./release/tarball-files.mjs";
 import { readPlan } from "./release/verify-request.mjs";
 
 const { values: releaseOptions } = parseArgs({
@@ -223,6 +227,31 @@ for (const { dir, manifest } of publishable) {
       `${manifest.name}'s tarball carries ${unexpected.length} file(s) of a kind no package ships, e.g. ${unexpected.slice(0, 3).join(", ")}`,
     );
   }
+  if (EXACT_TARBALLS.includes(manifest.name)) {
+    const { unreachable, missing, maps } = exportClosure(files, manifest, (f) =>
+      run("tar", ["-xzOf", tarball, f], work),
+    );
+    if (maps.length > 0) {
+      fail(
+        `${manifest.name}'s tarball carries ${maps.length} source map(s), which point at sources it does not ship, e.g. ${maps.slice(0, 3).join(", ")}`,
+      );
+    }
+    if (unreachable.length > 0) {
+      fail(
+        `${manifest.name}'s tarball carries ${unreachable.length} file(s) no export reaches, e.g. ${unreachable.slice(0, 3).join(", ")}`,
+      );
+    }
+    if (missing.length > 0) {
+      fail(
+        `${manifest.name}'s exports or imports name ${missing.length} file(s) its tarball lacks, e.g. ${missing.slice(0, 3).join(", ")}`,
+      );
+    }
+    if (maps.length + unreachable.length + missing.length === 0) {
+      ok(
+        `${manifest.name}'s tarball holds exactly what its exports reach: ${files.length} file(s), no source map`,
+      );
+    }
+  }
   const packedManifest = run(
     "tar",
     ["-xzOf", tarball, "package/package.json"],
@@ -355,6 +384,7 @@ for (const { manifest } of packed) {
   );
   for (const block of readme.matchAll(/```vue\n([\s\S]*?)```/g)) {
     vueSamples.push({
+      pkg: manifest.name,
       file: `Readme${short.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())}${vueSamples.length + 1}.vue`,
       body: block[1],
     });
@@ -527,6 +557,12 @@ process.stdout.write(JSON.stringify(results));
 
 // ---- install, use and type-check, once per React major ----
 
+// The Vue the repository's lockfile installs for packages/vue, when
+// @kozmos-ds/vue is packed: its main entry requires vue.
+const vuePeer = packed.some(({ manifest }) => manifest.name === "@kozmos-ds/vue")
+  ? lockedTree("vue", fs.realpathSync(path.join(PACKAGES, "vue"))).vue
+  : null;
+
 for (const major of REACT_MAJORS) {
   const app = path.join(work, `react-${major}`);
   fs.mkdirSync(app);
@@ -553,6 +589,9 @@ for (const major of REACT_MAJORS) {
         "--ignore-scripts",
         "--loglevel=error",
         ...packed.map(({ tarball }) => tarball),
+        // @kozmos-ds/vue's one required peer, which an npm with
+        // legacy-peer-deps would not install for it.
+        ...(vuePeer ? [`vue@${vuePeer}`] : []),
         `react@${major}`,
         `react-dom@${major}`,
         "typescript@5",
@@ -752,6 +791,265 @@ if (iconsPacked && iconsPacked.manifest.exports?.["./vue"]) {
   checkVueOnlyConsumer(iconsPacked);
 }
 
+// ---- @kozmos-ds/vue, installed as a Vue app would, then with its bridge ----
+//
+// Its main entry imports no React: React, ReactDOM and @kozmos-ds/react are
+// optional peers, for ./react-bridge alone. So the tarball, its stylesheet and
+// Vue install first with nothing else, React must not arrive, and the main
+// entry is imported, required and rendered on the server. Then the bridge's
+// peers join it (React 19 and the packed @kozmos-ds/react with its siblings),
+// ./react-bridge is imported and required, and vue-tsc checks the package
+// README's `vue` blocks and rejects a negative control.
+
+const vuePacked = packed.find(
+  ({ manifest }) => manifest.name === "@kozmos-ds/vue",
+);
+if (vuePacked) checkVuePackageConsumer(vuePacked);
+
+function checkVuePackageConsumer({ tarball, manifest }) {
+  const tarballOf = (name) =>
+    packed.find((entry) => entry.manifest.name === name)?.tarball;
+  const vueDir = fs.realpathSync(path.join(PACKAGES, "vue"));
+  const vueVersion = lockedTree("vue", vueDir).vue;
+  const floor = semver.minVersion(manifest.peerDependencies?.vue ?? "*");
+  if (
+    !vueVersion ||
+    !floor ||
+    semver.major(floor) !== semver.major(vueVersion) ||
+    semver.minor(floor) !== semver.minor(vueVersion)
+  ) {
+    fail(
+      `@kozmos-ds/vue: its vue peer (${manifest.peerDependencies?.vue}) starts at ${floor}, but the version tested is ${vueVersion}`,
+    );
+    return;
+  }
+  const internal = Object.keys({
+    ...manifest.dependencies,
+    ...manifest.peerDependencies,
+  }).filter((name) => name.startsWith("@kozmos-ds/"));
+  for (const name of internal) {
+    if (!tarballOf(name)) {
+      fail(`@kozmos-ds/vue names ${name}, which is not a package packed here`);
+      return;
+    }
+  }
+  const app = path.join(work, "vue-package");
+  fs.mkdirSync(app);
+  fs.writeFileSync(
+    path.join(app, "package.json"),
+    JSON.stringify(
+      { name: "kozmos-install-check-vue-package", private: true, type: "module" },
+      null,
+      2,
+    ),
+  );
+  const install = (what, stage) => {
+    try {
+      run(
+        "npm",
+        [
+          "install",
+          "--no-audit",
+          "--no-fund",
+          "--ignore-scripts",
+          "--loglevel=error",
+          ...what,
+        ],
+        app,
+      );
+      return true;
+    } catch (error) {
+      fail(
+        `@kozmos-ds/vue ${stage}: npm install failed: ${String(error.stderr || error)
+          .trim()
+          .split("\n")
+          .slice(-3)
+          .join(" / ")}`,
+      );
+      return false;
+    }
+  };
+  const probe = (file, source, stage, success) => {
+    fs.writeFileSync(path.join(app, file), source);
+    try {
+      const results = JSON.parse(run("node", [file], app));
+      const failed = results.filter(([passed]) => !passed);
+      for (const [, what] of failed) fail(`@kozmos-ds/vue ${stage}: ${what}`);
+      if (failed.length === 0) ok(`@kozmos-ds/vue ${stage}: ${success}`);
+    } catch (error) {
+      fail(
+        `@kozmos-ds/vue ${stage}: the probe crashed: ${String(error.stderr || error)
+          .trim()
+          .split("\n")
+          .slice(0, 3)
+          .join(" / ")}`,
+      );
+    }
+  };
+
+  // Stage 1: the package, the stylesheet it depends on and Vue. Nothing else.
+  if (
+    !install(
+      [tarball, tarballOf("@kozmos-ds/styles"), `vue@${vueVersion}`],
+      "with Vue alone",
+    )
+  )
+    return;
+  const reactArrived = ["react", "react-dom", "@kozmos-ds/react"].filter(
+    (name) => fs.existsSync(path.join(app, "node_modules", name)),
+  );
+  if (reactArrived.length > 0) {
+    fail(
+      `@kozmos-ds/vue with Vue alone: installing it brought ${reactArrived.join(", ")}`,
+    );
+  }
+  probe(
+    "probe-vue.mjs",
+    `import { createRequire } from "node:module";
+import { createSSRApp, h } from "vue";
+import { renderToString } from "vue/server-renderer";
+import * as esm from "@kozmos-ds/vue";
+
+const require = createRequire(import.meta.url);
+const cjs = require("@kozmos-ds/vue");
+const results = [];
+const render = (kozmos) =>
+  renderToString(
+    createSSRApp({
+      render: () =>
+        h(kozmos.KozmosThemeProvider, { theme: "light" }, () =>
+          h(kozmos.KozmosButton, { emotion: "success" }, () => "Save"),
+        ),
+    }),
+  );
+const html = await render(esm);
+results.push([/<button[^>]*>[\\s\\S]*Save/.test(html), "import: a KozmosButton in a KozmosThemeProvider renders a <button> on the server"]);
+results.push([(await render(cjs)) === html, "require() renders the same markup"]);
+results.push([Object.keys(cjs).sort().join() === Object.keys(esm).sort().join(), "require() and import() give the same exports"]);
+try {
+  await import("react");
+  results.push([false, "react is importable"]);
+} catch (error) {
+  results.push([error.code === "ERR_MODULE_NOT_FOUND", "react is not importable (" + error.code + ")"]);
+}
+process.stdout.write(JSON.stringify(results));
+`,
+    "with Vue alone",
+    `installs with no React; the main entry imports, requires and renders a KozmosButton on the server`,
+  );
+
+  // Stage 2: the bridge's peers, React 19 and the packed React with its own
+  // dependencies, beside it.
+  const reactSide = Object.keys(
+    packed.find((entry) => entry.manifest.name === "@kozmos-ds/react")
+      ?.manifest.dependencies ?? {},
+  ).filter((name) => name.startsWith("@kozmos-ds/"));
+  if (
+    !install(
+      [
+        tarballOf("@kozmos-ds/react"),
+        ...reactSide.map(tarballOf),
+        "react@19",
+        "react-dom@19",
+        "@types/react@19",
+        "@types/react-dom@19",
+      ],
+      "with its bridge",
+    )
+  )
+    return;
+  probe(
+    "probe-bridge.mjs",
+    `import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const results = [];
+const bridge = await import("@kozmos-ds/vue/react-bridge");
+const cjs = require("@kozmos-ds/vue/react-bridge");
+results.push([typeof bridge.KozmosSelect === "object" && typeof bridge.KozmosCheckbox === "object", "import: ./react-bridge gives KozmosSelect and KozmosCheckbox"]);
+results.push([Object.keys(cjs).sort().join() === Object.keys(bridge).sort().join(), "require() and import() give the same exports"]);
+process.stdout.write(JSON.stringify(results));
+`,
+    "with its bridge",
+    "./react-bridge imports and requires beside React 19 and the packed @kozmos-ds/react",
+  );
+
+  const samples = vueSamples.filter(({ pkg }) => pkg === manifest.name);
+  for (const { file, body } of samples) fs.writeFileSync(path.join(app, file), body);
+  fs.writeFileSync(
+    path.join(app, "NegativeButtonEmotion.vue"),
+    `<script setup lang="ts">
+import { KozmosButton } from "@kozmos-ds/vue";
+</script>
+
+<template>
+  <KozmosButton emotion="not-an-emotion">Save</KozmosButton>
+</template>
+`,
+  );
+  const tsconfig = (include) =>
+    JSON.stringify({
+      compilerOptions: {
+        target: "ES2022",
+        module: "ESNext",
+        moduleResolution: "Bundler",
+        strict: true,
+        noEmit: true,
+        skipLibCheck: true,
+        jsx: "preserve",
+        types: [],
+      },
+      // Vue's default template checking, not strict templates: a bridged
+      // part declares its React props, not the attributes it passes on, so
+      // strict templates refuse the README's <KozmosCheckbox aria-label>.
+      include,
+    });
+  fs.writeFileSync(
+    path.join(app, "tsconfig.json"),
+    tsconfig(samples.map(({ file }) => file)),
+  );
+  fs.writeFileSync(
+    path.join(app, "tsconfig.negative.json"),
+    tsconfig(["NegativeButtonEmotion.vue"]),
+  );
+  const vueTsc = path.join(
+    path.dirname(
+      fs.realpathSync(path.join(vueDir, "node_modules", "vue-tsc", "package.json")),
+    ),
+    "bin",
+    "vue-tsc.js",
+  );
+  let rejected = false;
+  try {
+    run("node", [vueTsc, "-p", "tsconfig.negative.json"], app);
+  } catch (error) {
+    rejected = /error TS/.test(String(error.stdout || error.stderr));
+  }
+  if (!rejected) {
+    fail("@kozmos-ds/vue: vue-tsc accepted a KozmosButton emotion it must reject");
+  }
+  if (samples.length === 0) {
+    fail("@kozmos-ds/vue: its README has no `vue` block to type-check");
+    return;
+  }
+  try {
+    run("node", [vueTsc, "-p", "tsconfig.json"], app);
+    if (rejected) {
+      ok(
+        `@kozmos-ds/vue: vue-tsc accepts its README's ${samples.length} vue sample(s) and rejects a negative control`,
+      );
+    }
+  } catch (error) {
+    const lines = String(error.stdout || error.stderr || error)
+      .trim()
+      .split("\n")
+      .filter((line) => line.includes("error TS"))
+      .slice(0, 5);
+    fail(
+      `@kozmos-ds/vue: README vue samples do not type-check:\n          ${lines.join("\n          ")}`,
+    );
+  }
+}
+
 function lockedTree(name, from) {
   // Every package under `name`, at the version installed for `from`.
   const versions = {};
@@ -902,7 +1200,8 @@ process.stdout.write(JSON.stringify(results));
   // vue-tsc, strict templates on: the README's vue blocks, and a component
   // giving an icon the attributes it takes beside its props, which must
   // type-check; and a negative control, which must not.
-  for (const { file, body } of vueSamples) {
+  const iconSamples = vueSamples.filter(({ pkg }) => pkg === manifest.name);
+  for (const { file, body } of iconSamples) {
     fs.writeFileSync(path.join(app, file), body);
   }
   fs.writeFileSync(
@@ -937,7 +1236,7 @@ const Back = getIconComponent("back");
     });
   fs.writeFileSync(
     path.join(app, "tsconfig.json"),
-    tsconfig(["IconAttributes.vue", ...vueSamples.map(({ file }) => file)]),
+    tsconfig(["IconAttributes.vue", ...iconSamples.map(({ file }) => file)]),
   );
   // Two controls vue-tsc must reject. A wrong prop type fails with or
   // without strict templates; an attribute an icon does not take fails only
@@ -988,7 +1287,7 @@ import { Calendar } from "@kozmos-ds/icons/vue";
     run("node", [vueTsc, "-p", "tsconfig.json"], app);
     if (negativeRejected) {
       ok(
-        `Vue only: vue-tsc (strict templates) accepts ${vueSamples.length} README vue sample(s) and an icon's attributes, and rejects ${Object.keys(NEGATIVE_CONTROLS).length} negative controls, one of them an unknown attribute`,
+        `Vue only: vue-tsc (strict templates) accepts ${iconSamples.length} README vue sample(s) and an icon's attributes, and rejects ${Object.keys(NEGATIVE_CONTROLS).length} negative controls, one of them an unknown attribute`,
       );
     }
   } catch (error) {

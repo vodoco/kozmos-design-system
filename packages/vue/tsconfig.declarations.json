@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": "src",
     "declarationDir": "dist",
+    "declarationMap": false,
     "paths": {
       "#kozmos-recipes": [".recipes-types/recipes/index.d.ts"]
     }
