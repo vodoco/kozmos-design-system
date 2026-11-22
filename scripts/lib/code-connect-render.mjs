@@ -13,7 +13,10 @@
 // Figma, with their own imports, so here they render as an empty fragment
 // (React) or nothing (native): what is checked is the document's own code.
 
-const NESTED = "NESTED";
+// Figma's own helpers (isReactComponentArray) take a nested value as an array
+// of INSTANCE, SLOT, CODE or ERROR sections; any other type is dropped, which
+// hid a required nested `icon` here until 22 Nov.
+const NESTED = "INSTANCE";
 
 /** The assignments a document is rendered at: its first value for every
  * enum and false for every boolean, then each other enum value and each
@@ -50,7 +53,7 @@ function sectionText(value) {
   if (typeof value === "boolean") return String(value);
   if (Array.isArray(value)) return value.map(sectionText).join("");
   if (typeof value === "object") {
-    if (value.type === NESTED) return value.code;
+    if (value.type === NESTED || value.type === "SLOT") return value.code;
     if (value.type === "CODE") return value.code;
     if ("$value" in value) {
       if (value.$type === "template-string") return `\`${value.$value}\``;

@@ -48,7 +48,7 @@ if (!parsePath) {
       "--outFile",
       parsePath,
     ],
-    { cwd: root, stdio: ["ignore", "ignore", "inherit"] },
+    { cwd: root, stdio: ["ignore", "ignore", "pipe"] },
   );
 }
 const docs = JSON.parse(fs.readFileSync(parsePath, "utf8"));
@@ -72,6 +72,13 @@ for (const file of [
 }
 
 const problems = [];
+const LEAKS = [
+  [/\bfigma\.[a-zA-Z]+\(/, "Code Connect's own code as text"],
+  [
+    /\[\s*undefined\s*[,\]]|,\s*undefined\s*[,\]]/,
+    "an array of undefined values",
+  ],
+];
 const files = new Map();
 const node = (doc) => doc.figmaNode.match(/node-id=([0-9-]+)/)?.[1] ?? "?";
 docs.forEach((doc, index) => {
@@ -86,6 +93,13 @@ docs.forEach((doc, index) => {
       return;
     }
     const code = rendered.code.trim();
+    // What compiles can still be wrong: Code Connect writes a property it
+    // cannot read (`figma.slot(…) ?? figma.children(…)`) into the snippet as
+    // text, and an array of `figma.string`s inside another mapping as
+    // `undefined`s.
+    for (const [pattern, words] of LEAKS)
+      if (pattern.test(code))
+        problems.push(`${label} at ${at}: the snippet shows ${words}`);
     const declared = /^function\s+([A-Za-z_$][\w$]*)/.exec(code);
     const body = declared
       ? `${code}\nexport { ${declared[1]} };\n`

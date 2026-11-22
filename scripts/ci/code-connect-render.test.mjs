@@ -62,3 +62,16 @@ test("a template that throws in Figma throws here, and says so", () => {
   );
   assert.match(rendered.error, /current is not defined/);
 });
+
+test("a nested instance in a prop renders as Figma's helper takes it, not dropped", () => {
+  // MapControlButton's required `icon`, 22 Nov 2026: a section type Figma's
+  // isReactComponentArray does not know was dropped, and the prop with it.
+  const [rendered] = renderDocument(
+    doc(
+      `${"function _fcc_renderReactProp(name, prop) { return Array.isArray(prop) && prop.every((item) => item.type === 'INSTANCE') ? figma.tsx\` \${name}={\${prop}}\` : '' }"}
+const icon = figma.currentLayer.__properties__.instance('Icon')
+export default figma.tsx\`<Part\${_fcc_renderReactProp('icon', icon)} />\``,
+    ),
+  );
+  assert.equal(rendered.code, "<Part icon={<></>} />");
+});
