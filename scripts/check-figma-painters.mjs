@@ -235,6 +235,9 @@ const variableByName = mockVariables([
   "Colors/transparent/inverted/10",
   "Border/bevel/top",
   "Effect/glass/border/color",
+  // Button's and IconButton's corners, which their glass layers take too.
+  "Button/radius",
+  "IconButton/radius",
   "Overlay/Scrim",
   // Decisions 202 and 203: Dialog's full size and media, and the display size.
   "Dialog/width/full",
@@ -8323,6 +8326,51 @@ section("A translucent token rides on the paint");
         iconEdge.cornerRadius === iconGlass.width / 2,
       `IconButton's Glass has the same edge, round (${iconEdge && iconEdge.cornerRadius} on ${iconGlass.width})`,
     );
+    // The glass takes the frame's corners from the frame's own radius
+    // token, at every size: IconButton's Large is drawn at 44 and bound to
+    // 48 by its size token, and a literal half of 44 left its glass at 22
+    // inside a 48 circle (the live file, 22 Nov).
+    const radiusToken = (node) => {
+      const alias =
+        node &&
+        node.boundVariables &&
+        (node.boundVariables.cornerRadius || node.boundVariables.topLeftRadius);
+      return alias ? String(alias.id).replace(/^VariableID:/, "") : null;
+    };
+    for (const [painter, set, token] of [
+      ["createButtonVariant", "Button", "Button/radius"],
+      ["createIconButtonVariant", "IconButton", "IconButton/radius"],
+      ["updateButtonVariant", "Button", "Button/radius"],
+      ["updateIconButtonVariant", "IconButton", "IconButton/radius"],
+    ]) {
+      for (const size of ["Small", "Default", "Large"]) {
+        const args = {
+          variant: "Glass",
+          size,
+          state: "Default",
+          variableByName,
+          fonts: FONTS,
+          textStyle: null,
+          stats: freshStats(),
+        };
+        let variant;
+        if (painter.startsWith("update")) {
+          variant = await plugin[painter.replace("update", "create")](args);
+          await plugin[painter](variant, args);
+        } else {
+          variant = await plugin[painter](args);
+        }
+        const layers = (variant.children || []).filter((child) =>
+          /^Glass (Fill|Edge)$/.test(child.name),
+        );
+        ok(
+          layers.length === 2 &&
+            radiusToken(variant) === token &&
+            layers.every((child) => radiusToken(child) === token),
+          `${set} ${size} Glass (${painter}): the glass and its edge take the frame's corners from ${token} (frame ${radiusToken(variant)}; ${layers.map((child) => `${child.name} ${radiusToken(child) || child.cornerRadius}`).join(", ")})`,
+        );
+      }
+    }
     const solid = await plugin.createButtonVariant({
       variant: "Default",
       size: "Default",

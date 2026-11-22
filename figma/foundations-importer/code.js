@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "8b63e49c6e19";
+const PLUGIN_BUILD = "87c85a8d683d";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -66409,6 +66409,7 @@ async function createButtonVariant({
   );
 
   paintButtonGlass(component, variant, KOZMOS_RADIUS.control, {
+    radiusToken: "Button/radius",
     variableByName,
     stats,
   });
@@ -66548,6 +66549,7 @@ async function updateButtonVariant(
   );
 
   paintButtonGlass(component, variant, KOZMOS_RADIUS.control, {
+    radiusToken: "Button/radius",
     variableByName,
     stats,
   });
@@ -66682,6 +66684,7 @@ async function updateIconButtonVariant(
   );
 
   paintButtonGlass(component, variant, metrics.size / 2, {
+    radiusToken: "IconButton/radius",
     variableByName,
     stats,
   });
@@ -99916,7 +99919,7 @@ function paintButtonGlass(
   component,
   variant,
   radius,
-  { variableByName, stats },
+  { radiusToken, variableByName, stats },
 ) {
   removeDirectChildrenNamed(component, ["Glass Fill", "Glass Edge"]);
   if (variant !== "Glass") {
@@ -99955,6 +99958,18 @@ function paintButtonGlass(
   );
   // The edge over the glass, both under the content.
   component.insertChild(1, directChildNamed(component, "Glass Edge"));
+  // The glass takes the frame's corners from the frame's own radius token,
+  // so it follows the frame at every size: a radius written as a number
+  // stays at the painter's size when a size token resizes the frame.
+  for (const name of ["Glass Fill", "Glass Edge"]) {
+    bindFloatVariable(
+      directChildNamed(component, name),
+      "cornerRadius",
+      radiusToken,
+      variableByName,
+      stats,
+    );
+  }
 }
 
 /**
