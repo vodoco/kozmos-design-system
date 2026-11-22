@@ -151,3 +151,42 @@ test("one attempt means no retry at all", async () => {
   );
   assert.equal(fake.calls.length, 1);
 });
+
+// Code Connect 1.4 prints "❌ <file>" for a file it could not parse, then
+// leaves it out and exits 0: parse, and a dry run that says "All Code Connect
+// files are valid". Seen 21 Nov 2026 with a figma.connect URL that was not a
+// string literal. A run that left a file out has failed.
+test("a run that left a file out because it could not parse it fails, naming the file", async () => {
+  const output = [
+    "Config file found, parsing packages/react using specified include globs",
+    "❌ /repo/packages/react/src/components/Surface/Surface.figma.tsx",
+    " -> /repo/packages/react/src/components/Surface/Surface.figma.tsx:10:23",
+    "Validating Code Connect files...",
+    "All Code Connect files are valid (29433ms)",
+    "Dry run complete",
+    "",
+  ].join("\n");
+  const { spawnImpl, calls } = fakeSpawn([{ status: 0, output }]);
+  const messages = [];
+  const status = await runFigmaConnect("figma", ["connect", "publish"], {}, {
+    ...quiet(),
+    spawnImpl,
+    log: (message) => messages.push(message),
+  });
+  assert.equal(status, 1);
+  assert.equal(calls.length, 1, "a file that does not parse is not retried");
+  assert.match(
+    messages.join("\n"),
+    /could not parse 1 file.*\n.*Surface\.figma\.tsx/,
+  );
+});
+
+test("a clean run that printed no unparsed file still passes", async () => {
+  const { spawnImpl } = fakeSpawn([
+    { status: 0, output: "All Code Connect files are valid (1ms)\n" },
+  ]);
+  assert.equal(
+    await runFigmaConnect("figma", ["connect", "parse"], {}, { ...quiet(), spawnImpl }),
+    0,
+  );
+});
