@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "e7dcd2cc993a";
+const PLUGIN_BUILD = "8b63e49c6e19";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -66408,9 +66408,10 @@ async function createButtonVariant({
     stats,
   );
 
-  if (variant === "Glass") {
-    component.effects = [elevationEffect("overlay")];
-  }
+  paintButtonGlass(component, variant, KOZMOS_RADIUS.control, {
+    variableByName,
+    stats,
+  });
 
   if (state === "Loading") {
     component.appendChild(
@@ -66546,7 +66547,10 @@ async function updateButtonVariant(
     stats,
   );
 
-  component.effects = variant === "Glass" ? [elevationEffect("overlay")] : [];
+  paintButtonGlass(component, variant, KOZMOS_RADIUS.control, {
+    variableByName,
+    stats,
+  });
 
   await syncButtonVariantChildren({
     component,
@@ -66677,7 +66681,10 @@ async function updateIconButtonVariant(
     stats,
   );
 
-  component.effects = variant === "Glass" ? [elevationEffect("overlay")] : [];
+  paintButtonGlass(component, variant, metrics.size / 2, {
+    variableByName,
+    stats,
+  });
 
   await syncIconButtonChildren({
     component,
@@ -99894,13 +99901,70 @@ function tabsTriggerConfig(state, isActive) {
 }
 
 /**
+ * Button's and IconButton's Glass, as React's .kozmos-button-glass draws it
+ * and as Surface's Glass is painted: the glass colour, Colors/background/0,
+ * at Effect/glass/opacity's 0.7, what is behind it blurred by
+ * Effect/glass/blur's 20, and the edge, Effect/glass/border/color at
+ * Effect/glass/border/opacity's 0.2 (decision 208, GAP-229), each a layer of
+ * its own, since a strength on a bound colour does not hold
+ * (setTranslucentTokenPaint). It was a 10 % inverted fill under a 50 %
+ * Border/bevel/top stroke on the frame, which no code draws. Every state keeps
+ * it: a disabled Glass changes its ink only. Any other variant has no glass
+ * layers, and its frame keeps the overlay elevation off.
+ */
+function paintButtonGlass(
+  component,
+  variant,
+  radius,
+  { variableByName, stats },
+) {
+  removeDirectChildrenNamed(component, ["Glass Fill", "Glass Edge"]);
+  if (variant !== "Glass") {
+    component.effects = [];
+    return;
+  }
+  component.fills = [];
+  component.strokes = [];
+  component.strokeWeight = 0;
+  component.effects = [
+    elevationEffect("overlay"),
+    {
+      type: "BACKGROUND_BLUR",
+      blurType: "NORMAL",
+      radius: SURFACE_GLASS.blur,
+      visible: true,
+    },
+  ];
+  insertTranslucentTokenLayer(component, {
+    name: "Glass Fill",
+    token: SURFACE_GLASS.fill,
+    opacity: SURFACE_GLASS.opacity,
+    cornerRadius: radius,
+    variableByName,
+    stats,
+  });
+  insertGap206Edge(
+    component,
+    {
+      name: "Glass Edge",
+      token: SURFACE_GLASS.edge,
+      opacity: SURFACE_GLASS.edgeOpacity,
+      radius,
+    },
+    { variableByName, stats },
+  );
+  // The edge over the glass, both under the content.
+  component.insertChild(1, directChildNamed(component, "Glass Edge"));
+}
+
+/**
  * A Button's paint in a state. Disabled is decision 197's disabled pair
  * (DISABLED_FILL, DISABLED_FOREGROUND), as React's .kozmos-button:disabled
  * draws it: every variant's label, icon and spinner take the foreground; a
  * filled variant (default, destructive, secondary, subtle) takes the fill
  * under it; an outline keeps the page under it and its edge takes the
  * foreground; ghost and link change their words only; glass keeps its glass
- * fill and bevel. Nothing is dimmed. A ghost takes the fill too (the owner,
+ * and edge. Nothing is dimmed. A ghost takes the fill too (the owner,
  * 17 Nov), so a disabled ghost never reads as an enabled grey one. Loading is
  * busy, not unavailable: it keeps the variant's own idle paint at full
  * strength, its spinner in the label's colour (React's data-loading).
@@ -99947,13 +100011,11 @@ function buttonConfig(variant, state) {
       foreground: "Secondary Buttons/themed/button/foreground/content/idle",
       foregroundFallback: "#0D44C2",
     },
+    // Glass paints no fill or stroke on the frame: its glass and edge are
+    // layers (paintButtonGlass), as Surface's Glass.
     Glass: {
-      background: "Colors/transparent/inverted/10",
       foreground: "Colors/foreground/0",
-      stroke: "Border/bevel/top",
-      backgroundFallback: "#FCFCFD1A",
       foregroundFallback: "#000000",
-      strokeFallback: "#FFFFFF80",
     },
     // The subtle variant's own tier (GAP-200, decision 135): theme 0 under
     // theme 600, the theme as text (decision 59).
@@ -99986,17 +100048,8 @@ function disabledButtonConfig(variant) {
     );
   }
   if (variant === "Link") return ink;
-  if (variant === "Glass") {
-    return Object.assign(
-      {
-        background: "Colors/transparent/inverted/10",
-        stroke: "Border/bevel/top",
-        backgroundFallback: "#FCFCFD1A",
-        strokeFallback: "#FFFFFF80",
-      },
-      ink,
-    );
-  }
+  // Glass keeps its glass and edge (paintButtonGlass); only its ink changes.
+  if (variant === "Glass") return ink;
   // Default, Destructive, Secondary, Subtle, Ghost, and any variant not
   // named: on the fill.
   return Object.assign(
