@@ -3129,8 +3129,14 @@ assertContains(
 assertContains(
   files.reactGridFigma,
   source.reactGridFigma,
-  "children: figma.children(cellSlots),",
-  "Grid Code Connect maps row-major cell slots to children",
+  'children: figma.children([\n        "Cell 1 Slot",',
+  "Grid Code Connect maps row-major cell slots to children, as a literal list the parser accepts",
+);
+assertContains(
+  files.reactGridFigma,
+  source.reactGridFigma,
+  '"Cell 8 Slot",\n      ]),',
+  "Grid Code Connect maps all eight cell slots",
 );
 assertContains(
   files.figma,
