@@ -106,6 +106,7 @@
     "figma:parse:android:linked": "node scripts/figma-connect-native.mjs android parse",
     "figma:native:check:android": "node scripts/check-native-code-connect.mjs android",
     "figma:native:check:ios": "node scripts/check-native-code-connect.mjs ios",
+    "figma:snippets:check": "node scripts/check-code-connect-snippets.mjs",
     "figma:publish:android:linked": "node scripts/figma-connect-native.mjs android publish",
     "figma:publish:android:linked:dry": "node scripts/figma-connect-native.mjs android publish --dry-run",
     "figma:parse:native:linked": "pnpm figma:parse:ios:linked && pnpm figma:parse:android:linked",

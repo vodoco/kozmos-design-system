@@ -20,7 +20,7 @@ figma.connect(
         Medium: "md",
         Large: "lg",
       }),
-      children: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
+      children: figma.slot("Content Slot"),
     },
     example: ({ centered, inset, block, children }) => (
       <Container centered={centered} inset={inset} block={block}>

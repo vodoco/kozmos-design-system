@@ -15,6 +15,9 @@ figma.connect(
   Notice,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2416-21502",
   {
+    // Show Action's Button is drawn only by a mapping, which Code Connect does
+    // not collect imports from: they are listed here.
+    imports: ["import { Notice, Button } from '@kozmos-ds/react';"],
     props: {
       // Warning is the default, so it names no tone.
       tone: figma.enum("Tone", {

@@ -7,7 +7,12 @@ import { Tag } from "../Tag";
 const listItemUrl =
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23108";
 
+// The leading ListItemStatus is drawn only by a mapping, which Code Connect
+// does not collect imports from: they are listed here.
 figma.connect(ListItem, listItemUrl, {
+  imports: [
+    "import { ListItem, ListItemStatus, Button, Tag } from '@kozmos-ds/react';",
+  ],
   props: {
     selected: figma.enum("Selected", { False: false, True: true }),
     title: figma.string("Title Text"),

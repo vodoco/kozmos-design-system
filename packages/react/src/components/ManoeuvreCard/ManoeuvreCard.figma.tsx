@@ -10,23 +10,26 @@ const manoeuvreCardUrl =
 // Typed from the components' own props so the example type-checks against them.
 declare const steps: ItineraryProps["steps"];
 declare const toggleItinerary: () => void;
+declare const itineraryOpen: boolean;
 
 figma.connect(ManoeuvreCard, manoeuvreCardUrl, {
   props: {
     instruction: figma.string("Instruction Text"),
     detail: figma.string("Detail Text"),
-    expanded: figma.enum("State", { Closed: false, Open: true }),
+    // State is the product's `expanded`, itineraryOpen above, not mapped:
+    // Code Connect leaves a false boolean out of a snippet, so Closed drew a
+    // card without the `expanded` it requires.
     appearance: figma.enum("Appearance", {
       Theme: "theme",
       Background: "background",
     }),
   },
-  example: ({ instruction, detail, expanded, appearance }) => (
+  example: ({ instruction, detail, appearance }) => (
     <ManoeuvreCard
       type="lift-down"
       instruction={instruction}
       detail={detail}
-      expanded={expanded}
+      expanded={itineraryOpen}
       onToggle={toggleItinerary}
       appearance={appearance}
     >

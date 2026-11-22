@@ -24,7 +24,7 @@ declare const setRange: NonNullable<CalendarRangeProps["onValueChange"]>;
  */
 figma.connect(Calendar, calendarUrl, {
   variant: { Mode: "Single" },
-  props: { months: figma.enum("Months", { One: undefined, Two: 2 as const }) },
+  props: { months: figma.enum("Months", { One: undefined, Two: 2 }) },
   example: ({ months }) => (
     <Calendar
       value={date}
@@ -36,7 +36,7 @@ figma.connect(Calendar, calendarUrl, {
 
 figma.connect(Calendar, calendarUrl, {
   variant: { Mode: "Range" },
-  props: { months: figma.enum("Months", { One: undefined, Two: 2 as const }) },
+  props: { months: figma.enum("Months", { One: undefined, Two: 2 }) },
   example: ({ months }) => (
     <Calendar
       mode="range"

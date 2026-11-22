@@ -23,6 +23,8 @@ import { MapEditToolbar } from "./MapEditToolbar";
  * (CLOUD-UI-005). Overflow has no prop: in code the toolbar overflows into
  * its More menu when the map is narrower than its items.
  * The set is not in the live file yet: its node id is a placeholder.
+ * An item's icon is a component passed as a value, which Code Connect
+ * collects no import for: each connection lists its imports.
  * @url https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2480-12604
  */
 const URL =
@@ -30,6 +32,10 @@ const URL =
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "Create" },
+  imports: [
+    "import { MapEditToolbar } from '@kozmos-ds/react/dashboard';",
+    "import { Pentagon, MarkerPin01, Circle, Code02, FlipBackward, FlipForward, XSquare } from '@kozmos-ds/icons';",
+  ],
   example: () => (
     <MapEditToolbar
       label="Geometry tools"
@@ -62,6 +68,10 @@ figma.connect(MapEditToolbar, URL, {
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "Draw Polygon" },
+  imports: [
+    "import { MapEditToolbar } from '@kozmos-ds/react/dashboard';",
+    "import { Pencil01, Divider, Ruler, FlipBackward, FlipForward, XSquare } from '@kozmos-ds/icons';",
+  ],
   example: () => (
     <MapEditToolbar
       label="Geometry tools"
@@ -105,6 +115,10 @@ figma.connect(MapEditToolbar, URL, {
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "Draw Circle" },
+  imports: [
+    "import { MapEditToolbar } from '@kozmos-ds/react/dashboard';",
+    "import { Pencil01, Divider, Ruler, FlipBackward, FlipForward, XSquare } from '@kozmos-ds/icons';",
+  ],
   example: () => (
     <MapEditToolbar
       label="Geometry tools"
@@ -148,6 +162,10 @@ figma.connect(MapEditToolbar, URL, {
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "Draw Point" },
+  imports: [
+    "import { MapEditToolbar } from '@kozmos-ds/react/dashboard';",
+    "import { Pencil01, FlipBackward, FlipForward, XSquare } from '@kozmos-ds/icons';",
+  ],
   example: () => (
     <MapEditToolbar
       label="Geometry tools"
@@ -177,6 +195,10 @@ figma.connect(MapEditToolbar, URL, {
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "Geometry Set" },
+  imports: [
+    "import { MapEditToolbar } from '@kozmos-ds/react/dashboard';",
+    "import { Transform, ScissorsCut01, Divider, Ruler, FlipBackward, FlipForward, XSquare } from '@kozmos-ds/icons';",
+  ],
   example: () => (
     <MapEditToolbar
       label="Geometry tools"
@@ -204,6 +226,11 @@ figma.connect(MapEditToolbar, URL, {
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "JSON" },
+  imports: [
+    "import { Input } from '@kozmos-ds/react';",
+    "import { MapEditToolbar } from '@kozmos-ds/react/dashboard';",
+    "import { FlipBackward, FlipForward, XSquare, RefreshCcw01 } from '@kozmos-ds/icons';",
+  ],
   example: () => (
     <MapEditToolbar
       label="Geometry tools"
@@ -226,6 +253,10 @@ figma.connect(MapEditToolbar, URL, {
 
 figma.connect(MapEditToolbar, URL, {
   variant: { Mode: "Edit Existing" },
+  imports: [
+    "import { MapEditToolbar } from '@kozmos-ds/react/dashboard';",
+    "import { Transform, ScissorsCut01, Divider, Ruler, FlipBackward, FlipForward, XSquare, RefreshCcw01 } from '@kozmos-ds/icons';",
+  ],
   example: () => (
     <MapEditToolbar
       label="Geometry tools"

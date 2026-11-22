@@ -14,7 +14,7 @@ figma.connect(
   {
     props: {
       variant: figma.enum("Variant", { Solid: undefined, Glass: "glass" }),
-      children: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
+      children: figma.slot("Content Slot"),
     },
     example: ({ variant, children }) => (
       <Surface variant={variant}>{children}</Surface>
