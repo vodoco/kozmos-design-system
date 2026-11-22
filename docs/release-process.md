@@ -1221,6 +1221,17 @@ SwiftUI and Compose ship as source in the repository at this commit, not to a re
 snapshot at 0.14.0, 0.15.x or 0.16.0; the 0.17.0 snapshot holds their changes since 0.13.0, and
 `scripts/release/changelogs.test.mjs` now fails a version PR that leaves the cut out.
 
+**Figma and Code Connect.** Code Connect was published on 22 Nov from main `b5c56435`, after #602 (the 17 GAP-206
+sets' mappings, and a run that now fails when the CLI leaves out a file it cannot parse) and after valid dry runs and
+the native parser checks: 328 React, 304 SwiftUI and 299 Compose documents. Read back through Figma's MCP server:
+DescriptionList (2572:68523) on React and Compose, ChipInput (2572:68659) on Compose and SpriteIcon (2572:68551) on
+SwiftUI and Compose show their part. **The read-back found snippets that do not compile**, which no check reads:
+Table's (237:2547) uses a `density` it never declares (since 24 Aug), DescriptionList's copy action draws an
+`IconButton` it does not import, Notice's (2416:21502) draws an empty body and imports an unused `Icon`, and
+Compose's ChipInput writes its state as string comparisons (`enabled = "default" != "disabled"`). The fix, and a
+check that renders each document as Dev Mode does and compiles it, is the next pull request; Code Connect is
+republished from it.
+
 ### `@kozmos-ds/vue` 0.17.0-next.0
 
 The first `@kozmos-ds/vue` on npm, on the `next` tag, published on 2026-11-22 from
