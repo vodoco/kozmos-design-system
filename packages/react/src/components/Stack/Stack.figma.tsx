@@ -6,7 +6,9 @@ figma.connect(
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=170-1027",
   {
     props: {
-      children: figma.slot("Content Slot") ?? figma.children("*"),
+      // The set's Content Slot SLOT property. One form: Code Connect keeps
+      // a `??` between two as the text of the snippet.
+      children: figma.slot("Content Slot"),
       direction: figma.enum("Direction", {
         Row: "row",
         Column: "column",
@@ -17,6 +19,10 @@ figma.connect(
         "6": 6,
       }),
     },
-    example: (props) => <Stack {...props} />,
+    example: ({ children, direction, gap }) => (
+      <Stack direction={direction} gap={gap}>
+        {children}
+      </Stack>
+    ),
   },
 );

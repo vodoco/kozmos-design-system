@@ -2966,8 +2966,8 @@ assertContains(
 assertContains(
   files.reactStackFigma,
   source.reactStackFigma,
-  'children: figma.slot("Content Slot") ?? figma.children("*")',
-  "Stack Code Connect content slot mapping",
+  'children: figma.slot("Content Slot"),',
+  "Stack Code Connect content slot mapping, in one form: Code Connect keeps a `??` as snippet text",
 );
 assertContains(
   files.reactStackFigma,
@@ -9138,8 +9138,8 @@ assertContains(
 assertContains(
   files.reactEmptyStateFigma,
   source.reactEmptyStateFigma,
-  'import { SearchMd as Search } from "@kozmos-ds/icons"',
-  "React EmptyState Code Connect draws Figma's search-md, not another size",
+  'import { SearchMd } from "@kozmos-ds/icons"',
+  "React EmptyState Code Connect draws Figma's search-md, not another size, by its own name (an alias reaches Dev Mode as an import icons lacks)",
 );
 assertContains(
   files.reactEmptyStateFigma,

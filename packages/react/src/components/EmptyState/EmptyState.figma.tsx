@@ -1,5 +1,7 @@
 import figma from "@figma/code-connect";
-import { SearchMd as Search } from "@kozmos-ds/icons";
+// Figma's search-md, by its own name: Code Connect imports what the example
+// names, so an alias reached Dev Mode as an import of a "Search" icons lacks.
+import { SearchMd } from "@kozmos-ds/icons";
 import { EmptyState } from "./EmptyState";
 
 const emptyStateUrl =
@@ -48,7 +50,7 @@ figma.connect(EmptyState, emptyStateUrl, {
   example: ({ description, list, title, tone }) => (
     <EmptyState
       description={description}
-      icon={<Search className="h-8 w-8" />}
+      icon={<SearchMd className="h-8 w-8" />}
       list={list}
       title={title}
       tone={tone}
@@ -66,7 +68,7 @@ figma.connect(EmptyState, emptyStateUrl, {
     <EmptyState
       action={action}
       description={description}
-      icon={<Search className="h-8 w-8" />}
+      icon={<SearchMd className="h-8 w-8" />}
       list={list}
       title={title}
       tone={tone}

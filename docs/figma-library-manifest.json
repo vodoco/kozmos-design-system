@@ -20683,7 +20683,7 @@
           "status": "linked",
           "issues": [],
           "connectedComponents": ["Stack"],
-          "mappedProps": [],
+          "mappedProps": ["direction", "gap"],
           "unmappedProps": []
         },
         "props": [

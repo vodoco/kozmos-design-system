@@ -3,6 +3,7 @@ import { AIInputBar, type AIInputBarProps } from "./AIInputBar";
 
 // What the caller supplies, typed from the component's own props so the
 // example type-checks against them; Code Connect renders the names as written.
+declare const draft: AIInputBarProps["value"];
 declare const setValue: AIInputBarProps["onValueChange"];
 declare const ask: AIInputBarProps["onSubmit"];
 declare const startVoice: NonNullable<AIInputBarProps["onVoiceStart"]>;
@@ -22,10 +23,12 @@ figma.connect(
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2606-18346",
   {
     props: {
+      // Empty and Disabled show the product's own draft: Code Connect leaves
+      // an empty string out of a snippet, and value is required.
       value: figma.enum("State", {
-        Empty: "",
+        Empty: draft,
         Filled: figma.string("Value Text"),
-        Disabled: "",
+        Disabled: draft,
       }),
       disabled: figma.enum("State", { Disabled: true }),
       placeholder: figma.string("Placeholder Text"),
