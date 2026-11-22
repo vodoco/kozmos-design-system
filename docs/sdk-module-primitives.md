@@ -5,9 +5,9 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: React 0.16.0 on `latest` with `@kozmos-ds/styles` 0.16.0, icons 0.10.0, tokens 0.9.0 and
-product-contracts 0.10.0 (published 2026-11-17 from `8afae665b7a8ae08c33b6bb89d7fbda63bf764f6`;
-[release evidence](release-process.md#0160)).
+Baseline: React 0.17.0 on `latest` with `@kozmos-ds/styles` 0.17.0, icons 0.11.0, tokens 0.10.0 and
+product-contracts 0.11.0 (published 2026-11-22 from `ecdcdb3a39f8970ac37e8763ca98c8b5d902da11`;
+[release evidence](release-process.md#0170)).
 This plan starts from release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02:
 React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0, with icons 0.5.0. Matching SwiftUI/Compose source is in the
 repository, not a native registry release. See [release evidence](release-process.md#080).
@@ -72,6 +72,14 @@ with the `success` tone and progress and done states (GAP-142's Notice half, GAP
 is visible in dark (decision 173); FloorSelector's closing column chooses nothing (GAP-233). Its Cloud parts, the
 Dashboard modules in `@kozmos-ds/react/dashboard` (decision 183), are never loaded by an SDK product, and the main
 entry and `style.css` hold none of their code. See [release evidence](release-process.md#0160).
+
+React 0.17.0 (2026-11-22, `ecdcdb3a`; styles 0.17.0, tokens 0.10.0, icons 0.11.0, product-contracts 0.11.0). For the
+SDK: a travel time says what it includes (GAP-047), from the new, optional `TravelEstimatePresentation.breakdown`,
+drawn by POIResultCard and POIDetailPanel on React, SwiftUI and Compose; SpriteIcon draws a cell of a published
+MapLibre sprite atlas as published (GAP-150); TourStep's card
+can be placed apart from what it lights (GAP-220); and a disabled map control, like every disabled Button, is drawn
+from the disabled pair at full strength, not at half opacity (GAP-218). Without a breakdown the cards draw what they
+drew. See [release evidence](release-process.md#0170).
 
 React 0.11.0 (2026-10-15, `a315aabe`; tokens 0.7.0, product-contracts and icons unchanged) adds
 POIResultList's `onOpen` (decision 72), ManoeuvreCard's quieter grip (decision 74), scrollbars by
