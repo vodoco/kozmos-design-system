@@ -19,6 +19,13 @@ figma.connect(
   PageHeader,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2446-23074",
   {
+    // The breadcrumb, the info IconButton and the action are drawn only by
+    // mappings, which Code Connect does not collect imports from: they are
+    // listed here.
+    imports: [
+      "import { PageHeader, Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage, IconButton, Button, Tag } from '@kozmos-ds/react';",
+      "import { InfoCircle } from '@kozmos-ds/icons';",
+    ],
     props: {
       tone: figma.enum("Tone", {
         Subtle: "subtle",

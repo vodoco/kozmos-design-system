@@ -11,7 +11,10 @@ declare const items: POIResultListProps["items"];
 declare const selectedPoiId: POIResultListProps["selectedPoiId"];
 declare const selectPoi: POIResultListProps["onSelect"];
 
+// Empty's EmptyState is drawn only by a mapping, which Code Connect does not
+// collect imports from: it is listed here.
 figma.connect(POIResultList, poiResultListUrl, {
+  imports: ["import { POIResultList, EmptyState } from '@kozmos-ds/react';"],
   props: {
     resultCountLabel: figma.string("Result Count Text"),
     emptyState: figma.enum("Content", {

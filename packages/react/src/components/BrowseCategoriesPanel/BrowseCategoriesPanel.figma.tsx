@@ -15,7 +15,12 @@ declare const categories: BrowseCategoriesPanelProps["categories"];
 declare const renderCategoryIcon: BrowseCategoriesPanelProps["renderIcon"];
 declare const selectCategory: BrowseCategoriesPanelProps["onSelect"];
 
+// Content's SearchBar and EmptyState are drawn only by mappings, which Code
+// Connect does not collect imports from: they are listed here.
 figma.connect(BrowseCategoriesPanel, browseCategoriesPanelUrl, {
+  imports: [
+    "import { BrowseCategoriesPanel, SearchBar, EmptyState } from '@kozmos-ds/react';",
+  ],
   props: {
     label: figma.string("Panel Label Text"),
     search: figma.enum("Content", {
