@@ -11,7 +11,7 @@ figma.connect(
         Surface: "rounded-control bg-card p-4 text-card-foreground",
         Outlined: "rounded-control border bg-card p-4 text-card-foreground",
       }),
-      children: figma.slot("Content Slot") ?? figma.children(["Content Slot"]),
+      children: figma.slot("Content Slot"),
     },
     example: ({ children, className }) => (
       <Box className={className}>{children}</Box>

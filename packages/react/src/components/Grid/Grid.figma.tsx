@@ -17,7 +17,7 @@ figma.connect(
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=359-1574",
   {
     props: {
-      children: figma.children(cellSlots) ?? figma.children("*"),
+      children: figma.children(cellSlots),
       cols: figma.enum("Columns", {
         "1": 1,
         "2": 2,

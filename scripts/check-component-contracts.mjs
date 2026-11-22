@@ -1450,7 +1450,7 @@ assertContains(
 assertContains(
   files.reactBoxFigma,
   source.reactBoxFigma,
-  'children: figma.slot("Content Slot") ?? figma.children(["Content Slot"])',
+  'children: figma.slot("Content Slot")',
   "Box Code Connect content slot mapping",
 );
 assertContains(
@@ -1468,7 +1468,7 @@ assertContains(
 assertContains(
   files.reactContainerFigma,
   source.reactContainerFigma,
-  'children: figma.slot("Content Slot") ?? figma.children(["Content Slot"])',
+  'children: figma.slot("Content Slot")',
   "Container Code Connect content slot mapping",
 );
 assertContains(
@@ -1720,7 +1720,7 @@ assertContains(
 assertContains(
   files.reactDrawerFigma,
   source.reactDrawerFigma,
-  'content: figma.slot("Content Slot") ?? figma.children(["Content Slot"])',
+  'content: figma.slot("Content Slot"),',
   "Drawer Code Connect content slot mapping",
 );
 assertContains(
@@ -3129,7 +3129,7 @@ assertContains(
 assertContains(
   files.reactGridFigma,
   source.reactGridFigma,
-  'figma.children(cellSlots) ?? figma.children("*")',
+  "children: figma.children(cellSlots),",
   "Grid Code Connect maps row-major cell slots to children",
 );
 assertContains(
