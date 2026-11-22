@@ -154,9 +154,9 @@ try {
   const react = section.getByRole("tab", { name: "React", exact: true });
   await react.focus();
   await page.keyboard.press("ArrowRight");
-  const vue = section.getByRole("tab", { name: "Vue 3 · Internal" });
+  const vue = section.getByRole("tab", { name: "Vue 3 · next" });
   await page.waitForFunction(
-    () => document.activeElement?.textContent === "Vue 3 · Internal",
+    () => document.activeElement?.textContent === "Vue 3 · next",
   );
   assert.equal(await vue.getAttribute("aria-selected"), "true");
   assert.match(

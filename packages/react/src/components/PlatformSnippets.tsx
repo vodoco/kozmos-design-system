@@ -21,9 +21,9 @@ const platforms = [
   },
   {
     value: "vue",
-    label: "Vue 3 · Internal",
+    label: "Vue 3 · next",
     language: "html",
-    note: "Internal only: @kozmos-ds/vue is private and not yet published (Vue 3 Phase 0). Its main entry is native Vue on Reka UI, imports no React and renders on the server: KozmosThemeProvider, KozmosDensityScope and KozmosButton so far. @kozmos-ds/vue/react-bridge wraps the React parts not yet ported: those need React and React DOM and do not render on the server. This reference snippet is not independently compiled.",
+    note: "Prerelease: @kozmos-ds/vue is published only on npm's next tag (npm install @kozmos-ds/vue@next vue). Its main entry is native Vue on Reka UI, imports no React and renders on the server: KozmosThemeProvider, KozmosDensityScope, KozmosAnalyticsProvider, KozmosButton, KozmosBadge and KozmosSeparator so far. @kozmos-ds/vue/react-bridge wraps the React parts not yet ported: those need React and React DOM and do not render on the server. This reference snippet is not independently compiled.",
   },
   {
     value: "swift",
