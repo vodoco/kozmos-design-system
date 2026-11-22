@@ -33,3 +33,11 @@ export function storybookHref(): string {
 export function storybookTo(page?: string): string {
   return `/${STORYBOOK_FOLDER}${page ? `?path=${page}` : ""}`;
 }
+
+/** The Releases guide: every package's changelog, a release at a time. */
+export const RELEASES_PAGE = "/docs/guides-releases--docs";
+
+/** One of Storybook's pages, for a plain link in this build. */
+export function storybookPageHref(page: string): string {
+  return `${storybookHref()}?path=${page}`;
+}

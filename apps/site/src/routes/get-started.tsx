@@ -10,7 +10,11 @@ import {
 } from "@kozmos-ds/react";
 import { Pipeline } from "../home/Pipeline";
 import { PACKAGES_PUBLISHED, PUBLIC_PACKAGES, pageTitle } from "../lib/site";
-import { storybookHref } from "../lib/storybook";
+import {
+  RELEASES_PAGE,
+  storybookHref,
+  storybookPageHref,
+} from "../lib/storybook";
 import { CodeBlock } from "../site/CodeBlock";
 import { PageHeader, Section } from "../site/Section";
 import analyticsSnippet from "../snippets/analytics.tsx?raw";
@@ -91,6 +95,12 @@ export default function GetStarted() {
             </ListItem>
           ))}
         </List>
+        <Text size="sm">
+          React pins the other four exactly, so install React’s version and the
+          rest follow. What each release changed is in{" "}
+          <Link href={storybookPageHref(RELEASES_PAGE)}>Releases</Link>, in
+          Storybook.
+        </Text>
       </Section>
 
       <Section
@@ -189,6 +199,38 @@ export default function GetStarted() {
           </ListItem>
         </List>
         <Text color="muted">Neither is published to a registry yet.</Text>
+      </Section>
+
+      <Section
+        title="Vue 3"
+        lead="@kozmos-ds/vue ships only as prereleases on npm’s next tag, one after each porting wave, and never on latest. Its version names the stylesheet and React it was built against: 0.17.0-next.0 is the first built on 0.17.0."
+      >
+        <CodeBlock
+          label="Install command"
+          code="npm install @kozmos-ds/vue@next vue"
+        />
+        <List aria-label="The Vue entries">
+          <ListItem>
+            <Text as="span" weight="medium">
+              @kozmos-ds/vue
+            </Text>
+            <Text as="span" color="muted">
+              {" "}
+              · the parts ported to Vue on Reka UI. They import no React and
+              render on the server.
+            </Text>
+          </ListItem>
+          <ListItem>
+            <Text as="span" weight="medium">
+              @kozmos-ds/vue/react-bridge
+            </Text>
+            <Text as="span" color="muted">
+              {" "}
+              · every part not ported yet, as a Vue wrapper around the React
+              part. It needs react, react-dom and @kozmos-ds/react.
+            </Text>
+          </ListItem>
+        </List>
       </Section>
 
       <Section
