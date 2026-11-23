@@ -19,7 +19,9 @@
  *   to it too: examples use only Kozmos. Everything drawn in <body> is read
  *   but Storybook's own chrome. No colour is allowed without a token: a
  *   glass surface's 1px edge, allowed by name until then (decision 167),
- *   reads the glass edge's colour token since decision 208 (GAP-229).
+ *   reads the glass edge's colour token since decision 208 (GAP-229). A
+ *   colour that moves with a part's product-data property instead (a
+ *   persona's own colour, in-page.mjs DATA_COLOURS) is the product's.
  *
  * scripts/vue/coverage.mjs says which stories are drawn; one it does not
  * name fails here before any is.

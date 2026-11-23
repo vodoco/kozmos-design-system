@@ -21,6 +21,9 @@
  *   dark than light swaps to another role. No colour is allowed without a
  *   token: a glass surface's 1px edge, allowed by name until then (decision
  *   167), reads the glass edge's colour token since decision 208 (GAP-229).
+ *   A colour that moves with a part's product-data property instead (a
+ *   persona's own colour, in-page.mjs DATA_COLOURS) is the product's, the
+ *   same in both themes.
  * - Each root carries the density asked for, or the one above it when it is
  *   nested (a provider inherits its density, and a DensityScope sets its
  *   own); each portal carries a provider's.
@@ -249,12 +252,15 @@ try {
           const written = [
             ["light", light],
             ["dark", dark],
-          ].filter(([, read]) => !read.fromToken);
+          ].filter(([, read]) => !read.fromToken && !read.fromData);
           if (written.length)
             for (const [theme, read] of written)
               failures.push(
                 `${id}: ${key} is ${read.text} ${theme}, and stays so when every colour token changes: it is written in, not a token's`,
               );
+          // A product's data colour (a persona's) is the same in both
+          // themes by design, and moves with no token.
+          else if (light.fromData && dark.fromData) continue;
           else if (light.sentinel !== dark.sentinel)
             failures.push(
               `${id}: ${key} is ${light.text} light and ${dark.text} dark from different tokens: with each token set to a sentinel of its own it reads ${light.sentinel} light and ${dark.sentinel} dark`,
