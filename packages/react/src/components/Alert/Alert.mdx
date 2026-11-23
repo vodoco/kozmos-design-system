@@ -50,15 +50,14 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosAlert } from "@kozmos-ds/vue/react-bridge"
-// KozmosAlert takes a title and a description only: @kozmos-ds/vue has no slot for the Alert's icon.
+import { KozmosAlert, KozmosAlertDescription, KozmosAlertTitle } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosAlert
-    title="Heads up!"
-    description="The venue closes at 18:00 today."
-  />
+  <KozmosAlert>
+    <KozmosAlertTitle>Heads up!</KozmosAlertTitle>
+    <KozmosAlertDescription>The venue closes at 18:00 today.</KozmosAlertDescription>
+  </KozmosAlert>
 </template>
     `}
     swift={`

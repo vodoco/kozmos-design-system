@@ -95,11 +95,13 @@ export function GeometryNotices({ saving, saved, onSetBoundary }: {
     `}
     vue={`
 <script setup>
-import { KozmosNotice } from "@kozmos-ds/vue/react-bridge"
+import { KozmosNotice } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosNotice tone="success" status="done" summary="Geometry is set" />
+  <KozmosNotice tone="success" status="done">
+    <template #summary>Geometry is set</template>
+  </KozmosNotice>
 </template>
     `}
     swift={`

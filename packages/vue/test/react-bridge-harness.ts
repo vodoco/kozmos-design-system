@@ -164,7 +164,6 @@ export function unmount() {
 
 /** What React part each adapter in index.ts draws, by the adapter's name. */
 const ADAPTERS: Record<string, string> = {
-  AlertAdapter: "Alert",
   BackdropAdapter: "Backdrop",
   TourStepAdapter: "TourStep",
   AnchoredPopoverAdapter: "Popover",

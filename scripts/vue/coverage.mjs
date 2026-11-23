@@ -538,6 +538,184 @@ export const VUE_STORIES = {
   },
   "vue-core-feedback-emptystate--download-progress": { interaction: "button" },
   "vue-core-feedback-emptystate--with-list": { interaction: "button" },
+  "vue-core-data-display-list--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A list of rows of words: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-list--compact": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A list of rows of words: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-list--checklist": {
+    interaction: "buttons-in-order",
+    exempt: {
+      "owned-css":
+        "ListItemStatus's dot and check are sized only inside @scope in the shared stylesheet, so a browser without @scope (Safari 26.0-26.3) draws them 0 wide in React and here alike; the port draws React's element byte for byte (list.parity.spec.ts); the fix is in @kozmos-ds/styles, recorded for React",
+    },
+  },
+  "vue-core-data-display-list--persona-visibility": {
+    interaction: "persona-visibility",
+    exempt: {
+      themes:
+        "The bridged KozmosIconButton (size sm) in the title add-on is React's IconButton, 28 tall at compact where the density token says 32: the bridged part's finding, not List's, until IconButton is ported",
+    },
+  },
+  "vue-core-data-display-descriptionlist--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A read-only record (decision 199): values under labels, nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-metastrip--default": {
+    interaction: "meta-strip-focus",
+  },
+  "vue-core-data-display-metastrip--with-visible-labels": {
+    interaction: "meta-strip-focus",
+  },
+  "vue-core-data-display-metastrip--overflowing": {
+    interaction: "meta-strip-scroll",
+  },
+  "vue-core-data-display-timeline--detailed": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      "token-references":
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-timeline--basic": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      "token-references":
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-timeline--compact": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      "token-references":
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-timeline--default": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      "token-references":
+        "React's Timeline draws this marker: its ring-8 ring-background ring reads #fff in both themes (Tailwind's ring colour does not follow the theme's background token), and the port draws React's recipe byte for byte (timeline.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--destructive": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Alert recipe (alertVariants) draws this border from /50 of one emotion token light and dark:border-<emotion> dark, two tokens; the port draws React's recipe byte for byte (alert.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--success": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Alert recipe (alertVariants) draws this border from /50 of one emotion token light and dark:border-<emotion> dark, two tokens; the port draws React's recipe byte for byte (alert.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--warning": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Alert recipe (alertVariants) draws this border from /50 of one emotion token light and dark:border-<emotion> dark, two tokens; the port draws React's recipe byte for byte (alert.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--info": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Alert recipe (alertVariants) draws this border from /50 of one emotion token light and dark:border-<emotion> dark, two tokens; the port draws React's recipe byte for byte (alert.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--without-title": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Alert recipe (alertVariants) draws this border from /50 of one emotion token light and dark:border-<emotion> dark, two tokens; the port draws React's recipe byte for byte (alert.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--liveness-and-title": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React's Alert recipe (alertVariants) draws this border from /50 of one emotion token light and dark:border-<emotion> dark, two tokens; the port draws React's recipe byte for byte (alert.parity.spec.ts); fixing it changes React's style.css, recorded for React",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-notice--collapsed": {
+    interaction: "notice-disclosure",
+  },
+  "vue-core-feedback-notice--expanded": {
+    interaction: "notice-disclosure",
+  },
+  "vue-core-feedback-notice--single-line": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A notice with no detail offers no disclosure and holds no control: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-notice--success": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A notice with no detail offers no disclosure and holds no control: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-notice--success-progress-and-done": {
+    interaction: "button",
+  },
+  "vue-core-feedback-notice--emergency": {
+    interaction: "button",
+  },
+  "vue-core-feedback-notice--search-with-ai": {
+    interaction: "button",
+  },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

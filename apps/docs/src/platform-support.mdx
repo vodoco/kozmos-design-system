@@ -62,7 +62,11 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 `KozmosAvatarImage` and `KozmosAvatarFallback`, `KozmosSpinner`, `KozmosSkeleton`,
 `KozmosProgress` with `KozmosProgressTrack`, and `KozmosPersonaMark` with
 `KozmosPersonaMarkGroup`, `KozmosCard` and its parts, `KozmosBreadcrumb` and its parts,
-`KozmosPageHeader`, `KozmosLink` and `KozmosEmptyState` so far), which draw the element their React counterparts draw, import
+`KozmosPageHeader`, `KozmosLink`, `KozmosEmptyState`, `KozmosList`, `KozmosListItem`,
+`KozmosListItemStatus`, `KozmosDescriptionList`, `KozmosDescriptionListItem`,
+`KozmosMetaStrip`, `KozmosMetaStripItem`, `KozmosTimeline` and its `Item`, `Time`,
+`Title` and `Description`, `KozmosAlert`, `KozmosAlertTitle`, `KozmosAlertDescription`
+and `KozmosNotice` so far), which draw the element their React counterparts draw, import
 no React and render on the server. `packages/vue/PORTING.md` is how a part is ported.
 The parts not yet ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount
 the React parts inside Vue wrappers: they need React and React DOM as well as Vue,
@@ -90,8 +94,8 @@ child (`as-child`), so it draws its own button. Write props in either case:
 pass as written.
 
 Vue snippets are internal reference examples, not instructions to install a
-released native Vue library. Only three component groups currently have stories;
-that is test coverage, not the total number of exported wrappers.
+released native Vue library. Not every exported part has a Vue story yet; the
+stories are test coverage, not the total number of exported parts.
 
 Maintainers can run `pnpm --filter @kozmos-ds/docs storybook:vue` to open the internal
 Vue harness on port 6007. It is intentionally absent from the public sidebar.

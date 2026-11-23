@@ -2322,6 +2322,42 @@ assertContains(
   "KozmosIconButton = createVueWrapper(IconButton)",
   "Vue IconButton wraps React IconButton",
 );
+// List, DescriptionList, MetaStrip, Timeline, Alert and Notice are Vue
+// ports (wave V1, packages/vue/PORTING.md), each with every part its React
+// folder exports, out of the bridge.
+for (const [folder, parts] of [
+  ["List", ["KozmosList", "KozmosListItem", "KozmosListItemStatus"]],
+  ["DescriptionList", ["KozmosDescriptionList", "KozmosDescriptionListItem"]],
+  ["MetaStrip", ["KozmosMetaStrip", "KozmosMetaStripItem"]],
+  [
+    "Timeline",
+    [
+      "KozmosTimeline",
+      "KozmosTimelineDescription",
+      "KozmosTimelineItem",
+      "KozmosTimelineTime",
+      "KozmosTimelineTitle",
+    ],
+  ],
+  ["Alert", ["KozmosAlert", "KozmosAlertDescription", "KozmosAlertTitle"]],
+  ["Notice", ["KozmosNotice"]],
+]) {
+  assertContains(
+    files.vueIndex,
+    source.vueIndex,
+    new RegExp(
+      `export \\{\\s*${parts.join(",\\s*")},?\\s*\\} from "\\./components/${folder}/${folder}"`,
+    ),
+    `Vue ${folder} exported as a Vue port`,
+  );
+  for (const part of parts)
+    assertNotContains(
+      files.vueBridge,
+      source.vueBridge,
+      `export const ${part} =`,
+      `Vue ${part} is native, not bridged`,
+    );
+}
 
 // CategoryField: the search field's form once a category is chosen — the
 // contract's numbers on every platform and in the importer.

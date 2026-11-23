@@ -74,14 +74,22 @@ export function UnitDetails() {
     `}
     vue={`
 <script setup>
-import { KozmosDescriptionList, KozmosDescriptionListItem } from "@kozmos-ds/vue/react-bridge"
+import { KozmosDescriptionList, KozmosDescriptionListItem } from "@kozmos-ds/vue"
 </script>
 
 <template>
   <KozmosDescriptionList aria-label="Unit">
-    <KozmosDescriptionListItem label="Name" value="Bean & Leaf Café" />
-    <KozmosDescriptionListItem label="Featured" :value="true" />
-    <KozmosDescriptionListItem label="FID" value="f-1042">
+    <KozmosDescriptionListItem>
+      <template #label>Name</template>
+      <template #value>Bean & Leaf Café</template>
+    </KozmosDescriptionListItem>
+    <!-- A yes or a no is a boolean :value, written as yes-label or no-label. -->
+    <KozmosDescriptionListItem :value="true">
+      <template #label>Featured</template>
+    </KozmosDescriptionListItem>
+    <KozmosDescriptionListItem>
+      <template #label>FID</template>
+      <template #value>f-1042</template>
       <template #action><button type="button">Copy FID</button></template>
     </KozmosDescriptionListItem>
   </KozmosDescriptionList>
