@@ -66,26 +66,36 @@ export const Group: Story = {
 
 /**
  * The feature panel's persona visibility list (GAP-106): each checkbox's
- * label is the persona's mark and name, read as the name alone.
+ * label is the persona's mark and name, read as the name alone. Drawn with
+ * a render function, not a template, so the name is React's text node: a
+ * template keeps the space before it.
  */
 export const InAPersonaList: Story = {
   render: () => ({
-    components: { KozmosCheckbox, KozmosLabel, KozmosPersonaMark },
-    setup: () => ({ personas: PERSONAS }),
-    template: `
-      <div class="flex flex-col gap-2">
-        <div v-for="(persona, index) in personas" :key="persona.name" class="flex items-center gap-2">
-          <KozmosCheckbox
-            :default-checked="index !== 1"
-            :id="'persona-' + persona.name"
-            wrapper-class-name="w-auto"
-          />
-          <KozmosLabel class="flex items-center gap-2" :for="'persona-' + persona.name">
-            <KozmosPersonaMark :color="persona.color" />
-            {{ persona.name }}
-          </KozmosLabel>
-        </div>
-      </div>
-    `,
+    setup: () => () =>
+      h(
+        "div",
+        { class: "flex flex-col gap-2" },
+        PERSONAS.map((persona, index) =>
+          h("div", { key: persona.name, class: "flex items-center gap-2" }, [
+            h(KozmosCheckbox, {
+              defaultChecked: index !== 1,
+              id: `persona-${persona.name}`,
+              wrapperClassName: "w-auto",
+            }),
+            h(
+              KozmosLabel,
+              {
+                class: "flex items-center gap-2",
+                for: `persona-${persona.name}`,
+              },
+              () => [
+                h(KozmosPersonaMark, { color: persona.color }),
+                persona.name,
+              ],
+            ),
+          ]),
+        ),
+      ),
   }),
 };
