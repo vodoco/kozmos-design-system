@@ -22,7 +22,12 @@
  *     (scripts/skills/ai-facts.mjs). They were read with regular expressions
  *     that assumed how the source was laid out, and Badge and Tag came out
  *     with no axes and Button without `emotion` (the review's T2);
- *   - whether SwiftUI and Compose have it.
+ *   - whether SwiftUI and Compose have it, as the status report
+ *     (scripts/skills/check-completion.ts) decides it for docs/status.md, the
+ *     cards and the site. A test of its own here, whether the part's native
+ *     folder exists, counted Surface's folder, which held only its Code
+ *     Connect file, as SwiftUI's Surface, and could say a part is built that
+ *     is not.
  *
  * A fact the checker cannot resolve is written as unknown, never as "none".
  * `--check` fails when the written file is stale, so the inventory cannot
@@ -50,6 +55,7 @@ import {
 } from "./skills/claude-design-docs.mjs";
 import { readStories, storyProgram } from "./skills/claude-design-examples.mjs";
 import { componentDirectory } from "./skills/claude-design-source.mjs";
+import { readStatusReport } from "../apps/site/scripts/generate-reference.mjs";
 
 /**
  * Written the way the repository writes markdown.
@@ -66,10 +72,12 @@ async function formatted(markdown, filepath) {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const IOS = path.join(root, "packages/ios/Sources/Components");
-const ANDROID = path.join(
-  root,
-  "packages/android/src/main/java/com/kozmos/components",
+// Whether SwiftUI and Compose have each part: the status report's answer.
+const nativeStatus = new Map(
+  readStatusReport().components.map((c) => [
+    c.name,
+    { ios: c.ios.component, android: c.android.component },
+  ]),
 );
 const OUT = path.join(root, ".ai-skills/component-inventory.md");
 
@@ -150,9 +158,19 @@ for (const directory of directories) {
     name: directory.name,
     exported: directory.parts.length > 0,
     variants,
-    ios: fs.existsSync(path.join(IOS, directory.name)),
-    android: fs.existsSync(path.join(ANDROID, directory.name)),
+    ...nativeOf(directory.name),
   });
+}
+
+/** SwiftUI and Compose for a component directory; a directory the report doesn't list is an error, never "no". */
+function nativeOf(name) {
+  const status = nativeStatus.get(name);
+  if (!status) {
+    throw new Error(
+      `${name}: not in the status report (scripts/skills/check-completion.ts), so whether SwiftUI and Compose have it is unknown`,
+    );
+  }
+  return status;
 }
 
 /** Components the package exports from outside a component directory: the providers. */
