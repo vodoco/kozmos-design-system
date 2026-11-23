@@ -49,6 +49,13 @@ const platforms = [
       : "@kozmos-ds/react is packaged for npm and not yet published: release waits on an approved browser support matrix. Apps inside the repository use it today.",
   },
   {
+    title: "Vue",
+    technology: "Vue 3.5 and later, on Reka UI",
+    status: "npm next",
+    description:
+      "@kozmos-ds/vue, as prereleases on npm’s next tag: the parts ported to Vue, and a bridge to the React parts for the rest.",
+  },
+  {
     title: "iOS",
     technology: "SwiftUI · iOS 16 and later",
     status: "In the repository",

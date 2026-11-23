@@ -31,12 +31,14 @@ describe("PlatformSnippets", () => {
     expect(screen.getByRole("tabpanel")).toHaveTextContent("KozmosButton()");
   });
 
-  it("distinguishes internal Vue examples from a released native library", async () => {
+  it("says Vue is a prerelease on npm's next tag", async () => {
     render(<PlatformSnippets react="<Button />" vue="<KozmosButton />" />);
-    await userEvent.click(
-      screen.getByRole("tab", { name: "Vue 3 · Internal" }),
-    );
+    await userEvent.click(screen.getByRole("tab", { name: "Vue 3 · next" }));
     const panel = screen.getByRole("tabpanel");
+    expect(panel).toHaveTextContent(
+      "published only on npm's next tag (npm install @kozmos-ds/vue@next vue)",
+    );
+    expect(panel).not.toHaveTextContent("not yet published");
     expect(panel).toHaveTextContent(
       "main entry is native Vue on Reka UI, imports no React and renders on the server",
     );
