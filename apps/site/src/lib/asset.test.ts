@@ -3,7 +3,7 @@ import { join } from "node:path";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { assetPath } from "./asset";
-import { storybookPath, storybookTo } from "./storybook";
+import { RELEASES_PAGE, storybookPath, storybookTo } from "./storybook";
 
 test("a path from public/ hangs off the base, whatever the base is", () => {
   assert.equal(assetPath("/", "/media/a.svg"), "/media/a.svg");
@@ -29,6 +29,8 @@ test("Storybook hangs off the base, in its own folder beside the pages", () => {
     storybookTo("/docs/components-button--docs"),
     "/storybook/?path=/docs/components-button--docs",
   );
+  // The Releases guide's id, as Storybook names a docs page from its title.
+  assert.equal(RELEASES_PAGE, "/docs/guides-releases--docs");
 });
 
 /** Every .ts and .tsx under src/, so the scan below cannot miss a new file. */

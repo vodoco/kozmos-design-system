@@ -4,7 +4,11 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 ## Unreleased — repository source
 
-Native source changes on `main` after the 0.13.0 snapshot below. Nothing here is tagged.
+Native source changes on `main` after the 0.17.0 snapshot below. Nothing here is tagged yet.
+
+## 0.17.0 — repository snapshot
+
+Native source changes since the 0.13.0 repository snapshot below, at the commit tagged `@kozmos-ds/react@0.17.0` (`ecdcdb3a`, 22 Nov 2026). The 0.14.0 to 0.16.0 releases cut no native snapshot, so their native changes are here too: pin a tag at or after the release a change names. This entry does not announce a native registry release. The web package has its own [changelog](../react/CHANGELOG.md).
 
 ### Added
 

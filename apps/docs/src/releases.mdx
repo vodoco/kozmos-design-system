@@ -1,0 +1,25 @@
+import { Meta } from "@storybook/blocks";
+import { ReleaseNotes } from "../stories/releases/ReleaseNotes";
+
+<Meta title="Guides/Releases" />
+
+# Releases
+
+What each Kozmos release changed, package by package. This page reads each package's own
+`CHANGELOG.md` from the repository, so it always says what the release that built this Storybook
+says: pick a package, then a release.
+
+- **On npm, on `latest`:** `@kozmos-ds/react`, `@kozmos-ds/styles`, `@kozmos-ds/tokens`,
+  `@kozmos-ds/icons` and `@kozmos-ds/product-contracts`. React pins the other four exactly, so
+  install React's version and the rest follow.
+- **On npm, on `next` only:** `@kozmos-ds/vue`, a prerelease after each Vue porting wave
+  (`npm install @kozmos-ds/vue@next vue`).
+- **From the repository:** SwiftUI (`packages/ios`) and Compose (`packages/android`), at the
+  commit a release is tagged at. Their headings follow the web release they shipped with.
+
+Each release also has a GitHub Release per package, made from the same notes, on
+[the repository's releases page](https://github.com/vodoco/kozmos-design-system/releases).
+Read a release's migration notes before upgrading: a 0.x minor release can change an API or a
+behaviour.
+
+<ReleaseNotes />
