@@ -1,16 +1,20 @@
 import { describe, expect, it } from "vitest";
 import * as KozmosReact from "@kozmos-ds/react";
-import { KozmosThemeProvider, KozmosSurface } from "../../src/index";
+import {
+  KozmosThemeProvider,
+  KozmosSurface,
+  KozmosText,
+} from "../../src/index";
 import { renderBoth, type Drawn } from "./render";
 
 /**
  * React's Surface stories are drawn by its meta's render, on a frame for
  * glass to show through, so the stories parity check cannot draw them from
- * args: here is each story's Surface in that frame, as React's draws it.
- * The frame's line of Text is left out of both: Vue's story draws it with
- * the bridge's KozmosText, which mounts React after a server render, so no
- * server render of Vue's shows it.
+ * args: here is each story's Surface in that frame, with its line of Text,
+ * as React's draws it.
  */
+const TEXT =
+  "Solid covers what is behind it; glass lets it show through, blurred and saturated by the token.";
 const BACKGROUND =
   "linear-gradient(135deg, var(--primitives-colors-theme-500) 0%, var(--primitives-colors-theme-200) 45%, var(--primitives-colors-background-300) 100%)";
 const STORY_CLASS = "rounded-container p-4 text-foreground shadow-floating";
@@ -34,6 +38,13 @@ const inFrame = (props: Record<string, unknown>, text: string): Drawn => {
         },
         children: [
           {
+            react: KozmosReact.Text,
+            vue: KozmosText,
+            props: { className: "mb-24 text-sm" },
+            vueProps: { class: "mb-24 text-sm" },
+            children: [TEXT],
+          },
+          {
             react: KozmosReact.Surface,
             vue: KozmosSurface,
             props,
@@ -52,6 +63,7 @@ describe("KozmosSurface draws what React's Surface draws", () => {
       inFrame({ className: STORY_CLASS }, "A card over the map."),
     );
     expect(react).toContain("kozmos-surface-solid");
+    expect(react).toContain("kozmos-text");
     expect(vue).toBe(react);
   });
 
