@@ -319,6 +319,176 @@ export const VUE_STORIES = {
         "Surface is a material under its content, with nothing of its own to focus or press, so there is no interaction; axe scans it",
     },
   },
+  "vue-core-data-display-tag--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A Tag with no remove listener is a label: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-tag--emotions": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A Tag with no remove listener is a label: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-tag--removable": { interaction: "button" },
+  "vue-core-data-display-avatar--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Avatar is a picture or its initials: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-avatar--fallback": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Avatar is a picture or its initials: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-spinner--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Spinner is a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-spinner--small": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Spinner is a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-spinner--large": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Spinner is a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-spinner--every-size": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Spinner is a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-spinner--in-a-button": { interaction: "button-loading" },
+  "vue-core-feedback-skeleton--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Skeleton is a placeholder: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--indeterminate": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--circular": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--top-of-page": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--circular-sizes": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--circular-complete": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--levels-added": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--tones": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--animated-update": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Progress is a progressbar, a status: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--selected-section": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "ProgressTrack is decorative, in a box that says what it means: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-progress--live-position": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "ProgressTrack is decorative, in a box that says what it means: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-personamark--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "PersonaMark is a mark, or an image named by the persona: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-personamark--named": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "PersonaMark is a mark, or an image named by the persona: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-personamark--group": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "PersonaMark is a mark, or an image named by the persona: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-personamark--in-a-persona-list": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "PersonaMark takes no input; the list's checkboxes are React's Checkbox through the bridge, whose own suites press them, so there is no interaction here; axe scans it",
+    },
+  },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

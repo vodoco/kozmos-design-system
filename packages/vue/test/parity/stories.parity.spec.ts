@@ -62,6 +62,12 @@ const VUE_ATTRIBUTE: Record<string, string> = {
   htmlFor: "for",
 };
 
+/** A sample's args without `children`: the outer part draws the port as its child. */
+const withoutChildren = (args: StoryArgs) =>
+  Object.fromEntries(
+    Object.entries(args).filter(([key]) => key !== "children"),
+  ) as StoryArgs;
+
 const lookup = (exports: object, name: string) =>
   (exports as Record<string, unknown>)[name];
 
@@ -138,8 +144,16 @@ const inTheme = (port: Port, node: Drawn): Drawn =>
         react: KozmosReact.ThemeProvider,
         vue: KozmosVue.KozmosThemeProvider,
         props: {},
-        children: [node],
+        children: [within(port, node)],
       };
+
+/** A compound's part inside the part it draws in (`Port.within`), as its sample draws that one. */
+function within(port: Port, node: Drawn): Drawn {
+  if (!port.within) return node;
+  const outer = PORTS.find((candidate) => candidate.react === port.within)!;
+  const sample = withoutChildren(outer.sample ?? {});
+  return { ...drawn(outer, sample), children: [node] };
+}
 
 const storiesOf = (port: Port) =>
   port.stories

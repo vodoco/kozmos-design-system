@@ -229,3 +229,25 @@ describe("every event a port declares is seen to fire", () => {
       }
     });
 });
+
+/**
+ * A compound's part names the port it draws inside, and a part that draws
+ * no element in a test's document names, with why, the spec that draws it
+ * where it does (`Port.within`, `Port.unmarked`).
+ */
+describe("every part drawn inside another, or nowhere, says where it is drawn", () => {
+  for (const port of PORTS.filter((p) => p.within || p.unmarked))
+    it(port.vue, () => {
+      if (port.within) {
+        const outer = PORTS.find((p) => p.react === port.within);
+        expect(outer, `${port.within} is not a port`).toBeTruthy();
+        expect(outer!.within, `${port.within} is itself inside another`).toBe(
+          undefined,
+        );
+      }
+      if (port.unmarked) {
+        expect(port.unmarked.why.trim().length).toBeGreaterThan(20);
+        drawsIn(port.unmarked.drawnIn, port);
+      }
+    });
+});

@@ -1,5 +1,5 @@
-import { KozmosBadge, KozmosButton, KozmosText } from "../../";
-import { KozmosMapOverlay, KozmosPOICard, KozmosTag } from "../../react-bridge";
+import { KozmosBadge, KozmosButton, KozmosTag, KozmosText } from "../../";
+import { KozmosMapOverlay, KozmosPOICard } from "../../react-bridge";
 
 // React's POICard through the bridge, drawn as React's stories draw it: its
 // badges, description and actions are Kozmos parts, on the classes React's

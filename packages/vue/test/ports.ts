@@ -43,6 +43,19 @@ export interface Port {
    * React's callback. Declaring an event is not emitting it.
    */
   events?: Record<string, string>;
+  /**
+   * The part of a compound this one draws only inside, by its React export
+   * (`Avatar` for `AvatarFallback`): Radix's parts throw outside their
+   * root, so the attributes and listeners checks draw it there, in both,
+   * with that port's sample.
+   */
+  within?: string;
+  /**
+   * Why the part draws no element in a test's document, so an app's
+   * attributes and listeners land nowhere in either framework (an image
+   * that has not loaded), with the spec that draws it where it does.
+   */
+  unmarked?: { why: string; drawnIn: string };
 }
 
 export const PORTS: Port[] = [
@@ -230,6 +243,124 @@ export const PORTS: Port[] = [
     },
     drawnIn: "parity/surface.parity.spec.ts",
     sample: { variant: "glass", children: "On glass" },
+  },
+  {
+    vue: "KozmosTag",
+    react: "Tag",
+    stories: "components/Tag/Tag.stories.tsx",
+    elsewhere: {
+      Default: "parity/tag.parity.spec.ts",
+      Removable: "parity/tag.parity.spec.ts",
+      Emotions: "parity/tag.parity.spec.ts",
+    },
+    drawnIn: "parity/tag.parity.spec.ts",
+    sample: { children: "Tag", emotion: "success" },
+    events: {
+      remove: "parity/tag.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosAvatar",
+    react: "Avatar",
+    stories: "components/Avatar/Avatar.stories.tsx",
+    elsewhere: {
+      Default: "parity/avatar.parity.spec.ts",
+      Fallback: "parity/avatar.parity.spec.ts",
+    },
+    drawnIn: "parity/avatar.parity.spec.ts",
+    sample: { size: "sm" },
+  },
+  {
+    vue: "KozmosAvatarImage",
+    react: "AvatarImage",
+    stories: null,
+    drawnIn: "parity/avatar.parity.spec.ts",
+    within: "Avatar",
+    sample: { src: "https://example.com/a.png", alt: "Ada Lovelace" },
+    // Radix's image draws nothing until it has loaded, which no image does
+    // in a test's document; the Avatar spec loads one in both.
+    unmarked: {
+      why: "an image draws nothing until it has loaded, and none loads in jsdom",
+      drawnIn: "parity/avatar.parity.spec.ts",
+    },
+    events: {
+      loadingStatusChange: "parity/avatar.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosAvatarFallback",
+    react: "AvatarFallback",
+    stories: null,
+    drawnIn: "parity/avatar.parity.spec.ts",
+    within: "Avatar",
+    sample: { children: "CN" },
+  },
+  {
+    vue: "KozmosSpinner",
+    react: "Spinner",
+    stories: "components/Spinner/Spinner.stories.tsx",
+    elsewhere: {
+      Default: "parity/spinner.parity.spec.ts",
+      Small: "parity/spinner.parity.spec.ts",
+      Large: "parity/spinner.parity.spec.ts",
+      EverySize: "parity/spinner.parity.spec.ts",
+      InAButton: "parity/spinner.parity.spec.ts",
+    },
+    drawnIn: "parity/spinner.parity.spec.ts",
+    sample: { size: "lg", label: "Loading places" },
+  },
+  {
+    vue: "KozmosSkeleton",
+    react: "Skeleton",
+    stories: "components/Skeleton/Skeleton.stories.tsx",
+    elsewhere: {
+      Default: "parity/skeleton.parity.spec.ts",
+    },
+    drawnIn: "parity/skeleton.parity.spec.ts",
+    sample: { shape: "circle", width: 48 },
+  },
+  {
+    vue: "KozmosProgress",
+    react: "Progress",
+    stories: "components/Progress/Progress.stories.tsx",
+    elsewhere: {
+      TopOfPage: "parity/progress.parity.spec.ts",
+      CircularSizes: "parity/progress.parity.spec.ts",
+      CircularComplete: "parity/progress.parity.spec.ts",
+      LevelsAdded: "parity/progress.parity.spec.ts",
+      Tones: "parity/progress.parity.spec.ts",
+      SelectedSection: "parity/progress.parity.spec.ts",
+      LivePosition: "parity/progress.parity.spec.ts",
+      AnimatedUpdate: "parity/progress.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosProgressTrack",
+    react: "ProgressTrack",
+    stories: null,
+    drawnIn: "parity/progress.parity.spec.ts",
+    sample: { value: 0.3 },
+  },
+  {
+    vue: "KozmosPersonaMark",
+    react: "PersonaMark",
+    stories: "components/PersonaMark/PersonaMark.stories.tsx",
+    elsewhere: {
+      Group: "parity/persona-mark.parity.spec.ts",
+      InAPersonaList: "parity/persona-mark.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosPersonaMarkGroup",
+    react: "PersonaMarkGroup",
+    stories: null,
+    drawnIn: "parity/persona-mark.parity.spec.ts",
+    sample: {
+      personas: [
+        { name: "Customer", color: "#FF9800" },
+        { name: "Visitor", color: "#2196F3" },
+      ],
+    },
   },
 ];
 

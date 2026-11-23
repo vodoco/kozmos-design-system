@@ -37,11 +37,13 @@ export function ClientMark() {
     `}
     vue={`
 <script setup>
-import { KozmosAvatar } from "@kozmos-ds/vue/react-bridge"
+import { KozmosAvatar, KozmosAvatarFallback } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosAvatar size="sm" fallback="AA" />
+  <KozmosAvatar size="sm">
+    <KozmosAvatarFallback>AA</KozmosAvatarFallback>
+  </KozmosAvatar>
 </template>
     `}
     swift={`
@@ -88,15 +90,14 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosAvatar } from "@kozmos-ds/vue/react-bridge"
+import { KozmosAvatar, KozmosAvatarFallback, KozmosAvatarImage } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosAvatar
-    src="https://github.com/shadcn.png"
-    alt="@shadcn"
-    fallback="CN"
-  />
+  <KozmosAvatar>
+    <KozmosAvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+    <KozmosAvatarFallback>CN</KozmosAvatarFallback>
+  </KozmosAvatar>
 </template>
     `}
     swift={`
