@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
+import { h } from "vue";
 import { KozmosContainer } from "../../index";
 
 /**
@@ -75,28 +76,31 @@ export const InAPanel: Story = {
  * GAP-116: a region's own top and bottom space. A page column under a top
  * bar takes `block="sm"`, 16 above and below, rather than a Box around it;
  * PageHeader takes `{ start: "lg", end: "md" }`, 32 above and 24 below.
+ * Drawn with a render function, not a template, so its text is React's to the
+ * node: a template keeps the spaces around a line's words and joins words
+ * React draws as separate text nodes (test/parity/story-renders.parity.spec.ts).
  */
 export const BlockInset: Story = {
   parameters: { layout: "fullscreen" },
   render: () => ({
-    components: { KozmosContainer },
-    setup: () => ({
-      blocks: ["sm", "md", "lg"],
-      apart: 'block={{ start: "lg", end: "md" }}',
-    }),
-    template: `
-      <div class="flex flex-col gap-6 p-6">
-        <div v-for="block in blocks" :key="block" class="rounded-container border">
-          <KozmosContainer :centered="false" inset="panel" :block="block">
-            <div class="border border-dashed bg-muted p-4 text-center">block="{{ block }}"</div>
-          </KozmosContainer>
-        </div>
-        <div class="rounded-container border">
-          <KozmosContainer :centered="false" inset="panel" :block="{ start: 'lg', end: 'md' }">
-            <div class="border border-dashed bg-muted p-4 text-center">{{ apart }}</div>
-          </KozmosContainer>
-        </div>
-      </div>
-    `,
+    setup: () => {
+      const LABEL = "border border-dashed bg-muted p-4 text-center";
+      const framed = (block: unknown, label: unknown) =>
+        h("div", { class: "rounded-container border" }, [
+          h(KozmosContainer, { centered: false, inset: "panel", block }, () =>
+            h("div", { class: LABEL }, label as string),
+          ),
+        ]);
+      return () =>
+        h("div", { class: "flex flex-col gap-6 p-6" }, [
+          ...(["sm", "md", "lg"] as const).map((block) =>
+            framed(block, ['block="', block, '"']),
+          ),
+          framed(
+            { start: "lg", end: "md" },
+            'block={{ start: "lg", end: "md" }}',
+          ),
+        ]);
+    },
   }),
 };

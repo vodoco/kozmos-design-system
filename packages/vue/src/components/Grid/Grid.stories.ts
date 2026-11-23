@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
+import { h } from "vue";
 import { KozmosBox, KozmosGrid } from "../../index";
 
 /**
@@ -44,6 +45,9 @@ export const Default: Story = {
  * GAP-172 (decision 209): Home's hundreds of site cards. Only the rows in
  * view and two past them are drawn, in reading order, each said as its place
  * in the 300; the Grid scrolls itself, so it has a height.
+ * Drawn with a render function, not a template, so its text is React's to the
+ * node: a template keeps the spaces around a line's words and joins words
+ * React draws as separate text nodes (test/parity/story-renders.parity.spec.ts).
  */
 export const Virtualized: Story = {
   args: {
@@ -56,14 +60,13 @@ export const Virtualized: Story = {
     style: { height: "320px" },
   },
   render: (args) => ({
-    components: { KozmosBox, KozmosGrid },
-    setup: () => ({ args, itemClass: ITEM_CLASS }),
-    template: `
-      <KozmosGrid v-bind="args">
-        <template #renderItem="{ index }">
-          <KozmosBox :class="itemClass">Site {{ index + 1 }}</KozmosBox>
-        </template>
-      </KozmosGrid>
-    `,
+    setup: () => () =>
+      h(KozmosGrid, args, {
+        renderItem: ({ index }: { index: number }) =>
+          h(KozmosBox, { class: ITEM_CLASS }, () => [
+            "Site ",
+            String(index + 1),
+          ]),
+      }),
   }),
 };

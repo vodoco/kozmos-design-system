@@ -45,16 +45,23 @@ export const Default: Story = {
   },
 };
 
-/** React's AsChild: the Box's attributes drawn on its one child, a span. */
+/**
+ * React's AsChild: the Box's attributes drawn on its one child, a span.
+ * Drawn with a render function, not a template, so its text is React's to the
+ * node: a template keeps the spaces around a line's words and joins words
+ * React draws as separate text nodes (test/parity/story-renders.parity.spec.ts).
+ */
 export const AsChild: Story = {
   render: () => ({
-    components: { KozmosBox },
-    template: `
-      <KozmosBox as-child>
-        <span class="p-4 bg-secondary text-secondary-foreground rounded-control">
-          This is a Span rendered via Box asChild
-        </span>
-      </KozmosBox>
-    `,
+    setup: () => () =>
+      h(KozmosBox, { asChild: true }, () =>
+        h(
+          "span",
+          {
+            class: "p-4 bg-secondary text-secondary-foreground rounded-control",
+          },
+          "This is a Span rendered via Box asChild",
+        ),
+      ),
   }),
 };
