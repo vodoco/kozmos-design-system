@@ -1232,6 +1232,16 @@ Compose's ChipInput writes its state as string comparisons (`enabled = "default"
 check that renders each document as Dev Mode does and compiles it, is the next pull request; Code Connect is
 republished from it.
 
+That was #606 (merged 22 Nov as `7e60e4f4`): the four snippets compile, Grid's slot list is written out because the
+parser takes only a literal there (CI found the run dropping Grid), and `pnpm figma:snippets:check`, in CI's web job,
+renders every document as Dev Mode does and type-checks what it shows. React's Code Connect was republished from it
+the same evening, after valid dry runs on all three platforms; SwiftUI's and Compose's files did not change, so they
+were not. Read back: Grid (359:1574) shows its columns and gap, and ManoeuvreCard (2210:38624) compiles; the icon
+imports Dev Mode lists beside it come from the icons nested in the set, not from its file.
+
+Figma's Glass Button (GAP-229) reached the live file after the release: #605's Update on 22 Nov, then #607's on
+23 Nov with build `87c85a8d683d`, both on Button and IconButton only, by Update. See GAP-229 for what was read back.
+
 ### `@kozmos-ds/vue` 0.17.0-next.0
 
 The first `@kozmos-ds/vue` on npm, on the `next` tag, published on 2026-11-22 from
