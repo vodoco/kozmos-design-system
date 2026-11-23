@@ -1,14 +1,13 @@
 import React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cn } from "../../utils";
-
-/**
- * When the latest group of waits started. Bars that start waiting within
- * 500 ms of a group's first are that group, and only its first says its
- * words: five uploads starting together are one "Loading", not five. A wait
- * that starts later speaks, even while an earlier, long wait still runs.
- */
-let groupStart = -Infinity;
+import {
+  PROGRESS_STATUS_CLASS,
+  progressBarClasses,
+  progressIndicatorClass,
+  progressWaitName,
+  progressWaitSpeaks,
+} from "../../recipes/progress";
 
 export interface ProgressBarProps extends React.ComponentPropsWithoutRef<
   typeof ProgressPrimitive.Root
@@ -69,9 +68,11 @@ export const ProgressBar = React.forwardRef<
     React.useEffect(() => {
       if (!waiting) return;
       const [own, by] = words.current;
-      const now = Date.now();
-      if (opened.current === groupStart || now - groupStart > 500) {
-        if (opened.current !== groupStart) groupStart = opened.current = now;
+      // Bars that start waiting together share one announcement, the
+      // first's (recipes/progress.ts).
+      const group = progressWaitSpeaks(opened.current);
+      opened.current = group.opened;
+      if (group.speaks) {
         setSaid(
           own ||
             by
@@ -89,32 +90,26 @@ export const ProgressBar = React.forwardRef<
         <ProgressPrimitive.Root
           ref={ref}
           value={value}
-          className={cn(
-            placement === "top"
-              ? "kozmos-progress-top"
-              : "relative h-2 w-full rounded-pill",
-            "overflow-hidden bg-secondary",
-            className,
-          )}
+          className={cn(progressBarClasses(placement), className)}
           aria-labelledby={labelledBy}
           aria-label={
             waiting && !ariaLabel && !labelledBy
-              ? (typeof label === "string" && label) || "Loading"
+              ? progressWaitName(label)
               : ariaLabel
           }
           {...props}
         >
           <ProgressPrimitive.Indicator
-            className={
-              waiting
-                ? "kozmos-progress-sweep"
-                : "h-full bg-primary transition-all"
-            }
+            className={progressIndicatorClass(waiting)}
             style={waiting ? undefined : { width: `${percentage}%` }}
           />
         </ProgressPrimitive.Root>
         {waiting && (
-          <span role="status" aria-live="polite" className="sr-only">
+          <span
+            role="status"
+            aria-live="polite"
+            className={PROGRESS_STATUS_CLASS}
+          >
             {said}
           </span>
         )}

@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../../utils";
+import { skeletonBox, skeletonClasses } from "../../recipes/skeleton";
 
 /**
  * What the placeholder stands in for, which is all that decides its shape.
@@ -24,44 +25,17 @@ export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   height?: number | string;
 }
 
-const length = (value: number | string | undefined) =>
-  typeof value === "number" ? `${value}px` : value;
-
 const SkeletonComponent = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, shape = "line", width, height, style, ...props }, ref) => {
-    const size = length(width);
-    return (
-      <div
-        ref={ref}
-        // The pulse is `.kozmos-skeleton` rather than `animate-pulse` so one
-        // owned rule can rest it under the reduced-motion preference and under
-        // the design config's `motion: reduced`, together with the spinner and
-        // the assistant's ring (GAP-50). The grey is in that rule too.
-        className={cn(
-          "kozmos-skeleton",
-          shape === "circle"
-            ? "shrink-0 rounded-pill"
-            : "w-full rounded-control",
-          // A line stands in for text, so it takes a text-sized height unless
-          // it is told otherwise. A block has no such default: it is whatever
-          // it replaces, and guessing would be worse than asking.
-          shape === "line" && height === undefined && "h-4",
-          className,
-        )}
-        data-shape={shape}
-        style={{
-          ...(shape === "circle"
-            ? {
-                width: size ?? "2.5rem",
-                height: length(height) ?? size ?? "2.5rem",
-              }
-            : { width: size, height: length(height) }),
-          ...style,
-        }}
-        {...props}
-      />
-    );
-  },
+  ({ className, shape = "line", width, height, style, ...props }, ref) => (
+    <div
+      ref={ref}
+      // The pulse, the grey and each shape's box: recipes/skeleton.ts.
+      className={cn(skeletonClasses(shape, height), className)}
+      data-shape={shape}
+      style={{ ...skeletonBox(shape, width, height), ...style }}
+      {...props}
+    />
+  ),
 );
 SkeletonComponent.displayName = "Skeleton";
 

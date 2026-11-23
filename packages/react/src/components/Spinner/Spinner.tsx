@@ -1,6 +1,11 @@
 import React from "react";
 import { cn } from "../../utils";
 import { SpinnerArc } from "./SpinnerArc";
+import {
+  SPINNER_CLASS,
+  SPINNER_LABEL_DELAY_MS,
+  SPINNER_SIZES,
+} from "../../recipes/spinner";
 
 export interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -16,9 +21,6 @@ export interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export type SpinnerSize = NonNullable<SpinnerProps["size"]>;
 
-/** How long after it mounts a spinner's region is given its label. */
-const LABEL_DELAY_MS = 100;
-
 /**
  * Indeterminate loading: the system's arc, turning, with a name to hear.
  *
@@ -30,43 +32,28 @@ const LABEL_DELAY_MS = 100;
  */
 const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
   ({ className, size = "md", label = "Loading", ...props }, ref) => {
-    // The `Spinner/size/*` tokens: 16, 24, 32, 48. Both forms are set — the
-    // attribute so the arc has an intrinsic size wherever the stylesheet does
-    // not reach, the class so a caller can still size it with one.
-    const pixels: Record<SpinnerSize, number> = {
-      sm: 16,
-      md: 24,
-      lg: 32,
-      xl: 48,
-    };
-    const sizeClasses: Record<SpinnerSize, string> = {
-      sm: "h-4 w-4",
-      md: "h-6 w-6",
-      lg: "h-8 w-8",
-      xl: "h-12 w-12",
-    };
-    // A spinner is mounted when a wait starts, so its status region cannot
-    // be there before it: it is mounted empty, and its label is put into it
-    // a moment later (GAP-226), as a screen reader may say nothing for a
-    // region inserted together with its words. The label is visually
-    // hidden, so nothing seen waits for it.
+    // The `Spinner/size/*` tokens, as attribute and class, and the label
+    // put in after the region (GAP-226): recipes/spinner.ts says why.
     const [labelled, setLabelled] = React.useState(false);
     React.useEffect(() => {
-      const timer = setTimeout(() => setLabelled(true), LABEL_DELAY_MS);
+      const timer = setTimeout(() => setLabelled(true), SPINNER_LABEL_DELAY_MS);
       return () => clearTimeout(timer);
     }, []);
 
     return (
       <div
         ref={ref}
-        className={cn("flex items-center justify-center", className)}
+        className={cn(SPINNER_CLASS, className)}
         role="status"
         // Said as well as implied: an open Select or Menu hides every box not
         // marked aria-live (GAP-193).
         aria-live="polite"
         {...props}
       >
-        <SpinnerArc className={sizeClasses[size]} size={pixels[size]} />
+        <SpinnerArc
+          className={SPINNER_SIZES[size]?.className}
+          size={SPINNER_SIZES[size]?.pixels}
+        />
         <span className="sr-only">{labelled ? label : null}</span>
       </div>
     );

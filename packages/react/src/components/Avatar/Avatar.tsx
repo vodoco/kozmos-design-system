@@ -1,6 +1,12 @@
 import React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { cn } from "../../utils";
+import {
+  AVATAR_FALLBACK_CLASS,
+  AVATAR_IMAGE_CLASS,
+  avatarClasses,
+  avatarDataSize,
+} from "../../recipes/avatar";
 
 export interface AvatarProps extends React.ComponentPropsWithoutRef<
   typeof AvatarPrimitive.Root
@@ -19,12 +25,8 @@ const Avatar = React.forwardRef<
 >(({ className, size = "default", ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
-    data-size={size === "sm" ? "sm" : undefined}
-    className={cn(
-      "relative flex shrink-0 overflow-hidden rounded-pill",
-      size === "sm" ? "h-6 w-6 text-xs" : "h-10 w-10",
-      className,
-    )}
+    data-size={avatarDataSize(size)}
+    className={cn(avatarClasses(size), className)}
     {...props}
   />
 ));
@@ -36,7 +38,7 @@ const AvatarImage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
+    className={cn(AVATAR_IMAGE_CLASS, className)}
     {...props}
   />
 ));
@@ -48,10 +50,7 @@ const AvatarFallback = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
-    className={cn(
-      "flex h-full w-full items-center justify-center rounded-pill bg-muted",
-      className,
-    )}
+    className={cn(AVATAR_FALLBACK_CLASS, className)}
     {...props}
   />
 ));

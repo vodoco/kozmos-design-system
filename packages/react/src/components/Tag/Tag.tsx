@@ -1,43 +1,17 @@
 import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
 import { cn } from "../../utils";
 import { X } from "@kozmos-ds/icons";
-import {
-  EMOTION_FILLED_CLASSES,
-  EMOTION_OUTLINE_CLASSES,
-  emotionSurfaceProperties,
-  type Emotion,
-} from "../../utils/emotion";
+import { emotionSurfaceProperties, type Emotion } from "../../utils/emotion";
 import { useKozmosAnalytics } from "../../utils/analytics";
-
-const tagVariants = cva(
-  // Four between a Tag's parts, the spacing scale's 50, as SwiftUI's
-  // `HStack(spacing: spacing50)` draws it. A Tag takes arbitrary children on
-  // React alone, so an icon beside its text touched — the pill scale's gap,
-  // not the control scale's 8, and not `Chip`'s 6, which Figma binds to
-  // `Layout/spacing/75` for a larger pill.
-  "inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-  {
-    variants: {
-      variant: {
-        // The theme fill and the theme foreground, the same in both themes
-        // (decision 59). Hovered, the themed Button's hover token, opaque,
-        // 6.24:1 under its white text: /90 of the fill let the page
-        // through, lighter in the light and darker in the dark.
-        default:
-          "border-transparent bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)]",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
+import {
+  TAG_REMOVE_CLASS,
+  TAG_REMOVE_ICON_CLASS,
+  TAG_REMOVE_ON_THEME_FILL_CLASS,
+  tagEmotionClasses,
+  tagOnThemeFill,
+  tagVariants,
+} from "../../recipes/tag";
 
 export interface TagProps
   extends
@@ -76,12 +50,8 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
-    const emotionClasses = emotion
-      ? variant === "outline"
-        ? EMOTION_OUTLINE_CLASSES
-        : EMOTION_FILLED_CLASSES
-      : undefined;
-    const onThemeFill = !emotion && (variant ?? "default") === "default";
+    const emotionClasses = tagEmotionClasses(variant, emotion);
+    const onThemeFill = tagOnThemeFill(variant, emotion);
 
     return (
       <div
@@ -106,23 +76,13 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
               }
               onRemove();
             }}
-            // No margin of its own: the row's gap spaces it. With both it
-            // sat 8 from the label where the rest of the Tag spaces 4 — the
-            // same compensating margin GAP-56 took off the Button's loader,
-            // reintroduced here the moment the gap arrived. Focused from the
-            // keyboard it draws Button's offset ring, a band of the page's
-            // colour and then the theme's 600, 3:1 on the fill and on the
-            // page; it drew none. On the theme fill its hover is the theme
-            // foreground at a fifth: the 600 it took read 1.11:1 there.
-            // Drawn 16, its target is 24 wide and the Tag's own height (WCAG
-            // 2.2's 2.5.8, with its spacing), from owned CSS on
-            // kozmos-tag-remove, so the Tag is no larger for it.
+            // The recipe says why each class is there (recipes/tag.ts).
             className={cn(
-              "kozmos-tag-remove rounded-pill p-0.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              onThemeFill && "hover:bg-theme-fill-foreground/20",
+              TAG_REMOVE_CLASS,
+              onThemeFill && TAG_REMOVE_ON_THEME_FILL_CLASS,
             )}
           >
-            <X className="h-3 w-3" />
+            <X className={TAG_REMOVE_ICON_CLASS} />
             <span className="sr-only">{removeLabel}</span>
           </button>
         )}
@@ -132,4 +92,6 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
 );
 Tag.displayName = "Tag";
 
-export { Tag, tagVariants };
+export { Tag };
+// The recipe Vue's KozmosTag draws from too, exported here as it always was.
+export { tagVariants } from "../../recipes/tag";
