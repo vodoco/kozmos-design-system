@@ -169,7 +169,7 @@ export const VUE_STORIES = {
         "A Label alone names nothing to focus or press, so there is no interaction; axe scans it",
     },
   },
-  "vue-core-inputs-label--with-input": { interaction: "search-typing" },
+  "vue-core-inputs-label--with-input": { interaction: "label-focuses-field" },
   "vue-foundations-icons-icon--default": {
     interaction: null,
     exempt: {
