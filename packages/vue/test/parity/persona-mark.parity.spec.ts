@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
 import * as KozmosReact from "@kozmos-ds/react";
 import {
+  KozmosLabel,
   KozmosPersonaMark,
   KozmosPersonaMarkGroup,
+  KozmosText,
   KozmosThemeProvider,
 } from "../../src/index";
 import { renderBoth, type Drawn } from "./render";
 
 /**
  * React's PersonaMark stories Group and InAPersonaList draw with their own
- * render: here is each, as its render draws it, with the element React's
- * Text and Label draw where the Vue story draws it (neither is ported yet;
- * InAPersonaList's checkboxes are React's own, through the bridge, so the
- * rows' labels are what is compared). And the group's edges: its label,
+ * render: here is each, as its render draws it, with the native Text and
+ * Label (InAPersonaList's checkboxes are React's own, through the bridge,
+ * as Checkbox is not ported yet, so the rows' labels are what is
+ * compared). And the group's edges: its label,
  * an app's class, and no persona at all, which draws nothing.
  */
 const PERSONAS = [
@@ -47,12 +49,8 @@ describe("KozmosPersonaMark draws what React's PersonaMark draws", () => {
       children: [
         {
           react: KozmosReact.Text,
-          vue: "p",
+          vue: KozmosText,
           props: { size: "sm" },
-          vueProps: {
-            class:
-              "kozmos-reset kozmos-text kozmos-text-sm kozmos-text-normal kozmos-text-start kozmos-text-default",
-          },
           children: ["Gate A12"],
         },
         group({ personas: PERSONAS }),
@@ -73,13 +71,13 @@ describe("KozmosPersonaMark draws what React's PersonaMark draws", () => {
       children: PERSONAS.map(
         (persona): Drawn => ({
           react: KozmosReact.Label,
-          vue: "label",
+          vue: KozmosLabel,
           props: {
             className: "flex items-center gap-2",
             htmlFor: `persona-${persona.name}`,
           },
           vueProps: {
-            class: "kozmos-reset kozmos-label flex items-center gap-2",
+            class: "flex items-center gap-2",
             for: `persona-${persona.name}`,
           },
           children: [mark({ color: persona.color }), persona.name],

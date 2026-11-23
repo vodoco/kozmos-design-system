@@ -16,16 +16,18 @@ import {
 } from "vue";
 import { renderToString as vueToString } from "vue/server-renderer";
 import {
+  KozmosBox,
   KozmosProgress,
   KozmosProgressTrack,
+  KozmosStack,
+  KozmosText,
   KozmosThemeProvider,
 } from "../../src/index";
 import { normalizeHtml } from "./normalize-html";
 
 /**
  * React's Progress stories that draw with their own render, drawn in both
- * as each render draws it, with the element React's Box, Stack and Text draw
- * where the Vue story draws it (none is ported yet); ProgressTrack's
+ * as each render draws it, with the native Box, Stack and Text; ProgressTrack's
  * SelectedSection and LivePosition; and the ring's and the bar's edges
  * React's tests cover. Mounted: a waiting bar says its words once, bars
  * that wait together share one announcement, and AnimatedUpdate's value
@@ -36,10 +38,13 @@ import { normalizeHtml } from "./normalize-html";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 const e = React.createElement;
-const TEXT = "kozmos-reset kozmos-text kozmos-text-start";
-const text = (size: string, weight: string, color: string) =>
-  `${TEXT.replace("kozmos-text-start", `kozmos-text-${size} kozmos-text-${weight} kozmos-text-start kozmos-text-${color}`)}`;
-const STACK_ROW = "flex flex-row items-center justify-start flex-wrap gap-4";
+/** React's Stack in a row, gap 4, centred and wrapping, as the stories draw it. */
+const ROW = {
+  direction: "row",
+  gap: 4,
+  align: "center",
+  wrap: "wrap",
+} as const;
 const TONES = [
   "themed",
   "neutral",
@@ -68,15 +73,13 @@ describe("KozmosProgress draws what React's Progress draws", () => {
         e(KozmosReact.Text, null, "Map content loads under the bar."),
       ),
       () =>
-        h("div", { class: "p-6" }, [
+        h(KozmosBox, { class: "p-6" }, () => [
           h(
             KozmosProgress,
             { placement: "top" },
             { label: () => "Loading the map" },
           ),
-          h("p", { class: text("base", "normal", "default") }, [
-            "Map content loads under the bar.",
-          ]),
+          h(KozmosText, null, () => "Map content loads under the bar."),
         ]),
     );
     expect(react).toContain("kozmos-progress-top");
@@ -88,7 +91,7 @@ describe("KozmosProgress draws what React's Progress draws", () => {
     const { react, vue } = await both(
       e(
         KozmosReact.Stack,
-        { direction: "row", gap: 4, align: "center", wrap: "wrap" },
+        ROW,
         e(KozmosReact.Progress, {
           shape: "circular",
           size: "sm",
@@ -111,7 +114,7 @@ describe("KozmosProgress draws what React's Progress draws", () => {
         }),
       ),
       () =>
-        h("div", { class: STACK_ROW }, [
+        h(KozmosStack, ROW, () => [
           h(KozmosProgress, {
             shape: "circular",
             size: "sm",
@@ -155,7 +158,7 @@ describe("KozmosProgress draws what React's Progress draws", () => {
       const { react, vue } = await both(
         e(
           KozmosReact.Stack,
-          { direction: "row", gap: 4, align: "center", wrap: "wrap" },
+          ROW,
           ...TONES.map((tone) =>
             e(KozmosReact.Progress, {
               key: tone,
@@ -168,9 +171,7 @@ describe("KozmosProgress draws what React's Progress draws", () => {
           ),
         ),
         () =>
-          h(
-            "div",
-            { class: STACK_ROW },
+          h(KozmosStack, ROW, () =>
             TONES.map((tone) =>
               h(KozmosProgress, {
                 key: tone,
@@ -218,10 +219,12 @@ describe("KozmosProgress draws what React's Progress draws", () => {
           },
           {
             label: () => [
-              h("p", { class: text("xl", "bold", "default") }, ["11 Levels"]),
-              h("p", { class: text("xs", "normal", "muted") }, [
-                "Added in total",
-              ]),
+              h(KozmosText, { size: "xl", weight: "bold" }, () => "11 Levels"),
+              h(
+                KozmosText,
+                { size: "xs", color: "muted" },
+                () => "Added in total",
+              ),
             ],
           },
         ),
@@ -246,13 +249,12 @@ describe("KozmosProgress draws what React's Progress draws", () => {
       ),
       () =>
         h(
-          "div",
+          KozmosBox,
           {
-            class: "",
             role: "img",
             "aria-label": "Selected section from 20 to 60 percent",
           },
-          [
+          () => [
             h(KozmosProgressTrack, {
               activeRange: { start: 0.2, end: 0.6 },
               value: null,
@@ -284,7 +286,7 @@ describe("KozmosProgress draws what React's Progress draws", () => {
     } as const;
     const { react, vue } = await both(
       e(KozmosReact.Box, box, e(KozmosReact.ProgressTrack, track)),
-      () => h("div", { class: "", ...box }, [h(KozmosProgressTrack, track)]),
+      () => h(KozmosBox, box, () => [h(KozmosProgressTrack, track)]),
     );
     expect(react).toContain("inset-inline-start:30%");
     expect(vue).toBe(react);
