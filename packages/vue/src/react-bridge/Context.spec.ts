@@ -125,7 +125,7 @@ describe("KozmosAnalyticsProvider", () => {
       provider(
         h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
           h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
-          h(Bridge.KozmosCard, null, () => [
+          h(Bridge.KozmosDialogHeader, null, () => [
             h(Bridge.KozmosCheckbox, { "aria-label": "Step-free" }),
           ]),
         ]),
@@ -147,7 +147,7 @@ describe("KozmosAnalyticsProvider", () => {
     const inner: KozmosAnalyticsEvent[][] = [];
     mount(() =>
       provider(
-        h(Bridge.KozmosCard, null, () => [
+        h(Bridge.KozmosDialogHeader, null, () => [
           h(
             KozmosAnalyticsProvider,
             {
@@ -246,7 +246,7 @@ describe("KozmosDensityScope", () => {
   it("a scope between a compound and its part reaches the part", async () => {
     mount(() =>
       h(KozmosThemeProvider, { density: "touch" }, () => [
-        h(Bridge.KozmosCard, null, () => [
+        h(Bridge.KozmosDialogHeader, null, () => [
           h(KozmosDensityScope, { density: "compact" }, () => [
             tooltip("Inside"),
           ]),

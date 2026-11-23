@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { defineComponent, h, nextTick, ref, type Component } from "vue";
-import * as KozmosReact from "@kozmos-ds/react";
 import { KozmosThemeProvider } from "../index";
 import * as Bridge from "./index";
 import { IN_A_COMPOUND } from "../../test/compounds";
@@ -164,42 +163,6 @@ describe("a compound is one React tree", () => {
     );
     byText("[role=dialog] button", "Done")!.click();
     await eventually(() => expect(open.value).toBe(false));
-  });
-
-  it("Card: its parts draw in the card's padding", async () => {
-    mount(() =>
-      h(Bridge.KozmosCard, { padding: "compact" }, () => [
-        h(Bridge.KozmosCardHeader, null, () => [
-          h(Bridge.KozmosCardTitle, null, () => "Level 2"),
-        ]),
-        h(Bridge.KozmosCardContent, null, () => "Opens at 9"),
-      ]),
-    );
-    const content = await until(() =>
-      [...document.querySelectorAll<HTMLElement>("div")].find(
-        (box) => box.className && box.textContent === "Opens at 9",
-      ),
-    );
-    const alone = document.createElement("div");
-    document.body.append(alone);
-    // React's own CardContent in a compact Card, for its classes.
-    const { createRoot } = await import("react-dom/client");
-    const React = await import("react");
-    const root = createRoot(alone);
-    root.render(
-      React.createElement(
-        KozmosReact.Card,
-        { padding: "compact" },
-        React.createElement(KozmosReact.CardContent, null, "Opens at 9"),
-      ),
-    );
-    const reactContent = await until(() =>
-      [...alone.querySelectorAll<HTMLElement>("div")].find(
-        (box) => box.textContent === "Opens at 9" && !box.querySelector("div"),
-      ),
-    );
-    expect(content.className).toBe(reactContent.className);
-    root.unmount();
   });
 
   it("a listener on a part of a compound runs once, given the native event", async () => {

@@ -79,12 +79,13 @@ export function MapContentHeader() {
     `}
     vue={`
 <script setup>
-import { KozmosTag } from "@kozmos-ds/vue"
-import { KozmosPageHeader } from "@kozmos-ds/vue/react-bridge"
+import { KozmosPageHeader, KozmosTag } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosPageHeader title="Map Content">
+  <!-- The title and every node beside it are slots. -->
+  <KozmosPageHeader>
+    <template #title>Map Content</template>
     <template #titleAddon><KozmosTag emotion="alert">Changes Awaiting Publish</KozmosTag></template>
   </KozmosPageHeader>
 </template>
@@ -159,14 +160,14 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosPageHeader } from "@kozmos-ds/vue/react-bridge"
+import { KozmosPageHeader } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosPageHeader
-    title="Settings"
-    description="Manage the site's map, its levels and who can edit them."
-  />
+  <KozmosPageHeader>
+    <template #title>Settings</template>
+    <template #description>Manage the site's map, its levels and who can edit them.</template>
+  </KozmosPageHeader>
 </template>
     `}
     swift={`

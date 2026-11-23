@@ -155,6 +155,65 @@ async function unavailable(page) {
   return "unavailable to Tab and to a click";
 }
 
+/**
+ * One link: Tab put focus on it, which draws a look that differs from its
+ * rest; Enter fires one click; the pointer's hover changes its look; a click
+ * fires one click. What the click would open is not followed: the story
+ * stays on its page.
+ */
+async function followLink(page, link) {
+  const name = await link.evaluate((el) => window.__kozmosVue.describe(el));
+  await page.mouse.move(0, 0);
+  await settle(page);
+  const focusLook = await lookOf(link);
+  await link.evaluate((el) => el.blur());
+  await settle(page);
+  const rest = await lookOf(link);
+  assert(
+    !same(focusLook, rest),
+    `${name} draws no focus: its look is the same focused from the keyboard and at rest`,
+  );
+  await link.focus();
+  await settle(page);
+  let before = await clicks(page);
+  await page.keyboard.press("Enter");
+  await settle(page);
+  assert.equal(
+    (await clicks(page)) - before,
+    1,
+    `Enter on ${name} fires one click`,
+  );
+  await link.evaluate((el) => el.blur());
+  const box = await link.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await settle(page);
+  assert(
+    !same(await lookOf(link), rest),
+    `${name} draws no hover: its look is the same under the pointer and at rest`,
+  );
+  before = await clicks(page);
+  await page.mouse.down();
+  await page.mouse.up();
+  await settle(page);
+  assert.equal(
+    (await clicks(page)) - before,
+    1,
+    `a click on ${name} fires one click`,
+  );
+  await page.mouse.move(0, 0);
+  return name;
+}
+
+/** Keeps the story on its page: a link's click is heard, and not followed. */
+const stayOnPage = (page) =>
+  page.evaluate(() => {
+    if (window.__kozmosStays) return;
+    window.__kozmosStays = true;
+    addEventListener("click", (event) => {
+      if (event.target.closest?.("a[href]")) event.preventDefault();
+    });
+  });
+
 /** axe at WCAG 2.2 AA over the page: what it finds, by rule and node. */
 async function axeFinds(page) {
   const { violations } = await new AxeBuilder({ page })
@@ -230,6 +289,56 @@ const INTERACTIONS = {
       await button.focus();
     }
     return `${buttons.length} buttons, Tab after Tab in reading order, each pressed and hovered`;
+  },
+
+  /**
+   * Every link, button and field, Tab after Tab in reading order: each link
+   * followed by Enter and by a click (heard, not followed), each button
+   * pressed and hovered, each field typed into. A story's controls are
+   * reached in the order they are drawn, whatever kind each is.
+   */
+  async "controls-in-order"(page) {
+    await stayOnPage(page);
+    // One selector, so every kind is looked for inside the story's surface.
+    const all = await controls(
+      page,
+      ":is(a[href], button:not([disabled]), input:not([disabled]))",
+    ).all();
+    assert(all.length > 0, "the story draws a link, a button or a field");
+    await focusStart(page);
+    const done = { link: 0, button: 0, field: 0 };
+    for (const control of all) {
+      await page.keyboard.press("Tab");
+      await settle(page);
+      const name = await control.evaluate((el) =>
+        window.__kozmosVue.describe(el),
+      );
+      assert.equal(
+        await control.evaluate((el) => el === document.activeElement),
+        true,
+        `Tab reaches ${name} (focus is on ${await focused(page)})`,
+      );
+      const tag = await control.evaluate((el) => el.localName);
+      if (tag === "a") {
+        await followLink(page, control);
+        done.link++;
+      } else if (tag === "button") {
+        await pressButton(page, control, { tabbed: true });
+        done.button++;
+      } else {
+        await page.keyboard.type("4");
+        await settle(page);
+        assert.match(
+          await control.inputValue(),
+          /4$/,
+          `${name} holds what was typed`,
+        );
+        done.field++;
+      }
+      // Focus back on it, so the next Tab is the next control's.
+      await control.focus();
+    }
+    return `${done.link} link(s), ${done.button} button(s) and ${done.field} field(s), Tab after Tab in reading order`;
   },
 
   /**

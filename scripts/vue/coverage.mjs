@@ -489,6 +489,55 @@ export const VUE_STORIES = {
         "PersonaMark takes no input; the list's checkboxes are React's Checkbox through the bridge, whose own suites press them, so there is no interaction here; axe scans it",
     },
   },
+  "vue-core-layout-card--default": { interaction: "controls-in-order" },
+  "vue-core-layout-card--title-level": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A card is a surface, not a control: this story draws no link, button or field, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-card--padding": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A card is a surface, not a control: this story draws no link, button or field, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-card--without-header": { interaction: "buttons-in-order" },
+  "vue-core-layout-card--header-actions": { interaction: "button" },
+  "vue-core-layout-card--subtle-header": { interaction: "buttons-in-order" },
+  "vue-core-layout-card--title-size": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A card is a surface, not a control: this story draws no link, button or field, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-pageheader--plain": { interaction: "controls-in-order" },
+  "vue-core-layout-pageheader--default": { interaction: "controls-in-order" },
+  "vue-core-layout-pageheader--landing": { interaction: "button" },
+  "vue-core-layout-pageheader--with-info": { interaction: "controls-in-order" },
+  "vue-core-layout-breadcrumb--default": { interaction: "controls-in-order" },
+  "vue-core-actions-link--default": { interaction: "controls-in-order" },
+  "vue-core-actions-link--subtle": { interaction: "controls-in-order" },
+  "vue-core-actions-link--external": { interaction: "controls-in-order" },
+  "vue-core-actions-link--external-in-text": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-actions-link--external-right-to-left": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-feedback-emptystate--default": { interaction: "button" },
+  "vue-core-feedback-emptystate--compact": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "An empty state with no action draws no link, button or field, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-feedback-emptystate--download-progress": { interaction: "button" },
+  "vue-core-feedback-emptystate--with-list": { interaction: "button" },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

@@ -48,11 +48,28 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosBreadcrumb } from "@kozmos-ds/vue/react-bridge"
+import {
+  KozmosBreadcrumb,
+  KozmosBreadcrumbItem,
+  KozmosBreadcrumbLink,
+  KozmosBreadcrumbList,
+  KozmosBreadcrumbPage,
+  KozmosBreadcrumbSeparator,
+} from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosBreadcrumb />
+  <KozmosBreadcrumb>
+    <KozmosBreadcrumbList>
+      <KozmosBreadcrumbItem>
+        <KozmosBreadcrumbLink href="/">Home</KozmosBreadcrumbLink>
+      </KozmosBreadcrumbItem>
+      <KozmosBreadcrumbSeparator />
+      <KozmosBreadcrumbItem>
+        <KozmosBreadcrumbPage>Breadcrumb</KozmosBreadcrumbPage>
+      </KozmosBreadcrumbItem>
+    </KozmosBreadcrumbList>
+  </KozmosBreadcrumb>
 </template>
     `}
     swift={`

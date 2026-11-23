@@ -2278,6 +2278,24 @@ for (const [part, module] of [
   ["KozmosProgressTrack", "Progress/Progress"],
   ["KozmosPersonaMark", "PersonaMark/PersonaMark"],
   ["KozmosPersonaMarkGroup", "PersonaMark/PersonaMark"],
+  // Card, Breadcrumb, PageHeader, Link and EmptyState (wave V1, the cards
+  // batch), and every part of Card and Breadcrumb.
+  ["KozmosCard", "Card/Card"],
+  ["KozmosCardHeader", "Card/Card"],
+  ["KozmosCardTitle", "Card/Card"],
+  ["KozmosCardDescription", "Card/Card"],
+  ["KozmosCardContent", "Card/Card"],
+  ["KozmosCardFooter", "Card/Card"],
+  ["KozmosBreadcrumb", "Breadcrumb/Breadcrumb"],
+  ["KozmosBreadcrumbList", "Breadcrumb/Breadcrumb"],
+  ["KozmosBreadcrumbItem", "Breadcrumb/Breadcrumb"],
+  ["KozmosBreadcrumbLink", "Breadcrumb/Breadcrumb"],
+  ["KozmosBreadcrumbPage", "Breadcrumb/Breadcrumb"],
+  ["KozmosBreadcrumbSeparator", "Breadcrumb/Breadcrumb"],
+  ["KozmosBreadcrumbEllipsis", "Breadcrumb/Breadcrumb"],
+  ["KozmosPageHeader", "PageHeader/PageHeader"],
+  ["KozmosLink", "Link/Link"],
+  ["KozmosEmptyState", "EmptyState/EmptyState"],
 ]) {
   assertContains(
     files.vueIndex,

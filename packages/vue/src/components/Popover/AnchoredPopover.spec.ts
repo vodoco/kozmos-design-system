@@ -2,7 +2,7 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, nextTick, ref, type App } from "vue";
 import { KozmosButton } from "../../index";
-import { KozmosAnchoredPopover, KozmosLink } from "../../react-bridge";
+import { KozmosAnchoredPopover, KozmosIconButton } from "../../react-bridge";
 
 // GAP-190 in the harness: the anchored popover is mounted from Vue, beside an
 // element Vue draws, opened and closed through v-model:open.
@@ -233,9 +233,9 @@ describe("KozmosAnchoredPopover", () => {
     app = createApp({
       setup: () => () => [
         h(
-          KozmosLink,
-          { ref: target, href: "#desk" },
-          { default: () => "Desk" },
+          KozmosIconButton,
+          { ref: target, "aria-label": "Desk" },
+          { default: () => "D" },
         ),
         h(
           KozmosAnchoredPopover,
@@ -252,10 +252,8 @@ describe("KozmosAnchoredPopover", () => {
       ],
     });
     app.mount(host);
-    const link = await until(() =>
-      [...document.querySelectorAll("a")].find(
-        (node) => node.textContent === "Desk",
-      ),
+    const desk = await until(() =>
+      document.querySelector('button[aria-label="Desk"]'),
     );
     const step = await until(() => document.querySelector('[role="dialog"]'));
     // As in the template-ref test above: Escape at a step on the page.
@@ -264,7 +262,7 @@ describe("KozmosAnchoredPopover", () => {
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
     await until(() => open.value === false);
-    // Nothing had focus as it opened: focus goes to the anchor, the link.
-    await until(() => document.activeElement === link);
+    // Nothing had focus as it opened: focus goes to the anchor, the button.
+    await until(() => document.activeElement === desk);
   });
 });
