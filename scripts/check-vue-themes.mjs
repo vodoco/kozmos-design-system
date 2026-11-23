@@ -161,6 +161,33 @@ try {
           for (const message of errors.splice(0))
             failures.push(`${at}: the page threw ${message}`);
         }
+        // Two rules that size one property of one element with density
+        // tokens (Button's `.kozmos-button-size-sm` and IconButton's
+        // `h-icon-control-sm` over it) are one size: the cascade draws one of
+        // them. When one is drawn at its token's size in both densities, the
+        // other is the rule it overrides, and is not held to its own.
+        const winners = new Set(
+          [...measured.touch.values()]
+            .filter(
+              (touch) =>
+                touch.atSize &&
+                measured.compact.get(`${touch.key} ${touch.token}`)?.atSize,
+            )
+            .map((touch) => touch.key),
+        );
+        for (const read of Object.values(measured))
+          for (const [key, control] of read)
+            if (
+              winners.has(control.key) &&
+              !(
+                control.atSize &&
+                (read === measured.touch
+                  ? measured.compact
+                  : measured.touch
+                ).get(key)?.atSize
+              )
+            )
+              read.delete(key);
         // Each control, in both densities: at its token's size in both, or
         // at the size its allowance names in both.
         for (const [key, compact] of measured.compact)
