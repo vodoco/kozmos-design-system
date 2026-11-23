@@ -5,6 +5,17 @@ import {
   DotsHorizontal as MoreHorizontal,
 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import {
+  BREADCRUMB_ELLIPSIS_CLASS,
+  BREADCRUMB_ELLIPSIS_ICON_CLASS,
+  BREADCRUMB_ELLIPSIS_LABEL_CLASS,
+  BREADCRUMB_ITEM_CLASS,
+  BREADCRUMB_LINK_CLASS,
+  BREADCRUMB_LIST_CLASS,
+  BREADCRUMB_PAGE_CLASS,
+  BREADCRUMB_SEPARATOR_CLASS,
+  BREADCRUMB_SEPARATOR_ICON_CLASS,
+} from "../../recipes/breadcrumb";
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,
@@ -18,14 +29,7 @@ const BreadcrumbList = React.forwardRef<
   HTMLOListElement,
   React.ComponentPropsWithoutRef<"ol">
 >(({ className, ...props }, ref) => (
-  <ol
-    ref={ref}
-    className={cn(
-      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
-      className,
-    )}
-    {...props}
-  />
+  <ol ref={ref} className={cn(BREADCRUMB_LIST_CLASS, className)} {...props} />
 ));
 BreadcrumbList.displayName = "BreadcrumbList";
 
@@ -33,11 +37,7 @@ const BreadcrumbItem = React.forwardRef<
   HTMLLIElement,
   React.ComponentPropsWithoutRef<"li">
 >(({ className, ...props }, ref) => (
-  <li
-    ref={ref}
-    className={cn("inline-flex items-center gap-1.5", className)}
-    {...props}
-  />
+  <li ref={ref} className={cn(BREADCRUMB_ITEM_CLASS, className)} {...props} />
 ));
 BreadcrumbItem.displayName = "BreadcrumbItem";
 
@@ -51,7 +51,7 @@ const BreadcrumbLink = React.forwardRef<
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors hover:text-foreground", className)}
+      className={cn(BREADCRUMB_LINK_CLASS, className)}
       {...props}
     />
   );
@@ -67,7 +67,7 @@ const BreadcrumbPage = React.forwardRef<
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-foreground", className)}
+    className={cn(BREADCRUMB_PAGE_CLASS, className)}
     {...props}
   />
 ));
@@ -81,10 +81,10 @@ const BreadcrumbSeparator = ({
   <li
     role="presentation"
     aria-hidden="true"
-    className={cn("[&>svg]:size-3.5", className)}
+    className={cn(BREADCRUMB_SEPARATOR_CLASS, className)}
     {...props}
   >
-    {children ?? <ChevronRight className="kozmos-rtl-mirror" />}
+    {children ?? <ChevronRight className={BREADCRUMB_SEPARATOR_ICON_CLASS} />}
   </li>
 );
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator";
@@ -96,11 +96,11 @@ const BreadcrumbEllipsis = ({
   <span
     role="presentation"
     aria-hidden="true"
-    className={cn("flex h-9 w-9 items-center justify-center", className)}
+    className={cn(BREADCRUMB_ELLIPSIS_CLASS, className)}
     {...props}
   >
-    <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More</span>
+    <MoreHorizontal className={BREADCRUMB_ELLIPSIS_ICON_CLASS} />
+    <span className={BREADCRUMB_ELLIPSIS_LABEL_CLASS}>More</span>
   </span>
 );
 BreadcrumbEllipsis.displayName = "BreadcrumbEllipsis";

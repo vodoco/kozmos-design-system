@@ -3,6 +3,19 @@ import { cn } from "../../utils";
 import { Text } from "../Text";
 import { Progress } from "../Progress/Progress";
 import { emotionSurfaceProperties, type Emotion } from "../../utils/emotion";
+import {
+  EMPTY_STATE_PROGRESS_LABELS_CLASS,
+  emptyStateActionClasses,
+  emptyStateClampPercent,
+  emptyStateClasses,
+  emptyStateDescriptionClasses,
+  emptyStateIconClasses,
+  emptyStateListClasses,
+  emptyStateProgressClasses,
+  emptyStateProgressLabelClasses,
+  emptyStateProgressValueClasses,
+  emptyStateTitleClasses,
+} from "../../recipes/empty-state";
 
 /**
  * The density a surrounding slot asks for.
@@ -73,15 +86,6 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   tone?: Emotion;
 }
 
-/**
- * The natives clamp the value; Radix does not. Past either end, even by
- * 0.0000001, it logs an error, marks the bar indeterminate, draws it empty
- * and drops aria-valuenow and aria-valuetext.
- */
-function clampPercent(value: number): number {
-  return Number.isNaN(value) ? 0 : Math.min(100, Math.max(0, value));
-}
-
 const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
   (
     {
@@ -102,42 +106,22 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
   ) => {
     const fromSlot = React.useContext(EmptyStateDensityContext);
     const resolved = size ?? fromSlot ?? "default";
-    // Every compact class is layered AFTER the default one and resolved by
-    // tailwind-merge, so the default strings stay whole — `w-16 h-16
-    // rounded-pill bg-muted` is asserted verbatim as the Figma geometry by
-    // `pnpm components:contract:check`, and splitting it into a conditional
-    // broke that check the first time this prop was written.
+    // Every compact class is layered after the default one (the recipe).
     const compact = resolved === "compact";
+    const toned = !!tone;
     const progressLabelId = React.useId();
     return (
       <div
         ref={ref}
         data-size={resolved}
         data-tone={tone}
-        className={cn(
-          "flex flex-col items-center justify-center p-8 text-center h-full w-full",
-          compact && "h-auto p-4",
-          // The emotion's surface, edged in its text colour, at the
-          // container's radius: a card of its own (GAP-213).
-          tone &&
-            "rounded-container border border-[var(--kz-emotion-text)] bg-[var(--kz-emotion-surface)]",
-          className,
-        )}
+        className={cn(...emptyStateClasses(compact, toned), className)}
         // The caller's own style wins, as on Tag: the tone sets a default.
         style={tone ? { ...emotionSurfaceProperties(tone), ...style } : style}
         {...props}
       >
         {icon && (
-          <div
-            className={cn(
-              "mb-4 flex items-center justify-center text-muted-foreground w-16 h-16 rounded-pill bg-muted",
-              compact && "mb-2 h-10 w-10",
-              // On the surface the muted disc would be grey on a tint: the
-              // page's colour, with the emotion's text on it, 4.5:1 in both
-              // themes as that text is on the page.
-              tone && "bg-background text-[var(--kz-emotion-text)]",
-            )}
-          >
+          <div className={cn(...emptyStateIconClasses(compact, toned))}>
             {icon}
           </div>
         )}
@@ -149,11 +133,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           align="center"
           size="base"
           weight="medium"
-          className={cn(
-            "mb-1 text-foreground",
-            compact && "mb-0.5",
-            tone && "text-[var(--kz-emotion-on-surface)]",
-          )}
+          className={cn(...emptyStateTitleClasses(compact, toned))}
         >
           {title}
         </Text>
@@ -161,11 +141,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           <Text
             align="center"
             size="sm"
-            className={cn(
-              "mb-4 text-muted-foreground max-w-[280px]",
-              compact && "mb-0",
-              tone && "text-[var(--kz-emotion-on-surface)]",
-            )}
+            className={cn(...emptyStateDescriptionClasses(compact, toned))}
           >
             {description}
           </Text>
@@ -180,10 +156,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             aria-label={listLabel}
             data-empty-state-list=""
             className={cn(
-              "kozmos-empty-state-list mb-4 w-full max-w-[280px] text-start text-sm text-muted-foreground",
-              !description && "mt-3",
-              compact && (description ? "mb-0 mt-2" : "mb-0 mt-1.5"),
-              tone && "text-[var(--kz-emotion-on-surface)]",
+              ...emptyStateListClasses(compact, toned, !!description),
             )}
           >
             {list.map((item, index) => (
@@ -198,41 +171,29 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         {progress && (
           <div
             data-empty-state-progress=""
-            className={cn(
-              "mb-4 w-full max-w-[280px] text-start",
-              !description && "mt-3",
-              compact && (description ? "mb-0 mt-2" : "mb-0 mt-1.5"),
-            )}
+            className={cn(...emptyStateProgressClasses(compact, !!description))}
           >
             {/* Hidden, and still the bar's name: aria-labelledby reads a
               hidden element. Read as text as well, the label was said twice
               in browse mode; the natives expose one element. */}
             <div
               aria-hidden="true"
-              className="mb-1 flex items-baseline justify-between gap-2 text-sm"
+              className={EMPTY_STATE_PROGRESS_LABELS_CLASS}
             >
               <span
                 id={progressLabelId}
-                className={cn(
-                  "min-w-0 text-foreground",
-                  tone && "text-[var(--kz-emotion-on-surface)]",
-                )}
+                className={cn(...emptyStateProgressLabelClasses(toned))}
               >
                 {progress.label}
               </span>
               {progress.valueText && (
-                <span
-                  className={cn(
-                    "shrink-0 text-muted-foreground",
-                    tone && "text-[var(--kz-emotion-on-surface)]",
-                  )}
-                >
+                <span className={cn(...emptyStateProgressValueClasses(toned))}>
                   {progress.valueText}
                 </span>
               )}
             </div>
             <Progress
-              value={clampPercent(progress.value)}
+              value={emptyStateClampPercent(progress.value)}
               aria-labelledby={progressLabelId}
               getValueLabel={
                 progress.valueText ? () => progress.valueText! : undefined
@@ -240,7 +201,11 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             />
           </div>
         )}
-        {action && <div className={cn(compact && "mt-3")}>{action}</div>}
+        {action && (
+          <div className={cn(...emptyStateActionClasses(compact))}>
+            {action}
+          </div>
+        )}
       </div>
     );
   },

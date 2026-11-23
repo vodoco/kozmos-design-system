@@ -214,6 +214,10 @@ const files = {
   // Badge's and Counter's recipes, shared with Vue's KozmosBadge (wave V0b).
   reactBadgeRecipe: "packages/react/src/recipes/badge.ts",
   reactCounterRecipe: "packages/react/src/recipes/counter.ts",
+  // Link's and EmptyState's recipes, shared with Vue's KozmosLink and
+  // KozmosEmptyState (wave V1).
+  reactLinkRecipe: "packages/react/src/recipes/link.ts",
+  reactEmptyStateRecipe: "packages/react/src/recipes/empty-state.ts",
   reactCategoryTile:
     "packages/react/src/components/CategoryTile/CategoryTile.tsx",
   reactCategoryField:
@@ -4208,8 +4212,8 @@ assertContains(
   "React Link variant prop",
 );
 assertContains(
-  files.reactLink,
-  source.reactLink,
+  files.reactLinkRecipe,
+  source.reactLinkRecipe,
   "variant === 'subtle'",
   "React Link subtle variant",
 );
@@ -9203,8 +9207,8 @@ assertContains(
   "React EmptyState exposes optional action slot",
 );
 assertContains(
-  files.reactEmptyState,
-  source.reactEmptyState,
+  files.reactEmptyStateRecipe,
+  source.reactEmptyStateRecipe,
   "w-16 h-16 rounded-pill bg-muted",
   "React EmptyState icon container matches Figma geometry",
 );

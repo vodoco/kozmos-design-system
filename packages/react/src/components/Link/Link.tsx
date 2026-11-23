@@ -1,6 +1,16 @@
 import React from "react";
 import { LinkExternal01 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import {
+  LINK_EXTERNAL_CLASS,
+  LINK_EXTERNAL_ICON_CLASS,
+  LINK_EXTERNAL_JOINER,
+  LINK_EXTERNAL_LABEL_CLASS,
+  LINK_NEW_TAB_REL,
+  LINK_NEW_TAB_TARGET,
+  linkClasses,
+  linkOpensNewTab,
+} from "../../recipes/link";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
@@ -41,46 +51,33 @@ const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
-    // The caller's `target` wins, so one that keeps the link in this tab
-    // leaves nothing to say about a new one. An empty target is this tab too.
-    const newTab =
-      external &&
-      (target == null || !/^(?:_self|_parent|_top)?$/i.test(target));
+    const newTab = linkOpensNewTab(external, target);
     return (
       <a
         ref={ref}
         href={href}
-        target={target ?? (newTab ? "_blank" : undefined)}
-        rel={rel ?? (newTab ? "noopener noreferrer" : undefined)}
+        target={target ?? (newTab ? LINK_NEW_TAB_TARGET : undefined)}
+        rel={rel ?? (newTab ? LINK_NEW_TAB_REL : undefined)}
         onClick={(e) => {
           trackEvent("Link", "link_clicked", { href });
           onClick?.(e);
         }}
-        className={cn(
-          "font-medium hover:underline underline-offset-4 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-marker",
-          variant === "default" && "text-primary",
-          variant === "subtle" && "text-muted-foreground hover:text-foreground",
-          className,
-        )}
+        className={cn(...linkClasses(variant), className)}
         {...props}
       >
         {children}
         {newTab && (
-          // A no-break space joins the icon to the link's last word, so the
-          // icon never wraps onto a line alone, and is the gap before it. It
-          // also parts the name from the announcement where WebKit runs a
-          // visually hidden span into the text before it.
-          <span className="kozmos-link-external">
-            {"\u00a0"}
+          // The no-break space joins the icon to the link's last word
+          // (LINK_EXTERNAL_JOINER).
+          <span className={LINK_EXTERNAL_CLASS}>
+            {LINK_EXTERNAL_JOINER}
             <LinkExternal01
               aria-hidden="true"
               size="1em"
-              className="kozmos-link-external-icon kozmos-rtl-mirror"
+              className={LINK_EXTERNAL_ICON_CLASS}
             />
             {externalLabel ? (
-              <span className="kozmos-link-external-label">
-                {externalLabel}
-              </span>
+              <span className={LINK_EXTERNAL_LABEL_CLASS}>{externalLabel}</span>
             ) : null}
           </span>
         )}
