@@ -907,9 +907,12 @@ function resolveComponentPropSource(componentFile, componentName) {
   if (!exists(componentFile)) return componentFile;
 
   const content = read(componentFile);
+  // One export block: `[^}]`, never across statements, so `export { Tag };`
+  // followed by `export { tagVariants } from "../../recipes/tag"` is not
+  // read as Tag re-exported from its recipe.
   const exportMatch = content.match(
     new RegExp(
-      `export\\s*\\{[\\s\\S]*?\\b${escapeRegExp(componentName)}\\b[\\s\\S]*?\\}\\s*from\\s*["']([^"']+)["']`,
+      `export\\s*\\{[^}]*\\b${escapeRegExp(componentName)}\\b[^}]*\\}\\s*from\\s*["']([^"']+)["']`,
     ),
   );
   if (!exportMatch) return componentFile;
