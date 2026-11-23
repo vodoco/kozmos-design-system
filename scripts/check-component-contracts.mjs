@@ -179,6 +179,11 @@ const files = {
   reactBox: "packages/react/src/components/Box/Box.tsx",
   reactBoxFigma: "packages/react/src/components/Box/Box.figma.tsx",
   reactStack: "packages/react/src/components/Stack/Stack.tsx",
+  // Stack's, Grid's, Container's and Surface's recipes, shared with Vue's
+  // ports (wave V1).
+  reactStackRecipe: "packages/react/src/recipes/stack.ts",
+  reactGridRecipe: "packages/react/src/recipes/grid.ts",
+  reactContainerRecipe: "packages/react/src/recipes/container.ts",
   reactStackFigma: "packages/react/src/components/Stack/Stack.figma.tsx",
   reactGrid: "packages/react/src/components/Grid/Grid.tsx",
   reactGridFigma: "packages/react/src/components/Grid/Grid.figma.tsx",
@@ -2953,14 +2958,14 @@ assertContains(
   "Stack importer documentation",
 );
 assertContains(
-  files.reactStack,
-  source.reactStack,
+  files.reactStackRecipe,
+  source.reactStackRecipe,
   "direction: {",
   "React Stack direction variants",
 );
 assertContains(
-  files.reactStack,
-  source.reactStack,
+  files.reactStackRecipe,
+  source.reactStackRecipe,
   "gap: {",
   "React Stack gap variants",
 );
@@ -3170,14 +3175,14 @@ assertContains(
   "Grid importer documentation",
 );
 assertContains(
-  files.reactGrid,
-  source.reactGrid,
+  files.reactGridRecipe,
+  source.reactGridRecipe,
   "cols: {",
   "React Grid columns variants",
 );
 assertContains(
-  files.reactGrid,
-  source.reactGrid,
+  files.reactGridRecipe,
+  source.reactGridRecipe,
   "gap: {",
   "React Grid gap variants",
 );
@@ -3350,8 +3355,8 @@ assertContains(
   "React Container centered default",
 );
 assertContains(
-  files.reactContainer,
-  source.reactContainer,
+  files.reactContainerRecipe,
+  source.reactContainerRecipe,
   "max-w-7xl",
   "React Container max width",
 );

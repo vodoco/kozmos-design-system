@@ -1,80 +1,16 @@
 import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
 import { Box, type BoxProps } from "../Box/Box";
 import { cn } from "../../utils";
-
-const gridVariants = cva("grid", {
-  variants: {
-    cols: {
-      1: "grid-cols-1",
-      2: "grid-cols-2",
-      3: "grid-cols-3",
-      4: "grid-cols-4",
-      5: "grid-cols-5",
-      6: "grid-cols-6",
-      12: "grid-cols-12",
-      none: "grid-cols-none",
-    },
-    rows: {
-      1: "grid-rows-1",
-      2: "grid-rows-2",
-      3: "grid-rows-3",
-      4: "grid-rows-4",
-      5: "grid-rows-5",
-      6: "grid-rows-6",
-      none: "grid-rows-none",
-    },
-    flow: {
-      row: "grid-flow-row",
-      col: "grid-flow-col",
-      dense: "grid-flow-dense",
-      "row-dense": "grid-flow-row-dense",
-      "col-dense": "grid-flow-col-dense",
-    },
-    align: {
-      start: "items-start",
-      center: "items-center",
-      end: "items-end",
-      baseline: "items-baseline",
-      stretch: "items-stretch",
-    },
-    justify: {
-      start: "justify-start",
-      center: "justify-center",
-      end: "justify-end",
-      between: "justify-between",
-      around: "justify-around",
-    },
-    gap: {
-      0: "gap-0",
-      1: "gap-1",
-      2: "gap-2",
-      3: "gap-3",
-      4: "gap-4",
-      6: "gap-6",
-      8: "gap-8",
-    },
-    xGap: {
-      0: "gap-x-0",
-      1: "gap-x-1",
-      2: "gap-x-2",
-      4: "gap-x-4",
-      8: "gap-x-8",
-    },
-    yGap: {
-      0: "gap-y-0",
-      1: "gap-y-1",
-      2: "gap-y-2",
-      4: "gap-y-4",
-      8: "gap-y-8",
-    },
-  },
-  defaultVariants: {
-    cols: "none",
-    flow: "row",
-    gap: 4,
-  },
-});
+import {
+  GRID_VIRTUAL_ITEM_CLASS,
+  GRID_VIRTUAL_SCROLLER_CLASS,
+  gridPixels,
+  gridVariants,
+  gridVirtualListStyle,
+  gridVirtualSpacerStyle,
+  gridVirtualWindow,
+} from "../../recipes/grid";
 
 /** The items a virtualized Grid draws (GAP-172): `start` up to, not including, `end`. */
 export interface GridVirtualRange {
@@ -128,13 +64,6 @@ const VIRTUAL_PROPS = [
 // A layout effect in the browser, an effect on a server render.
 const useGridLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
-
-/** A length in px from a computed style, or null when there is none. */
-function pixels(value: string | null | undefined): number | null {
-  if (!value) return null;
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
 type VirtualGridProps = GridProps & {
   forwardedRef: React.ForwardedRef<HTMLDivElement>;
@@ -199,8 +128,8 @@ function VirtualGrid({
       const list = listRef.current;
       if (list && typeof getComputedStyle === "function") {
         const computed = getComputedStyle(list);
-        const row = pixels(computed.rowGap);
-        const column = pixels(computed.columnGap);
+        const row = gridPixels(computed.rowGap);
+        const column = gridPixels(computed.columnGap);
         if (row !== null && column !== null)
           setGaps((old) =>
             old && old.row === row && old.column === column
@@ -216,37 +145,21 @@ function VirtualGrid({
     return () => observer.disconnect();
   }, []);
 
-  // Without a computed style (a test's DOM, a server render), the scale's
-  // own steps: Tailwind's spacing, 4 px a step.
-  const scale = (step: number | null | undefined) =>
-    typeof step === "number" ? step * 4 : null;
-  const rowGap = gaps?.row ?? scale(yGap) ?? scale(gap) ?? 16;
-  const columnGap = gaps?.column ?? scale(xGap) ?? scale(gap) ?? 16;
-
-  const columns = (() => {
-    if (typeof cols === "number") return cols;
-    if (minColumnWidth && minColumnWidth > 0 && size.width > 0)
-      return Math.max(
-        1,
-        Math.floor((size.width + columnGap) / (minColumnWidth + columnGap)),
-      );
-    return 1;
-  })();
-  const rowCount = Math.ceil(itemCount / columns);
-  const stride = rowHeight + rowGap;
-  const totalHeight =
-    rowCount > 0 ? rowCount * rowHeight + (rowCount - 1) * rowGap : 0;
-  const firstRow =
-    stride > 0 ? Math.max(0, Math.floor(scrollTop / stride) - overscan) : 0;
-  const lastRow =
-    stride > 0
-      ? Math.min(
-          rowCount,
-          Math.ceil((scrollTop + size.height) / stride) + overscan,
-        )
-      : rowCount;
-  const start = Math.min(itemCount, firstRow * columns);
-  const end = Math.min(itemCount, Math.max(start, lastRow * columns));
+  const view = gridVirtualWindow({
+    cols,
+    gap,
+    xGap,
+    yGap,
+    gaps,
+    width: size.width,
+    height: size.height,
+    scrollTop,
+    itemCount,
+    rowHeight,
+    minColumnWidth,
+    overscan,
+  });
+  const { start, end } = view;
 
   const report = React.useRef(onRangeChange);
   report.current = onRangeChange;
@@ -277,7 +190,7 @@ function VirtualGrid({
           aria-posinset={index + 1}
           aria-setsize={itemCount}
           data-index={index}
-          className="min-w-0"
+          className={GRID_VIRTUAL_ITEM_CLASS}
         >
           {renderItem(index)}
         </div>,
@@ -290,10 +203,7 @@ function VirtualGrid({
       ref={setRefs}
       tabIndex={0}
       data-virtual-scroller=""
-      className={cn(
-        "relative overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-        className,
-      )}
+      className={cn(GRID_VIRTUAL_SCROLLER_CLASS, className)}
       style={style}
       onScroll={(event) => {
         onScroll?.(event);
@@ -307,19 +217,12 @@ function VirtualGrid({
       }}
       {...props}
     >
-      <div style={{ position: "relative", height: `${totalHeight}px` }}>
+      <div style={gridVirtualSpacerStyle(view)}>
         <div
           ref={listRef}
           role="list"
           className={cn(gridVariants({ align, justify, gap, xGap, yGap }))}
-          style={{
-            position: "absolute",
-            insetInline: 0,
-            top: 0,
-            transform: `translateY(${firstRow * stride}px)`,
-            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-            gridAutoRows: `${rowHeight}px`,
-          }}
+          style={gridVirtualListStyle(view, rowHeight)}
         >
           {renderItem ? items : children}
         </div>

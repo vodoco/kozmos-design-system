@@ -1,30 +1,12 @@
 import React from "react";
 import { cn } from "../../utils";
 import { Box, type BoxProps } from "../Box/Box";
+import { containerClasses, type ContainerBlock } from "../../recipes/container";
 
-/**
- * A step of Container's block (top and bottom) inset: `none` 0, `sm` 16,
- * `md` 24 and `lg` 32, the layout spacing steps 200, 300 and 400.
- */
-export type ContainerBlockInset = "none" | "sm" | "md" | "lg";
-
-/** Both edges one step, or the top (`start`) and bottom (`end`) apart. */
-export type ContainerBlock =
-  | ContainerBlockInset
-  | { start?: ContainerBlockInset; end?: ContainerBlockInset };
-
-const BLOCK_START: Record<ContainerBlockInset, string | false> = {
-  none: false,
-  sm: "pt-4",
-  md: "pt-6",
-  lg: "pt-8",
-};
-const BLOCK_END: Record<ContainerBlockInset, string | false> = {
-  none: false,
-  sm: "pb-4",
-  md: "pb-6",
-  lg: "pb-8",
-};
+export type {
+  ContainerBlock,
+  ContainerBlockInset,
+} from "../../recipes/container";
 
 export interface ContainerProps extends BoxProps {
   centered?: boolean;
@@ -48,26 +30,12 @@ export interface ContainerProps extends BoxProps {
   block?: ContainerBlock;
 }
 
-function blockEdges(block: ContainerBlock | undefined) {
-  if (block === undefined) return { start: "none", end: "none" } as const;
-  if (typeof block === "string") return { start: block, end: block };
-  return { start: block.start ?? "none", end: block.end ?? "none" };
-}
-
 const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
   ({ className, centered = true, inset = "window", block, ...props }, ref) => {
-    const edges = blockEdges(block);
     return (
       <Box
         ref={ref}
-        className={cn(
-          "w-full",
-          inset === "panel" ? "px-4" : "px-4 sm:px-6 lg:px-8",
-          BLOCK_START[edges.start],
-          BLOCK_END[edges.end],
-          centered && "mx-auto max-w-7xl", // Centered with max width
-          className,
-        )}
+        className={cn(containerClasses({ centered, inset, block }), className)}
         {...props}
       />
     );
