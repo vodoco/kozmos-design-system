@@ -12,4 +12,8 @@ export const EXCEPTIONS: Record<string, string> = {
   // `@kozmos-ds/vue` imports no React, so it cannot take React's type.
   "KozmosIcon.icon:type":
     "Vue's Icon takes the glyph as @kozmos-ds/icons/vue's Vue component, where React's takes the React entry's; the same <svg> is drawn (icon.parity.spec.ts, Colors)",
+  // React's renderItem(index) is a render prop; Vue's is the scoped slot
+  // render-item, given one props object, `{ index }`, as a Vue slot is.
+  "KozmosGrid.renderItem:render-prop":
+    "React's renderItem(index) is Vue's render-item scoped slot, given { index }: a Vue slot takes one props object, not arguments",
 };

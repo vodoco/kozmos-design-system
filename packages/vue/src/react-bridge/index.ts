@@ -27,10 +27,6 @@ import {
   PART_TAKES,
 } from "./part-takes";
 import {
-  Box,
-  Stack,
-  Grid,
-  Container,
   Counter as ReactCounter,
   Input as ReactInput,
   Textarea,
@@ -363,12 +359,6 @@ const textField = {
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
-export const KozmosBox = createVueWrapper(Box);
-export const KozmosStack = createVueWrapper(Stack);
-// Virtualized (GAP-172), @range-change reports the items in view, and the
-// default slot draws only those.
-export const KozmosGrid = createVueWrapper(Grid);
-export const KozmosContainer = createVueWrapper(Container);
 export const KozmosCounter = createVueWrapper(ReactCounter);
 export const KozmosCard = createVueWrapper(Card);
 // Null is where the slider starts: its default, else its own fallback.

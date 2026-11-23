@@ -355,6 +355,60 @@ const INTERACTIONS = {
     return "swapped by pointer and by Enter, and a typed origin swapped from Vue's state";
   },
 
+  /**
+   * A virtualized Grid (GAP-172): it draws fewer items than it holds, from
+   * the first; Tab reaches its scroller, End scrolls it to the bottom, and
+   * the rows drawn follow, the last item among them and the first gone,
+   * still in reading order.
+   */
+  async "virtual-grid"(page) {
+    const scroller = controls(page, "[data-virtual-scroller]");
+    const items = controls(page, "[role=listitem]");
+    const places = () =>
+      items.evaluateAll((all) =>
+        all.map((item) => Number(item.getAttribute("aria-posinset"))),
+      );
+    const size = Number(await items.first().getAttribute("aria-setsize"));
+    const first = await places();
+    assert.equal(first[0], 1, "it draws from the first item");
+    assert(
+      first.length < size,
+      `it draws fewer items than it holds (${first.length} of ${size})`,
+    );
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await scroller.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the scroller (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("End");
+    // Keyboard scrolling is smooth: wait for it to reach the bottom, or 5 s.
+    await scroller.evaluate(
+      (el) =>
+        new Promise((resolve) => {
+          const deadline = performance.now() + 5000;
+          const check = () =>
+            el.scrollTop + el.clientHeight >= el.scrollHeight - 1 ||
+            performance.now() > deadline
+              ? resolve()
+              : requestAnimationFrame(check);
+          check();
+        }),
+    );
+    await settle(page);
+    const last = await places();
+    assert.equal(last.at(-1), size, "End draws the last item");
+    assert(!last.includes(1), "the first row is no longer drawn");
+    assert.deepEqual(
+      last,
+      [...last].sort((a, b) => a - b),
+      "the items drawn are in reading order",
+    );
+    return `Tab to the scroller; End scrolls it, and the rows drawn follow to item ${size}`;
+  },
+
   /** The Backdrop's cut-out lets the target through and catches the rest. */
   async "backdrop-target"(page) {
     const target = controls(page, "button").first();

@@ -41,6 +41,17 @@ export function Example() {
   );
 }
     `}
+    vue={`
+<script setup>
+import { KozmosSurface } from "@kozmos-ds/vue"
+</script>
+
+<template>
+  <KozmosSurface variant="glass" class="rounded-container p-4 shadow-floating">
+    A card over the map
+  </KozmosSurface>
+</template>
+    `}
     swift={`
 import SwiftUI
 import Kozmos

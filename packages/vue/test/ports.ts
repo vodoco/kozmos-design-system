@@ -170,6 +170,64 @@ export const PORTS: Port[] = [
     },
     drawnIn: "parity/sprite-icon.parity.spec.ts",
     sample: { sprite: "./sprite-fixture/sprite", name: "atm", label: "ATM" },
+    vue: "KozmosBox",
+    react: "Box",
+    stories: "components/Box/Box.stories.tsx",
+    elsewhere: {
+      AsChild: "parity/box.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosStack",
+    react: "Stack",
+    stories: "components/Stack/Stack.stories.tsx",
+    elsewhere: {
+      Default: "parity/stack.parity.spec.ts",
+      Horizontal: "parity/stack.parity.spec.ts",
+    },
+    drawnIn: "parity/stack.parity.spec.ts",
+    sample: { direction: "row", gap: 4, children: "Stacked" },
+  },
+  {
+    vue: "KozmosGrid",
+    react: "Grid",
+    stories: "components/Grid/Grid.stories.tsx",
+    elsewhere: {
+      Default: "parity/grid.parity.spec.ts",
+      // Its renderItem is a function, Vue's render-item slot.
+      Virtualized: "parity/grid.parity.spec.ts",
+    },
+    drawnIn: "parity/grid.parity.spec.ts",
+    sample: { cols: 3, gap: 4, children: "Cells" },
+    events: {
+      rangeChange: "parity/grid.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContainer",
+    react: "Container",
+    stories: "components/Container/Container.stories.tsx",
+    elsewhere: {
+      InAPanel: "parity/container.parity.spec.ts",
+      BlockInset: "parity/container.parity.spec.ts",
+      Default: "parity/container.parity.spec.ts",
+      Fluid: "parity/container.parity.spec.ts",
+    },
+    drawnIn: "parity/container.parity.spec.ts",
+    sample: { inset: "panel", block: "sm", children: "Region" },
+  },
+  {
+    vue: "KozmosSurface",
+    react: "Surface",
+    stories: "components/Surface/Surface.stories.tsx",
+    elsewhere: {
+      // Drawn in React's frame, its meta's render.
+      Solid: "parity/surface.parity.spec.ts",
+      Glass: "parity/surface.parity.spec.ts",
+      GlassPanel: "parity/surface.parity.spec.ts",
+    },
+    drawnIn: "parity/surface.parity.spec.ts",
+    sample: { variant: "glass", children: "On glass" },
   },
 ];
 

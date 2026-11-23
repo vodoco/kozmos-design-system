@@ -20,6 +20,35 @@ export type {
   KozmosBadgeVariant,
 } from "./components/Badge/types";
 export { KozmosSeparator } from "./components/Separator/Separator";
+export { KozmosBox } from "./components/Box/Box";
+export { KozmosStack } from "./components/Stack/Stack";
+export type {
+  KozmosStackAlign,
+  KozmosStackDirection,
+  KozmosStackGap,
+  KozmosStackJustify,
+  KozmosStackWrap,
+} from "./components/Stack/types";
+export { KozmosGrid } from "./components/Grid/Grid";
+export type {
+  KozmosGridAlign,
+  KozmosGridCols,
+  KozmosGridFlow,
+  KozmosGridGap,
+  KozmosGridJustify,
+  KozmosGridRows,
+  KozmosGridVirtualRange,
+  KozmosGridXGap,
+  KozmosGridYGap,
+} from "./components/Grid/types";
+export { KozmosContainer } from "./components/Container/Container";
+export type {
+  KozmosContainerBlock,
+  KozmosContainerBlockInset,
+  KozmosContainerInset,
+} from "./components/Container/types";
+export { KozmosSurface } from "./components/Surface/Surface";
+export type { KozmosSurfaceVariant } from "./components/Surface/types";
 export type { KozmosSeparatorOrientation } from "./components/Separator/types";
 export { KozmosText } from "./components/Text/Text";
 export type {

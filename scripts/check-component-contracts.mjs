@@ -2236,6 +2236,29 @@ assertContains(
   'export { KozmosSeparator } from "./components/Separator/Separator"',
   "Vue Separator exported as a Vue port",
 );
+// Box, Stack, Grid, Container and Surface are Vue ports (wave V1), drawn
+// from React's recipes; the first four leave the bridge with them (Surface
+// was never bridged).
+for (const [part, wrapped] of [
+  ["Box", "KozmosBox = createVueWrapper"],
+  ["Stack", "KozmosStack = createVueWrapper"],
+  ["Grid", "KozmosGrid = createVueWrapper"],
+  ["Container", "KozmosContainer = createVueWrapper"],
+  ["Surface", "KozmosSurface = createVueWrapper"],
+]) {
+  assertContains(
+    files.vueIndex,
+    source.vueIndex,
+    `export { Kozmos${part} } from "./components/${part}/${part}"`,
+    `Vue ${part} exported as a Vue port`,
+  );
+  assertNotContains(
+    files.vueBridge,
+    source.vueBridge,
+    wrapped,
+    `React ${part} wrapped in the Vue bridge as well`,
+  );
+}
 assertContains(
   files.vueBridge,
   source.vueBridge,

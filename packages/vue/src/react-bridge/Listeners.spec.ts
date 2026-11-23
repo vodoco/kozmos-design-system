@@ -763,10 +763,6 @@ const first = (selector: string) => (drawn: HTMLElement) =>
  * here), else the first element it draws.
  */
 const IN_PLACE: Record<string, InPlace> = {
-  KozmosBox: { slot: true },
-  KozmosStack: { slot: true },
-  KozmosGrid: { slot: true },
-  KozmosContainer: { slot: true },
   KozmosCounter: { slot: true },
   KozmosCard: { slot: true },
   KozmosSlider: {

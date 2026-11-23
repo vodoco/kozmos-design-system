@@ -26,7 +26,8 @@ Tab moves through the cards in view and the page scrolls to each; a focused card
 hands focus to the Grid, which takes the keyboard's scrolling, so focus is never lost.
 
 `renderItem(index)` draws each item. Without it the Grid draws its children as the items of the range it reports to
-`onRangeChange`, `{ start, end }`, so a caller draws only those: Vue's default slot does, with `@range-change`.
+`onRangeChange`, `{ start, end }`, so a caller draws only those. In Vue, `renderItem` is the `render-item` slot, given
+`{ index }`; without it the default slot draws the range `@range-change` reports.
 SwiftUI's and Compose's Grids are lazy already, a `LazyVGrid` and a `LazyVerticalGrid`, and draw only what shows.
 
 <Canvas>
@@ -60,15 +61,15 @@ export function SiteCards({ sites }: { sites: { id: string; name: string }[] }) 
     `}
     vue={`
 <script setup>
-import { computed, ref } from "vue"
-import { KozmosCard, KozmosGrid } from "@kozmos-ds/vue/react-bridge"
+import { KozmosGrid } from "@kozmos-ds/vue"
+import { KozmosCard } from "@kozmos-ds/vue/react-bridge"
 
 const sites = Array.from({ length: 400 }, (_, index) => ({ id: index, name: "Site " + (index + 1) }))
-const range = ref({ start: 0, end: 0 })
-const shown = computed(() => sites.slice(range.value.start, range.value.end))
 </script>
 
 <template>
+  <!-- React's renderItem is the render-item slot: each item is drawn in its
+       listitem, said as its place in the whole list. -->
   <KozmosGrid
     virtualized
     aria-label="Sites"
@@ -77,11 +78,10 @@ const shown = computed(() => sites.slice(range.value.start, range.value.end))
     :item-count="sites.length"
     :row-height="96"
     style="height: 640px"
-    @range-change="range = $event"
   >
-    <div v-for="(site, offset) in shown" :key="site.id" role="listitem" :aria-posinset="range.start + offset + 1" :aria-setsize="sites.length">
-      <KozmosCard>{{ site.name }}</KozmosCard>
-    </div>
+    <template #renderItem="{ index }">
+      <KozmosCard>{{ sites[index].name }}</KozmosCard>
+    </template>
   </KozmosGrid>
 </template>
     `}
@@ -142,7 +142,7 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosGrid } from "@kozmos-ds/vue/react-bridge"
+import { KozmosGrid } from "@kozmos-ds/vue"
 </script>
 
 <template>
