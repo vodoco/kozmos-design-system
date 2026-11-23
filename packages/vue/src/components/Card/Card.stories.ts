@@ -233,9 +233,7 @@ export const SubtleHeader: Story = {
           <KozmosCardHeader tone="subtle">
             <KozmosCardTitle>Landmark directions</KozmosCardTitle>
           </KozmosCardHeader>
-          <KozmosCardContent class="text-sm text-muted-foreground">
-            A lone title: the strip stays 52.
-          </KozmosCardContent>
+          <KozmosCardContent class="text-sm text-muted-foreground">A lone title: the strip stays 52.</KozmosCardContent>
         </KozmosCard>
       </div>`,
   }),
