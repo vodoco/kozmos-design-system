@@ -1,62 +1,11 @@
 import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../../utils";
+import { textVariants, textWeight } from "../../recipes/text";
 import type { BoxProps } from "../Box/Box";
 
-const textVariants = cva("kozmos-reset kozmos-text", {
-  variants: {
-    size: {
-      xs: "kozmos-text-xs",
-      sm: "kozmos-text-sm",
-      base: "kozmos-text-base",
-      lg: "kozmos-text-lg",
-      xl: "kozmos-text-xl",
-      "2xl": "kozmos-text-2xl",
-      "3xl": "kozmos-text-3xl",
-      "4xl": "kozmos-text-4xl",
-      /**
-       * The one display size (decision 203, GAP-272): 48 on 54 lines, bold
-       * unless a weight is given, from the display type tokens, for a
-       * marketing-style headline such as a sign-in hero.
-       */
-      display: "kozmos-text-display",
-    },
-    weight: {
-      normal: "kozmos-text-normal",
-      medium: "kozmos-text-medium",
-      semibold: "kozmos-text-semibold",
-      bold: "kozmos-text-bold",
-    },
-    align: {
-      /** The side reading starts on: left in English, right in Arabic. */
-      start: "kozmos-text-start",
-      end: "kozmos-text-end",
-      left: "kozmos-text-left",
-      center: "kozmos-text-center",
-      right: "kozmos-text-right",
-      justify: "kozmos-text-justify",
-    },
-    color: {
-      default: "kozmos-text-default",
-      muted: "kozmos-text-muted",
-      primary: "kozmos-text-primary",
-      destructive: "kozmos-text-destructive",
-      white: "kozmos-text-white",
-    },
-    truncate: {
-      true: "kozmos-text-truncate",
-    },
-  },
-  defaultVariants: {
-    size: "base",
-    weight: "normal",
-    // start, not left: Story 2 reads this interface in Arabic, and text that
-    // insists on the left there is text pinned to the wrong edge.
-    align: "start",
-    color: "default",
-  },
-});
+// The recipe is shared with Vue's KozmosText (recipes/text.ts).
 
 // Omit 'color' from BoxProps to avoid conflict with variant 'color'
 export interface TextProps
@@ -88,7 +37,7 @@ const Text = React.forwardRef<HTMLElement, TextProps>(
             size,
             // The display size carries its own weight, bold, unless one is
             // given: no weight class, so the size's own decides.
-            weight: size === "display" && weight == null ? null : weight,
+            weight: textWeight(size, weight),
             align,
             color,
             truncate,

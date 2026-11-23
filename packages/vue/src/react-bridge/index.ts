@@ -30,12 +30,8 @@ import {
   Box,
   Stack,
   Grid,
-  Text,
-  Heading,
   Container,
-  Icon,
   Counter as ReactCounter,
-  Label,
   Input as ReactInput,
   Textarea,
   Checkbox as ReactCheckbox,
@@ -50,7 +46,6 @@ import {
   Sidebar,
   Menu,
   ContextMenu,
-  Kbd,
   PersonaMark,
   PersonaMarkGroup,
   Notice,
@@ -97,7 +92,6 @@ import {
   ImageCropper,
   DescriptionList,
   DescriptionListItem,
-  CodeBlock,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -136,7 +130,6 @@ import {
   MapControlButton,
   MultiSelect,
   ChipInput,
-  SpriteIcon,
   NavigationItem,
   NumberInput,
   POIDetailPanel,
@@ -375,12 +368,8 @@ export const KozmosStack = createVueWrapper(Stack);
 // Virtualized (GAP-172), @range-change reports the items in view, and the
 // default slot draws only those.
 export const KozmosGrid = createVueWrapper(Grid);
-export const KozmosText = createVueWrapper(Text);
-export const KozmosHeading = createVueWrapper(Heading);
 export const KozmosContainer = createVueWrapper(Container);
-export const KozmosIcon = createVueWrapper(Icon);
 export const KozmosCounter = createVueWrapper(ReactCounter);
-export const KozmosLabel = createVueWrapper(Label);
 export const KozmosCard = createVueWrapper(Card);
 // Null is where the slider starts: its default, else its own fallback.
 export const KozmosSlider = createVueWrapper(ReactSlider, {
@@ -409,7 +398,6 @@ export const KozmosNavbar = createVueWrapper(Navbar);
 export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
-export const KozmosKbd = createVueWrapper(Kbd);
 export const KozmosPersonaMark = createVueWrapper(PersonaMark);
 export const KozmosPersonaMarkGroup = createVueWrapper(PersonaMarkGroup);
 // Its disclosure is a model: v-model:expanded, as React's expanded and
@@ -461,12 +449,7 @@ export const KozmosTable = createVueWrapper(Table, {
 // the part after its value (a Copy IconButton); its value is `value` (words,
 // or true and false for a yes and a no) or its default slot (tags).
 export const KozmosDescriptionList = createVueWrapper(DescriptionList);
-// GAP-150 (decision 219): one cell of a published sprite atlas, drawn as published.
-export const KozmosSpriteIcon = createVueWrapper(SpriteIcon);
 export const KozmosDescriptionListItem = createVueWrapper(DescriptionListItem);
-// GAP-216, decision 225: a read-only block of code; @copy is its onCopy,
-// with the code copied.
-export const KozmosCodeBlock = createVueWrapper(CodeBlock);
 // Its selection is reported as the item; the model is the item's id. A
 // multiple tree's model is its selected ids (GAP-151).
 export const KozmosTree = createVueWrapper(Tree, {

@@ -77,7 +77,10 @@ async function clicks(
     ),
   );
   marked = document.querySelector<HTMLElement>("[data-parity]");
-  marked?.click();
+  // A click as the pointer makes one: an <svg> (Icon's) has no click().
+  marked?.dispatchEvent(
+    new MouseEvent("click", { bubbles: true, cancelable: true }),
+  );
   await nextTick();
   return { marked: marked?.localName ?? null, landed };
 }

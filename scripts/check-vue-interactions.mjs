@@ -294,6 +294,28 @@ const INTERACTIONS = {
     return "Tab to the field, typed and corrected, the value held by v-model";
   },
 
+  /** Label's field: a click on the words moves focus into the field it names. */
+  async "label-focuses-field"(page) {
+    const label = controls(page, "label").first();
+    const field = controls(page, "input").first();
+    const id = await field.getAttribute("id");
+    assert(id, "the field has an id for the label to name");
+    assert.equal(
+      await label.getAttribute("for"),
+      id,
+      "the label names its field (for = the field's id)",
+    );
+    await focusStart(page);
+    await label.click();
+    await settle(page);
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `a click on the label focuses its field (focus is on ${await focused(page)})`,
+    );
+    return "a click on the label moved focus into the field it names";
+  },
+
   /** WayfindingCard's swap, in Vue's state through @swap and v-model. */
   async "wayfinding-swap"(page) {
     const [origin, destination] = await values(page);

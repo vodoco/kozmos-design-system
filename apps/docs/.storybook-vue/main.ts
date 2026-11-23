@@ -11,6 +11,10 @@ const config: StorybookConfig & PinsReact = {
   // (../.storybook/pinned-react.ts).
   resolvedReact,
   stories: ["../../../packages/vue/src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  // SpriteIcon's story draws from the small atlas React's Storybook serves
+  // (../.storybook/main.ts), cut from Pointr's published 10.17.0 light
+  // sprite, so its picture never waits on the network.
+  staticDirs: [{ from: "../src/sprite-fixture", to: "/sprite-fixture" }],
   addons: [
     getAbsolutePath("@storybook/addon-links"),
     getAbsolutePath("@storybook/addon-essentials"),

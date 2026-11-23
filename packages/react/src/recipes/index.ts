@@ -9,6 +9,14 @@
 export { cn } from "../utils";
 export * from "./badge";
 export * from "./button";
+export * from "./code-block";
 export * from "./counter";
+export * from "./heading";
+export * from "./icon";
+export * from "./icon-button";
+export * from "./kbd";
+export * from "./label";
 export * from "./separator";
 export * from "./spinner-arc";
+export * from "./sprite-icon";
+export * from "./text";

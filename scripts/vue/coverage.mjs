@@ -127,6 +127,113 @@ export const VUE_STORIES = {
   "vue-wayfindingcard--inside-map-overlay": {
     interaction: "wayfinding-swap",
   },
+  "vue-foundations-typography-text--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Text is words on the page, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-foundations-typography-text--muted": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Text is words on the page, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-foundations-typography-text--large-bold": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Text is words on the page, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-foundations-typography-heading--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Heading is words on the page, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-foundations-typography-heading--all-levels": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Heading is words on the page, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-inputs-label--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A Label alone names nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-inputs-label--with-input": { interaction: "label-focuses-field" },
+  "vue-foundations-icons-icon--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Icon is a glyph, decoration unless named: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-foundations-icons-icon--sizes": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Icon is a glyph, decoration unless named: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-foundations-icons-icon--colors": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Icon is a glyph, decoration unless named: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-foundations-icons-icon--registry": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Icon is a glyph, decoration unless named: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-kbd--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Kbd draws a key, it is not one: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-kbd--combination": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Kbd draws a key, it is not one: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-kbd--in-a-hint": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Kbd draws a key, it is not one: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-codeblock--default": { interaction: "button" },
+  "vue-core-data-display-codeblock--scroll": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A read-only scroller: no interaction in the table drives scrolling; its tabindex keeps it a keyboard stop, and axe scans it (scrollable-region-focusable)",
+    },
+  },
+  "vue-core-media-spriteicon--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "SpriteIcon is an image of a map type, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

@@ -766,13 +766,8 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosBox: { slot: true },
   KozmosStack: { slot: true },
   KozmosGrid: { slot: true },
-  // A <p> cannot hold the slot's box.
-  KozmosText: { props: { children: "Gate 4" } },
-  KozmosHeading: { slot: true },
   KozmosContainer: { slot: true },
-  KozmosIcon: { props: { name: "search" } },
   KozmosCounter: { slot: true },
-  KozmosLabel: { slot: true },
   KozmosCard: { slot: true },
   KozmosSlider: {
     props: { "aria-label": "Volume" },
@@ -791,7 +786,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSidebar: { slot: true },
   KozmosMenu: { slot: true },
   KozmosContextMenu: { slot: true },
-  KozmosKbd: { props: { keys: ["Esc"] } },
   KozmosPersonaMark: { props: { color: "#FF9800", name: "Customer" } },
   KozmosPersonaMarkGroup: {
     props: { personas: [{ name: "Customer", color: "#FF9800" }] },
@@ -816,10 +810,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosTable: { click: first("table") },
   KozmosDescriptionList: { slot: true },
   KozmosDescriptionListItem: { props: { label: "FID", value: "f-1042" } },
-  KozmosSpriteIcon: {
-    props: { sprite: "https://cdn.test/sprite", name: "atm", label: "ATM" },
-  },
-  KozmosCodeBlock: { props: { label: "JSON", code: "{}" } },
   KozmosTree: { props: { data: [{ id: "1", name: "a.ts" }] } },
   KozmosTimeline: { slot: true },
   KozmosPopover: { slot: true },

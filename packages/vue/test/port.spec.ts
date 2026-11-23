@@ -2,7 +2,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { planPort, PortRefusal, writePort } from "../scripts/port";
+import {
+  planPort,
+  PortRefusal,
+  storiesLayout,
+  storyNameId,
+  writePort,
+} from "../scripts/port";
 
 /**
  * The porting kit's scaffold (`pnpm --filter @kozmos-ds/vue port <Name>`,
@@ -43,6 +49,8 @@ const file = (plan: ReturnType<typeof planPort>, name: string) =>
 // "refuses a name React does not export" timed out at Vitest's 5 s there
 // (20 Nov), as the react-dom event table did before #527 gave it 30 s.
 describe("port <Name>", { timeout: 30_000 }, () => {
+  // The unported part the cases scaffold is RouteOptionCard, an SDK part,
+  // ported after every core part (Kbd was, until wave V1 ported it).
   it("refuses a part that is already native", () => {
     expect(() => planPort("Button", scratch())).toThrow(PortRefusal);
     expect(() => planPort("Button", scratch())).toThrow(/already native/);
@@ -52,15 +60,18 @@ describe("port <Name>", { timeout: 30_000 }, () => {
     expect(() => planPort("NotAKozmosPart", scratch())).toThrow(
       /no part NotAKozmosPart/,
     );
-    expect(() => planPort("kbd", scratch())).toThrow(PortRefusal);
+    expect(() => planPort("routeOptionCard", scratch())).toThrow(PortRefusal);
   });
 
   it("never overwrites a file", () => {
     const root = scratch();
-    const existing = path.join(root, "src/components/Kbd/Kbd.ts");
+    const existing = path.join(
+      root,
+      "src/components/RouteOptionCard/RouteOptionCard.ts",
+    );
     fs.mkdirSync(path.dirname(existing), { recursive: true });
     fs.writeFileSync(existing, "// the porter's own work\n");
-    expect(() => planPort("Kbd", root)).toThrow(
+    expect(() => planPort("RouteOptionCard", root)).toThrow(
       /exists: the scaffold never overwrites/,
     );
     expect(fs.readFileSync(existing, "utf8")).toBe(
@@ -70,22 +81,26 @@ describe("port <Name>", { timeout: 30_000 }, () => {
 
   it("writes the part, its stories, its export and its ports entry", async () => {
     const root = scratch();
-    const plan = planPort("Kbd", root);
+    const plan = planPort("RouteOptionCard", root);
     await writePort(plan, root);
     for (const f of [
-      "src/components/Kbd/Kbd.ts",
-      "src/components/Kbd/Kbd.stories.ts",
+      "src/components/RouteOptionCard/RouteOptionCard.ts",
+      "src/components/RouteOptionCard/RouteOptionCard.stories.ts",
     ])
       expect(fs.existsSync(path.join(root, f)), f).toBe(true);
     expect(fs.readFileSync(path.join(root, "src/index.ts"), "utf8")).toContain(
-      'export { KozmosKbd } from "./components/Kbd/Kbd";',
+      'export { KozmosRouteOptionCard } from "./components/RouteOptionCard/RouteOptionCard";',
     );
     const ports = fs.readFileSync(path.join(root, "test/ports.ts"), "utf8");
-    expect(ports).toContain('vue: "KozmosKbd"');
-    expect(ports).toContain('stories: "components/Kbd/Kbd.stories.tsx"');
+    expect(ports).toContain('vue: "KozmosRouteOptionCard"');
+    expect(ports).toContain(
+      'stories: "components/RouteOptionCard/RouteOptionCard.stories.tsx"',
+    );
     // React's args stories, by name and args.
-    expect(file(plan, "src/components/Kbd/Kbd.stories.ts")).toMatch(
-      /export const Default: Story = \{ args: \{\s*"children": "Esc"/,
+    expect(
+      file(plan, "src/components/RouteOptionCard/RouteOptionCard.stories.ts"),
+    ).toMatch(
+      /export const Selected: Story = \{ args: \{\s*"option": \{\s*"id": "quickest",\s*"label": "Quickest"/,
     );
     // Each story is in the Vue browser suites' register, for the porter to
     // name its interaction.
@@ -93,9 +108,11 @@ describe("port <Name>", { timeout: 30_000 }, () => {
       path.join(root, "../../scripts/vue/coverage.mjs"),
       "utf8",
     );
-    expect(register).toContain('"vue-core-data-display-kbd--default": {');
+    expect(register).toContain(
+      '"vue-sdk-navigation-routeoptioncard--selected": {',
+    );
     // Run twice, it refuses: the part is native now.
-    expect(() => planPort("Kbd", root)).toThrow(/already native/);
+    expect(() => planPort("RouteOptionCard", root)).toThrow(/already native/);
   });
 
   it("names a v-model, an event and a slot as the contract names them", () => {
@@ -123,8 +140,26 @@ describe("port <Name>", { timeout: 30_000 }, () => {
     );
   });
 
+  it("gives the stories React's layout", () => {
+    expect(storiesLayout("components/Label/Label.stories.tsx")).toBe(
+      "centered",
+    );
+    expect(storiesLayout("components/Text/Text.stories.tsx")).toBeNull();
+    const plan = planPort("RouteOptionCard", scratch());
+    expect(
+      file(plan, "src/components/RouteOptionCard/RouteOptionCard.stories.ts"),
+    ).toContain('parameters: { layout: "centered" },');
+  });
+
+  it("names each story's id as Storybook writes it", () => {
+    expect(storyNameId("Default")).toBe("default");
+    expect(storyNameId("LargeBold")).toBe("large-bold");
+    expect(storyNameId("InAHint")).toBe("in-a-hint");
+    expect(storyNameId("SDKNumberedFeatured")).toBe("sdk-numbered-featured");
+  });
+
   it("names the stories React draws by hand, for the porter to draw", () => {
-    const plan = planPort("Kbd", scratch());
+    const plan = planPort("RouteOptionCard", scratch());
     expect(plan.next.join("\n")).toContain("src/react-bridge/index.ts:");
     const tabs = planPort("Tabs", scratch());
     expect(file(tabs, "test/ports.ts")).toContain(

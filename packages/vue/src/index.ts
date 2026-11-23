@@ -21,6 +21,26 @@ export type {
 } from "./components/Badge/types";
 export { KozmosSeparator } from "./components/Separator/Separator";
 export type { KozmosSeparatorOrientation } from "./components/Separator/types";
+export { KozmosText } from "./components/Text/Text";
+export type {
+  KozmosTextAlign,
+  KozmosTextColor,
+  KozmosTextSize,
+  KozmosTextTag,
+  KozmosTextWeight,
+} from "./components/Text/types";
+export { KozmosHeading } from "./components/Heading/Heading";
+export type {
+  KozmosHeadingLevel,
+  KozmosHeadingTag,
+} from "./components/Heading/types";
+export { KozmosLabel } from "./components/Label/Label";
+export { KozmosIcon } from "./components/Icon/Icon";
+export type { KozmosIconColor, KozmosIconSize } from "./components/Icon/types";
+export { KozmosKbd } from "./components/Kbd/Kbd";
+export { KozmosCodeBlock } from "./components/CodeBlock/CodeBlock";
+export { KozmosSpriteIcon } from "./components/SpriteIcon/SpriteIcon";
+export type { KozmosSpriteIconSize } from "./components/SpriteIcon/types";
 export type {
   KozmosButtonEmotion,
   KozmosButtonSize,

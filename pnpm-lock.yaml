@@ -762,6 +762,9 @@ importers:
 
   packages/vue:
     dependencies:
+      "@kozmos-ds/icons":
+        specifier: workspace:*
+        version: link:../icons
       "@kozmos-ds/styles":
         specifier: workspace:*
         version: link:../styles
@@ -778,9 +781,6 @@ importers:
         specifier: 3.4.0
         version: 3.4.0
     devDependencies:
-      "@kozmos-ds/icons":
-        specifier: workspace:*
-        version: link:../icons
       "@kozmos-ds/react":
         specifier: workspace:*
         version: link:../react
