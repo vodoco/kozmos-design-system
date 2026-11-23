@@ -227,10 +227,14 @@ const files = {
   reactBadgeFigma: "packages/react/src/components/Badge/Badge.figma.tsx",
   reactCardFigma: "packages/react/src/components/Card/Card.figma.tsx",
   reactList: "packages/react/src/components/List/List.tsx",
+  // List's recipe, shared with Vue's KozmosList (wave V1).
+  reactListRecipe: "packages/react/src/recipes/list.ts",
   reactListFigma: "packages/react/src/components/List/List.figma.tsx",
   reactTable: "packages/react/src/components/Table/Table.tsx",
   reactTableFigma: "packages/react/src/components/Table/Table.figma.tsx",
   reactTimeline: "packages/react/src/components/Timeline/Timeline.tsx",
+  // Timeline's recipe, shared with Vue's KozmosTimeline (wave V1).
+  reactTimelineRecipe: "packages/react/src/recipes/timeline.ts",
   reactTimelineFigma:
     "packages/react/src/components/Timeline/Timeline.figma.tsx",
   reactTreeMdx: "packages/react/src/components/Tree/Tree.mdx",
@@ -1760,8 +1764,8 @@ assertContains(
   "React Drawer side data attribute",
 );
 assertContains(
-  files.reactList,
-  source.reactList,
+  files.reactListRecipe,
+  source.reactListRecipe,
   "export type ListDensity =",
   "React List density API",
 );
@@ -7058,8 +7062,8 @@ assertContains(
   "Linked Android Code Connect includes Tree source",
 );
 assertContains(
-  files.reactTimeline,
-  source.reactTimeline,
+  files.reactTimelineRecipe,
+  source.reactTimelineRecipe,
   /export type TimelineDensity = ["']default["'] \| ["']compact["'];/,
   "React Timeline exposes the Figma density variant",
 );

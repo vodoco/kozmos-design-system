@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "../../utils";
-import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
+import { scrollHorizontalWithKeyboard } from "../../recipes/keyboard-scroll";
+import { META_STRIP_CLASSES } from "../../recipes/meta-strip";
 
 /**
  * A row of small facts about one thing, each a label and a value.
@@ -32,13 +33,7 @@ const MetaStrip = React.forwardRef<
       onKeyDown?.(event);
       scrollHorizontalWithKeyboard(event);
     }}
-    className={cn(
-      // The source strip is wider than the card that holds it, so it scrolls
-      // rather than wraps: a fact tile that has wrapped to a second row reads
-      // as a different kind of thing.
-      "kozmos-reset kozmos-meta-strip",
-      className,
-    )}
+    className={cn(META_STRIP_CLASSES.root, className)}
     data-slot="meta-strip"
     {...props}
   >
@@ -60,27 +55,21 @@ const MetaStripItem = React.forwardRef<HTMLDivElement, MetaStripItemProps>(
   ({ className, label, showLabel = false, icon, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        // `dt` must come before its `dd` for the pair to be read as a pair, and
-        // the label is drawn under the value — so the DOM order is the accessible
-        // one and `flex-col-reverse` does the drawing.
-        "kozmos-reset kozmos-meta-item",
-        className,
-      )}
+      className={cn(META_STRIP_CLASSES.item, className)}
       data-slot="meta-strip-item"
       {...props}
     >
       <dt
         className={cn(
-          "kozmos-meta-label",
-          !showLabel && "kozmos-meta-label-hidden",
+          META_STRIP_CLASSES.label,
+          !showLabel && META_STRIP_CLASSES.labelHidden,
         )}
       >
         {label}
       </dt>
-      <dd className="kozmos-meta-value">
+      <dd className={META_STRIP_CLASSES.value}>
         {icon ? (
-          <span aria-hidden="true" className="kozmos-meta-icon">
+          <span aria-hidden="true" className={META_STRIP_CLASSES.icon}>
             {icon}
           </span>
         ) : null}

@@ -7,38 +7,29 @@ import {
   InfoCircle,
 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
-import { impliedLive } from "../../utils/live-region";
+import { impliedLive, LIVE_ROLES } from "../../recipes/live-region";
+import {
+  NOTICE_CLASS,
+  NOTICE_DETAIL_TEXT_CLASS,
+  NOTICE_MARK_CLASS,
+  NOTICE_MARK_SIZE,
+  NOTICE_MORE_CLASS,
+  NOTICE_SUMMARY_CLASS,
+  NOTICE_TONES,
+  noticeActionClass,
+  noticeChevronClass,
+  noticeDetailClass,
+  noticeDoneClass,
+  noticeMarkClass,
+  noticeRowClass,
+  noticeTone,
+  type NoticeLiveness,
+  type NoticeStatus,
+  type NoticeTone,
+} from "../../recipes/notice";
 import { SpinnerArc } from "../Spinner/SpinnerArc";
 
-export type NoticeTone = "warning" | "info" | "critical" | "success";
-
-/**
- * Where the work the notice reports on has got (GAP-160). `progress` turns
- * the system's loading arc where the tone's mark is; `done` draws a check
- * at the summary's inline end, in the tone's colour, in place of the mark
- * at its start.
- */
-export type NoticeStatus = "progress" | "done";
-
-/**
- * How loudly the notice announces itself. The same three values Alert takes,
- * so a product does not learn two vocabularies for one idea.
- *
- * `polite` is `role="status"`, the default and right for almost everything: a
- * dietary notice must be read when the results arrive, but must not cut across
- * whatever the visitor is already being told.
- *
- * `assertive` is `role="alert"`, which interrupts. It is for the emergency
- * notice and nothing else — the case the notice previously could not express,
- * because the role was fixed.
- */
-export type NoticeLiveness = "off" | "polite" | "assertive";
-
-const LIVE_ROLE: Record<NoticeLiveness, string | undefined> = {
-  off: undefined,
-  polite: "status",
-  assertive: "alert",
-};
+export type { NoticeLiveness, NoticeStatus, NoticeTone };
 
 export interface NoticeProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -110,13 +101,6 @@ export interface NoticeProps extends Omit<
   live?: NoticeLiveness;
 }
 
-const toneStyles: Record<NoticeTone, string> = {
-  warning: "border-warning/50 bg-warning/5 text-warning-text",
-  info: "border-info/50 bg-info/5 text-info-text",
-  critical: "border-destructive/60 bg-destructive/5 text-destructive-text",
-  success: "border-success/50 bg-success/5 text-success-text",
-};
-
 /** Each tone's own mark, the ones Toast draws for the same four tones. */
 const toneMarks: Record<NoticeTone, typeof AlertTriangle> = {
   warning: AlertTriangle,
@@ -182,7 +166,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
       onExpandedChange?.(next);
     };
 
-    const resolvedTone: NoticeTone = toneMarks[tone] ? tone : "warning";
+    const resolvedTone: NoticeTone = noticeTone(tone);
     const working = status === "progress";
     const done = status === "done";
     // No icon, no column: the detail and the action then start where the
@@ -190,16 +174,12 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
     // none unless the product gives one; progress always turns the arc.
     const drawsIcon =
       working || (icon !== null && icon !== false && !(done && icon == null));
-    const resolvedRole = role ?? LIVE_ROLE[live];
+    const resolvedRole = role ?? LIVE_ROLES[live];
     const ToneMark = toneMarks[resolvedTone];
 
     return (
       <div
-        className={cn(
-          "w-full rounded-container border px-3 py-2",
-          toneStyles[resolvedTone],
-          className,
-        )}
+        className={cn(NOTICE_CLASS, NOTICE_TONES[resolvedTone], className)}
         data-tone={resolvedTone}
         data-status={status}
         ref={ref}
@@ -213,56 +193,43 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
         aria-live={impliedLive(resolvedRole)}
         {...props}
       >
-        <div
-          className={cn(
-            "flex gap-2",
-            iconAlign === "center" ? "items-center" : "items-start",
-          )}
-        >
+        <div className={noticeRowClass(iconAlign)}>
           {drawsIcon && (
-            <span
-              aria-hidden="true"
-              className={cn("shrink-0", iconAlign === "start" && "mt-0.5")}
-            >
+            <span aria-hidden="true" className={noticeMarkClass(iconAlign)}>
               {working ? (
-                <SpinnerArc className="h-4 w-4" size={16} />
+                <SpinnerArc
+                  className={NOTICE_MARK_CLASS}
+                  size={NOTICE_MARK_SIZE}
+                />
               ) : (
-                (icon ?? <ToneMark className="h-4 w-4" />)
+                (icon ?? <ToneMark className={NOTICE_MARK_CLASS} />)
               )}
             </span>
           )}
           {/* Boxes, not paragraphs: a summary or detail may hold a control or
               a framework's wrapper (Vue's bridge draws a slot in a div), which
               a <p> may not hold. */}
-          <div className="min-w-0 flex-1 text-sm font-semibold leading-snug">
-            {summary}
-          </div>
+          <div className={NOTICE_SUMMARY_CLASS}>{summary}</div>
           {done && (
             <Check
               aria-hidden="true"
               focusable="false"
               data-kozmos-notice-done=""
-              className={cn(
-                "h-4 w-4 shrink-0",
-                iconAlign === "start" && "mt-0.5",
-              )}
+              className={noticeDoneClass(iconAlign)}
             />
           )}
           {hasDetail && canCollapse && (
             <button
               aria-controls={detailId}
               aria-expanded={open}
-              className="kozmos-notice-more -mr-1 inline-flex shrink-0 items-center gap-1 rounded-control px-1 py-0.5 text-xs font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className={NOTICE_MORE_CLASS}
               onClick={toggle}
               type="button"
             >
               {expandLabel}
               <ChevronDown
                 aria-hidden="true"
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform",
-                  open && "rotate-180",
-                )}
+                className={noticeChevronClass(open)}
               />
             </button>
           )}
@@ -276,20 +243,14 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
           // appears when CSS fails is the 114px problem this exists to solve.
           // The attribute also takes it out of the accessibility tree.
           <div
-            className={cn(
-              drawsIcon && "pl-6",
-              "pr-1",
-              detailVisible && "mt-1.5",
-            )}
+            className={noticeDetailClass(drawsIcon, detailVisible)}
             hidden={!detailVisible}
             id={detailId}
           >
-            <div className="text-sm leading-snug">{children}</div>
+            <div className={NOTICE_DETAIL_TEXT_CLASS}>{children}</div>
           </div>
         )}
-        {action && (
-          <div className={cn("mt-3", drawsIcon && "pl-6")}>{action}</div>
-        )}
+        {action && <div className={noticeActionClass(drawsIcon)}>{action}</div>}
       </div>
     );
   },

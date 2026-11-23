@@ -1,12 +1,11 @@
 import React from "react";
 import { cn } from "../../utils";
+import {
+  DESCRIPTION_LIST_CLASSES,
+  type DescriptionListLayout,
+} from "../../recipes/description-list";
 
-/**
- * How a DescriptionList's items go (GAP-221, decision 199): `"stack"`, one
- * under another; `"row"`, side by side, as many to a line as fit, each at
- * least 10rem wide, wrapping onto the next.
- */
-export type DescriptionListLayout = "stack" | "row";
+export type { DescriptionListLayout };
 
 export interface DescriptionListProps extends React.HTMLAttributes<HTMLDListElement> {
   /** `"stack"` (the default) or `"row"`. */
@@ -27,7 +26,7 @@ const DescriptionList = React.forwardRef<
   <dl
     ref={ref}
     data-layout={layout}
-    className={cn("kozmos-description-list", className)}
+    className={cn(DESCRIPTION_LIST_CLASSES.root, className)}
     {...props}
   />
 ));
@@ -84,14 +83,14 @@ const DescriptionListItem = React.forwardRef<
     return (
       <div
         ref={ref}
-        className={cn("kozmos-description-list-item", className)}
+        className={cn(DESCRIPTION_LIST_CLASSES.item, className)}
         {...props}
       >
-        <dt className="kozmos-description-list-label">{label}</dt>
-        <dd className="kozmos-description-list-value">
-          <span className="kozmos-description-list-content">{shown}</span>
+        <dt className={DESCRIPTION_LIST_CLASSES.label}>{label}</dt>
+        <dd className={DESCRIPTION_LIST_CLASSES.value}>
+          <span className={DESCRIPTION_LIST_CLASSES.content}>{shown}</span>
           {action !== undefined && action !== null && (
-            <span className="kozmos-description-list-action">{action}</span>
+            <span className={DESCRIPTION_LIST_CLASSES.action}>{action}</span>
           )}
         </dd>
       </div>
