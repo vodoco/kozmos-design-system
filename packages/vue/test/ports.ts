@@ -170,6 +170,8 @@ export const PORTS: Port[] = [
     },
     drawnIn: "parity/sprite-icon.parity.spec.ts",
     sample: { sprite: "./sprite-fixture/sprite", name: "atm", label: "ATM" },
+  },
+  {
     vue: "KozmosBox",
     react: "Box",
     stories: "components/Box/Box.stories.tsx",

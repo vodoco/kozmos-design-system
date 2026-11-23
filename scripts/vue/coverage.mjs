@@ -232,6 +232,8 @@ export const VUE_STORIES = {
     exempt: {
       interactions:
         "SpriteIcon is an image of a map type, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
   "vue-core-layout-box--default": {
     interaction: null,
     exempt: {
