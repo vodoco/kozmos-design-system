@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import * as React from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -30,8 +38,10 @@ const NOT_DRAWN: Record<string, string> = {
   // provider-and-scope.parity.spec.ts draw what they show.
   "ThemeProvider/Default": "its render reads React's own hooks",
   "ThemeProvider/Density": "draws parts not yet ported to Vue",
-  // The bridge mounts React's Input on the client only.
+  // The bridge mounts React's parts on the client only.
   "Label/WithInput": "its Input is a bridged part, drawn on the client only",
+  "PersonaMark/InAPersonaList":
+    "its Checkbox is a bridged part, drawn on the client only",
 };
 
 type Story = {
@@ -65,6 +75,18 @@ const layoutOf = (meta: Meta, story: Story) =>
 afterEach(() => document.body.replaceChildren());
 
 /**
+ * Waits that start within 500 ms are one announcement (GAP-159), and both
+ * frameworks' bars count them in the one shared recipe
+ * (recipes/progress.ts): each drawing starts on a clock a minute past the
+ * last, as Progress's own tests do, so React's waiting bar is not heard as
+ * a second bar in the wait Vue's drawing opened.
+ */
+let clock = 0;
+const nextDrawing = () => void (clock += 60_000);
+beforeAll(() => vi.spyOn(Date, "now").mockImplementation(() => clock));
+afterAll(() => vi.restoreAllMocks());
+
+/**
  * What a story drew, mounted: its markup normalised, with each text node
  * kept as the browser lays it out, one node to one ⟦…⟧, and the anchors
  * each framework leaves (comments, Vue's empty text nodes) left out. A
@@ -89,6 +111,7 @@ function drawn(mounted: HTMLElement) {
 const host = () => document.body.appendChild(document.createElement("div"));
 
 async function drawReact(meta: Meta, story: Story) {
+  nextDrawing();
   const args = { ...meta.args, ...story.args };
   const render =
     story.render ??
@@ -109,6 +132,7 @@ async function drawReact(meta: Meta, story: Story) {
 }
 
 async function drawVue(meta: Meta, story: Story) {
+  nextDrawing();
   const args = { ...meta.args, ...story.args };
   const render = story.render ?? meta.render!;
   const story_ = render(args, { args }) as Component;
