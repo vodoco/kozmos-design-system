@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 84         | 84/84 | 84/84     | 83/84   | 79/84 | 80/84   | 80/84   | 80/84       |
+| Core                   | 84         | 84/84 | 84/84     | 83/84   | 80/84 | 80/84   | 80/84   | 80/84       |
 | Code-Only / Utility    | 4          | 4/4   | 4/4       | —       | 4/4   | —       | 4/4     | —           |
 | Product / SDK          | 42         | 42/42 | 42/42     | 41/41   | 37/42 | 36/41   | 37/42   | 36/41       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -106,7 +106,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | SpriteIcon           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Stack                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Stepper              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
-| Surface              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ❌         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| Surface              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Switch               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Table                | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Tabs                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -221,7 +221,7 @@ Pointr Cloud's Dashboard modules (decision 88): web parts built from Core, shipp
 - Web Code Connect files: 134/135
 - Web Code Connect scaffolds: 0/135
 - Web Code Connect linked: 134/135
-- iOS components: 122/140
+- iOS components: 123/140
 - iOS Code Connect files: 118/135
 - iOS Code Connect scaffolds: 0/135
 - iOS Code Connect linked: 118/135

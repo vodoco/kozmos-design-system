@@ -6,7 +6,7 @@ What a surface over content is made of. Solid — the background colour with the
 
 - **Import:** `import { Surface } from "@kozmos-ds/react";`
 - **Group:** Core
-- **Platforms:** React and Compose; linked to its Figma component through Code Connect.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/foundations-surface--docs>
 
 ## Example

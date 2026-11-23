@@ -94,6 +94,36 @@ const CODE_CONNECT_NOT_APPLICABLE_REASONS: Record<string, string> = {
   ThemeProvider:
     "Runtime provider infrastructure; it does not have a visible Figma component set.",
 };
+// A native part that lives outside the Components/<Name>/<Name> convention,
+// and the declaration that shows it is there. SwiftUI's Surface view,
+// `KozmosSurface` (GAP-207, 0.17.0), sits in Sources/KozmosSurface.swift
+// beside `KozmosSurfaceModifier`, which every other part's surface is drawn
+// with; looking only in Components/Surface/ reported Surface as missing on
+// SwiftUI, and every page built from this report said so.
+const NATIVE_COMPONENT_FILE_OVERRIDES: Record<
+  "ios" | "android",
+  Record<string, { file: string; declares: RegExp }>
+> = {
+  ios: {
+    Surface: {
+      file: "packages/ios/Sources/KozmosSurface.swift",
+      declares: /^public struct KozmosSurface\b[^\n]*:\s*View\s*\{/m,
+    },
+  },
+  android: {},
+};
+
+/** Whether a native part is built: its conventional file, or its override's declaration. */
+function hasNativeComponent(
+  platform: "ios" | "android",
+  name: string,
+  conventional: string,
+): boolean {
+  const override = NATIVE_COMPONENT_FILE_OVERRIDES[platform][name];
+  if (!override) return exists(conventional);
+  return exists(override.file) && override.declares.test(read(override.file));
+}
+
 const CODE_CONNECT_FILE_OVERRIDES: Record<
   "web" | "ios" | "android",
   Record<string, string>
@@ -393,13 +423,21 @@ async function runCheck() {
         exported: exportedComponents.has(component),
       },
       ios: {
-        component: exists(PATHS.ios.component(component)),
+        component: hasNativeComponent(
+          "ios",
+          component,
+          PATHS.ios.component(component),
+        ),
         figmaFile: codeConnectApplicable && hasCodeConnectFile(iosFigmaPath),
         codeConnect:
           codeConnectApplicable && hasRealCodeConnectMapping(iosFigmaPath),
       },
       android: {
-        component: exists(PATHS.android.component(component)),
+        component: hasNativeComponent(
+          "android",
+          component,
+          PATHS.android.component(component),
+        ),
         figmaFile:
           codeConnectApplicable && hasCodeConnectFile(androidFigmaPath),
         codeConnect:
