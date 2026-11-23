@@ -5,7 +5,7 @@ import {
   normalizeClass,
   onBeforeUnmount,
   onMounted,
-  ref,
+  shallowRef,
   watch,
   type PropType,
   type SlotsType,
@@ -87,7 +87,9 @@ export const KozmosProgressBar = defineComponent({
   slots: Object as SlotsType<{ label?: () => VNode[] }>,
   setup(props, { attrs, slots }) {
     const waiting = () => props.value == null;
-    const said = ref<VNode[] | string | null>(null);
+    // Shallow: the words may be the label slot's nodes, which Vue patches
+    // in place; a deep ref would make each patch a change to draw again.
+    const said = shallowRef<VNode[] | string | null>(null);
     let opened: number | undefined;
     const speak = () => {
       const own = slots.label?.();
