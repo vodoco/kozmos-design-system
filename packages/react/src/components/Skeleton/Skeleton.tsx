@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "../../utils";
-import { skeletonBox, skeletonClasses } from "../../recipes/skeleton";
+import { skeleton } from "../../recipes/skeleton";
 
 /**
  * What the placeholder stands in for, which is all that decides its shape.
@@ -26,16 +26,19 @@ export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const SkeletonComponent = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, shape = "line", width, height, style, ...props }, ref) => (
-    <div
-      ref={ref}
-      // The pulse, the grey and each shape's box: recipes/skeleton.ts.
-      className={cn(skeletonClasses(shape, height), className)}
-      data-shape={shape}
-      style={{ ...skeletonBox(shape, width, height), ...style }}
-      {...props}
-    />
-  ),
+  ({ className, shape = "line", width, height, style, ...props }, ref) => {
+    // The pulse, the grey and each shape's box: recipes/skeleton.ts.
+    const [shapeClassName, box] = skeleton(shape, width, height);
+    return (
+      <div
+        ref={ref}
+        className={cn(shapeClassName, className)}
+        data-shape={shape}
+        style={{ ...box, ...style }}
+        {...props}
+      />
+    );
+  },
 );
 SkeletonComponent.displayName = "Skeleton";
 

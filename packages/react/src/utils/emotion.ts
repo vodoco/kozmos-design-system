@@ -13,9 +13,9 @@ export {
 /**
  * The three roles an emotion carries, as custom properties, in React's
  * style type (`emotionSurfaceVariables` in the recipe says what each is).
+ * The recipe's own function, typed for React's `style`: a wrapper around it
+ * cost every app a call for nothing.
  */
-export function emotionSurfaceProperties(
+export const emotionSurfaceProperties = emotionSurfaceVariables as (
   emotion: Emotion,
-): React.CSSProperties {
-  return emotionSurfaceVariables(emotion) as React.CSSProperties;
-}
+) => React.CSSProperties;

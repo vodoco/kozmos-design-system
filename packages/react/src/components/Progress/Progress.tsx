@@ -4,14 +4,19 @@ import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { type Emotion } from "../../utils/emotion";
 import {
-  PROGRESS_RING_CLASSES,
-  PROGRESS_TRACK_CLASSES,
+  PROGRESS_RING_ARC_CLASS,
+  PROGRESS_RING_CLASS,
+  PROGRESS_RING_DIAL_CLASS,
+  PROGRESS_RING_DONE_CLASS,
+  PROGRESS_RING_LABEL_CLASS,
+  PROGRESS_RING_SVG_CLASS,
+  PROGRESS_RING_TRACK_CLASS,
+  PROGRESS_TRACK_ACTIVE_CLASS,
+  PROGRESS_TRACK_CLASS,
+  PROGRESS_TRACK_FLOW_CLASS,
   isProgressSpan,
   progressDrawnValue,
-  progressRingDone,
-  progressRingGeometry,
-  progressRingTone,
-  progressRingToneVariables,
+  progressRing,
   progressSpanStyle,
   progressTrackSpans,
 } from "../../recipes/progress";
@@ -92,10 +97,15 @@ const Progress = React.forwardRef<
     const labelId = React.useId();
     // The value drawn, the total and the share done: one over the total is
     // all of it (recipes/progress.ts).
-    const progress = progressDrawnValue(value, max);
-    const { value: drawnValue, known, percentage } = progress;
+    const [resolvedMax, drawnValue, known, percentage] = progressDrawnValue(
+      value,
+      max,
+    );
     if (shape === "circular") {
-      const {
+      const labelled = label != null && label !== false && label !== "";
+      // Its drawing, its tone and whether it is done: a whole `sm` ring with
+      // no label draws a check, and says 100% (recipes/progress.ts).
+      const [
         diameter,
         stroke,
         centre,
@@ -103,22 +113,28 @@ const Progress = React.forwardRef<
         viewBox,
         dasharray,
         transform,
-      } = progressRingGeometry(size, percentage);
-      const labelled = label != null && label !== false && label !== "";
+        emotion,
+        toneVariables,
+        done,
+      ] = progressRing(
+        size,
+        percentage,
+        tone,
+        labelled,
+        drawnValue,
+        resolvedMax,
+      );
       // The label is the ring's name, or its description when the caller has
       // named it already; either way it is said by reference, and the drawn
       // copy is hidden, so a screen reader hears it once. It stays inside the
       // progress bar wherever it is drawn.
       const named = props["aria-label"] != null || labelledBy != null;
-      const emotion = progressRingTone(tone);
       const beside = labelPlacement === "end";
-      // A whole `sm` ring with no label draws a check, and says 100%.
-      const done = progressRingDone(size, labelled, progress);
       const drawn = labelled && (
         <div
           id={labelId}
           aria-hidden="true"
-          className={PROGRESS_RING_CLASSES.label}
+          className={PROGRESS_RING_LABEL_CLASS}
         >
           {label}
         </div>
@@ -132,12 +148,12 @@ const Progress = React.forwardRef<
           data-size={size}
           data-tone={emotion}
           data-label-placement={beside ? "end" : "center"}
-          className={cn(PROGRESS_RING_CLASSES.root, className)}
+          className={cn(PROGRESS_RING_CLASS, className)}
           // The arc's colour, as a property the stylesheet reads, so forced
           // colours can still replace it.
           style={
             {
-              ...progressRingToneVariables(emotion),
+              ...toneVariables,
               ...style,
             } as React.CSSProperties
           }
@@ -156,11 +172,11 @@ const Progress = React.forwardRef<
               does not mirror right to left: SVG is drawn in the page's own
               coordinates whatever the direction. With no value the track is
               drawn alone: a turning ring is Spinner. */}
-          <div className={PROGRESS_RING_CLASSES.dial}>
+          <div className={PROGRESS_RING_DIAL_CLASS}>
             <svg
               aria-hidden="true"
               focusable="false"
-              className={PROGRESS_RING_CLASSES.svg}
+              className={PROGRESS_RING_SVG_CLASS}
               width={diameter}
               height={diameter}
               viewBox={viewBox}
@@ -168,14 +184,14 @@ const Progress = React.forwardRef<
               strokeWidth={stroke}
             >
               <circle
-                className={PROGRESS_RING_CLASSES.track}
+                className={PROGRESS_RING_TRACK_CLASS}
                 cx={centre}
                 cy={centre}
                 r={radius}
               />
               {known && (
                 <circle
-                  className={PROGRESS_RING_CLASSES.arc}
+                  className={PROGRESS_RING_ARC_CLASS}
                   cx={centre}
                   cy={centre}
                   r={radius}
@@ -189,7 +205,7 @@ const Progress = React.forwardRef<
               <Check
                 aria-hidden="true"
                 focusable="false"
-                className={PROGRESS_RING_CLASSES.done}
+                className={PROGRESS_RING_DONE_CLASS}
               />
             )}
           </div>
@@ -263,25 +279,25 @@ const ProgressTrack = React.forwardRef<HTMLDivElement, ProgressTrackProps>(
       return () => document.removeEventListener("visibilitychange", update);
     }, []);
     // What it paints, by mode and motion (recipes/progress.ts).
-    const { fill, flow } = progressTrackSpans({
+    const [fill, flow] = progressTrackSpans(
       activeRange,
       value,
       positionMode,
       motion,
       visible,
-    });
+    );
     return (
       <div
         {...props}
         ref={ref}
         aria-hidden="true"
-        className={cn(PROGRESS_TRACK_CLASSES.root, className)}
+        className={cn(PROGRESS_TRACK_CLASS, className)}
       >
         {fill && (
           <span
             data-testid="progress-active-range"
             data-appearance={appearance}
-            className={PROGRESS_TRACK_CLASSES.active}
+            className={PROGRESS_TRACK_ACTIVE_CLASS}
             style={progressSpanStyle(fill)}
           />
         )}
@@ -289,7 +305,7 @@ const ProgressTrack = React.forwardRef<HTMLDivElement, ProgressTrackProps>(
           <span
             data-testid="progress-directional-flow"
             data-mode={positionMode}
-            className={PROGRESS_TRACK_CLASSES.flow}
+            className={PROGRESS_TRACK_FLOW_CLASS}
             style={progressSpanStyle(flow)}
           />
         )}

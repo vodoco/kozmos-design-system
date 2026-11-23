@@ -1,13 +1,7 @@
 import React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cn } from "../../utils";
-import {
-  PROGRESS_STATUS_CLASS,
-  progressBarClasses,
-  progressIndicatorClass,
-  progressWaitName,
-  progressWaitSpeaks,
-} from "../../recipes/progress";
+import { progressBar, progressWaitSpeaks } from "../../recipes/progress";
 
 export interface ProgressBarProps extends React.ComponentPropsWithoutRef<
   typeof ProgressPrimitive.Root
@@ -56,6 +50,11 @@ export const ProgressBar = React.forwardRef<
     ref,
   ) => {
     const waiting = value == null;
+    const [barClassName, indicatorClassName, waitName] = progressBar(
+      placement,
+      waiting,
+      label,
+    );
     const words = React.useRef<[React.ReactNode, string | undefined]>([
       null,
       undefined,
@@ -71,8 +70,8 @@ export const ProgressBar = React.forwardRef<
       // Bars that start waiting together share one announcement, the
       // first's (recipes/progress.ts).
       const group = progressWaitSpeaks(opened.current);
-      opened.current = group.opened;
-      if (group.speaks) {
+      if (group !== undefined) {
+        opened.current = group;
         setSaid(
           own ||
             by
@@ -90,26 +89,20 @@ export const ProgressBar = React.forwardRef<
         <ProgressPrimitive.Root
           ref={ref}
           value={value}
-          className={cn(progressBarClasses(placement), className)}
+          className={cn(barClassName, className)}
           aria-labelledby={labelledBy}
           aria-label={
-            waiting && !ariaLabel && !labelledBy
-              ? progressWaitName(label)
-              : ariaLabel
+            waiting && !ariaLabel && !labelledBy ? waitName : ariaLabel
           }
           {...props}
         >
           <ProgressPrimitive.Indicator
-            className={progressIndicatorClass(waiting)}
+            className={indicatorClassName}
             style={waiting ? undefined : { width: `${percentage}%` }}
           />
         </ProgressPrimitive.Root>
         {waiting && (
-          <span
-            role="status"
-            aria-live="polite"
-            className={PROGRESS_STATUS_CLASS}
-          >
+          <span role="status" aria-live="polite" className="sr-only">
             {said}
           </span>
         )}

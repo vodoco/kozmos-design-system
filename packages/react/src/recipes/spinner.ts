@@ -10,14 +10,15 @@
  * attribute so the arc has an intrinsic size wherever the stylesheet does
  * not reach, the class so a caller can still size it with one.
  */
-export const SPINNER_SIZES = {
-  sm: { pixels: 16, className: "h-4 w-4" },
-  md: { pixels: 24, className: "h-6 w-6" },
-  lg: { pixels: 32, className: "h-8 w-8" },
-  xl: { pixels: 48, className: "h-12 w-12" },
+export const SPINNER_PIXELS = { sm: 16, md: 24, lg: 32, xl: 48 } as const;
+export const SPINNER_SIZE_CLASSES = {
+  sm: "h-4 w-4",
+  md: "h-6 w-6",
+  lg: "h-8 w-8",
+  xl: "h-12 w-12",
 } as const;
 
-export type SpinnerSizeName = keyof typeof SPINNER_SIZES;
+export type SpinnerSizeName = keyof typeof SPINNER_PIXELS;
 
 /** The status box the arc is centred in. */
 export const SPINNER_CLASS = "flex items-center justify-center";

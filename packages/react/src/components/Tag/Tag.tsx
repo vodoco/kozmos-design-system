@@ -5,11 +5,8 @@ import { X } from "@kozmos-ds/icons";
 import { emotionSurfaceProperties, type Emotion } from "../../utils/emotion";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import {
-  TAG_REMOVE_CLASS,
   TAG_REMOVE_ICON_CLASS,
-  TAG_REMOVE_ON_THEME_FILL_CLASS,
-  tagEmotionClasses,
-  tagOnThemeFill,
+  tagParts,
   tagVariants,
 } from "../../recipes/tag";
 
@@ -50,8 +47,7 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
-    const emotionClasses = tagEmotionClasses(variant, emotion);
-    const onThemeFill = tagOnThemeFill(variant, emotion);
+    const [emotionClasses, removeClasses] = tagParts(variant, emotion);
 
     return (
       <div
@@ -77,10 +73,7 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
               onRemove();
             }}
             // The recipe says why each class is there (recipes/tag.ts).
-            className={cn(
-              TAG_REMOVE_CLASS,
-              onThemeFill && TAG_REMOVE_ON_THEME_FILL_CLASS,
-            )}
+            className={removeClasses}
           >
             <X className={TAG_REMOVE_ICON_CLASS} />
             <span className="sr-only">{removeLabel}</span>

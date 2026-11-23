@@ -11,14 +11,20 @@
  */
 export type AvatarSize = "default" | "sm";
 
-/** The avatar's own box, round, at its size. */
-export function avatarClasses(size: AvatarSize | undefined): string {
-  return `relative flex shrink-0 overflow-hidden rounded-pill ${size === "sm" ? "h-6 w-6 text-xs" : "h-10 w-10"}`;
+/**
+ * The avatar's own box, round, at its size, and what marks a small one
+ * (`data-size`; a default one carries none). One call, so React's bundle
+ * pays for one.
+ */
+export function avatarBox(
+  size: AvatarSize | undefined,
+): [className: string, dataSize: "sm" | undefined] {
+  const small = size === "sm";
+  return [
+    `relative flex shrink-0 overflow-hidden rounded-pill ${small ? "h-6 w-6 text-xs" : "h-10 w-10"}`,
+    small ? "sm" : undefined,
+  ];
 }
-
-/** What marks a small avatar (`data-size`); a default one carries none. */
-export const avatarDataSize = (size: AvatarSize | undefined) =>
-  size === "sm" ? "sm" : undefined;
 
 /** The image, filling the box. */
 export const AVATAR_IMAGE_CLASS = "aspect-square h-full w-full";

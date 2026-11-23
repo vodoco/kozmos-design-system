@@ -7,7 +7,9 @@ import {
 } from "vue";
 import {
   cn,
-  PERSONA_MARK_CLASSES,
+  PERSONA_MARK_CLASS,
+  PERSONA_MARK_SHAPE_CLASS,
+  PERSONA_MARKS_CLASS,
   PERSONA_MARK_DIAMOND,
   PERSONA_MARK_VIEWBOX,
   personaMarkGroupLabel,
@@ -40,7 +42,7 @@ export const KozmosPersonaMark = defineComponent({
       return h(
         "span",
         {
-          class: cn(PERSONA_MARK_CLASSES.mark, normalizeClass(className)),
+          class: cn(PERSONA_MARK_CLASS, normalizeClass(className)),
           ...styleAttribute(personaMarkVariables(props.color), style),
           ...(props.name
             ? { role: "img", "aria-label": props.name }
@@ -52,7 +54,7 @@ export const KozmosPersonaMark = defineComponent({
             "svg",
             {
               "aria-hidden": "true",
-              class: PERSONA_MARK_CLASSES.shape,
+              class: PERSONA_MARK_SHAPE_CLASS,
               focusable: "false",
               viewBox: PERSONA_MARK_VIEWBOX,
             },
@@ -90,7 +92,7 @@ export const KozmosPersonaMarkGroup = defineComponent({
         "span",
         {
           "aria-label": personaMarkGroupLabel(props.label, props.personas),
-          class: cn(PERSONA_MARK_CLASSES.group, normalizeClass(className)),
+          class: cn(PERSONA_MARKS_CLASS, normalizeClass(className)),
           role: "img",
           ...rest,
         },

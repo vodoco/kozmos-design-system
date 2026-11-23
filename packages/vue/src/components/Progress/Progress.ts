@@ -14,13 +14,18 @@ import { Primitive } from "reka-ui";
 import { Check } from "@kozmos-ds/icons/vue";
 import {
   cn,
-  PROGRESS_RING_CLASSES,
-  PROGRESS_TRACK_CLASSES,
+  PROGRESS_RING_ARC_CLASS,
+  PROGRESS_RING_CLASS,
+  PROGRESS_RING_DIAL_CLASS,
+  PROGRESS_RING_DONE_CLASS,
+  PROGRESS_RING_LABEL_CLASS,
+  PROGRESS_RING_SVG_CLASS,
+  PROGRESS_RING_TRACK_CLASS,
+  PROGRESS_TRACK_ACTIVE_CLASS,
+  PROGRESS_TRACK_CLASS,
+  PROGRESS_TRACK_FLOW_CLASS,
   progressDrawnValue,
-  progressRingDone,
-  progressRingGeometry,
-  progressRingTone,
-  progressRingToneVariables,
+  progressRing,
   progressSpanStyle,
   progressTrackSpans,
 } from "#kozmos-recipes";
@@ -100,7 +105,10 @@ export const KozmosProgress = defineComponent({
   setup(props, { attrs, slots }) {
     const labelId = useId();
     return () => {
-      const progress = progressDrawnValue(props.value, props.max);
+      const [max, value, known, percentage] = progressDrawnValue(
+        props.value,
+        props.max,
+      );
       if (props.shape !== "circular")
         // The bar, a part of its own as React's ProgressBar is, so it
         // starts and ends its wait as it mounts and unmounts.
@@ -108,9 +116,9 @@ export const KozmosProgress = defineComponent({
           KozmosProgressBar,
           {
             ...attrs,
-            value: progress.value,
+            value,
             max: props.max,
-            percentage: progress.percentage,
+            percentage,
             placement: props.placement,
             asChild: props.asChild,
             getValueLabel: props.getValueLabel,
@@ -124,30 +132,48 @@ export const KozmosProgress = defineComponent({
         "aria-describedby": describedBy,
         ...rest
       } = attrs;
-      const geometry = progressRingGeometry(props.size, progress.percentage);
       const label = slots.label?.();
       const text = slotText(label);
       const labelled = !!label && text !== "";
+      // Its drawing, its tone and whether it is done: a whole `sm` ring with
+      // no label draws a check, and says 100%.
+      const [
+        diameter,
+        stroke,
+        centre,
+        radius,
+        viewBox,
+        dasharray,
+        transform,
+        tone,
+        toneVariables,
+        done,
+      ] = progressRing(
+        props.size,
+        percentage,
+        props.tone,
+        labelled,
+        value,
+        max,
+      );
       // The label is the ring's name, or its description when the app has
       // named it already; either way it is said by reference, and the drawn
       // copy is hidden, so a screen reader hears it once.
       const named = attrs["aria-label"] != null || labelledBy != null;
-      const tone = progressRingTone(props.tone);
       const beside = props.labelPlacement === "end";
-      const done = progressRingDone(props.size, labelled, progress);
       const drawn = labelled
         ? h(
             "div",
             {
               id: labelId,
               "aria-hidden": "true",
-              class: PROGRESS_RING_CLASSES.label,
+              class: PROGRESS_RING_LABEL_CLASS,
             },
             label,
           )
         : null;
       const { attributes } = progressbarAttributes(
-        progress.value,
+        value,
         props.max,
         props.getValueLabel,
       );
@@ -161,10 +187,10 @@ export const KozmosProgress = defineComponent({
           "data-size": props.size,
           "data-tone": tone,
           "data-label-placement": beside ? "end" : "center",
-          class: cn(PROGRESS_RING_CLASSES.root, normalizeClass(className)),
+          class: cn(PROGRESS_RING_CLASS, normalizeClass(className)),
           // The arc's colour, as a property the stylesheet reads, so forced
           // colours can still replace it.
-          ...styleAttribute(progressRingToneVariables(tone), style),
+          ...styleAttribute(toneVariables, style),
           "aria-labelledby": labelled && !named ? labelId : labelledBy,
           "aria-describedby":
             labelled && named
@@ -177,34 +203,34 @@ export const KozmosProgress = defineComponent({
           // One drawing: the track and the arc are strokes of one circle,
           // from 12 o'clock clockwise, never mirrored. With no value the
           // track is drawn alone: a turning ring is Spinner.
-          h("div", { class: PROGRESS_RING_CLASSES.dial }, [
+          h("div", { class: PROGRESS_RING_DIAL_CLASS }, [
             h(
               "svg",
               {
                 "aria-hidden": "true",
                 focusable: "false",
-                class: PROGRESS_RING_CLASSES.svg,
-                width: geometry.diameter,
-                height: geometry.diameter,
-                viewBox: geometry.viewBox,
+                class: PROGRESS_RING_SVG_CLASS,
+                width: diameter,
+                height: diameter,
+                viewBox,
                 fill: "none",
-                "stroke-width": geometry.stroke,
+                "stroke-width": stroke,
               },
               [
                 h("circle", {
-                  class: PROGRESS_RING_CLASSES.track,
-                  cx: geometry.centre,
-                  cy: geometry.centre,
-                  r: geometry.radius,
+                  class: PROGRESS_RING_TRACK_CLASS,
+                  cx: centre,
+                  cy: centre,
+                  r: radius,
                 }),
-                progress.known
+                known
                   ? h("circle", {
-                      class: PROGRESS_RING_CLASSES.arc,
-                      cx: geometry.centre,
-                      cy: geometry.centre,
-                      r: geometry.radius,
-                      "stroke-dasharray": geometry.dasharray,
-                      transform: geometry.transform,
+                      class: PROGRESS_RING_ARC_CLASS,
+                      cx: centre,
+                      cy: centre,
+                      r: radius,
+                      "stroke-dasharray": dasharray,
+                      transform,
                     })
                   : null,
               ],
@@ -214,7 +240,7 @@ export const KozmosProgress = defineComponent({
               ? h(Check, {
                   "aria-hidden": "true",
                   focusable: "false",
-                  class: PROGRESS_RING_CLASSES.done,
+                  class: PROGRESS_RING_DONE_CLASS,
                 })
               : null,
           ]),
@@ -275,26 +301,26 @@ export const KozmosProgressTrack = defineComponent({
     );
     return () => {
       const { class: className, ...rest } = attrs;
-      const { fill, flow } = progressTrackSpans({
-        activeRange: props.activeRange,
-        value: props.value,
-        positionMode: props.positionMode,
-        motion: props.motion,
-        visible: visible.value,
-      });
+      const [fill, flow] = progressTrackSpans(
+        props.activeRange,
+        props.value,
+        props.positionMode,
+        props.motion,
+        visible.value,
+      );
       return h(
         "div",
         {
           ...rest,
           "aria-hidden": "true",
-          class: cn(PROGRESS_TRACK_CLASSES.root, normalizeClass(className)),
+          class: cn(PROGRESS_TRACK_CLASS, normalizeClass(className)),
         },
         [
           fill
             ? h("span", {
                 "data-testid": "progress-active-range",
                 "data-appearance": props.appearance,
-                class: PROGRESS_TRACK_CLASSES.active,
+                class: PROGRESS_TRACK_ACTIVE_CLASS,
                 style: progressSpanStyle(fill),
               })
             : null,
@@ -302,7 +328,7 @@ export const KozmosProgressTrack = defineComponent({
             ? h("span", {
                 "data-testid": "progress-directional-flow",
                 "data-mode": props.positionMode,
-                class: PROGRESS_TRACK_CLASSES.flow,
+                class: PROGRESS_TRACK_FLOW_CLASS,
                 style: progressSpanStyle(flow),
               })
             : null,

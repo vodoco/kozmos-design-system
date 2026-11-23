@@ -6,14 +6,14 @@ import {
   type SlotsType,
   type VNode,
 } from "vue";
-import { cn, skeletonBox, skeletonClasses } from "#kozmos-recipes";
+import { cn, skeleton } from "#kozmos-recipes";
 import { styleAttribute } from "../style";
 import type { KozmosSkeletonShape } from "./types";
 
 /**
  * Vue's counterpart of React's Skeleton: a placeholder that holds the space
  * of what is loading, drawn as the `<div>` React's draws from the same
- * recipe (`skeletonClasses`, `skeletonBox`). `shape` is what it stands in
+ * recipe (`skeleton`). `shape` is what it stands in
  * for: a `line` of text (16 tall unless told), a `block`, or a `circle`
  * whose `width` is its diameter (40 unless told). `width` and `height` take
  * a number of pixels or any CSS length; the app's own `style` wins. The
@@ -46,18 +46,13 @@ export const KozmosSkeleton = defineComponent({
     return () => {
       const { class: className, style, ...rest } = attrs;
       const shape = props.shape ?? "line";
+      const [shapeClass, box] = skeleton(shape, props.width, props.height);
       return h(
         "div",
         {
-          class: cn(
-            skeletonClasses(shape, props.height),
-            normalizeClass(className),
-          ),
+          class: cn(shapeClass, normalizeClass(className)),
           "data-shape": shape,
-          ...styleAttribute(
-            skeletonBox(shape, props.width, props.height),
-            style,
-          ),
+          ...styleAttribute(box, style),
           ...rest,
         },
         slots.default?.(),

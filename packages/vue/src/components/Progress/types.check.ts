@@ -20,11 +20,11 @@ type Equal<A, B> =
     ? true
     : false;
 type Expect<T extends true> = T;
-type Spans = Parameters<typeof progressTrackSpans>[0];
+type Spans = Parameters<typeof progressTrackSpans>;
 
 export type ProgressTypesMatchTheRecipe = [
   Expect<Equal<KozmosProgressSize, ProgressRingSize>>,
   Expect<Equal<KozmosProgressRange, ProgressSpan>>,
-  Expect<Equal<KozmosProgressTrackPositionMode, Spans["positionMode"]>>,
-  Expect<Equal<KozmosProgressTrackMotion, Spans["motion"]>>,
+  Expect<Equal<KozmosProgressTrackPositionMode, Spans[2]>>,
+  Expect<Equal<KozmosProgressTrackMotion, Spans[3]>>,
 ];

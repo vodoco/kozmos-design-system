@@ -18,8 +18,7 @@ import { Primitive } from "reka-ui";
 import {
   AVATAR_FALLBACK_CLASS,
   AVATAR_IMAGE_CLASS,
-  avatarClasses,
-  avatarDataSize,
+  avatarBox,
   cn,
 } from "#kozmos-recipes";
 import type { KozmosAvatarImageLoadingStatus, KozmosAvatarSize } from "./types";
@@ -37,7 +36,7 @@ const AvatarStatus: InjectionKey<Ref<KozmosAvatarImageLoadingStatus>> =
 /**
  * Vue's counterpart of React's Avatar: a round box at 40, or 24 with
  * `size="sm"` (decision 221), drawn as the `<span>` React's Radix Avatar
- * draws, from the same recipe (`avatarClasses`). Put a `KozmosAvatarImage`
+ * draws, from the same recipe (`avatarBox`). Put a `KozmosAvatarImage`
  * and a `KozmosAvatarFallback` in it: the fallback shows until the image
  * has loaded, and again if it fails. `as-child` draws the box on its one
  * child, as Radix's Slot does.
@@ -60,13 +59,14 @@ export const KozmosAvatar = defineComponent({
     provide(AvatarStatus, ref<KozmosAvatarImageLoadingStatus>("idle"));
     return () => {
       const { class: className, ...rest } = attrs;
+      const [boxClass, dataSize] = avatarBox(props.size);
       return h(
         Primitive,
         {
           as: "span",
           asChild: props.asChild,
-          "data-size": avatarDataSize(props.size),
-          class: cn(avatarClasses(props.size), normalizeClass(className)),
+          "data-size": dataSize,
+          class: cn(boxClass, normalizeClass(className)),
           ...rest,
         },
         slots.default,

@@ -17,12 +17,10 @@ export const PERSONA_MARK_DIAMOND = "M6 0 12 6 6 12 0 6Z";
 /** The diamond's drawing box. */
 export const PERSONA_MARK_VIEWBOX = "0 0 12 12";
 
-/** The mark's elements' classes, and the group's. */
-export const PERSONA_MARK_CLASSES = {
-  mark: "kozmos-persona-mark",
-  shape: "kozmos-persona-mark-shape",
-  group: "kozmos-persona-marks",
-} as const;
+/** The mark's elements' classes, and the group's, each a constant. */
+export const PERSONA_MARK_CLASS = "kozmos-persona-mark";
+export const PERSONA_MARK_SHAPE_CLASS = "kozmos-persona-mark-shape";
+export const PERSONA_MARKS_CLASS = "kozmos-persona-marks";
 
 /** The persona's colour, as the property the owned rule reads. */
 export const personaMarkVariables = (color: string) => ({

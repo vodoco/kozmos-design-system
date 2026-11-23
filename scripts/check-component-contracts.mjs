@@ -4003,7 +4003,8 @@ assertContains(
 assertContains(
   files.reactSkeletonRecipe,
   source.reactSkeletonRecipe,
-  '"kozmos-skeleton"',
+  // The class leads the recipe's template string: `kozmos-skeleton ${…}`.
+  /[`"]kozmos-skeleton[\s`"]/,
   "React Skeleton owned class",
 );
 assertContains(

@@ -14,12 +14,9 @@ import {
 import { Primitive } from "reka-ui";
 import {
   cn,
-  PROGRESS_STATUS_CLASS,
-  progressBarClasses,
+  progressBar,
   progressbarState,
   progressDefaultValueLabel,
-  progressIndicatorClass,
-  progressWaitName,
   progressWaitSpeaks,
 } from "#kozmos-recipes";
 import type { KozmosProgressPlacement } from "./types";
@@ -97,8 +94,8 @@ export const KozmosProgressBar = defineComponent({
       const ariaLabel = attrs["aria-label"];
       const by = attrs["aria-labelledby"];
       const group = progressWaitSpeaks(opened);
-      opened = group.opened;
-      if (!group.speaks) return;
+      if (group === undefined) return;
+      opened = group;
       said.value =
         (own?.length && ownText !== "" ? own : undefined) ??
         ((typeof ariaLabel === "string" && ariaLabel) ||
@@ -127,6 +124,11 @@ export const KozmosProgressBar = defineComponent({
         ...rest
       } = attrs;
       const isWaiting = waiting();
+      const [barClass, indicatorClass, waitName] = progressBar(
+        props.placement,
+        isWaiting,
+        slotText(slots.label?.()),
+      );
       const { attributes } = progressbarAttributes(
         props.value,
         props.max,
@@ -139,15 +141,10 @@ export const KozmosProgressBar = defineComponent({
             as: "div",
             asChild: props.asChild,
             ...attributes,
-            class: cn(
-              progressBarClasses(props.placement),
-              normalizeClass(className),
-            ),
+            class: cn(barClass, normalizeClass(className)),
             "aria-labelledby": labelledBy,
             "aria-label":
-              isWaiting && !ariaLabel && !labelledBy
-                ? progressWaitName(slotText(slots.label?.()))
-                : ariaLabel,
+              isWaiting && !ariaLabel && !labelledBy ? waitName : ariaLabel,
             ...rest,
           },
           () => [
@@ -155,7 +152,7 @@ export const KozmosProgressBar = defineComponent({
               "data-state": attributes["data-state"],
               "data-value": attributes["data-value"],
               "data-max": attributes["data-max"],
-              class: progressIndicatorClass(isWaiting),
+              class: indicatorClass,
               ...styleAttribute(
                 isWaiting ? undefined : { width: `${props.percentage}%` },
               ),
@@ -168,7 +165,7 @@ export const KozmosProgressBar = defineComponent({
               {
                 role: "status",
                 "aria-live": "polite",
-                class: PROGRESS_STATUS_CLASS,
+                class: "sr-only",
               },
               said.value ?? undefined,
             )

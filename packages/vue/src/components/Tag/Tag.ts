@@ -13,11 +13,8 @@ import { X } from "@kozmos-ds/icons/vue";
 import {
   cn,
   emotionSurfaceVariables,
-  TAG_REMOVE_CLASS,
   TAG_REMOVE_ICON_CLASS,
-  TAG_REMOVE_ON_THEME_FILL_CLASS,
-  tagEmotionClasses,
-  tagOnThemeFill,
+  tagParts,
   tagVariants,
 } from "#kozmos-recipes";
 import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
@@ -77,12 +74,16 @@ export const KozmosTag = defineComponent({
     return () => {
       const { class: className, style, ...rest } = attrs;
       const children = slots.default?.();
+      const [emotionClasses, removeClasses] = tagParts(
+        props.variant,
+        props.emotion,
+      );
       return h(
         "div",
         {
           class: cn(
             tagVariants({ variant: props.variant }),
-            tagEmotionClasses(props.variant, props.emotion),
+            emotionClasses,
             normalizeClass(className),
           ),
           // The app's own style wins: these are a default the emotion
@@ -107,11 +108,7 @@ export const KozmosTag = defineComponent({
                     else trackEvent("Tag", "tag_removed");
                     emit("remove");
                   },
-                  class: cn(
-                    TAG_REMOVE_CLASS,
-                    tagOnThemeFill(props.variant, props.emotion) &&
-                      TAG_REMOVE_ON_THEME_FILL_CLASS,
-                  ),
+                  class: removeClasses,
                 },
                 [
                   h(X, { class: TAG_REMOVE_ICON_CLASS }),

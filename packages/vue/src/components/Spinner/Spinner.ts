@@ -13,7 +13,8 @@ import {
   cn,
   SPINNER_CLASS,
   SPINNER_LABEL_DELAY_MS,
-  SPINNER_SIZES,
+  SPINNER_PIXELS,
+  SPINNER_SIZE_CLASSES,
 } from "#kozmos-recipes";
 import { spinnerArc } from "./SpinnerArc";
 import type { KozmosSpinnerSize } from "./types";
@@ -21,8 +22,9 @@ import type { KozmosSpinnerSize } from "./types";
 /**
  * Vue's counterpart of React's Spinner: indeterminate loading, the system's
  * arc turning in a polite status, drawn as the `<div>` React's draws from
- * the same recipes (`SPINNER_SIZES`, and the arc Button draws too). The
- * sizes are the `Spinner/size/*` tokens, 16, 24, 32 and 48; the turn stops
+ * the same recipes (`SPINNER_PIXELS`, `SPINNER_SIZE_CLASSES`, and the arc
+ * Button draws too). The sizes are the `Spinner/size/*` tokens, 16, 24, 32
+ * and 48; the turn stops
  * under reduced motion and the status keeps saying `label`, "Loading" by
  * default, which is put into the region a moment after it mounts (GAP-226)
  * so a screen reader says it.
@@ -53,7 +55,7 @@ export const KozmosSpinner = defineComponent({
     onBeforeUnmount(() => clearTimeout(timer));
     return () => {
       const { class: className, ...rest } = attrs;
-      const size = SPINNER_SIZES[props.size];
+
       return h(
         "div",
         {
@@ -65,7 +67,10 @@ export const KozmosSpinner = defineComponent({
           ...rest,
         },
         [
-          spinnerArc({ className: size?.className, size: size?.pixels }),
+          spinnerArc({
+            className: SPINNER_SIZE_CLASSES[props.size],
+            size: SPINNER_PIXELS[props.size],
+          }),
           h(
             "span",
             { class: "sr-only" },

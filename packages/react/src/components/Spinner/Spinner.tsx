@@ -4,7 +4,8 @@ import { SpinnerArc } from "./SpinnerArc";
 import {
   SPINNER_CLASS,
   SPINNER_LABEL_DELAY_MS,
-  SPINNER_SIZES,
+  SPINNER_PIXELS,
+  SPINNER_SIZE_CLASSES,
 } from "../../recipes/spinner";
 
 export interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -51,8 +52,8 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
         {...props}
       >
         <SpinnerArc
-          className={SPINNER_SIZES[size]?.className}
-          size={SPINNER_SIZES[size]?.pixels}
+          className={SPINNER_SIZE_CLASSES[size]}
+          size={SPINNER_PIXELS[size]}
         />
         <span className="sr-only">{labelled ? label : null}</span>
       </div>

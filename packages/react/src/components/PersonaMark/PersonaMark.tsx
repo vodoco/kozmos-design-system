@@ -1,7 +1,9 @@
 import React from "react";
 import { cn } from "../../utils";
 import {
-  PERSONA_MARK_CLASSES,
+  PERSONA_MARK_CLASS,
+  PERSONA_MARK_SHAPE_CLASS,
+  PERSONA_MARKS_CLASS,
   PERSONA_MARK_DIAMOND,
   PERSONA_MARK_VIEWBOX,
   personaMarkGroupLabel,
@@ -26,7 +28,7 @@ function Diamond() {
   return (
     <svg
       aria-hidden="true"
-      className={PERSONA_MARK_CLASSES.shape}
+      className={PERSONA_MARK_SHAPE_CLASS}
       focusable="false"
       viewBox={PERSONA_MARK_VIEWBOX}
     >
@@ -57,7 +59,7 @@ const PersonaMark = React.forwardRef<HTMLSpanElement, PersonaMarkProps>(
   ({ className, color, name, style, ...props }, ref) => (
     <span
       ref={ref}
-      className={cn(PERSONA_MARK_CLASSES.mark, className)}
+      className={cn(PERSONA_MARK_CLASS, className)}
       style={
         { ...personaMarkVariables(color), ...style } as React.CSSProperties
       }
@@ -105,7 +107,7 @@ const PersonaMarkGroup = React.forwardRef<
     <span
       ref={ref}
       aria-label={personaMarkGroupLabel(label, personas)}
-      className={cn(PERSONA_MARK_CLASSES.group, className)}
+      className={cn(PERSONA_MARKS_CLASS, className)}
       role="img"
       {...props}
     >

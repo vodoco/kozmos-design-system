@@ -4,8 +4,7 @@ import { cn } from "../../utils";
 import {
   AVATAR_FALLBACK_CLASS,
   AVATAR_IMAGE_CLASS,
-  avatarClasses,
-  avatarDataSize,
+  avatarBox,
 } from "../../recipes/avatar";
 
 export interface AvatarProps extends React.ComponentPropsWithoutRef<
@@ -22,14 +21,17 @@ export interface AvatarProps extends React.ComponentPropsWithoutRef<
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
   AvatarProps
->(({ className, size = "default", ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    data-size={avatarDataSize(size)}
-    className={cn(avatarClasses(size), className)}
-    {...props}
-  />
-));
+>(({ className, size = "default", ...props }, ref) => {
+  const [boxClassName, dataSize] = avatarBox(size);
+  return (
+    <AvatarPrimitive.Root
+      ref={ref}
+      data-size={dataSize}
+      className={cn(boxClassName, className)}
+      {...props}
+    />
+  );
+});
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
 const AvatarImage = React.forwardRef<

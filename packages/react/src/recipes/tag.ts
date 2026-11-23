@@ -5,6 +5,7 @@
  * (`recipes.framework-free.test.ts`).
  */
 import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "../utils";
 import {
   EMOTION_FILLED_CLASSES,
   EMOTION_OUTLINE_CLASSES,
@@ -45,43 +46,41 @@ export type TagVariant = NonNullable<
 >;
 
 /**
- * The classes an emotion adds: `outline` becomes the emotion as text with a
- * matching edge, every other variant the emotion's filled pair. None
- * without an emotion.
+ * What a Tag adds to `tagVariants`, given its variant and emotion: the
+ * emotion's treatment (`outline` becomes the emotion as text with a matching
+ * edge, every other variant the emotion's filled pair; none without an
+ * emotion), and its remove button's classes. One call, so React's bundle
+ * pays for one.
+ *
+ * The remove button has no margin of its own: the row's gap spaces it. With
+ * both it sat 8 from the label where the rest of the Tag spaces 4 — the same
+ * compensating margin GAP-56 took off the Button's loader, reintroduced here
+ * the moment the gap arrived. Focused from the keyboard it draws Button's
+ * offset ring, a band of the page's colour and then the theme's 600, 3:1 on
+ * the fill and on the page; it drew none. On the theme fill (no emotion, the
+ * default variant) its hover is the theme foreground at a fifth: the 600 it
+ * took read 1.11:1 there. Drawn 16, its target is 24 wide and the Tag's own
+ * height (WCAG 2.2's 2.5.8, with its spacing), from owned CSS on
+ * kozmos-tag-remove, so the Tag is no larger for it.
  */
-export function tagEmotionClasses(
+export function tagParts(
   variant: TagVariant | null | undefined,
   emotion: Emotion | undefined,
-): string | undefined {
-  return emotion
-    ? variant === "outline"
-      ? EMOTION_OUTLINE_CLASSES
-      : EMOTION_FILLED_CLASSES
-    : undefined;
+): [emotionClasses: string | undefined, removeClasses: string] {
+  return [
+    emotion
+      ? variant === "outline"
+        ? EMOTION_OUTLINE_CLASSES
+        : EMOTION_FILLED_CLASSES
+      : undefined,
+    cn(
+      "kozmos-tag-remove rounded-pill p-0.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      !emotion &&
+        (variant ?? "default") === "default" &&
+        "hover:bg-theme-fill-foreground/20",
+    ),
+  ];
 }
-
-/**
- * The remove button's classes. No margin of its own: the row's gap spaces
- * it. With both it sat 8 from the label where the rest of the Tag spaces 4 —
- * the same compensating margin GAP-56 took off the Button's loader,
- * reintroduced here the moment the gap arrived. Focused from the keyboard it
- * draws Button's offset ring, a band of the page's colour and then the
- * theme's 600, 3:1 on the fill and on the page; it drew none. On the theme
- * fill (no emotion, the default variant) its hover is the theme foreground
- * at a fifth: the 600 it took read 1.11:1 there. Drawn 16, its target is 24
- * wide and the Tag's own height (WCAG 2.2's 2.5.8, with its spacing), from
- * owned CSS on kozmos-tag-remove, so the Tag is no larger for it.
- */
-export const TAG_REMOVE_CLASS =
-  "kozmos-tag-remove rounded-pill p-0.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
-export const TAG_REMOVE_ON_THEME_FILL_CLASS =
-  "hover:bg-theme-fill-foreground/20";
-
-/** Whether the Tag sits on the theme fill: no emotion, the default variant. */
-export const tagOnThemeFill = (
-  variant: TagVariant | null | undefined,
-  emotion: Emotion | undefined,
-) => !emotion && (variant ?? "default") === "default";
 
 /** The remove button's glyph, `X`, at 12. */
 export const TAG_REMOVE_ICON_CLASS = "h-3 w-3";
