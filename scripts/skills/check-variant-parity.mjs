@@ -986,7 +986,19 @@ async function main() {
       ...vueBridge.matchAll(
         /export const Kozmos([A-Za-z0-9]+)\s*=\s*\n?\s*createVueWrapper/g,
       ),
-      ...vueIndex.matchAll(/export\s*\{\s*Kozmos([A-Za-z0-9]+)\s*\}\s*from/g),
+      // Every value a block exports, `export { KozmosAvatar, KozmosAvatarImage }`
+      // as well as `export { KozmosTag }`; `export type` blocks and inline
+      // `type` names are types, not parts.
+      ...[...vueIndex.matchAll(/export\s*\{([^}]*)\}\s*from/g)].flatMap(
+        (block) =>
+          block[1]
+            .split(",")
+            .map((name) => name.trim())
+            .flatMap((name) => {
+              const part = /^Kozmos([A-Za-z0-9]+)$/.exec(name);
+              return part ? [part] : [];
+            }),
+      ),
     ].map((match) => match[1].toLowerCase()),
   );
 
