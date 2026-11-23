@@ -46,15 +46,23 @@ export const Combination: Story = {
   },
 };
 
-/** React's InAHint: Esc drawn as a key and read "Escape" (GAP-156). */
+/**
+ * React's InAHint: Esc drawn as a key and read "Escape" (GAP-156). Drawn
+ * with a render function, not a template, so its text is React's to the
+ * node: a template trims nothing at the sentence's ends and joins React's
+ * `{" "}` with the words after it into one text node, which Chromium lays
+ * out a fraction of a pixel differently (PR #610's baselines).
+ */
 export const InAHint: Story = {
   render: () => ({
-    components: { KozmosKbd, KozmosText },
-    template: `
-      <KozmosText size="sm" color="muted">
-        Press <KozmosKbd>Esc</KozmosKbd> to clear the selection, or
-        <KozmosKbd :keys="['⌘', 'A']" /> to select every feature.
-      </KozmosText>
-    `,
+    setup: () => () =>
+      h(KozmosText, { size: "sm", color: "muted" }, () => [
+        "Press ",
+        h(KozmosKbd, null, () => "Esc"),
+        " to clear the selection, or ",
+        h(KozmosKbd, { keys: ["⌘", "A"] }),
+        " ",
+        "to select every feature.",
+      ]),
   }),
 };

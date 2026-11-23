@@ -15,6 +15,9 @@ const SLOTS = ["children"];
 const meta: Meta<Args> = {
   title: "Vue/Core/Inputs/Label",
   component: KozmosLabel,
+  // React's Label story is centred: the label's box at a fractional x, as
+  // React's is, or its baseline is a pixel narrower than React's.
+  parameters: { layout: "centered" },
   // React's node props are Vue's slots: `children` the default slot, the
   // rest slots of their own names, each drawing its arg's text.
   render: (args) => ({

@@ -2,7 +2,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { planPort, PortRefusal, storyNameId, writePort } from "../scripts/port";
+import {
+  planPort,
+  PortRefusal,
+  storiesLayout,
+  storyNameId,
+  writePort,
+} from "../scripts/port";
 
 /**
  * The porting kit's scaffold (`pnpm --filter @kozmos-ds/vue port <Name>`,
@@ -132,6 +138,17 @@ describe("port <Name>", { timeout: 30_000 }, () => {
     expect(file(plan, "test/parity/switch.parity.spec.ts")).toContain(
       'throw new Error("TODO(port): update:checked fires',
     );
+  });
+
+  it("gives the stories React's layout", () => {
+    expect(storiesLayout("components/Label/Label.stories.tsx")).toBe(
+      "centered",
+    );
+    expect(storiesLayout("components/Text/Text.stories.tsx")).toBeNull();
+    const plan = planPort("RouteOptionCard", scratch());
+    expect(
+      file(plan, "src/components/RouteOptionCard/RouteOptionCard.stories.ts"),
+    ).toContain('parameters: { layout: "centered" },');
   });
 
   it("names each story's id as Storybook writes it", () => {

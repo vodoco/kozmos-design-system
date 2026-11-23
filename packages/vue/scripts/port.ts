@@ -235,6 +235,25 @@ function storiesTitle(file: string | null, react: string): string {
   return `Vue/${title ?? `Core/${react}`}`;
 }
 
+/**
+ * The layout React's stories meta gives Storybook (`parameters.layout`), or
+ * null for Storybook's own, padded. Vue's stories take the same, or every
+ * baseline of a centred part draws it elsewhere: Label's was a pixel
+ * narrower than React's (PR #610).
+ */
+export function storiesLayout(file: string | null): string | null {
+  if (!file) return null;
+  const source = fs.readFileSync(path.join(REACT_SOURCE, file), "utf8");
+  const meta = source.slice(
+    source.search(/\bconst meta\b/),
+    source.search(/\bexport default meta\b/),
+  );
+  return (
+    meta.match(/\bparameters:\s*\{[^}]*\blayout:\s*["'`](\w+)["'`]/)?.[1] ??
+    null
+  );
+}
+
 /** Plans a port; `root` is the package to write into (tests pass a copy). */
 export function planPort(react: string, root = PACKAGE): PortPlan {
   if (!/^[A-Z][A-Za-z0-9]*$/.test(react))
@@ -272,6 +291,7 @@ export function planPort(react: string, root = PACKAGE): PortPlan {
   const plan = planOf(contract);
   const stories = storiesFile(react);
   const title = storiesTitle(stories, react);
+  const layout = storiesLayout(stories);
   const read = stories
     ? readStoryArgs(path.join(REACT_SOURCE, stories))
     : { stories: [] as StoryCase[], rendered: [] as string[] };
@@ -386,7 +406,7 @@ const SLOTS = ${JSON.stringify(nodes.map((m) => m.name))};
 
 const meta: Meta<Args> = {
   title: "${title}",
-  component: ${vue},
+  component: ${vue},${layout ? `\n  parameters: { layout: "${layout}" },` : ""}
   // React's node props are Vue's slots: \`children\` the default slot, the
   // rest slots of their own names, each drawing its arg's text.
   render: (args) => ({
