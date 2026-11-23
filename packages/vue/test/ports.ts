@@ -108,6 +108,69 @@ export const PORTS: Port[] = [
     drawnIn: "parity/separator.parity.spec.ts",
     sample: { orientation: "vertical", decorative: false },
   },
+  {
+    vue: "KozmosText",
+    react: "Text",
+    stories: "components/Text/Text.stories.tsx",
+  },
+  {
+    vue: "KozmosHeading",
+    react: "Heading",
+    stories: "components/Heading/Heading.stories.tsx",
+    elsewhere: {
+      AllLevels: "parity/heading.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosLabel",
+    react: "Label",
+    stories: "components/Label/Label.stories.tsx",
+    elsewhere: {
+      WithInput: "parity/label.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosIcon",
+    react: "Icon",
+    stories: "components/Icon/Icon.stories.tsx",
+    elsewhere: {
+      Sizes: "parity/icon.parity.spec.ts",
+      Colors: "parity/icon.parity.spec.ts",
+      Registry: "parity/icon.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosKbd",
+    react: "Kbd",
+    stories: "components/Kbd/Kbd.stories.tsx",
+    elsewhere: {
+      InAHint: "parity/kbd.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosCodeBlock",
+    react: "CodeBlock",
+    stories: "components/CodeBlock/CodeBlock.stories.tsx",
+    elsewhere: {
+      Default: "parity/code-block.parity.spec.ts",
+      Scroll: "parity/code-block.parity.spec.ts",
+    },
+    drawnIn: "parity/code-block.parity.spec.ts",
+    sample: { label: "JSON", code: "{}", copyable: true },
+    events: {
+      copy: "parity/code-block.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSpriteIcon",
+    react: "SpriteIcon",
+    stories: "components/SpriteIcon/SpriteIcon.stories.tsx",
+    elsewhere: {
+      Default: "parity/sprite-icon.parity.spec.ts",
+    },
+    drawnIn: "parity/sprite-icon.parity.spec.ts",
+    sample: { sprite: "./sprite-fixture/sprite", name: "atm", label: "ATM" },
+  },
 ];
 
 /**

@@ -14,8 +14,11 @@ and `@kozmos-ds/react` 0.17.0, which it pins exactly (it installs that styleshee
 
 - **`@kozmos-ds/vue`**: the Vue parts. Each draws the element its React counterpart draws, from the same
   recipes, imports no React and renders on the server: `KozmosThemeProvider`, `KozmosDensityScope`,
-  `KozmosAnalyticsProvider` (with `useKozmosAnalytics`), `KozmosButton`, `KozmosBadge` and
-  `KozmosSeparator`, with `useTheme`.
+  `KozmosAnalyticsProvider` (with `useKozmosAnalytics`), `KozmosButton`, `KozmosBadge`,
+  `KozmosSeparator`, `KozmosText`, `KozmosHeading`, `KozmosLabel`, `KozmosIcon`, `KozmosKbd`,
+  `KozmosCodeBlock` and `KozmosSpriteIcon`, with `useTheme`. `KozmosIcon` and `KozmosCodeBlock` draw
+  their glyphs from `@kozmos-ds/icons/vue`, which it installs; `KozmosIcon`'s `icon` takes a component
+  from that entry.
 - **`@kozmos-ds/vue/react-bridge`**: every part not ported yet, each a Vue wrapper that mounts the React
   part. It needs `react`, `react-dom` and `@kozmos-ds/react`. A part leaves the bridge when its Vue port
   lands in the main entry, so one name is never two components.

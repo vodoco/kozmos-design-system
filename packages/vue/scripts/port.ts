@@ -209,6 +209,19 @@ const storyId = (text: string) =>
 const kebab = (name: string) =>
   name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 
+/**
+ * A story's export name as Storybook writes it in the story's id, which
+ * splits words as lodash's startCase does: `InAHint` is `in-a-hint`, a
+ * capital before a capitalised word its own word (Kbd's InAHint was
+ * registered `in-ahint`, which no built story is).
+ */
+export const storyNameId = (name: string) =>
+  storyId(
+    name
+      .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+      .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2"),
+  );
+
 /** React's stories file for a part, relative to its source, or null. */
 function storiesFile(react: string): string | null {
   const file = `components/${react}/${react}.stories.tsx`;
@@ -450,7 +463,7 @@ ${[
 
   // scripts/vue/coverage.mjs: each new story, for the Vue browser suites.
   const storyIds = [...drawable.map((s) => s.name), ...elsewhere].map(
-    (name) => `${storyId(title)}--${storyId(kebab(name))}`,
+    (name) => `${storyId(title)}--${storyNameId(name)}`,
   );
   const registerAt = register.indexOf(
     "\n};",

@@ -87,6 +87,7 @@
     }
   },
   "dependencies": {
+    "@kozmos-ds/icons": "workspace:*",
     "@kozmos-ds/styles": "workspace:*",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -94,7 +95,6 @@
     "tailwind-merge": "3.4.0"
   },
   "devDependencies": {
-    "@kozmos-ds/icons": "workspace:*",
     "@kozmos-ds/react": "workspace:*",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",

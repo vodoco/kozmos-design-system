@@ -51,6 +51,10 @@ const MARKS = {
   KozmosThemeProvider: ['"KozmosThemeProvider"'],
   KozmosSeparator: ['"KozmosSeparator"'],
   KozmosAnalyticsProvider: ['"KozmosAnalyticsProvider"'],
+  KozmosText: ['"KozmosText"', "kozmos-text-4xl"],
+  KozmosIcon: ['"KozmosIcon"'],
+  KozmosCodeBlock: ['"KozmosCodeBlock"', "kozmos-code-block-pre"],
+  KozmosSpriteIcon: ['"KozmosSpriteIcon"'],
   bridge: ['"KozmosBridgeHost"'],
 } as const;
 
@@ -140,6 +144,15 @@ describe.each(Object.entries(bundlers))(
       expect(kept(await bundle(consumer(["useTheme"])))).toEqual([]);
     }, 60_000);
 
+    // KozmosCodeBlock draws a KozmosButton for its copy, and Button's own
+    // module comes with it; Text, Icon and SpriteIcon stay out.
+    it("import { KozmosCodeBlock } keeps it and the Button it draws", async () => {
+      expect(kept(await bundle(consumer(["KozmosCodeBlock"])))).toEqual([
+        "KozmosButton",
+        "KozmosCodeBlock",
+      ]);
+    }, 60_000);
+
     // The control: the marks are found when the parts are there.
     it("import { KozmosBadge, KozmosSeparator } keeps both", async () => {
       expect(
@@ -148,3 +161,40 @@ describe.each(Object.entries(bundlers))(
     }, 60_000);
   },
 );
+
+/**
+ * `@kozmos-ds/icons` is a dependency, left to the app's bundler as Vue and
+ * Reka UI are: KozmosIcon and KozmosCodeBlock import its Vue entry by name,
+ * and the package's build never copies a glyph in. Copied in, every glyph
+ * the registry names would ship in @kozmos-ds/vue, whatever an app imports.
+ */
+describe("the build carries no glyph of @kozmos-ds/icons", () => {
+  const built = () => {
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.(mjs|cjs|js)$/.test(entry.name)) files.push(full);
+      }
+    };
+    walk(path.join(PACKAGE_DIR, "dist"));
+    return files;
+  };
+
+  it("imports the icons' Vue entry, and copies none of it", () => {
+    const files = built();
+    const icon = fs.readFileSync(
+      path.join(PACKAGE_DIR, "dist/esm/components/Icon/Icon.mjs"),
+      "utf8",
+    );
+    expect(icon).toMatch(/from\s*["']@kozmos-ds\/icons\/vue["']/);
+    // The icon factories' own names, which every glyph module calls.
+    const copied = files.filter((file) =>
+      /createPointrIcon|createTaxonomyIcon|kozmosIconRegistry\s*=/.test(
+        fs.readFileSync(file, "utf8"),
+      ),
+    );
+    expect(copied.map((file) => path.relative(PACKAGE_DIR, file))).toEqual([]);
+  });
+});
