@@ -6,18 +6,21 @@
  * `scrollHorizontalWithKeyboard` (`keyboard-scroll.ts`). Framework-free
  * (`recipes.framework-free.test.ts`).
  */
-export const META_STRIP_CLASSES = {
-  // The source strip is wider than the card that holds it, so it scrolls
-  // rather than wraps: a fact tile that has wrapped to a second row reads
-  // as a different kind of thing.
-  root: "kozmos-reset kozmos-meta-strip",
-  // `dt` must come before its `dd` for the pair to be read as a pair, and
-  // the label is drawn under the value — so the DOM order is the accessible
-  // one and `flex-col-reverse` does the drawing.
-  item: "kozmos-reset kozmos-meta-item",
-  label: "kozmos-meta-label",
-  /** The label kept for assistive technology, not drawn. */
-  labelHidden: "kozmos-meta-label-hidden",
-  value: "kozmos-meta-value",
-  icon: "kozmos-meta-icon",
-} as const;
+// The source strip is wider than the card that holds it, so it scrolls
+// rather than wraps: a fact tile that has wrapped to a second row reads
+// as a different kind of thing.
+export const META_STRIP_CLASS = "kozmos-reset kozmos-meta-strip";
+
+// `dt` must come before its `dd` for the pair to be read as a pair, and
+// the label is drawn under the value — so the DOM order is the accessible
+// one and `flex-col-reverse` does the drawing.
+export const META_STRIP_ITEM_CLASS = "kozmos-reset kozmos-meta-item";
+
+export const META_STRIP_LABEL_CLASS = "kozmos-meta-label";
+
+/** The label kept for assistive technology, not drawn. */
+export const META_STRIP_LABEL_HIDDEN_CLASS = "kozmos-meta-label-hidden";
+
+export const META_STRIP_VALUE_CLASS = "kozmos-meta-value";
+
+export const META_STRIP_ICON_CLASS = "kozmos-meta-icon";

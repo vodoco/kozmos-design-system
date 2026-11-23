@@ -6,7 +6,15 @@ import {
   type SlotsType,
   type VNode,
 } from "vue";
-import { cn, DESCRIPTION_LIST_CLASSES } from "#kozmos-recipes";
+import {
+  cn,
+  DESCRIPTION_LIST_ACTION_CLASS,
+  DESCRIPTION_LIST_CLASS,
+  DESCRIPTION_LIST_CONTENT_CLASS,
+  DESCRIPTION_LIST_ITEM_CLASS,
+  DESCRIPTION_LIST_LABEL_CLASS,
+  DESCRIPTION_LIST_VALUE_CLASS,
+} from "#kozmos-recipes";
 import { drawn } from "../drawn";
 import type { KozmosDescriptionListLayout } from "./types";
 
@@ -15,7 +23,7 @@ import type { KozmosDescriptionListLayout } from "./types";
  * its label, with no field chrome (GAP-221, decision 199), a record's
  * read-only view. A `<dl>`, each `KozmosDescriptionListItem` a `<dt>` and
  * its `<dd>`, so a screen reader hears each label with its value, drawn
- * from the same recipe (`DESCRIPTION_LIST_CLASSES`). `layout` is `"stack"`
+ * from the same recipe (`DESCRIPTION_LIST_CLASS`). `layout` is `"stack"`
  * (the default), one under another, or `"row"`, side by side, wrapping.
  */
 export const KozmosDescriptionList = defineComponent({
@@ -36,7 +44,7 @@ export const KozmosDescriptionList = defineComponent({
         "dl",
         {
           "data-layout": props.layout,
-          class: cn(DESCRIPTION_LIST_CLASSES.root, normalizeClass(className)),
+          class: cn(DESCRIPTION_LIST_CLASS, normalizeClass(className)),
           ...rest,
         },
         slots.default?.(),
@@ -91,15 +99,15 @@ export const KozmosDescriptionListItem = defineComponent({
       return h(
         "div",
         {
-          class: cn(DESCRIPTION_LIST_CLASSES.item, normalizeClass(className)),
+          class: cn(DESCRIPTION_LIST_ITEM_CLASS, normalizeClass(className)),
           ...rest,
         },
         [
-          h("dt", { class: DESCRIPTION_LIST_CLASSES.label }, slots.label?.()),
-          h("dd", { class: DESCRIPTION_LIST_CLASSES.value }, [
-            h("span", { class: DESCRIPTION_LIST_CLASSES.content }, shown),
+          h("dt", { class: DESCRIPTION_LIST_LABEL_CLASS }, slots.label?.()),
+          h("dd", { class: DESCRIPTION_LIST_VALUE_CLASS }, [
+            h("span", { class: DESCRIPTION_LIST_CONTENT_CLASS }, shown),
             action
-              ? h("span", { class: DESCRIPTION_LIST_CLASSES.action }, action)
+              ? h("span", { class: DESCRIPTION_LIST_ACTION_CLASS }, action)
               : null,
           ]),
         ],

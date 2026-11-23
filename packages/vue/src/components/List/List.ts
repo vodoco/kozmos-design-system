@@ -1,3 +1,4 @@
+import { Check } from "@kozmos-ds/icons/vue";
 import {
   defineComponent,
   h,
@@ -11,14 +12,22 @@ import {
   LIST_CLASS,
   LIST_ITEM_CLASS,
   LIST_ITEM_SELECTED_CLASS,
-  LIST_ITEM_SLOT_CLASSES,
   LIST_ITEM_SLOTTED_CLASS,
-  LIST_ITEM_STATUS_CLASSES,
+  LIST_ITEM_STATUS_CLASS,
+  LIST_ITEM_STATUS_CHECK_CLASS,
+  LIST_ITEM_STATUS_DOT_CLASS,
   LIST_ITEM_STATUS_LABELS,
   listDensityClasses,
+  LIST_ITEM_BODY_CLASS,
+  LIST_ITEM_DESCRIPTION_CLASS,
+  LIST_ITEM_HEADING_CLASS,
+  LIST_ITEM_LEADING_CLASS,
+  LIST_ITEM_META_CLASS,
+  LIST_ITEM_TITLE_ADDON_CLASS,
+  LIST_ITEM_TITLE_CLASS,
+  LIST_ITEM_TRAILING_CLASS,
 } from "#kozmos-recipes";
 import { drawn } from "../drawn";
-import { glyph } from "../glyphs";
 import type { KozmosListDensity, KozmosListItemStatusValue } from "./types";
 
 /**
@@ -109,7 +118,6 @@ export const KozmosListItem = defineComponent({
         meta ||
         trailing
       );
-      const C = LIST_ITEM_SLOT_CLASSES;
       return h(
         "li",
         {
@@ -127,24 +135,30 @@ export const KozmosListItem = defineComponent({
               leading
                 ? h(
                     "span",
-                    { class: C.leading, "data-slot": "leading" },
+                    { class: LIST_ITEM_LEADING_CLASS, "data-slot": "leading" },
                     leading,
                   )
                 : null,
-              h("div", { class: C.body }, [
+              h("div", { class: LIST_ITEM_BODY_CLASS }, [
                 title || titleAddon
-                  ? h("div", { class: C.heading }, [
+                  ? h("div", { class: LIST_ITEM_HEADING_CLASS }, [
                       title
                         ? h(
                             "span",
-                            { class: C.title, "data-slot": "title" },
+                            {
+                              class: LIST_ITEM_TITLE_CLASS,
+                              "data-slot": "title",
+                            },
                             title,
                           )
                         : null,
                       titleAddon
                         ? h(
                             "span",
-                            { class: C.titleAddon, "data-slot": "title-addon" },
+                            {
+                              class: LIST_ITEM_TITLE_ADDON_CLASS,
+                              "data-slot": "title-addon",
+                            },
                             titleAddon,
                           )
                         : null,
@@ -153,19 +167,29 @@ export const KozmosListItem = defineComponent({
                 description
                   ? h(
                       "div",
-                      { class: C.description, "data-slot": "description" },
+                      {
+                        class: LIST_ITEM_DESCRIPTION_CLASS,
+                        "data-slot": "description",
+                      },
                       description,
                     )
                   : null,
                 meta
-                  ? h("div", { class: C.meta, "data-slot": "meta" }, meta)
+                  ? h(
+                      "div",
+                      { class: LIST_ITEM_META_CLASS, "data-slot": "meta" },
+                      meta,
+                    )
                   : null,
                 children,
               ]),
               trailing
                 ? h(
                     "div",
-                    { class: C.trailing, "data-slot": "trailing" },
+                    {
+                      class: LIST_ITEM_TRAILING_CLASS,
+                      "data-slot": "trailing",
+                    },
                     trailing,
                   )
                 : null,
@@ -202,19 +226,19 @@ export const KozmosListItemStatus = defineComponent({
         "span",
         {
           "data-status": props.status,
-          class: cn(LIST_ITEM_STATUS_CLASSES.root, normalizeClass(className)),
+          class: cn(LIST_ITEM_STATUS_CLASS, normalizeClass(className)),
           ...rest,
         },
         [
           props.status === "done"
-            ? glyph("Check", {
+            ? h(Check, {
                 "aria-hidden": "true",
-                class: LIST_ITEM_STATUS_CLASSES.check,
+                class: LIST_ITEM_STATUS_CHECK_CLASS,
               })
             : props.status === "inProgress"
               ? h("span", {
                   "aria-hidden": "true",
-                  class: LIST_ITEM_STATUS_CLASSES.dot,
+                  class: LIST_ITEM_STATUS_DOT_CLASS,
                 })
               : null,
           h(

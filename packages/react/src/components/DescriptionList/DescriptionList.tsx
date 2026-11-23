@@ -1,7 +1,12 @@
 import React from "react";
 import { cn } from "../../utils";
 import {
-  DESCRIPTION_LIST_CLASSES,
+  DESCRIPTION_LIST_CLASS,
+  DESCRIPTION_LIST_ITEM_CLASS,
+  DESCRIPTION_LIST_LABEL_CLASS,
+  DESCRIPTION_LIST_VALUE_CLASS,
+  DESCRIPTION_LIST_CONTENT_CLASS,
+  DESCRIPTION_LIST_ACTION_CLASS,
   type DescriptionListLayout,
 } from "../../recipes/description-list";
 
@@ -26,7 +31,7 @@ const DescriptionList = React.forwardRef<
   <dl
     ref={ref}
     data-layout={layout}
-    className={cn(DESCRIPTION_LIST_CLASSES.root, className)}
+    className={cn(DESCRIPTION_LIST_CLASS, className)}
     {...props}
   />
 ));
@@ -83,14 +88,14 @@ const DescriptionListItem = React.forwardRef<
     return (
       <div
         ref={ref}
-        className={cn(DESCRIPTION_LIST_CLASSES.item, className)}
+        className={cn(DESCRIPTION_LIST_ITEM_CLASS, className)}
         {...props}
       >
-        <dt className={DESCRIPTION_LIST_CLASSES.label}>{label}</dt>
-        <dd className={DESCRIPTION_LIST_CLASSES.value}>
-          <span className={DESCRIPTION_LIST_CLASSES.content}>{shown}</span>
+        <dt className={DESCRIPTION_LIST_LABEL_CLASS}>{label}</dt>
+        <dd className={DESCRIPTION_LIST_VALUE_CLASS}>
+          <span className={DESCRIPTION_LIST_CONTENT_CLASS}>{shown}</span>
           {action !== undefined && action !== null && (
-            <span className={DESCRIPTION_LIST_CLASSES.action}>{action}</span>
+            <span className={DESCRIPTION_LIST_ACTION_CLASS}>{action}</span>
           )}
         </dd>
       </div>

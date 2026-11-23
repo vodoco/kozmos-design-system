@@ -81,7 +81,7 @@ export const WithoutTitle: Story = {
   render: () => ({
     components: parts,
     template: `
-      <div class="flex flex-col gap-4" style="max-width: 520px">
+      <div class="flex max-w-[520px] flex-col gap-4">
         <KozmosAlert variant="info">
           <Terminal class="h-4 w-4" />
           <KozmosAlertDescription>The merge is saved as a draft.</KozmosAlertDescription>
@@ -109,7 +109,7 @@ export const LivenessAndTitle: Story = {
   render: () => ({
     components: parts,
     template: `
-      <div class="flex flex-col gap-4" style="max-width: 520px">
+      <div class="flex max-w-[520px] flex-col gap-4">
         <KozmosAlert variant="info">
           <KozmosAlertTitle>View only</KozmosAlertTitle>
           <KozmosAlertDescription>

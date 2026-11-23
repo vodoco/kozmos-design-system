@@ -1,4 +1,11 @@
 import {
+  AlertCircle,
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  InfoCircle,
+} from "@kozmos-ds/icons/vue";
+import {
   defineComponent,
   h,
   normalizeClass,
@@ -19,17 +26,10 @@ import {
   NOTICE_MORE_CLASS,
   NOTICE_SUMMARY_CLASS,
   NOTICE_TONES,
-  noticeActionClass,
-  noticeChevronClass,
-  noticeDetailClass,
-  noticeDoneClass,
-  noticeMarkClass,
-  noticeRowClass,
-  noticeTone,
+  noticeParts,
   type NoticeTone,
 } from "#kozmos-recipes";
 import { drawn } from "../drawn";
-import { glyph, type GlyphName } from "../glyphs";
 import { spinnerArc } from "../Spinner/SpinnerArc";
 import type {
   KozmosNoticeIconAlign,
@@ -39,11 +39,11 @@ import type {
 } from "./types";
 
 /** Each tone's own mark, the ones Toast draws for the same four tones. */
-const TONE_MARKS: Record<NoticeTone, GlyphName> = {
-  warning: "AlertTriangle",
-  info: "InfoCircle",
-  critical: "AlertCircle",
-  success: "Check",
+const TONE_MARKS: Record<NoticeTone, typeof Check> = {
+  warning: AlertTriangle,
+  info: InfoCircle,
+  critical: AlertCircle,
+  success: Check,
 };
 
 /**
@@ -118,7 +118,6 @@ export const KozmosNotice = defineComponent({
         emit("update:expanded", next);
       };
 
-      const tone = noticeTone(props.tone);
       const working = props.status === "progress";
       const done = props.status === "done";
       // An #icon that draws nothing is React's icon={null}: no mark, no
@@ -127,6 +126,14 @@ export const KozmosNotice = defineComponent({
       const iconSlot = slots.icon;
       const icon = iconSlot ? drawn(iconSlot()) : undefined;
       const drawsIcon = working || (iconSlot ? !!icon : !done);
+      const [tone, rowClass, markClass, doneClass, chevron, detail, actionBox] =
+        noticeParts(
+          props.tone,
+          props.iconAlign,
+          open,
+          drawsIcon,
+          detailVisible,
+        );
       const resolvedRole =
         (role as string | undefined) ?? LIVE_ROLES[props.live];
       const summary = slots.summary?.();
@@ -147,13 +154,13 @@ export const KozmosNotice = defineComponent({
           ...rest,
         },
         [
-          h("div", { class: noticeRowClass(props.iconAlign) }, [
+          h("div", { class: rowClass }, [
             drawsIcon
               ? h(
                   "span",
                   {
                     "aria-hidden": "true",
-                    class: noticeMarkClass(props.iconAlign),
+                    class: markClass,
                   },
                   working
                     ? [
@@ -163,17 +170,17 @@ export const KozmosNotice = defineComponent({
                         }),
                       ]
                     : (icon ?? [
-                        glyph(TONE_MARKS[tone], { class: NOTICE_MARK_CLASS }),
+                        h(TONE_MARKS[tone], { class: NOTICE_MARK_CLASS }),
                       ]),
                 )
               : null,
             h("div", { class: NOTICE_SUMMARY_CLASS }, summary),
             done
-              ? glyph("Check", {
+              ? h(Check, {
                   "aria-hidden": "true",
                   focusable: "false",
                   "data-kozmos-notice-done": "",
-                  class: noticeDoneClass(props.iconAlign),
+                  class: doneClass,
                 })
               : null,
             hasDetail && canCollapse
@@ -188,9 +195,9 @@ export const KozmosNotice = defineComponent({
                   },
                   [
                     props.expandLabel,
-                    glyph("ChevronDown", {
+                    h(ChevronDown, {
                       "aria-hidden": "true",
-                      class: noticeChevronClass(open),
+                      class: chevron,
                     }),
                   ],
                 )
@@ -200,16 +207,14 @@ export const KozmosNotice = defineComponent({
             ? h(
                 "div",
                 {
-                  class: noticeDetailClass(drawsIcon, detailVisible),
+                  class: detail,
                   hidden: !detailVisible,
                   id: detailId,
                 },
                 [h("div", { class: NOTICE_DETAIL_TEXT_CLASS }, children)],
               )
             : null,
-          action
-            ? h("div", { class: noticeActionClass(drawsIcon) }, action)
-            : null,
+          action ? h("div", { class: actionBox }, action) : null,
         ],
       );
     };

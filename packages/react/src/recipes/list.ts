@@ -27,16 +27,21 @@ export const LIST_ITEM_CLASS = "flex items-center border-b last:border-b-0";
  */
 export const LIST_ITEM_SLOTTED_CLASS = "kozmos-list-item-slotted";
 export const LIST_ITEM_SELECTED_CLASS = "kozmos-list-item-selected";
-export const LIST_ITEM_SLOT_CLASSES = {
-  leading: "kozmos-list-item-leading",
-  body: "kozmos-list-item-body",
-  heading: "kozmos-list-item-heading",
-  title: "kozmos-list-item-title",
-  titleAddon: "kozmos-list-item-title-addon",
-  description: "kozmos-list-item-description",
-  meta: "kozmos-list-item-meta",
-  trailing: "kozmos-list-item-trailing",
-} as const;
+export const LIST_ITEM_LEADING_CLASS = "kozmos-list-item-leading";
+
+export const LIST_ITEM_BODY_CLASS = "kozmos-list-item-body";
+
+export const LIST_ITEM_HEADING_CLASS = "kozmos-list-item-heading";
+
+export const LIST_ITEM_TITLE_CLASS = "kozmos-list-item-title";
+
+export const LIST_ITEM_TITLE_ADDON_CLASS = "kozmos-list-item-title-addon";
+
+export const LIST_ITEM_DESCRIPTION_CLASS = "kozmos-list-item-description";
+
+export const LIST_ITEM_META_CLASS = "kozmos-list-item-meta";
+
+export const LIST_ITEM_TRAILING_CLASS = "kozmos-list-item-trailing";
 
 export type ListItemStatusValue = "todo" | "inProgress" | "done";
 
@@ -48,8 +53,8 @@ export const LIST_ITEM_STATUS_LABELS: Record<ListItemStatusValue, string> = {
 };
 
 /** The status mark's box, its check (done) and its dot (in progress). */
-export const LIST_ITEM_STATUS_CLASSES = {
-  root: "kozmos-list-item-status",
-  check: "kozmos-list-item-status-check",
-  dot: "kozmos-list-item-status-dot",
-} as const;
+export const LIST_ITEM_STATUS_CLASS = "kozmos-list-item-status";
+
+export const LIST_ITEM_STATUS_CHECK_CLASS = "kozmos-list-item-status-check";
+
+export const LIST_ITEM_STATUS_DOT_CLASS = "kozmos-list-item-status-dot";

@@ -16,13 +16,7 @@ import {
   NOTICE_MORE_CLASS,
   NOTICE_SUMMARY_CLASS,
   NOTICE_TONES,
-  noticeActionClass,
-  noticeChevronClass,
-  noticeDetailClass,
-  noticeDoneClass,
-  noticeMarkClass,
-  noticeRowClass,
-  noticeTone,
+  noticeParts,
   type NoticeLiveness,
   type NoticeStatus,
   type NoticeTone,
@@ -166,7 +160,6 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
       onExpandedChange?.(next);
     };
 
-    const resolvedTone: NoticeTone = noticeTone(tone);
     const working = status === "progress";
     const done = status === "done";
     // No icon, no column: the detail and the action then start where the
@@ -174,6 +167,15 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
     // none unless the product gives one; progress always turns the arc.
     const drawsIcon =
       working || (icon !== null && icon !== false && !(done && icon == null));
+    const [
+      resolvedTone,
+      rowClass,
+      markClass,
+      doneClass,
+      chevronClass,
+      detailClass,
+      actionClass,
+    ] = noticeParts(tone, iconAlign, open, drawsIcon, detailVisible);
     const resolvedRole = role ?? LIVE_ROLES[live];
     const ToneMark = toneMarks[resolvedTone];
 
@@ -193,9 +195,9 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
         aria-live={impliedLive(resolvedRole)}
         {...props}
       >
-        <div className={noticeRowClass(iconAlign)}>
+        <div className={rowClass}>
           {drawsIcon && (
-            <span aria-hidden="true" className={noticeMarkClass(iconAlign)}>
+            <span aria-hidden="true" className={markClass}>
               {working ? (
                 <SpinnerArc
                   className={NOTICE_MARK_CLASS}
@@ -215,7 +217,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
               aria-hidden="true"
               focusable="false"
               data-kozmos-notice-done=""
-              className={noticeDoneClass(iconAlign)}
+              className={doneClass}
             />
           )}
           {hasDetail && canCollapse && (
@@ -227,10 +229,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
               type="button"
             >
               {expandLabel}
-              <ChevronDown
-                aria-hidden="true"
-                className={noticeChevronClass(open)}
-              />
+              <ChevronDown aria-hidden="true" className={chevronClass} />
             </button>
           )}
         </div>
@@ -242,15 +241,11 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
           // stylesheet to have loaded, and a notice whose collapsed text
           // appears when CSS fails is the 114px problem this exists to solve.
           // The attribute also takes it out of the accessibility tree.
-          <div
-            className={noticeDetailClass(drawsIcon, detailVisible)}
-            hidden={!detailVisible}
-            id={detailId}
-          >
+          <div className={detailClass} hidden={!detailVisible} id={detailId}>
             <div className={NOTICE_DETAIL_TEXT_CLASS}>{children}</div>
           </div>
         )}
-        {action && <div className={noticeActionClass(drawsIcon)}>{action}</div>}
+        {action && <div className={actionClass}>{action}</div>}
       </div>
     );
   },

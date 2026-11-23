@@ -5,9 +5,18 @@ import {
   LIST_CLASS,
   LIST_ITEM_CLASS,
   LIST_ITEM_SELECTED_CLASS,
-  LIST_ITEM_SLOT_CLASSES,
+  LIST_ITEM_LEADING_CLASS,
+  LIST_ITEM_BODY_CLASS,
+  LIST_ITEM_HEADING_CLASS,
+  LIST_ITEM_TITLE_CLASS,
+  LIST_ITEM_TITLE_ADDON_CLASS,
+  LIST_ITEM_DESCRIPTION_CLASS,
+  LIST_ITEM_META_CLASS,
+  LIST_ITEM_TRAILING_CLASS,
   LIST_ITEM_SLOTTED_CLASS,
-  LIST_ITEM_STATUS_CLASSES,
+  LIST_ITEM_STATUS_CLASS,
+  LIST_ITEM_STATUS_CHECK_CLASS,
+  LIST_ITEM_STATUS_DOT_CLASS,
   LIST_ITEM_STATUS_LABELS,
   listDensityClasses,
   type ListDensity,
@@ -122,27 +131,21 @@ const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
         {slotted ? (
           <>
             {leading != null ? (
-              <span
-                className={LIST_ITEM_SLOT_CLASSES.leading}
-                data-slot="leading"
-              >
+              <span className={LIST_ITEM_LEADING_CLASS} data-slot="leading">
                 {leading}
               </span>
             ) : null}
-            <div className={LIST_ITEM_SLOT_CLASSES.body}>
+            <div className={LIST_ITEM_BODY_CLASS}>
               {title != null || titleAddon != null ? (
-                <div className={LIST_ITEM_SLOT_CLASSES.heading}>
+                <div className={LIST_ITEM_HEADING_CLASS}>
                   {title != null ? (
-                    <span
-                      className={LIST_ITEM_SLOT_CLASSES.title}
-                      data-slot="title"
-                    >
+                    <span className={LIST_ITEM_TITLE_CLASS} data-slot="title">
                       {title}
                     </span>
                   ) : null}
                   {titleAddon != null ? (
                     <span
-                      className={LIST_ITEM_SLOT_CLASSES.titleAddon}
+                      className={LIST_ITEM_TITLE_ADDON_CLASS}
                       data-slot="title-addon"
                     >
                       {titleAddon}
@@ -152,24 +155,21 @@ const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
               ) : null}
               {description != null ? (
                 <div
-                  className={LIST_ITEM_SLOT_CLASSES.description}
+                  className={LIST_ITEM_DESCRIPTION_CLASS}
                   data-slot="description"
                 >
                   {description}
                 </div>
               ) : null}
               {meta != null ? (
-                <div className={LIST_ITEM_SLOT_CLASSES.meta} data-slot="meta">
+                <div className={LIST_ITEM_META_CLASS} data-slot="meta">
                   {meta}
                 </div>
               ) : null}
               {children}
             </div>
             {trailing != null ? (
-              <div
-                className={LIST_ITEM_SLOT_CLASSES.trailing}
-                data-slot="trailing"
-              >
+              <div className={LIST_ITEM_TRAILING_CLASS} data-slot="trailing">
                 {trailing}
               </div>
             ) : null}
@@ -208,13 +208,13 @@ const ListItemStatus = React.forwardRef<HTMLSpanElement, ListItemStatusProps>(
     <span
       ref={ref}
       data-status={status}
-      className={cn(LIST_ITEM_STATUS_CLASSES.root, className)}
+      className={cn(LIST_ITEM_STATUS_CLASS, className)}
       {...props}
     >
       {status === "done" ? (
-        <Check aria-hidden="true" className={LIST_ITEM_STATUS_CLASSES.check} />
+        <Check aria-hidden="true" className={LIST_ITEM_STATUS_CHECK_CLASS} />
       ) : status === "inProgress" ? (
-        <span aria-hidden="true" className={LIST_ITEM_STATUS_CLASSES.dot} />
+        <span aria-hidden="true" className={LIST_ITEM_STATUS_DOT_CLASS} />
       ) : null}
       <span className="sr-only">
         {label ?? LIST_ITEM_STATUS_LABELS[status]}

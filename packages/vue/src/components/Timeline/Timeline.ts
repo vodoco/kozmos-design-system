@@ -6,7 +6,17 @@ import {
   type SlotsType,
   type VNode,
 } from "vue";
-import { cn, TIMELINE_CLASSES } from "#kozmos-recipes";
+import {
+  cn,
+  TIMELINE_CLASS,
+  TIMELINE_COMPACT_CLASS,
+  TIMELINE_DESCRIPTION_CLASS,
+  TIMELINE_DOT_CLASS,
+  TIMELINE_ITEM_CLASS,
+  TIMELINE_MARKER_CLASS,
+  TIMELINE_TIME_CLASS,
+  TIMELINE_TITLE_CLASS,
+} from "#kozmos-recipes";
 import type { KozmosTimelineDensity } from "./types";
 
 /** The default slot, as React's `children`. */
@@ -35,7 +45,7 @@ function drawText(
 /**
  * Vue's counterpart of React's Timeline: an `<ol>` of events, each a
  * `KozmosTimelineItem` with its marker on a rail that ends at the last one
- * (GAP-247), drawn from the same recipe (`TIMELINE_CLASSES`). `density`
+ * (GAP-247), drawn from the same recipe (`TIMELINE_CLASS`). `density`
  * `compact` tightens every part inside it. The `data-timeline-*` attributes
  * are its anatomy, written `"true"` as React writes a bare JSX attribute.
  */
@@ -58,8 +68,8 @@ export const KozmosTimeline = defineComponent({
           "data-density": props.density,
           "data-timeline": "true",
           class: cn(
-            TIMELINE_CLASSES.root,
-            props.density === "compact" && TIMELINE_CLASSES.compact,
+            TIMELINE_CLASS,
+            props.density === "compact" && TIMELINE_COMPACT_CLASS,
             normalizeClass(className),
           ),
           ...rest,
@@ -85,7 +95,7 @@ export const KozmosTimelineItem = defineComponent({
         "li",
         {
           "data-timeline-item": "true",
-          class: cn(TIMELINE_CLASSES.item, normalizeClass(className)),
+          class: cn(TIMELINE_ITEM_CLASS, normalizeClass(className)),
           ...rest,
         },
         [
@@ -94,12 +104,12 @@ export const KozmosTimelineItem = defineComponent({
             {
               "aria-hidden": "true",
               "data-timeline-marker": "true",
-              class: TIMELINE_CLASSES.marker,
+              class: TIMELINE_MARKER_CLASS,
             },
             [
               h("span", {
                 "data-timeline-dot": "true",
-                class: TIMELINE_CLASSES.dot,
+                class: TIMELINE_DOT_CLASS,
               }),
             ],
           ),
@@ -120,7 +130,7 @@ export const KozmosTimelineTime = defineComponent({
       drawText(
         "time",
         "data-timeline-time",
-        TIMELINE_CLASSES.time,
+        TIMELINE_TIME_CLASS,
         attrs,
         slots.default?.(),
       );
@@ -137,7 +147,7 @@ export const KozmosTimelineTitle = defineComponent({
       drawText(
         "h3",
         "data-timeline-title",
-        TIMELINE_CLASSES.title,
+        TIMELINE_TITLE_CLASS,
         attrs,
         slots.default?.(),
       );
@@ -154,7 +164,7 @@ export const KozmosTimelineDescription = defineComponent({
       drawText(
         "p",
         "data-timeline-description",
-        TIMELINE_CLASSES.description,
+        TIMELINE_DESCRIPTION_CLASS,
         attrs,
         slots.default?.(),
       );

@@ -1,14 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
-import { KozmosMetaStrip, KozmosMetaStripItem } from "../../index";
-import { KozmosIcon } from "../../react-bridge";
+import { KozmosIcon, KozmosMetaStrip, KozmosMetaStripItem } from "../../index";
 
 /**
  * Vue's MetaStrip: the stories React's has, with the same names, each
  * inside the KozmosThemeProvider the Storybook's decorator gives every
  * story, drawn by its own render as React's is;
  * test/parity/meta-strip.parity.spec.ts draws each in both and holds Vue's
- * render to React's. Icon has no native port yet, so it comes from the
- * bridge, as an app would draw it today.
+ * render to React's.
  */
 const meta: Meta = {
   title: "Vue/Core/Data display/MetaStrip",

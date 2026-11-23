@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import * as KozmosReact from "@kozmos-ds/react";
 import { createApp, h, type App } from "vue";
 import {
+  KozmosIcon,
   KozmosMetaStrip,
   KozmosMetaStripItem,
   KozmosThemeProvider,
@@ -16,8 +17,7 @@ import { element, slotted } from "./slotted";
 /**
  * React's MetaStrip stories draw their tiles with their own render, so the
  * stories parity check cannot draw them from args: here is each, drawn in
- * both. Icon has no native Vue port yet, so the same element stands in for
- * it in both. Then, mounted, what a server render cannot show: the strip's
+ * both, its icon the native Icon in each. Then, mounted, what a server render cannot show: the strip's
  * arrow keys scroll it while it has focus, after an app's own keydown
  * listener, as React's runs its onKeyDown first.
  */
@@ -44,7 +44,7 @@ describe("KozmosMetaStrip draws what React's MetaStrip draws", () => {
         tile(
           { label: "Travel time" },
           "12 min",
-          element("svg", { className: "clock" }),
+          slotted(KozmosReact.Icon, KozmosIcon, { name: "clock", size: "sm" }),
         ),
         tile({ label: "Distance" }, "210 m"),
         tile({ label: "Price band" }, "$$$$"),

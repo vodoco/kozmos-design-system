@@ -2408,11 +2408,6 @@ describe("attributes reach React alone", () => {
       slot: "Gate 4",
     },
     {
-      name: "KozmosAvatar",
-      kind: "an adapter of several React parts",
-      props: { fallback: "AL" },
-    },
-    {
       name: "KozmosIconButton",
       kind: "a wrapper with props declared",
       slot: "G",

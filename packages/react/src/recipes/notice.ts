@@ -6,7 +6,9 @@
  * progress mark `SPINNER_ARC`. Framework-free
  * (`recipes.framework-free.test.ts`).
  */
-import { cn } from "../utils";
+
+/** The notice's box; its tone's classes follow (`NOTICE_TONES`). */
+export const NOTICE_CLASS = "w-full rounded-container border px-3 py-2";
 
 export type NoticeTone = "warning" | "info" | "critical" | "success";
 
@@ -42,30 +44,6 @@ export const NOTICE_TONES: Record<NoticeTone, string> = {
   success: "border-success/50 bg-success/5 text-success-text",
 };
 
-/** A tone the notice knows, or `warning`, its default, for any other. */
-export function noticeTone(tone: NoticeTone | undefined): NoticeTone {
-  return tone !== undefined && NOTICE_TONES[tone] ? tone : "warning";
-}
-
-/** The notice's box; its tone's classes follow (`NOTICE_TONES`). */
-export const NOTICE_CLASS = "w-full rounded-container border px-3 py-2";
-
-/** The summary's line: the mark, the summary, the done check, More. */
-export function noticeRowClass(iconAlign: NoticeIconAlign): string {
-  return cn(
-    "flex gap-2",
-    iconAlign === "center" ? "items-center" : "items-start",
-  );
-}
-
-/** The mark's box at the start, and the done check at the end. */
-export function noticeMarkClass(iconAlign: NoticeIconAlign): string {
-  return cn("shrink-0", iconAlign === "start" && "mt-0.5");
-}
-export function noticeDoneClass(iconAlign: NoticeIconAlign): string {
-  return cn("h-4 w-4 shrink-0", iconAlign === "start" && "mt-0.5");
-}
-
 /** The tone's mark and the progress arc, at 16. */
 export const NOTICE_MARK_CLASS = "h-4 w-4";
 export const NOTICE_MARK_SIZE = 16;
@@ -78,20 +56,39 @@ export const NOTICE_SUMMARY_CLASS =
 export const NOTICE_MORE_CLASS =
   "kozmos-notice-more -mr-1 inline-flex shrink-0 items-center gap-1 rounded-control px-1 py-0.5 text-xs font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
-export function noticeChevronClass(open: boolean): string {
-  return cn("h-3.5 w-3.5 transition-transform", open && "rotate-180");
-}
-
-/** The detail's box, under the summary, in line with it. */
-export function noticeDetailClass(
-  drawsIcon: boolean,
-  visible: boolean,
-): string {
-  return cn(drawsIcon && "pl-6", "pr-1", visible && "mt-1.5");
-}
 export const NOTICE_DETAIL_TEXT_CLASS = "text-sm leading-snug";
 
-/** The action's box, under the text, in line with it. */
-export function noticeActionClass(drawsIcon: boolean): string {
-  return cn("mt-3", drawsIcon && "pl-6");
+/**
+ * Everything else a notice draws that its state decides, in one call: the
+ * tone it draws (`warning`, its default, for a tone it does not know); the
+ * summary's line; the mark's box at the start; the done check at the end;
+ * More's chevron; the detail's box, in line with the summary; and the
+ * action's box, under the text.
+ */
+export function noticeParts(
+  tone: NoticeTone | undefined,
+  iconAlign: NoticeIconAlign,
+  open: boolean,
+  drawsIcon: boolean,
+  detailVisible: boolean,
+): [
+  tone: NoticeTone,
+  row: string,
+  mark: string,
+  done: string,
+  chevron: string,
+  detail: string,
+  action: string,
+] {
+  const start = iconAlign === "start" ? " mt-0.5" : "";
+  const inset = drawsIcon ? " pl-6" : "";
+  return [
+    tone !== undefined && NOTICE_TONES[tone] ? tone : "warning",
+    `flex gap-2 ${iconAlign === "center" ? "items-center" : "items-start"}`,
+    `shrink-0${start}`,
+    `h-4 w-4 shrink-0${start}`,
+    `h-3.5 w-3.5 transition-transform${open ? " rotate-180" : ""}`,
+    `${drawsIcon ? "pl-6 " : ""}pr-1${detailVisible ? " mt-1.5" : ""}`,
+    `mt-3${inset}`,
+  ];
 }

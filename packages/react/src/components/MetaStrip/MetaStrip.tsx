@@ -1,7 +1,14 @@
 import * as React from "react";
 import { cn } from "../../utils";
 import { scrollHorizontalWithKeyboard } from "../../recipes/keyboard-scroll";
-import { META_STRIP_CLASSES } from "../../recipes/meta-strip";
+import {
+  META_STRIP_CLASS,
+  META_STRIP_ICON_CLASS,
+  META_STRIP_ITEM_CLASS,
+  META_STRIP_LABEL_CLASS,
+  META_STRIP_LABEL_HIDDEN_CLASS,
+  META_STRIP_VALUE_CLASS,
+} from "../../recipes/meta-strip";
 
 /**
  * A row of small facts about one thing, each a label and a value.
@@ -33,7 +40,7 @@ const MetaStrip = React.forwardRef<
       onKeyDown?.(event);
       scrollHorizontalWithKeyboard(event);
     }}
-    className={cn(META_STRIP_CLASSES.root, className)}
+    className={cn(META_STRIP_CLASS, className)}
     data-slot="meta-strip"
     {...props}
   >
@@ -55,21 +62,21 @@ const MetaStripItem = React.forwardRef<HTMLDivElement, MetaStripItemProps>(
   ({ className, label, showLabel = false, icon, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(META_STRIP_CLASSES.item, className)}
+      className={cn(META_STRIP_ITEM_CLASS, className)}
       data-slot="meta-strip-item"
       {...props}
     >
       <dt
         className={cn(
-          META_STRIP_CLASSES.label,
-          !showLabel && META_STRIP_CLASSES.labelHidden,
+          META_STRIP_LABEL_CLASS,
+          !showLabel && META_STRIP_LABEL_HIDDEN_CLASS,
         )}
       >
         {label}
       </dt>
-      <dd className={META_STRIP_CLASSES.value}>
+      <dd className={META_STRIP_VALUE_CLASS}>
         {icon ? (
-          <span aria-hidden="true" className={META_STRIP_CLASSES.icon}>
+          <span aria-hidden="true" className={META_STRIP_ICON_CLASS}>
             {icon}
           </span>
         ) : null}

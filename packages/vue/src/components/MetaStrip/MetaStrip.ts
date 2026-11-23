@@ -7,7 +7,12 @@ import {
 } from "vue";
 import {
   cn,
-  META_STRIP_CLASSES,
+  META_STRIP_CLASS,
+  META_STRIP_ITEM_CLASS,
+  META_STRIP_LABEL_HIDDEN_CLASS,
+  META_STRIP_LABEL_CLASS,
+  META_STRIP_VALUE_CLASS,
+  META_STRIP_ICON_CLASS,
   scrollHorizontalWithKeyboard,
 } from "#kozmos-recipes";
 import { drawn } from "../drawn";
@@ -23,7 +28,7 @@ function callListeners(listeners: unknown, event: KeyboardEvent) {
 /**
  * Vue's counterpart of React's MetaStrip: a row of small facts about one
  * thing, each a label and a value, drawn from the same recipe
- * (`META_STRIP_CLASSES`). A `<dl>`, because every tile pairs a label with a
+ * (`META_STRIP_CLASS`). A `<dl>`, because every tile pairs a label with a
  * value; a tile may hide its label visually, but the label is always in the
  * accessible name. It scrolls rather than wraps: it is a stop for Tab, and
  * its arrow keys, Home and End scroll it while it has focus (the shared
@@ -47,7 +52,7 @@ export const KozmosMetaStrip = defineComponent({
             callListeners(onKeydown, event);
             scrollHorizontalWithKeyboard(event);
           },
-          class: cn(META_STRIP_CLASSES.root, normalizeClass(className)),
+          class: cn(META_STRIP_CLASS, normalizeClass(className)),
           "data-slot": "meta-strip",
           ...rest,
         },
@@ -85,7 +90,7 @@ export const KozmosMetaStripItem = defineComponent({
       return h(
         "div",
         {
-          class: cn(META_STRIP_CLASSES.item, normalizeClass(className)),
+          class: cn(META_STRIP_ITEM_CLASS, normalizeClass(className)),
           "data-slot": "meta-strip-item",
           ...rest,
         },
@@ -94,17 +99,17 @@ export const KozmosMetaStripItem = defineComponent({
             "dt",
             {
               class: cn(
-                META_STRIP_CLASSES.label,
-                !props.showLabel && META_STRIP_CLASSES.labelHidden,
+                META_STRIP_LABEL_CLASS,
+                !props.showLabel && META_STRIP_LABEL_HIDDEN_CLASS,
               ),
             },
             props.label,
           ),
-          h("dd", { class: META_STRIP_CLASSES.value }, [
+          h("dd", { class: META_STRIP_VALUE_CLASS }, [
             icon
               ? h(
                   "span",
-                  { "aria-hidden": "true", class: META_STRIP_CLASSES.icon },
+                  { "aria-hidden": "true", class: META_STRIP_ICON_CLASS },
                   icon,
                 )
               : null,

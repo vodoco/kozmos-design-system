@@ -1,6 +1,16 @@
 import React from "react";
 import { cn } from "../../utils";
-import { TIMELINE_CLASSES, type TimelineDensity } from "../../recipes/timeline";
+import {
+  type TimelineDensity,
+  TIMELINE_CLASS,
+  TIMELINE_COMPACT_CLASS,
+  TIMELINE_DESCRIPTION_CLASS,
+  TIMELINE_DOT_CLASS,
+  TIMELINE_ITEM_CLASS,
+  TIMELINE_MARKER_CLASS,
+  TIMELINE_TIME_CLASS,
+  TIMELINE_TITLE_CLASS,
+} from "../../recipes/timeline";
 
 export type { TimelineDensity };
 
@@ -15,8 +25,8 @@ const Timeline = React.forwardRef<HTMLOListElement, TimelineProps>(
       data-density={density}
       data-timeline
       className={cn(
-        TIMELINE_CLASSES.root,
-        density === "compact" && TIMELINE_CLASSES.compact,
+        TIMELINE_CLASS,
+        density === "compact" && TIMELINE_COMPACT_CLASS,
         className,
       )}
       {...props}
@@ -32,15 +42,15 @@ const TimelineItem = React.forwardRef<HTMLLIElement, TimelineItemProps>(
     <li
       ref={ref}
       data-timeline-item
-      className={cn(TIMELINE_CLASSES.item, className)}
+      className={cn(TIMELINE_ITEM_CLASS, className)}
       {...props}
     >
       <span
         aria-hidden="true"
         data-timeline-marker
-        className={TIMELINE_CLASSES.marker}
+        className={TIMELINE_MARKER_CLASS}
       >
-        <span data-timeline-dot className={TIMELINE_CLASSES.dot} />
+        <span data-timeline-dot className={TIMELINE_DOT_CLASS} />
       </span>
       {children}
     </li>
@@ -55,7 +65,7 @@ const TimelineTime = React.forwardRef<
   <time
     ref={ref}
     data-timeline-time
-    className={cn(TIMELINE_CLASSES.time, className)}
+    className={cn(TIMELINE_TIME_CLASS, className)}
     {...props}
   />
 ));
@@ -68,7 +78,7 @@ const TimelineTitle = React.forwardRef<
   <h3
     ref={ref}
     data-timeline-title
-    className={cn(TIMELINE_CLASSES.title, className)}
+    className={cn(TIMELINE_TITLE_CLASS, className)}
     {...props}
   />
 ));
@@ -81,7 +91,7 @@ const TimelineDescription = React.forwardRef<
   <p
     ref={ref}
     data-timeline-description
-    className={cn(TIMELINE_CLASSES.description, className)}
+    className={cn(TIMELINE_DESCRIPTION_CLASS, className)}
     {...props}
   />
 ));

@@ -3,11 +3,12 @@ import * as React from "react";
 import { createCommentVNode, defineComponent, h } from "vue";
 import * as KozmosReact from "@kozmos-ds/react";
 import {
-  KozmosBadge,
   KozmosButton,
+  KozmosIcon,
   KozmosList,
   KozmosListItem,
   KozmosListItemStatus,
+  KozmosTag,
   KozmosThemeProvider,
 } from "../../src/index";
 import { renderBoth, type Drawn } from "./render";
@@ -17,9 +18,9 @@ import { element, slotted } from "./slotted";
  * React's List stories draw their rows with their own render, so the
  * stories parity check cannot draw them from args: here is each, drawn in
  * both, and the edges React's tests cover (ListItem.slots.test.tsx). Where
- * a story holds a part Vue has no native port of yet (Tag, Checkbox,
- * IconButton, Icon), the same element stands in for it in both, so what is
- * compared is the list's own drawing; Button and Badge are native, and
+ * a story holds a part Vue has no native port of yet (Checkbox,
+ * IconButton), the same element stands in for it in both, so what is
+ * compared is the list's own drawing; Button, Tag and Icon are native, and
  * drawn as themselves.
  */
 const inTheme = (...children: Drawn[]): Drawn => ({
@@ -43,11 +44,10 @@ const status = (props: Record<string, unknown>) =>
   );
 const button = (props: Record<string, unknown>, label: string) =>
   slotted(KozmosReact.Button, KozmosButton, props, { default: [label] });
-/** Tag's place: a secondary Badge's element, the same in both. */
 const tag = (label: string) =>
   slotted(
-    KozmosReact.Badge,
-    KozmosBadge,
+    KozmosReact.Tag,
+    KozmosTag,
     { variant: "secondary" },
     { default: [label] },
   );
@@ -149,7 +149,13 @@ describe("KozmosList draws what React's List draws", () => {
             { selected: shown[persona] },
             {
               // Icon's, IconButton's and Checkbox's places.
-              leading: [element("span", { className: "persona-mark" })],
+              leading: [
+                slotted(KozmosReact.Icon, KozmosIcon, {
+                  name: "user",
+                  size: "sm",
+                  color: "muted",
+                }),
+              ],
               title: [persona],
               titleAddon: [
                 element("button", { "aria-label": `About ${persona}` }),

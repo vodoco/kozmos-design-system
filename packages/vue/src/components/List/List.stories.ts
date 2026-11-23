@@ -3,24 +3,21 @@ import { HelpCircle } from "@kozmos-ds/icons/vue";
 import { reactive } from "vue";
 import {
   KozmosButton,
+  KozmosIcon,
   KozmosList,
   KozmosListItem,
   KozmosListItemStatus,
-} from "../../index";
-import {
-  KozmosCheckbox,
-  KozmosIcon,
-  KozmosIconButton,
   KozmosTag,
-} from "../../react-bridge";
+} from "../../index";
+import { KozmosCheckbox, KozmosIconButton } from "../../react-bridge";
 
 /**
  * Vue's List: the stories React's has, with the same names, each inside the
  * KozmosThemeProvider the Storybook's decorator gives every story. Each is
  * drawn by its own render, as React's is; test/parity/list.parity.spec.ts
- * draws each in both and holds Vue's render to React's. Tag, Checkbox,
- * IconButton and Icon have no native port yet, so they come from the
- * bridge, as an app would draw them today.
+ * draws each in both and holds Vue's render to React's. Checkbox and
+ * IconButton have no native port yet, so they come from the bridge, as an
+ * app would draw them today.
  */
 const meta: Meta = {
   title: "Vue/Core/Data display/List",

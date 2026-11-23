@@ -7,14 +7,17 @@
  */
 
 /** The `<dl>`, its `<div>` items, and each item's label, value, words and action. */
-export const DESCRIPTION_LIST_CLASSES = {
-  root: "kozmos-description-list",
-  item: "kozmos-description-list-item",
-  label: "kozmos-description-list-label",
-  value: "kozmos-description-list-value",
-  content: "kozmos-description-list-content",
-  action: "kozmos-description-list-action",
-} as const;
+export const DESCRIPTION_LIST_CLASS = "kozmos-description-list";
+
+export const DESCRIPTION_LIST_ITEM_CLASS = "kozmos-description-list-item";
+
+export const DESCRIPTION_LIST_LABEL_CLASS = "kozmos-description-list-label";
+
+export const DESCRIPTION_LIST_VALUE_CLASS = "kozmos-description-list-value";
+
+export const DESCRIPTION_LIST_CONTENT_CLASS = "kozmos-description-list-content";
+
+export const DESCRIPTION_LIST_ACTION_CLASS = "kozmos-description-list-action";
 
 /**
  * How a DescriptionList's items go (GAP-221, decision 199): `"stack"`, one
