@@ -1,6 +1,16 @@
 import React from "react";
 import { Check, Copy01 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import {
+  CODE_BLOCK_CLASS,
+  CODE_BLOCK_COPY_CLASS,
+  CODE_BLOCK_COPY_ICON_CLASS,
+  CODE_BLOCK_PRE_CLASS,
+  CODE_BLOCK_SAID_MS,
+  codeBlockCapped,
+  codeBlockSaid,
+  codeBlockTabIndex,
+} from "../../recipes/code-block";
 import { IconButton } from "../IconButton/IconButton";
 
 export interface CodeBlockProps extends Omit<
@@ -64,11 +74,13 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
     const [said, setSaid] = React.useState("");
     React.useEffect(() => {
       if (!said) return;
-      const timer = setTimeout(setSaid, 2000, "");
+      const timer = setTimeout(setSaid, CODE_BLOCK_SAID_MS, "");
       return () => clearTimeout(timer);
     }, [said]);
-    const icon = "kozmos-reset kozmos-code-block-copy-icon";
-    const capped = maxHeight !== undefined && maxHeight !== null;
+    // The classes and rules are shared with Vue's KozmosCodeBlock
+    // (recipes/code-block.ts).
+    const icon = CODE_BLOCK_COPY_ICON_CLASS;
+    const capped = codeBlockCapped(maxHeight);
     return (
       <div
         ref={ref}
@@ -76,15 +88,15 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
         aria-label={label}
         data-wrap={wrap ? "true" : "false"}
         data-copyable={copyable ? "true" : undefined}
-        className={cn("kozmos-code-block", className)}
+        className={cn(CODE_BLOCK_CLASS, className)}
         {...props}
       >
         <pre
-          className="kozmos-code-block-pre"
+          className={CODE_BLOCK_PRE_CLASS}
           style={capped ? { maxHeight } : undefined}
           // Scrolling sideways, or down past maxHeight, the box is a stop on
           // the keyboard's way.
-          tabIndex={wrap && !capped ? undefined : 0}
+          tabIndex={codeBlockTabIndex(wrap, capped)}
         >
           <code>{code}</code>
         </pre>
@@ -95,7 +107,7 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
               size="sm"
               variant="ghost"
               aria-label={copyLabel}
-              className="kozmos-code-block-copy"
+              className={CODE_BLOCK_COPY_CLASS}
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(code);
@@ -104,11 +116,7 @@ const CodeBlock = React.forwardRef<HTMLDivElement, CodeBlockProps>(
                 }
                 // The same words twice are not read twice: a second copy
                 // changes them by a no-break space, as Input's copy does.
-                setSaid((previous) =>
-                  previous === copiedLabel
-                    ? `${copiedLabel}\u00a0`
-                    : copiedLabel,
-                );
+                setSaid((previous) => codeBlockSaid(previous, copiedLabel));
                 onCopy?.(code);
               }}
             >

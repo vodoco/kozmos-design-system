@@ -162,6 +162,11 @@ const files = {
   figmaLinked: "figma.linked.config.json",
   reactText: "packages/react/src/components/Text/Text.tsx",
   reactHeading: "packages/react/src/components/Heading/Heading.tsx",
+  // Text's, Heading's and Label's recipes, shared with Vue's KozmosText,
+  // KozmosHeading and KozmosLabel (wave V1).
+  reactTextRecipe: "packages/react/src/recipes/text.ts",
+  reactHeadingRecipe: "packages/react/src/recipes/heading.ts",
+  reactLabelRecipe: "packages/react/src/recipes/label.ts",
   reactLink: "packages/react/src/components/Link/Link.tsx",
   reactLinkFigma: "packages/react/src/components/Link/Link.figma.tsx",
   reactLabel: "packages/react/src/components/Label/Label.tsx",
@@ -194,6 +199,8 @@ const files = {
   reactButtonRecipe: "packages/react/src/recipes/button.ts",
   reactIconFigma: "packages/react/src/components/Icon/Icon.figma.tsx",
   reactIconButton: "packages/react/src/components/IconButton/IconButton.tsx",
+  // IconButton's box, shared with Vue's KozmosCodeBlock's copy (wave V1).
+  reactIconButtonRecipe: "packages/react/src/recipes/icon-button.ts",
   reactCounter: "packages/react/src/components/Counter/Counter.tsx",
   reactCounterFigma: "packages/react/src/components/Counter/Counter.figma.tsx",
   reactBadge: "packages/react/src/components/Badge/Badge.tsx",
@@ -840,14 +847,14 @@ for (const [size, classes] of [
   );
 }
 assertContains(
-  files.reactIconButton,
-  source.reactIconButton,
+  files.reactIconButtonRecipe,
+  source.reactIconButtonRecipe,
   'return "h-icon-control w-icon-control px-0"',
   "IconButton root class at the density's size",
 );
 assertContains(
-  files.reactIconButton,
-  source.reactIconButton,
+  files.reactIconButtonRecipe,
+  source.reactIconButtonRecipe,
   '"h-icon-control-lg w-icon-control-lg px-0',
   "IconButton large size at the density's size",
 );
@@ -2438,8 +2445,8 @@ assertContains(
     // Decision 82: IconButton reads the density's size, and CategoryField's
     // root is a touch DensityScope, where that size is the target.
     assertContains(
-      files.reactIconButton,
-      source.reactIconButton,
+      files.reactIconButtonRecipe,
+      source.reactIconButtonRecipe,
       'return "h-icon-control w-icon-control px-0"',
       "Core IconButton supplies CategoryField clear target at the density's size",
     );
@@ -4033,8 +4040,8 @@ assertContains(
   "React Label Radix primitive",
 );
 assertContains(
-  files.reactLabel,
-  source.reactLabel,
+  files.reactLabelRecipe,
+  source.reactLabelRecipe,
   "kozmos-reset kozmos-label",
   "React Label owned recipe",
 );
@@ -4173,8 +4180,8 @@ assertContains(
   "React Heading uses owned bold typography",
 );
 assertContains(
-  files.reactHeading,
-  source.reactHeading,
+  files.reactHeadingRecipe,
+  source.reactHeadingRecipe,
   "1: '4xl'",
   "React Heading H1 maps to 4xl",
 );
@@ -4186,8 +4193,8 @@ for (const [level, size] of [
   [6, "base"],
 ]) {
   assertContains(
-    files.reactHeading,
-    source.reactHeading,
+    files.reactHeadingRecipe,
+    source.reactHeadingRecipe,
     `${level}: "${size}"`,
     `React Heading H${level} maps to ${size}`,
   );
@@ -4238,14 +4245,14 @@ assertNotContains(
   "Text component picker option after typography demotion",
 );
 assertContains(
-  files.reactText,
-  source.reactText,
+  files.reactTextRecipe,
+  source.reactTextRecipe,
   "'4xl': 'kozmos-text-4xl'",
   "React Text 4xl size",
 );
 assertContains(
-  files.reactText,
-  source.reactText,
+  files.reactTextRecipe,
+  source.reactTextRecipe,
   "destructive: 'kozmos-text-destructive'",
   "React Text destructive tone",
 );

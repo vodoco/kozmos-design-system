@@ -1,9 +1,9 @@
 import React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
-import { cva, type VariantProps } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import { cn } from "../../utils";
-
-const labelVariants = cva("kozmos-reset kozmos-label");
+// The recipe is shared with Vue's KozmosLabel (recipes/label.ts).
+import { labelVariants } from "../../recipes/label";
 
 export interface LabelProps
   extends

@@ -1,33 +1,13 @@
 import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import { cn } from "../../utils";
+// The recipe is shared with Vue's KozmosIcon (recipes/icon.ts).
+import { iconAriaHidden, iconVariants } from "../../recipes/icon";
 import { getIconComponent, type KozmosIconKey } from "@kozmos-ds/icons";
 import type {
   KozmosIconComponent as LucideIcon,
   KozmosIconProps as LucideProps,
 } from "@kozmos-ds/icons";
-
-const iconVariants = cva("", {
-  variants: {
-    size: {
-      xs: "h-3 w-3",
-      sm: "h-4 w-4",
-      md: "h-5 w-5",
-      lg: "h-6 w-6",
-      xl: "h-8 w-8",
-    },
-    color: {
-      default: "text-current",
-      muted: "text-muted-foreground",
-      primary: "text-primary",
-      destructive: "text-destructive-text",
-    },
-  },
-  defaultVariants: {
-    size: "md",
-    color: "default",
-  },
-});
 
 export interface IconProps
   extends
@@ -45,9 +25,10 @@ const Icon = React.forwardRef<SVGSVGElement, IconProps>(
     return (
       <IconComp
         ref={ref}
-        aria-hidden={
-          props["aria-label"] || props["aria-labelledby"] ? undefined : "true"
-        }
+        aria-hidden={iconAriaHidden(
+          props["aria-label"],
+          props["aria-labelledby"],
+        )}
         className={cn(iconVariants({ size, color, className }))}
         {...props}
       />
