@@ -108,8 +108,8 @@ GAP-151's sections, GAP-268 and GAP-269 are released in 0.16.0; GAP-217 and GAP-
 and GAP-274 to GAP-276 are in 0.17.0, as is GAP-016 on `next`; and its GAP-244, an option's media, is new here as
 **GAP-282** (decision 215). The repository's own findings of 17 and 18 Nov add **GAP-280** (native FileUpload's
 limits) and **GAP-281** (button colours copied, not referenced), and the 0.17.0 work of 18 Nov adds **GAP-283** to
-**GAP-285** and decisions 217 to 226; the Vue track of 20 Nov adds decisions 227 and 228, and of 24 Nov **GAP-286** (a bridged part's `space-*` margin).
-The next free ID is **GAP-287**, and the next free decision **229**.
+**GAP-285** and decisions 217 to 226; the Vue track of 20 Nov adds decisions 227 and 228, of 23 Nov decision 229, and of
+24 Nov **GAP-286** (a bridged part's `space-*` margin). The next free ID is **GAP-287**, and the next free decision **230**.
 
 Previous intake: **Kozmos Design System Gaps (9).md**, exported from Claude Design on 2026-11-09 and compared with
 the 2026-11-05 intake below. Source SHA-256:
@@ -1724,6 +1724,10 @@ camera control, branding/provider policy and product ranking in their host adapt
   - **228, the Vue bridge's budget only falls (20 Nov):** `@kozmos-ds/vue/react-bridge` is held to 13.5 KB (11.5
     before the context bridge, GAP-230, which measured 12.67). Each Vue wave lowers it to the wave's measurement plus
     half a kilobyte, until the bridge is retired.
+  - **229, React's bundle pays for the shared recipes (23 Nov):** during the Vue track React's "Everything" budget
+    follows the measured cost of the recipes it shares with Vue, the measurement plus half a kilobyte per wave; the
+    recipes stay readable (no needless object maps or single-use wrappers). After wave V1 it measured 119.80 KB, so
+    120.30. Re-measured and re-sized when the core is done.
   - Also on 26 Oct: GAP-045 is closed as won't do, and the Coachmark, GAP-157, closes with TourStep, which with no
     `stepCount` is the coachmark (GAP-188, #422).
   - Also on 1 Nov: Vue 3 (GAP-016, GAP-148) starts after 0.16.0, as a track of its own alongside Cloud (moved on
