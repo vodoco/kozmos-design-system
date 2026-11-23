@@ -206,7 +206,7 @@ export default function GetStarted() {
         lead="@kozmos-ds/vue ships only as prereleases on npm’s next tag, one after each porting wave, and never on latest. Its version names the stylesheet and React it was built against: 0.17.0-next.0 is the first built on 0.17.0."
       >
         <CodeBlock
-          label="Install command"
+          label="Vue install command"
           code="npm install @kozmos-ds/vue@next vue"
         />
         <List aria-label="The Vue entries">
