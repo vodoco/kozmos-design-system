@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -113,20 +113,28 @@ const realImage = window.Image;
 beforeEach(() => {
   window.Image = LoadingImage as unknown as typeof Image;
 });
+/**
+ * The image's load and the fallback's delay run on a fake clock, so what
+ * each draws "early" and "later" is set by the test, not by how long a
+ * render takes on the machine: a slow runner once spent the fallback's
+ * 15 ms delay inside React's first render.
+ */
+const later = (ms: number) => vi.advanceTimersByTimeAsync(ms);
 afterEach(() => {
   act(() => reactRoot?.unmount());
   vueApp?.unmount();
+  vi.useRealTimers();
   reactRoot = undefined;
   vueApp = undefined;
   document.body.replaceChildren();
   window.Image = realImage;
 });
 const host = () => document.body.appendChild(document.createElement("div"));
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** What each framework draws once its image has loaded or failed, and what it heard. */
 async function mounted(src: string, delayMs?: number) {
   const heard = { react: [] as string[], vue: [] as string[] };
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const reactHost = host();
   reactRoot = createRoot(reactHost);
   await act(async () =>
@@ -145,7 +153,7 @@ async function mounted(src: string, delayMs?: number) {
     ),
   );
   const reactEarly = normalizeHtml(reactHost.innerHTML);
-  await act(() => wait(30));
+  await act(() => later(30));
   const react = normalizeHtml(reactHost.innerHTML);
 
   const vueHost = host();
@@ -164,7 +172,7 @@ async function mounted(src: string, delayMs?: number) {
   vueApp.mount(vueHost);
   await nextTick();
   const vueEarly = normalizeHtml(vueHost.innerHTML);
-  await wait(30);
+  await later(30);
   await nextTick();
   const vue = normalizeHtml(vueHost.innerHTML);
   return { react, vue, reactEarly, vueEarly, heard };
