@@ -44,7 +44,7 @@ token was declined, so this is not a gap to close.
 | Components absent entirely — iOS          | 9/132  |
 | Components absent entirely — Android      | 9/132  |
 | Components absent entirely — Figma        | 4/132  |
-| Components absent entirely — Vue          | 22/132 |
+| Components absent entirely — Vue          | 21/132 |
 
 <!-- /generated:headline -->
 
@@ -243,9 +243,9 @@ AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, La
 
 FieldWrapper, Icon, NavigationAnnouncer, ThemeProvider.
 
-### Vue — 22 of 132
+### Vue — 21 of 132
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, Calendar, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, Calendar, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, UserMessage.
 
 <!-- /generated:absent -->
 
