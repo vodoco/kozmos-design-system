@@ -4,7 +4,11 @@ Kozmos is consumed from this repository's `packages/ios` source as the `Kozmos` 
 
 ## Unreleased — repository source
 
-Native source changes on `main` after the 0.17.0 snapshot below. Nothing here is tagged yet.
+Native source changes on `main` after the 0.17.1 snapshot below. Nothing here is tagged yet.
+
+## 0.17.1 — repository snapshot
+
+No native source change since 0.17.0. The GAP-206 sets' Code Connect (#602), recorded under 0.17.0 below, landed after the commit tagged `@kozmos-ds/react@0.17.0`: pin `@kozmos-ds/react@0.17.1` or later for it. This entry does not announce a native registry release.
 
 ## 0.17.0 — repository snapshot
 

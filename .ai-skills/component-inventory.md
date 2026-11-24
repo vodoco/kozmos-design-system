@@ -9,10 +9,10 @@
 | ------------------------------ | ------------- |
 | `@kozmos-ds/icons`             | 0.11.0        |
 | `@kozmos-ds/product-contracts` | 0.11.0        |
-| `@kozmos-ds/react`             | 0.17.0        |
-| `@kozmos-ds/styles`            | 0.17.0        |
+| `@kozmos-ds/react`             | 0.17.1        |
+| `@kozmos-ds/styles`            | 0.17.1        |
 | `@kozmos-ds/tokens`            | 0.10.0        |
-| `@kozmos-ds/vue`               | 0.17.0-next.0 |
+| `@kozmos-ds/vue`               | 0.17.1-next.0 |
 
 These are the public packages. All but `@kozmos-ds/vue` publish on npm's
 `latest` tag. `@kozmos-ds/vue`, Kozmos for Vue 3 on Reka UI, publishes only
