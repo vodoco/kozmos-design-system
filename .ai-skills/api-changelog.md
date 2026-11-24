@@ -644,7 +644,21 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   Add labelled media-error fallback and remove forced smooth gallery movement.
 - eb68e53: Support decorative POI asset icons, generic highlighted properties, semantic metadata tones and price scales. Demonstrate taxonomy-driven attribute labels/icons/order with a pinned Pointr 10.12.0 dictionary outside the public component runtime.
 
-## `@kozmos-ds/react` — current 0.17.0
+## `@kozmos-ds/react` — current 0.17.1
+
+### 0.17.1
+
+#### Patch Changes
+
+- 4b0fae9: Card's, Breadcrumb's, PageHeader's, Link's and EmptyState's classes move into the package's shared `recipes` module (`recipes/card`, `breadcrumb`, `page-header`, `link` and `empty-state`), which `@kozmos-ds/vue` builds its own Card, Breadcrumb, PageHeader, Link and EmptyState from, so the two draw the same element (wave V1). Nothing changes for a product: every export is as before, `dist/index.d.ts` and `style.css` are byte-identical, and the tests of each part pass unchanged. The published files gain `dist/esm/recipes/breadcrumb.mjs`, `card.mjs`, `empty-state.mjs`, `link.mjs` and `page-header.mjs`.
+- 732c2c0: Stack's, Grid's, Container's and Surface's classes move into the package's shared `recipes` module (`stackVariants`, `gridVariants` and the window a virtualized Grid draws, `containerClasses`, and `SURFACE_CLASSES` and `surfaceClass`, which leave `components/Surface/surface-class`), which `@kozmos-ds/vue` builds its own Stack, Grid, Container and Surface from, so the two draw the same element (wave V1). Nothing changes for a product: `Box`, `Stack`, `Grid`, `GridVirtualRange`, `Container`, `ContainerBlock`, `ContainerBlockInset`, `Surface`, `SurfaceVariant`, `SURFACE_CLASSES` and `surfaceClass` are exported as before, `dist/index.d.ts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/container.mjs`, `grid.mjs`, `stack.mjs` and `surface.mjs`, and lose `dist/esm/components/Surface/surface-class.mjs`. `@kozmos-ds/styles`, built from React's and Vue's sources, ships a byte-identical `style.css`: the classes moved, and Vue's Box, Stack, Grid, Container and Surface draw only the recipes' classes.
+- 618e46e: List's, DescriptionList's, MetaStrip's, Timeline's, Alert's and Notice's classes move into the package's shared `recipes` module (`listDensityClasses`, `alertVariants`, the list row's and status mark's classes, the description list's, meta strip's, timeline's and notice's), with the live-region roles and the horizontal-scroll keys those parts use, which `@kozmos-ds/vue` builds its own List, DescriptionList, MetaStrip, Timeline, Alert and Notice from, so the two draw the same element (wave V1). Nothing changes for a product: every export is as before, `dist/index.d.ts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/alert.mjs`, `description-list.mjs`, `keyboard-scroll.mjs`, `list.mjs`, `live-region.mjs`, `meta-strip.mjs`, `notice.mjs` and `timeline.mjs`.
+- 199c75b: Text's, Heading's, Label's, Icon's, Kbd's, CodeBlock's and SpriteIcon's recipes move into the package's shared `recipes` module (`textVariants`, the heading levels' sizes and tags, `labelVariants`, `iconVariants`, Kbd's cap classes and `kbdKeyName`, CodeBlock's classes and copy rules, SpriteIcon's atlas reading and cell layout), with IconButton's square box, which `@kozmos-ds/vue` builds its own Text, Heading, Label, Icon, Kbd, CodeBlock and SpriteIcon from, so the two draw the same element (wave V1). Nothing changes for a product: every export is as before, `kbdKeyName` included, `dist/index.d.ts` and `style.css` are byte-identical to main's, and the parts' and the recipes' tests pass unchanged. The published files gain `dist/esm/recipes/text.mjs`, `heading.mjs`, `label.mjs`, `icon.mjs`, `icon-button.mjs`, `kbd.mjs`, `code-block.mjs` and `sprite-icon.mjs`.
+- 2dae3e2: The docs' Vue tab (PlatformSnippets) says `@kozmos-ds/vue` is a prerelease on npm's `next` tag, labelled "Vue 3 · next", where it said "Vue 3 · Internal" and that the package was private and not yet published, and names the six parts its main entry ports. `@kozmos-ds/styles` is built from React's sources and takes the change with no new rule.
+- a9a8a2c: Tag's, Avatar's, Spinner's, Skeleton's, Progress's and PersonaMark's classes, drawings and rules move into the package's shared `recipes` module (`tagVariants`, the emotion axis, Avatar's and Skeleton's classes, Spinner's sizes, Progress's value, ring, bar, wait and track rules, and PersonaMark's diamond), which `@kozmos-ds/vue` builds its own `KozmosTag`, `KozmosAvatar`, `KozmosSpinner`, `KozmosSkeleton`, `KozmosProgress` and `KozmosPersonaMark` from, so the two draw the same element (wave V1). Nothing changes for a product: every export is as before, `dist/index.d.ts`, `.d.mts`, `.d.cts` and `style.css` are byte-identical to main's, and the six parts' tests pass unchanged. The published files gain `dist/esm/recipes/avatar.mjs`, `emotion.mjs`, `persona-mark.mjs`, `progress.mjs`, `skeleton.mjs`, `spinner.mjs` and `tag.mjs`.
+- Updated dependencies [732c2c0]
+- Updated dependencies [2dae3e2]
+  - @kozmos-ds/styles@0.17.1
 
 ### 0.17.0
 
@@ -2812,7 +2826,14 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
-## `@kozmos-ds/styles` — current 0.17.0
+## `@kozmos-ds/styles` — current 0.17.1
+
+### 0.17.1
+
+#### Patch Changes
+
+- 732c2c0: Stack's, Grid's, Container's and Surface's classes move into the package's shared `recipes` module (`stackVariants`, `gridVariants` and the window a virtualized Grid draws, `containerClasses`, and `SURFACE_CLASSES` and `surfaceClass`, which leave `components/Surface/surface-class`), which `@kozmos-ds/vue` builds its own Stack, Grid, Container and Surface from, so the two draw the same element (wave V1). Nothing changes for a product: `Box`, `Stack`, `Grid`, `GridVirtualRange`, `Container`, `ContainerBlock`, `ContainerBlockInset`, `Surface`, `SurfaceVariant`, `SURFACE_CLASSES` and `surfaceClass` are exported as before, `dist/index.d.ts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/container.mjs`, `grid.mjs`, `stack.mjs` and `surface.mjs`, and lose `dist/esm/components/Surface/surface-class.mjs`. `@kozmos-ds/styles`, built from React's and Vue's sources, ships a byte-identical `style.css`: the classes moved, and Vue's Box, Stack, Grid, Container and Surface draw only the recipes' classes.
+- 2dae3e2: The docs' Vue tab (PlatformSnippets) says `@kozmos-ds/vue` is a prerelease on npm's `next` tag, labelled "Vue 3 · next", where it said "Vue 3 · Internal" and that the package was private and not yet published, and names the six parts its main entry ports. `@kozmos-ds/styles` is built from React's sources and takes the change with no new rule.
 
 ### 0.17.0
 
@@ -3311,7 +3332,7 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   `text-destructive-text`), which read those tokens; `success`, `warning`, `info`
   and `destructive` stay the fills, edges and rings they were.
 
-## `@kozmos-ds/vue` — current 0.17.0-next.0
+## `@kozmos-ds/vue` — current 0.17.1-next.0
 
 ### 0.17.0-next.0
 
