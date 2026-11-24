@@ -58,7 +58,10 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 `KozmosDensityScope`, `KozmosAnalyticsProvider`, `KozmosButton`, `KozmosBadge`,
 `KozmosSeparator`, `KozmosText`, `KozmosHeading`, `KozmosLabel`, `KozmosIcon`,
 `KozmosKbd`, `KozmosCodeBlock`, `KozmosSpriteIcon`, `KozmosBox`, `KozmosStack`,
-`KozmosGrid`, `KozmosContainer` and `KozmosSurface` so far), which draw the element their React counterparts draw, import
+`KozmosGrid`, `KozmosContainer`, `KozmosSurface`, `KozmosTag`, `KozmosAvatar` with
+`KozmosAvatarImage` and `KozmosAvatarFallback`, `KozmosSpinner`, `KozmosSkeleton`,
+`KozmosProgress` with `KozmosProgressTrack`, and `KozmosPersonaMark` with
+`KozmosPersonaMarkGroup` so far), which draw the element their React counterparts draw, import
 no React and render on the server. `packages/vue/PORTING.md` is how a part is ported.
 The parts not yet ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount
 the React parts inside Vue wrappers: they need React and React DOM as well as Vue,

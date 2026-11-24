@@ -1,52 +1,21 @@
 import type * as React from "react";
+import { emotionSurfaceVariables, type Emotion } from "../recipes/emotion";
+
+// The emotion axis lives in the shared recipes, which Vue's parts draw from
+// too (`recipes/emotion.ts`); React's parts keep importing it from here.
+export {
+  EMOTIONS,
+  EMOTION_FILLED_CLASSES,
+  EMOTION_OUTLINE_CLASSES,
+  type Emotion,
+} from "../recipes/emotion";
 
 /**
- * What a thing means, as opposed to how much it weighs.
- *
- * The product drives this axis on `Button`, `Tag` and `Counter` and uses all
- * six values; measured 2026-09-14, it covers 80% of its mapped control
- * instances. `Button` reads the six-emotion colours named for buttons; `Tag`
- * and `Counter` read `Semantics.Emotion`, which exists so they do not have to
- * borrow a Button's tokens (§5.1).
+ * The three roles an emotion carries, as custom properties, in React's
+ * style type (`emotionSurfaceVariables` in the recipe says what each is).
+ * The recipe's own function, typed for React's `style`: a wrapper around it
+ * cost every app a call for nothing.
  */
-export const EMOTIONS = [
-  "neutral",
-  "themed",
-  "success",
-  "danger",
-  "informative",
-  "alert",
-] as const;
-
-export type Emotion = (typeof EMOTIONS)[number];
-
-/**
- * The three roles an emotion carries, as custom properties.
- *
- * One indirection rather than a class per emotion-and-treatment pair: Tailwind
- * only ever sees the literal `var(--kz-emotion-*)` names, so the JIT has
- * nothing to miss, and `cn` is tailwind-merge, so a treatment's classes win
- * over whatever colour the variant already carried.
- *
- * `surface` and `onSurface` are a filled pair — 4.5:1 or better in both modes.
- * `text` is the emotion on the page itself, at the first step of each ramp that
- * reaches 4.5:1, which is not the same step for every emotion.
- */
-export function emotionSurfaceProperties(
+export const emotionSurfaceProperties = emotionSurfaceVariables as (
   emotion: Emotion,
-): React.CSSProperties {
-  const prefix = `--semantics-emotion-${emotion}`;
-  return {
-    "--kz-emotion-surface": `var(${prefix}-surface)`,
-    "--kz-emotion-on-surface": `var(${prefix}-on-surface)`,
-    "--kz-emotion-text": `var(${prefix}-text)`,
-  } as React.CSSProperties;
-}
-
-/** A filled treatment: the emotion's own field, with its ink on top. */
-export const EMOTION_FILLED_CLASSES =
-  "border-transparent bg-[var(--kz-emotion-surface)] text-[var(--kz-emotion-on-surface)]";
-
-/** An outline treatment: the emotion as text, with a matching edge. */
-export const EMOTION_OUTLINE_CLASSES =
-  "bg-transparent border-[var(--kz-emotion-text)] text-[var(--kz-emotion-text)]";
+) => React.CSSProperties;

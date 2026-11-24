@@ -43,6 +43,12 @@ beforeAll(() => {
   takesAttributes = (react) => side(react).reactAttributes.length > 0;
 }, 120_000);
 
+/** A sample's args without `children`: the outer part draws the port as its child. */
+const withoutChildren = (args: StoryArgs) =>
+  Object.fromEntries(
+    Object.entries(args).filter(([key]) => key !== "children"),
+  ) as StoryArgs;
+
 const lookup = (exports: object, name: string) =>
   (exports as Record<string, unknown>)[name];
 
@@ -85,17 +91,34 @@ async function clicks(
   return { marked: marked?.localName ?? null, landed };
 }
 
+/** The port a compound's part draws inside (`Port.within`), with its sample. */
+const outerOf = (port: Port) => {
+  const outer = port.within
+    ? PORTS.find((candidate) => candidate.react === port.within)
+    : undefined;
+  const sample = withoutChildren(outer?.sample ?? {});
+  return outer ? { outer, sample } : undefined;
+};
+
 const asReact = (
   port: Port,
   args: StoryArgs,
   onClick: (event: Event) => void,
 ) => {
   const { children, ...props } = args;
-  const part = React.createElement(
+  const drawn = React.createElement(
     lookup(KozmosReact, port.react) as React.ElementType,
     { ...props, "data-parity": "listener", onClick },
     children === undefined || children === null ? undefined : String(children),
   );
+  const around = outerOf(port);
+  const part = around
+    ? React.createElement(
+        lookup(KozmosReact, around.outer.react) as React.ElementType,
+        around.sample,
+        drawn,
+      )
+    : drawn;
   return port.react === "ThemeProvider"
     ? part
     : React.createElement(KozmosReact.ThemeProvider, null, part);
@@ -107,7 +130,7 @@ const asVue = (
   onClick: (event: Event) => void,
 ) => {
   const { children, ...props } = args;
-  const part = () =>
+  const drawn = () =>
     h(
       lookup(KozmosVue, port.vue) as Component,
       { ...props, "data-parity": "listener", onClick },
@@ -115,6 +138,13 @@ const asVue = (
         ? undefined
         : { default: () => String(children) },
     );
+  const around = outerOf(port);
+  const part = around
+    ? () =>
+        h(lookup(KozmosVue, around.outer.vue) as Component, around.sample, {
+          default: drawn,
+        })
+    : drawn;
   return port.react === "ThemeProvider"
     ? part()
     : h(KozmosVue.KozmosThemeProvider, null, { default: part });
@@ -147,8 +177,11 @@ describe("an app's listeners land where React's land", () => {
         return element;
       });
       expect(vue).toEqual(react);
-      // A part React gives DOM attributes carries the app's, somewhere.
-      if (takesAttributes(port.react))
+      // A part React gives DOM attributes carries the app's, somewhere,
+      // unless it draws no element in a test's document in either
+      // (`Port.unmarked`, drawn where it does by the spec it names).
+      if (port.unmarked) expect(react.marked).toBeNull();
+      else if (takesAttributes(port.react))
         expect(
           react.marked,
           `React's ${port.react} drew no element with the app's attributes`,

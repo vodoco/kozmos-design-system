@@ -49,6 +49,40 @@ export type {
 } from "./components/Container/types";
 export { KozmosSurface } from "./components/Surface/Surface";
 export type { KozmosSurfaceVariant } from "./components/Surface/types";
+export { KozmosTag } from "./components/Tag/Tag";
+export type { KozmosEmotion, KozmosTagVariant } from "./components/Tag/types";
+export {
+  KozmosAvatar,
+  KozmosAvatarImage,
+  KozmosAvatarFallback,
+} from "./components/Avatar/Avatar";
+export type {
+  KozmosAvatarImageLoadingStatus,
+  KozmosAvatarSize,
+} from "./components/Avatar/types";
+export { KozmosSpinner } from "./components/Spinner/Spinner";
+export type { KozmosSpinnerSize } from "./components/Spinner/types";
+export { KozmosSkeleton } from "./components/Skeleton/Skeleton";
+export type { KozmosSkeletonShape } from "./components/Skeleton/types";
+export {
+  KozmosProgress,
+  KozmosProgressTrack,
+} from "./components/Progress/Progress";
+export type {
+  KozmosProgressLabelPlacement,
+  KozmosProgressPlacement,
+  KozmosProgressRange,
+  KozmosProgressShape,
+  KozmosProgressSize,
+  KozmosProgressTrackAppearance,
+  KozmosProgressTrackMotion,
+  KozmosProgressTrackPositionMode,
+} from "./components/Progress/types";
+export {
+  KozmosPersonaMark,
+  KozmosPersonaMarkGroup,
+} from "./components/PersonaMark/PersonaMark";
+export type { KozmosPersonaMarkPersona } from "./components/PersonaMark/types";
 export type { KozmosSeparatorOrientation } from "./components/Separator/types";
 export { KozmosText } from "./components/Text/Text";
 export type {

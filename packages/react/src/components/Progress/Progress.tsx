@@ -2,7 +2,24 @@ import React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
-import { EMOTIONS, type Emotion } from "../../utils/emotion";
+import { type Emotion } from "../../utils/emotion";
+import {
+  PROGRESS_RING_ARC_CLASS,
+  PROGRESS_RING_CLASS,
+  PROGRESS_RING_DIAL_CLASS,
+  PROGRESS_RING_DONE_CLASS,
+  PROGRESS_RING_LABEL_CLASS,
+  PROGRESS_RING_SVG_CLASS,
+  PROGRESS_RING_TRACK_CLASS,
+  PROGRESS_TRACK_ACTIVE_CLASS,
+  PROGRESS_TRACK_CLASS,
+  PROGRESS_TRACK_FLOW_CLASS,
+  isProgressSpan,
+  progressDrawnValue,
+  progressRing,
+  progressSpanStyle,
+  progressTrackSpans,
+} from "../../recipes/progress";
 import { ProgressBar } from "./ProgressBar";
 
 export interface ProgressProps extends React.ComponentPropsWithoutRef<
@@ -55,13 +72,6 @@ export interface ProgressProps extends React.ComponentPropsWithoutRef<
   placement?: "inline" | "top";
 }
 
-/**
- * A ring's diameter and stroke width, in px, by size: the layout spacing
- * tokens 600, 900 and 1000 across, and 50, 100 and 150 thick. The box takes
- * its size from the same tokens in the stylesheet; these draw inside it.
- */
-const RING = { sm: [48, 4], md: [96, 8], lg: [128, 12] } as const;
-
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   ProgressProps
@@ -85,42 +95,46 @@ const Progress = React.forwardRef<
     ref,
   ) => {
     const labelId = React.useId();
-    const resolvedMax =
-      typeof max === "number" && !Number.isNaN(max) && max > 0 ? max : 100;
-    // A value over the total is all of it: "16 of 15" is a full ring and a
-    // full bar, as SwiftUI's and Compose's are and as `<progress>` has it.
-    // Radix would call it unknown and draw none done.
-    const drawnValue =
-      typeof value === "number" && Number.isFinite(value) && value > resolvedMax
-        ? resolvedMax
-        : value;
-    const known =
-      typeof drawnValue === "number" &&
-      drawnValue >= 0 &&
-      drawnValue <= resolvedMax;
-    const percentage = known ? (drawnValue / resolvedMax) * 100 : 0;
+    // The value drawn, the total and the share done: one over the total is
+    // all of it (recipes/progress.ts).
+    const [resolvedMax, drawnValue, known, percentage] = progressDrawnValue(
+      value,
+      max,
+    );
     if (shape === "circular") {
-      const [diameter, stroke] = RING[size] ?? RING.md;
-      const centre = diameter / 2;
-      const radius = (diameter - stroke) / 2;
-      const circumference = 2 * Math.PI * radius;
       const labelled = label != null && label !== false && label !== "";
+      // Its drawing, its tone and whether it is done: a whole `sm` ring with
+      // no label draws a check, and says 100% (recipes/progress.ts).
+      const [
+        diameter,
+        stroke,
+        centre,
+        radius,
+        viewBox,
+        dasharray,
+        transform,
+        emotion,
+        toneVariables,
+        done,
+      ] = progressRing(
+        size,
+        percentage,
+        tone,
+        labelled,
+        drawnValue,
+        resolvedMax,
+      );
       // The label is the ring's name, or its description when the caller has
       // named it already; either way it is said by reference, and the drawn
       // copy is hidden, so a screen reader hears it once. It stays inside the
       // progress bar wherever it is drawn.
       const named = props["aria-label"] != null || labelledBy != null;
-      const emotion = EMOTIONS.includes(tone) ? tone : "themed";
       const beside = labelPlacement === "end";
-      // "100%" is 31.8 wide at 12, in the 28.28 square an `sm` hole holds
-      // (owner, 2 Nov), so a whole `sm` ring with no label of the product's
-      // draws a check. It says 100%, by a name of its own if it has no other.
-      const done = size === "sm" && !labelled && drawnValue === resolvedMax;
       const drawn = labelled && (
         <div
           id={labelId}
           aria-hidden="true"
-          className="kozmos-progress-ring-label"
+          className={PROGRESS_RING_LABEL_CLASS}
         >
           {label}
         </div>
@@ -134,12 +148,12 @@ const Progress = React.forwardRef<
           data-size={size}
           data-tone={emotion}
           data-label-placement={beside ? "end" : "center"}
-          className={cn("kozmos-progress-ring", className)}
+          className={cn(PROGRESS_RING_CLASS, className)}
           // The arc's colour, as a property the stylesheet reads, so forced
           // colours can still replace it.
           style={
             {
-              "--kozmos-progress-ring-tone": `var(--semantics-emotion-${emotion}-text)`,
+              ...toneVariables,
               ...style,
             } as React.CSSProperties
           }
@@ -158,31 +172,31 @@ const Progress = React.forwardRef<
               does not mirror right to left: SVG is drawn in the page's own
               coordinates whatever the direction. With no value the track is
               drawn alone: a turning ring is Spinner. */}
-          <div className="kozmos-progress-ring-dial">
+          <div className={PROGRESS_RING_DIAL_CLASS}>
             <svg
               aria-hidden="true"
               focusable="false"
-              className="kozmos-progress-ring-svg"
+              className={PROGRESS_RING_SVG_CLASS}
               width={diameter}
               height={diameter}
-              viewBox={`0 0 ${diameter} ${diameter}`}
+              viewBox={viewBox}
               fill="none"
               strokeWidth={stroke}
             >
               <circle
-                className="kozmos-progress-ring-track"
+                className={PROGRESS_RING_TRACK_CLASS}
                 cx={centre}
                 cy={centre}
                 r={radius}
               />
               {known && (
                 <circle
-                  className="kozmos-progress-ring-arc"
+                  className={PROGRESS_RING_ARC_CLASS}
                   cx={centre}
                   cy={centre}
                   r={radius}
-                  strokeDasharray={`${(circumference * percentage) / 100} ${circumference}`}
-                  transform={`rotate(-90 ${centre} ${centre})`}
+                  strokeDasharray={dasharray}
+                  transform={transform}
                 />
               )}
             </svg>
@@ -191,7 +205,7 @@ const Progress = React.forwardRef<
               <Check
                 aria-hidden="true"
                 focusable="false"
-                className="kozmos-progress-ring-done"
+                className={PROGRESS_RING_DONE_CLASS}
               />
             )}
           </div>
@@ -228,14 +242,7 @@ export interface ProgressRange {
 export function validProgressRange(
   range: ProgressRange | undefined,
 ): range is ProgressRange {
-  return (
-    !!range &&
-    Number.isFinite(range.start) &&
-    Number.isFinite(range.end) &&
-    range.start >= 0 &&
-    range.end <= 1 &&
-    range.start < range.end
-  );
+  return isProgressSpan(range);
 }
 
 export interface ProgressTrackProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -264,22 +271,6 @@ const ProgressTrack = React.forwardRef<HTMLDivElement, ProgressTrackProps>(
     },
     ref,
   ) => {
-    const range = validProgressRange(activeRange) ? activeRange : undefined;
-    const position =
-      range &&
-      value !== null &&
-      Number.isFinite(value) &&
-      value >= range.start &&
-      value <= range.end
-        ? value
-        : null;
-    const fill =
-      positionMode === "static"
-        ? range
-        : position !== null && position > 0
-          ? { start: 0, end: position }
-          : undefined;
-    const flowStart = positionMode === "static" ? range?.start : position;
     const [visible, setVisible] = React.useState(true);
     React.useEffect(() => {
       const update = () => setVisible(document.visibilityState !== "hidden");
@@ -287,41 +278,35 @@ const ProgressTrack = React.forwardRef<HTMLDivElement, ProgressTrackProps>(
       document.addEventListener("visibilitychange", update);
       return () => document.removeEventListener("visibilitychange", update);
     }, []);
-    const flow =
-      motion === "directional" &&
-      visible &&
-      range &&
-      flowStart != null &&
-      flowStart < range.end
-        ? { start: flowStart, end: range.end }
-        : undefined;
+    // What it paints, by mode and motion (recipes/progress.ts).
+    const [fill, flow] = progressTrackSpans(
+      activeRange,
+      value,
+      positionMode,
+      motion,
+      visible,
+    );
     return (
       <div
         {...props}
         ref={ref}
         aria-hidden="true"
-        className={cn("kozmos-progress-track", className)}
+        className={cn(PROGRESS_TRACK_CLASS, className)}
       >
         {fill && (
           <span
             data-testid="progress-active-range"
             data-appearance={appearance}
-            className="kozmos-progress-track-active"
-            style={{
-              insetInlineStart: `${fill.start * 100}%`,
-              width: `${(fill.end - fill.start) * 100}%`,
-            }}
+            className={PROGRESS_TRACK_ACTIVE_CLASS}
+            style={progressSpanStyle(fill)}
           />
         )}
         {flow && (
           <span
             data-testid="progress-directional-flow"
             data-mode={positionMode}
-            className="kozmos-progress-track-flow"
-            style={{
-              insetInlineStart: `${flow.start * 100}%`,
-              width: `${(flow.end - flow.start) * 100}%`,
-            }}
+            className={PROGRESS_TRACK_FLOW_CLASS}
+            style={progressSpanStyle(flow)}
           />
         )}
       </div>

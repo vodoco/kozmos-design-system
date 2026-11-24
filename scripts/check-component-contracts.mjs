@@ -174,6 +174,8 @@ const files = {
   reactSeparatorFigma:
     "packages/react/src/components/Separator/Separator.figma.tsx",
   reactSkeleton: "packages/react/src/components/Skeleton/Skeleton.tsx",
+  // Skeleton's classes, shared with Vue's KozmosSkeleton (wave V1).
+  reactSkeletonRecipe: "packages/react/src/recipes/skeleton.ts",
   reactSkeletonFigma:
     "packages/react/src/components/Skeleton/Skeleton.figma.tsx",
   reactBox: "packages/react/src/components/Box/Box.tsx",
@@ -2259,6 +2261,35 @@ for (const [part, wrapped] of [
     `React ${part} wrapped in the Vue bridge as well`,
   );
 }
+// Tag, Avatar, Spinner, Skeleton, Progress and PersonaMark are Vue ports
+// (wave V1), each drawn from React's recipe, and left the bridge with them.
+for (const [part, module] of [
+  ["KozmosTag", "Tag/Tag"],
+  ["KozmosAvatar", "Avatar/Avatar"],
+  ["KozmosAvatarImage", "Avatar/Avatar"],
+  ["KozmosAvatarFallback", "Avatar/Avatar"],
+  ["KozmosSpinner", "Spinner/Spinner"],
+  ["KozmosSkeleton", "Skeleton/Skeleton"],
+  ["KozmosProgress", "Progress/Progress"],
+  ["KozmosProgressTrack", "Progress/Progress"],
+  ["KozmosPersonaMark", "PersonaMark/PersonaMark"],
+  ["KozmosPersonaMarkGroup", "PersonaMark/PersonaMark"],
+]) {
+  assertContains(
+    files.vueIndex,
+    source.vueIndex,
+    new RegExp(
+      `export \\{[^}]*\\b${part},?\\s[^}]*\\} from "\\./components/${module}"`,
+    ),
+    `Vue ${part.slice("Kozmos".length)} exported as a Vue port`,
+  );
+  assertNotContains(
+    files.vueBridge,
+    source.vueBridge,
+    `${part} = createVueWrapper`,
+    `React ${part.slice("Kozmos".length)} wrapped in the Vue bridge as well`,
+  );
+}
 assertContains(
   files.vueBridge,
   source.vueBridge,
@@ -3970,9 +4001,10 @@ assertContains(
 // grey and the pulse live in the owned rule, so they survive the build
 // without @scope; natively they are the token.
 assertContains(
-  files.reactSkeleton,
-  source.reactSkeleton,
-  '"kozmos-skeleton"',
+  files.reactSkeletonRecipe,
+  source.reactSkeletonRecipe,
+  // The class leads the recipe's template string: `kozmos-skeleton ${…}`.
+  /[`"]kozmos-skeleton[\s`"]/,
   "React Skeleton owned class",
 );
 assertContains(

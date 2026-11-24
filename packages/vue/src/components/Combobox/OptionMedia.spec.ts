@@ -2,11 +2,11 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, ref, type App, type Component } from "vue";
 import {
-  KozmosAvatar,
   KozmosCombobox,
   KozmosListbox,
   KozmosMultiSelect,
 } from "../../react-bridge";
+import { KozmosAvatar, KozmosAvatarFallback } from "../../index";
 
 // Decision 215 (GAP-282) and GAP-260 in the harness: an option's `media`
 // and `trailing` reach React's Combobox, Listbox and MultiSelect through
@@ -114,8 +114,18 @@ describe("an option's media and trailing words through the Vue wrappers", () => 
     expect(asked).toEqual(["pointr"]);
   });
 
+  // KozmosAvatar is a Vue port now (wave V1): its fallback is a part of
+  // its own, as React's is.
   it("KozmosAvatar takes size sm, 24 (decision 221), as option media draws it", async () => {
-    mount(KozmosAvatar, () => ({ size: "sm", fallback: "AA" }));
+    mount(
+      {
+        render: () =>
+          h(KozmosAvatar, { size: "sm" }, () =>
+            h(KozmosAvatarFallback, null, () => "AA"),
+          ),
+      },
+      () => ({}),
+    );
     const avatar = await until(() => document.querySelector("[data-size]"));
     expect(avatar.getAttribute("data-size")).toBe("sm");
     expect(avatar.className).toContain("h-6");

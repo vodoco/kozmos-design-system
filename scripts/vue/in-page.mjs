@@ -635,6 +635,23 @@ export function installVueProbes() {
   }
 
   /**
+   * Custom properties a part sets on its own element from a prop that is
+   * product data, not the theme's: the colour is the product's to give, so
+   * no token holds it and it must not move with one. Each, with why. A
+   * colour counts as data only when it moves with its property set to a
+   * sentinel on the elements that write it in their style attribute, as
+   * the part does; anything else that stays put is still written in.
+   */
+  const DATA_COLOURS = {
+    // A persona's own colour (Cloud's Customer is #FF9800), which React's
+    // PersonaMark takes as `color` and sets on the same property (GAP-106,
+    // decision 132), as CategoryTile takes a category's tint.
+    "--kozmos-persona-color":
+      "a persona's own colour is product data, as React's PersonaMark takes it",
+  };
+  const DATA_SENTINEL = "rgb(1, 2, 3)";
+
+  /**
    * Where each colour a drawn element paints comes from, keyed by its place,
    * pseudo-element and property. Each is read twice, transitions off: as the
    * page draws it, and with every colour token of the theme (themeTokens)
@@ -647,7 +664,9 @@ export function installVueProbes() {
    * one sentinel in either theme, so a colour that keeps its role across
    * the themes reads the same there in both. Nothing is allowed by name:
    * the glass edge, the one colour once allowed without a token (decision
-   * 167), reads its colour token since decision 208 (GAP-229).
+   * 167), reads its colour token since decision 208 (GAP-229). A colour
+   * that moves with a part's data property instead (DATA_COLOURS) is
+   * `fromData`: the product's, not the theme's.
    */
   function colourProvenance() {
     const elements = drawn();
@@ -675,11 +694,31 @@ export function installVueProbes() {
         `${ROOT} { ${[...tokens].map(([name, value]) => `${name}: ${value} !important;`).join(" ")} }`,
         () => colourReadings(elements),
       );
+      // Each data colour (DATA_COLOURS), set to a sentinel where a part
+      // writes it in its own style attribute.
+      const data = under(
+        "kozmos-vue-data",
+        Object.keys(DATA_COLOURS)
+          .map(
+            (name) =>
+              `[style*="${name}:"] { ${name}: ${DATA_SENTINEL} !important; }`,
+          )
+          .join("\n"),
+        () => colourReadings(elements),
+      );
       const colours = {};
       for (const [key, { text, colour }] of before) {
         const moved = after.get(key);
         const fromToken = !moved || !sameColour(colour, moved.colour);
-        colours[key] = { text, sentinel: moved?.text ?? "nothing", fromToken };
+        const asData = data.get(key);
+        const fromData =
+          !fromToken && !!asData && !sameColour(colour, asData.colour);
+        colours[key] = {
+          text,
+          sentinel: moved?.text ?? "nothing",
+          fromToken,
+          fromData,
+        };
       }
       return { tokens: tokens.size, colours };
     } finally {
@@ -691,8 +730,8 @@ export function installVueProbes() {
   function hardCodedColours() {
     const { tokens, colours } = colourProvenance();
     const problems = [];
-    for (const [key, { text, fromToken }] of Object.entries(colours))
-      if (!fromToken)
+    for (const [key, { text, fromToken, fromData }] of Object.entries(colours))
+      if (!fromToken && !fromData)
         problems.push(
           `${key.slice(key.indexOf(" ") + 1)} is ${text}, and stays ${text} when every colour token of the theme changes: it is written in, not taken from a token`,
         );

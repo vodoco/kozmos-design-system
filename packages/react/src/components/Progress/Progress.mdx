@@ -124,7 +124,7 @@ export function LevelsAdded() {
     `}
     vue={`
 <script setup>
-import { KozmosProgress } from "@kozmos-ds/vue/react-bridge"
+import { KozmosProgress } from "@kozmos-ds/vue"
 </script>
 
 <template>
@@ -133,9 +133,11 @@ import { KozmosProgress } from "@kozmos-ds/vue/react-bridge"
     size="lg"
     :value="11"
     :max="15"
-    labelPlacement="end"
-    label="11 Levels Added in total"
-  />
+    label-placement="end"
+    :get-value-label="(value, max) => value + ' of ' + max"
+  >
+    <template #label>11 Levels Added in total</template>
+  </KozmosProgress>
 </template>
     `}
     swift={`
@@ -243,12 +245,14 @@ export function PageLoadingBar({ loading }: { loading: boolean }) {
     `}
     vue={`
 <script setup>
-import { KozmosProgress } from "@kozmos-ds/vue/react-bridge"
+import { KozmosProgress } from "@kozmos-ds/vue"
 defineProps({ loading: Boolean })
 </script>
 
 <template>
-  <KozmosProgress v-if="loading" placement="top" label="Loading the map" />
+  <KozmosProgress v-if="loading" placement="top">
+    <template #label>Loading the map</template>
+  </KozmosProgress>
 </template>
     `}
     swift={`
@@ -324,11 +328,11 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosProgress } from "@kozmos-ds/vue/react-bridge"
+import { KozmosProgress } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosProgress />
+  <KozmosProgress :value="25" :max="50" aria-label="Upload progress" />
 </template>
     `}
     swift={`

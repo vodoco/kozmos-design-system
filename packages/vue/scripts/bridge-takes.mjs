@@ -39,7 +39,6 @@ export const TABLE = path.join(REPOSITORY, BRIDGE, "part-takes.ts");
  * `onOpenChange` to Popover and the rest to PopoverContent.
  */
 export const ADAPTERS = {
-  AvatarAdapter: ["Avatar"],
   AlertAdapter: ["Alert"],
   BackdropAdapter: ["Backdrop"],
   TourStepAdapter: ["TourStep"],

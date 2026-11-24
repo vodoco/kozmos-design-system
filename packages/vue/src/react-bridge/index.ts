@@ -42,8 +42,6 @@ import {
   Sidebar,
   Menu,
   ContextMenu,
-  PersonaMark,
-  PersonaMarkGroup,
   Notice,
   Drawer,
   Toast,
@@ -54,14 +52,7 @@ import {
   Alert as ReactAlert,
   AlertTitle,
   AlertDescription,
-  Progress,
-  Spinner,
-  Skeleton,
   Backdrop,
-  Avatar as ReactAvatar,
-  AvatarImage,
-  AvatarFallback,
-  Tag as ReactTag,
   List,
   ListItem,
   ListItemStatus,
@@ -201,23 +192,8 @@ export type {
 } from "./react-adapter";
 
 // ----------------------------------------------------------------------
-// Custom Adapters for Complex Multi-Part Components (Avatar, Alert, Inputs)
+// Custom Adapters for Complex Multi-Part Components (Alert, Inputs)
 // ----------------------------------------------------------------------
-const AvatarAdapter = ({
-  src,
-  alt,
-  fallback,
-  size,
-  className,
-  ...props
-}: any) =>
-  React.createElement(
-    ReactAvatar,
-    { className, size, ...props },
-    src ? React.createElement(AvatarImage, { src, alt }) : null,
-    React.createElement(AvatarFallback, null, fallback || "DK"),
-  );
-
 const AlertAdapter = ({
   variant,
   title,
@@ -323,14 +299,12 @@ AnchoredPopoverAdapter.displayName = "AnchoredPopover";
 // What each adapter hands on, as React's types read the parts it hands it
 // to (part-takes.ts).
 describeParts([
-  [AvatarAdapter, ADAPTER_TAKES.AvatarAdapter],
   [AlertAdapter, ADAPTER_TAKES.AlertAdapter],
   [BackdropAdapter, ADAPTER_TAKES.BackdropAdapter],
   [TourStepAdapter, ADAPTER_TAKES.TourStepAdapter],
   [AnchoredPopoverAdapter, ADAPTER_TAKES.AnchoredPopoverAdapter],
 ]);
 describeBooleans([
-  [AvatarAdapter, ADAPTER_BOOLEANS.AvatarAdapter],
   [AlertAdapter, ADAPTER_BOOLEANS.AlertAdapter],
   [BackdropAdapter, ADAPTER_BOOLEANS.BackdropAdapter],
   [TourStepAdapter, ADAPTER_BOOLEANS.TourStepAdapter],
@@ -388,8 +362,6 @@ export const KozmosNavbar = createVueWrapper(Navbar);
 export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
-export const KozmosPersonaMark = createVueWrapper(PersonaMark);
-export const KozmosPersonaMarkGroup = createVueWrapper(PersonaMarkGroup);
 // Its disclosure is a model: v-model:expanded, as React's expanded and
 // onExpandedChange are.
 export const KozmosNotice = createVueWrapper(Notice, {
@@ -406,17 +378,12 @@ export const KozmosStepper = createVueWrapper(Stepper);
 // writes every undeclared one (GAP-191).
 Object.assign(KozmosStepper, { props: { positionLabel: null } });
 export const KozmosAlert = createVueWrapper(AlertAdapter);
-export const KozmosProgress = createVueWrapper(Progress);
-export const KozmosSpinner = createVueWrapper(Spinner);
-export const KozmosSkeleton = createVueWrapper(Skeleton);
 export const KozmosBackdrop = createVueWrapper(BackdropAdapter);
 // `target` is declared as a prop, so Vue never writes it onto the wrapper's
 // element as an attribute: it does that with every undeclared attribute, and
 // a component instance cannot be written as one ("Cannot convert object to
 // primitive value"). The wrapper hands its props to React with its attrs.
 Object.assign(KozmosBackdrop, { props: { target: null } });
-export const KozmosAvatar = createVueWrapper(AvatarAdapter);
-export const KozmosTag = createVueWrapper(ReactTag);
 export const KozmosList = createVueWrapper(List);
 // ListItem's slots (GAP-195): #leading, #title, #titleAddon, #description,
 // #meta and #trailing, or its props for words. A row in a KozmosList's

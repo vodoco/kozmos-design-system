@@ -1695,24 +1695,29 @@ describe("createVueWrapper's models", () => {
     ]);
   });
 
-  it("KozmosTag with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
+  it("KozmosCounter with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
     mount(() =>
       h(
-        Bridge.KozmosTag,
-        { id: "tag", modelValue: "a", "onUpdate:modelValue": () => {} },
-        { default: () => "New" },
+        Bridge.KozmosCounter,
+        { id: "counter", modelValue: "a", "onUpdate:modelValue": () => {} },
+        { default: () => "3" },
       ),
     );
-    const tag = await until(() => $("[id=tag]"));
+    const counter = await until(() => $("[id=counter]"));
     await settle();
-    expect(tag.getAttributeNames()).not.toContain("modelvalue");
-    expect(heard()).toEqual([expect.stringContaining("Tag has no v-model")]);
+    expect(counter.getAttributeNames()).not.toContain("modelvalue");
+    expect(heard()).toEqual([
+      expect.stringContaining("Counter has no v-model"),
+    ]);
   });
 
-  it("KozmosProgress with :model-value draws no value, and says to give React's :value instead, which it draws", async () => {
+  // Progress is a Vue port now (wave V1), out of the bridge: React's own,
+  // wrapped as an app wraps a React part, is a part that takes its value by
+  // its own prop.
+  it("a wrapped React Progress with :model-value draws no value, and says to give React's :value instead, which it draws", async () => {
     const page = (template: string) =>
       defineComponent({
-        components: { KozmosProgress: Bridge.KozmosProgress },
+        components: { KozmosProgress: createVueWrapper(KozmosReact.Progress) },
         template,
       });
     mount(page(`<KozmosProgress :model-value="40" />`));
@@ -2412,7 +2417,7 @@ describe("attributes reach React alone", () => {
     props?: Record<string, unknown>;
     slot?: string;
   }[] = [
-    { name: "KozmosTag", kind: "a plain element", slot: "New" },
+    { name: "KozmosCounter", kind: "a plain element", slot: "3" },
     { name: "KozmosCard", kind: "a box drawing a Vue slot", slot: "Gate 4" },
     {
       name: "KozmosAlert",
@@ -2510,7 +2515,7 @@ describe("attributes reach React alone", () => {
     ],
   ] as const)("takes style as %s", async (_, style, name) => {
     const host = mount(() =>
-      h(Bridge.KozmosTag, { id: "probe", style }, { default: () => "New" }),
+      h(Bridge.KozmosCounter, { id: "probe", style }, { default: () => "3" }),
     );
     const { element } = await drawnByReact(host);
     expect(element.style.color).toBe("rgb(255, 0, 0)");
@@ -2520,13 +2525,13 @@ describe("attributes reach React alone", () => {
   it("keeps a declaration given !important, without it, and says so", async () => {
     const host = mount(() =>
       h(
-        Bridge.KozmosTag,
+        Bridge.KozmosCounter,
         {
           id: "probe",
           style:
             "color: rgb(255, 0, 0) !important; column-rule-color: rgb(0, 0, 255)",
         },
-        { default: () => "New" },
+        { default: () => "3" },
       ),
     );
     const { element } = await drawnByReact(host);
@@ -2534,7 +2539,7 @@ describe("attributes reach React alone", () => {
     expect(element.style.columnRuleColor).toBe("rgb(0, 0, 255)");
     expect(heard()).toEqual([
       expect.stringContaining(
-        "Tag's style color is given to React without !important",
+        "Counter's style color is given to React without !important",
       ),
     ]);
   });

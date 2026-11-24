@@ -1,5 +1,14 @@
 import React from "react";
 import { cn } from "../../utils";
+import {
+  PERSONA_MARK_CLASS,
+  PERSONA_MARK_SHAPE_CLASS,
+  PERSONA_MARKS_CLASS,
+  PERSONA_MARK_DIAMOND,
+  PERSONA_MARK_VIEWBOX,
+  personaMarkGroupLabel,
+  personaMarkVariables,
+} from "../../recipes/persona-mark";
 
 // A persona's colour mark (GAP-106, decision 132): a small diamond in the
 // persona's colour, as Pointr Cloud marks each persona in its Map Persona
@@ -15,18 +24,15 @@ import { cn } from "../../utils";
 // decoration, hidden from assistive technology, and standing alone it is an
 // image named by the persona.
 
-/** The diamond: its points on the 12 box's edge midpoints. */
-const DIAMOND = "M6 0 12 6 6 12 0 6Z";
-
 function Diamond() {
   return (
     <svg
       aria-hidden="true"
-      className="kozmos-persona-mark-shape"
+      className={PERSONA_MARK_SHAPE_CLASS}
       focusable="false"
-      viewBox="0 0 12 12"
+      viewBox={PERSONA_MARK_VIEWBOX}
     >
-      <path d={DIAMOND} />
+      <path d={PERSONA_MARK_DIAMOND} />
     </svg>
   );
 }
@@ -53,9 +59,9 @@ const PersonaMark = React.forwardRef<HTMLSpanElement, PersonaMarkProps>(
   ({ className, color, name, style, ...props }, ref) => (
     <span
       ref={ref}
-      className={cn("kozmos-persona-mark", className)}
+      className={cn(PERSONA_MARK_CLASS, className)}
       style={
-        { "--kozmos-persona-color": color, ...style } as React.CSSProperties
+        { ...personaMarkVariables(color), ...style } as React.CSSProperties
       }
       {...(name
         ? { role: "img", "aria-label": name }
@@ -100,8 +106,8 @@ const PersonaMarkGroup = React.forwardRef<
   return (
     <span
       ref={ref}
-      aria-label={`${label}: ${personas.map((persona) => persona.name).join(", ")}`}
-      className={cn("kozmos-persona-marks", className)}
+      aria-label={personaMarkGroupLabel(label, personas)}
+      className={cn(PERSONA_MARKS_CLASS, className)}
       role="img"
       {...props}
     >
