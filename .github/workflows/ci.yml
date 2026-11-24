@@ -940,8 +940,16 @@ jobs:
   # only Vue and what Vue needs (React, the stylesheet, tokens, icons), not
   # the apps. One red browser must not hide the others: every engine runs
   # whatever the one before it found.
+  # The Vue job ran its four browser suites in Chromium, then Firefox, then
+  # WebKit, in one queue, and every V1 batch adds stories to all twelve runs:
+  # 29 minutes on #610, 42 on #612, and #613 (105 stories) was cancelled at
+  # its 45-minute limit while still passing, in WebKit. As the web job's
+  # suites were (the browsers job, above), the suites are split by browser
+  # into vue-browsers, run at once, and "Vue (build, contract, parity,
+  # browser suites)", the required check, is the job that waits for both
+  # and passes only when both did: branch protection names it, unchanged.
   vue:
-    name: Vue (build, contract, parity, browser suites)
+    name: Vue (build, contract, parity)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     # The web job's container, fonts and shell: why is written there.
@@ -986,9 +994,10 @@ jobs:
       - name: Build The Vue Storybook
         run: pnpm --filter @kozmos-ds/docs build-storybook:vue
 
-      # As in the web job: the image's own builds, nothing from apt.
+      # As in the web job: the image's own builds, nothing from apt. The
+      # smoke test opens Chromium; the other engines are vue-browsers' work.
       - name: Install Playwright
-        run: pnpm --filter @kozmos-ds/react exec playwright install chromium firefox webkit
+        run: pnpm --filter @kozmos-ds/react exec playwright install chromium
 
       - name: Verify The Browsers Have The Runner's Fonts
         if: runner.os == 'Linux'
@@ -1000,19 +1009,6 @@ jobs:
             "python3 -m http.server 6009 --bind 127.0.0.1 --directory storybook-internal/vue" \
             "bash -lc 'until curl -sf http://127.0.0.1:6009/index.json >/dev/null; do sleep 2; done; VUE_STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:storybook-vue-smoke'"
 
-      # Each suite serves the built Storybook itself, on a port the system
-      # picks (scripts/vue/stories.mjs), and holds the register in
-      # scripts/vue/coverage.mjs to it first: a Vue story nothing covers
-      # fails all four. Every engine runs whatever the one before found, and
-      # each runs every suite (scripts/vue/run-suites.mjs).
-      - name: Vue Browser Suites (chromium, firefox, webkit)
-        run: |
-          result=0
-          for browser in chromium firefox webkit; do
-            ADAPTIVE_BROWSER="$browser" pnpm test:vue-stories || result=1
-          done
-          exit "$result"
-
       # The same specs on React 18, last: the package's peers take react and
       # react-dom 18 or 19, and the test step above runs its devDependencies'
       # 19. This one takes apps/docs's 18.3.1, the Vue Storybook's, for what
@@ -1020,13 +1016,98 @@ jobs:
       # loaded (test/react18/react18.probe.ts), and skips the one test that
       # holds react-dom 19 alone, by the KOZMOS_REACT18 the run sets
       # (packages/vue/src/react-bridge/Listeners.spec.ts).
-      # It runs after the Storybook, its smoke test and pin guard, and the
-      # browser suites, so a failure on React 18 alone hides none of them.
+      # It runs after the Storybook, its smoke test and pin guard, so a
+      # failure on React 18 alone hides none of them.
       # It needs only the build, and runs whatever the steps before it found;
       # failing, it fails the job.
       - name: Test @kozmos-ds/vue On React 18
         if: ${{ !cancelled() && steps.build-vue.outcome == 'success' }}
         run: pnpm --filter @kozmos-ds/vue test:react18
+
+  # The four Vue browser suites, one browser to a shard, at once. Each shard
+  # builds what it needs itself, as the browsers job's do, so it is a
+  # complete, re-runnable check. Each suite serves the built Storybook
+  # itself, on a port the system picks (scripts/vue/stories.mjs), and holds
+  # the register in scripts/vue/coverage.mjs to it first: a Vue story
+  # nothing covers fails all four. Every suite runs whatever the one before
+  # found (scripts/vue/run-suites.mjs).
+  vue-browsers:
+    name: ${{ matrix.shard.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # One red browser must not hide the others.
+      fail-fast: false
+      matrix:
+        shard:
+          - name: Vue Browser Suites (chromium)
+            browser: chromium
+          - name: Vue Browser Suites (firefox)
+            browser: firefox
+          - name: Vue Browser Suites (webkit)
+            browser: webkit
+    # The web job's container, fonts and shell: why is written there.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+        - /usr/share/fonts/truetype/lato:/usr/share/fonts/truetype/lato:ro
+    defaults:
+      run:
+        shell: bash -e {0}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @kozmos-ds/vue And The Packages It Needs
+        run: pnpm --filter "@kozmos-ds/vue..." build
+
+      - name: Build The Vue Storybook
+        run: pnpm --filter @kozmos-ds/docs build-storybook:vue
+
+      # As in the web job: the image's own builds, nothing from apt.
+      - name: Install Playwright
+        run: pnpm --filter @kozmos-ds/react exec playwright install ${{ matrix.shard.browser }}
+
+      - name: Verify The Browsers Have The Runner's Fonts
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/check-runner-fonts.sh
+
+      - name: Vue Browser Suites
+        run: ADAPTIVE_BROWSER=${{ matrix.shard.browser }} pnpm test:vue-stories
+
+  # The required check, by its name: it passes only when the Vue job and
+  # every browser shard passed. It runs when either failed too (a skipped
+  # required check would not block a merge), and not when the run was
+  # cancelled, which a newer push does.
+  vue-required:
+    name: Vue (build, contract, parity, browser suites)
+    needs: [vue, vue-browsers]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: The Vue Job And Every Browser Shard Passed
+        env:
+          VUE: ${{ needs.vue.result }}
+          BROWSERS: ${{ needs.vue-browsers.result }}
+        run: |
+          echo "Vue (build, contract, parity): $VUE"
+          echo "Vue browser suites: $BROWSERS"
+          test "$VUE" = success && test "$BROWSERS" = success
 
   # Whether a change touches what the iOS job builds: the iOS package, the
   # tokens it compiles against (the job builds @kozmos-ds/tokens first), the
