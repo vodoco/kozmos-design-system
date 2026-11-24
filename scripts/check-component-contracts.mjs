@@ -227,10 +227,14 @@ const files = {
   reactBadgeFigma: "packages/react/src/components/Badge/Badge.figma.tsx",
   reactCardFigma: "packages/react/src/components/Card/Card.figma.tsx",
   reactList: "packages/react/src/components/List/List.tsx",
+  // List's recipe, shared with Vue's KozmosList (wave V1).
+  reactListRecipe: "packages/react/src/recipes/list.ts",
   reactListFigma: "packages/react/src/components/List/List.figma.tsx",
   reactTable: "packages/react/src/components/Table/Table.tsx",
   reactTableFigma: "packages/react/src/components/Table/Table.figma.tsx",
   reactTimeline: "packages/react/src/components/Timeline/Timeline.tsx",
+  // Timeline's recipe, shared with Vue's KozmosTimeline (wave V1).
+  reactTimelineRecipe: "packages/react/src/recipes/timeline.ts",
   reactTimelineFigma:
     "packages/react/src/components/Timeline/Timeline.figma.tsx",
   reactTreeMdx: "packages/react/src/components/Tree/Tree.mdx",
@@ -1760,8 +1764,8 @@ assertContains(
   "React Drawer side data attribute",
 );
 assertContains(
-  files.reactList,
-  source.reactList,
+  files.reactListRecipe,
+  source.reactListRecipe,
   "export type ListDensity =",
   "React List density API",
 );
@@ -2318,6 +2322,42 @@ assertContains(
   "KozmosIconButton = createVueWrapper(IconButton)",
   "Vue IconButton wraps React IconButton",
 );
+// List, DescriptionList, MetaStrip, Timeline, Alert and Notice are Vue
+// ports (wave V1, packages/vue/PORTING.md), each with every part its React
+// folder exports, out of the bridge.
+for (const [folder, parts] of [
+  ["List", ["KozmosList", "KozmosListItem", "KozmosListItemStatus"]],
+  ["DescriptionList", ["KozmosDescriptionList", "KozmosDescriptionListItem"]],
+  ["MetaStrip", ["KozmosMetaStrip", "KozmosMetaStripItem"]],
+  [
+    "Timeline",
+    [
+      "KozmosTimeline",
+      "KozmosTimelineDescription",
+      "KozmosTimelineItem",
+      "KozmosTimelineTime",
+      "KozmosTimelineTitle",
+    ],
+  ],
+  ["Alert", ["KozmosAlert", "KozmosAlertDescription", "KozmosAlertTitle"]],
+  ["Notice", ["KozmosNotice"]],
+]) {
+  assertContains(
+    files.vueIndex,
+    source.vueIndex,
+    new RegExp(
+      `export \\{\\s*${parts.join(",\\s*")},?\\s*\\} from "\\./components/${folder}/${folder}"`,
+    ),
+    `Vue ${folder} exported as a Vue port`,
+  );
+  for (const part of parts)
+    assertNotContains(
+      files.vueBridge,
+      source.vueBridge,
+      `export const ${part} =`,
+      `Vue ${part} is native, not bridged`,
+    );
+}
 
 // CategoryField: the search field's form once a category is chosen — the
 // contract's numbers on every platform and in the importer.
@@ -7058,8 +7098,8 @@ assertContains(
   "Linked Android Code Connect includes Tree source",
 );
 assertContains(
-  files.reactTimeline,
-  source.reactTimeline,
+  files.reactTimelineRecipe,
+  source.reactTimelineRecipe,
   /export type TimelineDensity = ["']default["'] \| ["']compact["'];/,
   "React Timeline exposes the Figma density variant",
 );

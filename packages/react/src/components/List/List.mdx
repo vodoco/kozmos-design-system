@@ -60,19 +60,23 @@ export function TourChecklist() {
     `}
     vue={`
 <script setup>
-import { KozmosButton, KozmosTag } from "@kozmos-ds/vue"
 import {
+  KozmosButton,
   KozmosList,
   KozmosListItem,
   KozmosListItemStatus,
-} from "@kozmos-ds/vue/react-bridge"
+  KozmosTag,
+} from "@kozmos-ds/vue"
 </script>
 
 <template>
   <KozmosList>
-    <KozmosListItem title="Explore the map" description="Pan, zoom and change levels." meta="2 min">
+    <KozmosListItem>
       <template #leading><KozmosListItemStatus status="done" /></template>
+      <template #title>Explore the map</template>
       <template #titleAddon><KozmosTag variant="secondary">Viewer</KozmosTag></template>
+      <template #description>Pan, zoom and change levels.</template>
+      <template #meta>2 min</template>
       <template #trailing><KozmosButton size="sm" variant="outline">Replay</KozmosButton></template>
     </KozmosListItem>
   </KozmosList>
@@ -154,11 +158,14 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosList } from "@kozmos-ds/vue/react-bridge"
+import { KozmosList, KozmosListItem } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosList />
+  <KozmosList>
+    <KozmosListItem>Reception</KozmosListItem>
+    <KozmosListItem>Atrium Café</KozmosListItem>
+  </KozmosList>
 </template>
     `}
     swift={`

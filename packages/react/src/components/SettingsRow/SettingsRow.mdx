@@ -79,7 +79,8 @@ export function BannerSetting() {
     vue={`
 <script setup>
 import { ref } from "vue"
-import { KozmosList, KozmosSettingsRow, KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
+import { KozmosList } from "@kozmos-ds/vue"
+import { KozmosSettingsRow, KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
 
 const on = ref(false)
 const state = ref("inherited")

@@ -1,28 +1,40 @@
 import React from "react";
 import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import {
+  LIST_CLASS,
+  LIST_ITEM_CLASS,
+  LIST_ITEM_SELECTED_CLASS,
+  LIST_ITEM_LEADING_CLASS,
+  LIST_ITEM_BODY_CLASS,
+  LIST_ITEM_HEADING_CLASS,
+  LIST_ITEM_TITLE_CLASS,
+  LIST_ITEM_TITLE_ADDON_CLASS,
+  LIST_ITEM_DESCRIPTION_CLASS,
+  LIST_ITEM_META_CLASS,
+  LIST_ITEM_TRAILING_CLASS,
+  LIST_ITEM_SLOTTED_CLASS,
+  LIST_ITEM_STATUS_CLASS,
+  LIST_ITEM_STATUS_CHECK_CLASS,
+  LIST_ITEM_STATUS_DOT_CLASS,
+  LIST_ITEM_STATUS_LABELS,
+  listDensityClasses,
+  type ListDensity,
+  type ListItemStatusValue,
+} from "../../recipes/list";
 
-export type ListDensity = "default" | "compact";
+export type { ListDensity, ListItemStatusValue };
 
 export interface ListProps extends React.HTMLAttributes<HTMLUListElement> {
   density?: ListDensity;
 }
-
-const listDensityClasses: Record<ListDensity, string> = {
-  default: "[&>li]:min-h-12 [&>li]:px-4 [&>li]:py-3",
-  compact: "[&>li]:min-h-10 [&>li]:px-4 [&>li]:py-2",
-};
 
 const List = React.forwardRef<HTMLUListElement, ListProps>(
   ({ className, density = "default", ...props }, ref) => (
     <ul
       ref={ref}
       data-density={density}
-      className={cn(
-        "m-0 flex w-full list-none flex-col overflow-hidden rounded-control border bg-background p-0 text-sm text-foreground",
-        listDensityClasses[density],
-        className,
-      )}
+      className={cn(LIST_CLASS, listDensityClasses[density], className)}
       {...props}
     />
   ),
@@ -109,9 +121,9 @@ const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
         ref={ref}
         data-selected={selected ? "" : undefined}
         className={cn(
-          "flex items-center border-b last:border-b-0",
-          slotted && "kozmos-list-item-slotted",
-          selected && "kozmos-list-item-selected",
+          LIST_ITEM_CLASS,
+          slotted && LIST_ITEM_SLOTTED_CLASS,
+          selected && LIST_ITEM_SELECTED_CLASS,
           className,
         )}
         {...props}
@@ -119,21 +131,21 @@ const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
         {slotted ? (
           <>
             {leading != null ? (
-              <span className="kozmos-list-item-leading" data-slot="leading">
+              <span className={LIST_ITEM_LEADING_CLASS} data-slot="leading">
                 {leading}
               </span>
             ) : null}
-            <div className="kozmos-list-item-body">
+            <div className={LIST_ITEM_BODY_CLASS}>
               {title != null || titleAddon != null ? (
-                <div className="kozmos-list-item-heading">
+                <div className={LIST_ITEM_HEADING_CLASS}>
                   {title != null ? (
-                    <span className="kozmos-list-item-title" data-slot="title">
+                    <span className={LIST_ITEM_TITLE_CLASS} data-slot="title">
                       {title}
                     </span>
                   ) : null}
                   {titleAddon != null ? (
                     <span
-                      className="kozmos-list-item-title-addon"
+                      className={LIST_ITEM_TITLE_ADDON_CLASS}
                       data-slot="title-addon"
                     >
                       {titleAddon}
@@ -143,21 +155,21 @@ const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
               ) : null}
               {description != null ? (
                 <div
-                  className="kozmos-list-item-description"
+                  className={LIST_ITEM_DESCRIPTION_CLASS}
                   data-slot="description"
                 >
                   {description}
                 </div>
               ) : null}
               {meta != null ? (
-                <div className="kozmos-list-item-meta" data-slot="meta">
+                <div className={LIST_ITEM_META_CLASS} data-slot="meta">
                   {meta}
                 </div>
               ) : null}
               {children}
             </div>
             {trailing != null ? (
-              <div className="kozmos-list-item-trailing" data-slot="trailing">
+              <div className={LIST_ITEM_TRAILING_CLASS} data-slot="trailing">
                 {trailing}
               </div>
             ) : null}
@@ -170,14 +182,6 @@ const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
   },
 );
 ListItem.displayName = "ListItem";
-
-export type ListItemStatusValue = "todo" | "inProgress" | "done";
-
-const STATUS_LABELS: Record<ListItemStatusValue, string> = {
-  todo: "Not started",
-  inProgress: "In progress",
-  done: "Done",
-};
 
 export interface ListItemStatusProps extends Omit<
   React.HTMLAttributes<HTMLSpanElement>,
@@ -204,15 +208,17 @@ const ListItemStatus = React.forwardRef<HTMLSpanElement, ListItemStatusProps>(
     <span
       ref={ref}
       data-status={status}
-      className={cn("kozmos-list-item-status", className)}
+      className={cn(LIST_ITEM_STATUS_CLASS, className)}
       {...props}
     >
       {status === "done" ? (
-        <Check aria-hidden="true" className="kozmos-list-item-status-check" />
+        <Check aria-hidden="true" className={LIST_ITEM_STATUS_CHECK_CLASS} />
       ) : status === "inProgress" ? (
-        <span aria-hidden="true" className="kozmos-list-item-status-dot" />
+        <span aria-hidden="true" className={LIST_ITEM_STATUS_DOT_CLASS} />
       ) : null}
-      <span className="sr-only">{label ?? STATUS_LABELS[status]}</span>
+      <span className="sr-only">
+        {label ?? LIST_ITEM_STATUS_LABELS[status]}
+      </span>
     </span>
   ),
 );

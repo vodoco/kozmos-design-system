@@ -79,7 +79,13 @@ const MAX_BUTTON_GZIP_KB = 2;
 // (DescriptionList, EmptyState's and Chip's tones, PageHeader's titleAddon, Dialog's media and full
 // size, TourStep's anchor, the fixes and the larger tracks) has no room left under 112. One raise for
 // the release; the per-export, Button, CSS and module-count guards stay.
-const MAX_TOTAL_GZIP_KB = 120;
+// Decision 229 (owner, 23 Nov 2026): during the Vue track this line follows
+// the measured cost of the recipes React shares with Vue, measurement plus
+// half a kilobyte per wave, and is re-sized when the core is done. After
+// wave V1 (type, layout, status, cards and records: their classes, custom
+// properties and drawings moved into recipes/), Everything measured
+// 119.80 KB here, so 120.30.
+const MAX_TOTAL_GZIP_KB = 120.3;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
@@ -144,8 +150,10 @@ const MAX_VUE_BUTTON_GZIP_KB = 2;
 // Vue providers' values, and 1.08 for its 42 sub-part wrappers (Select,
 // Dialog, Tabs, Toast and the rest). The bridge only shrinks from here, as
 // parts become native: each Vue wave lowers this line to the wave's
-// measurement plus half a kilobyte, until the bridge is retired.
-const MAX_VUE_BRIDGE_GZIP_KB = 13.5;
+// measurement plus half a kilobyte, until the bridge is retired. After wave
+// V1 (type, layout, status, cards and records left it) it measured 11.36 KB
+// here, so 11.86.
+const MAX_VUE_BRIDGE_GZIP_KB = 11.86;
 // @kozmos-ds/react/dashboard, on lines of its own (decision 183, owner, 13 Nov
 // 2026): Pointr Cloud's Dashboard modules ship from that entry and its sheet,
 // dashboard.css, so an SDK or Core product pays nothing for them; the main

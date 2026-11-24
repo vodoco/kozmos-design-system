@@ -41,22 +41,14 @@ import {
   Sidebar,
   Menu,
   ContextMenu,
-  Notice,
   Drawer,
   Toast,
   Pagination,
   Stepper,
-  Alert as ReactAlert,
-  AlertTitle,
-  AlertDescription,
   Backdrop,
-  List,
-  ListItem,
-  ListItemStatus,
   SettingsRow,
   Table,
   Tree,
-  Timeline,
   Tooltip,
   Popover,
   PopoverAnchor,
@@ -74,8 +66,6 @@ import {
   Rating,
   FileUpload as ReactFileUpload,
   ImageCropper,
-  DescriptionList,
-  DescriptionListItem,
   DatePicker,
   TimePicker,
   FloatingActionButton,
@@ -182,24 +172,8 @@ export type {
 } from "./react-adapter";
 
 // ----------------------------------------------------------------------
-// Custom Adapters for Complex Multi-Part Components (Alert, Inputs)
+// Custom Adapters for Complex Multi-Part Components (Inputs)
 // ----------------------------------------------------------------------
-const AlertAdapter = ({
-  variant,
-  title,
-  description,
-  className,
-  ...props
-}: any) =>
-  React.createElement(
-    ReactAlert,
-    { variant, className, ...props },
-    title ? React.createElement(AlertTitle, null, title) : null,
-    description
-      ? React.createElement(AlertDescription, null, description)
-      : null,
-  );
-
 // Backdrop's target may be a template ref on a component, or a ref() in a
 // list: React is handed the element each names (GAP-189).
 const BackdropAdapter = ({ target, ...props }: any) =>
@@ -289,13 +263,11 @@ AnchoredPopoverAdapter.displayName = "AnchoredPopover";
 // What each adapter hands on, as React's types read the parts it hands it
 // to (part-takes.ts).
 describeParts([
-  [AlertAdapter, ADAPTER_TAKES.AlertAdapter],
   [BackdropAdapter, ADAPTER_TAKES.BackdropAdapter],
   [TourStepAdapter, ADAPTER_TAKES.TourStepAdapter],
   [AnchoredPopoverAdapter, ADAPTER_TAKES.AnchoredPopoverAdapter],
 ]);
 describeBooleans([
-  [AlertAdapter, ADAPTER_BOOLEANS.AlertAdapter],
   [BackdropAdapter, ADAPTER_BOOLEANS.BackdropAdapter],
   [TourStepAdapter, ADAPTER_BOOLEANS.TourStepAdapter],
   [AnchoredPopoverAdapter, ADAPTER_BOOLEANS.AnchoredPopoverAdapter],
@@ -351,11 +323,6 @@ export const KozmosNavbar = createVueWrapper(Navbar);
 export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
-// Its disclosure is a model: v-model:expanded, as React's expanded and
-// onExpandedChange are.
-export const KozmosNotice = createVueWrapper(Notice, {
-  expanded: { prop: "expanded", callback: "onExpandedChange", empty: false },
-});
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosPagination = createVueWrapper(Pagination);
@@ -364,19 +331,12 @@ export const KozmosStepper = createVueWrapper(Stepper);
 // React and never written onto the wrapper's element as an attribute, as Vue
 // writes every undeclared one (GAP-191).
 Object.assign(KozmosStepper, { props: { positionLabel: null } });
-export const KozmosAlert = createVueWrapper(AlertAdapter);
 export const KozmosBackdrop = createVueWrapper(BackdropAdapter);
 // `target` is declared as a prop, so Vue never writes it onto the wrapper's
 // element as an attribute: it does that with every undeclared attribute, and
 // a component instance cannot be written as one ("Cannot convert object to
 // primitive value"). The wrapper hands its props to React with its attrs.
 Object.assign(KozmosBackdrop, { props: { target: null } });
-export const KozmosList = createVueWrapper(List);
-// ListItem's slots (GAP-195): #leading, #title, #titleAddon, #description,
-// #meta and #trailing, or its props for words. A row in a KozmosList's
-// default slot is drawn in the list's React tree (GAP-230).
-export const KozmosListItem = createVueWrapper(ListItem);
-export const KozmosListItemStatus = createVueWrapper(ListItemStatus);
 // GAP-040: #control is the setting's control, @reset its Reset to default.
 export const KozmosSettingsRow = createVueWrapper(SettingsRow);
 // Its rows are React's, as `children` (GAP-016), so its selection reaches
@@ -389,11 +349,6 @@ export const KozmosTable = createVueWrapper(Table, {
     empty: [],
   },
 });
-// GAP-221, decision 199: a value under each label. An item's #action is
-// the part after its value (a Copy IconButton); its value is `value` (words,
-// or true and false for a yes and a no) or its default slot (tags).
-export const KozmosDescriptionList = createVueWrapper(DescriptionList);
-export const KozmosDescriptionListItem = createVueWrapper(DescriptionListItem);
 // Its selection is reported as the item; the model is the item's id. A
 // multiple tree's model is its selected ids (GAP-151).
 export const KozmosTree = createVueWrapper(Tree, {
@@ -419,7 +374,6 @@ Object.assign(KozmosTree, {
     ariaLabel: { type: String, default: undefined },
   },
 });
-export const KozmosTimeline = createVueWrapper(Timeline);
 export const KozmosTooltip = createVueWrapper(Tooltip);
 export const KozmosPopover = createVueWrapper(Popover);
 // Its attrs are React's alone, as every wrapper's are (createVueWrapper): a

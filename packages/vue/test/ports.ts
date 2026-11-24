@@ -508,6 +508,162 @@ export const PORTS: Port[] = [
       tone: "alert",
     },
   },
+  {
+    vue: "KozmosList",
+    react: "List",
+    stories: "components/List/List.stories.tsx",
+    elsewhere: {
+      // Each draws its rows with its own render; the checklist's and the
+      // persona list's rows hold Kozmos parts (Tag, Button, Checkbox).
+      Default: "parity/list.parity.spec.ts",
+      Compact: "parity/list.parity.spec.ts",
+      Checklist: "parity/list.parity.spec.ts",
+      PersonaVisibility: "parity/list.parity.spec.ts",
+    },
+    drawnIn: "parity/list.parity.spec.ts",
+    sample: { density: "compact", children: "First item" },
+  },
+  {
+    vue: "KozmosListItem",
+    react: "ListItem",
+    stories: null,
+    drawnIn: "parity/list.parity.spec.ts",
+    sample: { selected: true, children: "First item" },
+  },
+  {
+    vue: "KozmosListItemStatus",
+    react: "ListItemStatus",
+    stories: null,
+    drawnIn: "parity/list.parity.spec.ts",
+    sample: { status: "inProgress" },
+  },
+  {
+    vue: "KozmosDescriptionList",
+    react: "DescriptionList",
+    stories: "components/DescriptionList/DescriptionList.stories.tsx",
+    elsewhere: {
+      // Its items, with Badges and a yes and a no, drawn by its own render.
+      Default: "parity/description-list.parity.spec.ts",
+    },
+    drawnIn: "parity/description-list.parity.spec.ts",
+    sample: { layout: "row", children: "Unit" },
+  },
+  {
+    vue: "KozmosDescriptionListItem",
+    react: "DescriptionListItem",
+    stories: null,
+    drawnIn: "parity/description-list.parity.spec.ts",
+    sample: { label: "Name", value: "Gate A12" },
+  },
+  {
+    vue: "KozmosMetaStrip",
+    react: "MetaStrip",
+    stories: "components/MetaStrip/MetaStrip.stories.tsx",
+    elsewhere: {
+      // Each draws its tiles with its own render.
+      Default: "parity/meta-strip.parity.spec.ts",
+      WithVisibleLabels: "parity/meta-strip.parity.spec.ts",
+      Overflowing: "parity/meta-strip.parity.spec.ts",
+    },
+    drawnIn: "parity/meta-strip.parity.spec.ts",
+    sample: { "aria-label": "About this place", children: "12 min" },
+  },
+  {
+    vue: "KozmosMetaStripItem",
+    react: "MetaStripItem",
+    stories: null,
+    drawnIn: "parity/meta-strip.parity.spec.ts",
+    sample: { label: "Distance", showLabel: true, children: "210 m" },
+  },
+  {
+    vue: "KozmosTimeline",
+    react: "Timeline",
+    stories: "components/Timeline/Timeline.stories.tsx",
+    elsewhere: {
+      // Each draws its events with its own render.
+      Detailed: "parity/timeline.parity.spec.ts",
+      Basic: "parity/timeline.parity.spec.ts",
+      Compact: "parity/timeline.parity.spec.ts",
+      Default: "parity/timeline.parity.spec.ts",
+    },
+    drawnIn: "parity/timeline.parity.spec.ts",
+    sample: { density: "compact", children: "Events" },
+  },
+  {
+    vue: "KozmosTimelineItem",
+    react: "TimelineItem",
+    stories: null,
+    drawnIn: "parity/timeline.parity.spec.ts",
+    sample: { children: "Created" },
+  },
+  {
+    vue: "KozmosTimelineTime",
+    react: "TimelineTime",
+    stories: null,
+    drawnIn: "parity/timeline.parity.spec.ts",
+    sample: { children: "09:00" },
+  },
+  {
+    vue: "KozmosTimelineTitle",
+    react: "TimelineTitle",
+    stories: null,
+    drawnIn: "parity/timeline.parity.spec.ts",
+    sample: { children: "Created" },
+  },
+  {
+    vue: "KozmosTimelineDescription",
+    react: "TimelineDescription",
+    stories: null,
+    drawnIn: "parity/timeline.parity.spec.ts",
+    sample: { children: "Initial event captured." },
+  },
+  {
+    vue: "KozmosAlert",
+    react: "Alert",
+    stories: "components/Alert/Alert.stories.tsx",
+    elsewhere: {
+      // Each draws an icon, an AlertTitle and an AlertDescription with its
+      // own render.
+      Default: "parity/alert.parity.spec.ts",
+      Destructive: "parity/alert.parity.spec.ts",
+      Success: "parity/alert.parity.spec.ts",
+      Warning: "parity/alert.parity.spec.ts",
+      Info: "parity/alert.parity.spec.ts",
+      WithoutTitle: "parity/alert.parity.spec.ts",
+      LivenessAndTitle: "parity/alert.parity.spec.ts",
+    },
+    drawnIn: "parity/alert.parity.spec.ts",
+    sample: { variant: "info", live: "polite", children: "Saved" },
+  },
+  {
+    vue: "KozmosAlertTitle",
+    react: "AlertTitle",
+    stories: null,
+    drawnIn: "parity/alert.parity.spec.ts",
+    sample: { level: 3, children: "Heads up!" },
+  },
+  {
+    vue: "KozmosAlertDescription",
+    react: "AlertDescription",
+    stories: null,
+    drawnIn: "parity/alert.parity.spec.ts",
+    sample: { children: "The venue closes at 18:00 today." },
+  },
+  {
+    vue: "KozmosNotice",
+    react: "Notice",
+    stories: "components/Notice/Notice.stories.tsx",
+    elsewhere: {
+      // Its own render: three notices, one with a Button as its action.
+      SuccessProgressAndDone: "parity/notice.parity.spec.ts",
+      // A Button as its action, and as part of its summary.
+      Emergency: "parity/notice.parity.spec.ts",
+      SearchWithAi: "parity/notice.parity.spec.ts",
+    },
+    events: {
+      "update:expanded": "parity/notice.parity.spec.ts",
+    },
+  },
 ];
 
 /**

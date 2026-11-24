@@ -518,6 +518,128 @@ const INTERACTIONS = {
     return `Tab to the scroller; End scrolls it, and the rows drawn follow to item ${size}`;
   },
 
+  /**
+   * Notice's disclosure (KozmosNotice): Tab reaches More, Enter and Space
+   * each open or close the detail, as a click does, and the detail's
+   * `hidden` follows `aria-expanded` every time.
+   */
+  async "notice-disclosure"(page) {
+    const more = controls(page, "button[aria-expanded]");
+    assert.equal(await more.count(), 1, "the notice offers one disclosure");
+    const id = await more.getAttribute("aria-controls");
+    assert(id, "More names the detail it controls");
+    const state = async () => ({
+      expanded: (await more.getAttribute("aria-expanded")) === "true",
+      shown: await page.evaluate(
+        (detail) => !document.getElementById(detail)?.hidden,
+        id,
+      ),
+    });
+    const start = await state();
+    assert.equal(start.shown, start.expanded, "the detail shows as More says");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await more.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches More (focus is on ${await focused(page)})`,
+    );
+    let expected = start.expanded;
+    const steps = [
+      ["Enter", () => page.keyboard.press("Enter")],
+      ["Space", () => page.keyboard.press("Space")],
+      ["a click", () => more.click()],
+      ["a second click", () => more.click()],
+    ];
+    for (const [how, act] of steps) {
+      await act();
+      await settle(page);
+      expected = !expected;
+      assert.deepEqual(
+        await state(),
+        { expanded: expected, shown: expected },
+        `${how} on More ${expected ? "opens" : "closes"} the detail`,
+      );
+    }
+    return "Tab to More; Enter, Space and two clicks each open or close the detail, hidden as aria-expanded says";
+  },
+
+  /**
+   * Map Persona Visibility's rows: each row's checkbox, by the pointer and
+   * by Space, ticks and unticks it, and the row's tint (data-selected)
+   * follows, held in the story's Vue state.
+   */
+  async "persona-visibility"(page) {
+    const boxes = await controls(page, "[role=checkbox]").all();
+    assert.equal(boxes.length, 3, "the list draws three checkboxes");
+    const look = (box) =>
+      box.evaluate((el) => ({
+        checked: el.getAttribute("aria-checked") === "true",
+        tinted: el.closest("li")?.hasAttribute("data-selected") ?? null,
+      }));
+    for (const box of boxes) {
+      const before = await look(box);
+      assert.equal(before.tinted, before.checked, "a ticked row is tinted");
+      await box.click();
+      await settle(page);
+      assert.deepEqual(
+        await look(box),
+        { checked: !before.checked, tinted: !before.checked },
+        "a click ticks or unticks the row, and its tint follows",
+      );
+      await box.focus();
+      await page.keyboard.press("Space");
+      await settle(page);
+      assert.deepEqual(
+        await look(box),
+        before,
+        "Space puts it back, and its tint follows",
+      );
+    }
+    return "three rows ticked and unticked by a click and by Space, each row's tint following";
+  },
+
+  /** A MetaStrip is a stop for Tab, so its facts can be scrolled to. */
+  async "meta-strip-focus"(page) {
+    const strip = controls(page, "dl[data-slot=meta-strip]");
+    assert.equal(await strip.count(), 1, "the story draws one strip");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await strip.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the strip (focus is on ${await focused(page)})`,
+    );
+    return "Tab to the strip";
+  },
+
+  /**
+   * A MetaStrip wider than its column: Tab reaches it, and its keys scroll
+   * it (End to its end, Home back, ArrowRight a step), as React's do.
+   */
+  async "meta-strip-scroll"(page) {
+    const strip = controls(page, "dl[data-slot=meta-strip]");
+    await INTERACTIONS["meta-strip-focus"](page);
+    const at = () => strip.evaluate((el) => Math.abs(el.scrollLeft));
+    assert(
+      await strip.evaluate((el) => el.scrollWidth > el.clientWidth),
+      "the strip is wider than its column",
+    );
+    assert.equal(await at(), 0, "the strip starts at its start");
+    await page.keyboard.press("End");
+    await settle(page);
+    assert((await at()) > 0, "End scrolls the strip to its end");
+    await page.keyboard.press("Home");
+    await settle(page);
+    assert.equal(await at(), 0, "Home scrolls it back to its start");
+    await page.keyboard.press("ArrowRight");
+    await settle(page);
+    assert((await at()) > 0, "ArrowRight scrolls it a step");
+    return "Tab to the strip; End, Home and ArrowRight scroll it";
+  },
+
   /** The Backdrop's cut-out lets the target through and catches the rest. */
   async "backdrop-target"(page) {
     const target = controls(page, "button").first();

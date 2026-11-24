@@ -22,4 +22,14 @@ export const EXCEPTIONS: Record<string, string> = {
   // would not be a list prop, and a scoped slot would lose React's shape.
   "KozmosEmptyState.list:type":
     "React's ReactNode[] is Vue's (string | VNode)[]: each item a line of text or a VNode such as a KozmosLink, the same items in the type Vue writes them in",
+  // React's DescriptionListItem takes `value` as a node or as `true` and
+  // `false`, a yes and a no written in `yesLabel` and `noLabel` (GAP-221).
+  // The contract makes the node a `#value` slot, and a slot carries nodes,
+  // not a boolean: without a prop, Vue's `yes-label` and `no-label` would
+  // name words nothing can ask for. So Vue takes the boolean as a prop of
+  // the same name, boolean only, beside the slot.
+  "KozmosDescriptionListItem.value:extra-prop":
+    "React's boolean `value` (a yes or a no) is Vue's `:value`, beside the `#value` slot that takes its nodes: a slot cannot carry a boolean",
+  "KozmosDescriptionListItem.value:type":
+    "Vue's `value` prop is the boolean half of React's `ReactNode | boolean`; the node half is the `#value` slot",
 };

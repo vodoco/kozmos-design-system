@@ -538,6 +538,184 @@ export const VUE_STORIES = {
   },
   "vue-core-feedback-emptystate--download-progress": { interaction: "button" },
   "vue-core-feedback-emptystate--with-list": { interaction: "button" },
+  "vue-core-data-display-list--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A list of rows of words: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-list--compact": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A list of rows of words: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-data-display-list--checklist": {
+    interaction: "buttons-in-order",
+    exempt: {
+      "owned-css":
+        "React defect, @kozmos-ds/styles owned-components.css: .kozmos-list-item-status-check and .kozmos-list-item-status-dot set their inline-size only inside @scope, so Safari 26.0-26.3 (no @scope on these) draws ListItemStatus's check and dot 0 wide in React and here alike (list.parity.spec.ts). Remove when the sizes hold outside @scope",
+    },
+  },
+  "vue-core-data-display-list--persona-visibility": {
+    interaction: "persona-visibility",
+    exempt: {
+      themes:
+        "Bridged-part defect, not List's: React's IconButton at size sm (the persona row's info button, through the bridge) is 28px tall at compact density where --density-control-height-sm is 32px. Remove when IconButton follows the compact density or is ported",
+    },
+  },
+  "vue-core-data-display-descriptionlist--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A read-only record (decision 199): values under labels, nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-metastrip--default": {
+    interaction: "meta-strip-focus",
+  },
+  "vue-core-data-display-metastrip--with-visible-labels": {
+    interaction: "meta-strip-focus",
+  },
+  "vue-core-data-display-metastrip--overflowing": {
+    interaction: "meta-strip-scroll",
+  },
+  "vue-core-data-display-timeline--detailed": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      "token-references":
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-timeline--basic": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      "token-references":
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-timeline--compact": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      "token-references":
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-data-display-timeline--default": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      "token-references":
+        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
+      interactions:
+        "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--destructive": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--success": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--warning": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--info": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--without-title": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-alert--liveness-and-title": {
+    interaction: null,
+    exempt: {
+      themes:
+        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
+      interactions:
+        "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-notice--collapsed": {
+    interaction: "notice-disclosure",
+  },
+  "vue-core-feedback-notice--expanded": {
+    interaction: "notice-disclosure",
+  },
+  "vue-core-feedback-notice--single-line": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A notice with no detail offers no disclosure and holds no control: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-notice--success": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "A notice with no detail offers no disclosure and holds no control: nothing to focus or press; axe scans it",
+    },
+  },
+  "vue-core-feedback-notice--success-progress-and-done": {
+    interaction: "button",
+  },
+  "vue-core-feedback-notice--emergency": {
+    interaction: "button",
+  },
+  "vue-core-feedback-notice--search-with-ai": {
+    interaction: "button",
+  },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

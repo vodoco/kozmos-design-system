@@ -269,22 +269,6 @@ const PARTS: Part[] = [
     alone: "true",
   },
   {
-    // GAP-160: the "More" disclosure over the detail.
-    name: "KozmosNotice",
-    model: "expanded",
-    props: { summary: "Check allergens.", children: "The full wording." },
-    start: false,
-    before: "false",
-    field: () => $("button[aria-expanded]"),
-    change: (toggle) => toggle.click(),
-    next: true,
-    shown: () => $("button[aria-expanded]")?.getAttribute("aria-expanded"),
-    shows: "true",
-    nothing: "false",
-    listener: "onExpandedChange",
-    alone: "true",
-  },
-  {
     name: "KozmosSlider",
     props: { "aria-label": "Volume", max: 10 },
     start: [3],
@@ -2422,11 +2406,6 @@ describe("attributes reach React alone", () => {
       name: "KozmosDialogHeader",
       kind: "a box drawing a Vue slot",
       slot: "Gate 4",
-    },
-    {
-      name: "KozmosAlert",
-      kind: "an adapter of several React parts",
-      props: { title: "Saved" },
     },
     {
       name: "KozmosIconButton",

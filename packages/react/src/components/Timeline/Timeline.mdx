@@ -53,11 +53,25 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosTimeline } from "@kozmos-ds/vue/react-bridge"
+import {
+  KozmosTimeline,
+  KozmosTimelineDescription,
+  KozmosTimelineItem,
+  KozmosTimelineTime,
+  KozmosTimelineTitle,
+} from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosTimeline />
+  <KozmosTimeline density="default">
+    <KozmosTimelineItem>
+      <KozmosTimelineTime>February 2022</KozmosTimelineTime>
+      <KozmosTimelineTitle>Application UI code in Tailwind CSS</KozmosTimelineTitle>
+      <KozmosTimelineDescription>
+        Dashboard layouts, charts, boards, and calendar screens shipped.
+      </KozmosTimelineDescription>
+    </KozmosTimelineItem>
+  </KozmosTimeline>
 </template>
     `}
     swift={`
