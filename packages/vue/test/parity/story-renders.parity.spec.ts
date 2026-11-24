@@ -42,7 +42,24 @@ const NOT_DRAWN: Record<string, string> = {
   "Label/WithInput": "its Input is a bridged part, drawn on the client only",
   "PersonaMark/InAPersonaList":
     "its Checkbox is a bridged part, drawn on the client only",
+  "Card/Default": "its Input is a bridged part, drawn on the client only",
+  "Card/HeaderActions":
+    "its IconButton is a bridged part, drawn on the client only",
+  "Card/SubtleHeader":
+    "its IconButtons are bridged parts, drawn on the client only",
+  "PageHeader/WithInfo":
+    "its IconButton is a bridged part, drawn on the client only",
 };
+
+/**
+ * What Storybook gives a story's render beside its args: the toolbar's
+ * globals at their first values (apps/docs/.storybook/preview.tsx's
+ * initialGlobals). Link's ExternalRightToLeft reads the theme from them.
+ */
+const context = (args: Record<string, unknown>) => ({
+  args,
+  globals: { theme: "light", density: "touch" },
+});
 
 type Story = {
   args?: Record<string, unknown>;
@@ -118,7 +135,7 @@ async function drawReact(meta: Meta, story: Story) {
     meta.render ??
     ((all: Record<string, unknown>) =>
       React.createElement(meta.component as React.ElementType, all));
-  const Story = () => render(args, { args }) as React.ReactElement;
+  const Story = () => render(args, context(args)) as React.ReactElement;
   const element = host();
   const root = createRoot(element);
   await act(async () =>
@@ -135,7 +152,7 @@ async function drawVue(meta: Meta, story: Story) {
   nextDrawing();
   const args = { ...meta.args, ...story.args };
   const render = story.render ?? meta.render!;
-  const story_ = render(args, { args }) as Component;
+  const story_ = render(args, context(args)) as Component;
   const element = host();
   const app = createApp({
     render: () => h(KozmosThemeProvider, null, { default: () => h(story_) }),

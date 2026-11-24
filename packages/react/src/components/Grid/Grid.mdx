@@ -61,8 +61,7 @@ export function SiteCards({ sites }: { sites: { id: string; name: string }[] }) 
     `}
     vue={`
 <script setup>
-import { KozmosGrid } from "@kozmos-ds/vue"
-import { KozmosCard } from "@kozmos-ds/vue/react-bridge"
+import { KozmosCard, KozmosGrid } from "@kozmos-ds/vue"
 
 const sites = Array.from({ length: 400 }, (_, index) => ({ id: index, name: "Site " + (index + 1) }))
 </script>

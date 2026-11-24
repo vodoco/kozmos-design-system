@@ -3,6 +3,18 @@ import { cn } from "../../utils";
 import { Container, type ContainerProps } from "../Container/Container";
 import { Heading } from "../Heading/Heading";
 import { Text } from "../Text/Text";
+import {
+  PAGE_HEADER_BLOCK,
+  PAGE_HEADER_BREADCRUMB_CLASS,
+  PAGE_HEADER_ROW_CLASS,
+  PAGE_HEADER_TEXT_CLASS,
+  PAGE_HEADER_TITLE_CLASS,
+  PAGE_HEADER_TITLE_ADDON_CLASS,
+  PAGE_HEADER_INFO_CLASS,
+  PAGE_HEADER_ACTIONS_CLASS,
+  pageHeaderClasses,
+  pageHeaderTitleLevel,
+} from "../../recipes/page-header";
 
 // A page's header (GAP-036, decision 135): a breadcrumb, the page's title with
 // an info button beside it, a description and the page's actions, on a tinted
@@ -80,39 +92,31 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
       data-slot="page-header"
       data-tone={tone}
       data-size={size}
-      className={cn(
-        "kozmos-page-header",
-        tone === "subtle" && "kozmos-page-header-subtle",
-        className,
-      )}
+      className={cn(...pageHeaderClasses(tone), className)}
       {...props}
     >
-      <Container
-        inset={inset}
-        centered={centered}
-        block={{ start: "lg", end: "md" }}
-      >
+      <Container inset={inset} centered={centered} block={PAGE_HEADER_BLOCK}>
         {breadcrumb ? (
           <div
             data-slot="page-header-breadcrumb"
-            className="kozmos-page-header-breadcrumb"
+            className={PAGE_HEADER_BREADCRUMB_CLASS}
           >
             {breadcrumb}
           </div>
         ) : null}
-        <div className="kozmos-page-header-row">
-          <div className="kozmos-page-header-text">
+        <div className={PAGE_HEADER_ROW_CLASS}>
+          <div className={PAGE_HEADER_TEXT_CLASS}>
             <div
-              className="kozmos-page-header-title"
+              className={PAGE_HEADER_TITLE_CLASS}
               data-addon={titleAddon ? "" : undefined}
             >
-              <Heading as="h1" level={size === "lg" ? 2 : 3}>
+              <Heading as="h1" level={pageHeaderTitleLevel(size)}>
                 {title}
               </Heading>
               {titleAddon ? (
                 <div
                   data-slot="page-header-title-addon"
-                  className="kozmos-page-header-title-addon"
+                  className={PAGE_HEADER_TITLE_ADDON_CLASS}
                 >
                   {titleAddon}
                 </div>
@@ -120,7 +124,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
               {info ? (
                 <div
                   data-slot="page-header-info"
-                  className="kozmos-page-header-info"
+                  className={PAGE_HEADER_INFO_CLASS}
                 >
                   {info}
                 </div>
@@ -140,7 +144,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
           {actions ? (
             <div
               data-slot="page-header-actions"
-              className="kozmos-page-header-actions"
+              className={PAGE_HEADER_ACTIONS_CLASS}
             >
               {actions}
             </div>

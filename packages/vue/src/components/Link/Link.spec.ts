@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { createApp, h, type App } from "vue";
-import { KozmosLink } from "../../react-bridge";
+import { createApp, defineComponent, type App } from "vue";
+import { KozmosLink } from "../../index";
 
-/** React renders on its own schedule: wait until `ready` holds. */
-async function until(ready: () => boolean) {
-  for (let i = 0; i < 50 && !ready(); i++)
-    await new Promise((resolve) => setTimeout(resolve, 10));
-}
-
+/**
+ * KozmosLink as a template writes it (GAP-202), mounted: a bare `external`
+ * is true, as a Vue Boolean prop reads it, and opens a new tab with the icon
+ * and the product's words; without it the link stays in this tab. Moved from
+ * the bridge's spec when Link was ported: what it proved holds of the port.
+ */
 describe("KozmosLink", () => {
   let app: App | undefined;
   afterEach(() => {
@@ -16,43 +16,53 @@ describe("KozmosLink", () => {
     document.body.innerHTML = "";
   });
 
-  const mount = async (attrs: Record<string, unknown>) => {
+  const mount = (template: string) => {
     const host = document.createElement("div");
     document.body.append(host);
-    app = createApp({
-      render: () => h(KozmosLink, attrs, () => "Datenschutz"),
-    });
+    app = createApp(defineComponent({ components: { KozmosLink }, template }));
     app.mount(host);
-    await until(() => Boolean(host.querySelector("a")));
     return host.querySelector("a")!;
   };
 
-  it("is the Vue wrapper of the React Link, under its name", () => {
-    expect(KozmosLink).toMatchObject({
-      name: "Link",
-      setup: expect.any(Function),
-    });
+  it("is the native part, not the bridge's wrapper", () => {
+    expect(KozmosLink.name).toBe("KozmosLink");
   });
 
-  // GAP-202: a bare `external`, as a template writes it, is "" until it is a
-  // Boolean prop, and React read "" as false.
-  it("opens a new tab and draws the icon for a bare external", async () => {
-    const link = await mount({
-      href: "https://example.com/datenschutz",
-      external: "",
-      "external-label": "öffnet in einem neuen Tab",
-    });
-    expect(link.getAttribute("target")).toBe("_blank");
-    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
-    expect(link.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  it.each([
+    ["external", true],
+    ['external="external"', true],
+    ['external=""', true],
+    [':external="true"', true],
+    [':external="false"', false],
+    ["", false],
+  ])("%s: a new tab is %s", (attribute, newTab) => {
+    const link = mount(
+      `<KozmosLink href="https://example.com/datenschutz" external-label="öffnet in einem neuen Tab" ${attribute}>Datenschutz</KozmosLink>`,
+    );
+    expect(link.getAttribute("target") === "_blank").toBe(newTab);
+    expect(link.getAttribute("rel") === "noopener noreferrer").toBe(newTab);
+    expect(link.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+      newTab ? "true" : undefined,
+    );
     expect(link.querySelector(".kozmos-link-external-label")?.textContent).toBe(
-      "öffnet in einem neuen Tab",
+      newTab ? "öffnet in einem neuen Tab" : undefined,
     );
   });
 
-  it("opens in this tab without external", async () => {
-    const link = await mount({ href: "/venues" });
-    expect(link.hasAttribute("target")).toBe(false);
+  it("an app's target that keeps it in this tab opens no new tab", () => {
+    const link = mount(
+      `<KozmosLink href="/venues" external target="_self">Venues</KozmosLink>`,
+    );
+    expect(link.getAttribute("target")).toBe("_self");
+    expect(link.hasAttribute("rel")).toBe(false);
     expect(link.querySelector("svg")).toBeNull();
+  });
+
+  it("an app's rel wins over the new tab's", () => {
+    const link = mount(
+      `<KozmosLink href="https://example.com" external rel="noopener">Example</KozmosLink>`,
+    );
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener");
   });
 });

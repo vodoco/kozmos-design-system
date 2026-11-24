@@ -16,4 +16,10 @@ export const EXCEPTIONS: Record<string, string> = {
   // render-item, given one props object, `{ index }`, as a Vue slot is.
   "KozmosGrid.renderItem:render-prop":
     "React's renderItem(index) is Vue's render-item scoped slot, given { index }: a Vue slot takes one props object, not arguments",
+  // React's list is ReactNode[]; Vue's has no ReactNode. Each item is a line
+  // of text or a VNode (a KozmosLink), what Vue draws inside an <li>, so the
+  // same items reach the list in the type Vue writes them in. A slot per item
+  // would not be a list prop, and a scoped slot would lose React's shape.
+  "KozmosEmptyState.list:type":
+    "React's ReactNode[] is Vue's (string | VNode)[]: each item a line of text or a VNode such as a KozmosLink, the same items in the type Vue writes them in",
 };

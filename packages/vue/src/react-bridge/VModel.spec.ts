@@ -2418,17 +2418,20 @@ describe("attributes reach React alone", () => {
     slot?: string;
   }[] = [
     { name: "KozmosCounter", kind: "a plain element", slot: "3" },
-    { name: "KozmosCard", kind: "a box drawing a Vue slot", slot: "Gate 4" },
+    {
+      name: "KozmosDialogHeader",
+      kind: "a box drawing a Vue slot",
+      slot: "Gate 4",
+    },
     {
       name: "KozmosAlert",
       kind: "an adapter of several React parts",
       props: { title: "Saved" },
     },
     {
-      name: "KozmosLink",
+      name: "KozmosIconButton",
       kind: "a wrapper with props declared",
-      props: { href: "#gate" },
-      slot: "Gate",
+      slot: "G",
     },
     { name: "KozmosInput", kind: "a field, its <input> React's element" },
     {

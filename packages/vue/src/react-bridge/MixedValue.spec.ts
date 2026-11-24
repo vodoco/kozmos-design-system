@@ -2,11 +2,11 @@
 import { describe, expect, it } from "vitest";
 import { defineComponent, ref, type Component } from "vue";
 import * as Bridge from "./index";
-import { $, $$, mount, until } from "../../test/react-bridge-harness";
+import { $$, mount, until } from "../../test/react-bridge-harness";
 
-// GAP-153 and GAP-165 through the React bridge: a bare `mixed` attribute is
-// true, `@reset-mixed` hears the reset, and EmptyState's list arrives as the
-// array it is. Each bridged part is a React root of its own, drawn when it is
+// GAP-153 through the React bridge: a bare `mixed` attribute is true, and
+// `@reset-mixed` hears the reset (EmptyState's list, GAP-165, is the native
+// part's now: src/components/EmptyState/EmptyState.spec.ts). Each bridged part is a React root of its own, drawn when it is
 // ready: the spec waits for what it reads, never for a fixed time.
 
 const page = (template: string, setup: () => object = () => ({})) =>
@@ -45,20 +45,6 @@ describe("a mixed field through the bridge (GAP-153)", () => {
       () => edit.value === null && name.placeholder === "Multiple values",
     );
     expect(name.value).toBe("");
-  });
-
-  it("EmptyState's list arrives in order", async () => {
-    mount(
-      page(
-        `<KozmosEmptyState title="No Map Content Found" :list="['Check the level', 'Clear the filters']" />`,
-      ),
-    );
-    await until(() => $$("li").length === 2);
-    expect($("ul")?.getAttribute("role")).toBe("list");
-    expect($$("li").map((item) => item.textContent)).toEqual([
-      "Check the level",
-      "Clear the filters",
-    ]);
   });
 });
 

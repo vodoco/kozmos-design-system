@@ -764,7 +764,6 @@ const first = (selector: string) => (drawn: HTMLElement) =>
  */
 const IN_PLACE: Record<string, InPlace> = {
   KozmosCounter: { slot: true },
-  KozmosCard: { slot: true },
   KozmosSlider: {
     props: { "aria-label": "Volume" },
     click: first("span[data-orientation]"),
@@ -784,8 +783,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosContextMenu: { slot: true },
   KozmosNotice: { props: { summary: "Geometry is set" } },
   KozmosDrawer: { slot: true },
-  KozmosBreadcrumb: { slot: true },
-  KozmosPageHeader: { props: { title: "Settings" } },
   KozmosPagination: { slot: true },
   KozmosStepper: { props: { steps: ["Pick", "Pay"], currentStep: 0 } },
   KozmosAlert: { props: { title: "Saved" } },
@@ -829,7 +826,6 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Mode", items: [{ value: "walk", label: "Walk" }] },
     click: first("[role=group]"),
   },
-  KozmosLink: { slot: true },
   KozmosIconButton: { slot: true },
   KozmosTabs: { slot: true },
   KozmosDialog: { slot: true },
@@ -837,7 +833,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosChip: { slot: true },
   // Its island, inside the theme scope it draws round it.
   KozmosDynamicIsland: { click: first("[data-kozmos-root] > *") },
-  KozmosEmptyState: { props: { title: "Nothing here" } },
   KozmosFeedbackCard: {},
   KozmosFieldWrapper: { slot: true },
   KozmosMapControlsGroup: {},
@@ -951,12 +946,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosTooltipProvider: { slot: true },
   // The parts of the parts made of parts that draw alone, as their React
   // parts do (GAP-230).
-  KozmosCardHeader: { slot: true },
-  KozmosCardTitle: { slot: true },
-  // A <p> cannot hold the slot's box.
-  KozmosCardDescription: { props: { children: "Gate 4" } },
-  KozmosCardContent: { slot: true },
-  KozmosCardFooter: { slot: true },
   KozmosDialogHeader: { slot: true },
   KozmosDialogFooter: { slot: true },
   KozmosDrawerHeader: { slot: true },
@@ -1330,7 +1319,7 @@ describe("what a part draws in a portal", () => {
 // --------------------------------------------------------------------------
 
 describe("a wrapper inside another", () => {
-  it("Card > IconButton: each @click runs once, and .stop on the inner silences the outer", async () => {
+  it("DialogHeader > IconButton: each @click runs once, and .stop on the inner silences the outer", async () => {
     for (const [modifier, outerTimes] of [
       ["", 1],
       [".stop", 0],
@@ -1339,7 +1328,7 @@ describe("a wrapper inside another", () => {
       const inner = vi.fn();
       mount(
         page(
-          `<KozmosCard @click="outer"><KozmosIconButton aria-label="Go" @click${modifier}="inner">x</KozmosIconButton></KozmosCard>`,
+          `<KozmosDialogHeader @click="outer"><KozmosIconButton aria-label="Go" @click${modifier}="inner">x</KozmosIconButton></KozmosDialogHeader>`,
           { outer, inner },
         ),
       );

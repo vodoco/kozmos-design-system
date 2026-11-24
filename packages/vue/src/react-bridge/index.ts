@@ -32,7 +32,6 @@ import {
   Textarea,
   Checkbox as ReactCheckbox,
   Switch,
-  Card,
   Slider as ReactSlider,
   Search,
   SearchBar,
@@ -45,8 +44,6 @@ import {
   Notice,
   Drawer,
   Toast,
-  Breadcrumb,
-  PageHeader,
   Pagination,
   Stepper,
   Alert as ReactAlert,
@@ -85,14 +82,12 @@ import {
   SplitButton,
   ToggleButton,
   SegmentedControl,
-  Link,
   IconButton,
   Tabs,
   Dialog,
   MapOverlay,
   Chip,
   DynamicIsland,
-  EmptyState,
   FeedbackCard,
   FieldWrapper,
   MapControlsGroup,
@@ -132,11 +127,6 @@ import {
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
   DialogTrigger,
   DialogContent,
   DialogHeader,
@@ -334,7 +324,6 @@ const textField = {
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
 export const KozmosCounter = createVueWrapper(ReactCounter);
-export const KozmosCard = createVueWrapper(Card);
 // Null is where the slider starts: its default, else its own fallback.
 export const KozmosSlider = createVueWrapper(ReactSlider, {
   modelValue: {
@@ -369,8 +358,6 @@ export const KozmosNotice = createVueWrapper(Notice, {
 });
 export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
-export const KozmosBreadcrumb = createVueWrapper(Breadcrumb);
-export const KozmosPageHeader = createVueWrapper(PageHeader);
 export const KozmosPagination = createVueWrapper(Pagination);
 export const KozmosStepper = createVueWrapper(Stepper);
 // `positionLabel` may be a function: declared as a prop, it is handed to
@@ -512,13 +499,6 @@ export const KozmosToggleButton = createVueWrapper(ToggleButton, {
 export const KozmosSegmentedControl = createVueWrapper(SegmentedControl, {
   modelValue: { prop: "value", callback: "onValueChange", empty: null },
 });
-export const KozmosLink = createVueWrapper(Link);
-// `externalLabel` is declared so `external-label` reaches React by its name
-// (GAP-202). `external`, a boolean, is read as every bridged part's boolean
-// props are (react-adapter.ts): a bare `external` is true.
-Object.assign(KozmosLink, {
-  props: { externalLabel: { type: String, default: undefined } },
-});
 export const KozmosIconButton = createVueWrapper(IconButton);
 // `counterLabel` is a function: declared as a prop, it is handed to React and
 // never written onto the wrapper's element as an attribute (GAP-197).
@@ -530,7 +510,6 @@ export const KozmosDialog = createVueWrapper(Dialog);
 export const KozmosMapOverlay = createVueWrapper(MapOverlay);
 export const KozmosChip = createVueWrapper(Chip);
 export const KozmosDynamicIsland = createVueWrapper(DynamicIsland);
-export const KozmosEmptyState = createVueWrapper(EmptyState);
 export const KozmosFeedbackCard = createVueWrapper(FeedbackCard);
 export const KozmosFieldWrapper = createVueWrapper(FieldWrapper);
 export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup, {
@@ -721,11 +700,6 @@ export const KozmosPasswordInput = createVueWrapper(PasswordInput, {
 export const KozmosAccordionItem = createVueWrapper(AccordionItem);
 export const KozmosAccordionTrigger = createVueWrapper(AccordionTrigger);
 export const KozmosAccordionContent = createVueWrapper(AccordionContent);
-export const KozmosCardHeader = createVueWrapper(CardHeader);
-export const KozmosCardTitle = createVueWrapper(CardTitle);
-export const KozmosCardDescription = createVueWrapper(CardDescription);
-export const KozmosCardContent = createVueWrapper(CardContent);
-export const KozmosCardFooter = createVueWrapper(CardFooter);
 export const KozmosDialogTrigger = createVueWrapper(DialogTrigger);
 export const KozmosDialogContent = createVueWrapper(DialogContent);
 export const KozmosDialogHeader = createVueWrapper(DialogHeader);

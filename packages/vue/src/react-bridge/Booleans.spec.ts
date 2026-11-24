@@ -665,36 +665,6 @@ describe("a union with free text, read String first as Vue reads a [String, Bool
   });
 });
 
-describe("KozmosLink's external, read by the rule, not a declared prop", () => {
-  // GAP-202 declared it a Vue Boolean prop: the rule now reads it as Vue
-  // read that, so the declaration is gone, and Link draws the same.
-  it.each([
-    ["external", true, true],
-    ['external="external"', true, true],
-    ["", undefined, false],
-    [':external="true"', true, true],
-    [':external="false"', false, false],
-  ] as const)(
-    "%s: React is given %s, and a new tab is %s",
-    async (attribute, expected, newTab) => {
-      const given = await propsOf(KozmosReact.Link, () =>
-        mount(
-          page(
-            `<KozmosLink href="https://example.com/datenschutz" external-label="öffnet in einem neuen Tab" ${attribute}>Datenschutz</KozmosLink>`,
-          ),
-        ),
-      );
-      expect(given.external).toBe(expected);
-      expect(given.externalLabel).toBe("öffnet in einem neuen Tab");
-      const link = $("a")!;
-      expect(link.getAttribute("target") === "_blank").toBe(newTab);
-      expect(link.querySelector(".kozmos-link-external-label") !== null).toBe(
-        newTab,
-      );
-    },
-  );
-});
-
 // --------------------------------------------------------------------------
 // The table: part-takes.ts's booleans, generated from React's built
 // declarations by scripts/bridge-takes.mjs.
