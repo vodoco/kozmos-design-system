@@ -211,8 +211,8 @@ Fixes #123
 
 1. **Automated checks** must pass. Branch protection on `main` requires 20 checks: CI's web build
    and tests ("Web Build & Test"), its twelve browser shards, "Core Pipeline & POI Gallery", the
-   Android build and the iOS build, CI's Vue job ("Vue (build, contract, parity, browser
-   suites)"), the bundle budget (`analyze-bundle`), Lighthouse's accessibility audit
+   Android build and the iOS build, CI's Vue check ("Vue (build, contract, parity, browser
+   suites)", which passes when the Vue job and its three browser shards did), the bundle budget (`analyze-bundle`), Lighthouse's accessibility audit
    (`lighthouse`) and "Visual Review". The iOS build runs when a pull request
    touches what it builds (`packages/ios`, `packages/tokens`, its scripts, `ci.yml` or the
    dependencies) and is skipped, which counts as passing, otherwise; every push to `main` builds
