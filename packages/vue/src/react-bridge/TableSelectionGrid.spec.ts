@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { defineComponent, h, nextTick, ref } from "vue";
+import { h, ref } from "vue";
 import React from "react";
 import {
   TableBody,
@@ -18,12 +18,11 @@ const e = React.createElement;
 
 afterEach(unmount);
 
-// Decision 209's Table and Grid through the bridge. The rows are React's,
-// below the root, as `children` (GAP-016), so Table's selection reaches
-// them in the one React root: `v-model:selectedIds` is the selection
-// (GAP-171), a head's `onSort` sorts (GAP-037). A virtualized Grid reports
-// its range as `@range-change`, and its default slot draws only those items
-// (GAP-172).
+// Decision 209's Table through the bridge. The rows are React's, below the
+// root, as `children` (GAP-016), so Table's selection reaches them in the
+// one React root: `v-model:selectedIds` is the selection (GAP-171), a
+// head's `onSort` sorts (GAP-037). Its Grid is a Vue port now:
+// test/parity/grid.parity.spec.ts holds its virtualized mode (GAP-172).
 const people = ["ada", "grace"];
 const rows = (onSort: () => void) => [
   e(
@@ -82,53 +81,5 @@ describe("Table's selection and sort through the bridge", () => {
     const button = await until(() => $("th[aria-sort=ascending] button"));
     button.click();
     expect(onSort).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("Grid virtualized through the bridge", () => {
-  it("@range-change reports the window, and the slot draws only it", async () => {
-    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(
-      function (this: HTMLElement) {
-        return this.dataset.virtualScroller !== undefined ? 200 : 0;
-      },
-    );
-    const Sites = defineComponent({
-      setup() {
-        const range = ref({ start: 0, end: 0 });
-        return () =>
-          h(
-            Bridge.KozmosGrid,
-            {
-              virtualized: true,
-              cols: 2,
-              gap: 0,
-              itemCount: 500,
-              rowHeight: 100,
-              onRangeChange: (next: { start: number; end: number }) =>
-                (range.value = next),
-            },
-            {
-              default: () =>
-                Array.from(
-                  { length: range.value.end - range.value.start },
-                  (_, offset) =>
-                    h(
-                      "div",
-                      { role: "listitem", key: range.value.start + offset },
-                      `Site ${range.value.start + offset + 1}`,
-                    ),
-                ),
-            },
-          );
-      },
-    });
-    mount(Sites);
-    // 200 / 100 = 2 rows in view and 2 below: 4 rows of 2.
-    await until(() => $$("[role=listitem]").length === 8);
-    await nextTick();
-    expect($$("[role=listitem]").map((item) => item.textContent)).toEqual(
-      Array.from({ length: 8 }, (_, index) => `Site ${index + 1}`),
-    );
-    expect($("[role=list]")!.contains($("[role=listitem]"))).toBe(true);
   });
 });

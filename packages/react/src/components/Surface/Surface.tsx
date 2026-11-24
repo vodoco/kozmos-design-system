@@ -1,16 +1,10 @@
 import React from "react";
 import { cn } from "../../utils";
 
-import { surfaceClass } from "./surface-class";
+import { surfaceClass, type SurfaceVariant } from "../../recipes/surface";
 
-/**
- * What a surface is made of. Solid — the background colour with the subtle
- * border — is the default everywhere; glass, the glass surface role composed
- * from `Semantics.Effect.glass`, is a choice a product makes per surface.
- */
-export type SurfaceVariant = "solid" | "glass";
-
-export { SURFACE_CLASSES, surfaceClass } from "./surface-class";
+export type { SurfaceVariant } from "../../recipes/surface";
+export { SURFACE_CLASSES, surfaceClass } from "../../recipes/surface";
 
 export interface SurfaceProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: SurfaceVariant;

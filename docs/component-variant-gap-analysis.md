@@ -35,16 +35,16 @@ token was declined, so this is not a gap to close.
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 132    |
-| Declaring at least one React variant axis | 68     |
-| Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 15/68  |
-| Components with variant gaps — Android    | 16/68  |
-| Components with variant gaps — Figma      | 18/68  |
-| Components with variant gaps — Vue        | 11/68  |
+| Declaring at least one React variant axis | 71     |
+| Variations that are compositional only    | 61     |
+| Components with variant gaps — iOS        | 15/71  |
+| Components with variant gaps — Android    | 16/71  |
+| Components with variant gaps — Figma      | 24/71  |
+| Components with variant gaps — Vue        | 10/71  |
 | Components absent entirely — iOS          | 9/132  |
 | Components absent entirely — Android      | 9/132  |
 | Components absent entirely — Figma        | 4/132  |
-| Components absent entirely — Vue          | 23/132 |
+| Components absent entirely — Vue          | 22/132 |
 
 <!-- /generated:headline -->
 
@@ -74,11 +74,12 @@ AIMessage
 AdaptiveMapShell
   - ios missing axes -> panelSizing (fraction, content)
   - android missing axes -> panelSizing (fraction, content)
-  - figma missing axes -> panelSizing (fraction, content)
+  - figma missing axes -> panelSurface (solid, glass); panelSizing (fraction, content)
 Alert
   - ios missing axes -> live (off, polite, assertive)
   - android missing axes -> live (off, polite, assertive)
 ArrivalPanel
+  - figma missing axes -> surface (solid, glass)
   - vue: component absent
 BottomNavigation
   - ios missing axes -> density (default, compact)
@@ -91,6 +92,8 @@ Combobox
 DynamicIsland
   - android missing axes -> islandState (compact, expanded, minimal)
   - figma missing axes -> islandState (compact, expanded, minimal)
+FeedbackCard
+  - figma missing axes -> surface (solid, glass)
 FieldWrapper
   - figma: component/set absent
 FileUpload
@@ -111,6 +114,7 @@ List
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
 ManoeuvreCard
+  - figma missing axes -> surface (solid, glass)
   - vue: component absent
 MapAttribution
   - vue: component absent
@@ -134,12 +138,15 @@ RouteProgressRail
   - figma missing axes -> appearance (theme, gradient); positionMode (static, live); motion (none, directional)
   - vue: component absent
 RouteSetupPanel
+  - figma missing axes -> surface (solid, glass)
   - vue: component absent
+RoutingInputGroup
+  - figma missing axes -> surface (solid, glass)
+SaveLocationCard
+  - figma missing axes -> surface (solid, glass)
 Stepper
   - ios missing axes -> variant (numbered, dots)
   - android missing axes -> variant (numbered, dots)
-Surface
-  - vue: component absent
 ThemeProvider
   - ios missing axes -> dir (ltr, rtl)
   - android missing axes -> dir (ltr, rtl)
@@ -236,9 +243,9 @@ AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Calendar, La
 
 FieldWrapper, Icon, NavigationAnnouncer, ThemeProvider.
 
-### Vue — 23 of 132
+### Vue — 22 of 132
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, Calendar, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, Calendar, CategoryField, ClientAppBanner, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, UserMessage.
 
 <!-- /generated:absent -->
 

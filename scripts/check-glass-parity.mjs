@@ -169,7 +169,7 @@ const EDGE_COLOUR = {
   ];
   // The classes live apart from the Surface component, so a part that takes
   // only its class does not bring the component into an app's bundle.
-  const surface = read("packages/react/src/components/Surface/surface-class.ts");
+  const surface = read("packages/react/src/recipes/surface.ts");
   if (!surface.includes('glass: "kozmos-reset kozmos-surface-glass"') || !surface.includes('solid: "kozmos-reset kozmos-surface-solid"'))
     fail("web: Surface does not name both variants with kozmos-reset");
   else ok("web: Surface names solid and glass, with kozmos-reset");

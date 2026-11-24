@@ -52,11 +52,11 @@ export function StackExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `StackProps`, which extends `BoxProps, VariantProps<typeof stackVariants>`.
 
 - `asChild`: `boolean`, optional.
-- `align`: `"end" | "start" | "center" | "baseline" | "stretch" | null`, optional, default `'stretch'`.
-- `direction`: `"row" | "column" | "row-reverse" | "column-reverse" | null`, optional, default `'column'`.
-- `justify`: `"end" | "start" | "center" | "between" | "around" | null`, optional, default `'start'`.
+- `align`: `"end" | "start" | "center" | "baseline" | "stretch" | null`, optional, default `"stretch"`.
+- `direction`: `"row" | "column" | "row-reverse" | "column-reverse" | null`, optional, default `"column"`.
+- `justify`: `"end" | "start" | "center" | "between" | "around" | null`, optional, default `"start"`.
 - `gap`: `0 | 3 | 2 | 1 | 4 | 6 | 8 | null`, optional, default `2`.
-- `wrap`: `"wrap" | "nowrap" | "wrap-reverse" | null`, optional, default `'nowrap'`.
+- `wrap`: `"wrap" | "nowrap" | "wrap-reverse" | null`, optional, default `"nowrap"`.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

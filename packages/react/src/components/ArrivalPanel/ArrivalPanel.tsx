@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "../../utils";
 import { DestinationImage } from "../../utils/navigation-presentation";
 import { Button } from "../Button";
-import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
+import { surfaceClass, type SurfaceVariant } from "../../recipes/surface";
 import { DensityScope } from "../../theme/DensityScope";
 
 export interface ArrivalPanelProps extends Omit<

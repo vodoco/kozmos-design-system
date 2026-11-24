@@ -18,7 +18,7 @@ import type {
   MapReadiness,
 } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
-import { surfaceClass, type SurfaceVariant } from "../Surface/surface-class";
+import { surfaceClass, type SurfaceVariant } from "../../recipes/surface";
 import {
   emptyInsets,
   positive,

@@ -179,6 +179,11 @@ const files = {
   reactBox: "packages/react/src/components/Box/Box.tsx",
   reactBoxFigma: "packages/react/src/components/Box/Box.figma.tsx",
   reactStack: "packages/react/src/components/Stack/Stack.tsx",
+  // Stack's, Grid's, Container's and Surface's recipes, shared with Vue's
+  // ports (wave V1).
+  reactStackRecipe: "packages/react/src/recipes/stack.ts",
+  reactGridRecipe: "packages/react/src/recipes/grid.ts",
+  reactContainerRecipe: "packages/react/src/recipes/container.ts",
   reactStackFigma: "packages/react/src/components/Stack/Stack.figma.tsx",
   reactGrid: "packages/react/src/components/Grid/Grid.tsx",
   reactGridFigma: "packages/react/src/components/Grid/Grid.figma.tsx",
@@ -2231,6 +2236,29 @@ assertContains(
   'export { KozmosSeparator } from "./components/Separator/Separator"',
   "Vue Separator exported as a Vue port",
 );
+// Box, Stack, Grid, Container and Surface are Vue ports (wave V1), drawn
+// from React's recipes; the first four leave the bridge with them (Surface
+// was never bridged).
+for (const [part, wrapped] of [
+  ["Box", "KozmosBox = createVueWrapper"],
+  ["Stack", "KozmosStack = createVueWrapper"],
+  ["Grid", "KozmosGrid = createVueWrapper"],
+  ["Container", "KozmosContainer = createVueWrapper"],
+  ["Surface", "KozmosSurface = createVueWrapper"],
+]) {
+  assertContains(
+    files.vueIndex,
+    source.vueIndex,
+    `export { Kozmos${part} } from "./components/${part}/${part}"`,
+    `Vue ${part} exported as a Vue port`,
+  );
+  assertNotContains(
+    files.vueBridge,
+    source.vueBridge,
+    wrapped,
+    `React ${part} wrapped in the Vue bridge as well`,
+  );
+}
 assertContains(
   files.vueBridge,
   source.vueBridge,
@@ -2953,14 +2981,14 @@ assertContains(
   "Stack importer documentation",
 );
 assertContains(
-  files.reactStack,
-  source.reactStack,
+  files.reactStackRecipe,
+  source.reactStackRecipe,
   "direction: {",
   "React Stack direction variants",
 );
 assertContains(
-  files.reactStack,
-  source.reactStack,
+  files.reactStackRecipe,
+  source.reactStackRecipe,
   "gap: {",
   "React Stack gap variants",
 );
@@ -3170,14 +3198,14 @@ assertContains(
   "Grid importer documentation",
 );
 assertContains(
-  files.reactGrid,
-  source.reactGrid,
+  files.reactGridRecipe,
+  source.reactGridRecipe,
   "cols: {",
   "React Grid columns variants",
 );
 assertContains(
-  files.reactGrid,
-  source.reactGrid,
+  files.reactGridRecipe,
+  source.reactGridRecipe,
   "gap: {",
   "React Grid gap variants",
 );
@@ -3350,8 +3378,8 @@ assertContains(
   "React Container centered default",
 );
 assertContains(
-  files.reactContainer,
-  source.reactContainer,
+  files.reactContainerRecipe,
+  source.reactContainerRecipe,
   "max-w-7xl",
   "React Container max width",
 );

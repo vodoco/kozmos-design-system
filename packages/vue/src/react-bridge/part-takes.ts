@@ -18,10 +18,6 @@
 // reads a `[String, Boolean]` one. Every spelling is React's prop. A prop
 // that takes any ReactNode is a slot, and none of them.
 import {
-  Box,
-  Stack,
-  Grid,
-  Container,
   Counter,
   Input,
   Textarea,
@@ -214,10 +210,6 @@ const tourStepTakes: Takes = {
 
 /** By React part. */
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
-  [Box, D],
-  [Stack, D],
-  [Grid, { dom: true, own: ["onRangeChange"] }],
-  [Container, D],
   [Counter, D],
   [Input, inputTakes],
   [Textarea, D],
@@ -599,7 +591,6 @@ const html = (
 
 /** React's `HTMLAttributes`' booleans, and none of its own: most parts. */
 const H = html();
-const boxBooleans = html(["asChild"]);
 const textareaBooleans = html(
   ["disabled", "readOnly", "required"],
   [],
@@ -610,6 +601,7 @@ const menuBooleans = {
   unions: [],
   texts: [],
 };
+const progressBooleans = html(["asChild"]);
 const backdropBooleans = html(["visible"]);
 const settingsRowBooleans = html(["disabled"]);
 const popoverContentBooleans = html([
@@ -650,10 +642,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   unknown,
   Booleans
 >([
-  [Box, boxBooleans],
-  [Stack, boxBooleans],
-  [Grid, html(["asChild", "virtualized"])],
-  [Container, html(["asChild", "centered"])],
   [Counter, H],
   [
     Input,
@@ -793,13 +781,13 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Alert, H],
   [AlertTitle, H],
   [AlertDescription, H],
-  [Progress, boxBooleans],
+  [Progress, progressBooleans],
   [Spinner, H],
   [Skeleton, H],
   [Backdrop, backdropBooleans],
-  [Avatar, boxBooleans],
-  [AvatarImage, boxBooleans],
-  [AvatarFallback, boxBooleans],
+  [Avatar, progressBooleans],
+  [AvatarImage, progressBooleans],
+  [AvatarFallback, progressBooleans],
   [Tag, H],
   [List, H],
   [ListItem, html(["selected"])],
@@ -817,7 +805,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
     },
   ],
   [Popover, menuBooleans],
-  [PopoverAnchor, boxBooleans],
+  [PopoverAnchor, progressBooleans],
   [PopoverContent, popoverContentBooleans],
   [Accordion, html(["asChild", "collapsible", "disabled"])],
   [MapView, H],
@@ -859,7 +847,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   ],
   [Link, html(["external"])],
   [IconButton, floatingActionButtonBooleans],
-  [Tabs, boxBooleans],
+  [Tabs, progressBooleans],
   [Dialog, menuBooleans],
   [MapOverlay, H],
   [Chip, html(["active", "disabled", "selected"])],
@@ -1047,27 +1035,27 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [DialogTrigger, dialogTriggerBooleans],
   [DialogContent, accordionContentBooleans],
   [DialogHeader, html(["mediaBleed"])],
-  [DialogTitle, boxBooleans],
-  [DialogDescription, boxBooleans],
+  [DialogTitle, progressBooleans],
+  [DialogDescription, progressBooleans],
   [DialogFooter, H],
   [DialogClose, dialogTriggerBooleans],
   [DrawerTrigger, dialogTriggerBooleans],
   [DrawerContent, html(["asChild", "forceMount", "showClose"])],
   [DrawerHeader, H],
-  [DrawerTitle, boxBooleans],
-  [DrawerDescription, boxBooleans],
+  [DrawerTitle, progressBooleans],
+  [DrawerDescription, progressBooleans],
   [DrawerFooter, H],
   [DrawerClose, dialogTriggerBooleans],
   [
     SelectTrigger,
     html(["asChild", "disabled", "formNoValidate"], [], ["error"]),
   ],
-  [SelectValue, boxBooleans],
+  [SelectValue, progressBooleans],
   [SelectContent, html(["asChild", "avoidCollisions", "hideWhenDetached"])],
-  [SelectGroup, boxBooleans],
-  [SelectLabel, boxBooleans],
+  [SelectGroup, progressBooleans],
+  [SelectLabel, progressBooleans],
   [SelectItem, accordionItemBooleans],
-  [SelectSeparator, boxBooleans],
+  [SelectSeparator, progressBooleans],
   [TabsList, html(["asChild", "loop"])],
   [TabsTrigger, dialogTriggerBooleans],
   [TabsContent, accordionContentBooleans],
@@ -1080,15 +1068,15 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Toaster, toasterBooleans],
   [ToastProvider, toasterBooleans],
   [ToastViewport, html(["asChild", "reversed"])],
-  [ToastTitle, boxBooleans],
-  [ToastDescription, boxBooleans],
+  [ToastTitle, progressBooleans],
+  [ToastDescription, progressBooleans],
   [ToastAction, dialogTriggerBooleans],
   [ToastClose, dialogTriggerBooleans],
 ]);
 
 /** By the adapter in index.ts that hands its props on to React parts. */
 export const ADAPTER_BOOLEANS: Readonly<Record<string, Booleans>> = {
-  AvatarAdapter: boxBooleans,
+  AvatarAdapter: progressBooleans,
   AlertAdapter: H,
   BackdropAdapter: backdropBooleans,
   TourStepAdapter: tourStepBooleans,

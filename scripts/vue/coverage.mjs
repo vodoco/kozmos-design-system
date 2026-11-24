@@ -234,6 +234,91 @@ export const VUE_STORIES = {
         "SpriteIcon is an image of a map type, not a control: nothing to focus or press, so there is no interaction; axe scans it",
     },
   },
+  "vue-core-layout-box--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Box is a plain block with nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-box--as-child": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Box is a plain block with nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-stack--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Stack lays its items out and has nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-stack--horizontal": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Stack lays its items out and has nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-grid--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Grid lays its items out and has nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-grid--virtualized": { interaction: "virtual-grid" },
+  "vue-core-layout-container--in-a-panel": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Container pads a region and has nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-container--block-inset": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Container pads a region and has nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-container--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Container pads a region and has nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-container--fluid": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Container pads a region and has nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-surface--solid": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Surface is a material under its content, with nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-surface--glass": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Surface is a material under its content, with nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-layout-surface--glass-panel": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Surface is a material under its content, with nothing of its own to focus or press, so there is no interaction; axe scans it",
+    },
+  },
 };
 
 /** What every Vue story's id starts with, and no React story's. */
