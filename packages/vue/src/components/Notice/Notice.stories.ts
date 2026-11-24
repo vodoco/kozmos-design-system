@@ -66,9 +66,7 @@ export const Emergency: Story = {
     components: { KozmosButton, KozmosNotice },
     template: `
       <KozmosNotice tone="critical" :collapsible="false">
-        <template #summary>If someone's life is in danger, call 112 now</template>
-        Airport staff can help too. The nearest help points are below.
-        <template #action>
+        <template #summary>If someone's life is in danger, call 112 now</template>Airport staff can help too. The nearest help points are below.<template #action>
           <KozmosButton variant="destructive">Call 112</KozmosButton>
         </template>
       </KozmosNotice>
@@ -96,9 +94,7 @@ export const SearchWithAi: Story = {
       <KozmosNotice tone="info" icon-align="center">
         <template #icon><Stars01 class="h-4 w-4" /></template>
         <template #summary>
-          <span class="flex items-center justify-between gap-2">
-            Not finding it?
-            <KozmosButton size="sm" variant="outline">Search with AI</KozmosButton>
+          <span class="flex items-center justify-between gap-2">Not finding it?<KozmosButton size="sm" variant="outline">Search with AI</KozmosButton>
           </span>
         </template>
       </KozmosNotice>
@@ -117,9 +113,7 @@ export const SuccessProgressAndDone: Story = {
     template: `
       <div class="flex flex-col gap-3">
         <KozmosNotice tone="warning" :collapsible="false">
-          <template #summary>Set Geometry</template>
-          Draw the building's outline on the map.
-          <template #action>
+          <template #summary>Set Geometry</template>Draw the building's outline on the map.<template #action>
             <KozmosButton size="sm" variant="outline">Set Building Boundary</KozmosButton>
           </template>
         </KozmosNotice>

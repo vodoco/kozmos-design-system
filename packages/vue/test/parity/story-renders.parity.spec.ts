@@ -49,6 +49,8 @@ const NOT_DRAWN: Record<string, string> = {
     "its IconButtons are bridged parts, drawn on the client only",
   "PageHeader/WithInfo":
     "its IconButton is a bridged part, drawn on the client only",
+  "List/PersonaVisibility":
+    "its IconButtons and Checkboxes are bridged parts, drawn on the client only",
 };
 
 /**

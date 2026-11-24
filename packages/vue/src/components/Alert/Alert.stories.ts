@@ -88,10 +88,7 @@ export const WithoutTitle: Story = {
         </KozmosAlert>
         <KozmosAlert variant="warning">
           <Terminal class="h-4 w-4" />
-          <KozmosAlertDescription>
-            The merged unit keeps the first unit’s name, its category and its
-            opening hours; the other units’ are kept in the merge history.
-          </KozmosAlertDescription>
+          <KozmosAlertDescription>The merged unit keeps the first unit’s name, its category and its opening hours; the other units’ are kept in the merge history.</KozmosAlertDescription>
         </KozmosAlert>
       </div>
     `,
@@ -112,23 +109,15 @@ export const LivenessAndTitle: Story = {
       <div class="flex max-w-[520px] flex-col gap-4">
         <KozmosAlert variant="info">
           <KozmosAlertTitle>View only</KozmosAlertTitle>
-          <KozmosAlertDescription>
-            Only Dashboard admins can change these settings. Not a live region:
-            nothing is announced.
-          </KozmosAlertDescription>
+          <KozmosAlertDescription>Only Dashboard admins can change these settings. Not a live region: nothing is announced.</KozmosAlertDescription>
         </KozmosAlert>
         <KozmosAlert live="polite" variant="success">
           <KozmosAlertTitle>Saved</KozmosAlertTitle>
-          <KozmosAlertDescription>
-            role=&quot;status&quot; — read when the screen reader next pauses.
-          </KozmosAlertDescription>
+          <KozmosAlertDescription>role=&quot;status&quot; — read when the screen reader next pauses.</KozmosAlertDescription>
         </KozmosAlert>
         <KozmosAlert live="assertive" variant="destructive">
           <KozmosAlertTitle>Publish failed</KozmosAlertTitle>
-          <KozmosAlertDescription>
-            role=&quot;alert&quot; — interrupts. Only for something that cannot
-            wait.
-          </KozmosAlertDescription>
+          <KozmosAlertDescription>role=&quot;alert&quot; — interrupts. Only for something that cannot wait.</KozmosAlertDescription>
         </KozmosAlert>
       </div>
     `,

@@ -23,9 +23,7 @@ export const Default: Story = {
     template: `
       <KozmosMetaStrip aria-label="About this place">
         <KozmosMetaStripItem label="Travel time">
-          <template #icon><KozmosIcon name="clock" size="sm" /></template>
-          12 min
-        </KozmosMetaStripItem>
+          <template #icon><KozmosIcon name="clock" size="sm" /></template>12 min</KozmosMetaStripItem>
         <KozmosMetaStripItem label="Distance">210 m</KozmosMetaStripItem>
         <KozmosMetaStripItem label="Price band">$$$$</KozmosMetaStripItem>
       </KozmosMetaStrip>
