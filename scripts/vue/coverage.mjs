@@ -554,10 +554,6 @@ export const VUE_STORIES = {
   },
   "vue-core-data-display-list--checklist": {
     interaction: "buttons-in-order",
-    exempt: {
-      "owned-css":
-        "React defect, @kozmos-ds/styles owned-components.css: .kozmos-list-item-status-check and .kozmos-list-item-status-dot set their inline-size only inside @scope, so Safari 26.0-26.3 (no @scope on these) draws ListItemStatus's check and dot 0 wide in React and here alike (list.parity.spec.ts). Remove when the sizes hold outside @scope",
-    },
   },
   "vue-core-data-display-list--persona-visibility": {
     interaction: "persona-visibility",
@@ -585,10 +581,6 @@ export const VUE_STORIES = {
   "vue-core-data-display-timeline--detailed": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
-      "token-references":
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
       interactions:
         "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
     },
@@ -596,10 +588,6 @@ export const VUE_STORIES = {
   "vue-core-data-display-timeline--basic": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
-      "token-references":
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
       interactions:
         "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
     },
@@ -607,10 +595,6 @@ export const VUE_STORIES = {
   "vue-core-data-display-timeline--compact": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
-      "token-references":
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
       interactions:
         "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
     },
@@ -618,10 +602,6 @@ export const VUE_STORIES = {
   "vue-core-data-display-timeline--default": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
-      "token-references":
-        "React defect, recipes/timeline.ts TIMELINE_MARKER_CLASS: the marker's ring-8 ring-background resolves --tw-ring-color to --primitives-colors-background-0, a primitive that is #fff in light and dark, not a theme colour token, so the ring stays white on the dark canvas; the port draws React's classes byte for byte (timeline.parity.spec.ts). Remove when React's ring reads the theme's background token",
       interactions:
         "A timeline of events is read, not operated: nothing to focus or press; axe scans it",
     },
@@ -636,8 +616,6 @@ export const VUE_STORIES = {
   "vue-core-feedback-alert--destructive": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
       interactions:
         "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
     },
@@ -645,8 +623,6 @@ export const VUE_STORIES = {
   "vue-core-feedback-alert--success": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
       interactions:
         "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
     },
@@ -654,8 +630,6 @@ export const VUE_STORIES = {
   "vue-core-feedback-alert--warning": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
       interactions:
         "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
     },
@@ -663,8 +637,6 @@ export const VUE_STORIES = {
   "vue-core-feedback-alert--info": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
       interactions:
         "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
     },
@@ -672,8 +644,6 @@ export const VUE_STORIES = {
   "vue-core-feedback-alert--without-title": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
       interactions:
         "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
     },
@@ -681,8 +651,6 @@ export const VUE_STORIES = {
   "vue-core-feedback-alert--liveness-and-title": {
     interaction: null,
     exempt: {
-      themes:
-        "React defect, recipes/alert.ts alertVariants: the destructive, success, warning and info variants draw the border as border-<emotion>/50 in light and dark:border-<emotion> in dark, two different tokens, so the border is not one token across themes; the port draws React's classes byte for byte (alert.parity.spec.ts). Remove when React's border reads one token in both themes",
       interactions:
         "An Alert is a notice with no control of its own: nothing to focus or press; axe scans it",
     },
