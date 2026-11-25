@@ -1,5 +1,38 @@
 # @kozmos-ds/vue
 
+## 0.17.1-next.0
+
+Wave V1 of the Vue port: 29 more parts are native Vue, so 35 of Kozmos's 88 core parts now render
+without React. It is built on `@kozmos-ds/styles` and `@kozmos-ds/react` 0.17.1 and pins both exactly:
+`npm install @kozmos-ds/vue@next vue`.
+
+- **New native parts in `@kozmos-ds/vue`**, each drawing the element its React counterpart draws from the
+  same recipes, held to React's by the API contract and DOM parity checks, with visual baselines that
+  match React's:
+  - type: `KozmosText`, `KozmosHeading`, `KozmosLabel`, `KozmosIcon`, `KozmosKbd`, `KozmosCodeBlock` and
+    `KozmosSpriteIcon` (#610);
+  - layout: `KozmosBox`, `KozmosStack`, `KozmosGrid`, `KozmosContainer` and `KozmosSurface` (#611);
+  - status: `KozmosTag`, `KozmosAvatar`, `KozmosSpinner`, `KozmosSkeleton`, `KozmosProgress` and
+    `KozmosPersonaMark` (#612);
+  - cards: `KozmosCard`, `KozmosBreadcrumb`, `KozmosPageHeader`, `KozmosLink` and `KozmosEmptyState`
+    (#613);
+  - records: `KozmosList`, `KozmosDescriptionList`, `KozmosMetaStrip`, `KozmosTimeline`, `KozmosAlert` and
+    `KozmosNotice` (#615).
+
+  Compound parts ship as their own components (`KozmosCardHeader`, `KozmosBreadcrumbItem`,
+  `KozmosAvatarImage`, `KozmosTimelineItem` and the rest), and each part's prop types are exported
+  beside it.
+
+- **Breaking for `0.17.0-next.0`: these parts left `@kozmos-ds/vue/react-bridge`.** Import them from
+  `@kozmos-ds/vue` instead; the bridge keeps only the parts not ported yet. 36 bridge exports moved:
+  `KozmosAlert`, `KozmosAvatar`, `KozmosBox`, `KozmosBreadcrumb`, `KozmosCard` (with `KozmosCardContent`,
+  `KozmosCardDescription`, `KozmosCardFooter`, `KozmosCardHeader` and `KozmosCardTitle`),
+  `KozmosCodeBlock`, `KozmosContainer`, `KozmosDescriptionList`, `KozmosDescriptionListItem`,
+  `KozmosEmptyState`, `KozmosGrid`, `KozmosHeading`, `KozmosIcon`, `KozmosKbd`, `KozmosLabel`, `KozmosLink`,
+  `KozmosList`, `KozmosListItem`, `KozmosListItemStatus`, `KozmosNotice`, `KozmosPageHeader`,
+  `KozmosPersonaMark`, `KozmosPersonaMarkGroup`, `KozmosProgress`, `KozmosSkeleton`, `KozmosSpinner`,
+  `KozmosSpriteIcon`, `KozmosStack`, `KozmosTag`, `KozmosText` and `KozmosTimeline`.
+
 ## 0.17.0-next.0
 
 The first `@kozmos-ds/vue` on npm, a prerelease on the `next` tag (decisions 162 and 209):
