@@ -38,7 +38,8 @@ const navigationItemVariants = cva(
         // selected keeps muted, as its theme 600 label reads 3.83:1 on the
         // dark hover fill: the owner's ruling of 9 Nov (decision 173).
         selected: "bg-muted text-primary",
-        focus: "text-foreground ring-2 ring-ring ring-offset-2",
+        focus:
+          "text-foreground ring-2 ring-ring ring-offset-2 ring-offset-background",
         disabled:
           "pointer-events-none cursor-not-allowed text-muted-foreground opacity-50",
       },

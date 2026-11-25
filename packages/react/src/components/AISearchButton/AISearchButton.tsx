@@ -37,7 +37,7 @@ const AISearchButton = React.forwardRef<HTMLButtonElement, AISearchButtonProps>(
         // end of a row widened the page for part of every turn. Clipped to the
         // button it draws the same; the focus ring is a shadow and is not clipped.
         className={cn(
-          "kozmos-reset kozmos-ai-search group relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-clip rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed",
+          "kozmos-reset kozmos-ai-search group relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-clip rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed",
           className,
         )}
         {...props}

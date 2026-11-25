@@ -725,7 +725,7 @@ export const ColorPicker = React.forwardRef<HTMLInputElement, ColorPickerProps>(
                       className={cn(
                         "h-8 w-full min-w-8 rounded-control border border-input ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                         preset === currentValue &&
-                          "ring-2 ring-ring ring-offset-2",
+                          "ring-2 ring-ring ring-offset-2 ring-offset-background",
                       )}
                       style={{ backgroundColor: preset }}
                       disabled={pickerDisabled}

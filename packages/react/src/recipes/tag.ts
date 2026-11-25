@@ -18,7 +18,7 @@ export const tagVariants = cva(
   // React alone, so an icon beside its text touched — the pill scale's gap,
   // not the control scale's 8, and not `Chip`'s 6, which Figma binds to
   // `Layout/spacing/75` for a larger pill.
-  "inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
   {
     variants: {
       variant: {
