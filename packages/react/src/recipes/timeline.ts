@@ -18,9 +18,12 @@ export const TIMELINE_COMPACT_CLASS =
 // (owned CSS), and the last item draws none (GAP-247).
 export const TIMELINE_ITEM_CLASS = "relative mb-10 ml-6 last:mb-0";
 
-// 36 left of the item: 12 left of the list's edge, as it was.
+// 36 left of the item: 12 left of the list's edge, as it was. Its ring
+// draws an offset shadow too, 0 wide, whose colour Tailwind starts at a
+// written-in white: ring-offset-background gives it the canvas's token, so
+// no colour of the marker is written in. Nothing drawn changes.
 export const TIMELINE_MARKER_CLASS =
-  "absolute -left-9 flex h-6 w-6 items-center justify-center rounded-pill bg-secondary ring-8 ring-background";
+  "absolute -left-9 flex h-6 w-6 items-center justify-center rounded-pill bg-secondary ring-8 ring-background ring-offset-background";
 
 export const TIMELINE_DOT_CLASS = "h-2 w-2 rounded-pill bg-primary";
 

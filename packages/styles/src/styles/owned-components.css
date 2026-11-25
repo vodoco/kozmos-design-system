@@ -622,12 +622,18 @@
     @apply border-primary;
     border-width: 2px;
   }
+  /* The check and the dot never shrink. The status's spoken label sits
+     beside them, hidden by sr-only, a utility that goes with @scope: where
+     @scope is dropped (an engine without it), the label stayed in the flow
+     and squeezed both marks to 0 wide. */
   .kozmos-list-item-status-check {
+    flex-shrink: 0;
     inline-size: 0.75rem;
     block-size: 0.75rem;
   }
   .kozmos-list-item-status-dot {
     @apply rounded-pill bg-primary;
+    flex-shrink: 0;
     inline-size: 0.5rem;
     block-size: 0.5rem;
   }

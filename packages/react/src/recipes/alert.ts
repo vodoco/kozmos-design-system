@@ -19,15 +19,18 @@ export const alertVariants = cva(
   "relative w-full rounded-container border p-4 [&>svg~*]:ps-7 [&>svg+div]:-my-0.5 [&>svg]:absolute [&>svg]:start-4 [&>svg]:top-4 [&>svg]:text-foreground",
   {
     variants: {
+      // A status's border is its emotion at 50% in light and dark alike
+      // (decision 230), as Notice's is: one token in both themes. Dark drew
+      // it at full strength.
       variant: {
         default: "bg-background text-foreground",
         destructive:
-          "border-destructive/50 text-destructive-text dark:border-destructive [&>svg]:text-destructive-text",
+          "border-destructive/50 text-destructive-text [&>svg]:text-destructive-text",
         success:
-          "border-success/50 text-success-text dark:border-success [&>svg]:text-success-text",
+          "border-success/50 text-success-text [&>svg]:text-success-text",
         warning:
-          "border-warning/50 text-warning-text dark:border-warning [&>svg]:text-warning-text",
-        info: "border-info/50 text-info-text dark:border-info [&>svg]:text-info-text",
+          "border-warning/50 text-warning-text [&>svg]:text-warning-text",
+        info: "border-info/50 text-info-text [&>svg]:text-info-text",
       },
     },
     defaultVariants: {
