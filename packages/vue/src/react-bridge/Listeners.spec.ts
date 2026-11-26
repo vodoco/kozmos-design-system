@@ -889,7 +889,6 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Stay" },
     click: (drawn) => drawn.querySelector("[role=group]")?.children[1],
   },
-  KozmosListbox: { props: { options: fruit, "aria-label": "Fruit" } },
   KozmosMultiSelect: {
     props: { options: fruit, label: "Fruit" },
     click: (drawn) =>

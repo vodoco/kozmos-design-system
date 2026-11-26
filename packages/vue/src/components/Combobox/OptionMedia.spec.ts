@@ -1,11 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, ref, type App, type Component } from "vue";
-import {
-  KozmosCombobox,
-  KozmosListbox,
-  KozmosMultiSelect,
-} from "../../react-bridge";
+import { KozmosCombobox, KozmosMultiSelect } from "../../react-bridge";
+// Native since wave V2: the bridged parts' options are drawn as its are.
+import { KozmosListbox } from "../../index";
 import { KozmosAvatar, KozmosAvatarFallback } from "../../index";
 
 // Decision 215 (GAP-282) and GAP-260 in the harness: an option's `media`

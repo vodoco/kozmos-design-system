@@ -975,7 +975,7 @@ const require = createRequire(import.meta.url);
 const results = [];
 const bridge = await import("@kozmos-ds/vue/react-bridge");
 const cjs = require("@kozmos-ds/vue/react-bridge");
-results.push([typeof bridge.KozmosSelect === "object" && typeof bridge.KozmosToggleButton === "object", "import: ./react-bridge gives KozmosSelect and KozmosToggleButton"]);
+results.push([typeof bridge.KozmosTree === "object" && typeof bridge.KozmosToggleButton === "object", "import: ./react-bridge gives KozmosTree and KozmosToggleButton"]);
 results.push([Object.keys(cjs).sort().join() === Object.keys(bridge).sort().join(), "require() and import() give the same exports"]);
 process.stdout.write(JSON.stringify(results));
 `,

@@ -506,6 +506,79 @@ const INTERACTIONS = {
     return "typed into the mixed field, which took the edit and offered its reset; the reset took it back, the focus on the field";
   },
 
+  /**
+   * A native list (wave V2): Tab reaches it, ArrowDown moves its active row
+   * (aria-activedescendant, focus staying on the list) and draws the
+   * keyboard's ring, Enter chooses the active row, and a click chooses
+   * another; a multiple list toggles each in. A list that ignores a key or
+   * a press fails.
+   */
+  async listbox(page) {
+    const list = controls(page, "[role=listbox]").first();
+    const multiple =
+      (await list.getAttribute("aria-multiselectable")) === "true";
+    const activeId = () => list.getAttribute("aria-activedescendant");
+    const chosen = () =>
+      list.evaluate((el) =>
+        [...el.querySelectorAll("[role=option][aria-selected=true]")].map(
+          (row) => row.querySelector(".kozmos-option-label")?.textContent,
+        ),
+      );
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await list.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the list (focus is on ${await focused(page)})`,
+    );
+    const start = await activeId();
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    const moved = await activeId();
+    assert.notEqual(moved, start, "ArrowDown moves the active row");
+    assert.equal(
+      await list.evaluate((el) => el === document.activeElement),
+      true,
+      "focus stays on the list as its active row moves",
+    );
+    assert.equal(
+      await list.getAttribute("data-modality"),
+      "keyboard",
+      "the keyboard's ring is drawn on the active row",
+    );
+    const label = await page
+      .locator(`[id="${moved}"] .kozmos-option-label`)
+      .textContent();
+    const before = await chosen();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    const after = await chosen();
+    assert.equal(
+      after.includes(label),
+      !before.includes(label) || !multiple,
+      `Enter chooses ${label}`,
+    );
+    const rows = controls(page, "[role=listbox] [role=option]");
+    const other = (await rows.count()) - 1;
+    const otherLabel = await rows
+      .nth(other)
+      .locator(".kozmos-option-label")
+      .textContent();
+    const held = (await chosen()).includes(otherLabel);
+    await rows.nth(other).click();
+    await settle(page);
+    // A multiple list's click toggles the row; a single list's chooses it.
+    assert.equal(
+      (await chosen()).includes(otherLabel),
+      multiple ? !held : true,
+      `a click ${multiple && held ? "takes out" : "chooses"} ${otherLabel}`,
+    );
+    if (!multiple)
+      assert.deepEqual(await chosen(), [otherLabel], "one option is chosen");
+    return `Tab to the list, ArrowDown to ${label} with the ring, Enter on it, a click on ${otherLabel}${multiple ? ", each toggled in" : ""}`;
+  },
+
   /** Typing into the search field, its value held in Vue through the bridge. */
   async "search-typing"(page) {
     const field = controls(page, "input").first();

@@ -106,7 +106,7 @@ export function SwitchClient() {
     vue={`
 <script setup>
 import { ref } from "vue"
-import { KozmosListbox } from "@kozmos-ds/vue/react-bridge"
+import { KozmosListbox } from "@kozmos-ds/vue"
 
 const client = ref("acme")
 const options = [
@@ -206,7 +206,7 @@ export function ClientList() {
     vue={`
 <script setup>
 import { ref } from "vue"
-import { KozmosListbox } from "@kozmos-ds/vue/react-bridge"
+import { KozmosListbox } from "@kozmos-ds/vue"
 
 const client = ref("acme")
 const options = [
@@ -322,7 +322,7 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosListbox } from "@kozmos-ds/vue/react-bridge"
+import { KozmosListbox } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const floor = ref("l1")
@@ -334,11 +334,7 @@ const floors = [
 </script>
 
 <template>
-  <KozmosListbox
-    :options="floors"
-    :value="floor"
-    @valueChange="(value) => (floor = value)"
-  />
+  <KozmosListbox v-model="floor" aria-label="Floors" :options="floors" />
 </template>
   `}
   swift={`

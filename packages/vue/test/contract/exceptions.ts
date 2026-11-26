@@ -64,4 +64,13 @@ export const EXCEPTIONS: Record<string, string> = {
     "React's formatValue(value) is Vue's formatValue scoped slot, given { value }: a Vue slot takes one props object, not arguments; text it draws is the thumb's aria-valuetext (slider.parity.spec.ts)",
   "KozmosRating.valueLabel:default":
     "React's default is the recipe's defaultRatingValueLabel, a function the contract cannot read as a literal; Vue's default is the same function, and rating.parity.spec.ts reads the read-only label",
+  // React's ComboboxOption takes `trailing` as a ReactNode; Vue has no
+  // ReactNode, so KozmosComboboxOption takes text, a number or a VNode,
+  // what Vue draws at a row's end. Every other field is React's
+  // (Listbox/types.ts), and listbox.parity.spec.ts draws trailing words in
+  // both. The option is in what a choice emits too.
+  "KozmosListbox.options:type":
+    "Vue's KozmosComboboxOption is React's ComboboxOption but for `trailing`, text, a number or a VNode where React's is a ReactNode; listbox.parity.spec.ts draws trailing words in both",
+  "KozmosListbox.update:modelValue:payload":
+    "The option a choice emits is KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
 };

@@ -73,7 +73,6 @@ import {
   ColorPicker,
   Combobox,
   DateRangePicker,
-  Listbox,
   MapControlButton,
   MultiSelect,
   ChipInput,
@@ -326,14 +325,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       dom: true,
       except: ["onChange"],
       own: ["onOpenChange", "onRangeChange", "onResetMixed", "onValueChange"],
-    },
-  ],
-  [
-    Listbox,
-    {
-      dom: true,
-      except: ["onChange"],
-      own: ["onActiveValueChange", "onValueChange"],
     },
   ],
   [MapControlButton, D],
@@ -715,7 +706,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
-  [Listbox, html(["disabled", "embedded", "multiple"])],
   [
     MapControlButton,
     html([

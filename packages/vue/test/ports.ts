@@ -907,6 +907,20 @@ export const PORTS: Port[] = [
       valueCommit: "parity/slider.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosListbox",
+    react: "Listbox",
+    stories: "components/Listbox/Listbox.stories.tsx",
+    elsewhere: {
+      Single: "parity/listbox.parity.spec.ts",
+      Multiple: "parity/listbox.parity.spec.ts",
+      Grouped: "parity/listbox.parity.spec.ts",
+    },
+    events: {
+      "update:activeValue": "parity/listbox.parity.spec.ts",
+      "update:modelValue": "parity/listbox.parity.spec.ts",
+    },
+  },
 ];
 
 /**

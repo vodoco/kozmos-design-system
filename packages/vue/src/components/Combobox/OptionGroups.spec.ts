@@ -1,11 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, type App, type Component } from "vue";
-import {
-  KozmosCombobox,
-  KozmosListbox,
-  KozmosMultiSelect,
-} from "../../react-bridge";
+import { KozmosCombobox, KozmosMultiSelect } from "../../react-bridge";
+// Native since wave V2: the bridged parts' options are drawn as its are.
+import { KozmosListbox } from "../../index";
 
 // GAP-192 in the harness: an option's `group` reaches React's Combobox,
 // Listbox and MultiSelect through the Vue wrappers' `options`, and each draws

@@ -85,7 +85,6 @@ import {
   ColorPicker,
   Combobox,
   DateRangePicker,
-  Listbox,
   MapControlButton,
   MultiSelect,
   ChipInput,
@@ -525,21 +524,6 @@ export const KozmosDateRangePicker = createVueWrapper(DateRangePicker, {
     prop: "value",
     callback: "onValueChange",
     empty: { start: "", end: "" },
-  },
-});
-// One option is a string, several an array.
-export const KozmosListbox = createVueWrapper(Listbox, {
-  modelValue: {
-    prop: "value",
-    callback: "onValueChange",
-    empty: ({ multiple }) => (multiple ? [] : ""),
-  },
-  // The option a product moves (GAP-260): `v-model:active-value`, null for
-  // none.
-  activeValue: {
-    prop: "activeValue",
-    callback: "onActiveValueChange",
-    empty: null,
   },
 });
 export const KozmosMultiSelect = createVueWrapper(MultiSelect, {

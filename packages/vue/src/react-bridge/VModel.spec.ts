@@ -86,6 +86,8 @@ const tree = [
   { id: "1", name: "src", children: [{ id: "2", name: "a.ts" }] },
   { id: "3", name: "b.ts" },
 ];
+// The same rows, under a name the listener tests' own helper leaves free.
+const trees = tree;
 const photos = ["a", "b", "c"].map((id) => ({
   id,
   src: "data:,",
@@ -357,63 +359,6 @@ const PARTS: Part[] = [
     nothing: "",
     listener: "onInputValueChange",
     alone: "Ap",
-  },
-  {
-    name: "KozmosListbox",
-    props: { options: fruit, "aria-label": "Fruit" },
-    start: "apple",
-    before: ["Apple"],
-    field: () => byText("[role=option]", "Banana"),
-    change: (option) => option.click(),
-    next: "banana",
-    shown: () => texts("[role=option][aria-selected=true]"),
-    shows: ["Banana"],
-    nothing: [],
-    listener: "onValueChange",
-    alone: ["Banana"],
-  },
-  {
-    // Several options: nothing is an empty array (`empty` reads `multiple`).
-    name: "KozmosListbox",
-    variant: "multiple",
-    props: { options: fruit, "aria-label": "Fruit", multiple: true },
-    start: ["apple"],
-    before: ["Apple"],
-    field: () => byText("[role=option]", "Banana"),
-    change: (option) => option.click(),
-    next: ["apple", "banana"],
-    shown: () => texts("[role=option][aria-selected=true]"),
-    shows: ["Apple", "Banana"],
-    nothing: [],
-    fromNothing: { next: ["banana"], shows: ["Banana"] },
-    listener: "onValueChange",
-    alone: ["Banana"],
-  },
-  {
-    // The option a product moves (GAP-260): the list asks for the next one
-    // by its keys. Null is no active option, so Down Arrow reaches the first.
-    name: "KozmosListbox",
-    model: "activeValue",
-    props: { options: fruit, "aria-label": "Fruit" },
-    start: "apple",
-    before: "Apple",
-    field: () => $("[role=listbox]"),
-    change: (list: HTMLElement) => {
-      list.focus();
-      list.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
-      );
-    },
-    next: "banana",
-    shown: () =>
-      document.getElementById(
-        $("[role=listbox]")?.getAttribute("aria-activedescendant") ?? "",
-      )?.textContent ?? null,
-    shows: "Banana",
-    nothing: null,
-    fromNothing: { next: "apple", shows: "Apple" },
-    listener: "onActiveValueChange",
-    alone: "Banana",
   },
   {
     // An array, from onValueChange: typing in its search never reaches it.
@@ -1504,8 +1449,6 @@ describe("a model's nothing, read from React's props", () => {
   it.each([
     ["KozmosAccordion", "modelValue", { type: "multiple" }, []],
     ["KozmosAccordion", "modelValue", { type: "single" }, ""],
-    ["KozmosListbox", "modelValue", { multiple: true }, []],
-    ["KozmosListbox", "modelValue", {}, ""],
     ["KozmosPOIMediaGallery", "activeIndex", { defaultActiveIndex: 2 }, 2],
     ["KozmosPOIMediaGallery", "activeIndex", {}, 0],
     ["KozmosColorPicker", "alpha", { defaultAlpha: 60 }, 60],
@@ -2030,21 +1973,24 @@ describe("handlers given as an array", () => {
 // --------------------------------------------------------------------------
 
 describe("a listener that comes and goes after mount", () => {
-  /** A Listbox bound to "apple", with the listener `listeners` gives it now. */
-  const listbox = (
+  /**
+   * A Tree whose selection is bound to "1" (its "src" row), with the
+   * listener `listeners` gives it now. A bridged part with a model of its
+   * own name: Listbox was the example until its port (wave V2).
+   */
+  const tree = (
     listeners: (listen: (next: string) => void) => Record<string, unknown>,
   ) => {
-    const value = ref("apple");
+    const value = ref("1");
     const emitted: unknown[] = [];
     const listen = (next: string) => {
       emitted.push(next);
       value.value = next;
     };
     mount(() =>
-      h(Bridge.KozmosListbox, {
-        options: fruit,
-        "aria-label": "Fruit",
-        modelValue: value.value,
+      h(Bridge.KozmosTree, {
+        data: trees,
+        selectedId: value.value,
         ...listeners(listen),
       }),
     );
@@ -2053,63 +1999,63 @@ describe("a listener that comes and goes after mount", () => {
   // A fixed wait after each choice: most checks after it are that nothing
   // was emitted.
   const choose = async (label: string) => {
-    (await until(() => byText("[role=option]", label)))!.click();
+    (await until(() => byText("[role=treeitem]", label)))!.click();
     await settle();
   };
-  const chosen = () => texts("[role=option][aria-selected=true]");
+  const chosen = () => texts("[role=treeitem][aria-selected=true]");
 
   it("as a key that is there or not", async () => {
     const listening = ref(false);
-    const { emitted } = listbox((listen) =>
-      listening.value ? { "onUpdate:modelValue": listen } : {},
+    const { emitted } = tree((listen) =>
+      listening.value ? { "onUpdate:selectedId": listen } : {},
     );
-    await choose("Banana");
+    await choose("b.ts");
     expect(emitted).toEqual([]);
-    expect(chosen()).toEqual(["Apple"]);
+    expect(chosen()).toEqual(["src"]);
     listening.value = true;
     await settle();
-    await choose("Banana");
-    expect(emitted).toEqual(["banana"]);
-    expect(chosen()).toEqual(["Banana"]);
+    await choose("b.ts");
+    expect(emitted).toEqual(["3"]);
+    expect(chosen()).toEqual(["b.ts"]);
     listening.value = false;
     await settle();
-    await choose("Cherry");
-    expect(emitted).toEqual(["banana"]);
-    expect(chosen()).toEqual(["Banana"]);
+    await choose("src");
+    expect(emitted).toEqual(["3"]);
+    expect(chosen()).toEqual(["b.ts"]);
   });
 
   // The key stays; only its value changes. Under `emits`, Vue skipped the
   // wrapper for the camelCase key, the one templates compile to.
-  for (const key of ["onUpdate:modelValue", "onUpdate:model-value"])
+  for (const key of ["onUpdate:selectedId", "onUpdate:selected-id"])
     it(`as \`"${key}": listening ? fn : undefined\``, async () => {
       const listening = ref(false);
-      const { emitted } = listbox((listen) => ({
+      const { emitted } = tree((listen) => ({
         [key]: listening.value ? listen : undefined,
       }));
-      await choose("Banana");
+      await choose("b.ts");
       expect(emitted).toEqual([]);
       listening.value = true;
       await settle();
-      await choose("Banana");
-      expect(emitted).toEqual(["banana"]);
+      await choose("b.ts");
+      expect(emitted).toEqual(["3"]);
       listening.value = false;
       await settle();
-      await choose("Cherry");
-      expect(emitted).toEqual(["banana"]);
-      expect(chosen()).toEqual(["Banana"]);
+      await choose("src");
+      expect(emitted).toEqual(["3"]);
+      expect(chosen()).toEqual(["b.ts"]);
     });
 
-  for (const event of ["update:modelValue", "update:model-value"])
+  for (const event of ["update:selectedId", "update:selected-id"])
     it(`as a template's v-on="listening ? { '${event}': listen } : {}"`, async () => {
       const state = {
-        fruit,
-        value: ref("apple"),
+        trees,
+        value: ref("1"),
         listening: ref(false),
         emitted: [] as string[],
       };
       mount(
         defineComponent({
-          components: { KozmosListbox: Bridge.KozmosListbox },
+          components: { KozmosTree: Bridge.KozmosTree },
           setup: () => ({
             ...state,
             listen: (next: string) => {
@@ -2117,20 +2063,20 @@ describe("a listener that comes and goes after mount", () => {
               state.value.value = next;
             },
           }),
-          template: `<KozmosListbox :options="fruit" aria-label="Fruit" :model-value="value" v-on="listening ? { '${event}': listen } : {}" />`,
+          template: `<KozmosTree :data="trees" :selected-id="value" v-on="listening ? { '${event}': listen } : {}" />`,
         }),
       );
-      await choose("Banana");
+      await choose("b.ts");
       expect(state.emitted).toEqual([]);
       state.listening.value = true;
       await nextTick();
       await settle();
-      await choose("Banana");
-      expect(state.emitted).toEqual(["banana"]);
+      await choose("b.ts");
+      expect(state.emitted).toEqual(["3"]);
       state.listening.value = false;
       await settle();
-      await choose("Cherry");
-      expect(state.emitted).toEqual(["banana"]);
+      await choose("src");
+      expect(state.emitted).toEqual(["3"]);
     });
 });
 

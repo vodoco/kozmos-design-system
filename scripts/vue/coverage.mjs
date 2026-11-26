@@ -827,6 +827,10 @@ export const VUE_STORIES = {
   "vue-core-inputs-slider--default": { interaction: "slider" },
   "vue-core-inputs-slider--range": { interaction: "slider" },
   "vue-core-inputs-slider--with-readout": { interaction: "slider" },
+  "vue-core-inputs-listbox--grouped-and-ungrouped": { interaction: "listbox" },
+  "vue-core-inputs-listbox--single": { interaction: "listbox" },
+  "vue-core-inputs-listbox--multiple": { interaction: "listbox" },
+  "vue-core-inputs-listbox--grouped": { interaction: "listbox" },
 };
 
 /** What every Vue story's id starts with, and no React story's. */
