@@ -11,7 +11,7 @@ export const chipVariants = cva(
   // content, and the words never wrap, so a long label ran out of its
   // ChipGroup and, in MultiSelect, under the field's clear and open, which
   // covered the chip's remove (#537's audit, WCAG 2.5.8).
-  "inline-flex min-w-0 max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+  "inline-flex min-w-0 max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   {
     variants: {
       variant: {
@@ -226,7 +226,7 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
           <RadioGroupPrimitive.Item
             className={cn(
               contentClassName,
-              "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             )}
             disabled={disabled}
             onClick={(event) => {
@@ -246,7 +246,7 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
             aria-pressed={isSelected}
             className={cn(
               contentClassName,
-              "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             )}
             disabled={disabled}
             onClick={(event) => {

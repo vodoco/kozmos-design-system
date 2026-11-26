@@ -8,7 +8,7 @@ import { WithoutGenericClick } from "../../utils/generic-click";
 import { DensityScope } from "../../theme/DensityScope";
 
 const searchBarVariants = cva(
-  "flex items-center w-full rounded-control bg-background shadow-floating px-3 h-11 border border-input transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+  "flex items-center w-full rounded-control bg-background shadow-floating px-3 h-11 border border-input transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
   {
     variants: {
       variant: {

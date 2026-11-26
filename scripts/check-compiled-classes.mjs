@@ -516,6 +516,114 @@ if (stale.length) {
   );
 }
 
+// A ring offset names its colour (GAP-290). `ring-offset-2` draws a gap of
+// --tw-ring-offset-color between the part and its ring, and that colour is
+// registered as Tailwind 4 registers it, at a written-in #fff
+// (packages/styles/postcss/scoped-css.cjs), which no token sets: in dark
+// every such focus ring drew a white gap. So a class list that offsets a
+// ring also says the gap's colour, `ring-offset-background` or another
+// role, in the same string or @apply, or in a string that always joins it
+// on the element: an unconditional argument of the same cn()/clsx() call,
+// or the base of the same cva(). A colour under a condition does not count,
+// since the offset can draw without it. A width of 0 draws no gap and is not
+// held. Fixtures are skipped, as above.
+const RING_OFFSET_WIDTH = /^(?:[^\s:]+:)*ring-offset-(?:\d+|\[[^\]]+\])$/;
+const RING_OFFSET_ZERO = /^(?:[^\s:]+:)*ring-offset-(?:0|\[0(?:px)?\])$/;
+const RING_OFFSET_COLOUR =
+  /^(?:[^\s:]+:)*ring-offset-(?!\d|\[)[a-z][\w-]*(?:\/[\w.[\]]+)?$/;
+function classLists(file) {
+  const text = fs.readFileSync(file, "utf8");
+  const lists = [];
+  if (file.endsWith(".css")) {
+    postcss.parse(text, { from: file }).walkAtRules("apply", (rule) => {
+      lists.push({
+        words: tokens(rule.params, false, false),
+        line: rule.source.start.line,
+      });
+    });
+    return lists;
+  }
+  const kind = file.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const source = ts.createSourceFile(
+    file,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    kind,
+  );
+  const lineOf = (node) =>
+    source.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+  const wordsOf = (node) => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
+      return tokens(node.text, false, false);
+    if (ts.isTemplateExpression(node)) {
+      const words = [...tokens(node.head.text, false, true)];
+      node.templateSpans.forEach((span, index) => {
+        const last = index === node.templateSpans.length - 1;
+        words.push(...tokens(span.literal.text, true, !last));
+      });
+      return words;
+    }
+    return null;
+  };
+  const JOINERS = new Set(["cn", "clsx", "cx", "twMerge"]);
+  // `shared` holds the words that always join a literal on its element.
+  const visit = (node, shared) => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      const name = node.expression.text;
+      const always = node.arguments.map(wordsOf).filter(Boolean).flat();
+      if (JOINERS.has(name)) {
+        const joined = [...shared, ...always];
+        node.arguments.forEach((arg) => visit(arg, joined));
+        return;
+      }
+      if (name === "cva" && node.arguments.length) {
+        const base = wordsOf(node.arguments[0]) ?? [];
+        visit(node.arguments[0], shared);
+        node.arguments
+          .slice(1)
+          .forEach((arg) => visit(arg, [...shared, ...base]));
+        return;
+      }
+    }
+    const words = wordsOf(node);
+    if (words) {
+      lists.push({
+        words: [...words, ...shared],
+        own: words,
+        line: lineOf(node),
+      });
+      return;
+    }
+    ts.forEachChild(node, (child) => visit(child, shared));
+  };
+  visit(source, []);
+  return lists;
+}
+const uncolouredOffsets = [];
+let offsetLists = 0;
+for (const file of sources) {
+  if (FIXTURE.test(file)) continue;
+  for (const { words, own = words, line } of classLists(file)) {
+    const widths = own.filter(
+      (word) => RING_OFFSET_WIDTH.test(word) && !RING_OFFSET_ZERO.test(word),
+    );
+    if (!widths.length) continue;
+    offsetLists++;
+    if (!words.some((word) => RING_OFFSET_COLOUR.test(word)))
+      uncolouredOffsets.push(
+        `${widths.join(" ")} at ${path.relative(ROOT, file)}:${line}`,
+      );
+  }
+}
+if (uncolouredOffsets.length) {
+  fail(
+    `${uncolouredOffsets.length} class list(s) offset a ring with no colour for the gap, which then draws Tailwind's written-in white, in dark too: ${uncolouredOffsets.join(", ")}.\n          Add ring-offset-background (or the surface's role) to the same class list.`,
+  );
+} else {
+  ok(`all ${offsetLists} class lists that offset a ring name the gap's colour`);
+}
+
 console.log(
   `\n${problems.length === 0 ? "ok    no new class compiles to nothing" : `${problems.length} change(s) to the backlog`}`,
 );

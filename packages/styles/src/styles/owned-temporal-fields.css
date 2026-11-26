@@ -17,7 +17,7 @@
   /* Native date/time segments in WebKit can hold keyboard focus without matching
      :focus-visible. Always expose focus for these fields, in every engine. */
   .kozmos-temporal-input:focus {
-    @apply outline-none ring-2 ring-ring ring-offset-2;
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
   .kozmos-temporal-input.kozmos-input-warning:focus {
     @apply ring-warning;

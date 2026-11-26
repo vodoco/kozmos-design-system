@@ -8,7 +8,7 @@ export type LinkVariant = "default" | "subtle";
 /** The anchor's classes, before a caller's, by variant. */
 export function linkClasses(variant: LinkVariant | undefined) {
   return [
-    "font-medium hover:underline underline-offset-4 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-marker",
+    "font-medium hover:underline underline-offset-4 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded-marker",
     variant === "default" && "text-primary",
     variant === "subtle" && "text-muted-foreground hover:text-foreground",
   ];

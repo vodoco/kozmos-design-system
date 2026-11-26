@@ -523,7 +523,7 @@
   /* A mixed field's way back to its several values (GAP-153): a text
      button under the field, at its start, in Link's colour and weight. */
   .kozmos-field-reset {
-    @apply self-start rounded-marker text-sm font-medium leading-5 text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply self-start rounded-marker text-sm font-medium leading-5 text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
     background-color: transparent;
     cursor: pointer;
   }
@@ -1334,7 +1334,7 @@
      @scope too, where the browser's own button border and padding pushed the
      SDK tab inside it 3px off the card's top. */
   .kozmos-poi-result-select {
-    @apply block min-h-20 w-full rounded-[inherit] bg-transparent text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60;
+    @apply block min-h-20 w-full rounded-[inherit] bg-transparent text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60;
     cursor: pointer;
     text-transform: none;
     -webkit-appearance: button;

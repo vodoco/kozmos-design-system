@@ -100,7 +100,7 @@
   /* Its close: the icon button's size, centred on the title (decision 82),
      clear, and hovered and focused as its utilities draw it. */
   .kozmos-drawer-close {
-    @apply absolute end-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] box-border inline-flex h-icon-control w-icon-control items-center justify-center rounded-control border-0 p-0 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none;
+    @apply absolute end-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] box-border inline-flex h-icon-control w-icon-control items-center justify-center rounded-control border-0 p-0 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none;
   }
   /* Clear where no @scope rule applies; weighs nothing, so a host's own
      button rule decides as it did under @scope. */
@@ -124,7 +124,7 @@
     @apply mx-auto my-2 h-[5px] w-12 shrink-0 rounded-pill bg-muted-foreground/40;
   }
   .kozmos-bottom-sheet-close {
-    @apply absolute right-0 top-2 box-border inline-flex h-11 w-11 items-start justify-end rounded-control border-0 p-2 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none;
+    @apply absolute right-0 top-2 box-border inline-flex h-11 w-11 items-start justify-end rounded-control border-0 p-2 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none;
   }
   .kozmos-bottom-sheet-close > :where(svg) {
     @apply h-4 w-4;

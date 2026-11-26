@@ -54,7 +54,7 @@ export const NOTICE_SUMMARY_CLASS =
   "min-w-0 flex-1 text-sm font-semibold leading-snug";
 
 export const NOTICE_MORE_CLASS =
-  "kozmos-notice-more -mr-1 inline-flex shrink-0 items-center gap-1 rounded-control px-1 py-0.5 text-xs font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  "kozmos-notice-more -mr-1 inline-flex shrink-0 items-center gap-1 rounded-control px-1 py-0.5 text-xs font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export const NOTICE_DETAIL_TEXT_CLASS = "text-sm leading-snug";
 
