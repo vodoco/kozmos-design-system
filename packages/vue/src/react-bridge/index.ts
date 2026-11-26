@@ -27,10 +27,6 @@ import {
   PART_TAKES,
 } from "./part-takes";
 import {
-  Counter as ReactCounter,
-  Input as ReactInput,
-  Textarea,
-  Checkbox as ReactCheckbox,
   Switch,
   Slider as ReactSlider,
   Search,
@@ -62,8 +58,6 @@ import {
   FloorSelector,
   POICard,
   BottomSheet,
-  OTPInput as ReactOTPInput,
-  Rating,
   FileUpload as ReactFileUpload,
   ImageCropper,
   DatePicker,
@@ -72,14 +66,12 @@ import {
   SplitButton,
   ToggleButton,
   SegmentedControl,
-  IconButton,
   Tabs,
   Dialog,
   MapOverlay,
   Chip,
   DynamicIsland,
   FeedbackCard,
-  FieldWrapper,
   MapControlsGroup,
   NavigationAnnouncer,
   RadioGroup as ReactRadioGroup,
@@ -103,12 +95,10 @@ import {
   MultiSelect,
   ChipInput,
   NavigationItem,
-  NumberInput,
   POIDetailPanel,
   POIMediaGallery,
   POIResultCard,
   POIResultList,
-  PasswordInput,
   RouteOptionCard,
   RoutePreviewPanel,
   TourStep,
@@ -295,7 +285,6 @@ const textField = {
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
-export const KozmosCounter = createVueWrapper(ReactCounter);
 // Null is where the slider starts: its default, else its own fallback.
 export const KozmosSlider = createVueWrapper(ReactSlider, {
   modelValue: {
@@ -421,13 +410,6 @@ export const KozmosFloorSelector = createVueWrapper(FloorSelector, {
 });
 export const KozmosPOICard = createVueWrapper(POICard);
 export const KozmosBottomSheet = createVueWrapper(BottomSheet);
-export const KozmosOTPInput = createVueWrapper(ReactOTPInput, {
-  modelValue: { prop: "value", callback: "onChange", empty: "" },
-});
-// 0 is "Not rated".
-export const KozmosRating = createVueWrapper(Rating, {
-  modelValue: { prop: "value", callback: "onChange", empty: 0 },
-});
 export const KozmosFileUpload = createVueWrapper(ReactFileUpload, {
   modelValue: { prop: "value", callback: "onFilesChange", empty: [] },
 });
@@ -453,10 +435,6 @@ export const KozmosToggleButton = createVueWrapper(ToggleButton, {
 export const KozmosSegmentedControl = createVueWrapper(SegmentedControl, {
   modelValue: { prop: "value", callback: "onValueChange", empty: null },
 });
-export const KozmosIconButton = createVueWrapper(IconButton);
-// `counterLabel` is a function: declared as a prop, it is handed to React and
-// never written onto the wrapper's element as an attribute (GAP-197).
-Object.assign(KozmosIconButton, { props: { counterLabel: null } });
 export const KozmosTabs = createVueWrapper(Tabs, {
   modelValue: { prop: "value", callback: "onValueChange", empty: "" },
 });
@@ -465,7 +443,6 @@ export const KozmosMapOverlay = createVueWrapper(MapOverlay);
 export const KozmosChip = createVueWrapper(Chip);
 export const KozmosDynamicIsland = createVueWrapper(DynamicIsland);
 export const KozmosFeedbackCard = createVueWrapper(FeedbackCard);
-export const KozmosFieldWrapper = createVueWrapper(FieldWrapper);
 export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup, {
   stepFree: { prop: "stepFree", callback: "onStepFreeChange", empty: false },
 });
@@ -481,25 +458,6 @@ export const KozmosScrollArea = createVueWrapper(ScrollArea);
 export const KozmosUserLocationMarker = createVueWrapper(UserLocationMarker);
 
 // Custom Input Binding Interfaces
-// `v-model` is `checked`, as `v-model:checked` is (react-adapter.ts).
-export const KozmosCheckbox = createVueWrapper(ReactCheckbox, {
-  modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
-});
-export const KozmosInput = createVueWrapper(ReactInput, {
-  modelValue: textField,
-});
-// `action` is an object holding functions and an icon: declared as a prop, it
-// is handed to React, never written onto the wrapper's element (GAP-154).
-// Beside its model's props, which it would replace.
-Object.assign(KozmosInput, {
-  props: {
-    ...(KozmosInput as unknown as { props: object }).props,
-    action: null,
-  },
-});
-export const KozmosTextarea = createVueWrapper(Textarea, {
-  modelValue: textField,
-});
 export const KozmosSwitch = createVueWrapper(Switch, {
   modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
 });
@@ -628,14 +586,6 @@ export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
 export const KozmosChipInput = createVueWrapper(ChipInput, {
   modelValue: { prop: "value", callback: "onValueChange", empty: [] },
   inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
-});
-// A cleared field is `null` to Vue and "" to React's input.
-export const KozmosNumberInput = createVueWrapper(NumberInput, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-});
-export const KozmosPasswordInput = createVueWrapper(PasswordInput, {
-  modelValue: textField,
-  visible: { prop: "visible", callback: "onVisibleChange", empty: false },
 });
 
 // ----------------------------------------------------------------------

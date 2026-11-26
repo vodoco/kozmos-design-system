@@ -2,6 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { cn } from "../../utils";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
 import { FieldWrapper } from "../FieldWrapper";
+import { fieldDescribedBy } from "../../recipes/field";
+import {
+  OTP_CELL_CLASS,
+  OTP_ROW_CLASS,
+  isDecimalDigit,
+  isOtpComplete,
+  normalizeOtpLength,
+  otpCellId,
+  otpCellLabel,
+  sanitizeOtpValue,
+  toOtpCells,
+} from "../../recipes/otp-input";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface OTPInputProps extends Omit<
@@ -28,46 +40,6 @@ export interface OTPInputProps extends Omit<
   value?: string;
   wrapperClassName?: string;
 }
-
-const isDecimalDigit = (character: string) => /^\p{Nd}$/u.test(character);
-
-/**
- * The ASCII digit of a decimal digit's value, in any script: "٣" (Arabic-
- * Indic), "۳" (Extended Arabic-Indic), "३" (Devanagari) and "３" (full-width)
- * are all "3". Unicode encodes every script's decimal digits as ten contiguous
- * code points, zero first, and some sets sit back to back (five sets of
- * mathematical digits run as one), so a digit's value is its distance from
- * the start of its run of digits, modulo ten.
- */
-const toAsciiDigit = (digit: string) => {
-  const codePoint = digit.codePointAt(0)!;
-  let zero = codePoint;
-  while (isDecimalDigit(String.fromCodePoint(zero - 1))) zero -= 1;
-  return String((codePoint - zero) % 10);
-};
-
-/**
- * Keeps the decimal digits (general category Nd, in any script) as their
- * ASCII values, at most `length` of them, and drops everything else, so the
- * cells and `onChange` only ever hold "0"-"9". "²" and "½" are numbers but not
- * decimal digits, so they are dropped.
- */
-const sanitizeOtpValue = (nextValue: string, length: number) =>
-  Array.from(nextValue.replace(/\P{Nd}/gu, ""))
-    .slice(0, length)
-    .map(toAsciiDigit)
-    .join("");
-
-const normalizeOtpLength = (length: number) =>
-  Math.max(1, Math.trunc(Number.isFinite(length) ? length : 1));
-
-const toOtpCells = (source: string, cellCount: number) => {
-  const cells = sanitizeOtpValue(source, cellCount).split("");
-  while (cells.length < cellCount) cells.push("");
-  return cells;
-};
-
-const isOtpComplete = (cells: string[]) => cells.every((cell) => cell !== "");
 
 const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
   (
@@ -125,12 +97,12 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
     const hasError = !!error;
     const resolvedStatus: InputStatus = hasError ? "error" : status;
     const isInvalid = resolvedStatus === "error";
-    const describedBy =
-      hasError && typeof error === "string"
-        ? errorId
-        : helperText
-          ? helperId
-          : undefined;
+    const describedBy = fieldDescribedBy({
+      error,
+      errorId,
+      helperText,
+      helperId,
+    });
     const { trackEvent } = useKozmosAnalytics();
 
     // autoFocus puts the caret where the next digit goes: the first empty
@@ -308,15 +280,11 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
         status={resolvedStatus}
         className={wrapperClassName}
       >
-        <div
-          ref={ref}
-          className={cn("flex w-full items-center gap-2", className)}
-          {...props}
-        >
+        <div ref={ref} className={cn(OTP_ROW_CLASS, className)} {...props}>
           {otp.map((digit, index) => (
             <input
               key={index}
-              id={index === 0 ? inputId : `${inputId}-${index + 1}`}
+              id={otpCellId(inputId, index)}
               ref={(el) => {
                 inputs.current[index] = el;
               }}
@@ -362,12 +330,12 @@ const OTPInput = React.forwardRef<HTMLDivElement, OTPInputProps>(
               readOnly={readOnly}
               aria-invalid={isInvalid || undefined}
               aria-describedby={describedBy}
-              aria-label={`Digit ${index + 1} of ${cellCount}`}
-              // The cell's square, padding and centred digit are owned CSS:
-              // WebKit applies no scoped utility to an <input> (GAP-174).
+              aria-label={otpCellLabel(index, cellCount)}
+              // The cell's square, padding and centred digit are owned CSS
+              // (GAP-174).
               className={cn(
                 inputVariants({ status: resolvedStatus }),
-                "kozmos-otp-cell",
+                OTP_CELL_CLASS,
               )}
             />
           ))}

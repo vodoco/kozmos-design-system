@@ -2,6 +2,18 @@ import React from "react";
 import { Star01 as Star, ThumbsDown, ThumbsUp } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
+// The recipe is shared with Vue's KozmosRating (recipes/rating.ts).
+import {
+  defaultRatingItemLabel,
+  defaultRatingValueLabel,
+  RATING_CLASS,
+  RATING_HALF_CLASSES,
+  RATING_THUMB_ICON_CLASS,
+  ratingItemClass,
+  ratingStarClass,
+  ratingThumbClass,
+  roundRatingToHalf,
+} from "../../recipes/rating";
 
 /**
  * What a rating is measured on.
@@ -46,38 +58,10 @@ export interface RatingProps extends Omit<
   valueLabel?: (value: number, max: number, variant: RatingVariant) => string;
 }
 
-/**
- * A read-only star rating's value, rounded to the nearest half (decision
- * 181): 4.3 is 4.5, 4.2 is 4 and 4.25 is 4.5. It rounds the doubled value half
- * up, `Math.round(value * 2) / 2`, as SwiftUI's and Compose's do.
- */
-function roundRatingToHalf(value: number): number {
-  return Math.round(value * 2) / 2;
-}
-
-const defaultItemLabel: NonNullable<RatingProps["itemLabel"]> = (
-  value,
-  max,
-  variant,
-) =>
-  variant === "thumbs"
-    ? value === 1
-      ? "Poor"
-      : "Good"
-    : `Rate ${value} out of ${max} stars`;
-
-const defaultValueLabel: NonNullable<RatingProps["valueLabel"]> = (
-  value,
-  max,
-  variant,
-) => {
-  if (value === 0) return "Not rated";
-  return variant === "thumbs"
-    ? value === 1
-      ? "Rated poor"
-      : "Rated good"
-    : `Rated ${value} out of ${max} stars`;
-};
+const defaultItemLabel: NonNullable<RatingProps["itemLabel"]> =
+  defaultRatingItemLabel;
+const defaultValueLabel: NonNullable<RatingProps["valueLabel"]> =
+  defaultRatingValueLabel;
 
 const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
   (
@@ -124,7 +108,7 @@ const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
           ref={setGroup}
           role="img"
           aria-label={valueLabel(shown, max, variant)}
-          className={cn("flex items-center gap-1", className)}
+          className={cn(RATING_CLASS, className)}
           {...props}
         >
           {Array.from({ length: max }, (_, index) => (
@@ -207,7 +191,7 @@ const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
         ref={setGroup}
         role="radiogroup"
         aria-label={label}
-        className={cn("flex items-center gap-1", className)}
+        className={cn(RATING_CLASS, className)}
         {...props}
       >
         {Array.from({ length: max }, (_, index) => {
@@ -221,11 +205,7 @@ const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
               aria-checked={item === value}
               aria-label={itemLabel(item, max, variant)}
               tabIndex={item === tabStop ? 0 : -1}
-              className={cn(
-                "kozmos-reset flex cursor-pointer items-center justify-center rounded-pill bg-transparent p-0 transition-colors duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                thumbs && "h-11 w-11",
-              )}
+              className={ratingItemClass(thumbs)}
               onClick={() => select(item)}
               onKeyDown={(event) => onKeyDown(event, item)}
               onMouseEnter={() => !thumbs && setHoverValue(item)}
@@ -260,45 +240,27 @@ function Face({
     // one, since `start-0` is a logical side and the clipped box's own
     // content starts there too.
     return (
-      <span aria-hidden="true" className="relative block h-6 w-6">
-        <Star className="block h-6 w-6 text-muted-foreground" />
-        <span
-          className="absolute inset-y-0 start-0 block w-1/2 overflow-hidden"
-          data-rating-half=""
-        >
-          <Star className="block h-6 w-6 fill-data-yellow text-data-yellow" />
+      <span aria-hidden="true" className={RATING_HALF_CLASSES.box}>
+        <Star className={RATING_HALF_CLASSES.empty} />
+        <span className={RATING_HALF_CLASSES.clip} data-rating-half="">
+          <Star className={RATING_HALF_CLASSES.filled} />
         </span>
       </span>
     );
   }
   if (!thumbs) {
-    return (
-      <Star
-        aria-hidden="true"
-        className={cn(
-          "h-6 w-6",
-          filled
-            ? "fill-data-yellow text-data-yellow"
-            : "text-muted-foreground",
-        )}
-      />
-    );
+    return <Star aria-hidden="true" className={ratingStarClass(filled)} />;
   }
   const Icon = item === 1 ? ThumbsDown : ThumbsUp;
   return (
     <span
       aria-hidden="true"
-      className={cn(
-        "flex h-10 w-10 items-center justify-center rounded-pill border-2 transition-colors",
-        // The chosen thumb is the theme's tint, theme/0, ringed and marked in
-        // theme 600, as SwiftUI, Compose and Figma draw it. It was a theme 600
-        // fill with foreground/1000 on it (decision 59).
-        filled
-          ? "border-primary bg-[var(--primitives-colors-theme-0)] text-primary"
-          : "border-transparent bg-muted text-muted-foreground",
-      )}
+      // The chosen thumb is the theme's tint, theme/0, ringed and marked in
+      // theme 600, as SwiftUI, Compose and Figma draw it. It was a theme 600
+      // fill with foreground/1000 on it (decision 59).
+      className={ratingThumbClass(filled)}
     >
-      <Icon className="h-5 w-5" />
+      <Icon className={RATING_THUMB_ICON_CLASS} />
     </span>
   );
 }

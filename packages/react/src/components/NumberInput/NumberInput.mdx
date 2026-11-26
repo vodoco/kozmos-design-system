@@ -65,7 +65,7 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosNumberInput } from "@kozmos-ds/vue/react-bridge"
+import { KozmosNumberInput } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const quantity = ref(1)
@@ -77,8 +77,7 @@ const quantity = ref(1)
     :min="1"
     :max="99"
     :step="1"
-    :value="quantity"
-    @valueChange="(value) => (quantity = value ?? 0)"
+    v-model="quantity"
   />
 </template>
   `}
@@ -152,7 +151,7 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosNumberInput } from "@kozmos-ds/vue/react-bridge"
+import { KozmosNumberInput } from "@kozmos-ds/vue"
 </script>
 
 <template>

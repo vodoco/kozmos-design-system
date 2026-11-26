@@ -4,7 +4,7 @@
  * count inside Vue's `KozmosBadge`, so the two cannot drift. Framework-free
  * (`recipes.framework-free.test.ts`).
  */
-import { cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 
 export const counterVariants = cva(
   "inline-flex items-center justify-center rounded-pill font-semibold leading-none tabular-nums",
@@ -30,6 +30,12 @@ export const counterVariants = cva(
     },
   },
 );
+
+type CounterVariants = VariantProps<typeof counterVariants>;
+/** Counter's tones, as the recipe draws them. */
+export type CounterTone = NonNullable<CounterVariants["tone"]>;
+/** Counter's sizes, as the recipe draws them. */
+export type CounterSize = NonNullable<CounterVariants["size"]>;
 
 /**
  * A count as a counter writes it: trimmed, without the parentheses a caller

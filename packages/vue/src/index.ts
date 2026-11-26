@@ -173,11 +173,36 @@ export {
 } from "./components/Breadcrumb/Breadcrumb";
 export { KozmosLink } from "./components/Link/Link";
 export { KozmosEmptyState } from "./components/EmptyState/EmptyState";
+export { KozmosFieldWrapper } from "./components/FieldWrapper/FieldWrapper";
+export type { KozmosFieldStatus } from "./components/FieldWrapper/types";
+export { KozmosInput } from "./components/Input/Input";
+export type {
+  KozmosCharacterCount,
+  KozmosInputAction,
+  KozmosInputStatus,
+} from "./components/Input/types";
+export { KozmosTextarea } from "./components/Textarea/Textarea";
+export { KozmosPasswordInput } from "./components/PasswordInput/PasswordInput";
+export { KozmosNumberInput } from "./components/NumberInput/NumberInput";
+export { KozmosOTPInput } from "./components/OTPInput/OTPInput";
 export type {
   KozmosEmptyStateListItem,
   KozmosEmptyStateProgress,
   KozmosEmptyStateSize,
 } from "./components/EmptyState/types";
+export { KozmosCounter } from "./components/Counter/Counter";
+export type {
+  KozmosCounterSize,
+  KozmosCounterTone,
+} from "./components/Counter/types";
+export { KozmosIconButton } from "./components/IconButton/IconButton";
+export { KozmosCheckbox } from "./components/Checkbox/Checkbox";
+export type { KozmosCheckboxCheckedState } from "./components/Checkbox/types";
+export { KozmosRating } from "./components/Rating/Rating";
+export type {
+  KozmosRatingLabel,
+  KozmosRatingVariant,
+} from "./components/Rating/types";
 export type {
   KozmosButtonEmotion,
   KozmosButtonSize,

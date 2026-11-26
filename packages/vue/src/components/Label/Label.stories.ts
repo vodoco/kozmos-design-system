@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { h } from "vue";
-import { KozmosLabel } from "../../index";
-import { KozmosInput } from "../../react-bridge";
+import { KozmosInput, KozmosLabel } from "../../index";
 
 /**
  * Vue's Label: the stories React's has, with the same names and args,
@@ -43,10 +42,7 @@ export const Default: Story = {
   },
 };
 
-/**
- * React's WithInput: a label for an email field. Input is not ported yet,
- * so the field is the bridge's KozmosInput, React's Input mounted in Vue.
- */
+/** React's WithInput: a label for an email field, the native KozmosInput. */
 export const WithInput: Story = {
   render: () => ({
     components: { KozmosLabel, KozmosInput },

@@ -18,10 +18,6 @@
 // reads a `[String, Boolean]` one. Every spelling is React's prop. A prop
 // that takes any ReactNode is a slot, and none of them.
 import {
-  Counter,
-  Input,
-  Textarea,
-  Checkbox,
   Switch,
   Slider,
   Search,
@@ -53,8 +49,6 @@ import {
   FloorSelector,
   POICard,
   BottomSheet,
-  OTPInput,
-  Rating,
   FileUpload,
   ImageCropper,
   DatePicker,
@@ -63,14 +57,12 @@ import {
   SplitButton,
   ToggleButton,
   SegmentedControl,
-  IconButton,
   Tabs,
   Dialog,
   MapOverlay,
   Chip,
   DynamicIsland,
   FeedbackCard,
-  FieldWrapper,
   MapControlsGroup,
   NavigationAnnouncer,
   RadioGroup,
@@ -91,12 +83,10 @@ import {
   MultiSelect,
   ChipInput,
   NavigationItem,
-  NumberInput,
   POIDetailPanel,
   POIMediaGallery,
   POIResultCard,
   POIResultList,
-  PasswordInput,
   RouteOptionCard,
   RoutePreviewPanel,
   TourStep,
@@ -142,7 +132,6 @@ import type { Booleans, Takes } from "./react-adapter";
 
 /** Every React DOM event, and nothing of its own: most parts. */
 const D: Takes = { dom: true, own: [] };
-const inputTakes: Takes = { dom: true, own: ["onResetMixed"] };
 const searchTakes: Takes = { dom: true, own: ["onClear"] };
 const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const popoverContentTakes: Takes = {
@@ -181,10 +170,6 @@ const tourStepTakes: Takes = {
 
 /** By React part. */
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
-  [Counter, D],
-  [Input, inputTakes],
-  [Textarea, D],
-  [Checkbox, { dom: true, own: ["onCheckedChange"] }],
   [Switch, { dom: true, own: ["onCheckedChange", "onResetMixed"] }],
   [Slider, { dom: true, own: ["onValueChange", "onValueCommit"] }],
   [Search, searchTakes],
@@ -248,8 +233,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [FloorSelector, { dom: true, own: ["onFloorSelect"] }],
   [POICard, D],
   [BottomSheet, menuTakes],
-  [OTPInput, D],
-  [Rating, D],
   [
     FileUpload,
     { dom: true, except: ["onChange"], own: ["onFileSelect", "onFilesChange"] },
@@ -264,7 +247,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [SplitButton, { dom: true, own: ["onMainClick"] }],
   [ToggleButton, { dom: true, own: ["onPressedChange", "onResetMixed"] }],
   [SegmentedControl, segmentedControlTakes],
-  [IconButton, D],
   [Tabs, accordionTakes],
   [Dialog, menuTakes],
   [MapOverlay, D],
@@ -298,7 +280,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [FeedbackCard, { dom: true, own: ["onSubmitFeedback"] }],
-  [FieldWrapper, inputTakes],
   [
     MapControlsGroup,
     {
@@ -387,7 +368,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [NavigationItem, D],
-  [NumberInput, segmentedControlTakes],
   [
     POIDetailPanel,
     {
@@ -407,7 +387,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
       own: ["onAction", "onGroupExpandedChange", "onHostAction", "onOpen"],
     },
   ],
-  [PasswordInput, { dom: true, own: ["onVisibleChange"] }],
   [RouteOptionCard, categoryTileTakes],
   [
     RoutePreviewPanel,
@@ -531,11 +510,6 @@ const html = (
 
 /** React's `HTMLAttributes`' booleans, and none of its own: most parts. */
 const H = html();
-const textareaBooleans = html(
-  ["disabled", "readOnly", "required"],
-  [],
-  ["error"],
-);
 const menuBooleans = {
   flags: ["defaultOpen", "modal", "open"],
   unions: [],
@@ -565,11 +539,6 @@ const datePickerBooleans = html(
   ["capture"],
   ["error"],
 );
-const floatingActionButtonBooleans = html([
-  "disabled",
-  "formNoValidate",
-  "isLoading",
-]);
 const categoryTileBooleans = html(["disabled", "formNoValidate"]);
 const tourStepBooleans = html(["nextDisabled", "open"]);
 const accordionItemBooleans = html(["asChild", "disabled"]);
@@ -582,65 +551,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   unknown,
   Booleans
 >([
-  [Counter, H],
-  [
-    Input,
-    html(
-      [
-        "checked",
-        "disabled",
-        "formNoValidate",
-        "mixed",
-        "multiple",
-        "readOnly",
-        "required",
-      ],
-      ["capture"],
-      ["error"],
-    ),
-  ],
-  [Textarea, textareaBooleans],
-  [
-    Checkbox,
-    {
-      flags: [
-        "asChild",
-        "autoFocus",
-        "disabled",
-        "formNoValidate",
-        "hidden",
-        "itemScope",
-        "required",
-        "suppressContentEditableWarning",
-        "suppressHydrationWarning",
-      ],
-      unions: [
-        "aria-atomic",
-        "aria-busy",
-        "aria-checked",
-        "aria-current",
-        "aria-disabled",
-        "aria-expanded",
-        "aria-grabbed",
-        "aria-haspopup",
-        "aria-hidden",
-        "aria-invalid",
-        "aria-modal",
-        "aria-multiline",
-        "aria-multiselectable",
-        "aria-pressed",
-        "aria-readonly",
-        "aria-required",
-        "aria-selected",
-        "checked",
-        "contentEditable",
-        "defaultChecked",
-        "draggable",
-        "spellCheck",
-      ],
-      texts: ["error"],
-    },
-  ],
   [
     Switch,
     html(
@@ -736,13 +646,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [FloorSelector, html(["showResultCounts"])],
   [POICard, H],
   [BottomSheet, menuBooleans],
-  [OTPInput, html(["disabled", "readOnly"], [], ["error"])],
-  [Rating, html(["readOnly"])],
   [FileUpload, html(["disabled", "multiple"], [], ["error"])],
   [ImageCropper, html(["disabled", "showZoomControls"])],
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
-  [FloatingActionButton, floatingActionButtonBooleans],
+  [FloatingActionButton, html(["disabled", "formNoValidate", "isLoading"])],
   [SplitButton, settingsRowBooleans],
   [
     ToggleButton,
@@ -763,7 +671,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
-  [IconButton, floatingActionButtonBooleans],
   [Tabs, popoverAnchorBooleans],
   [Dialog, menuBooleans],
   [MapOverlay, H],
@@ -788,10 +695,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
     ),
   ],
   [FeedbackCard, html(["isSubmitting"])],
-  [
-    FieldWrapper,
-    html(["group", "hideLabel", "mixed", "required"], [], ["error"]),
-  ],
   [MapControlsGroup, html(["locationRevealOnChange", "stepFree"])],
   [NavigationAnnouncer, { flags: ["isActive"], unions: [], texts: [] }],
   [
@@ -893,47 +796,12 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
-  [ChipInput, textareaBooleans],
+  [ChipInput, html(["disabled", "readOnly", "required"], [], ["error"])],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
-  [
-    NumberInput,
-    html(
-      [
-        "checked",
-        "disabled",
-        "formNoValidate",
-        "mixed",
-        "multiple",
-        "readOnly",
-        "required",
-        "showSteppers",
-      ],
-      ["capture"],
-      ["error"],
-    ),
-  ],
   [POIDetailPanel, H],
   [POIMediaGallery, H],
   [POIResultCard, html(["numbered"])],
   [POIResultList, html(["numbered", "scrollSelectedIntoView"])],
-  [
-    PasswordInput,
-    html(
-      [
-        "checked",
-        "defaultVisible",
-        "disabled",
-        "formNoValidate",
-        "multiple",
-        "readOnly",
-        "required",
-        "showToggle",
-        "visible",
-      ],
-      ["capture"],
-      ["error"],
-    ),
-  ],
   [RouteOptionCard, categoryTileBooleans],
   [RoutePreviewPanel, H],
   [TourStep, tourStepBooleans],

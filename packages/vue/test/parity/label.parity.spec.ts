@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
 import * as KozmosReact from "@kozmos-ds/react";
-import { KozmosThemeProvider, KozmosLabel } from "../../src/index";
+import { KozmosThemeProvider, KozmosInput, KozmosLabel } from "../../src/index";
 import { renderBoth, type Drawn } from "./render";
 
 /**
  * React's WithInput story draws with its own render, so the stories parity
- * check cannot draw it from args. Its Input is not ported yet: Vue's story
- * draws the bridge's KozmosInput, which mounts React's and cannot be server
- * rendered here, so this draws the story's grid and its Label, `for` the
- * field's id, in both; the Input joins the comparison when it is ported.
- * React's Label is Radix's, Vue's Reka UI's: the same `<label>`.
+ * check cannot draw it from args: here it is, its grid, its Label `for`
+ * the field's id and the native KozmosInput (wave V2), in both. React's
+ * Label is Radix's, Vue's Reka UI's: the same `<label>`.
  */
 const inTheme = (...children: Drawn[]): Drawn => ({
   react: KozmosReact.ThemeProvider,
@@ -47,11 +45,21 @@ describe("KozmosLabel draws what React's Label draws", () => {
             vueProps: { for: "label-email" },
             children: ["Email"],
           },
+          {
+            react: KozmosReact.Input,
+            vue: KozmosInput,
+            props: {
+              id: "label-email",
+              type: "email",
+              placeholder: "you@example.com",
+            },
+          },
         ],
       }),
       { keepIds: ["label-email"] },
     );
     expect(react).toContain('for="label-email"');
+    expect(react).toContain('id="label-email"');
     expect(vue).toBe(react);
   });
 

@@ -92,15 +92,15 @@ import {
   KozmosThemeProvider,
   type KozmosAnalyticsEvent,
 } from "@kozmos-ds/vue";
-import { KozmosCheckbox } from "@kozmos-ds/vue/react-bridge";
+import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge";
 const send = (events: KozmosAnalyticsEvent[]) => console.log(events);
 </script>
 
 <template>
   <KozmosThemeProvider theme="dark" density="compact">
     <KozmosAnalyticsProvider @dispatch="send">
-      <!-- reports checkbox_toggled -->
-      <KozmosCheckbox aria-label="Step-free" />
+      <!-- reports switch_toggled -->
+      <KozmosSwitch aria-label="Step-free" />
       <!-- reports button_clicked -->
       <KozmosButton>Save</KozmosButton>
     </KozmosAnalyticsProvider>

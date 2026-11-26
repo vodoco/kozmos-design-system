@@ -6,7 +6,9 @@ import { $$, mount, until } from "../../test/react-bridge-harness";
 
 // GAP-153 through the React bridge: a bare `mixed` attribute is true, and
 // `@reset-mixed` hears the reset (EmptyState's list, GAP-165, is the native
-// part's now: src/components/EmptyState/EmptyState.spec.ts). Each bridged part is a React root of its own, drawn when it is
+// part's now: src/components/EmptyState/EmptyState.spec.ts; so are Input's
+// and NumberInput's mixed fields, wave V2: test/parity/input.parity.spec.ts
+// and number-input.parity.spec.ts). Each bridged part is a React root of its own, drawn when it is
 // ready: the spec waits for what it reads, never for a fixed time.
 
 const page = (template: string, setup: () => object = () => ({})) =>
@@ -15,38 +17,6 @@ const page = (template: string, setup: () => object = () => ({})) =>
     setup,
     template,
   });
-
-describe("a mixed field through the bridge (GAP-153)", () => {
-  it("a bare mixed attribute shows the mixed label; the reset is heard and takes it back", async () => {
-    const edit = ref<string | null>("Gate B2");
-    mount(
-      page(
-        `<KozmosInput label="Name" :mixed="edit === null" :model-value="edit ?? ''"
-           @update:model-value="edit = $event" @reset-mixed="edit = null" />
-         <KozmosNumberInput label="Height" mixed />`,
-        () => ({ edit }),
-      ),
-    );
-    const [name, height] = await until(() => {
-      const inputs = $$<HTMLInputElement>("input");
-      return inputs.length === 2 && inputs;
-    });
-    expect(name.value).toBe("Gate B2");
-    expect(height.placeholder).toBe("Multiple values");
-    expect(height.hasAttribute("data-mixed")).toBe(true);
-
-    const reset = await until(() =>
-      $$<HTMLButtonElement>("button").find(
-        (button) => button.textContent === "Reset to multiple values",
-      ),
-    );
-    reset.click();
-    await until(
-      () => edit.value === null && name.placeholder === "Multiple values",
-    );
-    expect(name.value).toBe("");
-  });
-});
 
 // Decisions 188 to 190 through the bridge: a bare `mixed` attribute is true
 // on Switch and ToggleButton, a click turns either on and is heard through

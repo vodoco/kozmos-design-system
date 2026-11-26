@@ -1,8 +1,20 @@
 import React from "react";
 import { cn } from "../../utils";
 import { Label } from "../Label";
+import {
+  FIELD_CLASS,
+  FIELD_DESCRIPTION_CLASS,
+  FIELD_HEADING_CLASS,
+  FIELD_OPTIONAL_CLASS,
+  FIELD_REQUIRED_CLASS,
+  FIELD_RESET_CLASS,
+  fieldLabelClass,
+  fieldMessage,
+  fieldMessageClass,
+  type FieldStatus,
+} from "../../recipes/field";
 
-export type FieldStatus = "default" | "error" | "warning" | "success";
+export type { FieldStatus };
 
 /**
  * A field that stands for several values at once (GAP-153): a property of a
@@ -86,16 +98,6 @@ export interface FieldWrapperProps extends React.HTMLAttributes<HTMLDivElement> 
   children: React.ReactNode;
 }
 
-function fieldMessageClass(status: FieldStatus) {
-  return cn(
-    "kozmos-reset kozmos-field-message",
-    status === "error" && "kozmos-field-error",
-    status === "warning" && "kozmos-field-warning",
-    status === "success" && "kozmos-field-success",
-    status === "default" && "kozmos-field-default",
-  );
-}
-
 export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
   (
     {
@@ -128,10 +130,13 @@ export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
   ) => {
     const groupLabelId = React.useId();
     const LabelElement = group ? "span" : Label;
-    const isStringError = typeof error === "string" && error.length > 0;
-    const message = isStringError ? error : helperText;
-    const messageId = isStringError ? errorId : helperId;
-    const messageStatus = isStringError ? "error" : status;
+    const { message, messageId, messageStatus } = fieldMessage({
+      error,
+      errorId,
+      helperText,
+      helperId,
+      status,
+    });
     const showRequiredMark = required && !hideLabel;
     const showOptionalText = Boolean(
       !required && optionalText && label && !hideLabel,
@@ -140,26 +145,23 @@ export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
     return (
       <div
         ref={ref}
-        className={cn("kozmos-reset kozmos-field", className)}
+        className={cn(FIELD_CLASS, className)}
         data-status={messageStatus}
         role={group ? "group" : undefined}
         aria-labelledby={group && label ? groupLabelId : undefined}
         {...props}
       >
         {label && (
-          <div className="kozmos-reset kozmos-field-heading">
+          <div className={FIELD_HEADING_CLASS}>
             <LabelElement
               {...(group ? { id: groupLabelId } : { htmlFor: inputId })}
-              className={cn(
-                "kozmos-field-label",
-                hideLabel && "kozmos-field-hidden",
-              )}
+              className={fieldLabelClass(hideLabel)}
             >
               {label}
               {showRequiredMark && (
                 <span
                   aria-hidden="true"
-                  className="kozmos-reset kozmos-field-required"
+                  className={FIELD_REQUIRED_CLASS}
                   data-slot="required-mark"
                 >
                   *
@@ -167,17 +169,14 @@ export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
               )}
             </LabelElement>
             {(showOptionalText || labelAction) && (
-              <span className="kozmos-reset kozmos-field-optional">
+              <span className={FIELD_OPTIONAL_CLASS}>
                 {labelAction || optionalText}
               </span>
             )}
           </div>
         )}
         {description && (
-          <p
-            id={descriptionId}
-            className="kozmos-reset kozmos-field-message kozmos-field-default"
-          >
+          <p id={descriptionId} className={FIELD_DESCRIPTION_CLASS}>
             {description}
           </p>
         )}
@@ -192,7 +191,7 @@ export const FieldWrapper = React.forwardRef<HTMLDivElement, FieldWrapperProps>(
         {!mixed && onResetMixed ? (
           <button
             type="button"
-            className="kozmos-reset kozmos-field-reset"
+            className={FIELD_RESET_CLASS}
             data-slot="reset-mixed"
             onClick={(event) => {
               // The button goes as the field turns mixed again: focus goes

@@ -90,12 +90,12 @@ describe("KozmosAnalyticsProvider", () => {
     mount(() =>
       providerWithin(
         1000,
-        h(Bridge.KozmosCheckbox, { "aria-label": "Step-free" }),
+        h(Bridge.KozmosSwitch, { "aria-label": "Step-free" }),
         h(KozmosButton, null, () => "Save"),
       ),
     );
-    const checkbox = await until(() => $("[role=checkbox]"));
-    checkbox.click();
+    const control = await until(() => $("[role=switch]"));
+    control.click();
     $("button:not([role])")!.click();
     // The bridged part's event reaches the provider a task after the native
     // one (React's AnalyticsProvider hands it on in a timeout), in the same
@@ -110,8 +110,8 @@ describe("KozmosAnalyticsProvider", () => {
           properties: { variant: "default", emotion: null },
         },
         {
-          component: "Checkbox",
-          eventName: "checkbox_toggled",
+          component: "Switch",
+          eventName: "switch_toggled",
           properties: { checked: true },
         },
       ]),
@@ -126,19 +126,19 @@ describe("KozmosAnalyticsProvider", () => {
         h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
           h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
           h(Bridge.KozmosDialogHeader, null, () => [
-            h(Bridge.KozmosCheckbox, { "aria-label": "Step-free" }),
+            h(Bridge.KozmosSwitch, { "aria-label": "Step-free" }),
           ]),
         ]),
       ),
     );
-    (await until(() => $("[role=checkbox]"))).click();
+    (await until(() => $("[role=switch]"))).click();
     (await until(() => $("[role=radio]"))).click();
     await eventually(() =>
       expect(
         reported()
           .map((event) => event.eventName)
           .sort(),
-      ).toEqual(["checkbox_toggled", "radio_selection_changed"]),
+      ).toEqual(["radio_selection_changed", "switch_toggled"]),
     );
   });
 
@@ -155,12 +155,12 @@ describe("KozmosAnalyticsProvider", () => {
               onDispatch: (events: KozmosAnalyticsEvent[]) =>
                 inner.push(events),
             },
-            () => [h(Bridge.KozmosCheckbox, { "aria-label": "Step-free" })],
+            () => [h(Bridge.KozmosSwitch, { "aria-label": "Step-free" })],
           ),
         ]),
       ),
     );
-    (await until(() => $("[role=checkbox]"))).click();
+    (await until(() => $("[role=switch]"))).click();
     await eventually(() => expect(inner.flat()).toHaveLength(1));
     await settle();
     expect(batches).toEqual([]);

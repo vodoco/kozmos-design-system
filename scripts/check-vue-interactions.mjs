@@ -54,6 +54,33 @@ async function settle(page) {
 }
 
 /** Puts focus at the page's start, so the next Tab is the story's first stop. */
+/**
+ * Puts a focusable stand-in after the story, so a Tab out of its last stop
+ * has somewhere to land. Without one, Chromium hands focus to the page and
+ * Firefox wraps it round to the first stop again, the very element a
+ * "Tab leaves the group" check is watching. Returns a check that focus is
+ * on the stand-in, and takes the stand-in away.
+ */
+async function standInAfterStory(page) {
+  await page.evaluate(() => {
+    const stand = document.createElement("button");
+    stand.type = "button";
+    stand.dataset.kozmosStandIn = "";
+    stand.textContent = "After the story";
+    document.body.append(stand);
+  });
+  return async () => {
+    const there = await page.evaluate(
+      () =>
+        document.activeElement?.hasAttribute("data-kozmos-stand-in") ?? false,
+    );
+    await page.evaluate(() =>
+      document.querySelector("[data-kozmos-stand-in]")?.remove(),
+    );
+    return there;
+  };
+}
+
 async function focusStart(page) {
   await page.evaluate(() => {
     document.activeElement?.blur?.();
@@ -225,6 +252,20 @@ async function axeFinds(page) {
   );
 }
 
+/**
+ * Puts a field's caret after its text, so what is typed is added at its
+ * end: End would go to the end of a wrapped textarea's line. A number
+ * field takes no selection; its caret is at its end already.
+ */
+const caretAtEnd = (field) =>
+  field.evaluate((el) => {
+    try {
+      el.setSelectionRange(el.value.length, el.value.length);
+    } catch {
+      // A number field has no selection to set.
+    }
+  });
+
 /** The fields' values, in order. */
 const values = (page) =>
   controls(page, "input").evaluateAll((inputs) => inputs.map((i) => i.value));
@@ -294,15 +335,16 @@ const INTERACTIONS = {
   /**
    * Every link, button and field, Tab after Tab in reading order: each link
    * followed by Enter and by a click (heard, not followed), each button
-   * pressed and hovered, each field typed into. A story's controls are
-   * reached in the order they are drawn, whatever kind each is.
+   * pressed and hovered, each field typed into, a read-only one holding its
+   * value. A story's controls are reached in the order they are drawn,
+   * whatever kind each is.
    */
   async "controls-in-order"(page) {
     await stayOnPage(page);
     // One selector, so every kind is looked for inside the story's surface.
     const all = await controls(
       page,
-      ":is(a[href], button:not([disabled]), input:not([disabled]))",
+      ":is(a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]))",
     ).all();
     assert(all.length > 0, "the story draws a link, a button or a field");
     await focusStart(page);
@@ -325,7 +367,18 @@ const INTERACTIONS = {
       } else if (tag === "button") {
         await pressButton(page, control, { tabbed: true });
         done.button++;
+      } else if (await control.evaluate((el) => el.readOnly)) {
+        const before = await control.inputValue();
+        await page.keyboard.type("4");
+        await settle(page);
+        assert.equal(
+          await control.inputValue(),
+          before,
+          `${name} is read only, and holds its value`,
+        );
+        done.field++;
       } else {
+        await caretAtEnd(control);
         await page.keyboard.type("4");
         await settle(page);
         assert.match(
@@ -373,6 +426,118 @@ const INTERACTIONS = {
     await settle(page);
     assert.equal(await chosen(), "Level 3", "a click chooses an option");
     return "Tab to the chosen option, ArrowDown to the next, a click on the last, each held by v-model";
+  },
+
+  /**
+   * The buttons at fields' ends (GAP-154, GAP-212): Enter on each fires one
+   * click, and a toggle's pressed state flips; then each field is typed
+   * into, a read-only one holding its value. An edit the story answers by
+   * making its field editable (EditAction's Map Style) is seen so: the
+   * field takes what is typed.
+   */
+  async "field-actions"(page) {
+    const buttons = await controls(page, "button.kozmos-input-action").all();
+    assert(buttons.length > 0, "the story draws a button at a field's end");
+    for (const button of buttons) {
+      const name = await button.evaluate((el) =>
+        window.__kozmosVue.describe(el),
+      );
+      const pressed = await button.getAttribute("aria-pressed");
+      await button.focus();
+      await settle(page);
+      const before = await clicks(page);
+      await page.keyboard.press("Enter");
+      await settle(page);
+      assert.equal(
+        (await clicks(page)) - before,
+        1,
+        `Enter on ${name} fires one click`,
+      );
+      if (pressed !== null)
+        assert.equal(
+          await button.getAttribute("aria-pressed"),
+          pressed === "true" ? "false" : "true",
+          `Enter on ${name} flips its pressed state`,
+        );
+    }
+    let editable = 0;
+    for (const field of await controls(page, "input").all()) {
+      const name = await field.evaluate((el) =>
+        window.__kozmosVue.describe(el),
+      );
+      const readOnly = await field.evaluate((el) => el.readOnly);
+      const before = await field.inputValue();
+      await field.focus();
+      await caretAtEnd(field);
+      await page.keyboard.type("4");
+      await settle(page);
+      if (readOnly)
+        assert.equal(
+          await field.inputValue(),
+          before,
+          `${name} is read only, and holds its value`,
+        );
+      else {
+        assert.equal(
+          await field.inputValue(),
+          `${before}4`,
+          `${name} holds what was typed`,
+        );
+        editable++;
+      }
+    }
+    return `${buttons.length} field-end button(s), each by Enter, then ${editable} editable field(s) typed into`;
+  },
+
+  /**
+   * A mixed field (GAP-153): it shows "Multiple values" and none of its
+   * own; typed into, it holds the number or text typed, is no longer mixed
+   * and offers its reset; the reset takes it back to mixed, empty, with the
+   * focus on the field, not lost to the page.
+   */
+  async "mixed-field"(page) {
+    const field = controls(page, "input[data-mixed]").first();
+    assert.equal(
+      (await controls(page, "input[data-mixed]").count()) > 0,
+      true,
+      "the story draws a mixed field",
+    );
+    const id = await field.getAttribute("id");
+    const own = controls(page, `input[id="${id}"]`);
+    assert.equal(
+      await own.getAttribute("placeholder"),
+      "Multiple values",
+      "the mixed field shows Multiple values",
+    );
+    assert.equal(await own.inputValue(), "", "the mixed field shows no value");
+    await own.focus();
+    await page.keyboard.type("4");
+    await settle(page);
+    assert.equal(await own.inputValue(), "4", "the field holds what was typed");
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      null,
+      "an edited field is no longer mixed",
+    );
+    const reset = own
+      .locator("xpath=ancestor::*[contains(@class, 'kozmos-field')][1]")
+      .locator("[data-slot=reset-mixed]");
+    assert.equal(await reset.count(), 1, "the edited field offers its reset");
+    await reset.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      "",
+      "the reset takes the field back to mixed",
+    );
+    assert.equal(await own.inputValue(), "", "a mixed field shows no value");
+    assert.equal(
+      await own.evaluate((el) => el === document.activeElement),
+      true,
+      `the reset hands the focus to its field (focus is on ${await focused(page)})`,
+    );
+    return "typed into the mixed field, which took the edit and offered its reset; the reset took it back, the focus on the field";
   },
 
   /** Typing into the search field, its value held in Vue through the bridge. */
@@ -678,6 +843,193 @@ const INTERACTIONS = {
       `Tab reaches the lit target (focus is on ${await focused(page)})`,
     );
     return "the target takes a click through the cut-out and Tab; the backdrop takes the rest";
+  },
+
+  /**
+   * One checkbox that owns its state: Tab reaches it and draws a focus;
+   * Space ticks it and a click unticks it; Enter does neither, as Radix's;
+   * a click on its label ticks it again.
+   */
+  async checkbox(page) {
+    const box = controls(page, "[role=checkbox]");
+    assert.equal(await box.count(), 1, "the story draws one checkbox");
+    const checked = () => box.getAttribute("aria-checked");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await box.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the checkbox (focus is on ${await focused(page)})`,
+    );
+    const focusLook = await lookOf(box);
+    await box.evaluate((el) => el.blur());
+    await settle(page);
+    assert(
+      !same(focusLook, await lookOf(box)),
+      "the checkbox draws no focus: its look is the same focused from the keyboard and at rest",
+    );
+    await box.focus();
+    const start = await checked();
+    const flipped = start === "true" ? "false" : "true";
+    await page.keyboard.press("Space");
+    await settle(page);
+    assert.equal(await checked(), flipped, "Space toggles the checkbox");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await checked(), flipped, "Enter does not toggle it");
+    await box.click();
+    await settle(page);
+    assert.equal(await checked(), start, "a click toggles it back");
+    const label = controls(page, "label");
+    if (await label.count()) {
+      await label.first().click();
+      await settle(page);
+      assert.equal(await checked(), flipped, "a click on its label toggles it");
+    }
+    return "Tab to the box, Space and a click toggle it, Enter does not, a click on its label toggles it";
+  },
+
+  /**
+   * A checkbox its story holds checked: Tab reaches it, and Space and a
+   * click ask for a change its owner does not make, so it stays checked.
+   */
+  async "checkbox-held"(page) {
+    const box = controls(page, "[role=checkbox]");
+    assert.equal(await box.count(), 1, "the story draws one checkbox");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await box.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the checkbox (focus is on ${await focused(page)})`,
+    );
+    const held = await box.getAttribute("aria-checked");
+    await page.keyboard.press("Space");
+    await box.click();
+    await settle(page);
+    assert.equal(
+      await box.getAttribute("aria-checked"),
+      held,
+      "a held checkbox stays as its owner holds it",
+    );
+    return `Tab to the box; Space and a click leave it ${held}, as its owner holds it`;
+  },
+
+  /** A disabled checkbox: no stop for Tab, and a click leaves it as it is. */
+  async "checkbox-disabled"(page) {
+    const box = controls(page, "[role=checkbox]");
+    assert.equal(await box.isDisabled(), true, "the checkbox is disabled");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await box.evaluate((el) => el === document.activeElement),
+      false,
+      "Tab passes the disabled checkbox",
+    );
+    const before = await box.getAttribute("aria-checked");
+    await box.click({ force: true });
+    await settle(page);
+    assert.equal(
+      await box.getAttribute("aria-checked"),
+      before,
+      "a click leaves the disabled checkbox as it is",
+    );
+    return "unavailable to Tab, and a click leaves it as it is";
+  },
+
+  /**
+   * A star rating its story holds at a value: Tab reaches the chosen star,
+   * the group's one stop; the arrows, Home and End move focus along the
+   * scale, in the writing direction, while the value stays its owner's.
+   */
+  async "rating-held"(page) {
+    const radios = controls(page, "[role=radio]");
+    const count = await radios.count();
+    assert(count > 1, "the story draws a scale");
+    const chosen = await radios.evaluateAll((all) =>
+      all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+    );
+    assert(chosen >= 0, "the story holds a value");
+    const at = () =>
+      radios.evaluateAll((all) => all.indexOf(document.activeElement));
+    const leftFor = await standInAfterStory(page);
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await at(),
+      chosen,
+      `Tab reaches the chosen option, the group's one stop (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(await at(), -1, "a second Tab leaves the group");
+    assert.equal(
+      await leftFor(),
+      true,
+      `a second Tab reaches what follows the group (focus is on ${await focused(page)})`,
+    );
+    await radios.nth(chosen).focus();
+    for (const [key, to] of [
+      ["ArrowRight", chosen + 1],
+      ["ArrowLeft", chosen],
+      ["End", count - 1],
+      ["Home", 0],
+      ["ArrowLeft", 0],
+    ]) {
+      await page.keyboard.press(key);
+      await settle(page);
+      assert.equal(await at(), to, `${key} moves focus to option ${to + 1}`);
+    }
+    assert.equal(
+      await radios.nth(chosen).getAttribute("aria-checked"),
+      "true",
+      "the value stays its owner's",
+    );
+    return `Tab to option ${chosen + 1}, the one stop; the arrows, Home and End move along the scale; the value stays held`;
+  },
+
+  /**
+   * The thumbs, held by v-model: Tab reaches the first, a click chooses up,
+   * a second click on it clears the answer, and ArrowRight chooses as it
+   * moves; the story's words follow the value.
+   */
+  async "rating-thumbs"(page) {
+    const radios = controls(page, "[role=radio]");
+    const words = () => controls(page, "p").first().textContent();
+    assert.equal(await radios.count(), 2, "the scale is a choice of two");
+    assert.match(await words(), /value: 0/, "it starts unanswered");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await radios.nth(0).evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the first thumb (focus is on ${await focused(page)})`,
+    );
+    await radios.nth(1).click();
+    await settle(page);
+    assert.equal(
+      await radios.nth(1).getAttribute("aria-checked"),
+      "true",
+      "a click chooses the thumb",
+    );
+    assert.match(await words(), /value: 2 \(up\)/, "v-model holds up");
+    await radios.nth(1).click();
+    await settle(page);
+    assert.match(await words(), /value: 0/, "a second click clears it");
+    await radios.nth(0).focus();
+    await page.keyboard.press("ArrowRight");
+    await settle(page);
+    assert.match(
+      await words(),
+      /value: 2 \(up\)/,
+      "ArrowRight chooses as it moves",
+    );
+    return "Tab to the first thumb, a click chooses up and a second clears it, ArrowRight chooses as it moves, held by v-model";
   },
 };
 

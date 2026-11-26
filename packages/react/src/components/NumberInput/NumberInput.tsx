@@ -4,6 +4,23 @@ import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import { mixedFieldValue, useMixedField } from "../FieldWrapper/mixedValue";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
+import { fieldDescribedBy } from "../../recipes/field";
+import { FIELD_ACTION_ICON_CLASS } from "../../recipes/input";
+import {
+  NUMBER_CONTROL_CLASS,
+  NUMBER_DECREMENT_CLASS,
+  NUMBER_FIELD_CLASS,
+  NUMBER_INCREMENT_CLASS,
+  NUMBER_INPUT_CLASS,
+  NUMBER_STEP_TONE_CLASSES,
+  NUMBER_UNIT_CLASS,
+  NUMBER_UNIT_FIELD_CLASS,
+  NUMBER_WITH_STEPPERS_CLASS,
+  NUMBER_WITH_UNIT_CLASS,
+  numberUnitWidth,
+  numericValueFromInput,
+  stepValue,
+} from "../../recipes/number-input";
 
 export interface NumberInputProps
   extends
@@ -28,76 +45,6 @@ export interface NumberInputProps
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
-
-/**
- * The unit's width in the font's "0" widths, before it is measured: a wide
- * or fullwidth character (East Asian Width W or F, "平方米", "ｍ") counts two,
- * any other one. The common ranges are enough for a reservation the measured
- * width replaces on the first paint.
- */
-function unitWidthInCh(unit: string) {
-  let width = 0;
-  for (const character of unit) {
-    const code = character.codePointAt(0) ?? 0;
-    const wide =
-      (code >= 0x1100 && code <= 0x115f) ||
-      (code >= 0x2e80 && code <= 0xa4cf && code !== 0x303f) ||
-      (code >= 0xac00 && code <= 0xd7a3) ||
-      (code >= 0xf900 && code <= 0xfaff) ||
-      (code >= 0xfe30 && code <= 0xfe4f) ||
-      (code >= 0xff00 && code <= 0xff60) ||
-      (code >= 0xffe0 && code <= 0xffe6) ||
-      (code >= 0x1f300 && code <= 0x1f64f) ||
-      (code >= 0x20000 && code <= 0x3fffd);
-    width += wide ? 2 : 1;
-  }
-  return width;
-}
-
-function numericValueFromInput(input: HTMLInputElement) {
-  if (input.value.trim() === "") return null;
-  // A mixed field is a text field (below): its typed number is read here.
-  if (input.type !== "number") {
-    const typed = Number(input.value.trim().replace(",", "."));
-    return Number.isFinite(typed) ? typed : null;
-  }
-  return Number.isNaN(input.valueAsNumber) ? null : input.valueAsNumber;
-}
-
-/** The number of decimals a number is written with: 2 for 1.25. */
-const decimalsOf = (value: number) =>
-  Number.isFinite(value) ? (String(value).split(".")[1]?.length ?? 0) : 0;
-
-function stepValue(
-  input: HTMLInputElement,
-  direction: "decrement" | "increment",
-) {
-  // `step="any"` takes any decimal, and the input's stepUp() and stepDown()
-  // throw for it, so the steppers step by 1 themselves (GAP-257), within
-  // `min` and `max`, keeping the value's own decimals: 2.5 goes to 3.5.
-  if (input.step.trim().toLowerCase() === "any") {
-    const current = numericValueFromInput(input) ?? 0;
-    let next = current + (direction === "increment" ? 1 : -1);
-    const min = input.min === "" ? NaN : Number(input.min);
-    const max = input.max === "" ? NaN : Number(input.max);
-    if (Number.isFinite(max)) next = Math.min(next, max);
-    if (Number.isFinite(min)) next = Math.max(next, min);
-    next = Number(
-      next.toFixed(
-        Math.min(20, Math.max(decimalsOf(current), decimalsOf(next))),
-      ),
-    );
-    input.value = String(next);
-    return numericValueFromInput(input);
-  }
-  if (direction === "increment") {
-    input.stepUp();
-  } else {
-    input.stepDown();
-  }
-
-  return numericValueFromInput(input);
-}
 
 export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
   (
@@ -149,12 +96,12 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const hasError = !!error;
     const resolvedStatus: InputStatus = hasError ? "error" : status;
     const isInvalid = resolvedStatus === "error";
-    const describedBy =
-      hasError && typeof error === "string"
-        ? errorId
-        : helperText
-          ? helperId
-          : undefined;
+    const describedBy = fieldDescribedBy({
+      error,
+      errorId,
+      helperText,
+      helperId,
+    });
     // Mixed, a step would start from nothing and write that number over
     // every selected feature's own: the steppers wait for a typed edit.
     // What the visitor types into a mixed field, kept as typed until the
@@ -171,12 +118,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const asText = mixed || draft !== null;
     const stepperDisabled = disabled || readOnly || asText;
     const mixedField = useMixedField(mixed, props.value);
-    const stepperToneClass = {
-      default: "",
-      error: "kozmos-number-step-error",
-      warning: "kozmos-number-step-warning",
-      success: "kozmos-number-step-success",
-    }[resolvedStatus];
+    const stepperToneClass = NUMBER_STEP_TONE_CLASSES[resolvedStatus];
 
     const setRefs = React.useCallback(
       (node: HTMLInputElement | null) => {
@@ -249,22 +191,16 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         }
         resetMixedLabel={resetMixedLabel}
       >
-        <div className="kozmos-reset kozmos-number-field">
+        <div className={NUMBER_FIELD_CLASS}>
           {showSteppers && (
             <button
               type="button"
               aria-label="Decrease value"
-              className={cn(
-                "kozmos-reset kozmos-field-action kozmos-number-step kozmos-number-decrement",
-                stepperToneClass,
-              )}
+              className={cn(NUMBER_DECREMENT_CLASS, stepperToneClass)}
               disabled={stepperDisabled}
               onClick={() => handleStep("decrement")}
             >
-              <Minus
-                className="kozmos-reset kozmos-field-action-icon"
-                aria-hidden="true"
-              />
+              <Minus className={FIELD_ACTION_ICON_CLASS} aria-hidden="true" />
             </button>
           )}
           {/* One wrapper, with a unit or without, so the input keeps its
@@ -272,11 +208,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
               draw a new input, losing the focus and a typed value). Without
               a unit it draws no box of its own. */}
           <div
-            className={
-              hasUnit
-                ? "kozmos-reset kozmos-number-unit-field"
-                : "kozmos-number-control"
-            }
+            className={hasUnit ? NUMBER_UNIT_FIELD_CLASS : NUMBER_CONTROL_CLASS}
             style={
               hasUnit
                 ? ({
@@ -284,10 +216,10 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
                     // paint), the room is the unit's length in the font's
                     // "0" widths, a wide character two, so a long unit is not run under; then its
                     // measured width.
-                    "--kozmos-number-unit-width":
-                      unitWidth !== null
-                        ? `${unitWidth}px`
-                        : `${unitWidthInCh(unit ?? "")}ch`,
+                    "--kozmos-number-unit-width": numberUnitWidth(
+                      unit ?? "",
+                      unitWidth,
+                    ),
                   } as React.CSSProperties)
                 : undefined
             }
@@ -304,10 +236,9 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
               id={inputId}
               className={cn(
                 inputVariants({ status: resolvedStatus }),
-                "kozmos-number-input",
-                showSteppers && "kozmos-number-with-steppers",
-                hasUnit &&
-                  "kozmos-number-with-unit pe-[calc(var(--kozmos-number-unit-width,1rem)_+_1rem_-_1px)]",
+                NUMBER_INPUT_CLASS,
+                showSteppers && NUMBER_WITH_STEPPERS_CLASS,
+                hasUnit && NUMBER_WITH_UNIT_CLASS,
                 className,
               )}
               ref={setRefs}
@@ -337,7 +268,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
                 <span
                   ref={unitRef}
                   aria-hidden="true"
-                  className="kozmos-reset kozmos-number-unit"
+                  className={NUMBER_UNIT_CLASS}
                   data-disabled={disabled ? "" : undefined}
                 >
                   {unit}
@@ -352,17 +283,11 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             <button
               type="button"
               aria-label="Increase value"
-              className={cn(
-                "kozmos-reset kozmos-field-action kozmos-number-step kozmos-number-increment",
-                stepperToneClass,
-              )}
+              className={cn(NUMBER_INCREMENT_CLASS, stepperToneClass)}
               disabled={stepperDisabled}
               onClick={() => handleStep("increment")}
             >
-              <Plus
-                className="kozmos-reset kozmos-field-action-icon"
-                aria-hidden="true"
-              />
+              <Plus className={FIELD_ACTION_ICON_CLASS} aria-hidden="true" />
             </button>
           )}
         </div>

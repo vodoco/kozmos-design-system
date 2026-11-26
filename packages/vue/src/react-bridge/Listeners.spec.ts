@@ -464,7 +464,7 @@ describe("routeListener", () => {
 });
 
 // --------------------------------------------------------------------------
-// Each listener on a bridged field (KozmosInput takes every DOM event),
+// Each listener on a bridged field (KozmosSearch takes every DOM event),
 // fired once by what fires it.
 // --------------------------------------------------------------------------
 
@@ -479,7 +479,7 @@ const fire = {
 };
 
 /**
- * Each listener, as a template writes it on KozmosInput, what fires it on
+ * Each listener, as a template writes it on KozmosSearch, what fires it on
  * React's `<input>`, and how many times it must run.
  */
 const LISTENERS: [string, (input: HTMLElement) => void, number][] = [
@@ -595,7 +595,7 @@ describe("each listener on a bridged field runs once", () => {
     for (const [listener, fires, times] of LISTENERS) {
       const spy = vi.fn();
       mount(
-        page(`<KozmosInput aria-label="Field" ${listener}="spy" />`, { spy }),
+        page(`<KozmosSearch aria-label="Field" ${listener}="spy" />`, { spy }),
       );
       const input = await until(() => $<HTMLInputElement>("input"));
       await settle();
@@ -611,7 +611,7 @@ describe("each listener on a bridged field runs once", () => {
     const enter = vi.fn();
     mount(
       page(
-        `<KozmosInput aria-label="Field" @keydown="any" @keydown.enter="enter" />`,
+        `<KozmosSearch aria-label="Field" @keydown="any" @keydown.enter="enter" />`,
         { any, enter },
       ),
     );
@@ -629,7 +629,7 @@ describe("each listener on a bridged field runs once", () => {
     const outside = vi.fn();
     const host = mount(
       page(
-        `<KozmosInput aria-label="Field" @keydown.enter.stop.prevent="enter" @click.stop="clicked" />`,
+        `<KozmosSearch aria-label="Field" @keydown.enter.stop.prevent="enter" @click.stop="clicked" />`,
         { enter, clicked },
       ),
     );
@@ -658,7 +658,9 @@ describe("each listener on a bridged field runs once", () => {
 
   it("one event dispatched twice runs the listener twice, as a native listener does", async () => {
     const click = vi.fn();
-    mount(page(`<KozmosInput aria-label="Field" @click="click" />`, { click }));
+    mount(
+      page(`<KozmosSearch aria-label="Field" @click="click" />`, { click }),
+    );
     const input = await until(() => $<HTMLInputElement>("input"));
     await settle();
     const event = new MouseEvent("click", { bubbles: true });
@@ -673,7 +675,7 @@ describe("each listener on a bridged field runs once", () => {
     const b = vi.fn();
     const which = ref<"none" | "a" | "b" | "aOnce">("none");
     mount(() =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         "aria-label": "Field",
         ...(which.value === "a" && { onClick: a }),
         ...(which.value === "b" && { onClick: b }),
@@ -763,7 +765,6 @@ const first = (selector: string) => (drawn: HTMLElement) =>
  * here), else the first element it draws.
  */
 const IN_PLACE: Record<string, InPlace> = {
-  KozmosCounter: { slot: true },
   KozmosSlider: {
     props: { "aria-label": "Volume" },
     click: first("span[data-orientation]"),
@@ -799,11 +800,6 @@ const IN_PLACE: Record<string, InPlace> = {
   // Its onClick is its button's; its other props go on the card.
   KozmosPOICard: { props: { title: "Gate 4" }, click: first("button") },
   KozmosBottomSheet: { slot: true },
-  KozmosOTPInput: {
-    props: { length: 4 },
-    click: (drawn) => drawn.querySelector("input")?.parentElement,
-  },
-  KozmosRating: { props: { label: "Your visit" } },
   KozmosFileUpload: {
     props: { label: "Floor plan" },
     click: (drawn) => drawn.querySelector("input[type=file]")?.parentElement,
@@ -818,7 +814,6 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Mode", items: [{ value: "walk", label: "Walk" }] },
     click: first("[role=group]"),
   },
-  KozmosIconButton: { slot: true },
   KozmosTabs: { slot: true },
   KozmosDialog: { slot: true },
   KozmosMapOverlay: { slot: true },
@@ -826,7 +821,6 @@ const IN_PLACE: Record<string, InPlace> = {
   // Its island, inside the theme scope it draws round it.
   KozmosDynamicIsland: { click: first("[data-kozmos-root] > *") },
   KozmosFeedbackCard: {},
-  KozmosFieldWrapper: { slot: true },
   KozmosMapControlsGroup: {},
   KozmosNavigationAnnouncer: { props: { message: "Turn left" } },
   KozmosRadioGroup: { slot: true },
@@ -843,12 +837,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSaveLocationCard: {},
   KozmosScrollArea: { slot: true },
   KozmosUserLocationMarker: {},
-  KozmosCheckbox: {
-    props: { "aria-label": "Accept" },
-    click: first("[role=checkbox]"),
-  },
-  KozmosInput: { props: { "aria-label": "Name" }, click: first("input") },
-  KozmosTextarea: { props: { "aria-label": "Note" }, click: first("textarea") },
   KozmosSwitch: {
     props: { "aria-label": "Wi-Fi" },
     click: first("[role=switch]"),
@@ -922,14 +910,6 @@ const IN_PLACE: Record<string, InPlace> = {
   },
   KozmosChipInput: {
     props: { label: "Keywords" },
-    click: first("input"),
-  },
-  KozmosNumberInput: {
-    props: { "aria-label": "Guests" },
-    click: first("input"),
-  },
-  KozmosPasswordInput: {
-    props: { "aria-label": "Password" },
     click: first("input"),
   },
   // Every root is inside a TooltipProvider of its own (GAP-230), so a
@@ -1135,7 +1115,6 @@ describe("the part decides what runs its listener", () => {
   });
 
   it.each([
-    ["KozmosIconButton", { "aria-label": "Go" }, "button"],
     ["KozmosFloatingActionButton", { "aria-label": "Go" }, "button"],
     ["KozmosToggleButton", { "aria-label": "Bold" }, "button"],
     ["KozmosChip", {}, "button"],
@@ -1311,7 +1290,7 @@ describe("what a part draws in a portal", () => {
 // --------------------------------------------------------------------------
 
 describe("a wrapper inside another", () => {
-  it("DialogHeader > IconButton: each @click runs once, and .stop on the inner silences the outer", async () => {
+  it("DialogHeader > ToggleButton: each @click runs once, and .stop on the inner silences the outer", async () => {
     for (const [modifier, outerTimes] of [
       ["", 1],
       [".stop", 0],
@@ -1320,7 +1299,7 @@ describe("a wrapper inside another", () => {
       const inner = vi.fn();
       mount(
         page(
-          `<KozmosDialogHeader @click="outer"><KozmosIconButton aria-label="Go" @click${modifier}="inner">x</KozmosIconButton></KozmosDialogHeader>`,
+          `<KozmosDialogHeader @click="outer"><KozmosToggleButton aria-label="Go" @click${modifier}="inner">x</KozmosToggleButton></KozmosDialogHeader>`,
           { outer, inner },
         ),
       );
@@ -1355,7 +1334,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
     const seen: Record<string, Event> = {};
     const listen = (name: string) => (event: Event) => (seen[name] = event);
     mount(() =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         "aria-label": "Field",
         modelValue: "",
         "onUpdate:modelValue": noop,
@@ -1407,7 +1386,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
   it("@mouseenter and @mouseleave: outside, the label, the input, the label, outside", async () => {
     const seen: string[] = [];
     mount(() =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         label: "Name",
         onMouseenter: (event: Event) => seen.push(`enter(${event.type})`),
         onMouseleave: (event: Event) => seen.push(`leave(${event.type})`),
@@ -1443,7 +1422,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
     const self = vi.fn();
     mount(
       page(
-        `<KozmosInput aria-label="Field" @click.capture="capture" @click.capture.self="self" />`,
+        `<KozmosSearch aria-label="Field" @click.capture="capture" @click.capture.self="self" />`,
         { capture: (event: Event) => (current = event.currentTarget), self },
       ),
     );
@@ -1462,7 +1441,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
       const listen = (heard: Event) => seen.push(heard);
       mount(
         page(
-          `<KozmosInput aria-label="Field" @${event}="listen" @${event}.capture="listen" />`,
+          `<KozmosSearch aria-label="Field" @${event}="listen" @${event}.capture="listen" />`,
           { listen },
         ),
       );
@@ -1573,11 +1552,11 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
   it(".prevent is React's too: a Radix part sees the event prevented, and does nothing", async () => {
     const clicked = vi.fn();
     mount(
-      page(`<KozmosCheckbox aria-label="Accept" @click.prevent="clicked" />`, {
+      page(`<KozmosSwitch aria-label="Wi-Fi" @click.prevent="clicked" />`, {
         clicked,
       }),
     );
-    const box = await until(() => $<HTMLElement>("[role=checkbox]"));
+    const box = await until(() => $<HTMLElement>("[role=switch]"));
     box.click();
     await settle();
     expect(clicked).toHaveBeenCalledTimes(1);
@@ -1587,7 +1566,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
   it(".self is the element the part gives the listener to, and currentTarget is restored after", async () => {
     const self = vi.fn();
     mount(
-      page(`<KozmosInput aria-label="Field" @click.self="self" />`, { self }),
+      page(`<KozmosSearch aria-label="Field" @click.self="self" />`, { self }),
     );
     const input = await until(() => $<HTMLInputElement>("input"));
     await settle();
@@ -1715,7 +1694,7 @@ describe("a React part's callbacks", () => {
 // --------------------------------------------------------------------------
 
 describe("the playground's field", () => {
-  it('<KozmosInput v-model="newTask" @keydown.enter="addTask">: Enter adds the task typed, once', async () => {
+  it('<KozmosSearch v-model="newTask" @keydown.enter="addTask">: Enter adds the task typed, once', async () => {
     const newTask = ref("");
     const tasks = ref<string[]>([]);
     const addTask = vi.fn(() => {
@@ -1726,7 +1705,7 @@ describe("the playground's field", () => {
     });
     mount(
       page(
-        `<KozmosInput v-model="newTask" placeholder="What needs to be done?" @keydown.enter="addTask" />`,
+        `<KozmosSearch v-model="newTask" placeholder="What needs to be done?" @keydown.enter="addTask" />`,
         { newTask, addTask },
       ),
     );

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { defineComponent, h, type Component } from "vue";
+import { h, type Component } from "vue";
 import React from "react";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as Bridge from "./index";
@@ -13,7 +13,6 @@ import {
 } from "../../scripts/bridge-takes.mjs";
 import {
   $,
-  $$,
   bridgedParts,
   eventually,
   mount,
@@ -27,6 +26,8 @@ import {
 // is React's `defaultValue` and `helperText`. Before, the bridge passed each
 // attribute on as it was named, and React wrote both onto the DOM as
 // attributes: the cells stayed empty and the helper text was not drawn.
+// OTPInput is a native Vue part now (wave V2): test/parity/otpinput.parity.spec.ts
+// holds its kebab-case props.
 // `aria-*` and `data-*`, whose React names are kebab-case, pass as they are.
 // React's types name no other prop in kebab-case (scripts/bridge-takes.mjs
 // fails on one), so the bridge needs no list of names.
@@ -153,11 +154,15 @@ describe("every prop React's types name reaches React by its name, in either cas
 
 describe("the names the bridge keeps", () => {
   it("passes aria-* and data-* as they are", async () => {
-    const given = await givenTo(Bridge.KozmosCounter, KozmosReact.Counter, {
-      "aria-label": "Two new",
-      "data-test-id": "counter",
-      "aria-describedby": "note",
-    });
+    const given = await givenTo(
+      Bridge.KozmosToggleButton,
+      KozmosReact.ToggleButton,
+      {
+        "aria-label": "Two new",
+        "data-test-id": "counter",
+        "aria-describedby": "note",
+      },
+    );
     expect(given).toMatchObject({
       "aria-label": "Two new",
       "data-test-id": "counter",
@@ -216,25 +221,4 @@ export declare const Camel: (props: { helperText?: string; "aria-label"?: string
       "helperText",
     ]);
   }, 60_000);
-});
-
-describe("OTPInput, as GAP-238 found it", () => {
-  it("draws default-value and helper-text, and leaves neither on the DOM", async () => {
-    mount(
-      defineComponent({
-        components: { KozmosOTPInput: Bridge.KozmosOTPInput },
-        template: `<KozmosOTPInput aria-label="Code" default-value="1234" helper-text="Sent by SMS" />`,
-      }),
-    );
-    await eventually(() =>
-      expect(
-        $$<HTMLInputElement>("input")
-          .map((cell) => cell.value)
-          .join(""),
-      ).toBe("1234"),
-    );
-    expect(document.body.textContent).toContain("Sent by SMS");
-    expect($("[default-value]")).toBeNull();
-    expect($("[helper-text]")).toBeNull();
-  });
 });

@@ -242,10 +242,14 @@ const files = {
   reactTabsFigma: "packages/react/src/components/Tabs/Tabs.figma.tsx",
   reactStepperFigma: "packages/react/src/components/Stepper/Stepper.figma.tsx",
   reactCheckbox: "packages/react/src/components/Checkbox/Checkbox.tsx",
+  // Checkbox's recipe, shared with Vue's KozmosCheckbox (wave V2).
+  reactCheckboxRecipe: "packages/react/src/recipes/checkbox.ts",
   reactRadio: "packages/react/src/components/Radio/Radio.tsx",
   reactSwitch: "packages/react/src/components/Switch/Switch.tsx",
   reactInput: "packages/react/src/components/Input/Input.tsx",
-  reactInputVariants: "packages/react/src/components/Input/inputVariants.ts",
+  // Input's recipe, shared with Vue's KozmosInput and every field drawn on
+  // it (wave V2, the fields batch).
+  reactInputVariants: "packages/react/src/recipes/input.ts",
   reactInputFigma: "packages/react/src/components/Input/Input.figma.tsx",
   reactCombobox: "packages/react/src/components/Combobox/Combobox.tsx",
   reactComboboxFigma:
@@ -269,6 +273,11 @@ const files = {
   reactPasswordInputFigma:
     "packages/react/src/components/PasswordInput/PasswordInput.figma.tsx",
   reactNumberInput: "packages/react/src/components/NumberInput/NumberInput.tsx",
+  // NumberInput's, PasswordInput's and OTPInput's recipes, shared with their
+  // Vue ports (wave V2, the fields batch).
+  reactNumberInputRecipe: "packages/react/src/recipes/number-input.ts",
+  reactPasswordInputRecipe: "packages/react/src/recipes/password-input.ts",
+  reactOTPInputRecipe: "packages/react/src/recipes/otp-input.ts",
   reactNumberInputFigma:
     "packages/react/src/components/NumberInput/NumberInput.figma.tsx",
   reactOTPInput: "packages/react/src/components/OTPInput/OTPInput.tsx",
@@ -1001,20 +1010,20 @@ assertContains(
   "React Badge uses 4px content gap",
 );
 assertContains(
-  files.reactCheckbox,
-  source.reactCheckbox,
+  files.reactCheckboxRecipe,
+  source.reactCheckboxRecipe,
   "min-h-11",
   "React Checkbox 44px row target",
 );
 assertContains(
-  files.reactCheckbox,
-  source.reactCheckbox,
+  files.reactCheckboxRecipe,
+  source.reactCheckboxRecipe,
   "h-5 w-5",
   "React Checkbox 20px visual control",
 );
 assertContains(
-  files.reactCheckbox,
-  source.reactCheckbox,
+  files.reactCheckboxRecipe,
+  source.reactCheckboxRecipe,
   "border-input",
   "React Checkbox neutral unchecked border",
 );
@@ -2224,12 +2233,6 @@ assertNotContains(
   "KozmosButton = createVueWrapper",
   "React Button wrapped in the Vue bridge as well",
 );
-assertContains(
-  files.vueBridge,
-  source.vueBridge,
-  "KozmosCounter = createVueWrapper(ReactCounter)",
-  "Vue Counter wraps React Counter",
-);
 // Badge and Separator are Vue ports (wave V0b, packages/vue/PORTING.md).
 // Their bridge entries leave with GAP-230's bridge work: until then
 // packages/vue/test/ports.ts names them in LEAVING_BRIDGE, and
@@ -2300,6 +2303,19 @@ for (const [part, module] of [
   ["KozmosPageHeader", "PageHeader/PageHeader"],
   ["KozmosLink", "Link/Link"],
   ["KozmosEmptyState", "EmptyState/EmptyState"],
+  // Counter, IconButton, Checkbox and Rating (wave V2, controls).
+  ["KozmosCounter", "Counter/Counter"],
+  ["KozmosIconButton", "IconButton/IconButton"],
+  ["KozmosCheckbox", "Checkbox/Checkbox"],
+  ["KozmosRating", "Rating/Rating"],
+  // FieldWrapper, Input, Textarea, PasswordInput, NumberInput and OTPInput
+  // (wave V2, the fields batch).
+  ["KozmosFieldWrapper", "FieldWrapper/FieldWrapper"],
+  ["KozmosInput", "Input/Input"],
+  ["KozmosTextarea", "Textarea/Textarea"],
+  ["KozmosPasswordInput", "PasswordInput/PasswordInput"],
+  ["KozmosNumberInput", "NumberInput/NumberInput"],
+  ["KozmosOTPInput", "OTPInput/OTPInput"],
 ]) {
   assertContains(
     files.vueIndex,
@@ -2316,12 +2332,6 @@ for (const [part, module] of [
     `React ${part.slice("Kozmos".length)} wrapped in the Vue bridge as well`,
   );
 }
-assertContains(
-  files.vueBridge,
-  source.vueBridge,
-  "KozmosIconButton = createVueWrapper(IconButton)",
-  "Vue IconButton wraps React IconButton",
-);
 // List, DescriptionList, MetaStrip, Timeline, Alert and Notice are Vue
 // ports (wave V1, packages/vue/PORTING.md), each with every part its React
 // folder exports, out of the bridge.
@@ -2687,9 +2697,11 @@ if (categoryTile.content.iconDecorative) {
 // action would ride into every field's bundle (+0.35 KB to PasswordInput,
 // DatePicker, Search and the rest, measured on 28 Oct). The specifier is
 // resolved, so what counts is the module reached and not how it is spelled:
-// the file, its folder's barrel or the package's.
+// the file, its folder's barrel or the package's. The recipe lives in
+// recipes/input.ts, shared with Vue (wave V2), which Input/inputVariants.ts
+// re-exports.
 {
-  const recipePath = "packages/react/src/components/Input/inputVariants.ts";
+  const recipePath = "packages/react/src/recipes/input.ts";
   if (!fs.existsSync(path.join(root, recipePath))) {
     fail(`${recipePath}: Input's recipe has no module of its own`);
   }
@@ -7382,10 +7394,16 @@ const ownedNativeFieldsPath =
   "packages/styles/src/styles/owned-native-fields.css";
 const ownedNativeFields = read(ownedNativeFieldsPath);
 assertContains(
+  files.reactNumberInputRecipe,
+  source.reactNumberInputRecipe,
+  'NUMBER_INPUT_CLASS = "kozmos-number-input"',
+  "React NumberInput selects its owned field recipe",
+);
+assertContains(
   files.reactNumberInput,
   source.reactNumberInput,
-  '"kozmos-number-input"',
-  "React NumberInput selects its owned field recipe",
+  "NUMBER_INPUT_CLASS,",
+  "React NumberInput draws its field from its recipe",
 );
 assertContains(
   ownedNativeFieldsPath,
@@ -7406,10 +7424,16 @@ assertContains(
   "React PasswordInput visibility toggle exposes pressed state",
 );
 assertContains(
-  files.reactPasswordInput,
-  source.reactPasswordInput,
+  files.reactPasswordInputRecipe,
+  source.reactPasswordInputRecipe,
   "kozmos-field-action kozmos-password-toggle",
   "React PasswordInput selects its owned toggle recipe",
+);
+assertContains(
+  files.reactPasswordInput,
+  source.reactPasswordInput,
+  "className={PASSWORD_TOGGLE_CLASS}",
+  "React PasswordInput draws its toggle from its recipe",
 );
 assertContains(
   ownedNativeFieldsPath,
@@ -8223,10 +8247,16 @@ assertContains(
   "React OTPInput supports readonly state",
 );
 assertContains(
+  files.reactOTPInputRecipe,
+  source.reactOTPInputRecipe,
+  'OTP_ROW_CLASS = "flex w-full items-center gap-2"',
+  "React OTPInput digit row fills its parent",
+);
+assertContains(
   files.reactOTPInput,
   source.reactOTPInput,
-  'className={cn("flex w-full items-center gap-2", className)}',
-  "React OTPInput digit row fills its parent",
+  "className={cn(OTP_ROW_CLASS, className)}",
+  "React OTPInput draws its digit row from its recipe",
 );
 assertContains(
   files.reactOTPInput,
