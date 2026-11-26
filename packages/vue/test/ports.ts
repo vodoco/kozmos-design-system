@@ -47,7 +47,9 @@ export interface Port {
    * The part of a compound this one draws only inside, by its React export
    * (`Avatar` for `AvatarFallback`): Radix's parts throw outside their
    * root, so the attributes and listeners checks draw it there, in both,
-   * with that port's sample.
+   * with that port's sample. The part it names may itself be drawn
+   * inside another (Select's item inside its content, inside its root):
+   * each is drawn inside the next, out to one drawn on its own.
    */
   within?: string;
   /**
@@ -920,6 +922,118 @@ export const PORTS: Port[] = [
       "update:activeValue": "parity/listbox.parity.spec.ts",
       "update:modelValue": "parity/listbox.parity.spec.ts",
     },
+  },
+  {
+    vue: "KozmosSelect",
+    react: "Select",
+    stories: "components/Select/Select.stories.tsx",
+    // Every story draws the parts by hand: select.parity.spec.ts draws each
+    // in both, closed in a server render and open, mounted.
+    elsewhere: {
+      Default: "parity/select.parity.spec.ts",
+      WithScroll: "parity/select.parity.spec.ts",
+      Disabled: "parity/select.parity.spec.ts",
+      WithError: "parity/select.parity.spec.ts",
+      OptionCounts: "parity/select.parity.spec.ts",
+      OptionCountsOpen: "parity/select.parity.spec.ts",
+      MixedValue: "parity/select.parity.spec.ts",
+    },
+    drawnIn: "parity/select.parity.spec.ts",
+    // Open, so its list and items are drawn in the document, in the theme's
+    // portal, where the attributes and listeners checks look for theirs.
+    sample: { defaultOpen: true },
+    events: {
+      "update:open": "parity/select.parity.spec.ts",
+      "update:modelValue": "parity/select.parity.spec.ts",
+      resetMixed: "parity/select.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSelectTrigger",
+    react: "SelectTrigger",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "Select",
+    sample: { "aria-label": "Fruit" },
+  },
+  {
+    vue: "KozmosSelectValue",
+    react: "SelectValue",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "Select",
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectContent",
+    react: "SelectContent",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "Select",
+    sample: {},
+    events: {
+      closeAutoFocus: "parity/select.parity.spec.ts",
+      escapeKeyDown: "parity/select.parity.spec.ts",
+      pointerDownOutside: "parity/select.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSelectGroup",
+    react: "SelectGroup",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectLabel",
+    react: "SelectLabel",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    // Radix's label names its group: drawn only inside one.
+    within: "SelectGroup",
+    sample: { children: "Fruits" },
+  },
+  {
+    vue: "KozmosSelectItem",
+    react: "SelectItem",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    sample: { value: "apple", children: "Apple" },
+  },
+  {
+    vue: "KozmosSelectSeparator",
+    react: "SelectSeparator",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectScrollUpButton",
+    react: "SelectScrollUpButton",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    // Drawn only while the list can scroll up, which a jsdom list cannot.
+    unmarked: {
+      why: "Radix and Reka draw the arrow only while the list can scroll, and nothing scrolls in jsdom",
+      drawnIn: "parity/select.parity.spec.ts",
+    },
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectScrollDownButton",
+    react: "SelectScrollDownButton",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    unmarked: {
+      why: "Radix and Reka draw the arrow only while the list can scroll, and nothing scrolls in jsdom",
+      drawnIn: "parity/select.parity.spec.ts",
+    },
+    sample: {},
   },
 ];
 

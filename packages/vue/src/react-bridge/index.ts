@@ -2,8 +2,8 @@
  * `@kozmos-ds/vue/react-bridge`: the Kozmos parts that have no Vue port yet,
  * each mounting its React component. A wrapper in no other wrapper's slot
  * is a React root; one in another's slot is drawn in that one's React tree,
- * so a part made of parts (`KozmosTabs` and its list, triggers and panels,
- * `KozmosSelect` and its trigger, content and items) is one React tree, and the Vue
+ * so a part made of parts (`KozmosTabs` and its list, triggers and panels)
+ * is one React tree, and the Vue
  * providers around it (KozmosThemeProvider, KozmosDensityScope,
  * KozmosAnalyticsProvider) reach every part it draws (GAP-230, decision
  * 172; react-adapter.ts). It needs `react`, `react-dom` and
@@ -29,7 +29,6 @@ import {
 import {
   Search,
   SearchBar,
-  Select,
   BottomNavigation,
   Navbar,
   Sidebar,
@@ -115,13 +114,6 @@ import {
   DrawerDescription,
   DrawerFooter,
   DrawerClose,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-  SelectSeparator,
   TabsList,
   TabsTrigger,
   TabsContent,
@@ -284,10 +276,6 @@ export const KozmosSearch = createVueWrapper(Search, {
 });
 export const KozmosSearchBar = createVueWrapper(SearchBar, {
   modelValue: { prop: "value", callback: "onChange", empty: "" },
-});
-// Radix's Select shows its placeholder for "".
-export const KozmosSelect = createVueWrapper(Select, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
 });
 export const KozmosBottomNavigation = createVueWrapper(BottomNavigation);
 export const KozmosNavbar = createVueWrapper(Navbar);
@@ -573,13 +561,6 @@ export const KozmosDrawerTitle = createVueWrapper(DrawerTitle);
 export const KozmosDrawerDescription = createVueWrapper(DrawerDescription);
 export const KozmosDrawerFooter = createVueWrapper(DrawerFooter);
 export const KozmosDrawerClose = createVueWrapper(DrawerClose);
-export const KozmosSelectTrigger = createVueWrapper(SelectTrigger);
-export const KozmosSelectValue = createVueWrapper(SelectValue);
-export const KozmosSelectContent = createVueWrapper(SelectContent);
-export const KozmosSelectGroup = createVueWrapper(SelectGroup);
-export const KozmosSelectLabel = createVueWrapper(SelectLabel);
-export const KozmosSelectItem = createVueWrapper(SelectItem);
-export const KozmosSelectSeparator = createVueWrapper(SelectSeparator);
 export const KozmosTabsList = createVueWrapper(TabsList);
 export const KozmosTabsTrigger = createVueWrapper(TabsTrigger);
 export const KozmosTabsContent = createVueWrapper(TabsContent);

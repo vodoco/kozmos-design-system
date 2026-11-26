@@ -90,10 +90,14 @@ afterEach(() => document.body.replaceChildren());
 let clock = 0;
 const nextDrawing = () => void (clock += 60_000);
 beforeAll(() => vi.spyOn(Date, "now").mockImplementation(() => clock));
-// jsdom has no ResizeObserver, which Radix's Slider measures its thumbs
-// with (and KozmosSlider as it does): a stand-in that never reports, in
-// both.
+// What jsdom lacks, in both: Radix's Slider measures its thumbs with
+// ResizeObserver (and KozmosSlider as it does), and an open Select (Select's
+// "Option counts, open") scrolls its chosen row into view and watches its
+// size. Stand-ins that never report.
 beforeAll(() => {
+  Element.prototype.scrollIntoView ??= function () {};
+  Element.prototype.hasPointerCapture ??= () => false;
+  Element.prototype.releasePointerCapture ??= () => {};
   globalThis.ResizeObserver ??= class {
     observe() {}
     unobserve() {}

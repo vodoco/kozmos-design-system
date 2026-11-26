@@ -147,12 +147,16 @@ const inTheme = (port: Port, node: Drawn): Drawn =>
         children: [within(port, node)],
       };
 
-/** A compound's part inside the part it draws in (`Port.within`), as its sample draws that one. */
+/**
+ * A compound's part inside the part it draws in (`Port.within`), as its
+ * sample draws that one, and that one inside its own, out to a part drawn
+ * on its own.
+ */
 function within(port: Port, node: Drawn): Drawn {
   if (!port.within) return node;
   const outer = PORTS.find((candidate) => candidate.react === port.within)!;
   const sample = withoutChildren(outer.sample ?? {});
-  return { ...drawn(outer, sample), children: [node] };
+  return within(outer, { ...drawn(outer, sample), children: [node] });
 }
 
 const storiesOf = (port: Port) =>

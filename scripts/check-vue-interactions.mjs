@@ -579,6 +579,162 @@ const INTERACTIONS = {
     return `Tab to the list, ArrowDown to ${label} with the ring, Enter on it, a click on ${otherLabel}${multiple ? ", each toggled in" : ""}`;
   },
 
+  /**
+   * A native Select (wave V2): Tab reaches its trigger, Enter opens its
+   * list (in the theme's portal) with focus on a row, ArrowDown and Enter
+   * choose the next row, closing the list and handing focus back, and the
+   * trigger shows the row's words; then a click opens it and a click on
+   * the last row chooses that one. A select that ignores a key or a press
+   * fails.
+   */
+  async select(page) {
+    const trigger = controls(page, "[role=combobox]").first();
+    const list = page.locator("[role=listbox]");
+    const words = async () => (await trigger.textContent()).trim();
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the trigger (focus is on ${await focused(page)})`,
+    );
+    const before = await words();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 1, "Enter opens the list");
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? "",
+      ),
+      "option",
+      `the open list has focus on a row (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    const row = await page.evaluate(() =>
+      document.activeElement
+        ?.querySelector(".kozmos-option-content")
+        ?.textContent?.trim(),
+    );
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Enter on a row closes the list");
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `the choice hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    assert.equal(await words(), row, `the trigger shows ${row}`);
+    assert.notEqual(await words(), before, "the choice changed the value");
+    await trigger.click();
+    await settle(page);
+    assert.equal(await list.count(), 1, "a click opens the list");
+    const last = list.locator("[role=option]").last();
+    const lastWords = (
+      await last.locator(".kozmos-option-content").textContent()
+    ).trim();
+    await last.click();
+    await settle(page);
+    assert.equal(await list.count(), 0, "a click on a row closes the list");
+    assert.equal(await words(), lastWords, `a click chose ${lastWords}`);
+    return `Tab to the trigger, Enter to open, ArrowDown and Enter to choose ${row}, a click to open and a click on ${lastWords}`;
+  },
+
+  /** A disabled Select: no stop for Tab, and a press opens nothing. */
+  async "select-disabled"(page) {
+    const trigger = controls(page, "[role=combobox]").first();
+    assert.equal(await trigger.isDisabled(), true, "the trigger is disabled");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      false,
+      "Tab passes the disabled trigger",
+    );
+    const box = await trigger.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await settle(page);
+    assert.equal(
+      await page.locator("[role=listbox]").count(),
+      0,
+      "a press on the disabled trigger opens nothing",
+    );
+    return "unavailable to Tab, and a press opens nothing";
+  },
+
+  /**
+   * A Select drawn open: its rows are named by their words and counts, a
+   * row has focus, and Escape closes the list, handing focus back to the
+   * trigger.
+   */
+  async "select-open"(page) {
+    const list = page.locator("[role=listbox]");
+    assert.equal(await list.count(), 1, "the list is drawn open");
+    assert.equal(
+      await list.locator('[role=option][aria-label="POI, 96"]').count(),
+      1,
+      "a row is named by its words and its count",
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? "",
+      ),
+      "option",
+      `a row has focus (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(
+      await controls(page, "[role=combobox]")
+        .first()
+        .evaluate((el) => el === document.activeElement),
+      true,
+      `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    return "open with a row focused, each named by its words and count, Escape closes it and focus goes back";
+  },
+
+  /**
+   * A mixed Select (GAP-153): a choice edits it, offering its reset, and the
+   * reset takes it back to mixed with the focus on its trigger.
+   */
+  async "select-mixed"(page) {
+    const trigger = controls(page, "[role=combobox][data-mixed]").first();
+    const id = await trigger.getAttribute("id");
+    const own = controls(page, `[role=combobox][id="${id}"]`);
+    await own.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      null,
+      "a choice edits the mixed field",
+    );
+    const reset = own
+      .locator("xpath=ancestor::*[contains(@class, 'kozmos-field')][1]")
+      .locator("[data-slot=reset-mixed]");
+    assert.equal(await reset.count(), 1, "the edited field offers its reset");
+    await reset.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      "",
+      "the reset takes the field back to mixed",
+    );
+    assert.equal(
+      await own.evaluate((el) => el === document.activeElement),
+      true,
+      `the reset hands the focus to its trigger (focus is on ${await focused(page)})`,
+    );
+    return "chose in the mixed field, which took the edit and offered its reset; the reset took it back, the focus on the trigger";
+  },
+
   /** Typing into the search field, its value held in Vue through the bridge. */
   async "search-typing"(page) {
     const field = controls(page, "input").first();

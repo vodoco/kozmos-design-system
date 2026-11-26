@@ -770,7 +770,6 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { placeholder: "Where to?" },
     click: first("input"),
   },
-  KozmosSelect: { slot: true },
   KozmosBottomNavigation: {
     props: { items: [{ icon: e("span"), label: "Home" }] },
   },
@@ -908,8 +907,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosDialogFooter: { slot: true },
   KozmosDrawerHeader: { slot: true },
   KozmosDrawerFooter: { slot: true },
-  KozmosSelectGroup: { slot: true },
-  KozmosSelectSeparator: {},
   // Its list, drawn in place outside a theme provider.
   KozmosToaster: {},
   KozmosToastProvider: { slot: true },
@@ -938,7 +935,6 @@ const CANNOT_DRAW_ALONE = IN_A_COMPOUND;
 /** The parts the review named, which draw no element of their own. */
 const ELEMENTLESS = [
   "KozmosDialog",
-  "KozmosSelect",
   "KozmosMenu",
   "KozmosContextMenu",
   "KozmosDrawer",

@@ -510,7 +510,9 @@ describe("which props of each part are booleans", () => {
     );
 
   it("part-takes.ts's booleans are what React's types say (else run pnpm --filter @kozmos-ds/vue bridge:takes)", () => {
-    expect(Object.keys(table.booleans.parts).length).toBeGreaterThan(100);
+    // The table read the bridge's parts, not nothing: fewer as each port
+    // leaves it (100 after wave V2's selects).
+    expect(Object.keys(table.booleans.parts).length).toBeGreaterThan(50);
     expect(byName()).toEqual(table.booleans.parts);
     expect(
       Object.fromEntries(

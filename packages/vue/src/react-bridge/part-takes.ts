@@ -20,7 +20,6 @@
 import {
   Search,
   SearchBar,
-  Select,
   BottomNavigation,
   Navbar,
   Sidebar,
@@ -101,13 +100,6 @@ import {
   DrawerDescription,
   DrawerFooter,
   DrawerClose,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-  SelectSeparator,
   TabsList,
   TabsTrigger,
   TabsContent,
@@ -162,10 +154,6 @@ const tourStepTakes: Takes = {
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Search, searchTakes],
   [SearchBar, searchTakes],
-  [
-    Select,
-    { dom: false, own: ["onOpenChange", "onResetMixed", "onValueChange"] },
-  ],
   [BottomNavigation, D],
   [Navbar, D],
   [Sidebar, D],
@@ -387,19 +375,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [DrawerDescription, D],
   [DrawerFooter, D],
   [DrawerClose, D],
-  [SelectTrigger, D],
-  [SelectValue, D],
-  [
-    SelectContent,
-    {
-      dom: true,
-      own: ["onCloseAutoFocus", "onEscapeKeyDown", "onPointerDownOutside"],
-    },
-  ],
-  [SelectGroup, D],
-  [SelectLabel, D],
-  [SelectItem, D],
-  [SelectSeparator, D],
   [TabsList, D],
   [TabsTrigger, D],
   [TabsContent, D],
@@ -518,7 +493,6 @@ const datePickerBooleans = html(
 );
 const categoryTileBooleans = html(["disabled", "formNoValidate"]);
 const tourStepBooleans = html(["nextDisabled", "open"]);
-const accordionItemBooleans = html(["asChild", "disabled"]);
 const accordionContentBooleans = html(["asChild", "forceMount"]);
 const dialogTriggerBooleans = html(["asChild", "disabled", "formNoValidate"]);
 const toasterBooleans = { flags: [], unions: [], texts: [] };
@@ -557,14 +531,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ],
       ["capture"],
     ),
-  ],
-  [
-    Select,
-    {
-      flags: ["defaultOpen", "disabled", "mixed", "open", "required"],
-      unions: [],
-      texts: [],
-    },
   ],
   [BottomNavigation, html(["inset"])],
   [Navbar, html(["logoInset"])],
@@ -734,7 +700,7 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [RouteOptionCard, categoryTileBooleans],
   [RoutePreviewPanel, H],
   [TourStep, tourStepBooleans],
-  [AccordionItem, accordionItemBooleans],
+  [AccordionItem, html(["asChild", "disabled"])],
   [
     AccordionTrigger,
     html(["asChild", "disabled", "formNoValidate", "loading"]),
@@ -754,16 +720,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [DrawerDescription, popoverAnchorBooleans],
   [DrawerFooter, H],
   [DrawerClose, dialogTriggerBooleans],
-  [
-    SelectTrigger,
-    html(["asChild", "disabled", "formNoValidate"], [], ["error"]),
-  ],
-  [SelectValue, popoverAnchorBooleans],
-  [SelectContent, html(["asChild", "avoidCollisions", "hideWhenDetached"])],
-  [SelectGroup, popoverAnchorBooleans],
-  [SelectLabel, popoverAnchorBooleans],
-  [SelectItem, accordionItemBooleans],
-  [SelectSeparator, popoverAnchorBooleans],
   [TabsList, html(["asChild", "loop"])],
   [TabsTrigger, dialogTriggerBooleans],
   [TabsContent, accordionContentBooleans],

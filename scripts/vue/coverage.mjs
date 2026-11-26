@@ -831,6 +831,13 @@ export const VUE_STORIES = {
   "vue-core-inputs-listbox--single": { interaction: "listbox" },
   "vue-core-inputs-listbox--multiple": { interaction: "listbox" },
   "vue-core-inputs-listbox--grouped": { interaction: "listbox" },
+  "vue-core-inputs-select--default": { interaction: "select" },
+  "vue-core-inputs-select--with-scroll": { interaction: "select" },
+  "vue-core-inputs-select--disabled": { interaction: "select-disabled" },
+  "vue-core-inputs-select--with-error": { interaction: "select" },
+  "vue-core-inputs-select--option-counts": { interaction: "select" },
+  "vue-core-inputs-select--option-counts-open": { interaction: "select-open" },
+  "vue-core-inputs-select--mixed-value": { interaction: "select-mixed" },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

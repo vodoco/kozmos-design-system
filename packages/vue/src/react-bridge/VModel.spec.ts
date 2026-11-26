@@ -14,10 +14,6 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   TabsContent,
   TabsList,
   TabsTrigger,
@@ -480,42 +476,6 @@ const PARTS: Part[] = [
     nothing: "",
     listener: "onDestinationChange",
     alone: "Lounge",
-  },
-  {
-    // Radix's Select, opened and chosen from with the keyboard; its parts
-    // below the root are React's, handed over as `children` (GAP-016).
-    name: "KozmosSelect",
-    props: {
-      children: [
-        e(
-          SelectTrigger,
-          { key: "trigger", "aria-label": "Fruit" },
-          e(SelectValue, { placeholder: "Pick one" }),
-        ),
-        e(
-          SelectContent,
-          { key: "content" },
-          ["apple", "banana"].map((value) =>
-            e(SelectItem, { key: value, value }, value),
-          ),
-        ),
-      ],
-    },
-    start: "apple",
-    before: "apple",
-    field: () => $("[role=combobox]"),
-    change: async (trigger) => {
-      trigger.focus();
-      press(trigger, "Enter");
-      press(await until(() => byText("[role=option]", "banana"))!, "Enter");
-    },
-    next: "banana",
-    shown: () => $("[role=combobox]")?.textContent,
-    shows: "banana",
-    // Its placeholder.
-    nothing: "Pick one",
-    listener: "onValueChange",
-    alone: "banana",
   },
   {
     name: "KozmosAccordion",

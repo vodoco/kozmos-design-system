@@ -210,6 +210,23 @@ export { KozmosCheckbox } from "./components/Checkbox/Checkbox";
 export type { KozmosCheckboxCheckedState } from "./components/Checkbox/types";
 export { KozmosRating } from "./components/Rating/Rating";
 export { KozmosListbox } from "./components/Listbox/Listbox";
+export {
+  KozmosSelect,
+  KozmosSelectContent,
+  KozmosSelectGroup,
+  KozmosSelectItem,
+  KozmosSelectLabel,
+  KozmosSelectScrollDownButton,
+  KozmosSelectScrollUpButton,
+  KozmosSelectSeparator,
+  KozmosSelectTrigger,
+  KozmosSelectValue,
+} from "./components/Select/Select";
+export type {
+  KozmosSelectAlign,
+  KozmosSelectDirection,
+  KozmosSelectSide,
+} from "./components/Select/types";
 export type {
   KozmosComboboxOption,
   KozmosComboboxOptionMedia,

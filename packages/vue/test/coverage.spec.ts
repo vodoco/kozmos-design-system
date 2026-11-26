@@ -238,12 +238,17 @@ describe("every event a port declares is seen to fire", () => {
 describe("every part drawn inside another, or nowhere, says where it is drawn", () => {
   for (const port of PORTS.filter((p) => p.within || p.unmarked))
     it(port.vue, () => {
-      if (port.within) {
-        const outer = PORTS.find((p) => p.react === port.within);
-        expect(outer, `${port.within} is not a port`).toBeTruthy();
-        expect(outer!.within, `${port.within} is itself inside another`).toBe(
-          undefined,
+      // Each part named is a port, and the chain ends at one drawn on its
+      // own, never back at a part already in it.
+      const seen = new Set([port.react]);
+      for (let at = port; at.within; ) {
+        const outer = PORTS.find((p) => p.react === at.within);
+        expect(outer, `${at.within} is not a port`).toBeTruthy();
+        expect(seen.has(outer!.react), `${outer!.react} is inside itself`).toBe(
+          false,
         );
+        seen.add(outer!.react);
+        at = outer!;
       }
       if (port.unmarked) {
         expect(port.unmarked.why.trim().length).toBeGreaterThan(20);

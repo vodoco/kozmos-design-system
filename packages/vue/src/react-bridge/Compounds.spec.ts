@@ -73,43 +73,6 @@ describe("a compound is one React tree", () => {
     );
   });
 
-  it("Select: the item chosen is the model, and the trigger shows its words", async () => {
-    const level = ref("1");
-    const open = ref(true);
-    mount(() =>
-      h(
-        Bridge.KozmosSelect,
-        {
-          modelValue: level.value,
-          "onUpdate:modelValue": (value: string) => (level.value = value),
-          open: open.value,
-          "onUpdate:open": (value: boolean) => (open.value = value),
-        },
-        () => [
-          h(Bridge.KozmosSelectTrigger, { "aria-label": "Level" }, () => [
-            h(Bridge.KozmosSelectValue, { placeholder: "Level" }),
-          ]),
-          h(Bridge.KozmosSelectContent, null, () => [
-            h(Bridge.KozmosSelectItem, { value: "1" }, () => "Level 1"),
-            h(Bridge.KozmosSelectItem, { value: "2" }, () => "Level 2"),
-          ]),
-        ],
-      ),
-    );
-    const option = await until(() => byText("[role=option]", "Level 2"));
-    // The chosen item's words are drawn in the trigger as well as the list.
-    expect($("[role=combobox]")!.textContent).toContain("Level 1");
-    option.dispatchEvent(
-      new PointerEvent("pointerup", { bubbles: true, pointerType: "mouse" }),
-    );
-    option.click();
-    await eventually(() => expect(level.value).toBe("2"));
-    await eventually(() => expect(open.value).toBe(false));
-    await eventually(() =>
-      expect($("[role=combobox]")!.textContent).toContain("Level 2"),
-    );
-  });
-
   it("Tabs: a trigger shows its panel, and a panel not shown draws nothing of its slot", async () => {
     mount(IN_A_COMPOUND.KozmosTabsTrigger.render);
     const list = await until(() => byText("[role=tab]", "List"));

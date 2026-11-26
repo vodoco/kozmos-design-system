@@ -165,7 +165,7 @@ import {
  * another's slot is drawn by that one's tree, through a portal into its own
  * box, where the part it is in draws the slot: React's context reaches it
  * as it reaches a React child, so a KozmosTabsTrigger finds its
- * KozmosTabs, a KozmosSelectItem its KozmosSelect, and every part
+ * KozmosTabs, a KozmosAccordionItem its KozmosAccordion, and every part
  * the context its compound gives its children. Each slot is a Host: the
  * wrappers inside it register their portals with it (SlotHost provides it
  * to them), and the slot's React element draws them.

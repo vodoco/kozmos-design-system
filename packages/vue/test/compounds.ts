@@ -51,27 +51,6 @@ const dialog = (name: "Dialog" | "Drawer") => () =>
       part(`${name}Footer`, {}, part(`${name}Close`, {}, "Done")),
     ),
   );
-const select = () =>
-  part(
-    "Select",
-    { open: true, defaultValue: "1" },
-    part(
-      "SelectTrigger",
-      { "aria-label": "Level" },
-      part("SelectValue", { placeholder: "Level" }),
-    ),
-    part(
-      "SelectContent",
-      {},
-      part(
-        "SelectGroup",
-        {},
-        part("SelectLabel", {}, "Floors"),
-        part("SelectItem", { value: "1" }, "Level 1"),
-        part("SelectItem", { value: "2" }, "Level 2"),
-      ),
-    ),
-  );
 const tabs = () =>
   part(
     "Tabs",
@@ -139,11 +118,6 @@ export const IN_A_COMPOUND: Record<string, InACompound> = {
     render: dialog("Drawer"),
     drawn: "[role=dialog] button",
   },
-  KozmosSelectTrigger: { render: select, drawn: "[role=combobox]" },
-  KozmosSelectValue: { render: select, drawn: "[role=combobox] span" },
-  KozmosSelectContent: { render: select, drawn: "[role=listbox]" },
-  KozmosSelectLabel: { render: select, drawn: "[role=group] div[id]" },
-  KozmosSelectItem: { render: select, drawn: "[role=option]" },
   KozmosTabsList: { render: tabs, drawn: "[role=tablist]" },
   KozmosTabsTrigger: { render: tabs, drawn: "[role=tab]" },
   KozmosTabsContent: { render: tabs, drawn: "[role=tabpanel]:not([hidden])" },
