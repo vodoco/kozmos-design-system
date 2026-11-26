@@ -18,10 +18,8 @@
 // reads a `[String, Boolean]` one. Every spelling is React's prop. A prop
 // that takes any ReactNode is a slot, and none of them.
 import {
-  Counter,
   Input,
   Textarea,
-  Checkbox,
   Switch,
   Slider,
   Search,
@@ -54,7 +52,6 @@ import {
   POICard,
   BottomSheet,
   OTPInput,
-  Rating,
   FileUpload,
   ImageCropper,
   DatePicker,
@@ -63,7 +60,6 @@ import {
   SplitButton,
   ToggleButton,
   SegmentedControl,
-  IconButton,
   Tabs,
   Dialog,
   MapOverlay,
@@ -181,10 +177,8 @@ const tourStepTakes: Takes = {
 
 /** By React part. */
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
-  [Counter, D],
   [Input, inputTakes],
   [Textarea, D],
-  [Checkbox, { dom: true, own: ["onCheckedChange"] }],
   [Switch, { dom: true, own: ["onCheckedChange", "onResetMixed"] }],
   [Slider, { dom: true, own: ["onValueChange", "onValueCommit"] }],
   [Search, searchTakes],
@@ -249,7 +243,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [POICard, D],
   [BottomSheet, menuTakes],
   [OTPInput, D],
-  [Rating, D],
   [
     FileUpload,
     { dom: true, except: ["onChange"], own: ["onFileSelect", "onFilesChange"] },
@@ -264,7 +257,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [SplitButton, { dom: true, own: ["onMainClick"] }],
   [ToggleButton, { dom: true, own: ["onPressedChange", "onResetMixed"] }],
   [SegmentedControl, segmentedControlTakes],
-  [IconButton, D],
   [Tabs, accordionTakes],
   [Dialog, menuTakes],
   [MapOverlay, D],
@@ -565,11 +557,6 @@ const datePickerBooleans = html(
   ["capture"],
   ["error"],
 );
-const floatingActionButtonBooleans = html([
-  "disabled",
-  "formNoValidate",
-  "isLoading",
-]);
 const categoryTileBooleans = html(["disabled", "formNoValidate"]);
 const tourStepBooleans = html(["nextDisabled", "open"]);
 const accordionItemBooleans = html(["asChild", "disabled"]);
@@ -582,7 +569,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   unknown,
   Booleans
 >([
-  [Counter, H],
   [
     Input,
     html(
@@ -600,47 +586,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
     ),
   ],
   [Textarea, textareaBooleans],
-  [
-    Checkbox,
-    {
-      flags: [
-        "asChild",
-        "autoFocus",
-        "disabled",
-        "formNoValidate",
-        "hidden",
-        "itemScope",
-        "required",
-        "suppressContentEditableWarning",
-        "suppressHydrationWarning",
-      ],
-      unions: [
-        "aria-atomic",
-        "aria-busy",
-        "aria-checked",
-        "aria-current",
-        "aria-disabled",
-        "aria-expanded",
-        "aria-grabbed",
-        "aria-haspopup",
-        "aria-hidden",
-        "aria-invalid",
-        "aria-modal",
-        "aria-multiline",
-        "aria-multiselectable",
-        "aria-pressed",
-        "aria-readonly",
-        "aria-required",
-        "aria-selected",
-        "checked",
-        "contentEditable",
-        "defaultChecked",
-        "draggable",
-        "spellCheck",
-      ],
-      texts: ["error"],
-    },
-  ],
   [
     Switch,
     html(
@@ -737,12 +682,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [POICard, H],
   [BottomSheet, menuBooleans],
   [OTPInput, html(["disabled", "readOnly"], [], ["error"])],
-  [Rating, html(["readOnly"])],
   [FileUpload, html(["disabled", "multiple"], [], ["error"])],
   [ImageCropper, html(["disabled", "showZoomControls"])],
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
-  [FloatingActionButton, floatingActionButtonBooleans],
+  [FloatingActionButton, html(["disabled", "formNoValidate", "isLoading"])],
   [SplitButton, settingsRowBooleans],
   [
     ToggleButton,
@@ -763,7 +707,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       ["error"],
     ),
   ],
-  [IconButton, floatingActionButtonBooleans],
   [Tabs, popoverAnchorBooleans],
   [Dialog, menuBooleans],
   [MapOverlay, H],

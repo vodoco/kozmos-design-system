@@ -242,6 +242,8 @@ const files = {
   reactTabsFigma: "packages/react/src/components/Tabs/Tabs.figma.tsx",
   reactStepperFigma: "packages/react/src/components/Stepper/Stepper.figma.tsx",
   reactCheckbox: "packages/react/src/components/Checkbox/Checkbox.tsx",
+  // Checkbox's recipe, shared with Vue's KozmosCheckbox (wave V2).
+  reactCheckboxRecipe: "packages/react/src/recipes/checkbox.ts",
   reactRadio: "packages/react/src/components/Radio/Radio.tsx",
   reactSwitch: "packages/react/src/components/Switch/Switch.tsx",
   reactInput: "packages/react/src/components/Input/Input.tsx",
@@ -1001,20 +1003,20 @@ assertContains(
   "React Badge uses 4px content gap",
 );
 assertContains(
-  files.reactCheckbox,
-  source.reactCheckbox,
+  files.reactCheckboxRecipe,
+  source.reactCheckboxRecipe,
   "min-h-11",
   "React Checkbox 44px row target",
 );
 assertContains(
-  files.reactCheckbox,
-  source.reactCheckbox,
+  files.reactCheckboxRecipe,
+  source.reactCheckboxRecipe,
   "h-5 w-5",
   "React Checkbox 20px visual control",
 );
 assertContains(
-  files.reactCheckbox,
-  source.reactCheckbox,
+  files.reactCheckboxRecipe,
+  source.reactCheckboxRecipe,
   "border-input",
   "React Checkbox neutral unchecked border",
 );
@@ -2224,12 +2226,6 @@ assertNotContains(
   "KozmosButton = createVueWrapper",
   "React Button wrapped in the Vue bridge as well",
 );
-assertContains(
-  files.vueBridge,
-  source.vueBridge,
-  "KozmosCounter = createVueWrapper(ReactCounter)",
-  "Vue Counter wraps React Counter",
-);
 // Badge and Separator are Vue ports (wave V0b, packages/vue/PORTING.md).
 // Their bridge entries leave with GAP-230's bridge work: until then
 // packages/vue/test/ports.ts names them in LEAVING_BRIDGE, and
@@ -2300,6 +2296,11 @@ for (const [part, module] of [
   ["KozmosPageHeader", "PageHeader/PageHeader"],
   ["KozmosLink", "Link/Link"],
   ["KozmosEmptyState", "EmptyState/EmptyState"],
+  // Counter, IconButton, Checkbox and Rating (wave V2, controls).
+  ["KozmosCounter", "Counter/Counter"],
+  ["KozmosIconButton", "IconButton/IconButton"],
+  ["KozmosCheckbox", "Checkbox/Checkbox"],
+  ["KozmosRating", "Rating/Rating"],
 ]) {
   assertContains(
     files.vueIndex,
@@ -2316,12 +2317,6 @@ for (const [part, module] of [
     `React ${part.slice("Kozmos".length)} wrapped in the Vue bridge as well`,
   );
 }
-assertContains(
-  files.vueBridge,
-  source.vueBridge,
-  "KozmosIconButton = createVueWrapper(IconButton)",
-  "Vue IconButton wraps React IconButton",
-);
 // List, DescriptionList, MetaStrip, Timeline, Alert and Notice are Vue
 // ports (wave V1, packages/vue/PORTING.md), each with every part its React
 // folder exports, out of the bridge.

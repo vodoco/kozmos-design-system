@@ -178,6 +178,19 @@ export type {
   KozmosEmptyStateProgress,
   KozmosEmptyStateSize,
 } from "./components/EmptyState/types";
+export { KozmosCounter } from "./components/Counter/Counter";
+export type {
+  KozmosCounterSize,
+  KozmosCounterTone,
+} from "./components/Counter/types";
+export { KozmosIconButton } from "./components/IconButton/IconButton";
+export { KozmosCheckbox } from "./components/Checkbox/Checkbox";
+export type { KozmosCheckboxCheckedState } from "./components/Checkbox/types";
+export { KozmosRating } from "./components/Rating/Rating";
+export type {
+  KozmosRatingLabel,
+  KozmosRatingVariant,
+} from "./components/Rating/types";
 export type {
   KozmosButtonEmotion,
   KozmosButtonSize,

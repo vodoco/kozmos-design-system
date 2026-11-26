@@ -4,9 +4,10 @@ import { defineComponent, type Component } from "vue";
 import * as Bridge from "./index";
 import { $, mount, unmount, until } from "../../test/react-bridge-harness";
 
-// GAP-162 through the bridge: a Checkbox's and a Switch's `description`
-// reaches React as a prop, and the control reads it as its description, not
-// its name; Switch's state words follow its model.
+// GAP-162 through the bridge: a Switch's `description` reaches React as a
+// prop, and the control reads it as its description, not its name; its
+// state words follow its model. Checkbox's is native now
+// (test/parity/checkbox.parity.spec.ts).
 const page = (template: string) =>
   defineComponent({
     components: Bridge as Record<string, Component>,
@@ -24,18 +25,6 @@ const describedBy = (control: Element) =>
 afterEach(() => unmount());
 
 describe("a control's description through the bridge (GAP-162)", () => {
-  it("KozmosCheckbox reads its description as its description", async () => {
-    mount(
-      page(
-        `<KozmosCheckbox label="Route updates" description="Tell me when a faster route opens" />`,
-      ),
-    );
-    const box = await until(() => $("[role=checkbox]"));
-    expect(describedBy(box)).toBe("Tell me when a faster route opens");
-    const label = document.querySelector(`label[for="${box.id}"]`);
-    expect(label?.textContent).toBe("Route updates");
-  });
-
   it("KozmosSwitch reads its description, and its state words follow v-model", async () => {
     mount(
       page(

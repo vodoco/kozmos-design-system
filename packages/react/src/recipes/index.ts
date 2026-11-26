@@ -6,15 +6,17 @@
  * moves here when its part gets a Vue port. `recipes.framework-free.test.ts`
  * holds this folder, and `cn` in `../utils`, to framework-free imports.
  */
-export { cn } from "../utils";
+export { cn, mergeAriaIds } from "../utils";
 export * from "./alert";
 export * from "./avatar";
 export * from "./badge";
 export * from "./breadcrumb";
 export * from "./button";
 export * from "./card";
+export * from "./checkbox";
 export * from "./code-block";
 export * from "./container";
+export * from "./control-text";
 export * from "./counter";
 export * from "./description-list";
 export * from "./emotion";
@@ -34,6 +36,7 @@ export * from "./notice";
 export * from "./page-header";
 export * from "./persona-mark";
 export * from "./progress";
+export * from "./rating";
 export * from "./separator";
 export * from "./skeleton";
 export * from "./spinner";

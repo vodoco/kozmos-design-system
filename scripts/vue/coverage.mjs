@@ -486,7 +486,7 @@ export const VUE_STORIES = {
     interaction: null,
     exempt: {
       interactions:
-        "PersonaMark takes no input; the list's checkboxes are React's Checkbox through the bridge, whose own suites press them, so there is no interaction here; axe scans it",
+        "PersonaMark takes no input; the list's checkboxes are KozmosCheckbox, whose own stories press them (the checkbox interaction), so there is no interaction here; axe scans it",
     },
   },
   "vue-core-layout-card--default": { interaction: "controls-in-order" },
@@ -557,10 +557,6 @@ export const VUE_STORIES = {
   },
   "vue-core-data-display-list--persona-visibility": {
     interaction: "persona-visibility",
-    exempt: {
-      themes:
-        "Bridged-part defect, not List's: React's IconButton at size sm (the persona row's info button, through the bridge) is 28px tall at compact density where --density-control-height-sm is 32px. Remove when IconButton follows the compact density or is ported",
-    },
   },
   "vue-core-data-display-descriptionlist--default": {
     interaction: null,
@@ -683,6 +679,66 @@ export const VUE_STORIES = {
   },
   "vue-core-feedback-notice--search-with-ai": {
     interaction: "button",
+  },
+  "vue-core-inputs-counter--default": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Counter is a count, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-inputs-counter--brand": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Counter is a count, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-inputs-counter--small": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Counter is a count, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-inputs-counter--destructive": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Counter is a count, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-inputs-counter--emotions": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Counter is a count, not a control: nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-actions-iconbutton--variants": { interaction: "buttons-in-order" },
+  "vue-core-actions-iconbutton--sizes": { interaction: "buttons-in-order" },
+  "vue-core-actions-iconbutton--counter": { interaction: "buttons-in-order" },
+  "vue-core-actions-iconbutton--default": { interaction: "button" },
+  "vue-core-inputs-checkbox--default": { interaction: "checkbox" },
+  "vue-core-inputs-checkbox--checked": { interaction: "checkbox-held" },
+  "vue-core-inputs-checkbox--disabled": { interaction: "checkbox-disabled" },
+  "vue-core-inputs-checkbox--error": { interaction: "checkbox" },
+  "vue-core-inputs-checkbox--with-description": { interaction: "checkbox" },
+  "vue-core-inputs-rating--default": { interaction: "rating-held" },
+  "vue-core-inputs-rating--thumbs": { interaction: "rating-thumbs" },
+  "vue-core-inputs-rating--read-only": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "a read-only Rating is one image, not a control (React's Rating): nothing to focus or press, so there is no interaction; axe scans it",
+    },
+  },
+  "vue-core-inputs-rating--read-only-halves": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "a read-only Rating is one image, not a control (React's Rating): nothing to focus or press, so there is no interaction; axe scans it",
+    },
   },
 };
 

@@ -664,6 +664,51 @@ export const PORTS: Port[] = [
       "update:expanded": "parity/notice.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosCounter",
+    react: "Counter",
+    stories: "components/Counter/Counter.stories.tsx",
+    elsewhere: {
+      // Its own render: the six emotions in a row.
+      Emotions: "parity/counter.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosIconButton",
+    react: "IconButton",
+    stories: "components/IconButton/IconButton.stories.tsx",
+    elsewhere: {
+      // An Icon in its args, and the rest their own renders.
+      Default: "parity/icon-button.parity.spec.ts",
+      Variants: "parity/icon-button.parity.spec.ts",
+      Sizes: "parity/icon-button.parity.spec.ts",
+      Counter: "parity/icon-button.parity.spec.ts",
+    },
+    drawnIn: "parity/icon-button.parity.spec.ts",
+    sample: { "aria-label": "Search", children: "Go", counter: 3 },
+  },
+  {
+    vue: "KozmosCheckbox",
+    react: "Checkbox",
+    stories: "components/Checkbox/Checkbox.stories.tsx",
+    events: {
+      "update:checked": "parity/checkbox.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosRating",
+    react: "Rating",
+    stories: "components/Rating/Rating.stories.tsx",
+    elsewhere: {
+      // Their own renders: a held thumbs scale, and read-only rows.
+      Thumbs: "parity/rating.parity.spec.ts",
+      ReadOnly: "parity/rating.parity.spec.ts",
+      ReadOnlyHalves: "parity/rating.parity.spec.ts",
+    },
+    events: {
+      "update:modelValue": "parity/rating.parity.spec.ts",
+    },
+  },
 ];
 
 /**

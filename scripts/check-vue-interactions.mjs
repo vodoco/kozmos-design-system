@@ -679,6 +679,187 @@ const INTERACTIONS = {
     );
     return "the target takes a click through the cut-out and Tab; the backdrop takes the rest";
   },
+
+  /**
+   * One checkbox that owns its state: Tab reaches it and draws a focus;
+   * Space ticks it and a click unticks it; Enter does neither, as Radix's;
+   * a click on its label ticks it again.
+   */
+  async checkbox(page) {
+    const box = controls(page, "[role=checkbox]");
+    assert.equal(await box.count(), 1, "the story draws one checkbox");
+    const checked = () => box.getAttribute("aria-checked");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await box.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the checkbox (focus is on ${await focused(page)})`,
+    );
+    const focusLook = await lookOf(box);
+    await box.evaluate((el) => el.blur());
+    await settle(page);
+    assert(
+      !same(focusLook, await lookOf(box)),
+      "the checkbox draws no focus: its look is the same focused from the keyboard and at rest",
+    );
+    await box.focus();
+    const start = await checked();
+    const flipped = start === "true" ? "false" : "true";
+    await page.keyboard.press("Space");
+    await settle(page);
+    assert.equal(await checked(), flipped, "Space toggles the checkbox");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await checked(), flipped, "Enter does not toggle it");
+    await box.click();
+    await settle(page);
+    assert.equal(await checked(), start, "a click toggles it back");
+    const label = controls(page, "label");
+    if (await label.count()) {
+      await label.first().click();
+      await settle(page);
+      assert.equal(await checked(), flipped, "a click on its label toggles it");
+    }
+    return "Tab to the box, Space and a click toggle it, Enter does not, a click on its label toggles it";
+  },
+
+  /**
+   * A checkbox its story holds checked: Tab reaches it, and Space and a
+   * click ask for a change its owner does not make, so it stays checked.
+   */
+  async "checkbox-held"(page) {
+    const box = controls(page, "[role=checkbox]");
+    assert.equal(await box.count(), 1, "the story draws one checkbox");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await box.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the checkbox (focus is on ${await focused(page)})`,
+    );
+    const held = await box.getAttribute("aria-checked");
+    await page.keyboard.press("Space");
+    await box.click();
+    await settle(page);
+    assert.equal(
+      await box.getAttribute("aria-checked"),
+      held,
+      "a held checkbox stays as its owner holds it",
+    );
+    return `Tab to the box; Space and a click leave it ${held}, as its owner holds it`;
+  },
+
+  /** A disabled checkbox: no stop for Tab, and a click leaves it as it is. */
+  async "checkbox-disabled"(page) {
+    const box = controls(page, "[role=checkbox]");
+    assert.equal(await box.isDisabled(), true, "the checkbox is disabled");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await box.evaluate((el) => el === document.activeElement),
+      false,
+      "Tab passes the disabled checkbox",
+    );
+    const before = await box.getAttribute("aria-checked");
+    await box.click({ force: true });
+    await settle(page);
+    assert.equal(
+      await box.getAttribute("aria-checked"),
+      before,
+      "a click leaves the disabled checkbox as it is",
+    );
+    return "unavailable to Tab, and a click leaves it as it is";
+  },
+
+  /**
+   * A star rating its story holds at a value: Tab reaches the chosen star,
+   * the group's one stop; the arrows, Home and End move focus along the
+   * scale, in the writing direction, while the value stays its owner's.
+   */
+  async "rating-held"(page) {
+    const radios = controls(page, "[role=radio]");
+    const count = await radios.count();
+    assert(count > 1, "the story draws a scale");
+    const chosen = await radios.evaluateAll((all) =>
+      all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+    );
+    assert(chosen >= 0, "the story holds a value");
+    const at = () =>
+      radios.evaluateAll((all) => all.indexOf(document.activeElement));
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await at(),
+      chosen,
+      `Tab reaches the chosen option, the group's one stop (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(await at(), -1, "a second Tab leaves the group");
+    await radios.nth(chosen).focus();
+    for (const [key, to] of [
+      ["ArrowRight", chosen + 1],
+      ["ArrowLeft", chosen],
+      ["End", count - 1],
+      ["Home", 0],
+      ["ArrowLeft", 0],
+    ]) {
+      await page.keyboard.press(key);
+      await settle(page);
+      assert.equal(await at(), to, `${key} moves focus to option ${to + 1}`);
+    }
+    assert.equal(
+      await radios.nth(chosen).getAttribute("aria-checked"),
+      "true",
+      "the value stays its owner's",
+    );
+    return `Tab to option ${chosen + 1}, the one stop; the arrows, Home and End move along the scale; the value stays held`;
+  },
+
+  /**
+   * The thumbs, held by v-model: Tab reaches the first, a click chooses up,
+   * a second click on it clears the answer, and ArrowRight chooses as it
+   * moves; the story's words follow the value.
+   */
+  async "rating-thumbs"(page) {
+    const radios = controls(page, "[role=radio]");
+    const words = () => controls(page, "p").first().textContent();
+    assert.equal(await radios.count(), 2, "the scale is a choice of two");
+    assert.match(await words(), /value: 0/, "it starts unanswered");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await radios.nth(0).evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the first thumb (focus is on ${await focused(page)})`,
+    );
+    await radios.nth(1).click();
+    await settle(page);
+    assert.equal(
+      await radios.nth(1).getAttribute("aria-checked"),
+      "true",
+      "a click chooses the thumb",
+    );
+    assert.match(await words(), /value: 2 \(up\)/, "v-model holds up");
+    await radios.nth(1).click();
+    await settle(page);
+    assert.match(await words(), /value: 0/, "a second click clears it");
+    await radios.nth(0).focus();
+    await page.keyboard.press("ArrowRight");
+    await settle(page);
+    assert.match(
+      await words(),
+      /value: 2 \(up\)/,
+      "ArrowRight chooses as it moves",
+    );
+    return "Tab to the first thumb, a click chooses up and a second clears it, ArrowRight chooses as it moves, held by v-model";
+  },
 };
 
 const { base, ids, covered } = await storiesFor(SUITE);

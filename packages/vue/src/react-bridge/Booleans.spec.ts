@@ -36,7 +36,7 @@ import {
 // prop: absent, React is not given it, so React's default applies; bare, or
 // with its own name as its value (`disabled="disabled"`), it is true; bound
 // (`:disabled="false"`), React is given the value as it is. A prop boolean
-// in a union with literals only (`aria-hidden`, Checkbox's `checked`) is
+// in a union with literals only (`aria-hidden`, `aria-pressed`) is
 // read as Vue reads a `[Boolean, String]` prop, Boolean first: bare or by
 // its name it is true. One in a union with free text (`error: boolean |
 // string`) is read String first: "" and its name are its strings. A model whose React
@@ -100,26 +100,6 @@ interface Case {
 
 const CASES: Case[] = [
   {
-    name: "KozmosIconButton",
-    part: KozmosReact.IconButton,
-    prop: "disabled",
-    attribute: "disabled",
-    template: (a) =>
-      `<KozmosIconButton aria-label="Go" ${a}>x</KozmosIconButton>`,
-    drawn: () => $<HTMLButtonElement>("button")!.disabled,
-    byDefault: false,
-  },
-  {
-    name: "KozmosIconButton",
-    part: KozmosReact.IconButton,
-    prop: "isLoading",
-    attribute: "is-loading",
-    template: (a) =>
-      `<KozmosIconButton aria-label="Go" ${a}>x</KozmosIconButton>`,
-    drawn: () => $(".kozmos-button-loader") !== null,
-    byDefault: false,
-  },
-  {
     name: "KozmosNavigationItem",
     part: KozmosReact.NavigationItem,
     prop: "disabled",
@@ -135,35 +115,6 @@ const CASES: Case[] = [
     attribute: "selected",
     template: (a) => `<KozmosNavigationItem ${a}>Gates</KozmosNavigationItem>`,
     drawn: () => $("button")!.hasAttribute("data-selected"),
-    byDefault: false,
-  },
-  {
-    name: "KozmosCheckbox",
-    part: KozmosReact.Checkbox,
-    prop: "disabled",
-    attribute: "disabled",
-    template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
-    drawn: () => $<HTMLButtonElement>("[role=checkbox]")!.disabled,
-    byDefault: false,
-  },
-  {
-    name: "KozmosCheckbox",
-    part: KozmosReact.Checkbox,
-    prop: "required",
-    attribute: "required",
-    template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
-    drawn: () => $("[role=checkbox]")!.getAttribute("aria-required") === "true",
-    byDefault: false,
-  },
-  {
-    // `checked` is `v-model:checked`'s (RADIX_MODELS), read from the
-    // attributes. Its type is boolean | "indeterminate".
-    name: "KozmosCheckbox",
-    part: KozmosReact.Checkbox,
-    prop: "checked",
-    attribute: "checked",
-    template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
-    drawn: () => $("[role=checkbox]")!.getAttribute("aria-checked") === "true",
     byDefault: false,
   },
   {
@@ -322,24 +273,6 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
     },
   );
 
-  it.each(["isLoading", "is-loading", "isloading"])(
-    "KozmosIconButton %s is React's isLoading",
-    async (attribute) => {
-      const given = await propsOf(KozmosReact.IconButton, () =>
-        mount(
-          page(
-            `<KozmosIconButton aria-label="Go" ${attribute}>x</KozmosIconButton>`,
-          ),
-        ),
-      );
-      expect(given.isLoading).toBe(true);
-      expect(
-        Object.keys(given).filter((key) => /^is-?loading$/i.test(key)),
-      ).toEqual(["isLoading"]);
-      expect($(".kozmos-button-loader")).not.toBeNull();
-    },
-  );
-
   it("React's own spelling wins over another given beside it", async () => {
     const given = await propsOf(KozmosReact.Input, () =>
       mount(() =>
@@ -452,14 +385,12 @@ describe("a model whose React prop is a boolean", () => {
     expect(booleanModels()).toEqual([
       "KozmosToggleButton pressed → pressed",
       "KozmosMapControlsGroup stepFree → stepFree",
-      "KozmosCheckbox modelValue → checked",
       "KozmosSwitch modelValue → checked",
       "KozmosPasswordInput visible → visible",
     ]);
     for (const [name, model] of [
       ["KozmosToggleButton", "pressed"],
       ["KozmosMapControlsGroup", "stepFree"],
-      ["KozmosCheckbox", "modelValue"],
       ["KozmosSwitch", "modelValue"],
       ["KozmosPasswordInput", "visible"],
     ] as const)
@@ -515,15 +446,6 @@ describe("a model whose React prop is a boolean", () => {
       drawn: () => $<HTMLInputElement>("input")!.type === "text",
     },
     {
-      name: "KozmosCheckbox",
-      part: KozmosReact.Checkbox,
-      attribute: "model-value",
-      prop: "checked",
-      template: (a) => `<KozmosCheckbox aria-label="Accept" ${a} />`,
-      drawn: () =>
-        $("[role=checkbox]")!.getAttribute("aria-checked") === "true",
-    },
-    {
       name: "KozmosSwitch",
       part: KozmosReact.Switch,
       attribute: "model-value",
@@ -558,32 +480,16 @@ describe("a model whose React prop is a boolean", () => {
 
 describe("a union, read Boolean first as Vue reads a [Boolean, String] prop", () => {
   it.each([
-    ['checked="checked"', true, "true"],
-    ["checked", true, "true"],
-    ['checked="indeterminate"', "indeterminate", "mixed"],
-    [':checked="false"', false, "false"],
-  ] as const)(
-    "KozmosCheckbox %s: React is given %s, aria-checked is %s",
-    async (attribute, expected, aria) => {
-      const given = await propsOf(KozmosReact.Checkbox, () =>
-        mount(page(`<KozmosCheckbox aria-label="Accept" ${attribute} />`)),
-      );
-      expect(given.checked).toBe(expected);
-      expect($("[role=checkbox]")!.getAttribute("aria-checked")).toBe(aria);
-    },
-  );
-
-  it.each([
     ['aria-hidden="aria-hidden"', true, "true"],
     ["aria-hidden", true, "true"],
     ['aria-hidden="false"', "false", "false"],
   ] as const)(
-    "KozmosIconButton %s: React is given %s, the DOM aria-hidden=%s",
+    "KozmosToggleButton %s: React is given %s, the DOM aria-hidden=%s",
     async (attribute, expected, dom) => {
-      const given = await propsOf(KozmosReact.IconButton, () =>
+      const given = await propsOf(KozmosReact.ToggleButton, () =>
         mount(
           page(
-            `<KozmosIconButton aria-label="Go" ${attribute}>x</KozmosIconButton>`,
+            `<KozmosToggleButton aria-label="Bold" ${attribute}>B</KozmosToggleButton>`,
           ),
         ),
       );
@@ -614,20 +520,6 @@ describe("a union with free text, read String first as Vue reads a [String, Bool
       expect(given.error).toBe(expected);
       expect($("input")!.getAttribute("aria-invalid") === "true").toBe(invalid);
       if (message) expect(document.body.textContent).toContain(message);
-    },
-  );
-
-  it.each([
-    [`:error="''"`, ""],
-    ["error", ""],
-    [':error="true"', true],
-  ] as const)(
-    "KozmosCheckbox %s: React is given %j",
-    async (attribute, expected) => {
-      const given = await propsOf(KozmosReact.Checkbox, () =>
-        mount(page(`<KozmosCheckbox aria-label="Accept" ${attribute} />`)),
-      );
-      expect(given.error).toBe(expected);
     },
   );
 

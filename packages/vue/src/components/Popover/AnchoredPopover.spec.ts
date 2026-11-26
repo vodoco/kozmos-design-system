@@ -2,7 +2,7 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, nextTick, ref, type App } from "vue";
 import { KozmosButton } from "../../index";
-import { KozmosAnchoredPopover, KozmosIconButton } from "../../react-bridge";
+import { KozmosAnchoredPopover, KozmosToggleButton } from "../../react-bridge";
 
 // GAP-190 in the harness: the anchored popover is mounted from Vue, beside an
 // element Vue draws, opened and closed through v-model:open.
@@ -233,7 +233,7 @@ describe("KozmosAnchoredPopover", () => {
     app = createApp({
       setup: () => () => [
         h(
-          KozmosIconButton,
+          KozmosToggleButton,
           { ref: target, "aria-label": "Desk" },
           { default: () => "D" },
         ),

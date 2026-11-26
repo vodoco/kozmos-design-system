@@ -40,17 +40,7 @@ const NOT_DRAWN: Record<string, string> = {
   "ThemeProvider/Density": "draws parts not yet ported to Vue",
   // The bridge mounts React's parts on the client only.
   "Label/WithInput": "its Input is a bridged part, drawn on the client only",
-  "PersonaMark/InAPersonaList":
-    "its Checkbox is a bridged part, drawn on the client only",
   "Card/Default": "its Input is a bridged part, drawn on the client only",
-  "Card/HeaderActions":
-    "its IconButton is a bridged part, drawn on the client only",
-  "Card/SubtleHeader":
-    "its IconButtons are bridged parts, drawn on the client only",
-  "PageHeader/WithInfo":
-    "its IconButton is a bridged part, drawn on the client only",
-  "List/PersonaVisibility":
-    "its IconButtons and Checkboxes are bridged parts, drawn on the client only",
 };
 
 /**

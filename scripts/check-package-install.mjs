@@ -965,7 +965,7 @@ const require = createRequire(import.meta.url);
 const results = [];
 const bridge = await import("@kozmos-ds/vue/react-bridge");
 const cjs = require("@kozmos-ds/vue/react-bridge");
-results.push([typeof bridge.KozmosSelect === "object" && typeof bridge.KozmosCheckbox === "object", "import: ./react-bridge gives KozmosSelect and KozmosCheckbox"]);
+results.push([typeof bridge.KozmosSelect === "object" && typeof bridge.KozmosSwitch === "object", "import: ./react-bridge gives KozmosSelect and KozmosSwitch"]);
 results.push([Object.keys(cjs).sort().join() === Object.keys(bridge).sort().join(), "require() and import() give the same exports"]);
 process.stdout.write(JSON.stringify(results));
 `,
@@ -1000,7 +1000,7 @@ import { KozmosButton } from "@kozmos-ds/vue";
       },
       // Vue's default template checking, not strict templates: a bridged
       // part declares its React props, not the attributes it passes on, so
-      // strict templates refuse the README's <KozmosCheckbox aria-label>.
+      // strict templates refuse the README's <KozmosSwitch aria-label>.
       include,
     });
   fs.writeFileSync(

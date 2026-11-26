@@ -9,17 +9,16 @@ import {
   KozmosBreadcrumbSeparator,
   KozmosButton,
   KozmosContainer,
+  KozmosIconButton,
   KozmosPageHeader,
   KozmosText,
 } from "../../index";
-import { KozmosIconButton } from "../../react-bridge";
 
 /**
  * Vue's PageHeader: the stories React's has, with the same names, its node
  * props given as slots, inside the KozmosThemeProvider the Storybook's
- * decorator gives every story. PageHeader, Breadcrumb, Button, Text and
- * Container are native; IconButton, which has no Vue port yet, is the
- * bridge's. test/parity/page-header.parity.spec.ts draws each in both
+ * decorator gives every story. PageHeader, Breadcrumb, Button, IconButton,
+ * Text and Container are native. test/parity/page-header.parity.spec.ts draws each in both
  * and holds Vue's render to React's.
  */
 const meta: Meta<typeof KozmosPageHeader> = {

@@ -5,6 +5,17 @@ import { cn, mergeAriaIds } from "../../utils";
 import { Label } from "../Label";
 import { ControlText } from "../Label/ControlText";
 import { useKozmosAnalytics } from "../../utils/analytics";
+// The recipe is shared with Vue's KozmosCheckbox (recipes/checkbox.ts).
+import {
+  CHECKBOX_CLASS,
+  CHECKBOX_ERROR_CLASS,
+  CHECKBOX_ERROR_TEXT_CLASS,
+  CHECKBOX_INDICATOR_CLASS,
+  CHECKBOX_LABEL_CLASS,
+  CHECKBOX_MARK_CLASS,
+  CHECKBOX_WRAPPER_CLASS,
+  checkboxRowClass,
+} from "../../recipes/checkbox";
 
 export interface CheckboxProps extends React.ComponentPropsWithoutRef<
   typeof CheckboxPrimitive.Root
@@ -43,22 +54,16 @@ const Checkbox = React.forwardRef<
     const { trackEvent } = useKozmosAnalytics();
 
     return (
-      <div className={cn("flex flex-col gap-1.5 w-full", wrapperClassName)}>
-        <div
-          className={cn(
-            "flex min-h-11 gap-2",
-            description ? "items-start" : "items-center",
-          )}
-        >
+      <div className={cn(CHECKBOX_WRAPPER_CLASS, wrapperClassName)}>
+        <div className={checkboxRowClass(!!description)}>
           <CheckboxPrimitive.Root
             id={inputId}
             ref={ref}
             className={cn(
-              // `indeterminate` is painted exactly like `checked` — same border, same fill. It is a
-              // real answer ("these disagree"), not a disabled or half-pressed control, so it must not
-              // read as weaker than the other two. Only the mark inside differs.
-              "peer h-5 w-5 shrink-0 rounded-marker border border-input ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-theme-fill aria-checked:bg-theme-fill aria-checked:text-theme-fill-foreground aria-[checked=mixed]:border-theme-fill aria-[checked=mixed]:bg-theme-fill aria-[checked=mixed]:text-theme-fill-foreground",
-              hasError && "border-destructive focus-visible:ring-destructive",
+              // `indeterminate` is painted exactly like `checked`: only the
+              // mark inside differs (recipes/checkbox.ts).
+              CHECKBOX_CLASS,
+              hasError && CHECKBOX_ERROR_CLASS,
               className,
             )}
             // The caller's props first, then the handler that wraps theirs:
@@ -83,12 +88,12 @@ const Checkbox = React.forwardRef<
             screen.
           */}
             <CheckboxPrimitive.Indicator
-              className={cn("flex items-center justify-center text-current")}
+              className={cn(CHECKBOX_INDICATOR_CLASS)}
             >
               {props.checked === "indeterminate" ? (
-                <Minus className="h-4 w-4" aria-hidden />
+                <Minus className={CHECKBOX_MARK_CLASS} aria-hidden />
               ) : (
-                <Check className="h-4 w-4" aria-hidden />
+                <Check className={CHECKBOX_MARK_CLASS} aria-hidden />
               )}
             </CheckboxPrimitive.Indicator>
           </CheckboxPrimitive.Root>
@@ -101,17 +106,14 @@ const Checkbox = React.forwardRef<
             />
           ) : (
             label && (
-              <Label
-                htmlFor={inputId}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
-              >
+              <Label htmlFor={inputId} className={CHECKBOX_LABEL_CLASS}>
                 {label}
               </Label>
             )
           )}
         </div>
         {isStringError && (
-          <p id={errorId} className="text-sm text-destructive-text">
+          <p id={errorId} className={CHECKBOX_ERROR_TEXT_CLASS}>
             {error}
           </p>
         )}

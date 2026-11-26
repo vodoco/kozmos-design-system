@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { KozmosBadge, KozmosButton } from '@kozmos-ds/vue';
-import { KozmosCheckbox, KozmosInput } from '@kozmos-ds/vue/react-bridge';
+import { KozmosBadge, KozmosButton, KozmosCheckbox } from '@kozmos-ds/vue';
+import { KozmosInput } from '@kozmos-ds/vue/react-bridge';
 
 interface Task {
   id: number;
@@ -67,7 +67,7 @@ const completedCount = computed(() => tasks.value.filter(t => t.completed).lengt
         <div style="display: flex; align-items: center; gap: 1rem;">
           <KozmosCheckbox 
             :checked="task.completed" 
-            @checkedChange="() => toggleTask(task.id)" 
+            @update:checked="() => toggleTask(task.id)" 
           />
           <span :style="{ textDecoration: task.completed ? 'line-through' : 'none', opacity: task.completed ? 0.6 : 1 }">
             {{ task.text }}

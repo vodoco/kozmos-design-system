@@ -46,6 +46,21 @@ import {
 } from "../../test/react-bridge-harness";
 import { planOf, reactSides } from "../../test/contract/read-contract";
 
+/**
+ * React's Counter, IconButton and Checkbox, wrapped as an app wraps a React
+ * part: the bridge's own are Vue ports now (wave V2), and these stand where
+ * they stood, a plain element, a wrapper with props declared, and a Radix
+ * part with a model.
+ */
+const WrappedCounter = createVueWrapper(KozmosReact.Counter);
+const WrappedIconButton = Object.assign(
+  createVueWrapper(KozmosReact.IconButton),
+  { props: { counterLabel: null } },
+);
+const WrappedCheckbox = createVueWrapper(KozmosReact.Checkbox, {
+  modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
+});
+
 // v-model and attributes through the React bridge (react-adapter.ts); the
 // attributes are at the end, the listeners in Listeners.spec.ts. Each
 // wrapper names its models: React's prop for the value, the callback that
@@ -283,22 +298,6 @@ const PARTS: Part[] = [
     fromNothing: { next: [1], shows: "1" },
     listener: "onValueChange",
     alone: "1",
-  },
-  {
-    name: "KozmosRating",
-    props: { label: "Your visit" },
-    start: 2,
-    before: 2,
-    field: () => $$("[role=radio]")[3],
-    change: (star) => star.click(),
-    next: 4,
-    shown: () =>
-      $$("[role=radio]").findIndex(
-        (star) => star.getAttribute("aria-checked") === "true",
-      ) + 1,
-    shows: 4,
-    nothing: 0,
-    listener: "onChange",
   },
   {
     name: "KozmosFloorSelector",
@@ -605,37 +604,6 @@ const PARTS: Part[] = [
     },
     listener: "onValueChange",
     alone: ["", "2026-11-09"],
-  },
-  {
-    // `v-model` is Radix's `checked`, as `v-model:checked` is.
-    name: "KozmosCheckbox",
-    props: { "aria-label": "Accept" },
-    start: false,
-    before: "false",
-    field: () => $("[role=checkbox]"),
-    change: (box) => box.click(),
-    next: true,
-    shown: () => $("[role=checkbox]")?.getAttribute("aria-checked"),
-    shows: "true",
-    nothing: "false",
-    listener: "onCheckedChange",
-    alone: "true",
-  },
-  {
-    name: "KozmosCheckbox",
-    model: "checked",
-    implicit: true,
-    props: { "aria-label": "Accept" },
-    start: false,
-    before: "false",
-    field: () => $("[role=checkbox]"),
-    change: (box) => box.click(),
-    next: true,
-    shown: () => $("[role=checkbox]")?.getAttribute("aria-checked"),
-    shows: "true",
-    nothing: "false",
-    listener: "onCheckedChange",
-    alone: "true",
   },
   {
     name: "KozmosSwitch",
@@ -1679,10 +1647,12 @@ describe("createVueWrapper's models", () => {
     ]);
   });
 
-  it("KozmosCounter with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
+  // Counter is a Vue port now (wave V2), out of the bridge: React's own,
+  // wrapped as an app wraps a React part, is a plain element with no model.
+  it("a wrapped React Counter with v-model draws no modelvalue attribute, and says it has no v-model", async () => {
     mount(() =>
       h(
-        Bridge.KozmosCounter,
+        WrappedCounter,
         { id: "counter", modelValue: "a", "onUpdate:modelValue": () => {} },
         { default: () => "3" },
       ),
@@ -2395,29 +2365,49 @@ describe("attributes reach React alone", () => {
 
   // One part of each kind, as React draws its attributes: the property
   // above holds for every wrapper, and these show what React does with them.
+  // Counter, IconButton and Checkbox are Vue ports now (wave V2): React's
+  // own, wrapped as an app wraps a React part, stand where the bridge's
+  // stood.
   const KINDS: {
-    name: keyof typeof Bridge;
+    name: string;
+    component: Component;
     kind: string;
     props?: Record<string, unknown>;
     slot?: string;
   }[] = [
-    { name: "KozmosCounter", kind: "a plain element", slot: "3" },
+    {
+      name: "Counter",
+      component: WrappedCounter,
+      kind: "a plain element",
+      slot: "3",
+    },
     {
       name: "KozmosDialogHeader",
+      component: Bridge.KozmosDialogHeader,
       kind: "a box drawing a Vue slot",
       slot: "Gate 4",
     },
     {
-      name: "KozmosIconButton",
+      name: "IconButton",
+      component: WrappedIconButton,
       kind: "a wrapper with props declared",
       slot: "G",
     },
-    { name: "KozmosInput", kind: "a field, its <input> React's element" },
+    {
+      name: "KozmosInput",
+      component: Bridge.KozmosInput,
+      kind: "a field, its <input> React's element",
+    },
     {
       name: "KozmosSearchBar",
+      component: Bridge.KozmosSearchBar,
       kind: "a field with a model, inside a row of its own",
     },
-    { name: "KozmosCheckbox", kind: "a Radix part with a model" },
+    {
+      name: "Checkbox",
+      component: WrappedCheckbox,
+      kind: "a Radix part with a model",
+    },
   ];
 
   // Every element with the id. jsdom reads `#probe` through getElementById,
@@ -2445,7 +2435,7 @@ describe("attributes reach React alone", () => {
         const onClick = vi.fn();
         const host = mount(() =>
           h(
-            Bridge[part.name] as Component,
+            part.component,
             {
               ...part.props,
               id: "probe",
@@ -2497,7 +2487,7 @@ describe("attributes reach React alone", () => {
     ],
   ] as const)("takes style as %s", async (_, style, name) => {
     const host = mount(() =>
-      h(Bridge.KozmosCounter, { id: "probe", style }, { default: () => "3" }),
+      h(WrappedCounter, { id: "probe", style }, { default: () => "3" }),
     );
     const { element } = await drawnByReact(host);
     expect(element.style.color).toBe("rgb(255, 0, 0)");
@@ -2507,7 +2497,7 @@ describe("attributes reach React alone", () => {
   it("keeps a declaration given !important, without it, and says so", async () => {
     const host = mount(() =>
       h(
-        Bridge.KozmosCounter,
+        WrappedCounter,
         {
           id: "probe",
           style:

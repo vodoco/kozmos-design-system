@@ -1,6 +1,9 @@
 import React from "react";
 import { cn } from "../../utils";
-import { iconButtonSizeClass } from "../../recipes/icon-button";
+import {
+  ICON_BUTTON_COUNTER_CLASS,
+  iconButtonSizeClass,
+} from "../../recipes/icon-button";
 import { Button, type ButtonProps } from "../Button/Button";
 
 export interface IconButtonProps extends ButtonProps {
@@ -28,7 +31,8 @@ export interface IconButtonProps extends ButtonProps {
   counterSeparator?: string;
 }
 
-// The box is shared with Vue's KozmosCodeBlock's copy (recipes/icon-button.ts).
+// The box is shared with Vue's KozmosCodeBlock's copy and Vue's
+// KozmosIconButton, and so is the count (recipes/icon-button.ts).
 
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
   (
@@ -82,7 +86,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
             <span
               aria-hidden="true"
               data-slot="counter"
-              className="kozmos-icon-button-counter inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-theme-fill px-[5px] text-[11px] font-semibold tabular-nums text-theme-fill-foreground"
+              className={ICON_BUTTON_COUNTER_CLASS}
             >
               {counter}
             </span>

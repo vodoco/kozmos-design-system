@@ -32,4 +32,15 @@ export const EXCEPTIONS: Record<string, string> = {
     "React's boolean `value` (a yes or a no) is Vue's `:value`, beside the `#value` slot that takes its nodes: a slot cannot carry a boolean",
   "KozmosDescriptionListItem.value:type":
     "Vue's `value` prop is the boolean half of React's `ReactNode | boolean`; the node half is the `#value` slot",
+  // A function React's parameter list defaults to, which the contract reads
+  // as source text, not a value: the same function is Vue's default.
+  // IconButton's counterLabel defaults to `String`, the number alone.
+  "KozmosIconButton.counterLabel:default":
+    "React's default is the function `String`, which the contract cannot read as a literal; Vue's default is the same `String`, and icon-button.parity.spec.ts reads the count it writes",
+  // Rating's itemLabel and valueLabel default to the recipe's English words
+  // (recipes/rating.ts), the functions React's parameter list names.
+  "KozmosRating.itemLabel:default":
+    "React's default is the recipe's defaultRatingItemLabel, a function the contract cannot read as a literal; Vue's default is the same function, and rating.parity.spec.ts reads each option's name",
+  "KozmosRating.valueLabel:default":
+    "React's default is the recipe's defaultRatingValueLabel, a function the contract cannot read as a literal; Vue's default is the same function, and rating.parity.spec.ts reads the read-only label",
 };

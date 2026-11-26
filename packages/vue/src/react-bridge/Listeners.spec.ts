@@ -763,7 +763,6 @@ const first = (selector: string) => (drawn: HTMLElement) =>
  * here), else the first element it draws.
  */
 const IN_PLACE: Record<string, InPlace> = {
-  KozmosCounter: { slot: true },
   KozmosSlider: {
     props: { "aria-label": "Volume" },
     click: first("span[data-orientation]"),
@@ -803,7 +802,6 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { length: 4 },
     click: (drawn) => drawn.querySelector("input")?.parentElement,
   },
-  KozmosRating: { props: { label: "Your visit" } },
   KozmosFileUpload: {
     props: { label: "Floor plan" },
     click: (drawn) => drawn.querySelector("input[type=file]")?.parentElement,
@@ -818,7 +816,6 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Mode", items: [{ value: "walk", label: "Walk" }] },
     click: first("[role=group]"),
   },
-  KozmosIconButton: { slot: true },
   KozmosTabs: { slot: true },
   KozmosDialog: { slot: true },
   KozmosMapOverlay: { slot: true },
@@ -843,10 +840,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSaveLocationCard: {},
   KozmosScrollArea: { slot: true },
   KozmosUserLocationMarker: {},
-  KozmosCheckbox: {
-    props: { "aria-label": "Accept" },
-    click: first("[role=checkbox]"),
-  },
   KozmosInput: { props: { "aria-label": "Name" }, click: first("input") },
   KozmosTextarea: { props: { "aria-label": "Note" }, click: first("textarea") },
   KozmosSwitch: {
@@ -1135,7 +1128,6 @@ describe("the part decides what runs its listener", () => {
   });
 
   it.each([
-    ["KozmosIconButton", { "aria-label": "Go" }, "button"],
     ["KozmosFloatingActionButton", { "aria-label": "Go" }, "button"],
     ["KozmosToggleButton", { "aria-label": "Bold" }, "button"],
     ["KozmosChip", {}, "button"],
@@ -1311,7 +1303,7 @@ describe("what a part draws in a portal", () => {
 // --------------------------------------------------------------------------
 
 describe("a wrapper inside another", () => {
-  it("DialogHeader > IconButton: each @click runs once, and .stop on the inner silences the outer", async () => {
+  it("DialogHeader > ToggleButton: each @click runs once, and .stop on the inner silences the outer", async () => {
     for (const [modifier, outerTimes] of [
       ["", 1],
       [".stop", 0],
@@ -1320,7 +1312,7 @@ describe("a wrapper inside another", () => {
       const inner = vi.fn();
       mount(
         page(
-          `<KozmosDialogHeader @click="outer"><KozmosIconButton aria-label="Go" @click${modifier}="inner">x</KozmosIconButton></KozmosDialogHeader>`,
+          `<KozmosDialogHeader @click="outer"><KozmosToggleButton aria-label="Go" @click${modifier}="inner">x</KozmosToggleButton></KozmosDialogHeader>`,
           { outer, inner },
         ),
       );
@@ -1573,11 +1565,11 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
   it(".prevent is React's too: a Radix part sees the event prevented, and does nothing", async () => {
     const clicked = vi.fn();
     mount(
-      page(`<KozmosCheckbox aria-label="Accept" @click.prevent="clicked" />`, {
+      page(`<KozmosSwitch aria-label="Wi-Fi" @click.prevent="clicked" />`, {
         clicked,
       }),
     );
-    const box = await until(() => $<HTMLElement>("[role=checkbox]"));
+    const box = await until(() => $<HTMLElement>("[role=switch]"));
     box.click();
     await settle();
     expect(clicked).toHaveBeenCalledTimes(1);
