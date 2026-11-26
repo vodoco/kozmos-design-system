@@ -52,6 +52,7 @@ export * from "./persona-mark";
 export * from "./progress";
 export * from "./radio";
 export * from "./rating";
+export * from "./scrollbar";
 export * from "./segmented-control";
 export * from "./select";
 export * from "./separator";
