@@ -765,10 +765,6 @@ const first = (selector: string) => (drawn: HTMLElement) =>
  * here), else the first element it draws.
  */
 const IN_PLACE: Record<string, InPlace> = {
-  KozmosSlider: {
-    props: { "aria-label": "Volume" },
-    click: first("span[data-orientation]"),
-  },
   KozmosSearch: { props: { "aria-label": "Search" }, click: first("input") },
   KozmosSearchBar: {
     props: { placeholder: "Where to?" },
@@ -810,10 +806,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosFloatingActionButton: { slot: true },
   KozmosSplitButton: { slot: true },
   KozmosToggleButton: { slot: true },
-  KozmosSegmentedControl: {
-    props: { label: "Mode", items: [{ value: "walk", label: "Walk" }] },
-    click: first("[role=group]"),
-  },
   KozmosTabs: { slot: true },
   KozmosDialog: { slot: true },
   KozmosMapOverlay: { slot: true },
@@ -823,7 +815,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosFeedbackCard: {},
   KozmosMapControlsGroup: {},
   KozmosNavigationAnnouncer: { props: { message: "Turn left" } },
-  KozmosRadioGroup: { slot: true },
   KozmosRouteSummary: {},
   KozmosRoutingInputGroup: {
     props: {
@@ -837,10 +828,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSaveLocationCard: {},
   KozmosScrollArea: { slot: true },
   KozmosUserLocationMarker: {},
-  KozmosSwitch: {
-    props: { "aria-label": "Wi-Fi" },
-    click: first("[role=switch]"),
-  },
   KozmosAdaptiveMapShell: { props: { panel: "Gate 4" } },
   KozmosBrowseCategoriesPanel: {
     props: { categories: [tile], onSelect: noop, renderIcon: () => null },
@@ -1552,15 +1539,16 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
   it(".prevent is React's too: a Radix part sees the event prevented, and does nothing", async () => {
     const clicked = vi.fn();
     mount(
-      page(`<KozmosSwitch aria-label="Wi-Fi" @click.prevent="clicked" />`, {
-        clicked,
-      }),
+      page(
+        `<KozmosToggleButton aria-label="Bold" @click.prevent="clicked">B</KozmosToggleButton>`,
+        { clicked },
+      ),
     );
-    const box = await until(() => $<HTMLElement>("[role=switch]"));
+    const box = await until(() => $<HTMLElement>("button[aria-pressed]"));
     box.click();
     await settle();
     expect(clicked).toHaveBeenCalledTimes(1);
-    expect(box.getAttribute("aria-checked")).toBe("false");
+    expect(box.getAttribute("aria-pressed")).toBe("false");
   });
 
   it(".self is the element the part gives the listener to, and currentTarget is restored after", async () => {

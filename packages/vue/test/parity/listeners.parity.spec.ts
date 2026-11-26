@@ -42,6 +42,16 @@ beforeAll(() => {
   const side = reactSides();
   takesAttributes = (react) => side(react).reactAttributes.length > 0;
 }, 120_000);
+// jsdom has no ResizeObserver, which Radix's Slider measures its thumbs
+// with (and KozmosSlider as it does): a stand-in that never reports, in
+// both.
+beforeAll(() => {
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+});
 
 /** A sample's args without `children`: the outer part draws the port as its child. */
 const withoutChildren = (args: StoryArgs) =>

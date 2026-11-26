@@ -37,8 +37,7 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosLabel } from "@kozmos-ds/vue"
-import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
+import { KozmosLabel, KozmosSwitch } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const isChecked = ref(false)
@@ -47,7 +46,7 @@ const isChecked = ref(false)
 <template>
   <div class="flex items-center space-x-2">
     <KozmosSwitch id="airplane-mode" v-model:checked="isChecked" />
-    <KozmosLabel htmlFor="airplane-mode">Airplane Mode</KozmosLabel>
+    <KozmosLabel for="airplane-mode">Airplane Mode</KozmosLabel>
   </div>
 </template>
     `}
@@ -102,7 +101,7 @@ export function GateAlerts() {
     `}
     vue={`
 <script setup>
-import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
+import { KozmosSwitch } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const alerts = ref(true)
@@ -198,7 +197,7 @@ export function StepFreeAcrossSelection({ settings }: { settings: boolean[] }) {
     `}
     vue={`
 <script setup>
-import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge"
+import { KozmosSwitch } from "@kozmos-ds/vue"
 import { computed, ref } from "vue"
 
 const props = defineProps({ settings: Array })

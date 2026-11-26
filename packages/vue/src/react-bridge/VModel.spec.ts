@@ -14,7 +14,6 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  RadioGroupItem,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -246,22 +245,6 @@ const PARTS: Part[] = [
     alone: "true",
   },
   {
-    name: "KozmosSlider",
-    props: { "aria-label": "Volume", max: 10 },
-    start: [3],
-    before: "3",
-    field: () => $("[role=slider]"),
-    change: (thumb) => press(thumb, "ArrowRight"),
-    next: [4],
-    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
-    shows: "4",
-    // Where it starts with nothing given: its minimum.
-    nothing: "0",
-    fromNothing: { next: [1], shows: "1" },
-    listener: "onValueChange",
-    alone: "1",
-  },
-  {
     name: "KozmosFloorSelector",
     props: { floors: ["1", "2", "3"], label: "Floor" },
     start: "1",
@@ -337,48 +320,6 @@ const PARTS: Part[] = [
     nothing: [],
     listener: "onFilesChange",
     alone: ["plan.pdf"],
-  },
-  {
-    // Its items cannot be KozmosRadioGroupItems: each wrapper is a React
-    // root of its own, and Radix's items must share their group's (GAP-016).
-    // React's items, handed over as `children`, share it.
-    name: "KozmosRadioGroup",
-    props: {
-      "aria-label": "Mode",
-      children: ["walk", "drive"].map((value) =>
-        e(RadioGroupItem, { key: value, value, label: value }),
-      ),
-    },
-    start: "walk",
-    before: "walk",
-    field: () => $("[role=radio][value=drive]"),
-    change: (radio) => radio.click(),
-    next: "drive",
-    shown: () => $("[role=radio][aria-checked=true]")?.getAttribute("value"),
-    shows: "drive",
-    nothing: undefined,
-    listener: "onValueChange",
-    alone: "drive",
-  },
-  {
-    name: "KozmosSegmentedControl",
-    props: {
-      label: "Mode",
-      items: [
-        { value: "walk", label: "Walk" },
-        { value: "drive", label: "Drive" },
-      ],
-    },
-    start: "walk",
-    before: "Walk",
-    field: () => byText("[role=radio]", "Drive"),
-    change: (segment) => segment.click(),
-    next: "drive",
-    shown: () => $("[role=radio][aria-checked=true]")?.textContent?.trim(),
-    shows: "Drive",
-    nothing: undefined,
-    listener: "onValueChange",
-    alone: "Drive",
   },
   {
     // The choice is the value; what is typed is only the query.
@@ -566,36 +507,6 @@ const PARTS: Part[] = [
     },
     listener: "onValueChange",
     alone: ["", "2026-11-09"],
-  },
-  {
-    name: "KozmosSwitch",
-    props: { "aria-label": "Wi-Fi" },
-    start: false,
-    before: "false",
-    field: () => $("[role=switch]"),
-    change: (toggle) => toggle.click(),
-    next: true,
-    shown: () => $("[role=switch]")?.getAttribute("aria-checked"),
-    shows: "true",
-    nothing: "false",
-    listener: "onCheckedChange",
-    alone: "true",
-  },
-  {
-    name: "KozmosSwitch",
-    model: "checked",
-    implicit: true,
-    props: { "aria-label": "Wi-Fi" },
-    start: false,
-    before: "false",
-    field: () => $("[role=switch]"),
-    change: (toggle) => toggle.click(),
-    next: true,
-    shown: () => $("[role=switch]")?.getAttribute("aria-checked"),
-    shows: "true",
-    nothing: "false",
-    listener: "onCheckedChange",
-    alone: "true",
   },
   {
     name: "KozmosWayfindingInputRow",
@@ -896,40 +807,6 @@ const PARTS: Part[] = [
   // A model whose nothing depends on the part's props (`empty` a function):
   // a row for each thing the function reads, which a constant gets wrong.
   // ------------------------------------------------------------------------
-  {
-    // Its default is where it starts with nothing given.
-    name: "KozmosSlider",
-    variant: "defaultValue",
-    props: { "aria-label": "Volume", max: 10, defaultValue: [5] },
-    start: [3],
-    before: "3",
-    field: () => $("[role=slider]"),
-    change: (thumb) => press(thumb, "ArrowRight"),
-    next: [4],
-    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
-    shows: "4",
-    nothing: "5",
-    fromNothing: { next: [6], shows: "6" },
-    listener: "onValueChange",
-    alone: "6",
-  },
-  {
-    // With no default, its thumbs start spread from its min to its max.
-    name: "KozmosSlider",
-    variant: "min, max and thumbCount",
-    props: { "aria-label": "Range", min: 2, max: 8, thumbCount: 2 },
-    start: [4, 6],
-    before: "4",
-    field: () => $("[role=slider]"),
-    change: (thumb) => press(thumb, "ArrowRight"),
-    next: [5, 6],
-    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
-    shows: "5",
-    nothing: "2",
-    fromNothing: { next: [3, 8], shows: "3" },
-    listener: "onValueChange",
-    alone: "3",
-  },
   {
     name: "KozmosColorPicker",
     model: "alpha",
@@ -1403,19 +1280,6 @@ describe("each model's other changes", () => {
     });
   });
 
-  it("KozmosSegmentedControl's choice taken back is undefined, and the control holds nothing", async () => {
-    const { emitted } = mountPart(PARTS_BY.KozmosSegmentedControl, {
-      vModel: true,
-    });
-    (await until(() => byText("[role=radio]", "Walk")))!.click();
-    // A fixed wait: the change is emitted once, and no more.
-    await settle();
-    expect(emitted).toEqual([undefined]);
-    await eventually(() =>
-      expect($("[role=radio][aria-checked=true]")).toBeNull(),
-    );
-  });
-
   it("an empty model leaves a text field controlled", async () => {
     const value = ref<string | undefined>(undefined);
     mount(() =>
@@ -1642,14 +1506,6 @@ describe("a model's nothing, read from React's props", () => {
     ["KozmosAccordion", "modelValue", { type: "single" }, ""],
     ["KozmosListbox", "modelValue", { multiple: true }, []],
     ["KozmosListbox", "modelValue", {}, ""],
-    ["KozmosSlider", "modelValue", { defaultValue: [5] }, [5]],
-    ["KozmosSlider", "modelValue", {}, [0]],
-    [
-      "KozmosSlider",
-      "modelValue",
-      { min: 2, max: 8, thumbCount: 3 },
-      [2, 5, 8],
-    ],
     ["KozmosPOIMediaGallery", "activeIndex", { defaultActiveIndex: 2 }, 2],
     ["KozmosPOIMediaGallery", "activeIndex", {}, 0],
     ["KozmosColorPicker", "alpha", { defaultAlpha: 60 }, 60],

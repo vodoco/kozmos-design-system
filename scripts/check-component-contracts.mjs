@@ -246,6 +246,13 @@ const files = {
   reactCheckboxRecipe: "packages/react/src/recipes/checkbox.ts",
   reactRadio: "packages/react/src/components/Radio/Radio.tsx",
   reactSwitch: "packages/react/src/components/Switch/Switch.tsx",
+  // Radio's, Switch's, Slider's and SegmentedControl's recipes, shared with
+  // Vue's ports (wave V2, choices).
+  reactRadioRecipe: "packages/react/src/recipes/radio.ts",
+  reactSwitchRecipe: "packages/react/src/recipes/switch.ts",
+  reactSliderRecipe: "packages/react/src/recipes/slider.ts",
+  reactSegmentedControlRecipe:
+    "packages/react/src/recipes/segmented-control.ts",
   reactInput: "packages/react/src/components/Input/Input.tsx",
   // Input's recipe, shared with Vue's KozmosInput and every field drawn on
   // it (wave V2, the fields batch).
@@ -1028,20 +1035,20 @@ assertContains(
   "React Checkbox neutral unchecked border",
 );
 assertContains(
-  files.reactRadio,
-  source.reactRadio,
+  files.reactRadioRecipe,
+  source.reactRadioRecipe,
   "min-h-11",
   "React Radio 44px row target",
 );
 assertContains(
-  files.reactRadio,
-  source.reactRadio,
+  files.reactRadioRecipe,
+  source.reactRadioRecipe,
   "h-5 w-5",
   "React Radio 20px visual control",
 );
 assertContains(
-  files.reactRadio,
-  source.reactRadio,
+  files.reactRadioRecipe,
+  source.reactRadioRecipe,
   "border-input",
   "React Radio neutral unchecked border",
 );
@@ -1052,26 +1059,26 @@ assertContains(
   "React Radio item error API",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "min-h-11",
   "React Switch 44px row target",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "h-6 w-11",
   "React Switch 44x24 visual track",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "h-5 w-5",
   "React Switch 20px visual thumb",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "border-muted-foreground bg-muted-foreground",
   "React Switch neutral unchecked track",
 );
@@ -1127,8 +1134,8 @@ assertContains(
   "React SelectTrigger at the density's field height (44 touch, 40 compact)",
 );
 assertContains(
-  files.reactSlider,
-  source.reactSlider,
+  files.reactSliderRecipe,
+  source.reactSliderRecipe,
   "border border-input bg-secondary",
   "React Slider inactive track boundary",
 );
@@ -1265,15 +1272,15 @@ assertContains(
   "Slider Code Connect type-to-thumb-count mapping",
 );
 assertContains(
-  files.reactSlider,
-  source.reactSlider,
+  files.reactSliderRecipe,
+  source.reactSliderRecipe,
   "thumbCount ??",
   "Slider range thumb count inference",
 );
 assertContains(
-  files.reactSlider,
-  source.reactSlider,
-  "Array.isArray(props.defaultValue)",
+  files.reactSliderRecipe,
+  source.reactSliderRecipe,
+  "Array.isArray(defaultValue)",
   "Slider range defaultValue inference",
 );
 assertContains(
@@ -2316,6 +2323,13 @@ for (const [part, module] of [
   ["KozmosPasswordInput", "PasswordInput/PasswordInput"],
   ["KozmosNumberInput", "NumberInput/NumberInput"],
   ["KozmosOTPInput", "OTPInput/OTPInput"],
+  // Switch, RadioGroup and its items, SegmentedControl and Slider (wave V2,
+  // the choices batch). RadioGroup's parts are one module, as React's are.
+  ["KozmosSwitch", "Switch/Switch"],
+  ["KozmosRadioGroup", "Radio/Radio"],
+  ["KozmosRadioGroupItem", "Radio/Radio"],
+  ["KozmosSegmentedControl", "SegmentedControl/SegmentedControl"],
+  ["KozmosSlider", "Slider/Slider"],
 ]) {
   assertContains(
     files.vueIndex,
@@ -6202,64 +6216,64 @@ assertContains(
   "Linked Android Code Connect includes SegmentedControl source",
 );
 assertNotContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "focus-within:ring-2",
   "React SegmentedControl should not draw a whole-track focus ring",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "rounded-[12px] font-medium",
   "React SegmentedControl selected item radius",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "rounded-[16px] border",
   "React SegmentedControl base radius",
 );
 assertNotContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "var(--primitives-radius-md)",
   "React SegmentedControl radius must not inherit the 16px primitive md radius",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'sm: "min-h-[52px]"',
   "React SegmentedControl small outer height",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'default: "min-h-[52px]"',
   "React SegmentedControl default outer height",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'lg: "min-h-[56px]"',
   "React SegmentedControl large outer height",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'sm: "min-h-11 px-3 text-xs"',
   "React SegmentedControl small item target",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   // GAP-267 (decision 201): 117 less the default's 16 a side, as the grid
   // column's most, and the words as its least (min-width: min-content).
   'className: "grid-cols-[minmax(max-content,85px)]"',
   "React SegmentedControl default segment minimum width",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   '"inline-grid min-w-min ',
   "React SegmentedControl options shrink to their words, never past them (GAP-267)",
 );

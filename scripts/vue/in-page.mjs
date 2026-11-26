@@ -404,6 +404,23 @@ export function installVueProbes() {
   const COLOUR_IN_TEXT =
     /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\((?:[^()]|\([^()]*\))*\)/g;
 
+  /** A computed box-shadow's layers, split at the commas between them. */
+  const shadowLayers = (text) => {
+    const layers = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === "(") depth++;
+      else if (text[i] === ")") depth--;
+      else if (text[i] === "," && depth === 0) {
+        layers.push(text.slice(start, i));
+        start = i + 1;
+      }
+    }
+    layers.push(text.slice(start));
+    return layers.map((layer) => layer.trim()).filter(Boolean);
+  };
+
   const close = (x, y, by) => Math.abs(x - y) <= by;
   /** Two colours that are the same to within rounding. */
   const sameColour = (a, b) =>
@@ -585,9 +602,20 @@ export function installVueProbes() {
         ]);
     if (style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0)
       out.push(["outline-color", style.outlineColor]);
+    // Each shadow that draws: one whose offsets, blur and spread are all
+    // zero draws nothing, as a border of no width draws nothing. Tailwind's
+    // `ring-0`, and a ring's offset of none, are such shadows in a colour
+    // of Tailwind's own (Switch's thumb, an invalid SegmentedControl).
     if (style.boxShadow && style.boxShadow !== "none")
-      for (const [colour] of style.boxShadow.matchAll(COLOUR_IN_TEXT))
-        out.push(["box-shadow", colour]);
+      for (const layer of shadowLayers(style.boxShadow)) {
+        const lengths = layer
+          .replace(COLOUR_IN_TEXT, "")
+          .match(/-?\d*\.?\d+(?:px|em|rem)?/g);
+        if (!lengths || lengths.every((length) => parseFloat(length) === 0))
+          continue;
+        for (const [colour] of layer.matchAll(COLOUR_IN_TEXT))
+          out.push(["box-shadow", colour]);
+      }
     if (
       style.textDecorationLine &&
       style.textDecorationLine !== "none" &&

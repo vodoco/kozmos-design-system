@@ -147,35 +147,6 @@ const CASES: Case[] = [
     byDefault: true,
   },
   {
-    name: "KozmosSwitch",
-    part: KozmosReact.Switch,
-    prop: "disabled",
-    attribute: "disabled",
-    template: (a) => `<KozmosSwitch aria-label="Wi-Fi" ${a} />`,
-    drawn: () => $<HTMLButtonElement>("[role=switch]")!.disabled,
-    byDefault: false,
-  },
-  {
-    // `v-model:checked`'s, read from the attributes: a boolean here.
-    name: "KozmosSwitch",
-    part: KozmosReact.Switch,
-    prop: "checked",
-    attribute: "checked",
-    template: (a) => `<KozmosSwitch aria-label="Wi-Fi" ${a} />`,
-    drawn: () => $("[role=switch]")!.getAttribute("aria-checked") === "true",
-    byDefault: false,
-  },
-  {
-    // GAP-162: the state in words beside the track, off unless asked.
-    name: "KozmosSwitch",
-    part: KozmosReact.Switch,
-    prop: "showStateLabel",
-    attribute: "show-state-label",
-    template: (a) => `<KozmosSwitch label="Gate alerts" ${a} />`,
-    drawn: () => $("[data-slot=state-label]") !== null,
-    byDefault: false,
-  },
-  {
     // Decision 159: a border and the control radius round the table.
     name: "KozmosTable",
     part: KozmosReact.Table,
@@ -375,12 +346,10 @@ describe("a model whose React prop is a boolean", () => {
     expect(booleanModels()).toEqual([
       "KozmosToggleButton pressed → pressed",
       "KozmosMapControlsGroup stepFree → stepFree",
-      "KozmosSwitch modelValue → checked",
     ]);
     for (const [name, model] of [
       ["KozmosToggleButton", "pressed"],
       ["KozmosMapControlsGroup", "stepFree"],
-      ["KozmosSwitch", "modelValue"],
     ] as const)
       for (const value of [false, true]) {
         const component = Bridge[name] as Component;
@@ -424,14 +393,6 @@ describe("a model whose React prop is a boolean", () => {
       attribute: "step-free",
       prop: "stepFree",
       template: (a) => `<KozmosMapControlsGroup label="Map controls" ${a} />`,
-    },
-    {
-      name: "KozmosSwitch",
-      part: KozmosReact.Switch,
-      attribute: "model-value",
-      prop: "checked",
-      template: (a) => `<KozmosSwitch aria-label="Wi-Fi" ${a} />`,
-      drawn: () => $("[role=switch]")!.getAttribute("aria-checked") === "true",
     },
   ];
 

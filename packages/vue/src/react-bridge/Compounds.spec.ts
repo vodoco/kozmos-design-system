@@ -18,8 +18,9 @@ import {
 // wrapper in another wrapper's slot is drawn in that one's React tree, by a
 // portal into its own box, where the React part draws the slot: so it finds
 // the context its compound gives it, as a React child does. Before, each
-// wrapper was a React root of its own, and a KozmosRadioGroupItem inside a
-// KozmosRadioGroup threw: it could not find its group.
+// wrapper was a React root of its own, and an item inside its group (a
+// KozmosRadioGroupItem in its KozmosRadioGroup, since ported to Vue) threw:
+// it could not find its group.
 
 const B = Bridge as unknown as Record<string, Component>;
 
@@ -37,40 +38,39 @@ describe("each part of a part made of parts draws inside its compound", () => {
 });
 
 describe("a compound is one React tree", () => {
-  it("RadioGroup: v-model is the item pressed, and each item is its group's", async () => {
+  it("Accordion: v-model is the item opened, and each item is its accordion's", async () => {
     const level = ref("1");
+    const item = (value: string, title: string) =>
+      h(Bridge.KozmosAccordionItem, { value }, () => [
+        h(Bridge.KozmosAccordionTrigger, {}, () => title),
+        h(Bridge.KozmosAccordionContent, {}, () => `${title} opens`),
+      ]);
     mount(() =>
       h(
-        Bridge.KozmosRadioGroup,
+        Bridge.KozmosAccordion,
         {
-          "aria-label": "Level",
+          type: "single",
+          collapsible: true,
           modelValue: level.value,
           "onUpdate:modelValue": (value: string) => (level.value = value),
         },
-        () => [
-          h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
-          h(Bridge.KozmosRadioGroupItem, { value: "2", label: "Level 2" }),
-        ],
+        () => [item("1", "Level 1"), item("2", "Level 2")],
       ),
     );
-    const radios = await until(() => {
-      const found = $$<HTMLButtonElement>("[role=radio]");
+    const triggers = await until(() => {
+      const found = $$<HTMLButtonElement>("button[aria-expanded]");
       return found.length === 2 && found;
     });
-    expect(radios.map((radio) => radio.getAttribute("aria-checked"))).toEqual([
-      "true",
-      "false",
-    ]);
-    radios[1].click();
+    expect(
+      triggers.map((trigger) => trigger.getAttribute("aria-expanded")),
+    ).toEqual(["true", "false"]);
+    triggers[1].click();
     await eventually(() => expect(level.value).toBe("2"));
     await eventually(() =>
-      expect(radios.map((radio) => radio.getAttribute("aria-checked"))).toEqual(
-        ["false", "true"],
-      ),
+      expect(
+        triggers.map((trigger) => trigger.getAttribute("aria-expanded")),
+      ).toEqual(["false", "true"]),
     );
-    // One group: the arrow keys move between its items (Radix's roving
-    // focus finds them in its collection).
-    expect($("[role=radiogroup]")!.contains(radios[0])).toBe(true);
   });
 
   it("Select: the item chosen is the model, and the trigger shows its words", async () => {
@@ -168,16 +168,14 @@ describe("a compound is one React tree", () => {
   it("a listener on a part of a compound runs once, given the native event", async () => {
     const click = vi.fn();
     mount(() =>
-      h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
-        h(Bridge.KozmosRadioGroupItem, {
-          value: "1",
-          label: "Level 1",
-          onClick: click,
-        }),
+      h(Bridge.KozmosAccordion, { type: "single", collapsible: true }, () => [
+        h(Bridge.KozmosAccordionItem, { value: "1" }, () => [
+          h(Bridge.KozmosAccordionTrigger, { onClick: click }, () => "Level 1"),
+        ]),
       ]),
     );
-    const radio = await until(() => $("[role=radio]"));
-    radio.click();
+    const trigger = await until(() => $("button[aria-expanded]"));
+    trigger.click();
     await settle();
     expect(click).toHaveBeenCalledTimes(1);
     expect(click.mock.calls[0][0]).toBeInstanceOf(MouseEvent);
@@ -185,25 +183,27 @@ describe("a compound is one React tree", () => {
 
   it("a part leaves its compound's tree when Vue takes it away", async () => {
     const shown = ref(true);
+    const item = (value: string) =>
+      h(Bridge.KozmosAccordionItem, { value }, () => [
+        h(Bridge.KozmosAccordionTrigger, {}, () => `Level ${value}`),
+      ]);
     mount(() =>
-      h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
-        h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
-        shown.value
-          ? h(Bridge.KozmosRadioGroupItem, { value: "2", label: "Level 2" })
-          : null,
-        h(Bridge.KozmosRadioGroupItem, { value: "3", label: "Level 3" }),
+      h(Bridge.KozmosAccordion, { type: "single", collapsible: true }, () => [
+        item("1"),
+        shown.value ? item("2") : null,
+        item("3"),
       ]),
     );
-    const third = await until(() => $$("[role=radio]")[2]);
+    const third = await until(() => $$("button[aria-expanded]")[2]);
     shown.value = false;
     await nextTick();
     await eventually(() =>
       expect(
-        $$("[role=radio]").map((radio) => radio.getAttribute("value")),
-      ).toEqual(["1", "3"]),
+        $$("button[aria-expanded]").map((trigger) => trigger.textContent),
+      ).toEqual(["Level 1", "Level 3"]),
     );
     // The item after it is the one it was: not drawn again.
-    expect($$("[role=radio]")[1]).toBe(third);
+    expect($$("button[aria-expanded]")[1]).toBe(third);
   });
 });
 

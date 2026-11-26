@@ -816,6 +816,97 @@ export const PORTS: Port[] = [
       "update:modelValue": "parity/otpinput.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosSwitch",
+    react: "Switch",
+    stories: "components/Switch/Switch.stories.tsx",
+    elsewhere: {
+      // Each its own render, of one switch.
+      Default: "parity/switch.parity.spec.ts",
+      Checked: "parity/switch.parity.spec.ts",
+      Disabled: "parity/switch.parity.spec.ts",
+      Error: "parity/switch.parity.spec.ts",
+      WithDescription: "parity/switch.parity.spec.ts",
+      StateLabel: "parity/switch.parity.spec.ts",
+    },
+    drawnIn: "parity/switch.parity.spec.ts",
+    sample: { label: "Airplane Mode" },
+    events: {
+      "update:checked": "parity/switch.parity.spec.ts",
+      resetMixed: "parity/switch.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosRadioGroup",
+    react: "RadioGroup",
+    // React's RadioGroup and RadioGroupItem are one module, Radio.
+    stories: "components/Radio/Radio.stories.tsx",
+    elsewhere: {
+      // Each its own render, of a group and its items.
+      Default: "parity/radio.parity.spec.ts",
+      Disabled: "parity/radio.parity.spec.ts",
+      Error: "parity/radio.parity.spec.ts",
+      WithDescription: "parity/radio.parity.spec.ts",
+      Cards: "parity/radio.parity.spec.ts",
+      Tiles: "parity/radio.parity.spec.ts",
+    },
+    drawnIn: "parity/radio.parity.spec.ts",
+    sample: { "aria-label": "Level", defaultValue: "1" },
+    events: {
+      "update:modelValue": "parity/radio.parity.spec.ts",
+      resetMixed: "parity/radio.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosRadioGroupItem",
+    react: "RadioGroupItem",
+    stories: null,
+    drawnIn: "parity/radio.parity.spec.ts",
+    within: "RadioGroup",
+    sample: { value: "1", label: "Level 1" },
+  },
+  {
+    vue: "KozmosSegmentedControl",
+    react: "SegmentedControl",
+    stories: "components/SegmentedControl/SegmentedControl.stories.tsx",
+    elsewhere: {
+      // The meta's `items` is a module constant the reader cannot read.
+      Default: "parity/segmented-control.parity.spec.ts",
+      FullWidth: "parity/segmented-control.parity.spec.ts",
+      Error: "parity/segmented-control.parity.spec.ts",
+      Disabled: "parity/segmented-control.parity.spec.ts",
+    },
+    drawnIn: "parity/segmented-control.parity.spec.ts",
+    sample: {
+      label: "Mode",
+      defaultValue: "walk",
+      items: [
+        { value: "walk", label: "Walk" },
+        { value: "drive", label: "Drive" },
+      ],
+    },
+    events: {
+      "update:modelValue": "parity/segmented-control.parity.spec.ts",
+      resetMixed: "parity/segmented-control.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSlider",
+    react: "Slider",
+    stories: "components/Slider/Slider.stories.tsx",
+    elsewhere: {
+      // Each its own render; WithReadout's formatValue is a function.
+      Default: "parity/slider.parity.spec.ts",
+      Range: "parity/slider.parity.spec.ts",
+      WithReadout: "parity/slider.parity.spec.ts",
+    },
+    drawnIn: "parity/slider.parity.spec.ts",
+    sample: { label: "Volume", defaultValue: [50] },
+    events: {
+      "update:modelValue": "parity/slider.parity.spec.ts",
+      valueCommit: "parity/slider.parity.spec.ts",
+    },
+  },
 ];
 
 /**

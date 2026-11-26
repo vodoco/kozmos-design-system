@@ -2,8 +2,8 @@
  * `@kozmos-ds/vue/react-bridge`: the Kozmos parts that have no Vue port yet,
  * each mounting its React component. A wrapper in no other wrapper's slot
  * is a React root; one in another's slot is drawn in that one's React tree,
- * so a part made of parts (`KozmosRadioGroup` and its items, `KozmosSelect`
- * and its trigger, content and items) is one React tree, and the Vue
+ * so a part made of parts (`KozmosTabs` and its list, triggers and panels,
+ * `KozmosSelect` and its trigger, content and items) is one React tree, and the Vue
  * providers around it (KozmosThemeProvider, KozmosDensityScope,
  * KozmosAnalyticsProvider) reach every part it draws (GAP-230, decision
  * 172; react-adapter.ts). It needs `react`, `react-dom` and
@@ -27,8 +27,6 @@ import {
   PART_TAKES,
 } from "./part-takes";
 import {
-  Switch,
-  Slider as ReactSlider,
   Search,
   SearchBar,
   Select,
@@ -65,7 +63,6 @@ import {
   FloatingActionButton,
   SplitButton,
   ToggleButton,
-  SegmentedControl,
   Tabs,
   Dialog,
   MapOverlay,
@@ -74,8 +71,6 @@ import {
   FeedbackCard,
   MapControlsGroup,
   NavigationAnnouncer,
-  RadioGroup as ReactRadioGroup,
-  RadioGroupItem as ReactRadioGroupItem,
   RouteSummary,
   RoutingInputGroup,
   SaveLocationCard,
@@ -285,18 +280,6 @@ const textField = {
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
-// Null is where the slider starts: its default, else its own fallback.
-export const KozmosSlider = createVueWrapper(ReactSlider, {
-  modelValue: {
-    prop: "value",
-    callback: "onValueChange",
-    empty: ({ defaultValue, min = 0, max = 100, thumbCount = 1 }) =>
-      defaultValue ??
-      Array.from({ length: thumbCount }, (_, index) =>
-        thumbCount === 1 ? min : min + ((max - min) * index) / (thumbCount - 1),
-      ),
-  },
-});
 export const KozmosSearch = createVueWrapper(Search, {
   modelValue: textField,
 });
@@ -430,11 +413,6 @@ export const KozmosSplitButton = createVueWrapper(SplitButton);
 export const KozmosToggleButton = createVueWrapper(ToggleButton, {
   pressed: { prop: "pressed", callback: "onPressedChange", empty: false },
 });
-// Nothing chosen is `null` to React: `undefined` hands the choice back to
-// the control.
-export const KozmosSegmentedControl = createVueWrapper(SegmentedControl, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: null },
-});
 export const KozmosTabs = createVueWrapper(Tabs, {
   modelValue: { prop: "value", callback: "onValueChange", empty: "" },
 });
@@ -447,20 +425,11 @@ export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup, {
   stepFree: { prop: "stepFree", callback: "onStepFreeChange", empty: false },
 });
 export const KozmosNavigationAnnouncer = createVueWrapper(NavigationAnnouncer);
-export const KozmosRadioGroup = createVueWrapper(ReactRadioGroup, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-});
-export const KozmosRadioGroupItem = createVueWrapper(ReactRadioGroupItem);
 export const KozmosRouteSummary = createVueWrapper(RouteSummary);
 export const KozmosRoutingInputGroup = createVueWrapper(RoutingInputGroup);
 export const KozmosSaveLocationCard = createVueWrapper(SaveLocationCard);
 export const KozmosScrollArea = createVueWrapper(ScrollArea);
 export const KozmosUserLocationMarker = createVueWrapper(UserLocationMarker);
-
-// Custom Input Binding Interfaces
-export const KozmosSwitch = createVueWrapper(Switch, {
-  modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
-});
 
 // ----------------------------------------------------------------------
 // Components added after the original adapter list was written.
@@ -593,9 +562,11 @@ export const KozmosChipInput = createVueWrapper(ChipInput, {
 // drawn in the React tree of the wrapper whose slot it is in, so it finds
 // the context its compound gives it, as a React child does:
 //
-//   <KozmosRadioGroup v-model="level">
-//     <KozmosRadioGroupItem value="1" label="Level 1" />
-//   </KozmosRadioGroup>
+//   <KozmosTabs v-model="level">
+//     <KozmosTabsList>
+//       <KozmosTabsTrigger value="1">Level 1</KozmosTabsTrigger>
+//     </KozmosTabsList>
+//   </KozmosTabs>
 //
 // A trigger draws its own button: `as-child` cannot hand its behaviour to
 // a Vue element (a slot is drawn in a box of its own), so open a dialog,

@@ -90,6 +90,16 @@ afterEach(() => document.body.replaceChildren());
 let clock = 0;
 const nextDrawing = () => void (clock += 60_000);
 beforeAll(() => vi.spyOn(Date, "now").mockImplementation(() => clock));
+// jsdom has no ResizeObserver, which Radix's Slider measures its thumbs
+// with (and KozmosSlider as it does): a stand-in that never reports, in
+// both.
+beforeAll(() => {
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+});
 afterAll(() => vi.restoreAllMocks());
 
 /**

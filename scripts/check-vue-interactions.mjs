@@ -395,40 +395,6 @@ const INTERACTIONS = {
   },
 
   /**
-   * A bridged group and its bridged options, one React tree (GAP-230): Tab
-   * reaches the chosen option, a held arrow moves to the next and chooses
-   * it, and a click chooses another, each held by v-model.
-   */
-  async "radio-group"(page) {
-    const radios = controls(page, "[role=radio]");
-    const chosen = () => controls(page, "output").textContent();
-    assert.equal(await radios.count(), 3, "the group draws its three options");
-    await focusStart(page);
-    await page.keyboard.press("Tab");
-    await settle(page);
-    assert.equal(
-      await radios.nth(0).evaluate((el) => el === document.activeElement),
-      true,
-      `Tab reaches the chosen option (focus is on ${await focused(page)})`,
-    );
-    // Radix chooses the option an arrow moves to while the key is down.
-    await page.keyboard.down("ArrowDown");
-    await settle(page);
-    await page.keyboard.up("ArrowDown");
-    await settle(page);
-    assert.equal(
-      await radios.nth(1).getAttribute("aria-checked"),
-      "true",
-      "ArrowDown chooses the next option",
-    );
-    assert.equal(await chosen(), "Level 2", "v-model holds the option chosen");
-    await radios.nth(2).click();
-    await settle(page);
-    assert.equal(await chosen(), "Level 3", "a click chooses an option");
-    return "Tab to the chosen option, ArrowDown to the next, a click on the last, each held by v-model";
-  },
-
-  /**
    * The buttons at fields' ends (GAP-154, GAP-212): Enter on each fires one
    * click, and a toggle's pressed state flips; then each field is typed
    * into, a read-only one holding its value. An edit the story answers by
@@ -1030,6 +996,364 @@ const INTERACTIONS = {
       "ArrowRight chooses as it moves",
     );
     return "Tab to the first thumb, a click chooses up and a second clears it, ArrowRight chooses as it moves, held by v-model";
+  },
+
+  /**
+   * One switch that owns its state: Tab reaches it and draws a focus; Space
+   * toggles it, and so does Enter (Radix's switch leaves Enter to the
+   * button's own click, where a checkbox refuses it); a click toggles it,
+   * and so does a click on its label. Its state words, when it draws them,
+   * follow it.
+   */
+  async switch(page) {
+    const track = controls(page, "[role=switch]");
+    assert.equal(await track.count(), 1, "the story draws one switch");
+    const checked = () => track.getAttribute("aria-checked");
+    const words = controls(page, "[data-slot=state-label]");
+    const said = async () =>
+      (await words.count()) ? await words.textContent() : null;
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await track.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the switch (focus is on ${await focused(page)})`,
+    );
+    const focusLook = await lookOf(track);
+    await track.evaluate((el) => el.blur());
+    await settle(page);
+    assert(
+      !same(focusLook, await lookOf(track)),
+      "the switch draws no focus: its look is the same focused from the keyboard and at rest",
+    );
+    await track.focus();
+    const start = await checked();
+    const flipped = start === "true" ? "false" : "true";
+    const startWords = await said();
+    await page.keyboard.press("Space");
+    await settle(page);
+    assert.equal(await checked(), flipped, "Space toggles the switch");
+    if (startWords !== null)
+      assert.notEqual(await said(), startWords, "its state words follow it");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await checked(), start, "Enter toggles it back");
+    await track.click();
+    await settle(page);
+    assert.equal(await checked(), flipped, "a click toggles it");
+    const label = controls(page, "label");
+    if (await label.count()) {
+      await label.first().click();
+      await settle(page);
+      assert.equal(await checked(), start, "a click on its label toggles it");
+    }
+    return "Tab to the switch, Space, Enter, a click and its label each toggle it, its words following";
+  },
+
+  /** A disabled switch: no stop for Tab, and a click leaves it as it is. */
+  async "switch-disabled"(page) {
+    const track = controls(page, "[role=switch]");
+    assert.equal(await track.isDisabled(), true, "the switch is disabled");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await track.evaluate((el) => el === document.activeElement),
+      false,
+      "Tab passes the disabled switch",
+    );
+    const before = await track.getAttribute("aria-checked");
+    await track.click({ force: true });
+    await settle(page);
+    assert.equal(
+      await track.getAttribute("aria-checked"),
+      before,
+      "a click leaves the disabled switch as it is",
+    );
+    return "unavailable to Tab, and a click leaves it as it is";
+  },
+
+  /**
+   * Each radio group of the story that owns its choice: Tab reaches its
+   * chosen option, the group's one stop, and draws a focus; a second Tab
+   * leaves the group; an arrow moves to the next option and chooses it, in
+   * the writing direction, going round from the last; a click on another
+   * option chooses it.
+   */
+  async "radio-choice"(page) {
+    const groups = await controls(page, "[role=radiogroup]").all();
+    assert(groups.length > 0, "the story draws a radio group");
+    await focusStart(page);
+    for (const group of groups) {
+      const radios = group.locator("[role=radio]");
+      const count = await radios.count();
+      assert(count > 1, "the group draws a choice of options");
+      const at = () =>
+        radios.evaluateAll((all) => all.indexOf(document.activeElement));
+      const chosenAt = () =>
+        radios.evaluateAll((all) =>
+          all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+        );
+      const chosen = await chosenAt();
+      await page.keyboard.press("Tab");
+      await settle(page);
+      assert.equal(
+        await at(),
+        chosen >= 0 ? chosen : 0,
+        `Tab reaches the chosen option, the group's one stop (focus is on ${await focused(page)})`,
+      );
+      const focusLook = await lookOf(radios.nth(await at()));
+      const from = await at();
+      await page.keyboard.press("ArrowRight");
+      await settle(page);
+      const next = (from + 1) % count;
+      assert.equal(await at(), next, "ArrowRight moves to the next option");
+      assert.equal(
+        await chosenAt(),
+        next,
+        "the option an arrow reaches is chosen",
+      );
+      await radios.nth(from).click();
+      await settle(page);
+      assert.equal(await chosenAt(), from, "a click chooses an option");
+      await radios.nth(from).focus();
+      await page.keyboard.press("Tab");
+      await settle(page);
+      assert.equal(await at(), -1, "a second Tab leaves the group");
+      // Chosen as it was when Tab reached it, and no longer focused.
+      assert(
+        !same(focusLook, await lookOf(radios.nth(from))),
+        "the focused option draws no focus: its look is the same as at rest",
+      );
+      await page.keyboard.press("Shift+Tab");
+      await settle(page);
+    }
+    return `${groups.length} group(s): Tab to the chosen option, the one stop; ArrowRight moves and chooses; a click chooses; Tab leaves`;
+  },
+
+  /** A disabled radio group: no stop for Tab, and a click chooses nothing. */
+  async "radio-disabled"(page) {
+    const radios = controls(page, "[role=radio]");
+    assert(await radios.count(), "the story draws options");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await radios.evaluateAll((all) => all.includes(document.activeElement)),
+      false,
+      "Tab passes the disabled options",
+    );
+    const before = await radios.evaluateAll((all) =>
+      all.map((el) => el.getAttribute("aria-checked")),
+    );
+    await radios.last().click({ force: true });
+    await settle(page);
+    assert.deepEqual(
+      await radios.evaluateAll((all) =>
+        all.map((el) => el.getAttribute("aria-checked")),
+      ),
+      before,
+      "a click on a disabled option chooses nothing",
+    );
+    return "unavailable to Tab, and a click chooses nothing";
+  },
+
+  /**
+   * A segmented control that owns its choice: Tab reaches the chosen
+   * segment and draws a focus; the arrows move focus along the segments
+   * without choosing; Space chooses the focused one and Enter too; a click
+   * chooses another, and a click on the chosen one takes the choice back.
+   */
+  async segmented(page) {
+    const segments = controls(page, "[role=radio]");
+    const count = await segments.count();
+    assert(count > 1, "the story draws its segments");
+    const at = () =>
+      segments.evaluateAll((all) => all.indexOf(document.activeElement));
+    const chosenAt = () =>
+      segments.evaluateAll((all) =>
+        all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+      );
+    const chosen = await chosenAt();
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await at(),
+      chosen,
+      `Tab reaches the chosen segment (focus is on ${await focused(page)})`,
+    );
+    const focusLook = await lookOf(segments.nth(chosen));
+    await segments.nth(chosen).evaluate((el) => el.blur());
+    await settle(page);
+    assert(
+      !same(focusLook, await lookOf(segments.nth(chosen))),
+      "the segment draws no focus: its look is the same focused and at rest",
+    );
+    await segments.nth(chosen).focus();
+    await page.keyboard.press("ArrowRight");
+    await settle(page);
+    const next = (chosen + 1) % count;
+    assert.equal(
+      await at(),
+      next,
+      "ArrowRight moves focus to the next segment",
+    );
+    assert.equal(await chosenAt(), chosen, "moving focus chooses nothing");
+    await page.keyboard.press("Space");
+    await settle(page);
+    assert.equal(await chosenAt(), next, "Space chooses the focused segment");
+    await page.keyboard.press("ArrowLeft");
+    await settle(page);
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await chosenAt(), chosen, "Enter chooses the focused segment");
+    await segments.nth(next).click();
+    await settle(page);
+    assert.equal(await chosenAt(), next, "a click chooses a segment");
+    await segments.nth(next).click();
+    await settle(page);
+    assert.equal(
+      await chosenAt(),
+      -1,
+      "a click on the chosen segment takes it back",
+    );
+    return "Tab to the chosen segment; the arrows move focus, Space and Enter choose, a click chooses and a second takes it back";
+  },
+
+  /**
+   * A segmented control its story holds at a value: Tab reaches the chosen
+   * segment, and a click on another asks for a change its owner does not
+   * make, so the choice stays.
+   */
+  async "segmented-held"(page) {
+    const segments = controls(page, "[role=radio]");
+    const chosenAt = () =>
+      segments.evaluateAll((all) =>
+        all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+      );
+    const chosen = await chosenAt();
+    assert(chosen >= 0, "the story holds a segment");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await segments
+        .nth(chosen)
+        .evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the chosen segment (focus is on ${await focused(page)})`,
+    );
+    await segments.nth((chosen + 1) % (await segments.count())).click();
+    await settle(page);
+    assert.equal(await chosenAt(), chosen, "the choice stays its owner's");
+    return "Tab to the chosen segment; a click leaves the choice its owner holds";
+  },
+
+  /**
+   * A disabled segmented control: the group keeps a Tab stop, so its
+   * overflowing segments are still reached, and a click on a segment
+   * chooses nothing.
+   */
+  async "segmented-disabled"(page) {
+    const group = controls(page, "[role=group]");
+    const segments = controls(page, "[role=radio]");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await group.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the disabled control's group (focus is on ${await focused(page)})`,
+    );
+    const before = await segments.evaluateAll((all) =>
+      all.map((el) => el.getAttribute("aria-checked")),
+    );
+    await segments.last().click({ force: true });
+    await settle(page);
+    assert.deepEqual(
+      await segments.evaluateAll((all) =>
+        all.map((el) => el.getAttribute("aria-checked")),
+      ),
+      before,
+      "a click on a disabled segment chooses nothing",
+    );
+    return "Tab to the group, its one stop; a click chooses nothing";
+  },
+
+  /**
+   * Each slider of the story: Tab reaches each thumb in turn, and draws a
+   * focus; ArrowRight moves it a step up and ArrowLeft back. A click near
+   * the track's end moves the nearest thumb there; Home sends the first
+   * thumb to the slider's least and End the last to its most, as Radix's.
+   */
+  async slider(page) {
+    const sliders = await controls(
+      page,
+      "[aria-disabled][data-orientation]",
+    ).all();
+    assert(sliders.length > 0, "the story draws a slider");
+    const now = async (thumb) =>
+      Number(await thumb.getAttribute("aria-valuenow"));
+    let count = 0;
+    await focusStart(page);
+    for (const slider of sliders) {
+      const thumbs = await slider.locator("[role=slider]").all();
+      for (const thumb of thumbs) {
+        await page.keyboard.press("Tab");
+        await settle(page);
+        assert.equal(
+          await thumb.evaluate((el) => el === document.activeElement),
+          true,
+          `Tab reaches the thumb (focus is on ${await focused(page)})`,
+        );
+        const focusLook = await lookOf(thumb);
+        const start = await now(thumb);
+        await page.keyboard.press("ArrowRight");
+        await settle(page);
+        assert((await now(thumb)) > start, "ArrowRight moves the thumb up");
+        await page.keyboard.press("ArrowLeft");
+        await settle(page);
+        assert.equal(await now(thumb), start, "ArrowLeft moves it back");
+        await thumb.evaluate((el) => el.blur());
+        await settle(page);
+        assert(
+          !same(focusLook, await lookOf(thumb)),
+          "the thumb draws no focus: its look is the same focused and at rest",
+        );
+        await thumb.focus();
+        count++;
+      }
+      const first = thumbs[0];
+      const last = thumbs[thumbs.length - 1];
+      const track = slider.locator(":scope > [data-orientation]").first();
+      const box = await track.boundingBox();
+      const before = await now(last);
+      await page.mouse.click(box.x + box.width - 2, box.y + box.height / 2);
+      await settle(page);
+      assert(
+        (await now(last)) > before,
+        "a click near the track's end moves the nearest thumb there",
+      );
+      await first.focus();
+      await page.keyboard.press("Home");
+      await settle(page);
+      assert.equal(
+        await first.getAttribute("aria-valuenow"),
+        await first.getAttribute("aria-valuemin"),
+        "Home sends the first thumb to the least",
+      );
+      await last.focus();
+      await page.keyboard.press("End");
+      await settle(page);
+      assert.equal(
+        await last.getAttribute("aria-valuenow"),
+        await last.getAttribute("aria-valuemax"),
+        "End sends the last thumb to the most",
+      );
+    }
+    return `${count} thumb(s): Tab to each, the arrows move it, a click on the track moves the nearest, Home and End reach the ends`;
   },
 };
 

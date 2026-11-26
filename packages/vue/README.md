@@ -36,22 +36,25 @@ React part draws the slot, so it finds the context its compound gives it:
 <script setup>
 import { ref } from "vue";
 import {
-  KozmosRadioGroup,
-  KozmosRadioGroupItem,
   KozmosSelect,
   KozmosSelectContent,
   KozmosSelectItem,
   KozmosSelectTrigger,
   KozmosSelectValue,
+  KozmosTabs,
+  KozmosTabsList,
+  KozmosTabsTrigger,
 } from "@kozmos-ds/vue/react-bridge";
 const level = ref("1");
 </script>
 
 <template>
-  <KozmosRadioGroup v-model="level" aria-label="Level">
-    <KozmosRadioGroupItem value="1" label="Level 1" />
-    <KozmosRadioGroupItem value="2" label="Level 2" />
-  </KozmosRadioGroup>
+  <KozmosTabs v-model="level">
+    <KozmosTabsList aria-label="Level">
+      <KozmosTabsTrigger value="1">Level 1</KozmosTabsTrigger>
+      <KozmosTabsTrigger value="2">Level 2</KozmosTabsTrigger>
+    </KozmosTabsList>
+  </KozmosTabs>
   <KozmosSelect v-model="level">
     <KozmosSelectTrigger aria-label="Level"
       ><KozmosSelectValue
@@ -94,15 +97,15 @@ import {
   KozmosThemeProvider,
   type KozmosAnalyticsEvent,
 } from "@kozmos-ds/vue";
-import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge";
+import { KozmosToggleButton } from "@kozmos-ds/vue/react-bridge";
 const send = (events: KozmosAnalyticsEvent[]) => console.log(events);
 </script>
 
 <template>
   <KozmosThemeProvider theme="dark" density="compact">
     <KozmosAnalyticsProvider @dispatch="send">
-      <!-- reports switch_toggled -->
-      <KozmosSwitch aria-label="Step-free" />
+      <!-- reports toggle_pressed -->
+      <KozmosToggleButton aria-label="Step-free">S</KozmosToggleButton>
       <!-- reports button_clicked -->
       <KozmosButton>Save</KozmosButton>
     </KozmosAnalyticsProvider>

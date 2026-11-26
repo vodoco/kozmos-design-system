@@ -116,27 +116,35 @@ describe("port <Name>", { timeout: 30_000 }, () => {
   });
 
   it("names a v-model, an event and a slot as the contract names them", () => {
-    const plan = planPort("Switch", scratch());
-    const part = file(plan, "src/components/Switch/Switch.ts");
-    // `checked` with `onCheckedChange` is a v-model: a prop and update:checked.
-    expect(part).toMatch(/\n {4}checked: \{ type: Boolean/);
-    expect(part).toContain('"update:checked": (_checked: boolean) => true');
-    expect(part).not.toMatch(/\n {4}onCheckedChange:/);
+    // ToggleButton, still bridged (Switch, the example before, is native).
+    const plan = planPort("ToggleButton", scratch());
+    const part = file(plan, "src/components/ToggleButton/ToggleButton.ts");
+    // `pressed` with `onPressedChange` is a v-model: a prop and update:pressed.
+    expect(part).toMatch(/\n {4}pressed: \{ type: Boolean/);
+    expect(part).toContain('"update:pressed": (_pressed: boolean) => true');
+    expect(part).not.toMatch(/\n {4}onPressedChange:/);
     // Another callback is a camelCase event.
     expect(part).toContain('"resetMixed": () => true');
     // React's defaults, and a union of primitives.
-    expect(part).toContain('onLabel: { type: String, default: "On" }');
     expect(part).toContain(
+      'resetMixedLabel: { type: String, default: "Reset to multiple values" }',
+    );
+    expect(
+      file(
+        planPort("FileUpload", scratch()),
+        "src/components/FileUpload/FileUpload.ts",
+      ),
+    ).toContain(
       "error: { type: [Boolean, String] as PropType<boolean | string>",
     );
     expect(part).toContain("default?: () => VNode[];");
     // The events are named in ports.ts, each with the spec that fires it,
     // and that spec fails until the porter writes it.
     expect(file(plan, "test/ports.ts")).toContain(
-      '"update:checked": "parity/switch.parity.spec.ts"',
+      '"update:pressed": "parity/toggle-button.parity.spec.ts"',
     );
-    expect(file(plan, "test/parity/switch.parity.spec.ts")).toContain(
-      'throw new Error("TODO(port): update:checked fires',
+    expect(file(plan, "test/parity/toggle-button.parity.spec.ts")).toContain(
+      'throw new Error("TODO(port): update:pressed fires',
     );
   });
 

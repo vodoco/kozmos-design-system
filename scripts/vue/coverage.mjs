@@ -108,7 +108,6 @@ export const VUE_STORIES = {
   },
   "vue-poicard--default": { interaction: "buttons-in-order" },
   "vue-poicard--inside-map-overlay": { interaction: "buttons-in-order" },
-  "vue-radiogroup--group": { interaction: "radio-group" },
   "vue-searchbar--floating-overlay": { interaction: "search-typing" },
   "vue-searchbar--inline": { interaction: "search-typing" },
   "vue-stepper--dots": {
@@ -803,6 +802,31 @@ export const VUE_STORIES = {
   "vue-core-inputs-otpinput--validation-states": {
     interaction: "controls-in-order",
   },
+  "vue-core-inputs-switch--default": { interaction: "switch" },
+  "vue-core-inputs-switch--checked": { interaction: "switch" },
+  "vue-core-inputs-switch--disabled": { interaction: "switch-disabled" },
+  "vue-core-inputs-switch--error": { interaction: "switch" },
+  "vue-core-inputs-switch--with-description": { interaction: "switch" },
+  "vue-core-inputs-switch--state-label": { interaction: "switch" },
+  "vue-core-inputs-radiogroup--default": { interaction: "radio-choice" },
+  "vue-core-inputs-radiogroup--disabled": { interaction: "radio-disabled" },
+  "vue-core-inputs-radiogroup--error": { interaction: "radio-choice" },
+  "vue-core-inputs-radiogroup--with-description": {
+    interaction: "radio-choice",
+  },
+  "vue-core-inputs-radiogroup--cards": { interaction: "radio-choice" },
+  "vue-core-inputs-radiogroup--tiles": { interaction: "radio-choice" },
+  "vue-core-inputs-segmentedcontrol--default": { interaction: "segmented" },
+  "vue-core-inputs-segmentedcontrol--full-width": { interaction: "segmented" },
+  "vue-core-inputs-segmentedcontrol--error": {
+    interaction: "segmented-held",
+  },
+  "vue-core-inputs-segmentedcontrol--disabled": {
+    interaction: "segmented-disabled",
+  },
+  "vue-core-inputs-slider--default": { interaction: "slider" },
+  "vue-core-inputs-slider--range": { interaction: "slider" },
+  "vue-core-inputs-slider--with-readout": { interaction: "slider" },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

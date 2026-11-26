@@ -1,8 +1,22 @@
 import React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
-import { cn, mergeAriaIds } from "../../utils";
+import { mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
+// The recipe is shared with Vue's KozmosSlider (recipes/slider.ts).
+import {
+  SLIDER_READOUT_CLASS,
+  SLIDER_READOUT_SEPARATOR,
+  SLIDER_TOOLTIP_CLASS,
+  SLIDER_TRACK_CLASS,
+  sliderClass,
+  sliderFallbackValue,
+  sliderRangeClass,
+  sliderRowClass,
+  sliderThumbClass,
+  sliderThumbCount,
+  sliderThumbLabel,
+} from "../../recipes/slider";
 
 export interface SliderProps extends React.ComponentPropsWithoutRef<
   typeof SliderPrimitive.Root
@@ -70,29 +84,23 @@ const Slider = React.forwardRef<
     const isStringError = typeof error === "string";
     const inputId = props.id || generatedInputId;
     const { trackEvent } = useKozmosAnalytics();
-    const inferredThumbCount = Math.max(
-      1,
-      thumbCount ??
-        (Array.isArray(props.value) ? props.value.length : undefined) ??
-        (Array.isArray(props.defaultValue)
-          ? props.defaultValue.length
-          : undefined) ??
-        1,
-    );
+    const inferredThumbCount = sliderThumbCount({
+      thumbCount,
+      value: props.value,
+      defaultValue: props.defaultValue,
+    });
     const thumbs = Array.from({ length: inferredThumbCount });
 
     const min = typeof props.min === "number" ? props.min : 0;
     const max = typeof props.max === "number" ? props.max : 100;
-    const fallbackDefaultValue =
-      thumbCount &&
-      !Array.isArray(props.value) &&
-      !Array.isArray(props.defaultValue)
-        ? Array.from({ length: inferredThumbCount }, (_, index) =>
-            inferredThumbCount === 1
-              ? min
-              : min + ((max - min) * index) / (inferredThumbCount - 1),
-          )
-        : undefined;
+    const fallbackDefaultValue = sliderFallbackValue({
+      thumbCount,
+      count: inferredThumbCount,
+      value: props.value,
+      defaultValue: props.defaultValue,
+      min,
+      max,
+    });
 
     // Which thumb should show its bubble, and why. Hover and focus are the easy
     // half; the drag is the half that matters, because the pointer leaves the
@@ -148,16 +156,16 @@ const Slider = React.forwardRef<
     // hear the value from the thumb, so it is not said twice.
     const wrapWithReadout = (slider: React.ReactElement) =>
       showValue ? (
-        <div className={cn("kozmos-reset kozmos-slider-row", className)}>
+        <div className={sliderRowClass(className)}>
           {slider}
           <span
             aria-hidden="true"
-            className="kozmos-reset kozmos-slider-readout"
+            className={SLIDER_READOUT_CLASS}
             data-disabled={props.disabled ? "" : undefined}
           >
             {thumbs.map((_, index) => (
               <React.Fragment key={index}>
-                {index > 0 ? " \u2013 " : null}
+                {index > 0 ? SLIDER_READOUT_SEPARATOR : null}
                 {shown(index)}
               </React.Fragment>
             ))}
@@ -181,13 +189,9 @@ const Slider = React.forwardRef<
             id={inputId}
             aria-invalid={hasError}
             aria-describedby={hasError && isStringError ? errorId : undefined}
-            className={cn(
-              "relative flex w-full touch-none select-none items-center",
-              hasError && "ring-1 ring-destructive rounded-pill",
-              // With a readout, the caller's class sizes the row, and the
-              // slider takes what the readout leaves.
-              showValue ? "min-w-0 flex-1" : className,
-            )}
+            // With a readout, the caller's class sizes the row, and the
+            // slider takes what the readout leaves.
+            className={sliderClass({ hasError, showValue, className })}
             {...props}
             defaultValue={props.defaultValue ?? fallbackDefaultValue}
             onValueChange={(value) => {
@@ -199,13 +203,8 @@ const Slider = React.forwardRef<
               props.onValueCommit?.(value);
             }}
           >
-            <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-pill border border-input bg-secondary">
-              <SliderPrimitive.Range
-                className={cn(
-                  "absolute h-full bg-primary",
-                  hasError && "bg-destructive",
-                )}
-              />
+            <SliderPrimitive.Track className={SLIDER_TRACK_CLASS}>
+              <SliderPrimitive.Range className={sliderRangeClass(hasError)} />
             </SliderPrimitive.Track>
             {thumbs.map((_, index) => (
               <SliderPrimitive.Thumb
@@ -219,20 +218,13 @@ const Slider = React.forwardRef<
                 )}
                 aria-invalid={hasError || ariaInvalid}
                 aria-valuetext={spoken(index)}
-                aria-label={
-                  thumbLabels?.[index] ??
-                  (inferredThumbCount > 1
-                    ? index === 0
-                      ? "Minimum value"
-                      : index === inferredThumbCount - 1
-                        ? "Maximum value"
-                        : `Value ${index + 1}`
-                    : (ariaLabel ?? label))
-                }
-                className={cn(
-                  "relative block h-5 w-5 rounded-pill border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                  hasError && "border-destructive",
-                )}
+                aria-label={sliderThumbLabel({
+                  index,
+                  count: inferredThumbCount,
+                  thumbLabels,
+                  single: ariaLabel ?? label,
+                })}
+                className={sliderThumbClass(hasError)}
                 onBlur={() => setHoveredThumb(null)}
                 onFocus={() => setHoveredThumb(index)}
                 onPointerDown={() => setDraggingThumb(index)}
@@ -242,10 +234,9 @@ const Slider = React.forwardRef<
                 {showValueTooltip &&
                 (hoveredThumb === index || draggingThumb === index) ? (
                   <span
-                    // pointer-events-none matters: the bubble sits directly above
-                    // the knob, and a bubble that eats the pointer ends the drag
-                    // the moment it appears.
-                    className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-control border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-overlay"
+                    // pointer-events-none: a bubble that eats the pointer
+                    // ends the drag the moment it appears.
+                    className={SLIDER_TOOLTIP_CLASS}
                     role="tooltip"
                   >
                     {shown(index)}

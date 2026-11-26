@@ -18,8 +18,6 @@
 // reads a `[String, Boolean]` one. Every spelling is React's prop. A prop
 // that takes any ReactNode is a slot, and none of them.
 import {
-  Switch,
-  Slider,
   Search,
   SearchBar,
   Select,
@@ -56,7 +54,6 @@ import {
   FloatingActionButton,
   SplitButton,
   ToggleButton,
-  SegmentedControl,
   Tabs,
   Dialog,
   MapOverlay,
@@ -65,8 +62,6 @@ import {
   FeedbackCard,
   MapControlsGroup,
   NavigationAnnouncer,
-  RadioGroup,
-  RadioGroupItem,
   RouteSummary,
   RoutingInputGroup,
   SaveLocationCard,
@@ -150,10 +145,6 @@ const datePickerTakes: Takes = {
   dom: true,
   own: ["onOpenChange", "onResetMixed"],
 };
-const segmentedControlTakes: Takes = {
-  dom: true,
-  own: ["onResetMixed", "onValueChange"],
-};
 const navigationAnnouncerTakes: Takes = { dom: false, own: [] };
 const categoryTileTakes: Takes = { dom: true, except: ["onClick"], own: [] };
 const tourStepTakes: Takes = {
@@ -170,8 +161,6 @@ const tourStepTakes: Takes = {
 
 /** By React part. */
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
-  [Switch, { dom: true, own: ["onCheckedChange", "onResetMixed"] }],
-  [Slider, { dom: true, own: ["onValueChange", "onValueCommit"] }],
   [Search, searchTakes],
   [SearchBar, searchTakes],
   [
@@ -246,7 +235,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [FloatingActionButton, D],
   [SplitButton, { dom: true, own: ["onMainClick"] }],
   [ToggleButton, { dom: true, own: ["onPressedChange", "onResetMixed"] }],
-  [SegmentedControl, segmentedControlTakes],
   [Tabs, accordionTakes],
   [Dialog, menuTakes],
   [MapOverlay, D],
@@ -294,8 +282,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [NavigationAnnouncer, navigationAnnouncerTakes],
-  [RadioGroup, segmentedControlTakes],
-  [RadioGroupItem, D],
   [RouteSummary, { dom: true, own: ["onEndRoute", "onStartNavigation"] }],
   [
     RoutingInputGroup,
@@ -552,30 +538,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   Booleans
 >([
   [
-    Switch,
-    html(
-      [
-        "asChild",
-        "checked",
-        "disabled",
-        "formNoValidate",
-        "mixed",
-        "required",
-        "showStateLabel",
-      ],
-      [],
-      ["error"],
-    ),
-  ],
-  [
-    Slider,
-    html(
-      ["asChild", "disabled", "inverted", "showValue", "showValueTooltip"],
-      [],
-      ["error"],
-    ),
-  ],
-  [
     Search,
     html(
       [
@@ -663,14 +625,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       "pressed",
     ]),
   ],
-  [
-    SegmentedControl,
-    html(
-      ["asChild", "disabled", "fullWidth", "loop", "mixed", "rovingFocus"],
-      [],
-      ["error"],
-    ),
-  ],
   [Tabs, popoverAnchorBooleans],
   [Dialog, menuBooleans],
   [MapOverlay, H],
@@ -697,21 +651,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [FeedbackCard, html(["isSubmitting"])],
   [MapControlsGroup, html(["locationRevealOnChange", "stepFree"])],
   [NavigationAnnouncer, { flags: ["isActive"], unions: [], texts: [] }],
-  [
-    RadioGroup,
-    html(["asChild", "disabled", "loop", "mixed", "required"], [], ["error"]),
-  ],
-  [
-    RadioGroupItem,
-    html([
-      "asChild",
-      "checked",
-      "disabled",
-      "error",
-      "formNoValidate",
-      "required",
-    ]),
-  ],
   [RouteSummary, H],
   [RoutingInputGroup, H],
   [SaveLocationCard, html(["isSaved"])],

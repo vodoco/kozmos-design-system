@@ -106,13 +106,6 @@ const toast = () =>
     ),
     part("ToastViewport", {}),
   );
-const radio = () =>
-  part(
-    "RadioGroup",
-    { "aria-label": "Level", defaultValue: "1" },
-    part("RadioGroupItem", { value: "1", label: "Level 1" }),
-    part("RadioGroupItem", { value: "2", label: "Level 2" }),
-  );
 
 export const IN_A_COMPOUND: Record<string, InACompound> = {
   KozmosAccordionItem: { render: accordion, drawn: "[data-state=open]" },
@@ -158,5 +151,4 @@ export const IN_A_COMPOUND: Record<string, InACompound> = {
   KozmosTooltipContent: { render: tooltip, drawn: "[role=tooltip]" },
   KozmosToast: { render: toast, drawn: "li[data-state=open]" },
   KozmosToastViewport: { render: toast, drawn: "ol" },
-  KozmosRadioGroupItem: { render: radio, drawn: "[role=radio]" },
 };

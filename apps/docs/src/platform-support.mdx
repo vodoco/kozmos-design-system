@@ -68,7 +68,9 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 `Title` and `Description`, `KozmosAlert`, `KozmosAlertTitle`, `KozmosAlertDescription`,
 `KozmosNotice`, `KozmosCounter`, `KozmosIconButton`, `KozmosCheckbox`,
 `KozmosRating`, `KozmosFieldWrapper`, `KozmosInput`, `KozmosTextarea`,
-`KozmosPasswordInput`, `KozmosNumberInput` and `KozmosOTPInput` so far), which
+`KozmosPasswordInput`, `KozmosNumberInput`, `KozmosOTPInput`, `KozmosSwitch`,
+`KozmosRadioGroup` with `KozmosRadioGroupItem`, `KozmosSegmentedControl` and
+`KozmosSlider` so far), which
 draw the element their React counterparts draw, import no React and render on the
 server. `packages/vue/PORTING.md` is how a part is ported.
 The parts not yet ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount
@@ -76,9 +78,9 @@ the React parts inside Vue wrappers: they need React and React DOM as well as Vu
 and do not render on the server.
 
 A bridged part in no other bridged part's slot is a React root. One in another's slot
-is drawn in that part's React tree, so a part made of parts (`KozmosRadioGroup` and its
-`KozmosRadioGroupItem`s, `KozmosSelect` and its trigger, content and items, Accordion,
-Dialog, Drawer, Tabs, Tooltip and Toast with theirs, and `KozmosToaster` with
+is drawn in that part's React tree, so a part made of parts (`KozmosSelect` and its
+trigger, content and items, Accordion, Dialog, Drawer, Tabs, Tooltip and Toast with
+theirs, and `KozmosToaster` with
 `toast()`) works as it does in React. These Vue providers reach every bridged part
 inside them (GAP-230, decision 172):
 

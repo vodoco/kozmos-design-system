@@ -90,13 +90,13 @@ describe("KozmosAnalyticsProvider", () => {
     mount(() =>
       providerWithin(
         1000,
-        h(Bridge.KozmosSwitch, { "aria-label": "Step-free" }),
+        h(Bridge.KozmosToggleButton, { "aria-label": "Step-free" }, () => "S"),
         h(KozmosButton, null, () => "Save"),
       ),
     );
-    const control = await until(() => $("[role=switch]"));
+    const control = await until(() => $("button[aria-pressed]"));
     control.click();
-    $("button:not([role])")!.click();
+    $("button:not([aria-pressed])")!.click();
     // The bridged part's event reaches the provider a task after the native
     // one (React's AnalyticsProvider hands it on in a timeout), in the same
     // batch.
@@ -110,9 +110,9 @@ describe("KozmosAnalyticsProvider", () => {
           properties: { variant: "default", emotion: null },
         },
         {
-          component: "Switch",
-          eventName: "switch_toggled",
-          properties: { checked: true },
+          component: "ToggleButton",
+          eventName: "toggle_pressed",
+          properties: { pressed: true },
         },
       ]),
     );
@@ -123,22 +123,28 @@ describe("KozmosAnalyticsProvider", () => {
     batches.length = 0;
     mount(() =>
       provider(
-        h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
-          h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
-          h(Bridge.KozmosDialogHeader, null, () => [
-            h(Bridge.KozmosSwitch, { "aria-label": "Step-free" }),
+        h(Bridge.KozmosAccordion, { type: "single", collapsible: true }, () => [
+          h(Bridge.KozmosAccordionItem, { value: "1" }, () => [
+            h(Bridge.KozmosAccordionTrigger, {}, () => "Level 1"),
+            h(Bridge.KozmosDialogHeader, null, () => [
+              h(
+                Bridge.KozmosToggleButton,
+                { "aria-label": "Step-free" },
+                () => "S",
+              ),
+            ]),
           ]),
         ]),
       ),
     );
-    (await until(() => $("[role=switch]"))).click();
-    (await until(() => $("[role=radio]"))).click();
+    (await until(() => $("button[aria-pressed]"))).click();
+    (await until(() => $("button[aria-expanded]"))).click();
     await eventually(() =>
       expect(
         reported()
           .map((event) => event.eventName)
           .sort(),
-      ).toEqual(["radio_selection_changed", "switch_toggled"]),
+      ).toEqual(["accordion_toggled", "toggle_pressed"]),
     );
   });
 
@@ -155,12 +161,18 @@ describe("KozmosAnalyticsProvider", () => {
               onDispatch: (events: KozmosAnalyticsEvent[]) =>
                 inner.push(events),
             },
-            () => [h(Bridge.KozmosSwitch, { "aria-label": "Step-free" })],
+            () => [
+              h(
+                Bridge.KozmosToggleButton,
+                { "aria-label": "Step-free" },
+                () => "S",
+              ),
+            ],
           ),
         ]),
       ),
     );
-    (await until(() => $("[role=switch]"))).click();
+    (await until(() => $("button[aria-pressed]"))).click();
     await eventually(() => expect(inner.flat()).toHaveLength(1));
     await settle();
     expect(batches).toEqual([]);
@@ -219,14 +231,19 @@ describe("KozmosThemeProvider", () => {
   it("a bridged part takes its direction", async () => {
     mount(() =>
       h(KozmosThemeProvider, { dir: "rtl" }, () => [
-        h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
-          h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
+        h(Bridge.KozmosTabs, { defaultValue: "1" }, () => [
+          h(Bridge.KozmosTabsList, { "aria-label": "Level" }, () => [
+            h(Bridge.KozmosTabsTrigger, { value: "1" }, () => "Level 1"),
+          ]),
         ]),
       ]),
     );
-    // Radix's group reads its direction from React's DirectionProvider.
-    const group = await until(() => $("[role=radiogroup]"));
-    expect(group.getAttribute("dir")).toBe("rtl");
+    // Radix's tabs read their direction from React's DirectionProvider, and
+    // write it on their root, around the list its slot draws.
+    const list = await until(() => $("[role=tablist]"));
+    expect(
+      list.parentElement?.closest("[data-orientation]")?.getAttribute("dir"),
+    ).toBe("rtl");
   });
 });
 

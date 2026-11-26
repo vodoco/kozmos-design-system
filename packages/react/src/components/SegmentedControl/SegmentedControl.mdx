@@ -105,7 +105,7 @@ export function MondayAcrossSelection({ days }: { days: string[] }) {
   `}
   vue={`
 <script setup>
-import { KozmosSegmentedControl } from "@kozmos-ds/vue/react-bridge"
+import { KozmosSegmentedControl } from "@kozmos-ds/vue"
 import { computed, ref } from "vue"
 
 const modes = [
@@ -203,11 +203,19 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosSegmentedControl } from "@kozmos-ds/vue/react-bridge"
+import { KozmosSegmentedControl } from "@kozmos-ds/vue"
+import { ref } from "vue"
+
+const section = ref("overview")
+const items = [
+  { value: "overview", label: "Overview" },
+  { value: "details", label: "Details" },
+  { value: "activity", label: "Activity" },
+]
 </script>
 
 <template>
-  <KozmosSegmentedControl />
+  <KozmosSegmentedControl v-model="section" aria-label="Section" :items="items" />
 </template>
   `}
   swift={`

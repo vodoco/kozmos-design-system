@@ -49,6 +49,19 @@ export const EXCEPTIONS: Record<string, string> = {
   // (recipes/rating.ts), the functions React's parameter list names.
   "KozmosRating.itemLabel:default":
     "React's default is the recipe's defaultRatingItemLabel, a function the contract cannot read as a literal; Vue's default is the same function, and rating.parity.spec.ts reads each option's name",
+  // React's SegmentedControlItem's label is a ReactNode; Vue's has no
+  // ReactNode, so a segment's label is text or a VNode (an icon beside
+  // words, drawn with `h`), what Vue draws inside the segment. The rest of
+  // the item, its value and disabled, is React's to the letter
+  // (SegmentedControl/types.ts).
+  "KozmosSegmentedControl.items:type":
+    "Vue's segment is React's SegmentedControlItem but for its label, text or a VNode where React's is a ReactNode; the same segment is drawn (segmented-control.parity.spec.ts)",
+  // React's formatValue(value) is a render prop; Vue's is the scoped slot
+  // formatValue, given one props object, `{ value }`, as a Vue slot is.
+  // What it draws as text alone is what the thumb says (aria-valuetext), as
+  // React's says a string or a number.
+  "KozmosSlider.formatValue:render-prop":
+    "React's formatValue(value) is Vue's formatValue scoped slot, given { value }: a Vue slot takes one props object, not arguments; text it draws is the thumb's aria-valuetext (slider.parity.spec.ts)",
   "KozmosRating.valueLabel:default":
     "React's default is the recipe's defaultRatingValueLabel, a function the contract cannot read as a literal; Vue's default is the same function, and rating.parity.spec.ts reads the read-only label",
 };
