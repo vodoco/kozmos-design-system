@@ -735,13 +735,29 @@ export const KozmosSelectContent = defineComponent({
     });
     // In the portal from opening until the exit is over.
     const shown = ref(state.open.value);
+    let release: (() => void) | undefined;
+    let observer: MutationObserver | undefined;
+    // Radix's Select is always modal: as it opens it hides the page with
+    // hideOthers, so the page is kept in reach where that keeps it visible
+    // (GAP-193), and given back as it closes, before focus goes back to the
+    // trigger (Reka's list leaves only once its exit is over).
+    const giveBack = () => {
+      release?.();
+      release = undefined;
+    };
     watch(state.open, (open) => {
       if (open) shown.value = true;
+      else giveBack();
     });
-    const content = shallowRef<HTMLElement | null>(null);
-    let release: (() => void) | undefined;
+    const instance = shallowRef<{ $el?: unknown } | null>(null);
+    /** Reka's list, as it is drawn now: open, the popper wrapper's child. */
     const contentElement = (): HTMLElement | null => {
-      const element = content.value;
+      const node = instance.value?.$el;
+      const element =
+        node instanceof HTMLElement &&
+        node.hasAttribute("data-reka-popper-content-wrapper")
+          ? node.firstElementChild
+          : node;
       return element instanceof HTMLElement &&
         element.getAttribute("role") === "listbox"
         ? element
@@ -750,10 +766,12 @@ export const KozmosSelectContent = defineComponent({
     const follow = () => {
       const element = contentElement();
       if (!element) {
-        release?.();
-        release = undefined;
         // Closed and gone: back to the fragment.
-        if (!state.open.value && shown.value) shown.value = false;
+        if (!state.open.value && shown.value) {
+          shown.value = false;
+          observer?.disconnect();
+          observer = undefined;
+        }
         return;
       }
       // Reka 2.11 hands its content's own props on to the popper, which
@@ -761,15 +779,24 @@ export const KozmosSelectContent = defineComponent({
       // writes an attribute again only when its value changes, and these
       // do not.
       for (const name of LEAKED_ATTRIBUTES) element.removeAttribute(name);
-      if (!release)
-        // Radix's Select is always modal: as it opens it hides the page
-        // with hideOthers, so the page is kept in reach where that keeps it
-        // visible (GAP-193).
+      if (state.open.value && !release)
         release = inertOutside(element, { mirrorAriaHidden: true });
+      // The list leaves when its exit is over, in Reka's own render: seen
+      // in the portal it is drawn in.
+      if (!observer && typeof MutationObserver !== "undefined") {
+        observer = new MutationObserver(follow);
+        observer.observe(
+          element.closest("[data-kozmos-portal]") ?? element.ownerDocument.body,
+          { childList: true, subtree: true },
+        );
+      }
     };
     onMounted(() => nextTick(follow));
     onUpdated(() => nextTick(follow));
-    onBeforeUnmount(() => release?.());
+    onBeforeUnmount(() => {
+      giveBack();
+      observer?.disconnect();
+    });
 
     return () => {
       if (!fragment.value) return null;
@@ -793,17 +820,7 @@ export const KozmosSelectContent = defineComponent({
           RekaSelectContent,
           {
             ref: (element: unknown) => {
-              const node =
-                (element as { $el?: unknown } | null)?.$el ?? element;
-              // Open, Reka's element is the popper's wrapper: the list is
-              // its child.
-              content.value =
-                node instanceof HTMLElement &&
-                node.hasAttribute("data-reka-popper-content-wrapper")
-                  ? (node.firstElementChild as HTMLElement | null)
-                  : node instanceof HTMLElement
-                    ? node
-                    : null;
+              instance.value = element as { $el?: unknown } | null;
             },
             asChild: props.asChild,
             side: props.side,
