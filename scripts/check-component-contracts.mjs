@@ -285,6 +285,10 @@ const files = {
   reactNumberInputRecipe: "packages/react/src/recipes/number-input.ts",
   reactPasswordInputRecipe: "packages/react/src/recipes/password-input.ts",
   reactOTPInputRecipe: "packages/react/src/recipes/otp-input.ts",
+  reactSelectRecipe: "packages/react/src/recipes/select.ts",
+  reactComboboxRecipe: "packages/react/src/recipes/combobox.ts",
+  reactListboxRecipe: "packages/react/src/recipes/listbox.ts",
+  reactOptionRecipe: "packages/react/src/recipes/option.ts",
   reactNumberInputFigma:
     "packages/react/src/components/NumberInput/NumberInput.figma.tsx",
   reactOTPInput: "packages/react/src/components/OTPInput/OTPInput.tsx",
@@ -1128,8 +1132,8 @@ assertContains(
   "React Input validation status API",
 );
 assertContains(
-  files.reactSelect,
-  source.reactSelect,
+  files.reactSelectRecipe,
+  source.reactSelectRecipe,
   "flex h-field w-full",
   "React SelectTrigger at the density's field height (44 touch, 40 compact)",
 );
@@ -11970,10 +11974,10 @@ assertContains(
 // it as a padding class, and for a day it said 4 while Figma said 12. These
 // assertions are the only thing that ties the two spellings together.
 for (const [key, needle, label] of [
-  ["reactCombobox", "bg-popover p-3", "Combobox"],
+  ["reactComboboxRecipe", "bg-popover p-3", "Combobox"],
   ["reactMultiSelect", "bg-popover p-3", "MultiSelect"],
   ["reactMenu", "bg-popover p-3", "Menu"],
-  ["reactSelect", '"p-3",', "Select viewport"],
+  ["reactSelectRecipe", '"p-3";', "Select viewport"],
 ]) {
   assertContains(
     files[key],
@@ -12041,8 +12045,8 @@ for (const [file, from] of [
 }
 const ownedSelectionPath = "packages/styles/src/styles/owned-selection.css";
 assertContains(
-  files.reactListbox,
-  source.reactListbox,
+  files.reactListboxRecipe,
+  source.reactListboxRecipe,
   "kozmos-listbox",
   "Listbox selects its owned recipe",
 );

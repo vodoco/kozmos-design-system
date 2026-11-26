@@ -105,23 +105,6 @@ export function firstDayOfWeek(locale: string) {
   }
 }
 
-/**
- * The locale to name dates in: the caller's, else the document's language,
- * else the browser's, else English. A tag no engine knows falls back too.
- */
-export function resolveLocale(locale?: string) {
-  const document = globalThis.document;
-  for (const tag of [
-    locale,
-    document?.documentElement.lang,
-    globalThis.navigator?.language,
-  ]) {
-    if (!tag) continue;
-    try {
-      if (Intl.DateTimeFormat.supportedLocalesOf(tag).length) return tag;
-    } catch {
-      // An invalid tag throws; try the next.
-    }
-  }
-  return "en-US";
-}
+// Moved to recipes/locale.ts, shared with @kozmos-ds/vue's KozmosSelectItem:
+// framework-free, so Vue builds it in.
+export { resolveLocale } from "../../recipes/locale";

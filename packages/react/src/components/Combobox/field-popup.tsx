@@ -3,6 +3,12 @@ import * as PopperPrimitive from "@radix-ui/react-popper";
 import { Portal } from "@radix-ui/react-portal";
 import { createThemePortal } from "../../theme/ThemePortal";
 import { cn } from "../../utils";
+import {
+  FIELD_POPUP_CONTENT_CLASS,
+  FIELD_POPUP_MAX_HEIGHT,
+  FIELD_POPUP_PLACEMENT,
+  keepsFieldFocus,
+} from "../../recipes/combobox";
 
 const FieldPopupPortal = createThemePortal(Portal);
 
@@ -15,14 +21,8 @@ const FieldPopupPortal = createThemePortal(Portal);
  */
 export const FieldPopupRoot = PopperPrimitive.Root;
 
-/**
- * The list's height: 16rem, or the room the window leaves on the side it
- * opens to. In its portal the list is fixed, so the page cannot scroll it
- * into view: on a phone on its side (568 by 320) it ran off the window.
- * Inline, outside the popper, the variable is unset and 16rem holds.
- */
-export const FIELD_POPUP_MAX_HEIGHT =
-  "min(16rem, var(--radix-popper-available-height, 16rem))";
+// The list's height, in recipes/combobox.ts with Vue's KozmosCombobox.
+export { FIELD_POPUP_MAX_HEIGHT };
 export const FieldPopupAnchor = PopperPrimitive.Anchor;
 
 export const FieldPopupContent = React.forwardRef<
@@ -32,11 +32,11 @@ export const FieldPopupContent = React.forwardRef<
   <FieldPopupPortal>
     <PopperPrimitive.Content
       ref={ref}
-      side="bottom"
-      align="start"
-      sideOffset={4}
-      collisionPadding={8}
-      className={cn("kozmos-reset z-50", className)}
+      side={FIELD_POPUP_PLACEMENT.side}
+      align={FIELD_POPUP_PLACEMENT.align}
+      sideOffset={FIELD_POPUP_PLACEMENT.sideOffset}
+      collisionPadding={FIELD_POPUP_PLACEMENT.collisionPadding}
+      className={cn(FIELD_POPUP_CONTENT_CLASS, className)}
       style={{ width: "var(--radix-popper-anchor-width)", ...style }}
       {...props}
     />
@@ -101,28 +101,7 @@ export function FieldPopupStatus({ message }: { message?: string }) {
  * scrollbar, outside its client area, is the browser's to drag.
  */
 export function keepFieldFocus(event: React.MouseEvent<HTMLElement>) {
-  const target = event.target;
-  if (target instanceof HTMLElement) {
-    const style = target.ownerDocument.defaultView?.getComputedStyle(target);
-    const border = (side: string) =>
-      parseFloat(style?.getPropertyValue(`border-${side}-width`) ?? "") || 0;
-    // Room a classic scrollbar takes: the box less its client area and borders.
-    const across =
-      target.offsetWidth -
-      target.clientWidth -
-      border("left") -
-      border("right");
-    const down =
-      target.offsetHeight -
-      target.clientHeight -
-      border("top") -
-      border("bottom");
-    const { offsetX, offsetY } = event.nativeEvent;
-    if (
-      (across > 0 && (offsetX < 0 || offsetX >= target.clientWidth)) ||
-      (down > 0 && (offsetY < 0 || offsetY >= target.clientHeight))
-    )
-      return;
-  }
+  const { offsetX, offsetY } = event.nativeEvent;
+  if (!keepsFieldFocus(event.target, offsetX, offsetY)) return;
   event.preventDefault();
 }

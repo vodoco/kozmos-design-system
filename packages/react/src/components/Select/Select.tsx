@@ -5,7 +5,29 @@ import { Check, ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 
 import { cn, mergeAriaIds } from "../../utils";
 
-import { resolveLocale } from "../Calendar/calendar-dates";
+import { resolveLocale } from "../../recipes/locale";
+import {
+  hasSelectCount,
+  isPlainText,
+  SELECT_CONTENT_CLASS,
+  SELECT_CONTENT_POPPER_CLASS,
+  SELECT_ICON_CLASS,
+  SELECT_ITEM_CHECK_SLOT_CLASS,
+  SELECT_ITEM_CLASS,
+  SELECT_ITEM_COUNT_CLASS,
+  SELECT_LABEL_CLASS,
+  SELECT_SCROLL_BUTTON_CLASS,
+  SELECT_SCROLL_ICON_CLASS,
+  SELECT_SEPARATOR_CLASS,
+  SELECT_TRIGGER_CLASS,
+  SELECT_TRIGGER_ERROR_CLASS,
+  SELECT_TRIGGER_GHOST_CLASS,
+  SELECT_VIEWPORT_CLASS,
+  SELECT_VIEWPORT_POPPER_CLASS,
+  selectCountText,
+  selectItemNaming,
+} from "../../recipes/select";
+import { OPTION_CHECK_CLASS, OPTION_CONTENT_CLASS } from "../../recipes/option";
 import { Counter } from "../Counter";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import { useKozmosAnalytics } from "../../utils/analytics";
@@ -172,18 +194,16 @@ const SelectTrigger = React.forwardRef<
             mixed ? mixedId : undefined,
           )}
           className={cn(
-            "flex h-field w-full items-center justify-between rounded-control border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-            variant === "ghost" &&
-              "w-auto max-w-full self-start justify-start gap-2 border-transparent bg-transparent hover:bg-hover-fill data-[state=open]:bg-hover-fill",
-            hasError &&
-              "border-destructive text-destructive-text focus:ring-destructive",
+            SELECT_TRIGGER_CLASS,
+            variant === "ghost" && SELECT_TRIGGER_GHOST_CLASS,
+            hasError && SELECT_TRIGGER_ERROR_CLASS,
             className,
           )}
           {...props}
         >
           {children}
           <SelectPrimitive.Icon asChild>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <ChevronDown className={SELECT_ICON_CLASS} />
           </SelectPrimitive.Icon>
         </SelectPrimitive.Trigger>
       </FieldWrapper>
@@ -198,13 +218,10 @@ const SelectScrollUpButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollUpButton
     ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1",
-      className,
-    )}
+    className={cn(SELECT_SCROLL_BUTTON_CLASS, className)}
     {...props}
   >
-    <ChevronUp className="h-4 w-4" />
+    <ChevronUp className={SELECT_SCROLL_ICON_CLASS} />
   </SelectPrimitive.ScrollUpButton>
 ));
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
@@ -215,13 +232,10 @@ const SelectScrollDownButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollDownButton
     ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1",
-      className,
-    )}
+    className={cn(SELECT_SCROLL_BUTTON_CLASS, className)}
     {...props}
   >
-    <ChevronDown className="h-4 w-4" />
+    <ChevronDown className={SELECT_SCROLL_ICON_CLASS} />
   </SelectPrimitive.ScrollDownButton>
 ));
 SelectScrollDownButton.displayName =
@@ -262,9 +276,8 @@ const SelectContent = React.forwardRef<
         <SelectPrimitive.Content
           ref={contentRef}
           className={cn(
-            "relative z-50 max-h-96 min-w-32 overflow-hidden rounded-control border bg-popover text-popover-foreground shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-            position === "popper" &&
-              "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+            SELECT_CONTENT_CLASS,
+            position === "popper" && SELECT_CONTENT_POPPER_CLASS,
             className,
           )}
           position={position}
@@ -274,9 +287,8 @@ const SelectContent = React.forwardRef<
           <SelectScrollUpButton />
           <SelectPrimitive.Viewport
             className={cn(
-              "p-3",
-              position === "popper" &&
-                "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
+              SELECT_VIEWPORT_CLASS,
+              position === "popper" && SELECT_VIEWPORT_POPPER_CLASS,
             )}
           >
             {children}
@@ -295,7 +307,7 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn("px-3 py-1.5 text-sm font-semibold", className)}
+    className={cn(SELECT_LABEL_CLASS, className)}
     {...props}
   />
 ));
@@ -341,19 +353,13 @@ const SelectItem = React.forwardRef<
   const textId = React.useId();
   const countId = React.useId();
   const locale = useAppLocale();
-  const hasCount = count !== undefined && count !== null && count !== false;
+  const hasCount = hasSelectCount(count);
   // A number in the app's grouping, as SwiftUI and Compose write it.
-  const countText = !hasCount
-    ? null
-    : typeof count === "number"
-      ? new Intl.NumberFormat(locale).format(count)
-      : count;
+  const countText = !hasCount ? null : selectCountText(count, locale);
   const callerLabel = props["aria-label"];
   const callerLabelledBy = props["aria-labelledby"];
-  const plain = (node: React.ReactNode) =>
-    typeof node === "string" || typeof node === "number";
   const plainName =
-    hasCount && plain(children) && plain(countText)
+    hasCount && isPlainText(children) && isPlainText(countText)
       ? `${children}, ${countText}`
       : null;
   // Words or a count that are not plain text: the name is read from what
@@ -371,15 +377,14 @@ const SelectItem = React.forwardRef<
   // Radix names the option by its item text alone, through
   // aria-labelledby, which would beat a caller's aria-label: that label
   // wins. With a count, the name is the words, then the count: "POI, 96".
-  let naming: Record<string, string | undefined> | null = null;
-  if (callerLabel !== undefined && callerLabelledBy === undefined) {
-    naming = { "aria-labelledby": undefined };
-  } else if (hasCount && callerLabelledBy === undefined) {
-    const name = plainName ?? drawnName;
-    naming = name
-      ? { "aria-label": name, "aria-labelledby": undefined }
-      : { "aria-labelledby": `${textId} ${countId}` };
-  }
+  const naming = selectItemNaming({
+    callerLabel,
+    callerLabelledBy,
+    hasCount,
+    name: plainName ?? drawnName,
+    textId,
+    countId,
+  });
   return (
     // Combobox's row (owned-selection.css): the words, then the check at the
     // end, a light row under the pointer or the keyboard. The check's place
@@ -387,14 +392,11 @@ const SelectItem = React.forwardRef<
     // never moves (decision 1).
     <SelectPrimitive.Item
       ref={ref}
-      className={cn(
-        "kozmos-reset kozmos-option select-none data-[disabled]:pointer-events-none",
-        className,
-      )}
+      className={cn(SELECT_ITEM_CLASS, className)}
       {...props}
       {...naming}
     >
-      <span className="kozmos-reset kozmos-option-content">
+      <span className={OPTION_CONTENT_CLASS}>
         <SelectPrimitive.ItemText
           ref={textRef}
           {...(hasCount ? { id: textId } : null)}
@@ -403,19 +405,20 @@ const SelectItem = React.forwardRef<
         </SelectPrimitive.ItemText>
       </span>
       {hasCount ? (
-        <Counter ref={countRef} id={countId} className="shrink-0">
+        <Counter
+          ref={countRef}
+          id={countId}
+          className={SELECT_ITEM_COUNT_CLASS}
+        >
           {countText}
         </Counter>
       ) : null}
       <span
         data-slot="select-item-check"
-        className="flex h-4 w-4 shrink-0 items-center justify-center"
+        className={SELECT_ITEM_CHECK_SLOT_CLASS}
       >
         <SelectPrimitive.ItemIndicator asChild>
-          <Check
-            aria-hidden="true"
-            className="kozmos-reset kozmos-option-check"
-          />
+          <Check aria-hidden="true" className={OPTION_CHECK_CLASS} />
         </SelectPrimitive.ItemIndicator>
       </span>
     </SelectPrimitive.Item>
@@ -429,7 +432,7 @@ const SelectSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    className={cn(SELECT_SEPARATOR_CLASS, className)}
     {...props}
   />
 ));
