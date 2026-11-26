@@ -280,7 +280,9 @@ describe("which on… props each part takes", () => {
         if (takesProp(takes, prop) !== handlers.has(prop))
           wrong.push(`${name} ${prop}: ${handlers.has(prop)}`);
     }
-    expect(entries.length).toBeGreaterThan(100);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (97 after wave V2's choices and selects).
+    expect(entries.length).toBeGreaterThan(50);
     expect(wrong).toEqual([]);
   }, 60_000);
 

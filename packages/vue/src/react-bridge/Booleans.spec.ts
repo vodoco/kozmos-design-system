@@ -585,7 +585,9 @@ describe("which props of each part are booleans", () => {
           check(key, "maybe", { [boolean]: "maybe" });
         }
     }
-    expect(entries.length).toBeGreaterThan(100);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (97 after wave V2's choices and selects).
+    expect(entries.length).toBeGreaterThan(50);
     expect(wrong).toEqual([]);
   }, 60_000);
 
