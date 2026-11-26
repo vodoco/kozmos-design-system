@@ -3352,6 +3352,20 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
 
 ## `@kozmos-ds/vue` — current 0.17.2-next.0
 
+### 0.17.2-next.0
+
+The V1 parts on `@kozmos-ds/styles` and `@kozmos-ds/react` 0.17.2, which it pins exactly:
+`npm install @kozmos-ds/vue@next vue`. No Vue API changes; what the parts draw follows the four
+fixes the Vue suites found in React's recipes and the stylesheet:
+
+- `KozmosAlert`'s destructive, success, warning and info borders are the emotion at 50% in dark as
+  in light (decision 230, GAP-289).
+- `KozmosListItemStatus`'s check and dot keep their size where `@scope` is dropped (GAP-288).
+- `KozmosTimeline`'s marker takes every colour from a token (GAP-287).
+- A focus ring drawn with an offset gives its gap the canvas's colour, where dark drew it white:
+  `KozmosLink`, `KozmosTag` and `KozmosNotice` among the native parts, and the bridged parts that
+  use it (GAP-290).
+
 ### 0.17.1-next.0
 
 Wave V1 of the Vue port: 29 more parts are native Vue, so 35 of Kozmos's 88 core parts now render
