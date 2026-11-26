@@ -84,8 +84,13 @@ const MAX_BUTTON_GZIP_KB = 2;
 // half a kilobyte per wave, and is re-sized when the core is done. After
 // wave V1 (type, layout, status, cards and records: their classes, custom
 // properties and drawings moved into recipes/), Everything measured
-// 119.80 KB here, so 120.30.
-const MAX_TOTAL_GZIP_KB = 120.3;
+// 119.80 KB here, so 120.30. After wave V2's controls and fields batches
+// (Checkbox's, Rating's, the field's, Input's and its kin's classes and
+// helpers moved into recipes/), Everything measured 120.60 KB in CI's
+// bundle job, so 121.10. CI's job is the measurement: it reads about
+// 0.4 KB above a Mac's local run of this script (main measured 120.26 there
+// and 119.80 on a Mac), so size the budget from CI's number.
+const MAX_TOTAL_GZIP_KB = 121.1;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
