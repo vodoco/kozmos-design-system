@@ -54,6 +54,33 @@ async function settle(page) {
 }
 
 /** Puts focus at the page's start, so the next Tab is the story's first stop. */
+/**
+ * Puts a focusable stand-in after the story, so a Tab out of its last stop
+ * has somewhere to land. Without one, Chromium hands focus to the page and
+ * Firefox wraps it round to the first stop again, the very element a
+ * "Tab leaves the group" check is watching. Returns a check that focus is
+ * on the stand-in, and takes the stand-in away.
+ */
+async function standInAfterStory(page) {
+  await page.evaluate(() => {
+    const stand = document.createElement("button");
+    stand.type = "button";
+    stand.dataset.kozmosStandIn = "";
+    stand.textContent = "After the story";
+    document.body.append(stand);
+  });
+  return async () => {
+    const there = await page.evaluate(
+      () =>
+        document.activeElement?.hasAttribute("data-kozmos-stand-in") ?? false,
+    );
+    await page.evaluate(() =>
+      document.querySelector("[data-kozmos-stand-in]")?.remove(),
+    );
+    return there;
+  };
+}
+
 async function focusStart(page) {
   await page.evaluate(() => {
     document.activeElement?.blur?.();
@@ -928,6 +955,7 @@ const INTERACTIONS = {
     assert(chosen >= 0, "the story holds a value");
     const at = () =>
       radios.evaluateAll((all) => all.indexOf(document.activeElement));
+    const leftFor = await standInAfterStory(page);
     await focusStart(page);
     await page.keyboard.press("Tab");
     await settle(page);
@@ -939,6 +967,11 @@ const INTERACTIONS = {
     await page.keyboard.press("Tab");
     await settle(page);
     assert.equal(await at(), -1, "a second Tab leaves the group");
+    assert.equal(
+      await leftFor(),
+      true,
+      `a second Tab reaches what follows the group (focus is on ${await focused(page)})`,
+    );
     await radios.nth(chosen).focus();
     for (const [key, to] of [
       ["ArrowRight", chosen + 1],
