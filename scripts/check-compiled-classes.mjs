@@ -522,7 +522,10 @@ if (stale.length) {
 // (packages/styles/postcss/scoped-css.cjs), which no token sets: in dark
 // every such focus ring drew a white gap. So a class list that offsets a
 // ring also says the gap's colour, `ring-offset-background` or another
-// role, in the same string or @apply. A width of 0 draws no gap and is not
+// role, in the same string or @apply, or in a string that always joins it
+// on the element: an unconditional argument of the same cn()/clsx() call,
+// or the base of the same cva(). A colour under a condition does not count,
+// since the offset can draw without it. A width of 0 draws no gap and is not
 // held. Fixtures are skipped, as above.
 const RING_OFFSET_WIDTH = /^(?:[^\s:]+:)*ring-offset-(?:\d+|\[[^\]]+\])$/;
 const RING_OFFSET_ZERO = /^(?:[^\s:]+:)*ring-offset-(?:0|\[0(?:px)?\])$/;
@@ -550,31 +553,59 @@ function classLists(file) {
   );
   const lineOf = (node) =>
     source.getLineAndCharacterOfPosition(node.getStart()).line + 1;
-  const visit = (node) => {
-    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
-      lists.push({
-        words: tokens(node.text, false, false),
-        line: lineOf(node),
-      });
-    } else if (ts.isTemplateExpression(node)) {
+  const wordsOf = (node) => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
+      return tokens(node.text, false, false);
+    if (ts.isTemplateExpression(node)) {
       const words = [...tokens(node.head.text, false, true)];
       node.templateSpans.forEach((span, index) => {
         const last = index === node.templateSpans.length - 1;
         words.push(...tokens(span.literal.text, true, !last));
       });
-      lists.push({ words, line: lineOf(node) });
+      return words;
     }
-    ts.forEachChild(node, visit);
+    return null;
   };
-  visit(source);
+  const JOINERS = new Set(["cn", "clsx", "cx", "twMerge"]);
+  // `shared` holds the words that always join a literal on its element.
+  const visit = (node, shared) => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      const name = node.expression.text;
+      const always = node.arguments.map(wordsOf).filter(Boolean).flat();
+      if (JOINERS.has(name)) {
+        const joined = [...shared, ...always];
+        node.arguments.forEach((arg) => visit(arg, joined));
+        return;
+      }
+      if (name === "cva" && node.arguments.length) {
+        const base = wordsOf(node.arguments[0]) ?? [];
+        visit(node.arguments[0], shared);
+        node.arguments
+          .slice(1)
+          .forEach((arg) => visit(arg, [...shared, ...base]));
+        return;
+      }
+    }
+    const words = wordsOf(node);
+    if (words) {
+      lists.push({
+        words: [...words, ...shared],
+        own: words,
+        line: lineOf(node),
+      });
+      return;
+    }
+    ts.forEachChild(node, (child) => visit(child, shared));
+  };
+  visit(source, []);
   return lists;
 }
 const uncolouredOffsets = [];
 let offsetLists = 0;
 for (const file of sources) {
   if (FIXTURE.test(file)) continue;
-  for (const { words, line } of classLists(file)) {
-    const widths = words.filter(
+  for (const { words, own = words, line } of classLists(file)) {
+    const widths = own.filter(
       (word) => RING_OFFSET_WIDTH.test(word) && !RING_OFFSET_ZERO.test(word),
     );
     if (!widths.length) continue;
