@@ -42,7 +42,7 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosInput } from "@kozmos-ds/vue/react-bridge"
+import { KozmosInput } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const email = ref("")
@@ -187,7 +187,7 @@ export function PersonaMapStyle({
   `}
   vue={`
 <script setup>
-import { KozmosInput } from "@kozmos-ds/vue/react-bridge"
+import { KozmosInput } from "@kozmos-ds/vue"
 
 defineProps({ mapStyle: String })
 const emit = defineEmits(["edit"])

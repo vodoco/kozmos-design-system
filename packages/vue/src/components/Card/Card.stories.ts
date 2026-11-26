@@ -11,16 +11,15 @@ import {
   KozmosCardTitle,
   KozmosHeading,
   KozmosIconButton,
+  KozmosInput,
   KozmosLabel,
 } from "../../index";
-import { KozmosInput } from "../../react-bridge";
 
 /**
  * Vue's Card: the stories React's has, with the same names, each drawn as
  * React's story draws it, inside the KozmosThemeProvider the Storybook's
- * decorator gives every story. The card's parts, Button, IconButton, Label
- * and Heading are native; Input, which has no Vue port yet, is the
- * bridge's. test/parity/card.parity.spec.ts
+ * decorator gives every story. The card's parts, Button, IconButton, Input,
+ * Label and Heading are native. test/parity/card.parity.spec.ts
  * draws each in both and holds Vue's render to React's.
  */
 const meta: Meta<typeof KozmosCard> = {

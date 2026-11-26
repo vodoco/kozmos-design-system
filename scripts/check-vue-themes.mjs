@@ -64,6 +64,13 @@ const SIZED_OVER_DENSITY = [
     reason:
       "WayfindingInputRow's route fields are 40 tall in every density: its owned rule (packages/styles/src/styles/owned-native-fields.css) sets h-10 over the field's --density-field-height-md, inside the row's touch DensityScope (decision 89), and React's check-field-styles.mjs holds the same (wayfinding-input-row, height 40)",
   },
+  {
+    selector: ".kozmos-input.kozmos-otp-cell",
+    property: "height",
+    px: 44,
+    reason:
+      "OTPInput's cells are a 44 square in every density: its owned rule (packages/styles/src/styles/owned-native-fields.css, `.kozmos-input.kozmos-otp-cell`) sets h-11 w-11 over the field's --density-field-height-md, as React's OTPInput draws them",
+  },
 ];
 
 const { base, covered } = await storiesFor(SUITE);

@@ -27,8 +27,6 @@ import {
   PART_TAKES,
 } from "./part-takes";
 import {
-  Input as ReactInput,
-  Textarea,
   Switch,
   Slider as ReactSlider,
   Search,
@@ -60,7 +58,6 @@ import {
   FloorSelector,
   POICard,
   BottomSheet,
-  OTPInput as ReactOTPInput,
   FileUpload as ReactFileUpload,
   ImageCropper,
   DatePicker,
@@ -75,7 +72,6 @@ import {
   Chip,
   DynamicIsland,
   FeedbackCard,
-  FieldWrapper,
   MapControlsGroup,
   NavigationAnnouncer,
   RadioGroup as ReactRadioGroup,
@@ -99,12 +95,10 @@ import {
   MultiSelect,
   ChipInput,
   NavigationItem,
-  NumberInput,
   POIDetailPanel,
   POIMediaGallery,
   POIResultCard,
   POIResultList,
-  PasswordInput,
   RouteOptionCard,
   RoutePreviewPanel,
   TourStep,
@@ -416,9 +410,6 @@ export const KozmosFloorSelector = createVueWrapper(FloorSelector, {
 });
 export const KozmosPOICard = createVueWrapper(POICard);
 export const KozmosBottomSheet = createVueWrapper(BottomSheet);
-export const KozmosOTPInput = createVueWrapper(ReactOTPInput, {
-  modelValue: { prop: "value", callback: "onChange", empty: "" },
-});
 export const KozmosFileUpload = createVueWrapper(ReactFileUpload, {
   modelValue: { prop: "value", callback: "onFilesChange", empty: [] },
 });
@@ -452,7 +443,6 @@ export const KozmosMapOverlay = createVueWrapper(MapOverlay);
 export const KozmosChip = createVueWrapper(Chip);
 export const KozmosDynamicIsland = createVueWrapper(DynamicIsland);
 export const KozmosFeedbackCard = createVueWrapper(FeedbackCard);
-export const KozmosFieldWrapper = createVueWrapper(FieldWrapper);
 export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup, {
   stepFree: { prop: "stepFree", callback: "onStepFreeChange", empty: false },
 });
@@ -468,21 +458,6 @@ export const KozmosScrollArea = createVueWrapper(ScrollArea);
 export const KozmosUserLocationMarker = createVueWrapper(UserLocationMarker);
 
 // Custom Input Binding Interfaces
-export const KozmosInput = createVueWrapper(ReactInput, {
-  modelValue: textField,
-});
-// `action` is an object holding functions and an icon: declared as a prop, it
-// is handed to React, never written onto the wrapper's element (GAP-154).
-// Beside its model's props, which it would replace.
-Object.assign(KozmosInput, {
-  props: {
-    ...(KozmosInput as unknown as { props: object }).props,
-    action: null,
-  },
-});
-export const KozmosTextarea = createVueWrapper(Textarea, {
-  modelValue: textField,
-});
 export const KozmosSwitch = createVueWrapper(Switch, {
   modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
 });
@@ -611,14 +586,6 @@ export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
 export const KozmosChipInput = createVueWrapper(ChipInput, {
   modelValue: { prop: "value", callback: "onValueChange", empty: [] },
   inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
-});
-// A cleared field is `null` to Vue and "" to React's input.
-export const KozmosNumberInput = createVueWrapper(NumberInput, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-});
-export const KozmosPasswordInput = createVueWrapper(PasswordInput, {
-  modelValue: textField,
-  visible: { prop: "visible", callback: "onVisibleChange", empty: false },
 });
 
 // ----------------------------------------------------------------------

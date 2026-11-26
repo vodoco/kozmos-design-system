@@ -173,6 +173,18 @@ export {
 } from "./components/Breadcrumb/Breadcrumb";
 export { KozmosLink } from "./components/Link/Link";
 export { KozmosEmptyState } from "./components/EmptyState/EmptyState";
+export { KozmosFieldWrapper } from "./components/FieldWrapper/FieldWrapper";
+export type { KozmosFieldStatus } from "./components/FieldWrapper/types";
+export { KozmosInput } from "./components/Input/Input";
+export type {
+  KozmosCharacterCount,
+  KozmosInputAction,
+  KozmosInputStatus,
+} from "./components/Input/types";
+export { KozmosTextarea } from "./components/Textarea/Textarea";
+export { KozmosPasswordInput } from "./components/PasswordInput/PasswordInput";
+export { KozmosNumberInput } from "./components/NumberInput/NumberInput";
+export { KozmosOTPInput } from "./components/OTPInput/OTPInput";
 export type {
   KozmosEmptyStateListItem,
   KozmosEmptyStateProgress,

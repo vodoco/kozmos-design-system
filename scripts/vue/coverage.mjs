@@ -740,6 +740,70 @@ export const VUE_STORIES = {
         "a read-only Rating is one image, not a control (React's Rating): nothing to focus or press, so there is no interaction; axe scans it",
     },
   },
+  "vue-core-inputs-fieldwrapper--default": { interaction: "controls-in-order" },
+  "vue-core-inputs-fieldwrapper--validation-states": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-input--default": { interaction: "controls-in-order" },
+  "vue-core-inputs-input--with-helper-text": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-input--with-error": { interaction: "controls-in-order" },
+  "vue-core-inputs-input--validation-states": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-input--actions": { interaction: "field-actions" },
+  "vue-core-inputs-input--edit-action": { interaction: "field-actions" },
+  "vue-core-inputs-input--mixed-value": { interaction: "mixed-field" },
+  "vue-core-inputs-textarea--default": { interaction: "controls-in-order" },
+  "vue-core-inputs-textarea--with-error": { interaction: "controls-in-order" },
+  "vue-core-inputs-textarea--character-count": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-passwordinput--default": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-passwordinput--visible": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-passwordinput--error": { interaction: "controls-in-order" },
+  "vue-core-inputs-passwordinput--without-toggle": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-passwordinput--right-to-left": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--read-only": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--default": { interaction: "controls-in-order" },
+  "vue-core-inputs-numberinput--with-helper-text": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--validation-states": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--without-steppers": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--with-unit": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--with-unit-right-to-left": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--right-to-left": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-numberinput--mixed-value": { interaction: "mixed-field" },
+  "vue-core-inputs-otpinput--default": { interaction: "controls-in-order" },
+  "vue-core-inputs-otpinput--with-error": { interaction: "controls-in-order" },
+  "vue-core-inputs-otpinput--with-default-value": {
+    interaction: "controls-in-order",
+  },
+  "vue-core-inputs-otpinput--validation-states": {
+    interaction: "controls-in-order",
+  },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

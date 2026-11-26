@@ -2308,6 +2308,14 @@ for (const [part, module] of [
   ["KozmosIconButton", "IconButton/IconButton"],
   ["KozmosCheckbox", "Checkbox/Checkbox"],
   ["KozmosRating", "Rating/Rating"],
+  // FieldWrapper, Input, Textarea, PasswordInput, NumberInput and OTPInput
+  // (wave V2, the fields batch).
+  ["KozmosFieldWrapper", "FieldWrapper/FieldWrapper"],
+  ["KozmosInput", "Input/Input"],
+  ["KozmosTextarea", "Textarea/Textarea"],
+  ["KozmosPasswordInput", "PasswordInput/PasswordInput"],
+  ["KozmosNumberInput", "NumberInput/NumberInput"],
+  ["KozmosOTPInput", "OTPInput/OTPInput"],
 ]) {
   assertContains(
     files.vueIndex,

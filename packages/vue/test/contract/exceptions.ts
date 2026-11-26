@@ -30,6 +30,14 @@ export const EXCEPTIONS: Record<string, string> = {
   // the same name, boolean only, beside the slot.
   "KozmosDescriptionListItem.value:extra-prop":
     "React's boolean `value` (a yes or a no) is Vue's `:value`, beside the `#value` slot that takes its nodes: a slot cannot carry a boolean",
+  // React's Input action's toggle takes its icon as a ReactNode; Vue's has
+  // no ReactNode, so the toggle's icon is a Vue component (an
+  // @kozmos-ds/icons/vue glyph) or a VNode, which draws the same <svg> at
+  // the field's end (input.parity.spec.ts, Actions). The rest of the
+  // action, copy, toggle and edit, is React's to the letter
+  // (Input/types.ts).
+  "KozmosInput.action:type":
+    "Vue's Input action is React's InputAction but for its toggle's icon, a Vue component or a VNode where React's is a ReactNode; the same <svg> is drawn (input.parity.spec.ts, Actions)",
   "KozmosDescriptionListItem.value:type":
     "Vue's `value` prop is the boolean half of React's `ReactNode | boolean`; the node half is the `#value` slot",
   // A function React's parameter list defaults to, which the contract reads

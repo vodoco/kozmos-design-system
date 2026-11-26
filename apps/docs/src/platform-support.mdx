@@ -66,9 +66,11 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 `KozmosListItemStatus`, `KozmosDescriptionList`, `KozmosDescriptionListItem`,
 `KozmosMetaStrip`, `KozmosMetaStripItem`, `KozmosTimeline` and its `Item`, `Time`,
 `Title` and `Description`, `KozmosAlert`, `KozmosAlertTitle`, `KozmosAlertDescription`,
-`KozmosNotice`, `KozmosCounter`, `KozmosIconButton`, `KozmosCheckbox` and
-`KozmosRating` so far), which draw the element their React counterparts draw, import
-no React and render on the server. `packages/vue/PORTING.md` is how a part is ported.
+`KozmosNotice`, `KozmosCounter`, `KozmosIconButton`, `KozmosCheckbox`,
+`KozmosRating`, `KozmosFieldWrapper`, `KozmosInput`, `KozmosTextarea`,
+`KozmosPasswordInput`, `KozmosNumberInput` and `KozmosOTPInput` so far), which
+draw the element their React counterparts draw, import no React and render on the
+server. `packages/vue/PORTING.md` is how a part is ported.
 The parts not yet ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount
 the React parts inside Vue wrappers: they need React and React DOM as well as Vue,
 and do not render on the server.

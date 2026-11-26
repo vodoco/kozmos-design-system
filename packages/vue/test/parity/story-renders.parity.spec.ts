@@ -38,9 +38,6 @@ const NOT_DRAWN: Record<string, string> = {
   // provider-and-scope.parity.spec.ts draw what they show.
   "ThemeProvider/Default": "its render reads React's own hooks",
   "ThemeProvider/Density": "draws parts not yet ported to Vue",
-  // The bridge mounts React's parts on the client only.
-  "Label/WithInput": "its Input is a bridged part, drawn on the client only",
-  "Card/Default": "its Input is a bridged part, drawn on the client only",
 };
 
 /**

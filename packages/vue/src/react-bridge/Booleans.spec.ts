@@ -118,20 +118,20 @@ const CASES: Case[] = [
     byDefault: false,
   },
   {
-    name: "KozmosInput",
-    part: KozmosReact.Input,
+    name: "KozmosSearch",
+    part: KozmosReact.Search,
     prop: "required",
     attribute: "required",
-    template: (a) => `<KozmosInput aria-label="Gate" ${a} />`,
+    template: (a) => `<KozmosSearch aria-label="Gate" ${a} />`,
     drawn: () => $<HTMLInputElement>("input")!.required,
     byDefault: false,
   },
   {
-    name: "KozmosInput",
-    part: KozmosReact.Input,
+    name: "KozmosSearch",
+    part: KozmosReact.Search,
     prop: "readOnly",
     attribute: "read-only",
-    template: (a) => `<KozmosInput aria-label="Gate" ${a} />`,
+    template: (a) => `<KozmosSearch aria-label="Gate" ${a} />`,
     drawn: () => $<HTMLInputElement>("input")!.readOnly,
     byDefault: false,
   },
@@ -174,16 +174,6 @@ const CASES: Case[] = [
     template: (a) => `<KozmosSwitch label="Gate alerts" ${a} />`,
     drawn: () => $("[data-slot=state-label]") !== null,
     byDefault: false,
-  },
-  {
-    // Its toggle is drawn unless told otherwise.
-    name: "KozmosPasswordInput",
-    part: KozmosReact.PasswordInput,
-    prop: "showToggle",
-    attribute: "show-toggle",
-    template: (a) => `<KozmosPasswordInput aria-label="Password" ${a} />`,
-    drawn: () => $("[aria-label='Show password']") !== null,
-    byDefault: true,
   },
   {
     // Decision 159: a border and the control radius round the table.
@@ -274,9 +264,9 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
   );
 
   it("React's own spelling wins over another given beside it", async () => {
-    const given = await propsOf(KozmosReact.Input, () =>
+    const given = await propsOf(KozmosReact.Search, () =>
       mount(() =>
-        h(Bridge.KozmosInput, {
+        h(Bridge.KozmosSearch, {
           "aria-label": "Gate",
           "read-only": "",
           readOnly: false,
@@ -288,7 +278,7 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
   });
 
   it("of two spellings neither of which is React's, the last given wins", () => {
-    const input = PART_BOOLEANS.get(KozmosReact.Input)!;
+    const input = PART_BOOLEANS.get(KozmosReact.Search)!;
     expect(withBooleans({ readonly: "", "read-only": false }, input)).toEqual({
       readOnly: false,
     });
@@ -386,13 +376,11 @@ describe("a model whose React prop is a boolean", () => {
       "KozmosToggleButton pressed → pressed",
       "KozmosMapControlsGroup stepFree → stepFree",
       "KozmosSwitch modelValue → checked",
-      "KozmosPasswordInput visible → visible",
     ]);
     for (const [name, model] of [
       ["KozmosToggleButton", "pressed"],
       ["KozmosMapControlsGroup", "stepFree"],
       ["KozmosSwitch", "modelValue"],
-      ["KozmosPasswordInput", "visible"],
     ] as const)
       for (const value of [false, true]) {
         const component = Bridge[name] as Component;
@@ -436,14 +424,6 @@ describe("a model whose React prop is a boolean", () => {
       attribute: "step-free",
       prop: "stepFree",
       template: (a) => `<KozmosMapControlsGroup label="Map controls" ${a} />`,
-    },
-    {
-      name: "KozmosPasswordInput",
-      part: KozmosReact.PasswordInput,
-      attribute: "visible",
-      prop: "visible",
-      template: (a) => `<KozmosPasswordInput aria-label="Password" ${a} />`,
-      drawn: () => $<HTMLInputElement>("input")!.type === "text",
     },
     {
       name: "KozmosSwitch",
@@ -512,10 +492,10 @@ describe("a union with free text, read String first as Vue reads a [String, Bool
     ['error="error"', "error", true, "error"],
     [':error="false"', false, false, ""],
   ] as const)(
-    "KozmosInput %s: React is given %j, aria-invalid is %s",
+    "KozmosSearch %s: React is given %j, aria-invalid is %s",
     async (attribute, expected, invalid, message) => {
-      const given = await propsOf(KozmosReact.Input, () =>
-        mount(page(`<KozmosInput aria-label="Gate" ${attribute} />`)),
+      const given = await propsOf(KozmosReact.Search, () =>
+        mount(page(`<KozmosSearch aria-label="Gate" ${attribute} />`)),
       );
       expect(given.error).toBe(expected);
       expect($("input")!.getAttribute("aria-invalid") === "true").toBe(invalid);

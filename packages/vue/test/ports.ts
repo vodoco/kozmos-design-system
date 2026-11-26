@@ -709,6 +709,102 @@ export const PORTS: Port[] = [
       "update:modelValue": "parity/rating.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosFieldWrapper",
+    react: "FieldWrapper",
+    stories: "components/FieldWrapper/FieldWrapper.stories.tsx",
+    elsewhere: {
+      Default: "parity/field-wrapper.parity.spec.ts",
+      ValidationStates: "parity/field-wrapper.parity.spec.ts",
+    },
+    drawnIn: "parity/field-wrapper.parity.spec.ts",
+    sample: { label: "Name", helperText: "Helper text", children: "Field" },
+    events: {
+      resetMixed: "parity/field-wrapper.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosInput",
+    react: "Input",
+    stories: "components/Input/Input.stories.tsx",
+    elsewhere: {
+      Default: "parity/input.parity.spec.ts",
+      WithHelperText: "parity/input.parity.spec.ts",
+      WithError: "parity/input.parity.spec.ts",
+      ValidationStates: "parity/input.parity.spec.ts",
+      Actions: "parity/input.parity.spec.ts",
+      EditAction: "parity/input.parity.spec.ts",
+      MixedValue: "parity/input.parity.spec.ts",
+    },
+    drawnIn: "parity/input.parity.spec.ts",
+    sample: { label: "Name", placeholder: "Your name" },
+    events: {
+      "update:modelValue": "parity/input.parity.spec.ts",
+      resetMixed: "parity/input.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosTextarea",
+    react: "Textarea",
+    stories: "components/Textarea/Textarea.stories.tsx",
+    elsewhere: {
+      Default: "parity/textarea.parity.spec.ts",
+      WithError: "parity/textarea.parity.spec.ts",
+      CharacterCount: "parity/textarea.parity.spec.ts",
+    },
+    drawnIn: "parity/textarea.parity.spec.ts",
+    sample: { label: "Note", placeholder: "Tell us" },
+    events: {
+      "update:modelValue": "parity/textarea.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosPasswordInput",
+    react: "PasswordInput",
+    stories: "components/PasswordInput/PasswordInput.stories.tsx",
+    elsewhere: {
+      RightToLeft: "parity/password-input.parity.spec.ts",
+    },
+    events: {
+      "update:visible": "parity/password-input.parity.spec.ts",
+      "update:modelValue": "parity/password-input.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosNumberInput",
+    react: "NumberInput",
+    stories: "components/NumberInput/NumberInput.stories.tsx",
+    elsewhere: {
+      Default: "parity/number-input.parity.spec.ts",
+      WithHelperText: "parity/number-input.parity.spec.ts",
+      ValidationStates: "parity/number-input.parity.spec.ts",
+      WithoutSteppers: "parity/number-input.parity.spec.ts",
+      WithUnit: "parity/number-input.parity.spec.ts",
+      WithUnitRightToLeft: "parity/number-input.parity.spec.ts",
+      RightToLeft: "parity/number-input.parity.spec.ts",
+      MixedValue: "parity/number-input.parity.spec.ts",
+    },
+    events: {
+      "update:modelValue": "parity/number-input.parity.spec.ts",
+      resetMixed: "parity/number-input.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosOTPInput",
+    react: "OTPInput",
+    stories: "components/OTPInput/OTPInput.stories.tsx",
+    elsewhere: {
+      Default: "parity/otpinput.parity.spec.ts",
+      WithError: "parity/otpinput.parity.spec.ts",
+      WithDefaultValue: "parity/otpinput.parity.spec.ts",
+      ValidationStates: "parity/otpinput.parity.spec.ts",
+    },
+    drawnIn: "parity/otpinput.parity.spec.ts",
+    sample: { label: "Code", length: 4 },
+    events: {
+      "update:modelValue": "parity/otpinput.parity.spec.ts",
+    },
+  },
 ];
 
 /**

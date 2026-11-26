@@ -173,51 +173,13 @@ const textField = (
 });
 
 const PARTS: Part[] = [
-  textField("KozmosInput", "input", "Ada", "Ada L"),
-  textField("KozmosTextarea", "textarea", "Gate 4", "Gate 42"),
   textField("KozmosSearch", "input[type=search]", "caf", "cafe"),
-  textField("KozmosPasswordInput", "input[type=password]", "hunte", "hunter"),
   textField("KozmosDatePicker", "input[type=date]", "2026-11-01", "2026-11-06"),
   textField("KozmosTimePicker", "input[type=time]", "09:00", "09:30"),
   {
     // Its onChange reports the text, not an event.
     ...textField("KozmosSearchBar", "input", "Gat", "Gate"),
     props: { placeholder: "Where to?" },
-  },
-  {
-    // A number, from onValueChange: its DOM onChange reports a string.
-    name: "KozmosNumberInput",
-    props: { "aria-label": "Guests" },
-    start: 1,
-    before: "1",
-    field: () => $("input[type=number]"),
-    change: (field) => type(field, "42"),
-    next: 42,
-    shown: () => $<HTMLInputElement>("input[type=number]")?.value,
-    shows: "42",
-    nothing: "",
-    listener: "onValueChange",
-    alone: "42",
-  },
-  {
-    name: "KozmosOTPInput",
-    props: { length: 4 },
-    start: "12",
-    // OTPInput draws the code it is given in its first render (since #490);
-    // a visitor types once they see 1 and 2.
-    before: ["1", "2", "", ""],
-    field: () => $$("input")[2],
-    change: (field) => type(field, "3"),
-    next: "123",
-    shown: () => $$<HTMLInputElement>("input").map((cell) => cell.value),
-    shows: ["1", "2", "3", ""],
-    nothing: ["", "", "", ""],
-    // OTPInput reports its cells joined, so a digit typed in the third of
-    // four empty cells is the code "3", and React's part keeps it drawn
-    // where it was typed: it redraws its cells only for another code.
-    fromNothing: { next: "3", shows: ["", "", "3", ""] },
-    listener: "onChange",
-    alone: ["", "", "3", ""],
   },
   {
     // A colour typed whole is normalised; onValueChange reports it.
@@ -805,21 +767,6 @@ const PARTS: Part[] = [
     alone: "2 of 3",
   },
   {
-    name: "KozmosPasswordInput",
-    model: "visible",
-    props: { "aria-label": "Password" },
-    start: false,
-    before: "password",
-    field: () => $("button[aria-label='Show password']"),
-    change: (button) => button.click(),
-    next: true,
-    shown: () => $("input")?.getAttribute("type"),
-    shows: "text",
-    nothing: "password",
-    listener: "onVisibleChange",
-    alone: "text",
-  },
-  {
     // Clicking a parent selects and opens it.
     name: "KozmosTree",
     model: "expandedIds",
@@ -1388,8 +1335,8 @@ describe("a typed query is not the value", () => {
 // --------------------------------------------------------------------------
 
 describe("each model's other changes", () => {
-  it("KozmosInput keeps its caret where the visitor typed", async () => {
-    mountPart(PARTS_BY.KozmosInput, { vModel: true });
+  it("KozmosSearch keeps its caret where the visitor typed", async () => {
+    mountPart(PARTS_BY.KozmosSearch, { vModel: true });
     const input = await until(() => $<HTMLInputElement>("input"));
     await settle();
     // "Ada" with an "n" typed after the "A".
@@ -1405,10 +1352,10 @@ describe("each model's other changes", () => {
     expect(input.selectionStart).toBe(2);
   });
 
-  it("KozmosInput shows the model when the parent refuses a change, or changes it", async () => {
+  it("KozmosSearch shows the model when the parent refuses a change, or changes it", async () => {
     const value = ref("ADA");
     mount(() =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         modelValue: value.value,
         // Capitals only: anything else is refused.
         "onUpdate:modelValue": (next: string) => {
@@ -1456,22 +1403,6 @@ describe("each model's other changes", () => {
     });
   });
 
-  it("KozmosNumberInput's steppers emit a number, and a cleared field null", async () => {
-    const { emitted } = mountPart(PARTS_BY.KozmosNumberInput, {
-      vModel: true,
-    });
-    const input = await until(() => $<HTMLInputElement>("input"));
-    $<HTMLButtonElement>("button[aria-label='Increase value']")!.click();
-    // Fixed waits: each change is emitted once, and no more.
-    await settle();
-    expect(emitted).toEqual([2]);
-    await eventually(() => expect(input.value).toBe("2"));
-    type(input, "");
-    await settle();
-    expect(emitted).toEqual([2, null]);
-    await eventually(() => expect(input.value).toBe(""));
-  });
-
   it("KozmosSegmentedControl's choice taken back is undefined, and the control holds nothing", async () => {
     const { emitted } = mountPart(PARTS_BY.KozmosSegmentedControl, {
       vModel: true,
@@ -1488,7 +1419,7 @@ describe("each model's other changes", () => {
   it("an empty model leaves a text field controlled", async () => {
     const value = ref<string | undefined>(undefined);
     mount(() =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         modelValue: value.value,
         "onUpdate:modelValue": (next: string) => (value.value = next),
       }),
@@ -1895,7 +1826,7 @@ describe("a model's change goes through Vue's emit", () => {
             string,
             unknown[],
           ];
-          if (instance.type !== Bridge.KozmosInput) return;
+          if (instance.type !== Bridge.KozmosSearch) return;
           emitted.push([event, args]);
         },
         on() {},
@@ -1914,9 +1845,9 @@ describe("a model's change goes through Vue's emit", () => {
     const state = { name: ref("Ada"), listener };
     mount(
       defineComponent({
-        components: { KozmosInput: Bridge.KozmosInput },
+        components: { KozmosSearch: Bridge.KozmosSearch },
         setup: () => state,
-        template: `<KozmosInput aria-label="Name" v-model.trim="name" @update:model-value="listener" />`,
+        template: `<KozmosSearch aria-label="Name" v-model.trim="name" @update:model-value="listener" />`,
       }),
     );
     const input = await until(() => $<HTMLInputElement>("input"));
@@ -1931,7 +1862,7 @@ describe("a model's change goes through Vue's emit", () => {
     const emitted = recordEmits();
     const once = vi.fn();
     mount(() =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         "aria-label": "Name",
         modelValue: "Ada",
         "onUpdate:modelValueOnce": once,
@@ -1981,19 +1912,19 @@ describe("every spelling of a model", () => {
   const name = ref("Bob");
   const spellings = {
     "h() camelCase": () =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         "aria-label": "Name",
         modelValue: name.value,
         "onUpdate:modelValue": (next: string) => (name.value = next),
       }),
     "h() kebab-case": () =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         "aria-label": "Name",
         "model-value": name.value,
         "onUpdate:model-value": (next: string) => (name.value = next),
       }),
     "h() kebab-case value, camelCase listener": () =>
-      h(Bridge.KozmosInput, {
+      h(Bridge.KozmosSearch, {
         "aria-label": "Name",
         "model-value": name.value,
         "onUpdate:modelValue": (next: string) => (name.value = next),
@@ -2020,7 +1951,7 @@ describe("every spelling of a model", () => {
     const state = { name: ref("Bob") };
     mount(
       page(
-        `<KozmosInput aria-label="Name" :model-value="name" @update:model-value="(next) => (name = next)" />`,
+        `<KozmosSearch aria-label="Name" :model-value="name" @update:model-value="(next) => (name = next)" />`,
         state,
       ),
     );
@@ -2054,7 +1985,7 @@ describe("every spelling of a model", () => {
     const state = { name: ref("Bob"), once };
     mount(
       page(
-        `<KozmosInput aria-label="Name" v-model="name" @update:model-value.once="once" />`,
+        `<KozmosSearch aria-label="Name" v-model="name" @update:model-value.once="once" />`,
         state,
       ),
     );
@@ -2072,7 +2003,7 @@ describe("every spelling of a model", () => {
     const state = { name: ref("Bob") };
     mount(
       page(
-        `<KozmosInput aria-label="Name" :model-value="name" @update:model-value.once="(next) => (name = next)" />`,
+        `<KozmosSearch aria-label="Name" :model-value="name" @update:model-value.once="(next) => (name = next)" />`,
         state,
       ),
     );
@@ -2104,7 +2035,9 @@ describe("v-model's modifiers", () => {
 
   it(".trim: the field keeps a typed space, the model is trimmed, and a commit trims the field", async () => {
     const state = { name: ref("Ada") };
-    mount(page(`<KozmosInput aria-label="Name" v-model.trim="name" />`, state));
+    mount(
+      page(`<KozmosSearch aria-label="Name" v-model.trim="name" />`, state),
+    );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "Ada ");
     // Fixed waits where what was typed may not be taken back.
@@ -2141,7 +2074,7 @@ describe("v-model's modifiers", () => {
     const state = { guests: ref<unknown>(1) };
     mount(
       page(
-        `<KozmosInput aria-label="Guests" v-model.number="guests" />`,
+        `<KozmosSearch aria-label="Guests" v-model.number="guests" />`,
         state,
       ),
     );
@@ -2162,7 +2095,9 @@ describe("v-model's modifiers", () => {
 
   it(".lazy is passed on and does nothing, as on any component's v-model", async () => {
     const state = { name: ref("Ada") };
-    mount(page(`<KozmosInput aria-label="Name" v-model.lazy="name" />`, state));
+    mount(
+      page(`<KozmosSearch aria-label="Name" v-model.lazy="name" />`, state),
+    );
     const input = await until(() => $<HTMLInputElement>("input"));
     type(input, "Ada L");
     await eventually(() => expect(state.name.value).toBe("Ada L"));
@@ -2176,14 +2111,14 @@ describe("v-model's modifiers", () => {
 // --------------------------------------------------------------------------
 
 describe("handlers given as an array", () => {
-  it("KozmosInput's @change and @update:model-value, each an array, call every handler once", async () => {
+  it("KozmosSearch's @change and @update:model-value, each an array, call every handler once", async () => {
     const inner = vi.fn();
     const outer = vi.fn();
     const first = vi.fn();
     const value = ref("Ada");
     mount(() =>
       h(
-        Bridge.KozmosInput,
+        Bridge.KozmosSearch,
         mergeProps(
           {
             "aria-label": "Name",
@@ -2394,8 +2329,8 @@ describe("attributes reach React alone", () => {
       slot: "G",
     },
     {
-      name: "KozmosInput",
-      component: Bridge.KozmosInput,
+      name: "KozmosSearch",
+      component: Bridge.KozmosSearch,
       kind: "a field, its <input> React's element",
     },
     {
