@@ -58,7 +58,29 @@ const MARKERS = {
   // React's Text (drawn here through the bridge) marks every text with it;
   // what it draws is the size, weight and colour rules, .kozmos-text-*.
   "kozmos-text": "React's Text's mark; its rules are .kozmos-text-*",
+  // React's ChipInput writes it on its field, beside data-slot="chip-input";
+  // the field draws with utilities, and its input with
+  // .kozmos-multiselect-input's rule.
+  "kozmos-chip-input":
+    "React's ChipInput's mark on its field; its input's rule is .kozmos-multiselect-input",
 };
+
+/**
+ * Owned declarations a flex row sizes over, each with why: the owned value
+ * is the element's size outside the row, and inside it the row (a utility
+ * of its parent, which goes with @scope) gives it the room. Compared
+ * without @scope, the row goes and the owned value comes back, by design.
+ * An allowance no story draws fails, so none outlives its part.
+ */
+const FLEX_SIZED = [
+  {
+    selector: ".kozmos-multiselect-input",
+    property: "width",
+    reason:
+      "MultiSelect's and ChipInput's input is flex-1 in its ChipGroup's flex row (`flex flex-wrap`, a utility), which gives it the room after the chips; its owned 6rem is its width outside a row, and drawn so once @scope and the row go",
+  },
+];
+const flexSized = new Map(FLEX_SIZED.map((allowance) => [allowance, 0]));
 
 /**
  * A flex or grid container's children are blockified: an owned
@@ -110,7 +132,14 @@ try {
               const hosted = reading.hosted[key];
               if (!contested) held++;
               const property = key.slice(key.lastIndexOf(" ") + 1);
-              if (
+              const sizedByRow = FLEX_SIZED.find(
+                (allowance) =>
+                  allowance.selector === selector &&
+                  allowance.property === property,
+              );
+              if (sizedByRow)
+                flexSized.set(sizedByRow, flexSized.get(sizedByRow) + 1);
+              else if (
                 !contested &&
                 unscoped &&
                 blockified(property, unscoped.value) !==
@@ -141,6 +170,15 @@ try {
 } finally {
   await browser.close();
 }
+for (const [allowance, count] of flexSized)
+  if (count)
+    console.log(
+      `${count} reading(s) of ${allowance.selector}'s ${allowance.property} left to its flex row: ${allowance.reason}`,
+    );
+  else
+    failures.push(
+      `no story drew ${allowance.selector}'s ${allowance.property}: remove its allowance from FLEX_SIZED`,
+    );
 if (!compared)
   failures.push("no story drew an owned rule: the suite compared nothing");
 else console.log(`${compared} owned declaration readings compared`);
