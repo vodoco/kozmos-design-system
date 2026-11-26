@@ -1430,6 +1430,9 @@ const INTERACTIONS = {
   async "radio-choice"(page) {
     const groups = await controls(page, "[role=radiogroup]").all();
     assert(groups.length > 0, "the story draws a radio group");
+    // The last group's second Tab needs somewhere to go: Firefox would wrap
+    // it round to the group's own stop (standInAfterStory).
+    const takeStandIn = await standInAfterStory(page);
     await focusStart(page);
     for (const group of groups) {
       const radios = group.locator("[role=radio]");
@@ -1475,6 +1478,7 @@ const INTERACTIONS = {
       await page.keyboard.press("Shift+Tab");
       await settle(page);
     }
+    await takeStandIn();
     return `${groups.length} group(s): Tab to the chosen option, the one stop; ArrowRight moves and chooses; a click chooses; Tab leaves`;
   },
 
