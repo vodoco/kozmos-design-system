@@ -20,6 +20,7 @@ export * from "./container";
 export * from "./control-text";
 export * from "./counter";
 export * from "./description-list";
+export * from "./design-config";
 export * from "./emotion";
 export * from "./empty-state";
 export * from "./field";

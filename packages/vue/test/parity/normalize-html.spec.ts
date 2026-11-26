@@ -54,6 +54,20 @@ describe("normalizeHtml settles spelling, never what is drawn", () => {
       '<a href="#r1">A</a><b id="r1"></b>',
       '<a href="#v-2">A</a><b id="v-2"></b>',
     );
+    // A design config's id: its scope's mark, its custom property, and the
+    // quoted url() of its filter.
+    same(
+      '<div style="--kozmos-design-id:kozmos-design-_R_1_;--glass-surface-filter:url(&quot;#kozmos-design-_R_1_-surface&quot;)"><div data-kozmos-design-scope="kozmos-design-_R_1_"></div><filter id="kozmos-design-_R_1_-surface"></filter></div>',
+      '<div style="--kozmos-design-id: kozmos-design-v-0; --glass-surface-filter: url(&quot;#kozmos-design-v-0-surface&quot;);"><div data-kozmos-design-scope="kozmos-design-v-0"></div><filter id="kozmos-design-v-0-surface"></filter></div>',
+    );
+    differ(
+      '<div style="--kozmos-design-id:a"><div data-kozmos-design-scope="a"></div></div>',
+      '<div style="--kozmos-design-id:a"><div data-kozmos-design-scope="b"></div></div>',
+    );
+    differ(
+      '<div style="--f:url(&quot;#a&quot;)"><filter id="a"></filter></div>',
+      '<div style="--f:url(&quot;#b&quot;)"><filter id="a"></filter></div>',
+    );
   });
 
   it("keeps the ids a test supplies, so an app's id that never lands is seen", () => {

@@ -18,20 +18,27 @@ import { ThemeProviderContext } from "../theme/theme-context";
 import { MotionContext } from "../theme/motion-context";
 import {
   DEFAULT_CONFIG,
+  SPOTLIGHT_SURFACES,
+  designConfigDrawsFilters,
+  designConfigFollowsPointer,
+  designConfigMotion,
+  designConfigTokenConfig,
   designConfigTokens,
+  mergeRuntimeTokens,
   normalizeDesignConfig,
   normalizeRuntimeTokens,
-} from "./design-config";
+  spotlightPosition,
+} from "../recipes/design-config";
 import type {
   DesignConfig,
   DesignConfigInput,
   GlassConfig,
-} from "./design-config";
+} from "../recipes/design-config";
 export type {
   DesignConfig,
   DesignConfigInput,
   GlassConfig,
-} from "./design-config";
+} from "../recipes/design-config";
 
 interface DesignConfigContextType {
   config: DesignConfig;
@@ -169,17 +176,7 @@ export function DesignConfigProvider({
     [commit],
   );
   const injectRuntimeTokens = useCallback((patch: Record<string, string>) => {
-    setRuntimeTokens((previous) => {
-      const next = { ...previous };
-      for (const [key, value] of Object.entries(patch)) {
-        const normalizedKey = key.startsWith("--")
-          ? key
-          : `--primitives-${key}`;
-        if (value === "") delete next[normalizedKey];
-        else if (typeof value === "string") next[normalizedKey] = value;
-      }
-      return next;
-    });
+    setRuntimeTokens((previous) => mergeRuntimeTokens(previous, patch));
   }, []);
   // Reduced motion, for the rules that cannot read a duration scale: an
   // animation that loops has to be told to stop, not run a thousand times
@@ -189,18 +186,12 @@ export function DesignConfigProvider({
   // scope, and through MotionContext on the portal of every ThemeProvider
   // inside it.
   const inheritedMotion = useContext(MotionContext);
-  const motion =
-    config.accessibility.reduceMotion || config.motion === "reduced"
-      ? "reduced"
-      : inheritedMotion;
+  const motion = designConfigMotion(config, inheritedMotion);
   // The tokens follow it too: a provider inside a reduced one draws with the
   // reduced motion scale and effects, whatever its own config says, while
   // useDesignConfig() still reads its own config.
   const tokenConfig = useMemo(
-    () =>
-      motion === "reduced" && config.motion !== "reduced"
-        ? normalizeDesignConfig({ motion: "reduced" }, config)
-        : config,
+    () => designConfigTokenConfig(config, motion),
     [config, motion],
   );
   const values = useMemo(
@@ -225,9 +216,7 @@ export function DesignConfigProvider({
 
   function spotlightSurface(event: PointerEvent<HTMLDivElement>) {
     const target = event.target as Element;
-    const surface = target.closest?.<HTMLElement>(
-      ".glass-spotlight, .glass-edge-spotlight",
-    );
+    const surface = target.closest?.<HTMLElement>(SPOTLIGHT_SURFACES);
     if (!surface) return;
     const view = surface.ownerDocument.defaultView;
     // React events bubble through portals. Check the destination's inherited owner
@@ -242,26 +231,13 @@ export function DesignConfigProvider({
     return surface;
   }
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (
-      !config.spotlight ||
-      !config.glass.enabled ||
-      config.accessibility.reduceTransparency ||
-      motion === "reduced"
-    )
-      return;
+    if (!designConfigFollowsPointer(config, motion)) return;
     const surface = spotlightSurface(event);
     if (!surface) return;
-    const bounds = surface.getBoundingClientRect();
-    if (bounds.width <= 0 || bounds.height <= 0) return;
-    // Convert visual coordinates back to the CSS box when glass magnification applies.
-    surface.style.setProperty(
-      "--spotlight-x",
-      `${(event.clientX - bounds.left) * (surface.offsetWidth / bounds.width || 1)}px`,
-    );
-    surface.style.setProperty(
-      "--spotlight-y",
-      `${(event.clientY - bounds.top) * (surface.offsetHeight / bounds.height || 1)}px`,
-    );
+    const position = spotlightPosition(surface, event.clientX, event.clientY);
+    if (!position) return;
+    surface.style.setProperty("--spotlight-x", position.x);
+    surface.style.setProperty("--spotlight-y", position.y);
   }
   function onPointerOut(event: PointerEvent<HTMLDivElement>) {
     const surface = spotlightSurface(event);
@@ -308,45 +284,44 @@ export function DesignConfigProvider({
             onPointerOut={onPointerOut}
           >
             {children}
-            {config.glass.enabled &&
-              !config.accessibility.reduceTransparency && (
-                <svg
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    width: 0,
-                    height: 0,
-                    pointerEvents: "none",
-                    visibility: "hidden",
-                  }}
-                >
-                  <defs>
-                    <filter
-                      id={`${id}-surface`}
-                      x="0%"
-                      y="0%"
-                      width="100%"
-                      height="100%"
-                    >
-                      <feTurbulence
-                        type="fractalNoise"
-                        baseFrequency="0.5"
-                        numOctaves="2"
-                        result="noise"
-                      />
-                      <feColorMatrix
-                        type="saturate"
-                        values="0"
-                        in="noise"
-                        result="monoNoise"
-                      />
-                      <feComponentTransfer in="monoNoise" result="smoothNoise">
-                        <feFuncA type="linear" slope="0.1" />
-                      </feComponentTransfer>
-                    </filter>
-                  </defs>
-                </svg>
-              )}
+            {designConfigDrawsFilters(config) && (
+              <svg
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  width: 0,
+                  height: 0,
+                  pointerEvents: "none",
+                  visibility: "hidden",
+                }}
+              >
+                <defs>
+                  <filter
+                    id={`${id}-surface`}
+                    x="0%"
+                    y="0%"
+                    width="100%"
+                    height="100%"
+                  >
+                    <feTurbulence
+                      type="fractalNoise"
+                      baseFrequency="0.5"
+                      numOctaves="2"
+                      result="noise"
+                    />
+                    <feColorMatrix
+                      type="saturate"
+                      values="0"
+                      in="noise"
+                      result="monoNoise"
+                    />
+                    <feComponentTransfer in="monoNoise" result="smoothNoise">
+                      <feFuncA type="linear" slope="0.1" />
+                    </feComponentTransfer>
+                  </filter>
+                </defs>
+              </svg>
+            )}
           </div>
         </ThemeProvider>
       </MotionContext.Provider>

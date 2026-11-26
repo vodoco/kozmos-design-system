@@ -4,7 +4,7 @@ import { Surface, surfaceClass } from "./Surface";
 import {
   designConfigTokens,
   normalizeDesignConfig,
-} from "../../context/design-config";
+} from "../../recipes/design-config";
 
 describe("Surface", () => {
   it("is solid by default, in the caller's shape", () => {

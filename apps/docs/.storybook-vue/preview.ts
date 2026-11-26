@@ -5,12 +5,14 @@ import "../../../packages/styles/dist/style.css"; // The shared stylesheet (@koz
 import "../.storybook/preview.css";
 // From source, as the stories import @kozmos-ds/vue: one copy of the module,
 // so the parts in a story find the provider this decorator gives them.
-import { KozmosThemeProvider } from "../../../packages/vue/src/index";
+import { KozmosDesignConfigProvider } from "../../../packages/vue/src/index";
 
 /**
- * React's toolbar, for Vue: every story is drawn inside a KozmosThemeProvider
- * at the toolbar's theme and density, on the story surface React's preview
- * draws, as React's DesignConfigProvider decorator does. A story gives no
+ * React's toolbar, for Vue: every story is drawn inside a
+ * KozmosDesignConfigProvider at the toolbar's theme and density, on the story
+ * surface React's preview draws, as React's decorator draws each inside a
+ * DesignConfigProvider with the same arguments: the same glass, shadow and
+ * motion properties, glass filters and spotlight (GAP-291). A story gives no
  * provider of its own: a nested provider follows the system's theme, not the
  * toolbar's. The browser suites (scripts/check-vue-*.mjs) and the visual
  * review choose the theme and the density through these globals.
@@ -47,7 +49,7 @@ const preview: Preview = {
   initialGlobals: { theme: "light", density: "touch" },
   decorators: [
     (story, context) => ({
-      components: { story, KozmosThemeProvider },
+      components: { story, KozmosDesignConfigProvider },
       setup: () => ({
         theme: context.globals.theme === "dark" ? "dark" : "light",
         density: context.globals.density === "compact" ? "compact" : "touch",
@@ -55,11 +57,11 @@ const preview: Preview = {
         viewMode: context.viewMode,
       }),
       template: `
-        <KozmosThemeProvider :theme="theme" :density="density">
+        <KozmosDesignConfigProvider :theme="theme" :density="density">
           <main class="kozmos-story-surface" :data-layout="layout" :data-view-mode="viewMode">
             <story />
           </main>
-        </KozmosThemeProvider>`,
+        </KozmosDesignConfigProvider>`,
     }),
   ],
   parameters: {

@@ -1,4 +1,13 @@
-import type { ThemeTokens } from "../components/ThemeProvider/ThemeProvider";
+/**
+ * The design configuration every Kozmos framework applies: what a config
+ * holds, how caller input and stored JSON are read into one, and the custom
+ * properties it sets on its provider's scope. React's DesignConfigProvider
+ * and Vue's KozmosDesignConfigProvider draw from this one module, so a
+ * config sets the same properties in both (GAP-291).
+ */
+
+/** Custom properties, as ThemeProvider's `ThemeTokens`. */
+type ThemeTokens = Record<`--${string}`, string | number>;
 
 export interface GlassConfig {
   enabled: boolean;
@@ -127,6 +136,89 @@ export function normalizeRuntimeTokens(
         value,
       ]),
   );
+}
+
+/**
+ * Merges runtime token overrides, as `injectRuntimeTokens` does: a key without
+ * `--` is a primitive, and an empty value removes the key.
+ */
+export function mergeRuntimeTokens(
+  previous: Record<string, string>,
+  patch: Record<string, string>,
+): Record<string, string> {
+  const next = { ...previous };
+  for (const [key, value] of Object.entries(patch)) {
+    const normalizedKey = key.startsWith("--") ? key : `--primitives-${key}`;
+    if (value === "") delete next[normalizedKey];
+    else if (typeof value === "string") next[normalizedKey] = value;
+  }
+  return next;
+}
+
+/**
+ * Reduced motion where a provider draws: its own config's, or an enclosing
+ * provider's (`inherited`). It carries downward, so a provider inside a
+ * reduced one cannot turn motion back on.
+ */
+export function designConfigMotion(
+  config: DesignConfig,
+  inherited: "reduced" | undefined,
+): "reduced" | undefined {
+  return config.accessibility.reduceMotion || config.motion === "reduced"
+    ? "reduced"
+    : inherited;
+}
+
+/**
+ * The config a provider draws its tokens from: its own, reduced when an
+ * enclosing provider reduces motion and it does not.
+ */
+export function designConfigTokenConfig(
+  config: DesignConfig,
+  motion: "reduced" | undefined,
+): DesignConfig {
+  return motion === "reduced" && config.motion !== "reduced"
+    ? normalizeDesignConfig({ motion: "reduced" }, config)
+    : config;
+}
+
+/** Whether a config follows the pointer with its spotlight. */
+export function designConfigFollowsPointer(
+  config: DesignConfig,
+  motion: "reduced" | undefined,
+): boolean {
+  return (
+    config.spotlight &&
+    config.glass.enabled &&
+    !config.accessibility.reduceTransparency &&
+    motion !== "reduced"
+  );
+}
+
+/** Whether a config draws its glass SVG filters. */
+export function designConfigDrawsFilters(config: DesignConfig): boolean {
+  return config.glass.enabled && !config.accessibility.reduceTransparency;
+}
+
+/** The surfaces a spotlight follows the pointer over. */
+export const SPOTLIGHT_SURFACES = ".glass-spotlight, .glass-edge-spotlight";
+
+/**
+ * Where the pointer is on a spotlight surface, as `--spotlight-x` and
+ * `--spotlight-y`, or null when the surface draws nothing. Visual
+ * coordinates are converted back to the CSS box when glass magnifies it.
+ */
+export function spotlightPosition(
+  surface: HTMLElement,
+  clientX: number,
+  clientY: number,
+): { x: string; y: string } | null {
+  const bounds = surface.getBoundingClientRect();
+  if (bounds.width <= 0 || bounds.height <= 0) return null;
+  return {
+    x: `${(clientX - bounds.left) * (surface.offsetWidth / bounds.width || 1)}px`,
+    y: `${(clientY - bounds.top) * (surface.offsetHeight / bounds.height || 1)}px`,
+  };
 }
 
 // Local, deterministic texture. Its alpha is encoded into the image so noise

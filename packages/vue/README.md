@@ -13,7 +13,8 @@ and `@kozmos-ds/react` 0.17.0, which it pins exactly (it installs that styleshee
 ## Two entries
 
 - **`@kozmos-ds/vue`**: the Vue parts. Each draws the element its React counterpart draws, from the same
-  recipes, imports no React and renders on the server: `KozmosThemeProvider`, `KozmosDensityScope`,
+  recipes, imports no React and renders on the server: `KozmosThemeProvider`,
+  `KozmosDesignConfigProvider` (with `useDesignConfig`), `KozmosDensityScope`,
   `KozmosAnalyticsProvider` (with `useKozmosAnalytics`), `KozmosButton`, `KozmosBadge`,
   `KozmosSeparator`, `KozmosText`, `KozmosHeading`, `KozmosLabel`, `KozmosIcon`, `KozmosKbd`,
   `KozmosCodeBlock` and `KozmosSpriteIcon`, with `useTheme`. `KozmosIcon` and `KozmosCodeBlock` draw
@@ -73,16 +74,17 @@ slot is drawn in.
 **Vue's providers reach the React parts (decision 172).** Every React root the bridge mounts is drawn
 inside React's providers, given what the nearest Vue provider holds, and follows its changes:
 
-| Vue provider              | What a bridged part reads                                                                                                                               |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `KozmosThemeProvider`     | React's `ThemeProvider`: the theme, direction, density and tokens; its portal, so dialogs and toasts are in the theme; `useTheme().setTheme` sets Vue's |
-| `KozmosDensityScope`      | React's `DensityScope`: the density                                                                                                                     |
-| `KozmosAnalyticsProvider` | React's `AnalyticsProvider`, which hands each event to the Vue provider's batch                                                                         |
-| (none)                    | a Radix `TooltipProvider`, so a `KozmosTooltip` needs none; `KozmosTooltipProvider` sets the delays inside it                                           |
+| Vue provider                 | What a bridged part reads                                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `KozmosThemeProvider`        | React's `ThemeProvider`: the theme, direction, density and tokens; its portal, so dialogs and toasts are in the theme; `useTheme().setTheme` sets Vue's  |
+| `KozmosDensityScope`         | React's `DensityScope`: the density                                                                                                                      |
+| `KozmosAnalyticsProvider`    | React's `AnalyticsProvider`, which hands each event to the Vue provider's batch                                                                          |
+| `KozmosDesignConfigProvider` | its glass, shadow and motion properties, through its theme provider's tokens, and its glass spotlight; its reduced motion only in place, not in a portal |
+| (none)                       | a Radix `TooltipProvider`, so a `KozmosTooltip` needs none; `KozmosTooltipProvider` sets the delays inside it                                            |
 
 A part drawn in a compound's tree is given only the providers that sit between it and the compound.
-`DesignConfigProvider`'s configuration and reduced motion have no Vue provider yet, and reach no bridged
-part.
+`KozmosDesignConfigProvider`'s reduced motion marks what a bridged part draws in place, but not what it
+draws in a portal: React's `MotionContext` is not exported, so the bridge cannot give it.
 
 ```vue
 <script setup lang="ts">
