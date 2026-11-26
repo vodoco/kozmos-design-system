@@ -644,7 +644,18 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   Add labelled media-error fallback and remove forced smooth gallery movement.
 - eb68e53: Support decorative POI asset icons, generic highlighted properties, semantic metadata tones and price scales. Demonstrate taxonomy-driven attribute labels/icons/order with a pinned Pointr 10.12.0 dictionary outside the public component runtime.
 
-## `@kozmos-ds/react` — current 0.17.1
+## `@kozmos-ds/react` — current 0.17.2
+
+### 0.17.2
+
+#### Patch Changes
+
+- c1278f4: Alert's destructive, success, warning and info borders are the emotion at 50% in dark as in light, as Notice's are, where dark drew them at full strength (decision 230, GAP-289). Light is unchanged; in dark the four status borders are softer.
+- 1610fce: A focus ring drawn with an offset gives its gap the canvas's colour token (`ring-offset-background`), where 17 class lists left it at Tailwind's written-in white, so in dark the ring drew a 2px white gap inside it (GAP-290). Affected: AISearchButton, BottomSheet's and Drawer's close buttons, CategoryTile, Chip and its actions, RouteOptionCard, SearchBar, Link, Notice's "more", Tag and owned CSS rules in the components, overlays and temporal fields sheets. Light is unchanged; in dark these focus rings' gaps are the canvas colour.
+- c1278f4: Timeline's marker gives its ring's offset shadow the canvas's colour token (`ring-offset-background`), where Tailwind started it at a written-in white (GAP-287). The shadow is 0 wide, so nothing drawn changes; every colour of the marker now comes from a token, in light and dark.
+- Updated dependencies [1610fce]
+- Updated dependencies [c1278f4]
+  - @kozmos-ds/styles@0.17.2
 
 ### 0.17.1
 
@@ -2826,7 +2837,14 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
-## `@kozmos-ds/styles` — current 0.17.1
+## `@kozmos-ds/styles` — current 0.17.2
+
+### 0.17.2
+
+#### Patch Changes
+
+- 1610fce: A focus ring drawn with an offset gives its gap the canvas's colour token (`ring-offset-background`), where 17 class lists left it at Tailwind's written-in white, so in dark the ring drew a 2px white gap inside it (GAP-290). Affected: AISearchButton, BottomSheet's and Drawer's close buttons, CategoryTile, Chip and its actions, RouteOptionCard, SearchBar, Link, Notice's "more", Tag and owned CSS rules in the components, overlays and temporal fields sheets. Light is unchanged; in dark these focus rings' gaps are the canvas colour.
+- c1278f4: ListItemStatus's check and dot no longer shrink (`flex-shrink: 0`), so where `@scope` is dropped, and the status's spoken label stays in the flow, they keep their 12 and 8 instead of drawing 0 wide (GAP-288). With `@scope`, nothing drawn changes.
 
 ### 0.17.1
 
@@ -3332,7 +3350,7 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   `text-destructive-text`), which read those tokens; `success`, `warning`, `info`
   and `destructive` stay the fills, edges and rings they were.
 
-## `@kozmos-ds/vue` — current 0.17.1-next.0
+## `@kozmos-ds/vue` — current 0.17.2-next.0
 
 ### 0.17.1-next.0
 

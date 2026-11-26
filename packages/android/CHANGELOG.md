@@ -4,7 +4,11 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 ## Unreleased — repository source
 
-Native source changes on `main` after the 0.17.1 snapshot below. Nothing here is tagged yet.
+Native source changes on `main` after the 0.17.2 snapshot below. Nothing here is tagged yet.
+
+## 0.17.2 — repository snapshot
+
+No native source change since 0.17.1. The 0.17.2 web fixes (GAP-287 to GAP-290) are in React and the stylesheet only. This entry does not announce a native registry release.
 
 ## 0.17.1 — repository snapshot
 
