@@ -1,5 +1,16 @@
 # @kozmos-ds/react
 
+## 0.17.2
+
+### Patch Changes
+
+- c1278f4: Alert's destructive, success, warning and info borders are the emotion at 50% in dark as in light, as Notice's are, where dark drew them at full strength (decision 230, GAP-289). Light is unchanged; in dark the four status borders are softer.
+- 1610fce: A focus ring drawn with an offset gives its gap the canvas's colour token (`ring-offset-background`), where 17 class lists left it at Tailwind's written-in white, so in dark the ring drew a 2px white gap inside it (GAP-290). Affected: AISearchButton, BottomSheet's and Drawer's close buttons, CategoryTile, Chip and its actions, RouteOptionCard, SearchBar, Link, Notice's "more", Tag and owned CSS rules in the components, overlays and temporal fields sheets. Light is unchanged; in dark these focus rings' gaps are the canvas colour.
+- c1278f4: Timeline's marker gives its ring's offset shadow the canvas's colour token (`ring-offset-background`), where Tailwind started it at a written-in white (GAP-287). The shadow is 0 wide, so nothing drawn changes; every colour of the marker now comes from a token, in light and dark.
+- Updated dependencies [1610fce]
+- Updated dependencies [c1278f4]
+  - @kozmos-ds/styles@0.17.2
+
 ## 0.17.1
 
 ### Patch Changes
