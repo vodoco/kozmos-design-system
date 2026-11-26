@@ -65,6 +65,26 @@ export async function eventually<T>(
  */
 export const settle = () => new Promise((resolve) => setTimeout(resolve, 40));
 
+/**
+ * Counts what a change did once it is done: waits until `count()` reaches
+ * `expected`, however long the runner takes to draw it, then `settle`s, so a
+ * draw or call beyond `expected` is counted too. Returns the count, for the
+ * test to compare with `expected`: a count that never arrives is returned
+ * after `timeout` ms as it is. For a count that must stay at nothing, this is
+ * `settle`.
+ */
+export async function counted(
+  count: () => number,
+  expected: number,
+  timeout = 2000,
+): Promise<number> {
+  const deadline = Date.now() + timeout;
+  while (count() < expected && Date.now() < deadline)
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  await settle();
+  return count();
+}
+
 /** Types into a field React controls, as a browser's input event does. */
 export function type(
   field: HTMLInputElement | HTMLTextAreaElement,
