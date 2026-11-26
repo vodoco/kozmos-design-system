@@ -287,6 +287,7 @@ const files = {
   reactOTPInputRecipe: "packages/react/src/recipes/otp-input.ts",
   reactSelectRecipe: "packages/react/src/recipes/select.ts",
   reactComboboxRecipe: "packages/react/src/recipes/combobox.ts",
+  reactMultiSelectRecipe: "packages/react/src/recipes/multi-select.ts",
   reactListboxRecipe: "packages/react/src/recipes/listbox.ts",
   reactOptionRecipe: "packages/react/src/recipes/option.ts",
   reactNumberInputFigma:
@@ -11975,7 +11976,7 @@ assertContains(
 // assertions are the only thing that ties the two spellings together.
 for (const [key, needle, label] of [
   ["reactComboboxRecipe", "bg-popover p-3", "Combobox"],
-  ["reactMultiSelect", "bg-popover p-3", "MultiSelect"],
+  ["reactMultiSelectRecipe", "bg-popover p-3", "MultiSelect"],
   ["reactMenu", "bg-popover p-3", "Menu"],
   ["reactSelectRecipe", '"p-3";', "Select viewport"],
 ]) {

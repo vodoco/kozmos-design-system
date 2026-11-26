@@ -1,5 +1,15 @@
 import React from "react";
-import { cn, mergeAriaIds } from "../../utils";
+import { mergeAriaIds } from "../../utils";
+import {
+  addEntries,
+  CHIP_FIELD_GROUP_CLASS,
+  CHIP_FIELD_INPUT_CLASS,
+  chipInputDefaults,
+  chipInputFieldClass,
+  ENTRY_BREAK,
+  nextSaid,
+  readEntries,
+} from "../../recipes/multi-select";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Chip, ChipGroup } from "../Chip";
 import { FieldWrapper } from "../FieldWrapper";
@@ -54,23 +64,15 @@ export interface ChipInputProps extends Omit<
 
 const NO_ENTRIES: string[] = [];
 
-/** Text pasted or typed with commas or line breaks in it, as entries. */
-function splitEntries(text: string) {
-  return text
-    .split(/[,\n\r]/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
 export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
   (
     {
-      addedLabel = (entry) => `${entry} added`,
+      addedLabel = chipInputDefaults.addedLabel,
       className,
       defaultInputValue = "",
       defaultValue = NO_ENTRIES,
       disabled,
-      duplicateLabel = (entry) => `${entry} is already added`,
+      duplicateLabel = chipInputDefaults.duplicateLabel,
       error,
       helperText,
       inputId: inputIdProp,
@@ -80,8 +82,8 @@ export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
       onValueChange,
       placeholder,
       readOnly,
-      removeLabel = (entry) => `Remove ${entry}`,
-      removedLabel = (entry) => `${entry} removed`,
+      removeLabel = chipInputDefaults.removeLabel,
+      removedLabel = chipInputDefaults.removedLabel,
       required,
       status = "default",
       value,
@@ -108,11 +110,7 @@ export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
     // What the status region says. The same words twice in a row would not
     // be read again, so every other message carries a no-break space.
     const [said, setSaid] = React.useState({ words: "", odd: false });
-    const say = (words: string) =>
-      setSaid((last) => ({
-        words: last.odd ? words : `${words}\u00a0`,
-        odd: !last.odd,
-      }));
+    const say = (words: string) => setSaid((last) => nextSaid(last, words));
     const resolvedStatus: InputStatus = error ? "error" : status;
     const describedBy =
       error && typeof error === "string"
@@ -136,23 +134,17 @@ export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
      * the text that held it stays, so nothing typed is lost unseen.
      */
     const add = (candidates: string[], rest: string) => {
-      const next = [...entries];
-      const added: string[] = [];
-      let duplicate: string | null = null;
-      for (const entry of candidates) {
-        if (next.includes(entry)) {
-          duplicate = entry;
-        } else {
-          next.push(entry);
-          added.push(entry);
-        }
-      }
+      const { next, added, duplicate, text } = addEntries(
+        entries,
+        candidates,
+        rest,
+      );
       if (added.length > 0) {
         commit(next);
         for (const entry of added)
           trackEvent("ChipInput", "entry_added", { value: entry });
       }
-      setText(duplicate !== null ? duplicate : rest);
+      setText(text);
       if (duplicate !== null) say(duplicateLabel(duplicate));
       else if (added.length > 0) say(added.map(addedLabel).join(", "));
     };
@@ -178,25 +170,12 @@ export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
       >
         <div
           ref={ref}
-          className={cn(
-            // MultiSelect's field, with no clear and no open: chips and the
-            // input wrap inside it, and the field rings for its input.
-            "kozmos-chip-input relative flex min-h-field w-full cursor-text items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-            resolvedStatus === "error" &&
-              "border-destructive focus-within:ring-destructive",
-            resolvedStatus === "warning" &&
-              "border-warning focus-within:ring-warning",
-            resolvedStatus === "success" &&
-              "border-success focus-within:ring-success",
-            disabled &&
-              "cursor-not-allowed bg-muted text-muted-foreground opacity-80",
-            className,
-          )}
+          className={chipInputFieldClass(resolvedStatus, disabled, className)}
           data-slot="chip-input"
           onClick={() => inputRef.current?.focus()}
           {...props}
         >
-          <ChipGroup className="min-w-0 flex-1 gap-1.5">
+          <ChipGroup className={CHIP_FIELD_GROUP_CLASS}>
             {entries.map((entry) => (
               <Chip
                 key={entry}
@@ -223,7 +202,7 @@ export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
               aria-required={required || undefined}
               autoComplete="off"
               // MultiSelect's input: the same height, padding and placeholder.
-              className="kozmos-reset kozmos-multiselect-input"
+              className={CHIP_FIELD_INPUT_CLASS}
               disabled={disabled}
               enterKeyHint="enter"
               placeholder={entries.length > 0 ? "" : placeholder}
@@ -233,10 +212,9 @@ export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
                 const next = event.target.value;
                 // A comma typed, or text pasted with commas or line breaks,
                 // adds what comes before the last one; what follows stays.
-                if (/[,\n\r]/.test(next)) {
-                  const parts = next.split(/[,\n\r]/);
-                  const rest = parts.pop() ?? "";
-                  add(splitEntries(parts.join(",")), rest.trimStart());
+                if (ENTRY_BREAK.test(next)) {
+                  const read = readEntries(next);
+                  add(read.entries, read.rest);
                 } else {
                   setText(next);
                 }
@@ -246,11 +224,10 @@ export const ChipInput = React.forwardRef<HTMLDivElement, ChipInputProps>(
                 // so a pasted list is read here, before it is: each line or
                 // comma-separated part is an entry, and the last stays typed.
                 const pasted = event.clipboardData.getData("text");
-                if (locked || !/[,\n\r]/.test(pasted)) return;
+                if (locked || !ENTRY_BREAK.test(pasted)) return;
                 event.preventDefault();
-                const parts = `${text}${pasted}`.split(/[,\n\r]/);
-                const rest = parts.pop() ?? "";
-                add(splitEntries(parts.join(",")), rest.trimStart());
+                const read = readEntries(`${text}${pasted}`);
+                add(read.entries, read.rest);
               }}
               onKeyDown={(event) => {
                 if (locked || event.nativeEvent.isComposing) return;
