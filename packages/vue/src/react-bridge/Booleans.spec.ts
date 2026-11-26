@@ -136,17 +136,6 @@ const CASES: Case[] = [
     byDefault: false,
   },
   {
-    // Clearable unless told otherwise: an absent attribute leaves it so.
-    name: "KozmosCombobox",
-    part: KozmosReact.Combobox,
-    prop: "clearable",
-    attribute: "clearable",
-    template: (a) =>
-      `<KozmosCombobox :options="fruit" label="Fruit" model-value="apple" ${a} />`,
-    drawn: () => $("[aria-label='Clear selection']") !== null,
-    byDefault: true,
-  },
-  {
     // Decision 159: a border and the control radius round the table.
     name: "KozmosTable",
     part: KozmosReact.Table,
@@ -215,22 +204,20 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
   // Vue keeps an attribute as the template spells it: an SFC's `readOnly`,
   // a kebab-case `read-only`, and an in-DOM template's `readonly`, which the
   // browser writes in small letters. Each is React's `readOnly`.
+  // A bridged field: Combobox was the example until its port (wave V2).
   it.each(["readOnly", "read-only", "readonly"])(
-    "KozmosCombobox %s is React's readOnly: no clear button",
+    "KozmosSearch %s is React's readOnly",
     async (attribute) => {
-      const given = await propsOf(KozmosReact.Combobox, () =>
-        mount(
-          page(
-            `<KozmosCombobox :options="fruit" label="Fruit" model-value="apple" ${attribute} />`,
-          ),
-        ),
+      const given = await propsOf(KozmosReact.Search, () =>
+        mount(page(`<KozmosSearch aria-label="Gate" ${attribute} />`)),
       );
       expect(given.readOnly).toBe(true);
       expect(
         Object.keys(given).filter((key) => /^read-?only$/i.test(key)),
       ).toEqual(["readOnly"]);
-      expect($("[aria-label='Clear selection']")).toBeNull();
-      expect($<HTMLInputElement>("input")!.readOnly).toBe(true);
+      await eventually(() =>
+        expect($<HTMLInputElement>("input")?.readOnly).toBe(true),
+      );
     },
   );
 

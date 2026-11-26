@@ -880,10 +880,6 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Brand" },
     click: first("input[type=text]"),
   },
-  KozmosCombobox: {
-    props: { options: fruit, label: "Fruit" },
-    click: first("input[role=combobox]"),
-  },
   KozmosDateRangePicker: {
     props: { label: "Stay" },
     click: (drawn) => drawn.querySelector("[role=group]")?.children[1],

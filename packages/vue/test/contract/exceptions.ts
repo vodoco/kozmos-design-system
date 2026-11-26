@@ -73,4 +73,20 @@ export const EXCEPTIONS: Record<string, string> = {
     "Vue's KozmosComboboxOption is React's ComboboxOption but for `trailing`, text, a number or a VNode where React's is a ReactNode; listbox.parity.spec.ts draws trailing words in both",
   "KozmosListbox.update:modelValue:payload":
     "The option a choice emits is KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  // Combobox's options are Listbox's (KozmosListbox.options:type), and
+  // its filter is given them; its commands' icons are Vue components or
+  // VNodes where React's are nodes. Its defaults are React's own: the
+  // shared recipe's defaultFilterOption, and no commands.
+  "KozmosCombobox.options:type":
+    "Vue's KozmosComboboxOption is React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type); combobox.parity.spec.ts draws the options in both",
+  "KozmosCombobox.update:modelValue:payload":
+    "The option a choice emits is KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosCombobox.filterOption:type":
+    "The filter is given KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosCombobox.popupActions:type":
+    "Vue's KozmosComboboxPopupAction is React's ComboboxPopupAction but for its icon, a Vue component or a VNode where React's is a ReactNode; combobox.parity.spec.ts draws and runs the commands in both",
+  "KozmosCombobox.filterOption:default":
+    "React's default is the recipe's defaultFilterOption, a function the contract cannot read as a literal; Vue's default is the same function (recipes/combobox.ts), and combobox.parity.spec.ts filters by typing in both",
+  "KozmosCombobox.popupActions:default":
+    "React's default is NO_ACTIONS, an empty list the contract cannot read as a literal; Vue's default is an empty list too, and combobox.parity.spec.ts draws a combobox without commands in both",
 };

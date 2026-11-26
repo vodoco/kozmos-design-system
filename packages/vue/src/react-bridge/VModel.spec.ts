@@ -320,43 +320,6 @@ const PARTS: Part[] = [
     alone: ["plan.pdf"],
   },
   {
-    // The choice is the value; what is typed is only the query.
-    name: "KozmosCombobox",
-    props: { options: fruit, label: "Fruit" },
-    start: "banana",
-    before: "Banana",
-    field: () => $("input"),
-    change: async (input) => {
-      input.focus();
-      type(input, "Ap");
-      (await until(() => byText("[role=option]", "Apple")))!.click();
-    },
-    next: "apple",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "Apple",
-    nothing: "",
-    listener: "onValueChange",
-    alone: "Apple",
-  },
-  {
-    name: "KozmosCombobox",
-    model: "inputValue",
-    props: { options: fruit, label: "Fruit" },
-    start: "",
-    before: "",
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "Ap");
-    },
-    next: "Ap",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "Ap",
-    nothing: "",
-    listener: "onInputValueChange",
-    alone: "Ap",
-  },
-  {
     // An array, from onValueChange: typing in its search never reaches it.
     name: "KozmosMultiSelect",
     props: { options: fruit, label: "Fruit" },
@@ -1069,34 +1032,6 @@ describe("every controlled pair is a model", () => {
 // --------------------------------------------------------------------------
 
 describe("a typed query is not the value", () => {
-  it("KozmosCombobox without v-model filters as you type", async () => {
-    mount(() => h(Bridge.KozmosCombobox, { options: fruit, label: "Fruit" }));
-    const input = await until(() => $<HTMLInputElement>("input"));
-    input.focus();
-    type(input, "Ap");
-    await eventually(() => {
-      expect(input.value).toBe("Ap");
-      expect(texts("[role=option]")).toEqual(["Apple"]);
-    });
-  });
-
-  it("KozmosCombobox with v-model filters as you type, and emits only a choice", async () => {
-    const { model, emitted } = mountPart(PARTS_BY.KozmosCombobox, {
-      vModel: true,
-    });
-    const input = await until(() => $<HTMLInputElement>("input"));
-    input.focus();
-    type(input, "Ap");
-    // A fixed wait: nothing may be emitted.
-    await settle();
-    await eventually(() => {
-      expect(input.value).toBe("Ap");
-      expect(texts("[role=option]")).toEqual(["Apple"]);
-    });
-    expect(emitted).toEqual([]);
-    expect(model.value).toBe("banana");
-  });
-
   it("KozmosMultiSelect with v-model filters as you type, and keeps its array", async () => {
     const { model, emitted } = mountPart(PARTS_BY.KozmosMultiSelect, {
       vModel: true,
@@ -1199,48 +1134,6 @@ describe("each model's other changes", () => {
       expect(value.value).toBe("A");
       expect(input.value).toBe("A");
     });
-  });
-
-  it("KozmosCombobox chosen twice and reset to null shows nothing, not its first choice", async () => {
-    const { model } = mountPart(PARTS_BY.KozmosCombobox, {
-      vModel: true,
-      start: null,
-    });
-    for (const label of ["Apple", "Banana"]) {
-      const input = await until(() => $<HTMLInputElement>("input"));
-      input.focus();
-      type(input, label.slice(0, 2));
-      (await until(() => byText("[role=option]", label)))!.click();
-      await settle();
-    }
-    expect(model.value).toBe("banana");
-    model.value = null;
-    await eventually(() =>
-      expect($<HTMLInputElement>("input")!.value).toBe(""),
-    );
-  });
-
-  it("KozmosCombobox keeps each character typed when the product clears its model as the visitor types (GAP-232)", async () => {
-    const value = ref<string | null>("banana");
-    mount(() =>
-      h(Bridge.KozmosCombobox, {
-        options: fruit,
-        label: "Fruit",
-        modelValue: value.value,
-        "onUpdate:modelValue": (next: string | null) => (value.value = next),
-        "onUpdate:inputValue": () => (value.value = null),
-      }),
-    );
-    const input = await until(() => $<HTMLInputElement>("input"));
-    await eventually(() => expect(input.value).toBe("Banana"));
-    input.focus();
-    for (const text of ["C", "Ch", "Che"]) {
-      type(input, text);
-      // A fixed wait: what was typed may not be taken back.
-      await settle();
-      expect(input.value).toBe(text);
-    }
-    expect(value.value).toBeNull();
   });
 });
 
@@ -1903,25 +1796,22 @@ describe("handlers given as an array", () => {
     await eventually(() => expect(input.value).toBe("Ada L"));
   });
 
-  it("KozmosCombobox's @value-change as an array, beside v-model", async () => {
+  // A bridged part whose callback says more than its value: Combobox was
+  // the example until its port (wave V2).
+  it("KozmosMultiSelect's @value-change as an array, beside v-model", async () => {
     const inner = vi.fn();
     const outer = vi.fn();
+    const part = PARTS_BY.KozmosMultiSelect;
     const { emitted } = mountPart(
-      {
-        ...PARTS_BY.KozmosCombobox,
-        props: {
-          ...PARTS_BY.KozmosCombobox.props,
-          onValueChange: [inner, outer],
-        },
-      },
+      { ...part, props: { ...part.props, onValueChange: [inner, outer] } },
       { vModel: true },
     );
-    await PARTS_BY.KozmosCombobox.change(await until(() => $("input")));
+    await part.change(await until(() => $("input")));
     await settle();
-    // Combobox reports the option beside its value.
-    expect(inner).toHaveBeenCalledWith("apple", fruit[0]);
-    expect(outer).toHaveBeenCalledWith("apple", fruit[0]);
-    expect(emitted).toEqual(["apple"]);
+    expect(inner).toHaveBeenCalledTimes(1);
+    expect(inner.mock.calls[0][0]).toEqual(part.next);
+    expect(outer.mock.calls).toEqual(inner.mock.calls);
+    expect(emitted).toEqual([part.next]);
   });
 });
 

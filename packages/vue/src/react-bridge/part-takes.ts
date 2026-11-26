@@ -70,7 +70,6 @@ import {
   BrowseCategoriesPanel,
   CategoryTile,
   ColorPicker,
-  Combobox,
   DateRangePicker,
   MapControlButton,
   MultiSelect,
@@ -297,14 +296,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     {
       dom: true,
       own: ["onAlphaChange", "onFormatChange", "onOpenChange", "onValueChange"],
-    },
-  ],
-  [
-    Combobox,
-    {
-      dom: true,
-      except: ["onChange"],
-      own: ["onInputValueChange", "onResetMixed", "onValueChange"],
     },
   ],
   [
@@ -633,24 +624,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
         "required",
         "showPickerPanel",
         "showPresets",
-      ],
-      ["capture"],
-      ["error"],
-    ),
-  ],
-  [
-    Combobox,
-    html(
-      [
-        "checked",
-        "clearable",
-        "disabled",
-        "formNoValidate",
-        "includeValueInAnalytics",
-        "mixed",
-        "multiple",
-        "readOnly",
-        "required",
       ],
       ["capture"],
       ["error"],

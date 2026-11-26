@@ -838,6 +838,10 @@ export const VUE_STORIES = {
   "vue-core-inputs-select--option-counts": { interaction: "select" },
   "vue-core-inputs-select--option-counts-open": { interaction: "select-open" },
   "vue-core-inputs-select--mixed-value": { interaction: "select-mixed" },
+  "vue-core-inputs-combobox--default": { interaction: "combobox" },
+  "vue-core-inputs-combobox--with-validation": { interaction: "combobox" },
+  "vue-core-inputs-combobox--grouped": { interaction: "combobox" },
+  "vue-core-inputs-combobox--mixed-value": { interaction: "combobox-mixed" },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

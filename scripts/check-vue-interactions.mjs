@@ -735,6 +735,123 @@ const INTERACTIONS = {
     return "chose in the mixed field, which took the edit and offered its reset; the reset took it back, the focus on the trigger";
   },
 
+  /**
+   * A native Combobox (wave V2): Tab reaches its field and opens its list
+   * (in the theme's portal), focus staying in the field; typing filters the
+   * list and makes the first match active; ArrowDown moves the active row
+   * (aria-activedescendant); Enter chooses it, closing the list, and the
+   * field shows its label; Escape closes a list opened again. A field that
+   * ignores a key or a press fails.
+   */
+  async combobox(page) {
+    const field = controls(page, "input[role=combobox]").first();
+    const list = page.locator("[role=listbox]");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the field (focus is on ${await focused(page)})`,
+    );
+    assert.equal(await list.count(), 1, "focus opens the list");
+    const labels = await list
+      .locator("[role=option] .kozmos-option-label")
+      .allTextContents();
+    assert(labels.length > 1, "the list draws its options");
+    await field.fill("");
+    await settle(page);
+    const query = labels[1].slice(0, 2);
+    await page.keyboard.type(query);
+    await settle(page);
+    const shown = await list
+      .locator("[role=option] .kozmos-option-label")
+      .allTextContents();
+    assert(
+      shown.every((label) =>
+        label.toLowerCase().includes(query.toLowerCase()),
+      ) || shown.length < labels.length,
+      `typing "${query}" filters the list (${shown.join(", ")})`,
+    );
+    const activeId = await field.getAttribute("aria-activedescendant");
+    assert(activeId, "typing makes the first match active");
+    if (shown.length > 1) {
+      await page.keyboard.press("ArrowDown");
+      await settle(page);
+      assert.notEqual(
+        await field.getAttribute("aria-activedescendant"),
+        activeId,
+        "ArrowDown moves the active row",
+      );
+    }
+    const chosen = await page
+      .locator(
+        `[id="${await field.getAttribute("aria-activedescendant")}"] .kozmos-option-label`,
+      )
+      .textContent();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Enter chooses and closes the list");
+    assert.equal(await field.inputValue(), chosen, `the field shows ${chosen}`);
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.equal(await list.count(), 1, "ArrowDown opens the list again");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      "focus stays in the field",
+    );
+    return `Tab to the field and its list, "${query}" typed and filtered, ArrowDown and Enter to choose ${chosen}, ArrowDown and Escape`;
+  },
+
+  /**
+   * A mixed Combobox (GAP-153): a query keeps it mixed, a choice edits it,
+   * offering its reset, and the reset takes it back to mixed with the focus
+   * on its field.
+   */
+  async "combobox-mixed"(page) {
+    const field = controls(page, "input[role=combobox][data-mixed]").first();
+    const id = await field.getAttribute("id");
+    const own = controls(page, `input[id="${id}"]`);
+    await own.focus();
+    await page.keyboard.type("d");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      "",
+      "a query keeps the field mixed",
+    );
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      null,
+      "a choice edits the mixed field",
+    );
+    const reset = own
+      .locator("xpath=ancestor::*[contains(@class, 'kozmos-field')][1]")
+      .locator("[data-slot=reset-mixed]");
+    assert.equal(await reset.count(), 1, "the edited field offers its reset");
+    await reset.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      "",
+      "the reset takes the field back to mixed",
+    );
+    assert.equal(await own.inputValue(), "", "a mixed field shows no value");
+    assert.equal(
+      await own.evaluate((el) => el === document.activeElement),
+      true,
+      `the reset hands the focus to its field (focus is on ${await focused(page)})`,
+    );
+    return "typed a query that kept the field mixed, chose, which edited it and offered its reset; the reset took it back, the focus on the field";
+  },
+
   /** Typing into the search field, its value held in Vue through the bridge. */
   async "search-typing"(page) {
     const field = controls(page, "input").first();

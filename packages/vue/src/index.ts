@@ -210,6 +210,8 @@ export { KozmosCheckbox } from "./components/Checkbox/Checkbox";
 export type { KozmosCheckboxCheckedState } from "./components/Checkbox/types";
 export { KozmosRating } from "./components/Rating/Rating";
 export { KozmosListbox } from "./components/Listbox/Listbox";
+export { KozmosCombobox } from "./components/Combobox/Combobox";
+export type { KozmosComboboxPopupAction } from "./components/Combobox/types";
 export {
   KozmosSelect,
   KozmosSelectContent,

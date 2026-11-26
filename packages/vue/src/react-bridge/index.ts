@@ -82,7 +82,6 @@ import {
   BrowseCategoriesPanel,
   CategoryTile,
   ColorPicker,
-  Combobox,
   DateRangePicker,
   MapControlButton,
   MultiSelect,
@@ -502,10 +501,6 @@ export const KozmosColorPicker = createVueWrapper(ColorPicker, {
     callback: "onFormatChange",
     empty: ({ defaultFormat = "hsl" }) => defaultFormat,
   },
-});
-export const KozmosCombobox = createVueWrapper(Combobox, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
 });
 export const KozmosDateRangePicker = createVueWrapper(DateRangePicker, {
   modelValue: {

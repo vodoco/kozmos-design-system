@@ -1035,6 +1035,30 @@ export const PORTS: Port[] = [
     },
     sample: {},
   },
+  {
+    vue: "KozmosCombobox",
+    react: "Combobox",
+    stories: "components/Combobox/Combobox.stories.tsx",
+    elsewhere: {
+      Default: "parity/combobox.parity.spec.ts",
+      WithValidation: "parity/combobox.parity.spec.ts",
+      Grouped: "parity/combobox.parity.spec.ts",
+      MixedValue: "parity/combobox.parity.spec.ts",
+    },
+    drawnIn: "parity/combobox.parity.spec.ts",
+    sample: {
+      label: "View",
+      options: [
+        { value: "overview", label: "Overview" },
+        { value: "details", label: "Details" },
+      ],
+    },
+    events: {
+      "update:inputValue": "parity/combobox.parity.spec.ts",
+      "update:modelValue": "parity/combobox.parity.spec.ts",
+      resetMixed: "parity/combobox.parity.spec.ts",
+    },
+  },
 ];
 
 /**
