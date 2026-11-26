@@ -197,24 +197,7 @@ async function findings(port: (typeof PORTS)[number]) {
  */
 const EARLIER: Record<string, string> = {
   "KozmosThemeProvider:stories file":
-    "Vue's ThemeProvider has no stories file; mounted.parity.spec.ts draws React's stories' behaviour",
-  // The first port's stories (Vue 3 Phase 0) are written apart from
-  // React's: their own names (SubtleDestructive, CompactScope), arg-built
-  // stories where React's are centred, and Emotions drawn otherwise.
-  "KozmosButton:*":
-    "Vue's Button stories were written before ports drew React's stories; button.parity.spec.ts compares the buttons",
-  "KozmosBadge:Default layout":
-    "React's Badge stories are centred and Vue's padded: their baselines differ in place only",
-  "KozmosBadge:Outline layout":
-    "React's Badge stories are centred and Vue's padded: their baselines differ in place only",
-  "KozmosBadge:WithCounter layout":
-    "React's Badge stories are centred and Vue's padded: their baselines differ in place only",
-  "KozmosBadge:DefaultWithCounter layout":
-    "React's Badge stories are centred and Vue's padded: their baselines differ in place only",
-  "KozmosBadge:Icon layout":
-    "React's Badge stories are centred and Vue's padded: their baselines differ in place only",
-  "KozmosSeparator:Default drawing":
-    "Vue's Default template keeps the spaces around its paragraph's words, which a block trims",
+    "Vue's ThemeProvider has no stories file until wave V2: React's Density story draws Input, Select, Combobox, MultiSelect, NumberInput and PasswordInput, V2's form controls; mounted.parity.spec.ts draws React's stories' behaviour",
 };
 
 describe("each Vue story draws what React's story of its name draws", () => {

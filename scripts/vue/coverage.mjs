@@ -58,13 +58,12 @@ export const VUE_STORIES = {
   "vue-core-actions-button--link": { interaction: "button" },
   "vue-core-actions-button--glass": { interaction: "button" },
   "vue-core-actions-button--subtle": { interaction: "button" },
-  "vue-core-actions-button--subtle-destructive": { interaction: "button" },
+  "vue-core-actions-button--subtle-emotions": {
+    interaction: "buttons-in-order",
+  },
   "vue-core-actions-button--loading": { interaction: "button-loading" },
   "vue-core-actions-button--disabled": { interaction: "button-disabled" },
   "vue-core-actions-button--emotions": { interaction: "buttons-in-order" },
-  "vue-core-actions-button--compact-scope": {
-    interaction: "buttons-in-order",
-  },
   "vue-core-data-display-badge--default": {
     interaction: null,
     exempt: {

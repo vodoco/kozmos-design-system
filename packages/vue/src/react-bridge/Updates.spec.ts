@@ -6,6 +6,7 @@ import * as Bridge from "./index";
 import { createVueWrapper } from "./react-adapter";
 import {
   $,
+  counted,
   eventually,
   mount,
   settle,
@@ -50,10 +51,13 @@ function bindProbe(bound: Record<string, unknown>) {
   return state;
 }
 
+/** Waits for the probe's first draw, and for nothing more to follow it. */
+const firstDrawn = () => counted(() => draws, 1);
+
 describe("what a wrapper given nothing is given later", () => {
   it("an attribute added to a wrapper that had none redraws React", async () => {
     const state = bindProbe({});
-    await settle();
+    await firstDrawn();
     expect(given).toEqual({});
     state.bound = { title: "t" };
     await eventually(() => expect(given).toEqual({ title: "t" }));
@@ -61,7 +65,7 @@ describe("what a wrapper given nothing is given later", () => {
 
   it("an attribute removed after it was added redraws React", async () => {
     const state = bindProbe({});
-    await settle();
+    await firstDrawn();
     state.bound = { title: "t", lang: "tr" };
     await eventually(() => expect(given).toEqual({ title: "t", lang: "tr" }));
     state.bound = { title: "t" };
@@ -73,7 +77,7 @@ describe("what a wrapper given nothing is given later", () => {
   it("a listener added later is heard, and one taken away is not", async () => {
     const listener = vi.fn();
     const state = bindProbe({});
-    await settle();
+    await firstDrawn();
     expect(given).not.toHaveProperty("onClick");
     state.bound = { onClick: listener };
     await eventually(() => {
@@ -114,13 +118,12 @@ describe("what a wrapper given nothing is given later", () => {
 describe("React is drawn once per change", () => {
   it("one draw for each attribute, listener and model a wrapper is given, taken or changed", async () => {
     const state = bindProbe({});
-    await settle();
+    await firstDrawn();
     const counts: Record<string, number> = {};
     const step = async (name: string, bound: Record<string, unknown>) => {
       const before = draws;
       state.bound = bound;
-      await settle();
-      counts[name] = draws - before;
+      counts[name] = await counted(() => draws - before, 1);
     };
     const listener = () => {};
     await step("attribute added", { title: "t" });
@@ -148,13 +151,12 @@ describe("React is drawn once per change", () => {
     const items = reactive(["a"]);
     const filter = reactive({ query: "" });
     bindProbe({ items, filter });
-    await settle();
+    await firstDrawn();
     const counts: Record<string, number> = {};
     const step = async (name: string, change: () => void) => {
       const before = draws;
       change();
-      await settle();
-      counts[name] = draws - before;
+      counts[name] = await counted(() => draws - before, 1);
     };
     await step("item pushed", () => items.push("b"));
     await step("item replaced", () => (items[0] = "z"));
@@ -183,7 +185,7 @@ describe("React is drawn once per change", () => {
         template: `<Wrapper :items="items" title="t">{{ query }}</Wrapper>`,
       }),
     );
-    await settle();
+    await firstDrawn();
     const before = draws;
     query.value = "b";
     // A fixed wait: no draw may follow the change.
@@ -205,7 +207,7 @@ describe("React is drawn once per change", () => {
         ),
       ]),
     );
-    await settle();
+    await firstDrawn();
     const before = draws;
     tick.value += 1;
     // A fixed wait: no draw may follow the change.
@@ -216,8 +218,7 @@ describe("React is drawn once per change", () => {
     expect(draws - before).toBe(0);
     // And the same parent's change is drawn once.
     items.push("b");
-    await settle();
-    expect(draws - before).toBe(1);
+    expect(await counted(() => draws - before, 1)).toBe(1);
   });
 
   it("one draw for a slot given or taken away after mount, which React is given as a prop", async () => {
@@ -231,16 +232,14 @@ describe("React is drawn once per change", () => {
           : { default: () => "Gate" },
       ),
     );
-    await settle();
+    await firstDrawn();
     expect(given).not.toHaveProperty("actions");
     const before = draws;
     shown.value = true;
     await eventually(() => expect(given).toHaveProperty("actions"));
     shown.value = false;
-    // A fixed wait: the draws are counted once the last change is made.
-    await settle();
     await eventually(() => expect(given).not.toHaveProperty("actions"));
-    expect(draws - before).toBe(2);
+    expect(await counted(() => draws - before, 2)).toBe(2);
   });
 
   it("one draw for a row added to a v-for whose wrappers are held in a template ref array", async () => {
@@ -265,14 +264,13 @@ describe("React is drawn once per change", () => {
         ),
       ),
     );
-    await settle();
-    expect(draws).toBe(3);
+    expect(await counted(() => draws, 3)).toBe(3);
     expect(items.value).toHaveLength(3);
     rows.value = [...rows.value, 4];
-    await settle();
+    expect(await counted(() => draws, 4)).toBe(4);
     expect(items.value).toHaveLength(4);
-    expect(draws).toBe(4);
     rows.value = rows.value.slice(1);
+    // A fixed wait: a row taken away draws nothing.
     await settle();
     expect(items.value).toHaveLength(3);
     expect(draws).toBe(4);
@@ -306,7 +304,7 @@ describe("React is drawn once per change", () => {
       }),
     );
     const field = await until(() => $<HTMLInputElement>("input"));
-    await settle();
+    await counted(() => fieldDraws, 1);
     // One inside React's event, so the field keeps what was typed and its
     // caret (`emitModel`), and one after Vue's render with the parent's
     // model: the redraw `onUpdated` asks for when the parent takes it,
@@ -318,8 +316,7 @@ describe("React is drawn once per change", () => {
       const before = fieldDraws;
       type(field, text);
       await nextTick();
-      await settle();
-      return fieldDraws - before;
+      return counted(() => fieldDraws - before, 2);
     };
     expect(await typed("ab")).toBe(2);
     await eventually(() => {

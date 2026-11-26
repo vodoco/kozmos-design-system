@@ -4,7 +4,7 @@ import { renderToString } from "vue/server-renderer";
 import meta, * as stories from "./Button.stories";
 
 /**
- * Each story draws a button with only Button's own props: `label` is the
+ * Each story draws a button with only Button's own props: `children` is the
  * story's text, never an attribute of the <button>.
  */
 type StoryModule = {
@@ -25,8 +25,9 @@ describe("Button's Vue stories", () => {
         createSSRApp(render(args as never, {} as never) as Component),
       );
       expect(html).toContain("<button");
-      expect(html).not.toMatch(/<button[^>]*\blabel=/);
-      if (typeof args.label === "string") expect(html).toContain(args.label);
+      expect(html).not.toMatch(/<button[^>]*\bchildren=/);
+      if (typeof args.children === "string")
+        expect(html).toContain(args.children);
     });
   }
 });
