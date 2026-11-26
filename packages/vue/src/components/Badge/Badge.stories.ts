@@ -15,6 +15,7 @@ const SLOTS = ["counter", "icon", "children"];
 const meta: Meta<Args> = {
   title: "Vue/Core/Data display/Badge",
   component: KozmosBadge,
+  parameters: { layout: "centered" },
   // React's node props are Vue's slots: `children` the default slot, the
   // rest slots of their own names, each drawing its arg's text.
   render: (args) => ({
