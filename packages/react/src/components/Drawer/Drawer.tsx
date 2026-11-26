@@ -12,6 +12,20 @@ import {
   useOverlayContainer,
 } from "../../theme/overlay-container";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import {
+  DRAWER_CLOSE_CLASS,
+  DRAWER_DESCRIPTION_CLASS,
+  DRAWER_FOOTER_CLASS,
+  DRAWER_HEADER_CLASS,
+  DRAWER_OVERLAY_CLASS,
+  DRAWER_OVERLAY_INLINE_CLASS,
+  DRAWER_TITLE_CLASS,
+  DRAWER_UNNAMED_PANEL_WARNING,
+  MODAL_CLOSE_ICON_CLASS,
+  MODAL_CLOSE_NAME_CLASS,
+  drawerContentClasses,
+  focusIfStillThere,
+} from "../../recipes/drawer";
 
 export type DrawerSide = "left" | "right" | "top" | "bottom";
 
@@ -74,26 +88,6 @@ export type DrawerContentProps = React.ComponentPropsWithoutRef<
   side?: DrawerSide;
 };
 
-const drawerSideClasses: Record<DrawerSide, string> = {
-  bottom:
-    "kozmos-drawer-bottom inset-x-0 bottom-0 max-h-[80vh] rounded-t-container border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-  left: "kozmos-drawer-left inset-y-0 left-0 h-full w-[min(100vw,24rem)] rounded-r-container border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
-  right:
-    "kozmos-drawer-right inset-y-0 right-0 h-full w-[min(100vw,24rem)] rounded-l-container border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
-  top: "kozmos-drawer-top inset-x-0 top-0 max-h-[80vh] rounded-b-container border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
-};
-
-// Inline, a side drawer floats in its region, as Pointr Cloud's Get started
-// panel (decisions 139 and 148): 16 from every edge it reaches; 420 wide, or
-// the region less 16 each side; as tall as its content up to the region less
-// 16 top and bottom; the container's corners and its border all round. A top
-// or bottom one, BottomSheet's, stays at its edge across the region.
-const drawerInlineSideClasses: Partial<Record<DrawerSide, string>> = {
-  left: "kozmos-drawer-inline-left left-4 top-4 max-h-[calc(100%-2rem)] w-[min(26.25rem,calc(100%-2rem))] rounded-container border data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
-  right:
-    "kozmos-drawer-inline-right right-4 top-4 max-h-[calc(100%-2rem)] w-[min(26.25rem,calc(100%-2rem))] rounded-container border data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
-};
-
 type OutsideEvent = Parameters<
   NonNullable<DrawerContentProps["onInteractOutside"]>
 >[0];
@@ -115,17 +109,8 @@ function useWarnUnnamed(
       panel.ownerDocument.getElementById(titleId)
     )
       return;
-    console.warn(
-      "Drawer: an inline panel has no DrawerTitle, so nothing names it to a screen reader. Render a DrawerTitle in it, or pass aria-label.",
-    );
+    console.warn(DRAWER_UNNAMED_PANEL_WARNING);
   }, [panel, titleId, labelled]);
-}
-
-/** Focuses `element` if it is still there to take it; says whether it did. */
-function focusIfFocusable(element: Element | null | undefined) {
-  if (!(element instanceof HTMLElement) || !element.isConnected) return false;
-  element.focus({ preventScroll: true });
-  return element.ownerDocument.activeElement === element;
 }
 
 const Drawer = ({
@@ -211,10 +196,7 @@ const DrawerOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn(
-      "kozmos-modal-overlay fixed inset-0 z-50 bg-overlay-scrim data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
-      className,
-    )}
+    className={cn(DRAWER_OVERLAY_CLASS, className)}
     {...props}
   />
 ));
@@ -267,29 +249,14 @@ const DrawerContent = React.forwardRef<
         {showClose ? (
           // The icon button's size, its centre where touch's 44 puts it, on
           // the title (decision 82): 16 from the top at 44, 22 at 32.
-          <DialogPrimitive.Close className="kozmos-drawer-close absolute end-4 top-[calc(1rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)] inline-flex h-icon-control w-icon-control items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none">
-            <X aria-hidden="true" className="h-4 w-4" />
-            <span className="kozmos-modal-close-name sr-only">
-              {closeLabel}
-            </span>
+          <DialogPrimitive.Close className={DRAWER_CLOSE_CLASS}>
+            <X aria-hidden="true" className={MODAL_CLOSE_ICON_CLASS} />
+            <span className={MODAL_CLOSE_NAME_CLASS}>{closeLabel}</span>
           </DialogPrimitive.Close>
         ) : null}
       </>
     );
-    const shape = cn(
-      // The owned classes hold its place and surface where no @scope rule
-      // applies (GAP-262); under @scope its utilities and a caller's decide.
-      "kozmos-drawer-content",
-      inline ? "kozmos-drawer-inline absolute" : "fixed",
-      "z-50 flex flex-col gap-4 overflow-auto bg-background p-6 text-foreground shadow-overlay outline-none transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-300",
-      "border-border",
-      (inline && drawerInlineSideClasses[side]) || drawerSideClasses[side],
-      // At its edge, inline, the region is a limit too: past it is the header.
-      inline &&
-        (side === "top" || side === "bottom") &&
-        "kozmos-drawer-inline-edge max-h-[min(100%,80vh)]",
-      className,
-    );
+    const shape = cn(...drawerContentClasses(side, inline), className);
     // A panel beside the page, not a dialog: Dialog.Content's parts, with what
     // makes it a dialog left out. Its focus guards would be two invisible Tab
     // stops at the ends of the page, its loop would hold Tab inside, and its
@@ -339,7 +306,7 @@ const DrawerContent = React.forwardRef<
               if (
                 !wasInside ||
                 (doc?.activeElement && doc.activeElement !== doc.body) ||
-                focusIfFocusable(drawer.trigger.element)
+                focusIfStillThere(drawer.trigger.element)
               )
                 event.preventDefault();
             }}
@@ -397,7 +364,7 @@ const DrawerContent = React.forwardRef<
     }
     const overlay = (
       <DrawerOverlay
-        className={inline ? "kozmos-modal-overlay-inline absolute" : undefined}
+        className={inline ? DRAWER_OVERLAY_INLINE_CLASS : undefined}
       />
     );
     const content = (
@@ -433,14 +400,7 @@ const DrawerHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      // Room for the close, the icon button's size (decision 82).
-      "flex flex-col gap-2 pe-[calc(var(--density-icon-control-size-md,2.75rem)_+_0.25rem)] text-start",
-      className,
-    )}
-    {...props}
-  />
+  <div className={cn(DRAWER_HEADER_CLASS, className)} {...props} />
 );
 DrawerHeader.displayName = "DrawerHeader";
 
@@ -448,13 +408,7 @@ const DrawerFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "mt-auto flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-      className,
-    )}
-    {...props}
-  />
+  <div className={cn(DRAWER_FOOTER_CLASS, className)} {...props} />
 );
 DrawerFooter.displayName = "DrawerFooter";
 
@@ -467,10 +421,7 @@ const DrawerTitle = React.forwardRef<
     <DialogPrimitive.Title
       ref={ref}
       {...(panel && { id: `${panelId}-title` })}
-      className={cn(
-        "text-lg font-semibold leading-6 text-foreground",
-        className,
-      )}
+      className={cn(DRAWER_TITLE_CLASS, className)}
       {...props}
     />
   );
@@ -486,7 +437,7 @@ const DrawerDescription = React.forwardRef<
     <DialogPrimitive.Description
       ref={ref}
       {...(panel && { id: `${panelId}-description` })}
-      className={cn("text-sm leading-5 text-muted-foreground", className)}
+      className={cn(DRAWER_DESCRIPTION_CLASS, className)}
       {...props}
     />
   );

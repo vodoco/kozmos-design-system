@@ -344,6 +344,7 @@ const files = {
     "packages/react/src/components/EmptyState/EmptyState.figma.tsx",
   reactTailwindConfig: "packages/styles/tailwind.config.js",
   reactTooltip: "packages/react/src/components/Tooltip/Tooltip.tsx",
+  reactTooltipRecipe: "packages/react/src/recipes/tooltip.ts",
   reactTooltipFigma: "packages/react/src/components/Tooltip/Tooltip.figma.tsx",
   reactDrawer: "packages/react/src/components/Drawer/Drawer.tsx",
   reactDrawerFigma: "packages/react/src/components/Drawer/Drawer.figma.tsx",
@@ -1743,8 +1744,8 @@ assertContains(
   "React Tooltip arrow rendering",
 );
 assertContains(
-  files.reactTooltip,
-  source.reactTooltip,
+  files.reactTooltipRecipe,
+  source.reactTooltipRecipe,
   "overflow-visible",
   "React Tooltip content lets the arrow protrude",
 );

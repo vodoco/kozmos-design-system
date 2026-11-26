@@ -11,6 +11,16 @@ import {
 } from "../Drawer";
 import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import {
+  BOTTOM_SHEET_CLOSE_CLASS,
+  BOTTOM_SHEET_CLOSE_LABEL,
+  BOTTOM_SHEET_CONTENT_CLASS,
+  BOTTOM_SHEET_GRIP_CLASS,
+} from "../../recipes/bottom-sheet";
+import {
+  MODAL_CLOSE_ICON_CLASS,
+  MODAL_CLOSE_NAME_CLASS,
+} from "../../recipes/drawer";
 
 const BottomSheet = Drawer;
 const BottomSheetTrigger = DrawerTrigger;
@@ -45,25 +55,19 @@ const BottomSheetContent = React.forwardRef<
     ref={ref}
     side="bottom"
     showClose={false}
-    className={cn(
-      "kozmos-bottom-sheet inset-x-0 bottom-0 mt-24 flex h-auto max-h-[min(100%,calc(100dvh-env(safe-area-inset-top)-1rem))] flex-col overscroll-contain rounded-t-container border-t bg-background !px-4 !pb-[max(1.5rem,env(safe-area-inset-bottom))] !pt-0",
-      className,
-    )}
+    className={cn(BOTTOM_SHEET_CONTENT_CLASS, className)}
     {...props}
   >
-    <div
-      aria-hidden="true"
-      className="kozmos-bottom-sheet-grip mx-auto my-2 h-[5px] w-12 shrink-0 rounded-pill bg-muted-foreground/40"
-    />
+    <div aria-hidden="true" className={BOTTOM_SHEET_GRIP_CLASS} />
     {title ? (
       <BottomSheetTitle className="sr-only">{title}</BottomSheetTitle>
     ) : null}
     {children}
     {showClose ? (
-      <BottomSheetClose className="kozmos-bottom-sheet-close absolute right-0 top-2 inline-flex h-11 w-11 items-start justify-end rounded-control p-2 text-muted-foreground transition-colors hover:bg-hover-fill hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none">
-        <X aria-hidden="true" className="h-4 w-4" />
-        <span className="kozmos-modal-close-name sr-only">
-          Close bottom sheet
+      <BottomSheetClose className={BOTTOM_SHEET_CLOSE_CLASS}>
+        <X aria-hidden="true" className={MODAL_CLOSE_ICON_CLASS} />
+        <span className={MODAL_CLOSE_NAME_CLASS}>
+          {BOTTOM_SHEET_CLOSE_LABEL}
         </span>
       </BottomSheetClose>
     ) : null}

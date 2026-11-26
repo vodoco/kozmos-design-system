@@ -2,6 +2,13 @@ import { createThemePortal } from "../../theme/ThemePortal";
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "../../utils";
+import {
+  POPOVER_ARROW_CLASS,
+  POPOVER_ARROW_SIZE,
+  POPOVER_CONTENT_CLASS,
+  POPOVER_CONTENT_DEFAULTS,
+  focusIfFocusable,
+} from "../../recipes/popover";
 
 const PopoverPortal = createThemePortal(PopoverPrimitive.Portal);
 
@@ -89,16 +96,6 @@ const PopoverAnchor = React.forwardRef<
 });
 PopoverAnchor.displayName = PopoverPrimitive.Anchor.displayName;
 
-/** Focuses `element` if it can take focus there and then; says whether it did. */
-function focusIfFocusable(element: Element | null | undefined) {
-  if (!(element instanceof HTMLElement) || !element.isConnected) return false;
-  const document = element.ownerDocument;
-  if (element === document.body || element === document.documentElement)
-    return false;
-  element.focus({ preventScroll: true });
-  return document.activeElement === element;
-}
-
 /**
  * The popover's panel, in the theme's portal.
  *
@@ -120,8 +117,8 @@ const PopoverContent = React.forwardRef<
   (
     {
       className,
-      align = "center",
-      sideOffset = 4,
+      align = POPOVER_CONTENT_DEFAULTS.align,
+      sideOffset = POPOVER_CONTENT_DEFAULTS.sideOffset,
       portalContainer,
       onOpenAutoFocus,
       onCloseAutoFocus,
@@ -142,7 +139,7 @@ const PopoverContent = React.forwardRef<
           ref={ref}
           align={align}
           sideOffset={sideOffset}
-          className={cn("kozmos-reset kozmos-popover", className)}
+          className={cn(POPOVER_CONTENT_CLASS, className)}
           onOpenAutoFocus={(event) => {
             invoker.current =
               (event.currentTarget as Node | null)?.ownerDocument
@@ -197,15 +194,25 @@ PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 const PopoverArrow = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Arrow>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Arrow>
->(({ className, width = 8, height = 4, ...props }, ref) => (
-  <PopoverPrimitive.Arrow
-    ref={ref}
-    width={width}
-    height={height}
-    className={cn("kozmos-reset kozmos-popover-arrow", className)}
-    {...props}
-  />
-));
+>(
+  (
+    {
+      className,
+      width = POPOVER_ARROW_SIZE.width,
+      height = POPOVER_ARROW_SIZE.height,
+      ...props
+    },
+    ref,
+  ) => (
+    <PopoverPrimitive.Arrow
+      ref={ref}
+      width={width}
+      height={height}
+      className={cn(POPOVER_ARROW_CLASS, className)}
+      {...props}
+    />
+  ),
+);
 PopoverArrow.displayName = PopoverPrimitive.Arrow.displayName;
 
 export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent, PopoverArrow };
