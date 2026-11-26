@@ -18,7 +18,7 @@ import {
 
 // Moved to recipes/chip.ts, shared with @kozmos-ds/vue's KozmosChip:
 // framework-free, so Vue builds it in.
-export { chipVariants };
+export { chipVariants } from "../../recipes/chip";
 
 export interface ChipProps
   extends
