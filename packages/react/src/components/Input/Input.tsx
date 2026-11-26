@@ -14,6 +14,16 @@ import {
   type CharacterCount,
 } from "../FieldWrapper/characterCount";
 import { inputVariants, type InputStatus } from "./inputVariants";
+import {
+  FIELD_ACTION_ICON_CLASS,
+  INPUT_ACTION_CLASS,
+  INPUT_ACTION_FIELD_CLASS,
+  INPUT_CONTROL_CLASS,
+  INPUT_COPIED_MS,
+  INPUT_WITH_ACTION_CLASS,
+  inputActionLabel,
+  inputCopiedSaid,
+} from "../../recipes/input";
 
 export { inputVariants, type InputStatus };
 
@@ -92,23 +102,19 @@ function FieldAction({
   const [said, setSaid] = React.useState("");
   React.useEffect(() => {
     if (!said) return;
-    const timer = setTimeout(setSaid, 2000, "");
+    const timer = setTimeout(setSaid, INPUT_COPIED_MS, "");
     return () => clearTimeout(timer);
   }, [said]);
   const copy = action.kind === "copy";
   const edit = action.kind === "edit";
-  const icon = "kozmos-reset kozmos-field-action-icon";
+  const icon = FIELD_ACTION_ICON_CLASS;
   return (
     <>
       <button
         type="button"
-        aria-label={
-          action.kind === "toggle"
-            ? action.label
-            : (action.label ?? (copy ? "Copy" : "Edit"))
-        }
+        aria-label={inputActionLabel(action)}
         aria-pressed={action.kind === "toggle" ? action.pressed : undefined}
-        className="kozmos-reset kozmos-field-action kozmos-input-action"
+        className={INPUT_ACTION_CLASS}
         disabled={disabled}
         onClick={async (event) => {
           if (action.kind === "edit") return action.onEdit();
@@ -125,9 +131,7 @@ function FieldAction({
           const copied = action.copiedLabel ?? "Copied";
           // The same words twice are not read twice: a second copy changes
           // them by a no-break space.
-          setSaid((previous) =>
-            previous === copied ? `${copied}\u00a0` : copied,
-          );
+          setSaid((previous) => inputCopiedSaid(previous, copied));
           action.onCopy?.(value);
         }}
       >
@@ -204,8 +208,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           inputVariants({ status: resolvedStatus }),
           // Room for the action, as PasswordInput keeps for its toggle: the
           // utility beats a caller's px-*, the owned rule holds in WebKit.
-          action &&
-            "kozmos-input-with-action pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+          action && INPUT_WITH_ACTION_CLASS,
           className,
         )}
         ref={fieldRef}
@@ -248,11 +251,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             React draw a new input, losing the focus and a typed value.
             Without an action the wrapper draws no box of its own. */}
         <div
-          className={
-            action
-              ? "kozmos-reset kozmos-password-field"
-              : "kozmos-input-control"
-          }
+          className={action ? INPUT_ACTION_FIELD_CLASS : INPUT_CONTROL_CLASS}
         >
           {field}
           {action ? (

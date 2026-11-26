@@ -1,5 +1,5 @@
 import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 import {
@@ -8,7 +8,7 @@ import {
   type CharacterCount,
 } from "../FieldWrapper/characterCount";
 
-const textareaVariants = cva("kozmos-reset kozmos-textarea");
+import { TEXTAREA_ERROR_CLASS, textareaVariants } from "../../recipes/textarea";
 
 export interface TextareaProps
   extends
@@ -67,7 +67,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={inputId}
           className={cn(
             textareaVariants(),
-            hasError && "kozmos-textarea-error",
+            hasError && TEXTAREA_ERROR_CLASS,
             className,
           )}
           ref={ref}

@@ -3,6 +3,13 @@ import { Eye, EyeOff } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
+import { fieldDescribedBy } from "../../recipes/field";
+import { FIELD_ACTION_ICON_CLASS } from "../../recipes/input";
+import {
+  PASSWORD_FIELD_CLASS,
+  PASSWORD_TOGGLE_CLASS,
+  PASSWORD_WITH_TOGGLE_CLASS,
+} from "../../recipes/password-input";
 
 export interface PasswordInputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -56,12 +63,12 @@ export const PasswordInput = React.forwardRef<
     const hasError = !!error;
     const resolvedStatus: InputStatus = hasError ? "error" : status;
     const isInvalid = resolvedStatus === "error";
-    const describedBy =
-      hasError && typeof error === "string"
-        ? errorId
-        : helperText
-          ? helperId
-          : undefined;
+    const describedBy = fieldDescribedBy({
+      error,
+      errorId,
+      helperText,
+      helperId,
+    });
 
     const handleToggle = () => {
       const nextVisible = !isVisible;
@@ -82,18 +89,15 @@ export const PasswordInput = React.forwardRef<
         status={resolvedStatus}
         className={wrapperClassName}
       >
-        <div className="kozmos-reset kozmos-password-field">
+        <div className={PASSWORD_FIELD_CLASS}>
           <input
             {...props}
             type={isVisible ? "text" : "password"}
             id={inputId}
             className={cn(
               inputVariants({ status: resolvedStatus }),
-              // Room for the toggle (decision 82): the utility beats a
-              // caller's px-*; the owned rule holds it where no @scope rule
-              // reaches an <input> (WebKit).
-              showToggle &&
-                "kozmos-password-with-toggle pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+              // Room for the toggle (decision 82).
+              showToggle && PASSWORD_WITH_TOGGLE_CLASS,
               className,
             )}
             ref={ref}
@@ -106,20 +110,17 @@ export const PasswordInput = React.forwardRef<
               type="button"
               aria-label={isVisible ? hidePasswordLabel : showPasswordLabel}
               aria-pressed={isVisible}
-              className="kozmos-reset kozmos-field-action kozmos-password-toggle"
+              className={PASSWORD_TOGGLE_CLASS}
               disabled={disabled}
               onClick={handleToggle}
             >
               {isVisible ? (
                 <EyeOff
-                  className="kozmos-reset kozmos-field-action-icon"
+                  className={FIELD_ACTION_ICON_CLASS}
                   aria-hidden="true"
                 />
               ) : (
-                <Eye
-                  className="kozmos-reset kozmos-field-action-icon"
-                  aria-hidden="true"
-                />
+                <Eye className={FIELD_ACTION_ICON_CLASS} aria-hidden="true" />
               )}
             </button>
           )}
