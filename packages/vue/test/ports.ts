@@ -1059,6 +1059,71 @@ export const PORTS: Port[] = [
       resetMixed: "parity/combobox.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosChip",
+    react: "Chip",
+    stories: "components/Chip/Chip.stories.tsx",
+    elsewhere: {
+      Default: "parity/chip.parity.spec.ts",
+      Sizes: "parity/chip.parity.spec.ts",
+      Variants: "parity/chip.parity.spec.ts",
+      OneChoice: "parity/chip.parity.spec.ts",
+    },
+    drawnIn: "parity/chip.parity.spec.ts",
+    sample: { children: "Coffee" },
+    events: {
+      remove: "parity/chip.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosChipGroup",
+    react: "ChipGroup",
+    // React's Chip and ChipGroup are one module, Chip, and share its stories.
+    stories: null,
+    drawnIn: "parity/chip.parity.spec.ts",
+    sample: {},
+    events: {
+      "update:modelValue": "parity/chip.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMultiSelect",
+    react: "MultiSelect",
+    stories: "components/MultiSelect/MultiSelect.stories.tsx",
+    elsewhere: {
+      Default: "parity/multi-select.parity.spec.ts",
+      WithSelectedValues: "parity/multi-select.parity.spec.ts",
+      Grouped: "parity/multi-select.parity.spec.ts",
+    },
+    drawnIn: "parity/multi-select.parity.spec.ts",
+    sample: {
+      label: "Tools",
+      options: [
+        { value: "filters", label: "Filters" },
+        { value: "layers", label: "Layers" },
+      ],
+      defaultValue: ["filters"],
+    },
+    events: {
+      "update:searchValue": "parity/multi-select.parity.spec.ts",
+      "update:modelValue": "parity/multi-select.parity.spec.ts",
+      resetMixed: "parity/multi-select.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosChipInput",
+    react: "ChipInput",
+    stories: "components/ChipInput/ChipInput.stories.tsx",
+    elsewhere: {
+      Default: "parity/chip-input.parity.spec.ts",
+    },
+    drawnIn: "parity/chip-input.parity.spec.ts",
+    sample: { label: "Keywords", defaultValue: ["coffee"] },
+    events: {
+      "update:modelValue": "parity/chip-input.parity.spec.ts",
+      "update:inputValue": "parity/chip-input.parity.spec.ts",
+    },
+  },
 ];
 
 /**

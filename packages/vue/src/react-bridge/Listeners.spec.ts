@@ -288,7 +288,9 @@ describe("which on… props each part takes", () => {
 
   it("describes every Kozmos* export's part", () => {
     const parts = bridgedParts();
-    expect(parts.length).toBeGreaterThan(90);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (90 after wave V2's chips batch).
+    expect(parts.length).toBeGreaterThan(50);
     const undescribed = parts
       .filter(({ bridge }) => {
         const part = bridge?.part as { name?: string } | undefined;
@@ -709,10 +711,6 @@ describe("each listener on a bridged field runs once", () => {
   });
 });
 
-const fruit = [
-  { value: "apple", label: "Apple" },
-  { value: "banana", label: "Banana" },
-];
 const tile = { id: "shopping", label: "Shopping", selected: false };
 const poi = {
   id: "gate-12",
@@ -810,7 +808,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosTabs: { slot: true },
   KozmosDialog: { slot: true },
   KozmosMapOverlay: { slot: true },
-  KozmosChip: { slot: true },
   // Its island, inside the theme scope it draws round it.
   KozmosDynamicIsland: { click: first("[data-kozmos-root] > *") },
   KozmosFeedbackCard: {},
@@ -885,15 +882,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosDateRangePicker: {
     props: { label: "Stay" },
     click: (drawn) => drawn.querySelector("[role=group]")?.children[1],
-  },
-  KozmosMultiSelect: {
-    props: { options: fruit, label: "Fruit" },
-    click: (drawn) =>
-      drawn.querySelector("[data-slot=chip-group]")?.parentElement,
-  },
-  KozmosChipInput: {
-    props: { label: "Keywords" },
-    click: first("input"),
   },
   // Every root is inside a TooltipProvider of its own (GAP-230), so a
   // tooltip draws alone; it and its provider draw no element.
@@ -1097,7 +1085,6 @@ describe("the part decides what runs its listener", () => {
   it.each([
     ["KozmosFloatingActionButton", { "aria-label": "Go" }, "button"],
     ["KozmosToggleButton", { "aria-label": "Bold" }, "button"],
-    ["KozmosChip", {}, "button"],
   ] as const)(
     "%s disabled: React runs no onClick of a disabled button",
     async (name, props, selector) => {

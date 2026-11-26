@@ -593,7 +593,9 @@ describe("which props of each part are booleans", () => {
 
   it("describes every Kozmos* export's part", () => {
     const parts = bridgedParts();
-    expect(parts.length).toBeGreaterThan(90);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (90 after wave V2's chips batch).
+    expect(parts.length).toBeGreaterThan(50);
     const undescribed = parts
       .filter(({ bridge }) => {
         const part = bridge?.part as { name?: string } | undefined;

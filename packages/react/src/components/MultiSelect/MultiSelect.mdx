@@ -126,7 +126,7 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosMultiSelect } from "@kozmos-ds/vue/react-bridge"
+import { KozmosMultiSelect } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const selected = ref([])
@@ -139,10 +139,9 @@ const categories = [
 <template>
   <KozmosMultiSelect
     label="Categories"
+    v-model="selected"
     :options="categories"
-    :value="selected"
     placeholder="Add a category"
-    @valueChange="(values) => (selected = values)"
   />
 </template>
   `}
@@ -244,7 +243,7 @@ export function FacilitiesAcrossSelection({ facilities }: { facilities: string[]
   `}
   vue={`
 <script setup>
-import { KozmosMultiSelect } from "@kozmos-ds/vue/react-bridge"
+import { KozmosMultiSelect } from "@kozmos-ds/vue"
 import { computed, ref } from "vue"
 
 const props = defineProps({ facilities: Array })
@@ -262,10 +261,10 @@ const differs = computed(() =>
   <KozmosMultiSelect
     label="Facilities"
     :options="options"
-    :value="edit ?? (differs ? [] : facilities[0])"
+    :model-value="edit ?? (differs ? [] : facilities[0])"
     :mixed="differs && edit === undefined"
-    @valueChange="(values) => (edit = values)"
-    @resetMixed="edit = undefined"
+    @update:model-value="(values) => (edit = values)"
+    @reset-mixed="edit = undefined"
   />
 </template>
   `}

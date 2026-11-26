@@ -70,19 +70,19 @@ It forwards its ref to `HTMLDivElement`. Its props are `ChipInputProps`, which e
 
   The `id` of the text input, which the label names.
 
-- `removeLabel`: `(entry: string) => string`, optional, default `` (entry) => `Remove ${entry}` ``.
+- `removeLabel`: `(entry: string) => string`, optional, default `chipInputDefaults.removeLabel`.
 
   Each chip's remove button's name, in the product's language. "Remove {entry}" by default.
 
-- `addedLabel`: `(entry: string) => string`, optional, default `` (entry) => `${entry} added` ``.
+- `addedLabel`: `(entry: string) => string`, optional, default `chipInputDefaults.addedLabel`.
 
   Said politely when an entry is added. "{entry} added" by default.
 
-- `removedLabel`: `(entry: string) => string`, optional, default `` (entry) => `${entry} removed` ``.
+- `removedLabel`: `(entry: string) => string`, optional, default `chipInputDefaults.removedLabel`.
 
   Said politely when an entry is removed. "{entry} removed" by default.
 
-- `duplicateLabel`: `(entry: string) => string`, optional, default `` (entry) => `${entry} is already added` ``.
+- `duplicateLabel`: `(entry: string) => string`, optional, default `chipInputDefaults.duplicateLabel`.
 
   Said politely when the typed entry is already in the field, which keeps
   the text and adds nothing. "{entry} is already added" by default.

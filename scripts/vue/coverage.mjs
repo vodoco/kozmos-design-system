@@ -842,6 +842,28 @@ export const VUE_STORIES = {
   "vue-core-inputs-combobox--with-validation": { interaction: "combobox" },
   "vue-core-inputs-combobox--grouped": { interaction: "combobox" },
   "vue-core-inputs-combobox--mixed-value": { interaction: "combobox-mixed" },
+  "vue-core-data-display-chip--default": { interaction: "chip-toggles" },
+  "vue-core-data-display-chip--sizes": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Plain chips show a size or a variant: nothing to focus or press, so there is no interaction; axe scans them",
+    },
+  },
+  "vue-core-data-display-chip--variants": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Plain chips show a size or a variant: nothing to focus or press, so there is no interaction; axe scans them",
+    },
+  },
+  "vue-core-data-display-chip--one-choice": { interaction: "radio-choice" },
+  "vue-core-inputs-multiselect--default": { interaction: "multiselect" },
+  "vue-core-inputs-multiselect--with-selected-values": {
+    interaction: "multiselect",
+  },
+  "vue-core-inputs-multiselect--grouped": { interaction: "multiselect" },
+  "vue-core-inputs-chipinput--default": { interaction: "chip-input" },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

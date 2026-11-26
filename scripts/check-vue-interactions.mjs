@@ -852,6 +852,202 @@ const INTERACTIONS = {
     return "typed a query that kept the field mixed, chose, which edited it and offered its reset; the reset took it back, the focus on the field";
   },
 
+  /**
+   * Filter chips and a removable one (Chip's Default): Tab reaches each
+   * toggle in reading order and draws a focus; Enter presses it, which the
+   * story answers by selecting it (aria-pressed true); a click presses
+   * another; then the removable chip's remove, by Enter, takes the chip
+   * away. A chip that ignores a key or a press fails.
+   */
+  async "chip-toggles"(page) {
+    const toggles = await controls(page, "button[aria-pressed]").all();
+    assert(toggles.length > 1, "the story draws toggle chips");
+    await focusStart(page);
+    for (const toggle of toggles) {
+      await page.keyboard.press("Tab");
+      await settle(page);
+      const name = await toggle.evaluate((el) =>
+        window.__kozmosVue.describe(el),
+      );
+      assert.equal(
+        await toggle.evaluate((el) => el === document.activeElement),
+        true,
+        `Tab reaches ${name} (focus is on ${await focused(page)})`,
+      );
+      const focusLook = await lookOf(toggle);
+      await page.keyboard.press("Enter");
+      await settle(page);
+      assert.equal(
+        await toggle.getAttribute("aria-pressed"),
+        "true",
+        `Enter on ${name} selects it`,
+      );
+      await toggle.evaluate((el) => el.blur());
+      await settle(page);
+      assert(
+        !same(focusLook, await lookOf(toggle)),
+        `${name} draws a focus that differs from its rest`,
+      );
+      await toggle.focus();
+    }
+    await toggles[0].click();
+    await settle(page);
+    assert.equal(
+      await toggles[0].getAttribute("aria-pressed"),
+      "true",
+      "a click selects a chip",
+    );
+    const removes = controls(page, "button.kozmos-chip-remove");
+    const count = await removes.count();
+    assert(count > 0, "the story draws a removable chip");
+    const chips = await controls(page, "[data-slot=chip]").count();
+    await removes.first().focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await controls(page, "[data-slot=chip]").count(),
+      chips - 1,
+      "Enter on a chip's remove takes the chip away",
+    );
+    return `${toggles.length} toggle chips, Tab after Tab, each selected by Enter, one by a click; a remove by Enter took its chip away`;
+  },
+
+  /**
+   * A MultiSelect: focus on its input opens the list (in the theme's
+   * portal), focus staying in the input; ArrowDown moves the active row;
+   * Enter toggles it, a chip coming or going, the list staying open;
+   * Backspace in the empty input removes the last chip; Escape closes the
+   * list; a chip's remove by Enter removes its chip, focus back in the
+   * input. A field that ignores a key or a press fails.
+   */
+  async multiselect(page) {
+    const field = controls(page, "input[role=combobox]").first();
+    const list = page.locator("[role=listbox]");
+    const chips = () => controls(page, "[data-slot=chip]").count();
+    await focusStart(page);
+    await field.focus();
+    await settle(page);
+    assert.equal(await list.count(), 1, "focus opens the list");
+    assert.equal(
+      await list.getAttribute("aria-multiselectable"),
+      "true",
+      "the list is multi-selectable",
+    );
+    const before = await chips();
+    const activeBefore = await field.getAttribute("aria-activedescendant");
+    assert(activeBefore, "the list makes an option active");
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.notEqual(
+      await field.getAttribute("aria-activedescendant"),
+      activeBefore,
+      "ArrowDown moves the active row",
+    );
+    const id = await field.getAttribute("aria-activedescendant");
+    const wasChosen = await page
+      .locator(`[id="${id}"]`)
+      .getAttribute("aria-selected");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    const after = await chips();
+    assert.equal(
+      after,
+      wasChosen === "true" ? before - 1 : before + 1,
+      "Enter toggles the active option, a chip coming or going",
+    );
+    assert.equal(await list.count(), 1, "the list stays open after a choice");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      "focus stays in the input",
+    );
+    if (after > 0) {
+      await page.keyboard.press("Backspace");
+      await settle(page);
+      assert.equal(
+        await chips(),
+        after - 1,
+        "Backspace in the empty input removes the last chip",
+      );
+    }
+    // A chip to remove by its button.
+    if ((await chips()) === 0) {
+      await page.keyboard.press("ArrowDown");
+      await settle(page);
+      await page.keyboard.press("Enter");
+      await settle(page);
+      await page.keyboard.press("Escape");
+      await settle(page);
+    }
+    const left = await chips();
+    assert(left > 0, "a choice draws a chip");
+    await controls(page, "button.kozmos-chip-remove").first().focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await chips(), left - 1, "a chip's remove removes its chip");
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `the remove hands focus to the input (focus is on ${await focused(page)})`,
+    );
+    return "focus opened the list, ArrowDown moved its active row, Enter toggled it, Escape closed it; Backspace and a chip's remove each took a chip away, focus in the input";
+  },
+
+  /**
+   * A ChipInput: typed text and Enter add an entry as a chip, the field
+   * emptied; a comma adds another; Backspace in the empty field removes the
+   * last; a chip's remove by Enter removes its chip, focus back in the
+   * field.
+   */
+  async "chip-input"(page) {
+    const field = controls(page, "input").first();
+    const labels = () =>
+      controls(page, "[data-slot=chip-label]").allTextContents();
+    await focusStart(page);
+    await field.focus();
+    const before = await labels();
+    await page.keyboard.type("tea");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.deepEqual(
+      await labels(),
+      [...before, "tea"],
+      "Enter adds the typed text as a chip",
+    );
+    assert.equal(await field.inputValue(), "", "the field is emptied");
+    await page.keyboard.type("cake,");
+    await settle(page);
+    assert.deepEqual(
+      await labels(),
+      [...before, "tea", "cake"],
+      "a comma adds the text before it",
+    );
+    await page.keyboard.press("Backspace");
+    await settle(page);
+    assert.deepEqual(
+      await labels(),
+      [...before, "tea"],
+      "Backspace in the empty field removes the last chip",
+    );
+    await controls(page, "button.kozmos-chip-remove").first().focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      (await labels()).length,
+      before.length,
+      "a chip's remove removes its chip",
+    );
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `the remove hands focus to the field (focus is on ${await focused(page)})`,
+    );
+    return "Enter and a comma added entries, Backspace and a chip's remove took them away, focus in the field";
+  },
+
   /** Typing into the search field, its value held in Vue through the bridge. */
   async "search-typing"(page) {
     const field = controls(page, "input").first();

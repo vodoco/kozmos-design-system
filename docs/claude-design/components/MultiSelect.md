@@ -48,7 +48,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `MultiSelectProps`, which
 - `helperText`: `string`, optional.
 - `label`: `string`, optional.
 - `maxSelected`: `number`, optional.
-- `maxSelectedLabel`: `(max: number) => string`, optional, default `` (max) => `Limit of ${max} reached` ``.
+- `maxSelectedLabel`: `(max: number) => string`, optional, default `defaultMaxSelectedLabel`.
 
   What a screen reader is told, politely and once, when the selection
   reaches `maxSelected` and the remaining options are disabled: given the

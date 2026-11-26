@@ -65,7 +65,6 @@ import {
   Tabs,
   Dialog,
   MapOverlay,
-  Chip,
   DynamicIsland,
   FeedbackCard,
   MapControlsGroup,
@@ -84,8 +83,6 @@ import {
   ColorPicker,
   DateRangePicker,
   MapControlButton,
-  MultiSelect,
-  ChipInput,
   NavigationItem,
   POIDetailPanel,
   POIMediaGallery,
@@ -404,7 +401,6 @@ export const KozmosTabs = createVueWrapper(Tabs, {
 });
 export const KozmosDialog = createVueWrapper(Dialog);
 export const KozmosMapOverlay = createVueWrapper(MapOverlay);
-export const KozmosChip = createVueWrapper(Chip);
 export const KozmosDynamicIsland = createVueWrapper(DynamicIsland);
 export const KozmosFeedbackCard = createVueWrapper(FeedbackCard);
 export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup, {
@@ -509,21 +505,6 @@ export const KozmosDateRangePicker = createVueWrapper(DateRangePicker, {
     empty: { start: "", end: "" },
   },
 });
-export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
-  searchValue: {
-    prop: "searchValue",
-    callback: "onSearchValueChange",
-    empty: "",
-  },
-});
-// GAP-222 (decision 216): the entries are the v-model, the typed text a
-// second one, as Combobox's inputValue.
-export const KozmosChipInput = createVueWrapper(ChipInput, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
-  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
-});
-
 // ----------------------------------------------------------------------
 // The parts of the parts made of parts (GAP-230, decision 172). Each is
 // drawn in the React tree of the wrapper whose slot it is in, so it finds

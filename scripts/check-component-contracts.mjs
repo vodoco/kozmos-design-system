@@ -2335,6 +2335,12 @@ for (const [part, module] of [
   ["KozmosRadioGroupItem", "Radio/Radio"],
   ["KozmosSegmentedControl", "SegmentedControl/SegmentedControl"],
   ["KozmosSlider", "Slider/Slider"],
+  // Chip with ChipGroup (one module, as React's), MultiSelect and ChipInput
+  // (wave V2, the chips batch).
+  ["KozmosChip", "Chip/Chip"],
+  ["KozmosChipGroup", "Chip/Chip"],
+  ["KozmosMultiSelect", "MultiSelect/MultiSelect"],
+  ["KozmosChipInput", "ChipInput/ChipInput"],
 ]) {
   assertContains(
     files.vueIndex,

@@ -56,7 +56,6 @@ import {
   Tabs,
   Dialog,
   MapOverlay,
-  Chip,
   DynamicIsland,
   FeedbackCard,
   MapControlsGroup,
@@ -72,8 +71,6 @@ import {
   ColorPicker,
   DateRangePicker,
   MapControlButton,
-  MultiSelect,
-  ChipInput,
   NavigationItem,
   POIDetailPanel,
   POIMediaGallery,
@@ -224,7 +221,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [Tabs, accordionTakes],
   [Dialog, menuTakes],
   [MapOverlay, D],
-  [Chip, { dom: true, except: ["onSelect"], own: ["onRemove"] }],
   [
     DynamicIsland,
     {
@@ -307,22 +303,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
     },
   ],
   [MapControlButton, D],
-  [
-    MultiSelect,
-    {
-      dom: true,
-      except: ["onChange"],
-      own: ["onResetMixed", "onSearchValueChange", "onValueChange"],
-    },
-  ],
-  [
-    ChipInput,
-    {
-      dom: true,
-      except: ["onChange"],
-      own: ["onInputValueChange", "onValueChange"],
-    },
-  ],
   [NavigationItem, D],
   [
     POIDetailPanel,
@@ -576,7 +556,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [Tabs, popoverAnchorBooleans],
   [Dialog, menuBooleans],
   [MapOverlay, H],
-  [Chip, html(["active", "disabled", "selected"])],
   [
     DynamicIsland,
     html(
@@ -656,15 +635,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
       "showLabel",
     ]),
   ],
-  [
-    MultiSelect,
-    html(
-      ["clearable", "disabled", "mixed", "readOnly", "required"],
-      [],
-      ["error"],
-    ),
-  ],
-  [ChipInput, html(["disabled", "readOnly", "required"], [], ["error"])],
   [NavigationItem, html(["asChild", "disabled", "focusVisible", "selected"])],
   [POIDetailPanel, H],
   [POIMediaGallery, H],

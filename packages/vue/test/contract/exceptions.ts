@@ -89,4 +89,28 @@ export const EXCEPTIONS: Record<string, string> = {
     "React's default is the recipe's defaultFilterOption, a function the contract cannot read as a literal; Vue's default is the same function (recipes/combobox.ts), and combobox.parity.spec.ts filters by typing in both",
   "KozmosCombobox.popupActions:default":
     "React's default is NO_ACTIONS, an empty list the contract cannot read as a literal; Vue's default is an empty list too, and combobox.parity.spec.ts draws a combobox without commands in both",
+  // MultiSelect's options are Listbox's (KozmosListbox.options:type), and
+  // its filter is given them and its change emits them. Its defaults are
+  // React's own: the shared recipe's filter and limit words.
+  "KozmosMultiSelect.options:type":
+    "Vue's KozmosComboboxOption is React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type); multi-select.parity.spec.ts draws the options in both",
+  "KozmosMultiSelect.update:modelValue:payload":
+    "The options a change emits are KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosMultiSelect.filterOption:type":
+    "The filter is given KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosMultiSelect.filterOption:default":
+    "React's default is the recipe's defaultFilterOption, a function the contract cannot read as a literal; Vue's default is the same function (recipes/combobox.ts), and multi-select.parity.spec.ts filters by typing in both",
+  "KozmosMultiSelect.maxSelectedLabel:default":
+    "React's default is the recipe's defaultMaxSelectedLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and multi-select.parity.spec.ts hears the limit said in both",
+  // ChipInput's defaults are React's own, from the shared recipe.
+  "KozmosChipInput.defaultValue:default":
+    "React's default is NO_ENTRIES, an empty list the contract cannot read as a literal; Vue's default is an empty list too, and chip-input.parity.spec.ts draws a field without entries in both",
+  "KozmosChipInput.removeLabel:default":
+    "React's default is the recipe's chipInputDefaults.removeLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts draws the removes' names in both",
+  "KozmosChipInput.addedLabel:default":
+    "React's default is the recipe's chipInputDefaults.addedLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
+  "KozmosChipInput.removedLabel:default":
+    "React's default is the recipe's chipInputDefaults.removedLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
+  "KozmosChipInput.duplicateLabel:default":
+    "React's default is the recipe's chipInputDefaults.duplicateLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
 };

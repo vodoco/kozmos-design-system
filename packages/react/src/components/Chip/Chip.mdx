@@ -122,15 +122,17 @@ export function FieldStatusChips() {
     `}
     vue={`
 <script setup>
-import { KozmosChip } from "@kozmos-ds/vue/react-bridge"
+import { KozmosChip, KozmosChipGroup } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const showNew = ref(true)
 </script>
 
 <template>
-  <KozmosChip emotion="informative" :selected="showNew" @click="showNew = !showNew">New</KozmosChip>
-  <KozmosChip emotion="danger" @remove="() => {}">Marked for Deletion</KozmosChip>
+  <KozmosChipGroup>
+    <KozmosChip emotion="informative" :selected="showNew" @click="showNew = !showNew">New</KozmosChip>
+    <KozmosChip emotion="danger" @remove="() => {}">Marked for Deletion</KozmosChip>
+  </KozmosChipGroup>
 </template>
     `}
     swift={`

@@ -72,11 +72,6 @@ const WrappedCheckbox = createVueWrapper(KozmosReact.Checkbox, {
 // so typing stopped filtering, typed MultiSelect's array into a string, and
 // dropped a user's `@change`.
 
-const fruit = [
-  { value: "apple", label: "Apple" },
-  { value: "banana", label: "Banana" },
-  { value: "cherry", label: "Cherry" },
-];
 const plan = new File(["%PDF"], "plan.pdf", { type: "application/pdf" });
 const tree = [
   { id: "1", name: "src", children: [{ id: "2", name: "a.ts" }] },
@@ -318,81 +313,6 @@ const PARTS: Part[] = [
     nothing: [],
     listener: "onFilesChange",
     alone: ["plan.pdf"],
-  },
-  {
-    // An array, from onValueChange: typing in its search never reaches it.
-    name: "KozmosMultiSelect",
-    props: { options: fruit, label: "Fruit" },
-    start: ["apple"],
-    before: ["Apple"],
-    field: () => $("input"),
-    change: async (input) => {
-      input.focus();
-      type(input, "Ba");
-      (await until(() => byText("[role=option]", "Banana")))!.click();
-    },
-    next: ["apple", "banana"],
-    shown: () => texts('[data-slot="chip-label"]'),
-    shows: ["Apple", "Banana"],
-    nothing: [],
-    fromNothing: { next: ["banana"], shows: ["Banana"] },
-    listener: "onValueChange",
-    alone: ["Banana"],
-  },
-  {
-    name: "KozmosMultiSelect",
-    model: "searchValue",
-    props: { options: fruit, label: "Fruit" },
-    start: "",
-    before: "",
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "Ba");
-    },
-    next: "Ba",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "Ba",
-    nothing: "",
-    listener: "onSearchValueChange",
-    alone: "Ba",
-  },
-  {
-    // GAP-222: an array, from onValueChange: a comma adds what was typed.
-    name: "KozmosChipInput",
-    props: { label: "Keywords" },
-    start: ["coffee"],
-    before: ["coffee"],
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "tea,");
-    },
-    next: ["coffee", "tea"],
-    shown: () => texts('[data-slot="chip-label"]'),
-    shows: ["coffee", "tea"],
-    nothing: [],
-    fromNothing: { next: ["tea"], shows: ["tea"] },
-    listener: "onValueChange",
-    alone: ["tea"],
-  },
-  {
-    name: "KozmosChipInput",
-    model: "inputValue",
-    props: { label: "Keywords" },
-    start: "",
-    before: "",
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "tea");
-    },
-    next: "tea",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "tea",
-    nothing: "",
-    listener: "onInputValueChange",
-    alone: "tea",
   },
   {
     name: "KozmosDateRangePicker",
@@ -981,7 +901,8 @@ describe("every controlled pair is a model", () => {
 
   it("has a model for each pair each React part has", () => {
     // Every wrapper's React part is read, and every exception says why.
-    expect(parts.length).toBeGreaterThan(90);
+    // Fewer as each port leaves the bridge (90 after wave V2's chips batch).
+    expect(parts.length).toBeGreaterThan(50);
     expect(
       parts
         .filter((part) => !part.bridge || !part.react)
@@ -1025,26 +946,6 @@ describe("every controlled pair is a model", () => {
     }
     expect(missing).toEqual([]);
   }, 60_000);
-});
-
-// --------------------------------------------------------------------------
-// What a query is, beside a value.
-// --------------------------------------------------------------------------
-
-describe("a typed query is not the value", () => {
-  it("KozmosMultiSelect with v-model filters as you type, and keeps its array", async () => {
-    const { model, emitted } = mountPart(PARTS_BY.KozmosMultiSelect, {
-      vModel: true,
-    });
-    const input = await until(() => $<HTMLInputElement>("input"));
-    input.focus();
-    type(input, "Ba");
-    // A fixed wait: nothing may be emitted.
-    await settle();
-    await eventually(() => expect(texts("[role=option]")).toEqual(["Banana"]));
-    expect(emitted).toEqual([]);
-    expect(model.value).toEqual(["apple"]);
-  });
 });
 
 // --------------------------------------------------------------------------
@@ -1796,17 +1697,17 @@ describe("handlers given as an array", () => {
     await eventually(() => expect(input.value).toBe("Ada L"));
   });
 
-  // A bridged part whose callback says more than its value: Combobox was
-  // the example until its port (wave V2).
-  it("KozmosMultiSelect's @value-change as an array, beside v-model", async () => {
+  // A bridged part whose model is more than a string: Combobox, then
+  // MultiSelect, were the example until their ports (wave V2).
+  it("KozmosDateRangePicker's @value-change as an array, beside v-model", async () => {
     const inner = vi.fn();
     const outer = vi.fn();
-    const part = PARTS_BY.KozmosMultiSelect;
+    const part = PARTS_BY.KozmosDateRangePicker;
     const { emitted } = mountPart(
       { ...part, props: { ...part.props, onValueChange: [inner, outer] } },
       { vModel: true },
     );
-    await part.change(await until(() => $("input")));
+    await part.change(await until(() => $$("input[type=date]")[1]));
     await settle();
     expect(inner).toHaveBeenCalledTimes(1);
     expect(inner.mock.calls[0][0]).toEqual(part.next);

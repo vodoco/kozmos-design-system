@@ -263,3 +263,11 @@ export type {
   KozmosSegmentedControlSize,
 } from "./components/SegmentedControl/types";
 export { KozmosSlider } from "./components/Slider/Slider";
+export { KozmosChip, KozmosChipGroup } from "./components/Chip/Chip";
+export type {
+  KozmosChipGroupSelectionMode,
+  KozmosChipSize,
+  KozmosChipVariant,
+} from "./components/Chip/types";
+export { KozmosMultiSelect } from "./components/MultiSelect/MultiSelect";
+export { KozmosChipInput } from "./components/ChipInput/ChipInput";
