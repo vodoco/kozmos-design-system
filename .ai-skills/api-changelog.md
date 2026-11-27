@@ -644,7 +644,23 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   Add labelled media-error fallback and remove forced smooth gallery movement.
 - eb68e53: Support decorative POI asset icons, generic highlighted properties, semantic metadata tones and price scales. Demonstrate taxonomy-driven attribute labels/icons/order with a pinned Pointr 10.12.0 dictionary outside the public component runtime.
 
-## `@kozmos-ds/react` — current 0.17.2
+## `@kozmos-ds/react` — current 0.17.3
+
+### 0.17.3
+
+#### Patch Changes
+
+- c5c6b49: Chip's and ChipGroup's classes, MultiSelect's and ChipInput's field, input and popup classes, and ChipInput's reading of typed and pasted entries move into the package's shared `recipes` module (`recipes/chip.ts`, `recipes/multi-select.ts`), which `@kozmos-ds/vue` builds its own `KozmosChip`, `KozmosChipGroup`, `KozmosMultiSelect` and `KozmosChipInput` from, so the two draw the same element (wave V2, chips). Nothing changes for a product: every export is as before (`chipVariants` is still exported from Chip), `dist/index.d.ts`, `.d.mts`, `.d.cts` and `style.css` are byte-identical to the branch's before the move, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/chip.mjs` and `multi-select.mjs`.
+- d636477: The design configuration's pure parts move into the package's shared `recipes` module (`recipes/design-config.ts`: the config's shape and defaults, `normalizeDesignConfig`, the custom properties a config sets, reduced motion, and the spotlight's position), which `@kozmos-ds/vue` builds its own `KozmosDesignConfigProvider` from, so a config sets the same properties in both (GAP-291). Nothing changes for a product: `DesignConfigProvider`, `KozmosTheme` and `useDesignConfig` are exported as before, `dist/index.d.ts` and `style.css` are byte-identical to main's, and the design config's tests pass unchanged. The published files gain `dist/esm/recipes/design-config.mjs` in place of `dist/esm/context/design-config.mjs`. `@kozmos-ds/styles`, built from React's and Vue's sources, ships a byte-identical `style.css`: Vue's KozmosDesignConfigProvider draws no class.
+- c6e8e7e: FieldWrapper's, Input's, Textarea's, PasswordInput's, NumberInput's and OTPInput's classes and framework-free helpers move into the package's shared `recipes` module (`fieldMessageClass` and the field's classes, `resolveCharacterCount`, `inputVariants` and the field-end action's classes, `textareaVariants`, the password reveal's classes, NumberInput's steppers, unit and stepping, OTPInput's cells and its digit reading), which `@kozmos-ds/vue` builds its own FieldWrapper, Input, Textarea, PasswordInput, NumberInput and OTPInput from, so the two draw the same element (wave V2). Nothing changes for a product: every export is as before, `dist/index.d.ts`, `index.d.mts`, `index.d.cts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/character-count.mjs`, `field.mjs`, `input.mjs`, `number-input.mjs`, `otp-input.mjs`, `password-input.mjs` and `textarea.mjs`.
+- c5c6b49: Dialog, Drawer, BottomSheet, Popover and Tooltip draw from shared recipes (`src/recipes`), which `@kozmos-ds/vue`'s native overlays draw from too. React's output is byte-identical: the built declarations and `style.css` are unchanged.
+- f2bca3e: A chosen RadioGroup card or tile draws its heavier theme 600 edge in Safari 26.0–26.3 too (GAP-292). WebKit draws no box-shadow on a `<button>` it still draws natively, and the box's only rules that made it a styled button were the scoped preflight's and utilities', which those Safari versions do not apply to a form field, so the chosen edge vanished there, in React and in Vue alike. The box now carries the preflight's button reset (`-webkit-appearance: button; background-image: none`) in owned CSS. With `@scope`, and in Chromium and Firefox, nothing drawn changes.
+- c5c6b49: Listbox's, Select's and Combobox's classes and framework-free helpers move into the package's shared `recipes` module (the option row's and its groups' classes, `orderByGroup` and the keys' arithmetic, Listbox's classes, Select's trigger, list, row, label and separator classes and how a counted row is named, Combobox's field-end buttons, popup classes, default filter and active entry), with the input modality's store, `inertOutside`, the app's locale and the map shell's `scrollbarFor`, which `@kozmos-ds/vue` builds its own Listbox, Select and Combobox from, so the two draw the same element (wave V2). Nothing changes for a product: every export is as before, `dist/index.d.ts`, `index.d.mts`, `index.d.cts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/combobox.mjs`, `input-modality.mjs`, `listbox.mjs`, `locale.mjs`, `modal-inert.mjs`, `option.mjs`, `scrollbar.mjs` and `select.mjs`. The bundle's "Everything" measure goes from 120.22 to 120.60 KB on a Mac; its budget is sized from CI's measurement (decision 229).
+- c5c6b49: Switch's, RadioGroup's (with RadioGroupItem's cards and tiles), SegmentedControl's and Slider's classes move into the package's shared `recipes` module (`recipes/switch.ts`, `recipes/radio.ts`, `recipes/segmented-control.ts`, `recipes/slider.ts`), with Slider's thumb count, starting values and thumb names, and the mixed group's line and its reset's focus target (`recipes/mixed-group.ts`), which `@kozmos-ds/vue` builds its own `KozmosSwitch`, `KozmosRadioGroup`, `KozmosRadioGroupItem`, `KozmosSegmentedControl` and `KozmosSlider` from, so the two draw the same element (wave V2, choices). Nothing changes for a product: every export is as before, `dist/index.d.ts`, `.d.mts`, `.d.cts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/switch.mjs`, `radio.mjs`, `segmented-control.mjs`, `slider.mjs` and `mixed-group.mjs`. The bundle budget for everything at once moves from 120.30 to 121.11 KB gzip under decision 229: Everything measured 120.61 KB after the move, plus half a kilobyte.
+- c6e8e7e: Checkbox's, Rating's and ControlText's classes, and Rating's rounding and default words, move into the package's shared `recipes` module (`recipes/checkbox.ts`, `recipes/rating.ts`, `recipes/control-text.ts`), with IconButton's count class (`ICON_BUTTON_COUNTER_CLASS`) and Counter's tone and size types beside the recipes they already had, which `@kozmos-ds/vue` builds its own `KozmosCounter`, `KozmosIconButton`, `KozmosCheckbox` and `KozmosRating` from, so the two draw the same element (wave V2). Nothing changes for a product: every export is as before, `dist/index.d.ts`, `.d.mts`, `.d.cts` and `style.css` are byte-identical to main's, and the four parts' tests pass unchanged. The published files gain `dist/esm/recipes/checkbox.mjs`, `control-text.mjs` and `rating.mjs`.
+- Updated dependencies [d636477]
+- Updated dependencies [f2bca3e]
+  - @kozmos-ds/styles@0.17.3
 
 ### 0.17.2
 
@@ -2837,7 +2853,14 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
-## `@kozmos-ds/styles` — current 0.17.2
+## `@kozmos-ds/styles` — current 0.17.3
+
+### 0.17.3
+
+#### Patch Changes
+
+- d636477: The design configuration's pure parts move into the package's shared `recipes` module (`recipes/design-config.ts`: the config's shape and defaults, `normalizeDesignConfig`, the custom properties a config sets, reduced motion, and the spotlight's position), which `@kozmos-ds/vue` builds its own `KozmosDesignConfigProvider` from, so a config sets the same properties in both (GAP-291). Nothing changes for a product: `DesignConfigProvider`, `KozmosTheme` and `useDesignConfig` are exported as before, `dist/index.d.ts` and `style.css` are byte-identical to main's, and the design config's tests pass unchanged. The published files gain `dist/esm/recipes/design-config.mjs` in place of `dist/esm/context/design-config.mjs`. `@kozmos-ds/styles`, built from React's and Vue's sources, ships a byte-identical `style.css`: Vue's KozmosDesignConfigProvider draws no class.
+- f2bca3e: A chosen RadioGroup card or tile draws its heavier theme 600 edge in Safari 26.0–26.3 too (GAP-292). WebKit draws no box-shadow on a `<button>` it still draws natively, and the box's only rules that made it a styled button were the scoped preflight's and utilities', which those Safari versions do not apply to a form field, so the chosen edge vanished there, in React and in Vue alike. The box now carries the preflight's button reset (`-webkit-appearance: button; background-image: none`) in owned CSS. With `@scope`, and in Chromium and Firefox, nothing drawn changes.
 
 ### 0.17.2
 
@@ -3350,7 +3373,7 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   `text-destructive-text`), which read those tokens; `success`, `warning`, `info`
   and `destructive` stay the fills, edges and rings they were.
 
-## `@kozmos-ds/vue` — current 0.17.2-next.0
+## `@kozmos-ds/vue` — current 0.17.3-next.0
 
 ### 0.17.2-next.0
 

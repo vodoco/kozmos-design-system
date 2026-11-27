@@ -1,5 +1,0 @@
----
-"@kozmos-ds/react": patch
----
-
-Listbox's, Select's and Combobox's classes and framework-free helpers move into the package's shared `recipes` module (the option row's and its groups' classes, `orderByGroup` and the keys' arithmetic, Listbox's classes, Select's trigger, list, row, label and separator classes and how a counted row is named, Combobox's field-end buttons, popup classes, default filter and active entry), with the input modality's store, `inertOutside`, the app's locale and the map shell's `scrollbarFor`, which `@kozmos-ds/vue` builds its own Listbox, Select and Combobox from, so the two draw the same element (wave V2). Nothing changes for a product: every export is as before, `dist/index.d.ts`, `index.d.mts`, `index.d.cts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/combobox.mjs`, `input-modality.mjs`, `listbox.mjs`, `locale.mjs`, `modal-inert.mjs`, `option.mjs`, `scrollbar.mjs` and `select.mjs`. The bundle's "Everything" measure goes from 120.22 to 120.60 KB on a Mac; its budget is sized from CI's measurement (decision 229).

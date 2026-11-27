@@ -1,10 +1,14 @@
 {
   "schemaVersion": 1,
-  "tag": "next",
+  "tag": "latest",
   "packages": [
     {
-      "name": "@kozmos-ds/vue",
-      "version": "0.17.2-next.0"
+      "name": "@kozmos-ds/react",
+      "version": "0.17.3"
+    },
+    {
+      "name": "@kozmos-ds/styles",
+      "version": "0.17.3"
     }
   ]
 }
