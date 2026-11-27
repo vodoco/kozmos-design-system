@@ -2,7 +2,13 @@
 import { describe, expect, it } from "vitest";
 import { h, nextTick, ref } from "vue";
 import React from "react";
-import { useTheme } from "@kozmos-ds/react";
+import {
+  DialogHeader,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useTheme,
+} from "@kozmos-ds/react";
 import {
   KozmosAnalyticsProvider,
   KozmosButton,
@@ -43,12 +49,19 @@ const SetsTheme = () => {
   );
 };
 const KozmosSetsTheme = createVueWrapper(SetsTheme);
+// A React part drawn in a portal and one that draws its slot in a box, each
+// wrapped as the bridge wraps its parts: Tooltip and DialogHeader are
+// native in Vue since wave V2, and the bridge exports neither.
+const KozmosTooltipProbe = createVueWrapper(Tooltip);
+const KozmosTooltipTriggerProbe = createVueWrapper(TooltipTrigger);
+const KozmosTooltipContentProbe = createVueWrapper(TooltipContent);
+const KozmosBoxProbe = createVueWrapper(DialogHeader);
 
 /** An open tooltip's surface, which React draws in its theme's portal. */
 const tooltip = (words: string) =>
-  h(Bridge.KozmosTooltip, { open: true }, () => [
-    h(Bridge.KozmosTooltipTrigger, null, () => "Info"),
-    h(Bridge.KozmosTooltipContent, null, () => words),
+  h(KozmosTooltipProbe, { open: true }, () => [
+    h(KozmosTooltipTriggerProbe, null, () => "Info"),
+    h(KozmosTooltipContentProbe, null, () => words),
   ]);
 const surface = (words: string) =>
   until(() =>
@@ -126,7 +139,7 @@ describe("KozmosAnalyticsProvider", () => {
         h(Bridge.KozmosAccordion, { type: "single", collapsible: true }, () => [
           h(Bridge.KozmosAccordionItem, { value: "1" }, () => [
             h(Bridge.KozmosAccordionTrigger, {}, () => "Level 1"),
-            h(Bridge.KozmosDialogHeader, null, () => [
+            h(KozmosBoxProbe, null, () => [
               h(
                 Bridge.KozmosToggleButton,
                 { "aria-label": "Step-free" },
@@ -153,7 +166,7 @@ describe("KozmosAnalyticsProvider", () => {
     const inner: KozmosAnalyticsEvent[][] = [];
     mount(() =>
       provider(
-        h(Bridge.KozmosDialogHeader, null, () => [
+        h(KozmosBoxProbe, null, () => [
           h(
             KozmosAnalyticsProvider,
             {
@@ -263,7 +276,7 @@ describe("KozmosDensityScope", () => {
   it("a scope between a compound and its part reaches the part", async () => {
     mount(() =>
       h(KozmosThemeProvider, { density: "touch" }, () => [
-        h(Bridge.KozmosDialogHeader, null, () => [
+        h(KozmosBoxProbe, null, () => [
           h(KozmosDensityScope, { density: "compact" }, () => [
             tooltip("Inside"),
           ]),

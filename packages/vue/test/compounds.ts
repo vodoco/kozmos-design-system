@@ -34,23 +34,6 @@ const accordion = () =>
       part("AccordionContent", {}, "9 to 5"),
     ),
   );
-const dialog = (name: "Dialog" | "Drawer") => () =>
-  part(
-    name,
-    { open: true },
-    part(`${name}Trigger`, {}, "Edit"),
-    part(
-      `${name}Content`,
-      {},
-      part(
-        `${name}Header`,
-        {},
-        part(`${name}Title`, {}, "Edit level"),
-        part(`${name}Description`, {}, "Rename the level."),
-      ),
-      part(`${name}Footer`, {}, part(`${name}Close`, {}, "Done")),
-    ),
-  );
 const tabs = () =>
   part(
     "Tabs",
@@ -63,13 +46,6 @@ const tabs = () =>
     ),
     part("TabsContent", { value: "map" }, "The map"),
     part("TabsContent", { value: "list" }, "The list"),
-  );
-const tooltip = () =>
-  part(
-    "Tooltip",
-    { open: true },
-    part("TooltipTrigger", {}, "Info"),
-    part("TooltipContent", {}, "Opens at 9"),
   );
 const toast = () =>
   part(
@@ -90,39 +66,9 @@ export const IN_A_COMPOUND: Record<string, InACompound> = {
   KozmosAccordionItem: { render: accordion, drawn: "[data-state=open]" },
   KozmosAccordionTrigger: { render: accordion, drawn: "button" },
   KozmosAccordionContent: { render: accordion, drawn: "[role=region]" },
-  KozmosDialogTrigger: {
-    render: dialog("Dialog"),
-    drawn: "button[aria-haspopup=dialog]",
-  },
-  KozmosDialogContent: { render: dialog("Dialog"), drawn: "[role=dialog]" },
-  KozmosDialogTitle: { render: dialog("Dialog"), drawn: "[role=dialog] h2" },
-  KozmosDialogDescription: {
-    render: dialog("Dialog"),
-    drawn: "[role=dialog] p",
-  },
-  KozmosDialogClose: {
-    render: dialog("Dialog"),
-    drawn: "[role=dialog] button",
-  },
-  KozmosDrawerTrigger: {
-    render: dialog("Drawer"),
-    drawn: "button[aria-haspopup=dialog]",
-  },
-  KozmosDrawerContent: { render: dialog("Drawer"), drawn: "[role=dialog]" },
-  KozmosDrawerTitle: { render: dialog("Drawer"), drawn: "[role=dialog] h2" },
-  KozmosDrawerDescription: {
-    render: dialog("Drawer"),
-    drawn: "[role=dialog] p",
-  },
-  KozmosDrawerClose: {
-    render: dialog("Drawer"),
-    drawn: "[role=dialog] button",
-  },
   KozmosTabsList: { render: tabs, drawn: "[role=tablist]" },
   KozmosTabsTrigger: { render: tabs, drawn: "[role=tab]" },
   KozmosTabsContent: { render: tabs, drawn: "[role=tabpanel]:not([hidden])" },
-  KozmosTooltipTrigger: { render: tooltip, drawn: "button[data-state]" },
-  KozmosTooltipContent: { render: tooltip, drawn: "[role=tooltip]" },
   KozmosToast: { render: toast, drawn: "li[data-state=open]" },
   KozmosToastViewport: { render: toast, drawn: "ol" },
 };

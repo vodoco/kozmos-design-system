@@ -35,13 +35,11 @@ export const TABLE = path.join(REPOSITORY, BRIDGE, "part-takes.ts");
 
 /**
  * The adapters `index.ts` defines, by name, with the React parts each hands
- * its props to: their own props are typed `any`. AnchoredPopover gives
- * `onOpenChange` to Popover and the rest to PopoverContent.
+ * its props to: their own props are typed `any`.
  */
 export const ADAPTERS = {
   BackdropAdapter: ["Backdrop"],
   TourStepAdapter: ["TourStep"],
-  AnchoredPopoverAdapter: ["Popover", "PopoverContent"],
 };
 
 /**

@@ -1,6 +1,7 @@
 import {
   defineComponent,
   h,
+  inject,
   normalizeClass,
   type PropType,
   type SlotsType,
@@ -16,6 +17,7 @@ import {
 } from "#kozmos-recipes";
 import { spinnerArc } from "../Spinner/SpinnerArc";
 import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
+import { GenericClickKey } from "../../theme/injection";
 import type {
   KozmosButtonEmotion,
   KozmosButtonSize,
@@ -60,7 +62,11 @@ export const KozmosButton = defineComponent({
   slots: Object as SlotsType<{ default?: () => VNode[] }>,
   setup(props, { attrs, slots }) {
     const { trackEvent } = useKozmosAnalytics();
+    // Off where a part reports this press with its own event, or with none
+    // (the Dialog's close), as React's GenericClickTracking.
+    const genericClick = inject(GenericClickKey, true);
     const track = () =>
+      genericClick &&
       trackEvent("Button", "button_clicked", {
         variant: props.variant || "default",
         emotion: props.emotion || null,

@@ -864,6 +864,42 @@ export const VUE_STORIES = {
   },
   "vue-core-inputs-multiselect--grouped": { interaction: "multiselect" },
   "vue-core-inputs-chipinput--default": { interaction: "chip-input" },
+  "vue-core-overlays-dialog--default": { interaction: "dialog" },
+  "vue-core-overlays-drawer--default": { interaction: "drawer" },
+  "vue-core-overlays-drawer--inline": { interaction: "drawer-inline" },
+  "vue-core-overlays-bottomsheet--default": { interaction: "bottom-sheet" },
+  "vue-core-overlays-popover--default": { interaction: "popover" },
+  "vue-core-overlays-popover--anchored-to-a-control": {
+    interaction: "popover-anchored",
+  },
+  "vue-core-overlays-popover--anchored-to-a-rect": {
+    interaction: "popover-rect",
+  },
+  "vue-core-overlays-tooltip--default": { interaction: "tooltip" },
+  "vue-core-overlays-layering--select-in-dialog": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--combobox-in-dialog": {
+    interaction: "layers-combobox",
+  },
+  "vue-core-overlays-layering--tooltip-in-dialog": {
+    interaction: "layers-tooltip",
+  },
+  "vue-core-overlays-layering--select-in-drawer": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--combobox-in-drawer": {
+    interaction: "layers-combobox",
+  },
+  "vue-core-overlays-layering--select-in-bottom-sheet": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--select-in-popover": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--combobox-in-popover": {
+    interaction: "layers-combobox",
+  },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

@@ -210,8 +210,12 @@ for (const port of PORTS) {
           }),
         ),
         // The app's ids land as written, or the comparison would not see
-        // one that never lands.
-        { keepIds: ["kozmos-parity", "kozmos-parity-note"] },
+        // one that never lands. Reka's tooltip trigger marks itself for its
+        // hoverable content's grace area, which Radix's needs no mark for.
+        {
+          keepIds: ["kozmos-parity", "kozmos-parity-note"],
+          ignore: ["data-grace-area-trigger"],
+        },
       );
       expect(vue).toBe(react);
     });

@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp, h, nextTick, ref, type App } from "vue";
-import { KozmosButton } from "../../index";
-import { KozmosAnchoredPopover, KozmosToggleButton } from "../../react-bridge";
+import { KozmosAnchoredPopover, KozmosButton } from "../../index";
+import { KozmosToggleButton } from "../../react-bridge";
 
-// GAP-190 in the harness: the anchored popover is mounted from Vue, beside an
-// element Vue draws, opened and closed through v-model:open.
+// GAP-190: the anchored popover, native since wave V2, mounted beside an
+// element Vue draws (or a bridged part's), opened and closed through
+// v-model:open.
 beforeAll(() => {
   // Radix measures through ResizeObserver, which jsdom does not have.
   globalThis.ResizeObserver ??= class {
@@ -31,7 +32,7 @@ async function until<T>(read: () => T | null | undefined | false) {
  */
 function placed(step: Element) {
   const wrapper = step.closest<HTMLElement>(
-    "[data-radix-popper-content-wrapper]",
+    "[data-reka-popper-content-wrapper], [data-radix-popper-content-wrapper]",
   );
   return !!wrapper && !wrapper.style.transform.includes("-200%");
 }
@@ -71,9 +72,9 @@ function mountStep() {
 }
 
 describe("KozmosAnchoredPopover", () => {
-  it("exports a Vue adapter for React's anchored Popover", () => {
+  it("is a native Vue part", () => {
     expect(KozmosAnchoredPopover).toMatchObject({
-      name: "AnchoredPopover",
+      name: "KozmosAnchoredPopover",
       setup: expect.any(Function),
     });
   });
@@ -168,9 +169,7 @@ describe("KozmosAnchoredPopover", () => {
     expect(
       document.querySelector('[role="dialog"][aria-label="Step 2 of 2"]'),
     ).not.toBeNull();
-    // Nothing asked step 2 to close. (Step 1, in a React root of its own, may
-    // hear step 2 take focus before its own open={false} arrives: it is
-    // closing either way.)
+    // Nothing asked step 2 to close.
     expect(closed).not.toContain(2);
     expect(document.activeElement?.textContent).toBe("Done");
   });

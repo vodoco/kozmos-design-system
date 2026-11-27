@@ -270,6 +270,69 @@ const caretAtEnd = (field) =>
 const values = (page) =>
   controls(page, "input").evaluateAll((inputs) => inputs.map((i) => i.value));
 
+/** The overlays open: dialogs, drawers, sheets and popovers. */
+const overlayCount = (page) => page.locator("[role=dialog]").count();
+
+/** Opens a story's overlay from its "Open" trigger, by the keyboard. */
+async function openHost(page) {
+  const open = controls(page, "button").filter({ hasText: "Open" }).first();
+  await open.focus();
+  await page.keyboard.press("Enter");
+  await settle(page);
+  assert((await overlayCount(page)) > 0, "Enter on Open opens the overlay");
+}
+
+/**
+ * A modal overlay from its trigger, the story's first button: Tab reaches
+ * it, Enter opens the overlay with focus inside, Tab keeps it inside,
+ * Escape closes it back to the trigger, a click opens it and a click on its
+ * close named `closeName` closes it.
+ */
+async function modal(page, closeName) {
+  const trigger = controls(page, "button").first();
+  const overlay = page.locator("[role=dialog]");
+  const inside = () =>
+    page.evaluate(() => !!document.activeElement?.closest("[role=dialog]"));
+  await focusStart(page);
+  await page.keyboard.press("Tab");
+  await settle(page);
+  assert.equal(
+    await trigger.evaluate((el) => el === document.activeElement),
+    true,
+    `Tab reaches the trigger (focus is on ${await focused(page)})`,
+  );
+  await page.keyboard.press("Enter");
+  await settle(page);
+  assert.equal(await overlay.count(), 1, "Enter opens it");
+  assert.equal(
+    await inside(),
+    true,
+    `focus moves in (focus is on ${await focused(page)})`,
+  );
+  for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
+  await settle(page);
+  assert.equal(
+    await inside(),
+    true,
+    `Tab stays inside (focus is on ${await focused(page)})`,
+  );
+  await page.keyboard.press("Escape");
+  await settle(page);
+  assert.equal(await overlay.count(), 0, "Escape closes it");
+  assert.equal(
+    await trigger.evaluate((el) => el === document.activeElement),
+    true,
+    `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+  );
+  await trigger.click();
+  await settle(page);
+  assert.equal(await overlay.count(), 1, "a click opens it");
+  await overlay.getByRole("button", { name: closeName }).click();
+  await settle(page);
+  assert.equal(await overlay.count(), 0, `a click on ${closeName} closes it`);
+  return `Tab to the trigger, Enter opened it with focus inside, Tab stayed inside, Escape closed it to the trigger, a click opened it and ${closeName} closed it`;
+}
+
 const INTERACTIONS = {
   /** The story's one button, by keyboard and pointer. */
   async button(page) {
@@ -1900,6 +1963,282 @@ const INTERACTIONS = {
       );
     }
     return `${count} thumb(s): Tab to each, the arrows move it, a click on the track moves the nearest, Home and End reach the ends`;
+  },
+  /**
+   * A modal overlay (wave V2): Tab reaches its trigger and Enter opens it,
+   * with focus inside; Tab stays inside however often it is pressed; Escape
+   * closes it and gives the trigger its focus back; a click opens it again
+   * and a click on its close closes it. One that ignores a key or a press
+   * fails.
+   */
+  async dialog(page) {
+    return modal(page, "Close");
+  },
+  async drawer(page) {
+    return modal(page, "Close drawer");
+  },
+  async "bottom-sheet"(page) {
+    return modal(page, "Close bottom sheet");
+  },
+
+  /**
+   * An inline panel (GAP-198), open from the start: it took no focus, the
+   * page beside it stays usable (a press on the header's Help leaves it
+   * open), Escape from inside closes it and gives its trigger the focus, and
+   * the trigger opens it again.
+   */
+  async "drawer-inline"(page) {
+    const panel = page.locator("[role=complementary]");
+    assert.equal(await panel.count(), 1, "the panel is drawn open");
+    assert.equal(
+      await page.evaluate(
+        () => !!document.activeElement?.closest("[role=complementary]"),
+      ),
+      false,
+      "opened by the page, it took no focus",
+    );
+    const help = page.getByRole("button", { name: "Help" });
+    await help.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "a press on the page leaves it open");
+    await panel.getByRole("button", { name: "Close drawer" }).focus();
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await panel.count(), 0, "Escape from inside closes it");
+    const trigger = controls(page, "button").filter({ hasText: "Get started" });
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `closing hands focus to its trigger (focus is on ${await focused(page)})`,
+    );
+    await trigger.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "its trigger opens it again");
+    return "open without focus, a press on the page left it open, Escape from inside closed it to its trigger, a click opened it";
+  },
+
+  /**
+   * A Popover: a click on its trigger opens it; Escape closes it, focus back
+   * on the trigger; a click outside closes it again.
+   */
+  async popover(page) {
+    const trigger = controls(page, "button").first();
+    const panel = page.locator("[role=dialog]");
+    await trigger.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "a click opens it");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await panel.count(), 0, "Escape closes it");
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    await trigger.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "a click opens it again");
+    await page.mouse.click(2, 2);
+    await settle(page);
+    assert.equal(await panel.count(), 0, "a click outside closes it");
+    return "a click opened it, Escape closed it to its trigger, a click outside closed it";
+  },
+
+  /**
+   * GAP-190: a step anchored to "Add desk", a plain button: no popover
+   * attributes on it; "Got it" closes the step, "Show the step" opens it, and
+   * Escape closes it, focus back on what opened it.
+   */
+  async "popover-anchored"(page) {
+    const step = page.locator('[role=dialog][aria-label="Step 2 of 5"]');
+    const desk = controls(page, "button").filter({ hasText: "Add desk" });
+    assert.equal(await step.count(), 1, "the step is drawn open");
+    for (const attribute of ["aria-haspopup", "aria-expanded", "aria-controls"])
+      assert.equal(
+        await desk.getAttribute(attribute),
+        null,
+        `Add desk carries no ${attribute}`,
+      );
+    await step.getByRole("button", { name: "Got it" }).click();
+    await settle(page);
+    assert.equal(await step.count(), 0, "Got it closes the step");
+    const show = controls(page, "button").filter({ hasText: "Show the step" });
+    // From the keyboard: WebKit gives a pressed button no focus, and a step
+    // opened with nothing focused gives focus to its anchor as it closes.
+    await show.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await step.count(), 1, "Show the step opens it");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await step.count(), 0, "Escape closes it");
+    assert.equal(
+      await show.evaluate((el) => el === document.activeElement),
+      true,
+      `focus goes back to what opened it (focus is on ${await focused(page)})`,
+    );
+    return "plain anchor, Got it closed the step, Show the step opened it, Escape closed it back to Show the step";
+  },
+
+  /** A popover beside a rect on a map: drawn open, beside the map, with no anchor element. */
+  async "popover-rect"(page) {
+    const hint = page.locator('[role=dialog][aria-label="Reception desk"]');
+    assert.equal(await hint.count(), 1, "the hint is drawn open");
+    const map = await controls(page, ".bg-muted").first().boundingBox();
+    const box = await hint.boundingBox();
+    assert(
+      box.x + box.width > map.x &&
+        box.x < map.x + map.width &&
+        box.y + box.height <= map.y + map.height * 0.6 + 1,
+      "the hint sits above the point on the map",
+    );
+    return "open above its point on the map, beside no element";
+  },
+
+  /**
+   * A Tooltip: the pointer resting on its trigger opens it, Escape closes it;
+   * Tab onto the trigger opens it at once and describes the trigger by it.
+   */
+  async tooltip(page) {
+    const trigger = controls(page, "button").first();
+    const tip = page.locator("[role=tooltip]");
+    const box = await trigger.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(900);
+    await settle(page);
+    assert.equal(await tip.count(), 1, "resting on the trigger opens it");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await tip.count(), 0, "Escape closes it");
+    await page.mouse.move(0, 0);
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(await tip.count(), 1, "Tab onto the trigger opens it");
+    const describedBy = await trigger.getAttribute("aria-describedby");
+    assert.equal(
+      await page.evaluate(
+        (id) => document.getElementById(id)?.getAttribute("role"),
+        describedBy,
+      ),
+      "tooltip",
+      "the trigger is described by the tooltip",
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    return "the pointer resting opened it, Escape closed it; Tab opened it, describing the trigger";
+  },
+
+  /**
+   * Wave V2's reason for porting the overlays together: a native Select in a
+   * native overlay. The overlay opens from "Open"; a click opens the Select
+   * and a click on a row chooses it, the overlay staying open; Enter opens
+   * the list again and Escape closes it alone; the next Escape closes the
+   * overlay.
+   */
+  async "layers-select"(page) {
+    const hosts = page.locator("[role=dialog]");
+    await openHost(page);
+    const before = await hosts.count();
+    const field = page.locator("button[role=combobox]");
+    const list = page.locator("[role=listbox]");
+    await field.click();
+    await settle(page);
+    assert.equal(await list.count(), 1, "a click opens the Select's list");
+    await list.locator("[role=option]").filter({ hasText: "Banana" }).click();
+    await settle(page);
+    assert.equal(await list.count(), 0, "a click on a row closes the list");
+    assert.equal(
+      (await field.textContent()).trim(),
+      "Banana",
+      "the click chose Banana",
+    );
+    assert.equal(await hosts.count(), before, "the overlay stays open");
+    await field.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 1, "Enter opens the list again");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(await hosts.count(), before, "and leaves the overlay open");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(
+      await overlayCount(page),
+      0,
+      "the next Escape closes the overlay",
+    );
+    return "opened the overlay, chose Banana with the pointer, Escape closed the list then the overlay";
+  },
+
+  /**
+   * A native Combobox in a native overlay: its popup takes the pointer (a
+   * modal's body turns pointer events off), a click on a row chooses it and
+   * the overlay stays open; Escape closes the popup alone, the next one the
+   * overlay.
+   */
+  async "layers-combobox"(page) {
+    const hosts = page.locator("[role=dialog]");
+    await openHost(page);
+    const before = await hosts.count();
+    const field = page.locator("input[role=combobox]");
+    const list = page.locator("[role=listbox]");
+    await field.click();
+    await settle(page);
+    assert.equal(await list.count(), 1, "a click on the field opens its list");
+    await list.locator("[role=option]").filter({ hasText: "Banana" }).click();
+    await settle(page);
+    assert.equal(await field.inputValue(), "Banana", "the click chose Banana");
+    assert.equal(await hosts.count(), before, "the overlay stays open");
+    await field.focus();
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.equal(await list.count(), 1, "ArrowDown opens the list again");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(await hosts.count(), before, "and leaves the overlay open");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(
+      await overlayCount(page),
+      0,
+      "the next Escape closes the overlay",
+    );
+    return "opened the overlay, chose Banana with the pointer in the popup, Escape closed the popup then the overlay";
+  },
+
+  /**
+   * A Tooltip on a button in a Dialog: Tab onto the button opens it; Escape
+   * closes the tooltip alone, the next one the Dialog.
+   */
+  async "layers-tooltip"(page) {
+    await openHost(page);
+    const tip = page.locator("[role=tooltip]");
+    const button = page
+      .locator("[role=dialog] button")
+      .filter({ hasText: "Add to library" });
+    // Focus in the Dialog moves to the button from the keyboard.
+    await button.focus();
+    for (let i = 0; i < 4 && !(await tip.count()); i++) {
+      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Tab");
+      await settle(page);
+    }
+    assert.equal(await tip.count(), 1, "the button's tooltip opens on focus");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await tip.count(), 0, "Escape closes the tooltip");
+    assert.equal(await overlayCount(page), 1, "and leaves the Dialog open");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(
+      await overlayCount(page),
+      0,
+      "the next Escape closes the Dialog",
+    );
+    return "the tooltip opened on focus in the Dialog, Escape closed it, then the Dialog";
   },
 };
 

@@ -96,3 +96,12 @@ export interface KozmosAnalytics {
 
 export const AnalyticsKey: InjectionKey<KozmosAnalytics> =
   Symbol("KozmosAnalytics");
+
+/**
+ * Whether a KozmosButton reports its generic `button_clicked`, as React's
+ * GenericClickTracking: a part turns it off around a control whose press it
+ * reports with its own event, or that React's draws without one (Dialog's
+ * close). Internal: the main entry exports no key.
+ */
+export const GenericClickKey: InjectionKey<boolean> =
+  Symbol("KozmosGenericClick");

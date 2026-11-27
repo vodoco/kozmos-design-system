@@ -113,4 +113,35 @@ export const EXCEPTIONS: Record<string, string> = {
     "React's default is the recipe's chipInputDefaults.removedLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
   "KozmosChipInput.duplicateLabel:default":
     "React's default is the recipe's chipInputDefaults.duplicateLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
+  // Wave V2's overlays. Drawer's `modal` defaults to `placement ===
+  // "fixed"`, an expression: Vue's prop is unset by default and the root
+  // reads it so (drawer.parity.spec.ts draws a fixed and an inline drawer
+  // modal and not).
+  "KozmosDrawer.modal:default":
+    'React\'s default is the expression placement === "fixed", which the contract cannot read as a literal; Vue\'s `modal` is unset by default and the root makes it placement === "fixed", as drawer.parity.spec.ts draws',
+  // React's virtualRef is a React RefObject; Vue has no React ref. Vue's
+  // takes the same `{ current }` object, a Vue ref, or the rect itself.
+  "KozmosPopoverAnchor.virtualRef:type":
+    "React's RefObject<Measurable> is Vue's { current } object of the same rect, or a Vue ref of it, or the rect: popover.parity.spec.ts anchors to a rect and to an element through { current } in both",
+  // Tooltip's delays: Radix documents 700 and false, the provider's, which
+  // a Tooltip takes when it sets none. Vue's are unset, so the provider's
+  // reach it, as they reach React's.
+  "KozmosTooltip.delayDuration:default":
+    "Radix's 700 is the provider's default, which a Tooltip with none of its own takes: Vue's is unset, so a KozmosTooltipProvider's delay reaches it, as it reaches React's",
+  "KozmosTooltip.disableHoverableContent:default":
+    "Radix's false is the provider's default, which a Tooltip with none of its own takes: Vue's is unset, so a KozmosTooltipProvider's reaches it, as it reaches React's",
+  // KozmosAnchoredPopover (GAP-190) is Vue's own: React's Popover, a
+  // PopoverAnchor on `anchor` and a PopoverContent in one part, as the
+  // bridge's was. It takes the content's props and events, and beside them
+  // the root's open state and what it sits beside.
+  "KozmosAnchoredPopover.anchor:extra-prop":
+    "What it sits beside: React's PopoverAnchor's virtualRef, given as an element, a component or a rect (popover.parity.spec.ts, AnchoredPopover.spec.ts)",
+  "KozmosAnchoredPopover.open:extra-prop":
+    "React's Popover's `open`, the root this one part draws round its content (v-model:open)",
+  "KozmosAnchoredPopover.defaultOpen:extra-prop":
+    "React's Popover's `defaultOpen`, the root this one part draws round its content",
+  "KozmosAnchoredPopover.modal:extra-prop":
+    "React's Popover's `modal`, the root this one part draws round its content",
+  "KozmosAnchoredPopover.update:open:extra-event":
+    "React's Popover's onOpenChange, the root this one part draws round its content (v-model:open)",
 };

@@ -502,6 +502,11 @@ export const KozmosSelectTrigger = defineComponent({
     // Reka writes its own id for the list unless one is set first.
     const reka = injectSelectRootContext();
     reka.contentId = state.contentId;
+    // Where the trigger was pressed, which the open list reads to swallow
+    // the press's own release: Radix starts it unset, Reka at the page's
+    // corner, so a list opened by the keyboard swallowed a press on a row
+    // near (0, 0). Unset until a press sets it, as Radix's.
+    reka.triggerPointerDownPosRef.value = null;
     // Listening before the list opens: the key that opens it comes first.
     useInputModality();
     // The button, as Reka knows it once mounted (its Slot keeps no ref of

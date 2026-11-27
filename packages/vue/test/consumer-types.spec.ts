@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
  * installed the package would.
  *
  * Until this, nothing compiled them so: every check here skipped library
- * types, and KozmosAnchoredPopover's declaration put Vue's
+ * types, and the bridged KozmosAnchoredPopover's declaration put Vue's
  * `GlobalComponents` where its own constraint refuses it (TS2344, twice).
  */
 const CONSUMER = path.resolve(__dirname, "consumer");

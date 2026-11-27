@@ -38,6 +38,14 @@ const NOT_DRAWN: Record<string, string> = {
   // provider-and-scope.parity.spec.ts draw what they show.
   "ThemeProvider/Default": "its render reads React's own hooks",
   "ThemeProvider/Density": "draws parts not yet ported to Vue",
+  // Its meta's decorator draws the TooltipProvider React's Tooltip needs,
+  // and this check draws no decorator: tooltip.parity.spec.ts draws the
+  // story in both, closed and open.
+  "Tooltip/Default":
+    "React's Tooltip throws outside its meta's TooltipProvider decorator",
+  // Navbar above the panel is still bridged, a React root drawn after
+  // Vue's: drawer.parity.spec.ts draws the inline panel in both.
+  "Drawer/Inline": "draws Navbar, not yet ported to Vue",
 };
 
 /**
@@ -231,7 +239,9 @@ describe("each Vue story draws what React's story of its name draws", () => {
           key.endsWith(":*") ? !found.length : !found.includes(key),
         ),
       ).toEqual([]);
-    });
+      // A stories file that draws a bridged part beside a native one
+      // (Drawer's Inline, Navbar) loads the bridge, and React, first.
+    }, 20_000);
 
   it("names in NOT_DRAWN only stories that exist", async () => {
     for (const key of Object.keys(NOT_DRAWN)) {

@@ -69,6 +69,7 @@ import {
 } from "../Listbox/options";
 import type { KozmosComboboxOption } from "../Listbox/types";
 import { KozmosFieldPopper } from "./fieldPopper";
+import { joinLayers } from "../shared/layers";
 import {
   MapShellPresentationKey,
   type KozmosComboboxPopupAction,
@@ -550,6 +551,11 @@ export const KozmosCombobox = defineComponent({
         "div",
         {
           ref: popup,
+          // A layer of the overlays' stack, as React's popup is a Radix
+          // DismissableLayer with no dismiss of its own: a Dialog, Drawer or
+          // Popover it opens in hears a press in it as inside, and it takes
+          // the pointer a modal under it turned off (shared/layers.ts).
+          ...joinLayers(popup.value),
           "data-combobox-popup": "",
           onMousedown: (event: MouseEvent) => {
             if (keepsFieldFocus(event.target, event.offsetX, event.offsetY))
@@ -559,7 +565,10 @@ export const KozmosCombobox = defineComponent({
             COMBOBOX_POPUP_CLASS,
             props.popupLayout === "inline" && COMBOBOX_POPUP_INLINE_CLASS,
           ),
-          style: { maxHeight: FIELD_POPUP_MAX_HEIGHT },
+          style: {
+            maxHeight: FIELD_POPUP_MAX_HEIGHT,
+            ...joinLayers(popup.value).style,
+          },
         },
         [
           // Plain text: the field's status says it aloud.

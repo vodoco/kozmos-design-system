@@ -9,7 +9,6 @@ import { Button } from "@kozmos-ds/react";
 import * as Kozmos from "@kozmos-ds/vue";
 import * as Bridge from "@kozmos-ds/vue/react-bridge";
 import {
-  KozmosAnchoredPopover,
   createVueWrapper,
   type ModelBinding,
   type ModelBindings,
@@ -31,10 +30,13 @@ export const everyPartIsAComponent: [
   : false = true;
 
 export const App = defineComponent({
-  components: { KozmosAnchoredPopover, KozmosButton: Kozmos.KozmosButton },
+  components: {
+    KozmosAnchoredPopover: Kozmos.KozmosAnchoredPopover,
+    KozmosButton: Kozmos.KozmosButton,
+  },
   setup: () => () => [
     h(Kozmos.KozmosThemeProvider, null, () => h(Kozmos.KozmosButton)),
-    h(KozmosAnchoredPopover),
+    h(Kozmos.KozmosAnchoredPopover),
     h(Bridge.KozmosTourStep),
   ],
 });

@@ -2,4 +2,8 @@
 import * as Kozmos from "@kozmos-ds/vue";
 import * as Bridge from "@kozmos-ds/vue/react-bridge";
 
-export const parts = [Kozmos.KozmosButton, Bridge.KozmosAnchoredPopover];
+export const parts = [
+  Kozmos.KozmosButton,
+  Kozmos.KozmosAnchoredPopover,
+  Bridge.KozmosTourStep,
+];

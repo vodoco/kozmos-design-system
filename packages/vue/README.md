@@ -67,11 +67,11 @@ const level = ref("1");
 </template>
 ```
 
-The parts of Accordion, Card, Dialog, Drawer, Select, Tabs, Tooltip and Toast are bridged, and
+The parts of Accordion, Tabs and Toast are bridged, and
 `KozmosToaster` draws what `toast()` (React's own, exported here) shows. A slot the React part does not
 draw (an inactive tab's panel) shows nothing. Two things are not bridged: a trigger cannot take a Vue
-element as its child (`as-child`), so it draws its own button (open a dialog or drawer from a
-`KozmosButton` by `v-model:open`); and Table's rows and cells, since a `<table>` holds no box a Vue
+element as its child (`as-child`), so it draws its own button (open what it opens from a
+`KozmosButton` by its `v-model`); and Table's rows and cells, since a `<table>` holds no box a Vue
 slot is drawn in.
 
 **Vue's providers reach the React parts (decision 172).** Every React root the bridge mounts is drawn
@@ -83,7 +83,7 @@ inside React's providers, given what the nearest Vue provider holds, and follows
 | `KozmosDensityScope`         | React's `DensityScope`: the density                                                                                                                      |
 | `KozmosAnalyticsProvider`    | React's `AnalyticsProvider`, which hands each event to the Vue provider's batch                                                                          |
 | `KozmosDesignConfigProvider` | its glass, shadow and motion properties, through its theme provider's tokens, and its glass spotlight; its reduced motion only in place, not in a portal |
-| (none)                       | a Radix `TooltipProvider`, so a `KozmosTooltip` needs none; `KozmosTooltipProvider` sets the delays inside it                                            |
+| (none)                       | a Radix `TooltipProvider`, for the tooltips a bridged part draws                                                                                         |
 
 A part drawn in a compound's tree is given only the providers that sit between it and the compound.
 `KozmosDesignConfigProvider`'s reduced motion marks what a bridged part draws in place, but not what it

@@ -260,6 +260,13 @@ describe("KozmosCombobox, mounted, as React's", () => {
     }
     for (const element of document.body.querySelectorAll("[data-v-app]"))
       element.removeAttribute("data-v-app");
+    // The popup is a layer of the overlays' stack in both: React's a Radix
+    // DismissableLayer, which marks nothing; Vue's carries the mark Reka's
+    // layers read (shared/layers.ts, joinLayers).
+    for (const element of document.body.querySelectorAll(
+      "[data-dismissable-layer]",
+    ))
+      element.removeAttribute("data-dismissable-layer");
     return normalizeHtml(document.body.innerHTML);
   };
   const body = () => alike(document.body.innerHTML);

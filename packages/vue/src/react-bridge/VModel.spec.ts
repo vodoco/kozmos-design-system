@@ -48,6 +48,9 @@ import { planOf, reactSides } from "../../test/contract/read-contract";
  * part with a model.
  */
 const WrappedCounter = createVueWrapper(KozmosReact.Counter);
+// A box drawing a Vue slot: React's DialogHeader, wrapped as the bridge
+// wraps a part (Dialog is native in Vue since wave V2).
+const WrappedDialogHeader = createVueWrapper(KozmosReact.DialogHeader);
 const WrappedIconButton = Object.assign(
   createVueWrapper(KozmosReact.IconButton),
   { props: { counterLabel: null } },
@@ -901,7 +904,8 @@ describe("every controlled pair is a model", () => {
 
   it("has a model for each pair each React part has", () => {
     // Every wrapper's React part is read, and every exception says why.
-    // Fewer as each port leaves the bridge (90 after wave V2's chips batch).
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (67 after wave V2's chips and overlays).
     expect(parts.length).toBeGreaterThan(50);
     expect(
       parts
@@ -1870,8 +1874,8 @@ describe("attributes reach React alone", () => {
       slot: "3",
     },
     {
-      name: "KozmosDialogHeader",
-      component: Bridge.KozmosDialogHeader,
+      name: "DialogHeader",
+      component: WrappedDialogHeader,
       kind: "a box drawing a Vue slot",
       slot: "Gate 4",
     },

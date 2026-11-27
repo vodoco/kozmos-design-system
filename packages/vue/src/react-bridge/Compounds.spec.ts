@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { defineComponent, h, nextTick, ref, type Component } from "vue";
+import { defineComponent, h, nextTick, ref } from "vue";
 import { KozmosThemeProvider } from "../index";
 import * as Bridge from "./index";
 import { IN_A_COMPOUND } from "../../test/compounds";
@@ -21,8 +21,6 @@ import {
 // wrapper was a React root of its own, and an item inside its group (a
 // KozmosRadioGroupItem in its KozmosRadioGroup, since ported to Vue) threw:
 // it could not find its group.
-
-const B = Bridge as unknown as Record<string, Component>;
 
 describe("each part of a part made of parts draws inside its compound", () => {
   it.each(Object.entries(IN_A_COMPOUND))(
@@ -101,33 +99,6 @@ describe("a compound is one React tree", () => {
     );
   });
 
-  it("Dialog: its close button closes it, through v-model:open", async () => {
-    const open = ref(true);
-    mount(() =>
-      h(
-        Bridge.KozmosDialog,
-        {
-          open: open.value,
-          "onUpdate:open": (value: boolean) => (open.value = value),
-        },
-        () => [
-          h(Bridge.KozmosDialogContent, null, () => [
-            h(Bridge.KozmosDialogTitle, null, () => "Edit level"),
-            h(Bridge.KozmosDialogDescription, null, () => "Rename it."),
-            h(Bridge.KozmosDialogClose, null, () => "Done"),
-          ]),
-        ],
-      ),
-    );
-    const dialog = await until(() => $("[role=dialog]"));
-    // Its title names it: Radix finds the title the compound drew.
-    expect(dialog.getAttribute("aria-labelledby")).toBe(
-      byText("h2", "Edit level")!.id,
-    );
-    byText("[role=dialog] button", "Done")!.click();
-    await eventually(() => expect(open.value).toBe(false));
-  });
-
   it("a listener on a part of a compound runs once, given the native event", async () => {
     const click = vi.fn();
     mount(() =>
@@ -190,32 +161,5 @@ describe("toast()", () => {
     expect(
       words.closest("[data-kozmos-portal]")?.getAttribute("data-theme"),
     ).toBe("dark");
-  });
-});
-
-describe("Tooltip", () => {
-  it("draws with no provider of the caller's: every root has one", async () => {
-    mount(IN_A_COMPOUND.KozmosTooltipContent.render);
-    await until(() => byText("[role=tooltip]", "Opens at 9"));
-  });
-
-  it("a KozmosTooltipProvider sets the delay of the tooltips in it", async () => {
-    mount(() =>
-      h(B.KozmosTooltipProvider, { delayDuration: 0 }, () => [
-        h(B.KozmosTooltip, null, () => [
-          h(B.KozmosTooltipTrigger, null, () => "Info"),
-          h(B.KozmosTooltipContent, null, () => "Opens at 9"),
-        ]),
-      ]),
-    );
-    const trigger = await until(() => byText("button", "Info"));
-    trigger.dispatchEvent(
-      new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }),
-    );
-    // No delay: open at once, which the default 700 ms would not be.
-    await eventually(
-      () => expect(trigger.getAttribute("data-state")).toBe("delayed-open"),
-      300,
-    );
   });
 });
