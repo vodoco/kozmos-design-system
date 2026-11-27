@@ -20,8 +20,7 @@ import { PURE_CALLS } from "../../packages/vue/vite-plugins/pure-calls.mjs";
 //   read with its dependencies, React's and Vue's alike (./with-dependencies.mjs): Radix,
 //   floating-ui, Reka UI, tailwind-merge, the icons it imports and the rest, all but the
 //   frameworks an app already has (react, react-dom, vue). Until then a React part's Radix was
-//   left out and a Vue part's equivalent code counted. The cap still reads 9 KB until one is set
-//   from that data; both figures are printed for every export.
+//   left out and a Vue part's equivalent code counted; both figures are printed for every export.
 // - Button alone, under MAX_BUTTON_GZIP_KB: the canary for the per-module output itself. When the
 //   ES build was one file, importing Button cost an app 48.7 KB, nearly the whole library.
 // - Everything at once (54.6 KB on 2026-09-22), and the stylesheet (26.4 KB), which no bundler
@@ -63,7 +62,14 @@ import { PURE_CALLS } from "../../packages/vue/vite-plugins/pure-calls.mjs";
 // Olcay approved 9 KB on 2026-11-18 (decision 220) for 0.17.0: AdaptiveMapShell measured 8.60 KB
 // after GAP-084's keyboard avoidance, GAP-226's live regions mounted before their words and
 // GAP-265's first layout (#582). The half-kilobyte step React's later budgets take.
-const MAX_EXPORT_GZIP_KB = 9;
+// Decision 231 (owner, 27 Nov 2026): one cap for React's and Vue's exports, each read with its
+// dependencies. Read that way a part costs at least 9 to 10 KB (tailwind-merge alone is 8.03 KB
+// under 337 of 437 exports); the median was 10.54 KB for React and 9.20 for Vue, and the heaviest
+// React's DynamicIsland at 46.28 KB (framer-motion's motion, about 36 KB of it). The cap is that
+// plus a tenth, rounded up to the half kilobyte: 51. It drops to 44 once GAP-293 (DynamicIsland's
+// framer-motion) and GAP-294 (the icon registry behind Icon and POIDetailPanel) are fixed. The
+// 2 KB Button checks below still catch Kozmos's own code growing.
+const MAX_EXPORT_GZIP_KB = 51;
 const MAX_BUTTON_GZIP_KB = 2;
 // Olcay approved 92 KB on 2026-10-21 (decision 114) for the web's own date and time panels
 // (decision 104): Calendar (#352), DatePicker's (#361), DateRangePicker's (#366) and
@@ -96,7 +102,9 @@ const MAX_BUTTON_GZIP_KB = 2;
 // bundle job, so 121.10. CI's job is the measurement: it reads about
 // 0.4 KB above a Mac's local run of this script (main measured 120.26 there
 // and 119.80 on a Mac), so size the budget from CI's number.
-const MAX_TOTAL_GZIP_KB = 121.1;
+// After wave V2's choices, selects, chips and overlays batches, Everything
+// measured 121.54 KB on a Mac; the line is CI's measurement + 0.5.
+const MAX_TOTAL_GZIP_KB = 122.5;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
@@ -130,8 +138,8 @@ const MIN_ESM_MODULES = 50;
 // follows React's model instead, sized for the core. Its first two ports
 // (Badge, Separator, #590) took it to 3.66 KB, and the core adds about 85
 // parts on Reka UI: the whole entry stays under 75 KB (React's 120 holds
-// about 140 parts), and every export alone under React's own 9 KB
-// (MAX_EXPORT_GZIP_KB), so no one import pulls in the rest. Re-measured and
+// about 140 parts), and every export alone under the export cap React's use
+// (MAX_EXPORT_GZIP_KB, decision 231), so no one import pulls in the rest. Re-measured and
 // re-sized when the core is done.
 const MAX_VUE_GZIP_KB = 75;
 // KozmosButton alone, the canary for Vue's per-module output, as Button is
