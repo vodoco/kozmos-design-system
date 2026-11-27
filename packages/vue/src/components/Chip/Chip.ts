@@ -48,8 +48,11 @@ import type {
 
 /**
  * What a single-choice group tells its chips, as React's ChipChoiceContext
- * and Radix's RadioGroup context together: the chosen value, and how to
- * choose.
+ * and Radix's RadioGroup context together: the chosen value, how to
+ * choose, and how a chip joins the group as one of its radios. The group
+ * hands its chips the roving focus and the hidden input (`join`), so a
+ * KozmosChip used without a group carries neither: as React's Chip leaves
+ * them to Radix's RadioGroup, which only the group imports.
  */
 interface ChipChoice {
   /** Whether the group is one choice: a group of toggles tells its chips nothing. */
@@ -59,6 +62,15 @@ interface ChipChoice {
   disabled: () => boolean;
   required: () => boolean;
   name: () => unknown;
+  /** Called from a chip's setup: its roving focus and its hidden input. */
+  join: (item: {
+    focusable: () => boolean;
+    active: () => boolean;
+    form: () => unknown;
+  }) => {
+    roving: ReturnType<typeof useRovingFocusItem>;
+    bubble: ReturnType<typeof useBubbleInput>;
+  };
 }
 const CHOICE: InjectionKey<ChipChoice> = Symbol("KozmosChipChoice");
 
@@ -135,19 +147,13 @@ export const KozmosChip = defineComponent({
 
     // A choice is one of the group's radios, as Radix's RadioGroupItem:
     // the group's one Tab stop and its arrows, and a hidden input in a form.
-    const roving = choice
-      ? useRovingFocusItem({
+    const { roving, bubble } = choice
+      ? choice.join({
           focusable: () => !choiceDisabled(),
           active: isSelected,
-        })
-      : null;
-    const bubble = choice
-      ? useBubbleInput({
-          type: "radio",
-          checked: isSelected,
           form: () => attrs.form,
         })
-      : null;
+      : { roving: null, bubble: null };
     // An arrow moves focus, and the chip it reaches is chosen as Radix's
     // radio is: while an arrow key is down.
     let isArrowKeyPressed = false;
@@ -398,6 +404,10 @@ export const KozmosChipGroup = defineComponent({
       disabled: () => attrs.disabled === "" || attrs.disabled === true,
       required: () => attrs.required === "" || attrs.required === true,
       name: () => attrs.name,
+      join: ({ focusable, active, form }) => ({
+        roving: useRovingFocusItem({ focusable, active }),
+        bubble: useBubbleInput({ type: "radio", checked: active, form }),
+      }),
     });
 
     return () => {
