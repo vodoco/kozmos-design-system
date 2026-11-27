@@ -1076,7 +1076,17 @@
      The second pixel is an inset shadow held in --tw-shadow, the slot the
      ring utilities compose their box-shadow with: focused, the ring is drawn
      around it and the heavier edge stays. An outline did not survive focus,
-     as the scoped focus-visible:outline-none outweighs this rule. */
+     as the scoped focus-visible:outline-none outweighs this rule.
+     The box is a <button>, and WebKit draws no box-shadow on a button it
+     still draws natively: one stays native until an author rule sets its
+     background, its border or its appearance. Those were the scoped
+     preflight's and utilities' alone, so where @scope does not reach a form
+     field (Safari 26.0–26.3) the chosen edge vanished (GAP-292). The
+     preflight's own button reset, owned, so the box is never native. */
+  .kozmos-radio-card {
+    -webkit-appearance: button;
+    background-image: none;
+  }
   .kozmos-radio-card[aria-checked="true"] {
     --tw-shadow: inset 0 0 0 1px var(--primitives-colors-theme-600);
     box-shadow:
