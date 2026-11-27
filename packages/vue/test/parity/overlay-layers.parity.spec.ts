@@ -42,6 +42,7 @@ import {
   settle,
   useOverlayPage,
 } from "./overlays";
+import { layOut } from "./mounted-both";
 
 /**
  * Why the overlays were ported together (wave V2): a native Select,
@@ -148,17 +149,40 @@ function vueHost(host: Host, field: () => VNode): VNode {
   ]);
 }
 
-/** What a step leaves: the host open, the list open, the value, focus. */
-const state = (value: () => string) => ({
-  host: document.querySelectorAll("[role=dialog]").length,
-  list: document.querySelectorAll("[role=listbox]").length,
-  value: value(),
-  focus:
-    document.activeElement === document.body
-      ? "the page"
-      : (document.activeElement?.getAttribute("role") ??
-        document.activeElement?.tagName),
-});
+/**
+ * What a step leaves: the host open, the list open, the value, focus; and
+ * a field's popup, where it is placed and whether it takes the pointer.
+ */
+const state = (value: () => string) => {
+  const field = document.querySelector("input[role=combobox]");
+  const list = field?.getAttribute("aria-controls");
+  const wrapper = list
+    ? document
+        .getElementById(list)
+        ?.closest<HTMLElement>("[data-radix-popper-content-wrapper]")
+    : undefined;
+  const content = wrapper?.firstElementChild as HTMLElement | undefined;
+  return {
+    host: document.querySelectorAll("[role=dialog]").length,
+    list: document.querySelectorAll("[role=listbox]").length,
+    value: value(),
+    focus:
+      document.activeElement === document.body
+        ? "the page"
+        : (document.activeElement?.getAttribute("role") ??
+          document.activeElement?.tagName),
+    ...(wrapper && {
+      popup: {
+        transform: wrapper.style.transform,
+        side: content?.getAttribute("data-side"),
+        // The layer in it takes the pointer the modal host took from the body.
+        layer: wrapper.querySelector<HTMLElement>("[style*=pointer-events]")
+          ?.style.pointerEvents,
+        body: document.body.style.pointerEvents || undefined,
+      },
+    }),
+  };
+};
 
 async function inBoth(
   host: Host,
@@ -166,104 +190,119 @@ async function inBoth(
   steps: (() => void | Promise<void>)[],
 ) {
   const seen = { react: [] as unknown[], vue: [] as unknown[] };
-  for (const side of ["react", "vue"] as const) {
-    const values: string[] = [];
-    const value = () => values.at(-1) ?? "";
-    if (side === "react") {
-      const Field = () =>
-        field === "select"
-          ? e(
-              KozmosReact.Select,
-              { onValueChange: (next: string) => values.push(next) },
-              e(
-                KozmosReact.SelectTrigger,
-                { "aria-label": "Fruit" },
-                e(KozmosReact.SelectValue, { placeholder: "Pick" }),
-              ),
-              e(
-                KozmosReact.SelectContent,
-                null,
-                ...fruit.map((option) =>
-                  e(
-                    KozmosReact.SelectItem,
-                    { key: option.value, value: option.value },
-                    option.label,
-                  ),
-                ),
-              ),
-            )
-          : field === "combobox"
-            ? e(KozmosReact.Combobox, {
-                label: "Fruit",
-                options: fruit,
-                onValueChange: (next: string) => values.push(next),
-              })
-            : e(KozmosReact.MultiSelect, {
-                label: "Fruit",
-                options: fruit,
-                onValueChange: (next: string[]) => values.push(next.join()),
-              });
-      await mountReact(reactHost(host, e(Field)));
-    } else {
-      const chosen = ref<string>();
-      await mountVue(() =>
-        vueHost(host, () =>
-          field === "select"
-            ? h(
-                KozmosSelect,
-                {
-                  modelValue: chosen.value,
-                  "onUpdate:modelValue": (next: string) => {
-                    chosen.value = next;
-                    values.push(next);
-                  },
-                },
-                () => [
-                  h(KozmosSelectTrigger, { "aria-label": "Fruit" }, () =>
-                    h(KozmosSelectValue, null, { placeholder: () => "Pick" }),
-                  ),
-                  h(KozmosSelectContent, null, () =>
-                    fruit.map((option) =>
-                      h(
-                        KozmosSelectItem,
-                        { value: option.value },
-                        () => option.label,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : field === "combobox"
-              ? h(KozmosCombobox, {
-                  label: "Fruit",
-                  options: fruit,
-                  modelValue: chosen.value,
-                  "onUpdate:modelValue": (next: string) => {
-                    chosen.value = next;
-                    values.push(next);
-                  },
-                })
-              : h(KozmosMultiSelect, {
-                  label: "Fruit",
-                  options: fruit,
-                  modelValue: chosen.value ? chosen.value.split(",") : [],
-                  "onUpdate:modelValue": (next: string[]) => {
-                    chosen.value = next.join();
-                    values.push(next.join());
-                  },
-                }),
-        ),
-      );
-    }
-    for (const step of steps) {
-      if (side === "react") await act(async () => void (await step()));
-      else await step();
-      await settle();
-      await settle();
-      seen[side].push(state(value));
-    }
+  // A field's popup near the window's foot, so it flips above the field.
+  const restore =
+    field === "select"
+      ? () => {}
+      : layOut({
+          field: { x: 100, y: 650, width: 240, height: 44 },
+          popup: { width: 240, height: 200 },
+        });
+  try {
+    await run();
+  } finally {
+    restore();
   }
   return seen;
+  async function run() {
+    for (const side of ["react", "vue"] as const) {
+      const values: string[] = [];
+      const value = () => values.at(-1) ?? "";
+      if (side === "react") {
+        const Field = () =>
+          field === "select"
+            ? e(
+                KozmosReact.Select,
+                { onValueChange: (next: string) => values.push(next) },
+                e(
+                  KozmosReact.SelectTrigger,
+                  { "aria-label": "Fruit" },
+                  e(KozmosReact.SelectValue, { placeholder: "Pick" }),
+                ),
+                e(
+                  KozmosReact.SelectContent,
+                  null,
+                  ...fruit.map((option) =>
+                    e(
+                      KozmosReact.SelectItem,
+                      { key: option.value, value: option.value },
+                      option.label,
+                    ),
+                  ),
+                ),
+              )
+            : field === "combobox"
+              ? e(KozmosReact.Combobox, {
+                  label: "Fruit",
+                  options: fruit,
+                  onValueChange: (next: string) => values.push(next),
+                })
+              : e(KozmosReact.MultiSelect, {
+                  label: "Fruit",
+                  options: fruit,
+                  onValueChange: (next: string[]) => values.push(next.join()),
+                });
+        await mountReact(reactHost(host, e(Field)));
+      } else {
+        const chosen = ref<string>();
+        await mountVue(() =>
+          vueHost(host, () =>
+            field === "select"
+              ? h(
+                  KozmosSelect,
+                  {
+                    modelValue: chosen.value,
+                    "onUpdate:modelValue": (next: string) => {
+                      chosen.value = next;
+                      values.push(next);
+                    },
+                  },
+                  () => [
+                    h(KozmosSelectTrigger, { "aria-label": "Fruit" }, () =>
+                      h(KozmosSelectValue, null, { placeholder: () => "Pick" }),
+                    ),
+                    h(KozmosSelectContent, null, () =>
+                      fruit.map((option) =>
+                        h(
+                          KozmosSelectItem,
+                          { value: option.value },
+                          () => option.label,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : field === "combobox"
+                ? h(KozmosCombobox, {
+                    label: "Fruit",
+                    options: fruit,
+                    modelValue: chosen.value,
+                    "onUpdate:modelValue": (next: string) => {
+                      chosen.value = next;
+                      values.push(next);
+                    },
+                  })
+                : h(KozmosMultiSelect, {
+                    label: "Fruit",
+                    options: fruit,
+                    modelValue: chosen.value ? chosen.value.split(",") : [],
+                    "onUpdate:modelValue": (next: string[]) => {
+                      chosen.value = next.join();
+                      values.push(next.join());
+                    },
+                  }),
+          ),
+        );
+      }
+      for (const step of steps) {
+        if (side === "react") await act(async () => void (await step()));
+        else await step();
+        await settle();
+        await settle();
+        seen[side].push(state(value));
+      }
+    }
+  }
 }
 
 const open = () => {
@@ -315,7 +354,15 @@ describe.each<Host>(["dialog", "drawer", "bottom sheet", "popover"])(
         escape,
         escape,
       ]);
-      expect(seen.react[1]).toMatchObject({ host: 1, list: 1 });
+      expect(seen.react[1]).toMatchObject({
+        host: 1,
+        list: 1,
+        popup: {
+          transform: "translate(100px, 446px)",
+          side: "top",
+          ...(host === "popover" ? {} : { layer: "auto", body: "none" }),
+        },
+      });
       expect(seen.react[2]).toMatchObject({ host: 1, value: "banana" });
       expect(seen.react[4]).toMatchObject({ host: 1, list: 0 });
       expect(seen.react[5]).toMatchObject({ host: 0 });
@@ -332,7 +379,15 @@ describe.each<Host>(["dialog", "drawer", "bottom sheet", "popover"])(
         escape,
         escape,
       ]);
-      expect(seen.react[1]).toMatchObject({ host: 1, list: 1 });
+      expect(seen.react[1]).toMatchObject({
+        host: 1,
+        list: 1,
+        popup: {
+          transform: "translate(100px, 446px)",
+          side: "top",
+          ...(host === "popover" ? {} : { layer: "auto", body: "none" }),
+        },
+      });
       expect(seen.react[2]).toMatchObject({ host: 1, value: "banana" });
       expect(seen.react[3]).toMatchObject({ host: 1, list: 0 });
       expect(seen.react[4]).toMatchObject({ host: 0 });

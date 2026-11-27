@@ -36,14 +36,11 @@ export interface Heard {
   other: Record<string, number>;
 }
 
-const GEOMETRY = /^(transform|left|top|z-index|--radix-popper-[\w-]+)$/;
-
 /**
- * The document as each draws it, with the popper's geometry made one:
- * where Radix's floating-ui and the port's placement put the popup in
- * jsdom, which lays nothing out, differs, so each geometric declaration is
- * kept by name; and the declarations sorted. Vue's layer mark is taken
- * off, as Radix's layers draw none.
+ * The document as each draws it, each style's declarations sorted. The
+ * popper's geometry is compared as drawn: both place it with floating-ui,
+ * Radix's options in each (Combobox/fieldPopper.ts). Vue's layer mark is
+ * taken off, as Radix's layers draw none.
  */
 export function alike(html: string) {
   const document = new DOMParser().parseFromString(html, "text/html");
@@ -53,10 +50,6 @@ export function alike(html: string) {
       .split(";")
       .map((part) => part.trim())
       .filter(Boolean)
-      .map((part) => {
-        const name = part.slice(0, part.indexOf(":")).trim();
-        return GEOMETRY.test(name) ? `${name}:*` : part;
-      })
       .sort();
     element.setAttribute("style", declarations.join(";"));
   }
@@ -102,6 +95,106 @@ export function standIns() {
     disconnect() {}
   } as unknown as typeof ResizeObserver;
   Element.prototype.scrollIntoView ??= function () {};
+}
+
+/**
+ * A laid-out page for a field's popup, in jsdom, which lays nothing out: a
+ * window of `view`, the field (every box holding its combobox input, short
+ * of the body) at `field`, and the popper's wrapper `popup` in size, so
+ * floating-ui's offset, shift, flip and size act on both frameworks' popups
+ * as in a browser. Returns what takes it down.
+ */
+export function layOut({
+  view = { width: 1024, height: 768 },
+  field,
+  popup,
+}: {
+  view?: { width: number; height: number };
+  field: { x: number; y: number; width: number; height: number };
+  popup: { width: number; height: number };
+}) {
+  const html = document.documentElement;
+  const rect = Element.prototype.getBoundingClientRect;
+  const width = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    "offsetWidth",
+  )!;
+  const height = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    "offsetHeight",
+  )!;
+  const wrapper = (element: Element) =>
+    element.hasAttribute("data-radix-popper-content-wrapper");
+  Object.defineProperty(html, "clientWidth", {
+    configurable: true,
+    value: view.width,
+  });
+  Object.defineProperty(html, "clientHeight", {
+    configurable: true,
+    value: view.height,
+  });
+  Element.prototype.getBoundingClientRect = function (this: Element) {
+    if (
+      this !== html &&
+      this !== document.body &&
+      this.querySelector("input[role=combobox]")
+    ) {
+      const { x, y, width: w, height: h } = field;
+      return DOMRect.fromRect({ x, y, width: w, height: h });
+    }
+    return rect.call(this);
+  };
+  Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return wrapper(this) ? popup.width : width.get!.call(this);
+    },
+  });
+  Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return wrapper(this) ? popup.height : height.get!.call(this);
+    },
+  });
+  return () => {
+    delete (html as unknown as Record<string, unknown>).clientWidth;
+    delete (html as unknown as Record<string, unknown>).clientHeight;
+    Element.prototype.getBoundingClientRect = rect;
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", width);
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", height);
+  };
+}
+
+/** Where floating-ui's popper is placed, and the room it writes. */
+export function placement() {
+  const wrapper = document.querySelector<HTMLElement>(
+    "[data-radix-popper-content-wrapper]",
+  );
+  const content = wrapper?.firstElementChild;
+  return {
+    transform: wrapper?.style.transform,
+    side: content?.getAttribute("data-side"),
+    align: content?.getAttribute("data-align"),
+    availableHeight: wrapper?.style.getPropertyValue(
+      "--radix-popper-available-height",
+    ),
+    anchorWidth: wrapper?.style.getPropertyValue("--radix-popper-anchor-width"),
+    origin: wrapper?.style.getPropertyValue("--radix-popper-transform-origin"),
+  };
+}
+
+let moves = 0;
+/**
+ * The pointer moved last, as nothing has touched a fresh page: each
+ * framework's copy of the input-modality store (recipes/input-modality.ts)
+ * keeps listening once a list subscribed, so a key pressed in React's run
+ * would otherwise start Vue's on the keyboard.
+ */
+export function pointerMovedLast() {
+  moves += 1;
+  document.dispatchEvent(
+    new MouseEvent("pointermove", { clientX: moves, clientY: moves }),
+  );
 }
 
 /** Through the element's own setter, as typing sets it, then `input`. */
@@ -184,6 +277,7 @@ export async function inBoth({
       };
     return React.createElement(react, { ...own, ...extra });
   }
+  pointerMovedLast();
   let host = document.body.appendChild(document.createElement("div"));
   reactRoot = createRoot(host);
   await act(async () =>
@@ -226,6 +320,7 @@ export async function inBoth({
     Object.fromEntries(models.map((m) => [m.vueProp, m.start])),
   );
   const extra = ref<Record<string, unknown>>({});
+  pointerMovedLast();
   host = document.body.appendChild(document.createElement("div"));
   vueApp = createApp({
     render: () =>

@@ -13,6 +13,16 @@ import {
   type VNode,
 } from "vue";
 import {
+  autoUpdate,
+  computePosition,
+  flip,
+  limitShift,
+  offset,
+  shift,
+  size,
+  type Middleware,
+} from "@floating-ui/dom";
+import {
   cn,
   FIELD_POPUP_CONTENT_CLASS,
   FIELD_POPUP_PLACEMENT,
@@ -20,19 +30,26 @@ import {
 import { ThemeKey, useKozmosDensity } from "../../theme/injection";
 
 /**
- * A text field's popup (Combobox's), drawn as React's FieldPopupContent
- * draws it: in the theme's portal, the box Radix's Popper places
- * (`data-radix-popper-content-wrapper`, fixed, its custom properties named
- * as Radix's, which React's classes and FIELD_POPUP_MAX_HEIGHT read) around
- * the content (`data-side`, `data-align`, as wide as the field). Positioned
- * only: no dialog, no focus scope and no dismiss layer, so the field keeps
- * its keyboard and its Escape. Internal.
+ * A text field's popup (Combobox's, MultiSelect's), drawn as React's
+ * FieldPopupContent draws it: in the theme's portal, the box Radix's Popper
+ * places (`data-radix-popper-content-wrapper`, fixed, its custom properties
+ * named as Radix's, which React's classes and FIELD_POPUP_MAX_HEIGHT read)
+ * around the content (`data-side`, `data-align`, as wide as the field).
+ * Positioned only: no dialog, no focus scope and no dismiss layer, so the
+ * field keeps its keyboard and its Escape. Internal.
  *
- * Reka UI keeps its Popper to itself, so this places the popup as Radix's
- * options for it do: under the field from its start (its end, right to
- * left), 4 below, flipped above when the room under it is smaller than the
- * popup and than the room above, shifted along to stay 8 from the window's
- * edges, with the room left on its side as `--radix-popper-available-height`.
+ * Reka UI keeps its Popper to itself, so this is Radix's PopperContent
+ * (@radix-ui/react-popper 1.2) for the props FieldPopupContent passes, on
+ * the floating-ui Reka already ships: fixed, `bottom-start`, and its
+ * middleware in its order with its options — offset 4, shift on the main
+ * axis only with limitShift (sticky "partial"), flip, size writing the room
+ * and the field's size as Radix's custom properties on the wrapper, and the
+ * transform origin Radix's own middleware works out with no arrow — against
+ * the window alone (Radix passes an empty boundary, so a scroll box never
+ * clips it), 8 in from its edges. autoUpdate replaces it on scroll, resize
+ * and layout shifts, as Radix's does ("optimized": no frame loop); a
+ * resize of the field or the popup is observed here, so the room it
+ * writes never loops WebKit's ResizeObserver (below).
  */
 export const KozmosFieldPopper = defineComponent({
   name: "KozmosFieldPopper",
@@ -50,119 +67,118 @@ export const KozmosFieldPopper = defineComponent({
     const mounted = ref(false);
     const wrapper = shallowRef<HTMLElement | null>(null);
     const content = shallowRef<HTMLElement | null>(null);
+    // Where floating-ui placed it, its side and alignment, the popup's
+    // height there (for the transform origin) and the device pixel ratio.
     const placed = ref<{
       x: number;
       y: number;
-      side: "bottom" | "top";
-      availableWidth: number;
-      availableHeight: number;
-      anchorWidth: number;
-      anchorHeight: number;
-      origin: string;
+      side: string;
+      align: string;
+      height: number;
+      dpr: number;
     } | null>(null);
 
-    const {
-      side: preferred,
-      sideOffset,
-      collisionPadding,
-    } = FIELD_POPUP_PLACEMENT;
-    const place = () => {
-      const anchor = props.anchor();
-      const floating = content.value;
-      if (!anchor || !floating) return;
-      const view = anchor.ownerDocument.defaultView;
-      const width = view?.innerWidth ?? 0;
-      const height = view?.innerHeight ?? 0;
-      const box = anchor.getBoundingClientRect();
-      const own = floating.getBoundingClientRect();
-      const below = height - box.bottom - sideOffset - collisionPadding;
-      const above = box.top - sideOffset - collisionPadding;
-      const side =
-        preferred === "bottom" && own.height > below && above > below
-          ? "top"
-          : "bottom";
-      const rtl = view?.getComputedStyle(floating).direction === "rtl";
-      const start = rtl ? box.right - own.width : box.left;
-      const x = Math.max(
-        collisionPadding,
-        Math.min(start, width - collisionPadding - own.width),
-      );
-      const y =
-        side === "bottom"
-          ? box.bottom + sideOffset
-          : box.top - sideOffset - own.height;
-      placed.value = {
-        x: Math.round(x),
-        y: Math.round(y),
-        side,
-        availableWidth: width - collisionPadding * 2,
-        availableHeight: side === "bottom" ? below : above,
-        anchorWidth: box.width,
-        anchorHeight: box.height,
-        origin: `${rtl ? "100%" : "0%"} ${side === "bottom" ? "0px" : `${own.height}px`}`,
-      };
-    };
+    const { side, align, sideOffset, collisionPadding } = FIELD_POPUP_PLACEMENT;
+    // Radix's options, written as floating-ui's defaults leave them: its
+    // offset with no alignment offset, its shift on the main axis alone, and
+    // its detectOverflowOptions, no boundary of its own (so the window) and
+    // no altBoundary.
+    const overflow = { padding: collisionPadding, boundary: [] };
+    const middleware: Middleware[] = [
+      offset(sideOffset),
+      shift({ limiter: limitShift(), ...overflow }),
+      flip(overflow),
+      size({
+        ...overflow,
+        apply({ elements, rects, availableWidth, availableHeight }) {
+          for (const [name, value] of [
+            ["available-width", availableWidth],
+            ["available-height", availableHeight],
+            ["anchor-width", rects.reference.width],
+            ["anchor-height", rects.reference.height],
+          ] as const)
+            elements.floating.style.setProperty(
+              `--radix-popper-${name}`,
+              `${value}px`,
+            );
+        },
+      }),
+      // Radix's transformOrigin reads the popup's height where it settles.
+      { name: "origin", fn: ({ rects }) => ({ data: rects.floating }) },
+    ];
 
-    let observer: ResizeObserver | undefined;
-    let reobserveFrame = 0;
-    let placeFrame = 0;
-    const onMove = () => place();
-    // Nothing placed inside the observer's delivery may resize what it
-    // observes, or WebKit raises "ResizeObserver loop completed with
-    // undelivered notifications". Two resizes do:
-    // - the field's: placing writes its width as the popup's. As Radix's
-    //   Popper (floating-ui's autoUpdate) does, the popup is no longer
-    //   observed until the next frame, and placed at once, so it never lags
-    //   the field (floating-ui#1740).
-    // - the popup's own: placing writes the room left on its side
-    //   (--radix-popper-available-height), which its list's max-height
-    //   reads, so it resizes again (a Combobox in a Dialog or Popover, where
-    //   the popup settles as the overlay opens). It is placed on the next
-    //   frame instead, outside the delivery.
-    const onResize = (entries: ResizeObserverEntry[]) => {
+    let stop: (() => void) | undefined;
+    let live = true;
+    const update = () => {
       const anchor = props.anchor();
-      const floating = content.value;
-      if (!entries.some((entry) => entry.target === anchor)) {
-        cancelAnimationFrame(placeFrame);
-        placeFrame = requestAnimationFrame(place);
-        return;
-      }
-      if (observer && floating) {
-        observer.unobserve(floating);
-        cancelAnimationFrame(reobserveFrame);
-        reobserveFrame = requestAnimationFrame(() => {
-          if (observer && content.value) observer.observe(content.value);
-        });
-      }
-      cancelAnimationFrame(placeFrame);
-      place();
+      const floating = wrapper.value;
+      if (!anchor || !floating) return;
+      computePosition(anchor, floating, {
+        strategy: "fixed",
+        placement: `${side}-${align}`,
+        middleware,
+      }).then(({ x, y, placement, middlewareData }) => {
+        const [placedSide, placedAlign = "center"] = placement.split("-");
+        if (live)
+          placed.value = {
+            x,
+            y,
+            side: placedSide,
+            align: placedAlign,
+            height: middlewareData.origin.height,
+            dpr: floating.ownerDocument.defaultView?.devicePixelRatio || 1,
+          };
+      });
     };
     onMounted(() => {
       mounted.value = true;
       nextTick(() => {
-        place();
         const anchor = props.anchor();
-        if (typeof ResizeObserver !== "undefined") {
-          observer = new ResizeObserver(onResize);
-          if (anchor) observer.observe(anchor);
-          if (content.value) observer.observe(content.value);
-        }
-        window.addEventListener("scroll", onMove, {
-          capture: true,
-          passive: true,
+        const floating = wrapper.value;
+        if (!live || !anchor || !floating) return;
+        // autoUpdate, as Radix's, on scroll, resize and layout shifts; its
+        // ResizeObserver is this one. autoUpdate's places the popup inside
+        // the observer's delivery on any resize, and stops observing the
+        // popup for a frame only when the field resizes (floating-ui#1740).
+        // The popup's own resize is the other loop: placing writes the room
+        // left on its side, which its list's max-height reads, so it resizes
+        // again in the same delivery (a Combobox in a Dialog, a Drawer or a
+        // Popover, where the popup settles as the overlay opens), and WebKit
+        // raises "ResizeObserver loop completed with undelivered
+        // notifications". It is placed on the next frame instead.
+        const cleanup = autoUpdate(anchor, floating, update, {
+          elementResize: false,
         });
-        window.addEventListener("resize", onMove);
+        let frame = 0;
+        let reobserve = 0;
+        const observer =
+          typeof ResizeObserver === "undefined"
+            ? undefined
+            : new ResizeObserver((entries) => {
+                cancelAnimationFrame(frame);
+                if (entries.some((entry) => entry.target === anchor)) {
+                  observer!.unobserve(floating);
+                  cancelAnimationFrame(reobserve);
+                  reobserve = requestAnimationFrame(() =>
+                    observer!.observe(floating),
+                  );
+                  update();
+                } else frame = requestAnimationFrame(update);
+              });
+        observer?.observe(anchor);
+        observer?.observe(floating);
+        stop = () => {
+          cleanup();
+          observer?.disconnect();
+          cancelAnimationFrame(frame);
+          cancelAnimationFrame(reobserve);
+        };
       });
     });
     onBeforeUnmount(() => {
-      observer?.disconnect();
-      observer = undefined;
-      if (typeof cancelAnimationFrame !== "undefined") {
-        cancelAnimationFrame(reobserveFrame);
-        cancelAnimationFrame(placeFrame);
-      }
-      window.removeEventListener("scroll", onMove, { capture: true });
-      window.removeEventListener("resize", onMove);
+      live = false;
+      stop?.();
+      stop = undefined;
     });
 
     return () => {
@@ -172,6 +188,10 @@ export const KozmosFieldPopper = defineComponent({
       // portal exists.
       if (!container) return null;
       const at = placed.value;
+      // As @floating-ui/react-dom's floatingStyles: rounded to the device
+      // pixel, and promoted at 1.5 and over.
+      const round = (value: number) =>
+        at ? Math.round(value * at.dpr) / at.dpr : 0;
       const {
         class: className,
         style,
@@ -182,7 +202,9 @@ export const KozmosFieldPopper = defineComponent({
             content.value,
           ).zIndex
         : undefined;
-      // Radix's Portal draws a <div> of its own around what it portals.
+      // Radix's Portal draws a <div> of its own around what it portals. The
+      // wrapper's --radix-popper-available-* and -anchor-* are written by the
+      // size middleware, as Radix's are, and never drawn here.
       return h(Teleport, { to: container }, [
         h("div", null, [
           h(
@@ -195,23 +217,16 @@ export const KozmosFieldPopper = defineComponent({
                 left: "0px",
                 top: "0px",
                 transform: at
-                  ? `translate(${at.x}px, ${at.y}px)`
+                  ? `translate(${round(at.x)}px, ${round(at.y)}px)`
                   : "translate(0, -200%)",
+                willChange: at && at.dpr >= 1.5 ? "transform" : undefined,
                 minWidth: "max-content",
                 zIndex: zIndex || undefined,
-                "--radix-popper-available-width": at
-                  ? `${at.availableWidth}px`
-                  : undefined,
-                "--radix-popper-available-height": at
-                  ? `${at.availableHeight}px`
-                  : undefined,
-                "--radix-popper-anchor-width": at
-                  ? `${at.anchorWidth}px`
-                  : undefined,
-                "--radix-popper-anchor-height": at
-                  ? `${at.anchorHeight}px`
-                  : undefined,
-                "--radix-popper-transform-origin": at?.origin,
+                // Radix's with no arrow: the aligned edge, on the field's side
+                // (only bottom or top: flip falls back to the other).
+                "--radix-popper-transform-origin": at
+                  ? `${{ start: "0%", center: "50%", end: "100%" }[at.align]} ${at.side === "top" ? at.height : 0}px`
+                  : " ",
               },
             },
             [
@@ -219,8 +234,8 @@ export const KozmosFieldPopper = defineComponent({
                 "div",
                 {
                   ref: content,
-                  "data-side": at?.side ?? preferred,
-                  "data-align": FIELD_POPUP_PLACEMENT.align,
+                  "data-side": at?.side ?? side,
+                  "data-align": at?.align ?? align,
                   // As React's ThemePortal marks what it draws.
                   "data-kozmos-density": density?.value,
                   class: cn(FIELD_POPUP_CONTENT_CLASS, className as string),

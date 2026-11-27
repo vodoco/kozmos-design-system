@@ -7,6 +7,8 @@ import { renderBoth, type Drawn } from "./render";
 import {
   inBoth,
   keyOn,
+  layOut,
+  placement,
   standIns,
   typeInto,
   unmountBoth,
@@ -216,6 +218,43 @@ describe("KozmosMultiSelect, mounted, as React's", () => {
     expect(heard.vue.events).toEqual(heard.react.events);
     return result;
   }
+
+  /**
+   * Where the popup lands on a laid-out page (`layOut`), as Combobox's: both
+   * place it with floating-ui and Radix's options, so the documents are one.
+   */
+  it.each([
+    [
+      "room below",
+      { x: 100, y: 100 },
+      { transform: "translate(100px, 148px)", side: "bottom" },
+    ],
+    [
+      "at the window's foot: flipped above",
+      { x: 100, y: 650 },
+      { transform: "translate(100px, 446px)", side: "top" },
+    ],
+    [
+      "at its end: shifted back to 8 from the edge",
+      { x: 900, y: 100 },
+      { transform: "translate(776px, 148px)", side: "bottom" },
+    ],
+  ] as const)(
+    "places the popup as React's: %s",
+    async (_name, at, expected) => {
+      const restore = layOut({
+        field: { ...at, width: 240, height: 44 },
+        popup: { width: 240, height: 200 },
+      });
+      try {
+        const { shots } = await compare({}, [() => input().focus()]);
+        expect(shots.react[1]).toContain("data-radix-popper-content-wrapper");
+        expect(placement()).toMatchObject({ align: "start", ...expected });
+      } finally {
+        restore();
+      }
+    },
+  );
 
   it("focus opens the list in the theme's portal; typing filters it; Enter toggles the active option, keeping it active", async () => {
     const { heard, shots } = await compare({}, [

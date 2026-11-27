@@ -13,6 +13,7 @@ import {
 } from "../../src/index";
 import { normalizeHtml } from "./normalize-html";
 import { renderBoth, type Drawn } from "./render";
+import { layOut, placement, pointerMovedLast } from "./mounted-both";
 
 /**
  * Combobox, drawn in both: React's stories (their options are named
@@ -237,12 +238,10 @@ describe("KozmosCombobox, mounted, as React's", () => {
   const settle = () => (inReact ? act(wait) : wait());
 
   /**
-   * The document as each draws it, with the popper's geometry made one:
-   * where Radix's floating-ui and this port's placement put the popup in
-   * jsdom, which lays nothing out, differs, so each geometric declaration
-   * is kept by name; and the declarations sorted.
+   * The document as each draws it, each style's declarations sorted. The
+   * popper's geometry is compared as drawn: both place it with floating-ui,
+   * Radix's options in each (fieldPopper.ts).
    */
-  const GEOMETRY = /^(transform|left|top|z-index|--radix-popper-[\w-]+)$/;
   const alike = (html: string) => {
     const document = new DOMParser().parseFromString(html, "text/html");
     for (const element of document.body.querySelectorAll("[style]")) {
@@ -251,10 +250,6 @@ describe("KozmosCombobox, mounted, as React's", () => {
         .split(";")
         .map((part) => part.trim())
         .filter(Boolean)
-        .map((part) => {
-          const name = part.slice(0, part.indexOf(":")).trim();
-          return GEOMETRY.test(name) ? `${name}:*` : part;
-        })
         .sort();
       element.setAttribute("style", declarations.join(";"));
     }
@@ -366,6 +361,7 @@ describe("KozmosCombobox, mounted, as React's", () => {
               },
       } as never);
     }
+    pointerMovedLast();
     let host = document.body.appendChild(document.createElement("div"));
     reactRoot = createRoot(host);
     await act(async () =>
@@ -407,6 +403,7 @@ describe("KozmosCombobox, mounted, as React's", () => {
     const value = ref(start ?? "");
     const text = ref("");
     const extra = ref<Props>({});
+    pointerMovedLast();
     host = document.body.appendChild(document.createElement("div"));
     vueApp = createApp({
       render: () =>
@@ -460,6 +457,58 @@ describe("KozmosCombobox, mounted, as React's", () => {
     expect(read(heard.vue.events)).toEqual(read(heard.react.events));
     return { heard, shots };
   }
+
+  /**
+   * Where the popup lands on a laid-out page (`layOut`): both place it with
+   * floating-ui and Radix's options, so the documents, its transform, side,
+   * alignment and the room it writes included, are one.
+   */
+  it.each([
+    [
+      "room below: under the field from its start, 4 down",
+      { x: 100, y: 100 },
+      { height: 200 },
+      { transform: "translate(100px, 148px)", side: "bottom", align: "start" },
+    ],
+    [
+      "at the window's foot: flipped above",
+      { x: 100, y: 650 },
+      { height: 200 },
+      { transform: "translate(100px, 446px)", side: "top", align: "start" },
+    ],
+    [
+      "at its end: shifted back to 8 from the edge",
+      { x: 900, y: 100 },
+      { height: 200 },
+      { transform: "translate(776px, 148px)", side: "bottom", align: "start" },
+    ],
+    [
+      "taller than either side: stays below, the room left written",
+      { x: 100, y: 300 },
+      { height: 600 },
+      { side: "bottom", availableHeight: "412px" },
+    ],
+  ] as const)(
+    "places the popup as React's: %s",
+    async (_name, at, size, expected) => {
+      const restore = layOut({
+        field: { ...at, width: 240, height: 44 },
+        popup: { width: 240, ...size },
+      });
+      try {
+        const { shots } = await inBoth({ label: "Fruit", options: fruit }, [
+          () => input().focus(),
+        ]);
+        expect(shots.react[1]).toContain("data-radix-popper-content-wrapper");
+        expect(placement()).toMatchObject({
+          anchorWidth: "240px",
+          ...expected,
+        });
+      } finally {
+        restore();
+      }
+    },
+  );
 
   it("focus opens the list in the theme's portal; typing filters it; Enter chooses the first match", async () => {
     const { heard, shots } = await inBoth({ label: "Fruit", options: fruit }, [
