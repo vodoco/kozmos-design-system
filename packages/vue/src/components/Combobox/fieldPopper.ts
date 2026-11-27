@@ -105,29 +105,36 @@ export const KozmosFieldPopper = defineComponent({
 
     let observer: ResizeObserver | undefined;
     let reobserveFrame = 0;
+    let placeFrame = 0;
     const onMove = () => place();
-    // As Radix's Popper (floating-ui's autoUpdate) does: placed in the
-    // observer's callback, and when the field resizes, the popup is no
-    // longer observed until the next frame. Placing writes the field's width
-    // as the popup's, so the popup resizes in the same frame; observed, it
-    // would be a loop, which WebKit raises as "ResizeObserver loop completed
-    // with undelivered notifications" (floating-ui#1740; a Combobox in a
-    // Dialog, where the field and the popup settle as the Dialog opens). A
-    // resize of the popup alone moves it and changes no size it observes.
+    // Nothing placed inside the observer's delivery may resize what it
+    // observes, or WebKit raises "ResizeObserver loop completed with
+    // undelivered notifications". Two resizes do:
+    // - the field's: placing writes its width as the popup's. As Radix's
+    //   Popper (floating-ui's autoUpdate) does, the popup is no longer
+    //   observed until the next frame, and placed at once, so it never lags
+    //   the field (floating-ui#1740).
+    // - the popup's own: placing writes the room left on its side
+    //   (--radix-popper-available-height), which its list's max-height
+    //   reads, so it resizes again (a Combobox in a Dialog or Popover, where
+    //   the popup settles as the overlay opens). It is placed on the next
+    //   frame instead, outside the delivery.
     const onResize = (entries: ResizeObserverEntry[]) => {
       const anchor = props.anchor();
       const floating = content.value;
-      if (
-        observer &&
-        floating &&
-        entries.some((entry) => entry.target === anchor)
-      ) {
+      if (!entries.some((entry) => entry.target === anchor)) {
+        cancelAnimationFrame(placeFrame);
+        placeFrame = requestAnimationFrame(place);
+        return;
+      }
+      if (observer && floating) {
         observer.unobserve(floating);
         cancelAnimationFrame(reobserveFrame);
         reobserveFrame = requestAnimationFrame(() => {
           if (observer && content.value) observer.observe(content.value);
         });
       }
+      cancelAnimationFrame(placeFrame);
       place();
     };
     onMounted(() => {
@@ -150,8 +157,10 @@ export const KozmosFieldPopper = defineComponent({
     onBeforeUnmount(() => {
       observer?.disconnect();
       observer = undefined;
-      if (typeof cancelAnimationFrame !== "undefined")
+      if (typeof cancelAnimationFrame !== "undefined") {
         cancelAnimationFrame(reobserveFrame);
+        cancelAnimationFrame(placeFrame);
+      }
       window.removeEventListener("scroll", onMove, { capture: true });
       window.removeEventListener("resize", onMove);
     });
