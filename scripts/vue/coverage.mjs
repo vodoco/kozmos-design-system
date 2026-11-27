@@ -125,6 +125,20 @@ export const VUE_STORIES = {
   "vue-wayfindingcard--inside-map-overlay": {
     interaction: "wayfinding-swap",
   },
+  "vue-foundations-theming-themeprovider--default": {
+    interaction: "theme-switch",
+    exempt: {
+      themes:
+        "The story's own KozmosThemeProvider is the demo: it follows the theme its buttons set (system until one is pressed), not the toolbar's, as React's story draws it; the interaction checks each button's theme",
+    },
+  },
+  "vue-foundations-theming-themeprovider--density": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Decision 82's controls at both densities, each one's interaction its own story's (Button, IconButton, Input, Select, Combobox, MultiSelect, NumberInput, PasswordInput); the themes suite measures each at its density, and axe scans them",
+    },
+  },
   "vue-foundations-typography-text--default": {
     interaction: null,
     exempt: {

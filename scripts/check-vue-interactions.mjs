@@ -396,6 +396,52 @@ const INTERACTIONS = {
   },
 
   /**
+   * ThemeProvider's demo: its three buttons, Tab after Tab, each pressed by
+   * Enter, set the theme of the provider the story draws (useTheme's
+   * setTheme): Light and Dark their own, System the page's colour scheme.
+   * A button that sets nothing, or another theme, fails.
+   */
+  async "theme-switch"(page) {
+    const buttons = await controls(page, "button").all();
+    assert.equal(buttons.length, 3, "the demo draws three buttons");
+    const themeOf = () =>
+      buttons[0].evaluate((el) =>
+        el.closest("[data-kozmos-root]")?.getAttribute("data-theme"),
+      );
+    const system = await page.evaluate(() =>
+      matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+    );
+    const wanted = ["light", "dark", system];
+    await focusStart(page);
+    const did = [];
+    for (const [index, button] of buttons.entries()) {
+      await page.keyboard.press("Tab");
+      await settle(page);
+      const name = await button.evaluate((el) =>
+        window.__kozmosVue.describe(el),
+      );
+      assert.equal(
+        await button.evaluate((el) => el === document.activeElement),
+        true,
+        `Tab reaches ${name} (focus is on ${await focused(page)})`,
+      );
+      // From the other theme, so each press is seen to change it.
+      await buttons[index === 1 ? 0 : 1].evaluate((el) => el.click());
+      await settle(page);
+      await button.focus();
+      await page.keyboard.press("Enter");
+      await settle(page);
+      assert.equal(
+        await themeOf(),
+        wanted[index],
+        `Enter on ${name} sets the provider's theme to ${wanted[index]}`,
+      );
+      did.push(`${name} ${wanted[index]}`);
+    }
+    return `Tab, then Enter on each: ${did.join(", ")}`;
+  },
+
+  /**
    * Every link, button and field, Tab after Tab in reading order: each link
    * followed by Enter and by a click (heard, not followed), each button
    * pressed and hovered, each field typed into, a read-only one holding its

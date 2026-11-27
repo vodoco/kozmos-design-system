@@ -68,8 +68,8 @@ export const PORTS: Port[] = [
     elsewhere: {
       // A provider whose buttons call useTheme().setTheme.
       Default: "parity/mounted.parity.spec.ts",
-      // DensityScope at both densities; the controls it shows beyond Button
-      // are not ported yet, and are drawn in both once they are.
+      // DensityScope at both densities, its controls all native:
+      // story-renders.parity.spec.ts draws the story itself in both.
       Density: "parity/provider-and-scope.parity.spec.ts",
     },
     drawnIn: "parity/button.parity.spec.ts",

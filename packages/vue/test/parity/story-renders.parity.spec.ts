@@ -33,11 +33,6 @@ import { normalizeHtml } from "./normalize-html";
  * Stories this cannot draw in both are named in NOT_DRAWN, with why.
  */
 const NOT_DRAWN: Record<string, string> = {
-  // A provider with buttons that call useTheme, and a density demo whose
-  // other controls are not ported: mounted.parity.spec.ts and
-  // provider-and-scope.parity.spec.ts draw what they show.
-  "ThemeProvider/Default": "its render reads React's own hooks",
-  "ThemeProvider/Density": "draws parts not yet ported to Vue",
   // Its meta's decorator draws the TooltipProvider React's Tooltip needs,
   // and this check draws no decorator: tooltip.parity.spec.ts draws the
   // story in both, closed and open.
@@ -217,10 +212,7 @@ async function findings(port: (typeof PORTS)[number]) {
  * it is. Each is the port's to settle, and an entry that no longer occurs
  * fails, so the list only shrinks. A port made since has none.
  */
-const EARLIER: Record<string, string> = {
-  "KozmosThemeProvider:stories file":
-    "Vue's ThemeProvider has no stories file until wave V2: React's Density story draws Input, Select, Combobox, MultiSelect, NumberInput and PasswordInput, V2's form controls; mounted.parity.spec.ts draws React's stories' behaviour",
-};
+const EARLIER: Record<string, string> = {};
 
 describe("each Vue story draws what React's story of its name draws", () => {
   for (const port of PORTS.filter((p) => p.stories))
