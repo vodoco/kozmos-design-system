@@ -816,11 +816,11 @@
       ],
       "sources": [
         {
-          "file": "packages/react/src/components/Chip/Chip.tsx",
+          "file": "packages/react/src/recipes/chip.ts",
           "contains": "text-[var(--kz-emotion-on-surface)] hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]"
         },
         {
-          "file": "packages/react/src/components/Chip/Chip.tsx",
+          "file": "packages/react/src/recipes/chip.ts",
           "contains": "\"hover:bg-[color-mix(in_srgb,var(--kz-emotion-text)_10%,var(--kz-emotion-surface))]\""
         }
       ]
