@@ -5,6 +5,7 @@ import { execSync } from "child_process";
 import { createRequire } from "module";
 import { gzipSync } from "zlib";
 import { topLevelRetainers } from "./top-level-retainers.mjs";
+import { createDependencyCost } from "./with-dependencies.mjs";
 import { PURE_CALLS } from "../../packages/vue/vite-plugins/pure-calls.mjs";
 
 // What an app pays for @kozmos-ds/react. The ES build is one file per module, and package.json
@@ -15,7 +16,12 @@ import { PURE_CALLS } from "../../packages/vue/vite-plugins/pure-calls.mjs";
 //
 // - Every public export, bundled alone: the heaviest stays under MAX_EXPORT_GZIP_KB, so no one
 //   component can quietly pull in the rest. On 2026-09-22 the heaviest was POIDetailPanel at
-//   6.15 KB, and the median export 1.14 KB.
+//   6.15 KB, and the median export 1.14 KB. Since 2026-11-27 (the owner's ruling) each export is
+//   read with its dependencies, React's and Vue's alike (./with-dependencies.mjs): Radix,
+//   floating-ui, Reka UI, tailwind-merge, the icons it imports and the rest, all but the
+//   frameworks an app already has (react, react-dom, vue). Until then a React part's Radix was
+//   left out and a Vue part's equivalent code counted. The cap still reads 9 KB until one is set
+//   from that data; both figures are printed for every export.
 // - Button alone, under MAX_BUTTON_GZIP_KB: the canary for the per-module output itself. When the
 //   ES build was one file, importing Button cost an app 48.7 KB, nearly the whole library.
 // - Everything at once (54.6 KB on 2026-09-22), and the stylesheet (26.4 KB), which no bundler
@@ -225,6 +231,10 @@ interface EsbuildApi {
     code: string,
     options: Record<string, unknown>,
   ): Promise<{ code: string }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context(options: Record<string, unknown>): Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  build(options: Record<string, unknown>): Promise<any>;
 }
 
 // Rollup and esbuild as Vite ships them, which is what an app's build runs.
@@ -422,6 +432,14 @@ async function main() {
     return { output, raw: minified.length, gzip: gzipSync(minified).length };
   }
 
+  // Each export with its dependencies (./with-dependencies.mjs): its own
+  // Rollup cache, since it resolves and shakes what cost() leaves out.
+  const withDependencies = await createDependencyCost({
+    rollup,
+    esbuild,
+    plugins: [productionDefine],
+  });
+
   try {
     const everything = await cost(
       `import * as kozmos from ${JSON.stringify(ENTRY)}; console.log(kozmos);`,
@@ -441,16 +459,22 @@ async function main() {
         ).generate({ format: "es" })
       ).output[0].exports ?? [];
     const perExport: Array<[string, number]> = [];
+    // name, with its dependencies, and alone as measured until 27 Nov 2026
+    const perExportWithDeps: Array<[string, number, number]> = [];
     for (const name of exportsList) {
+      const source = `import { ${name} } from ${JSON.stringify(ENTRY)}; console.log(${name});`;
       const { gzip } = await cost(
-        `import { ${name} } from ${JSON.stringify(ENTRY)}; console.log(${name});`,
+        source,
         // Numbered: `Toast` and `toast` are one file on a Mac's disk, which
         // ignores case, and the second entry then never resolved.
         `export_${perExport.length}_${name}`,
       );
       perExport.push([name, gzip]);
+      const withDeps = await withDependencies.cost(source, REACT_PKG_DIR);
+      perExportWithDeps.push([name, withDeps.gzip, gzip]);
     }
     perExport.sort((a, b) => b[1] - a[1]);
+    perExportWithDeps.sort((a, b) => b[1] - a[1]);
     const button = perExport.find(([name]) => name === "Button");
     const cssGzip = gzipSync(fs.readFileSync(STYLESHEET)).length;
     if (!fs.readFileSync(STYLESHEET).equals(fs.readFileSync(REACT_STYLESHEET)))
@@ -459,19 +483,26 @@ async function main() {
       );
     const sorted = perExport.map(([, gzip]) => gzip).sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
+    const medianOf = (rows: Array<[string, number, number]>) =>
+      rows.map(([, gzip]) => gzip).sort((a, b) => a - b)[
+        Math.floor(rows.length / 2)
+      ] ?? 0;
+    // Every export, heaviest first: with its dependencies, against the cap,
+    // and alone as measured until 27 Nov 2026.
+    const printExports = (rows: Array<[string, number, number]>) => {
+      for (const [name, gzip, alone] of rows)
+        console.log(
+          `  ${name.padEnd(36)} ${kb(gzip).toFixed(2).padStart(6)} KB / ${MAX_EXPORT_GZIP_KB.toFixed(2)} KB with dependencies (${kb(alone).toFixed(2)} KB without)`,
+        );
+    };
 
     console.log(`\n📊 What an app pays for @kozmos-ds/react (minified, gzip):`);
     console.log(`---------------------------------`);
     console.log(`ES modules:        ${modules.length} files in dist/esm`);
     console.log(
-      `Exports measured:  ${perExport.length}, median ${kb(median).toFixed(2)} KB`,
+      `Exports measured:  ${perExport.length}, median ${kb(medianOf(perExportWithDeps)).toFixed(2)} KB with dependencies (${kb(median).toFixed(2)} KB without), each alone:`,
     );
-    console.log(`Heaviest exports:`);
-    for (const [name, gzip] of perExport.slice(0, 5)) {
-      console.log(
-        `  ${name.padEnd(28)} ${kb(gzip).toFixed(2)} KB / ${MAX_EXPORT_GZIP_KB.toFixed(2)} KB`,
-      );
-    }
+    printExports(perExportWithDeps);
     console.log(
       `Button alone:      ${button ? kb(button[1]).toFixed(2) : "missing"} KB / ${MAX_BUTTON_GZIP_KB.toFixed(2)} KB`,
     );
@@ -483,7 +514,7 @@ async function main() {
     );
     console.log(`---------------------------------`);
 
-    const overBudget = perExport.filter(
+    const overBudget = perExportWithDeps.filter(
       ([, gzip]) => kb(gzip) > MAX_EXPORT_GZIP_KB,
     );
     if (overBudget.length) {
@@ -492,7 +523,7 @@ async function main() {
         .map(([name, gzip]) => `${name} ${kb(gzip).toFixed(2)} KB`)
         .join(", ");
       fail.push(
-        `${overBudget.length} of ${perExport.length} exports cost over ${MAX_EXPORT_GZIP_KB} KB alone (${named}${overBudget.length > 5 ? ", …" : ""})`,
+        `${overBudget.length} of ${perExportWithDeps.length} exports cost over ${MAX_EXPORT_GZIP_KB} KB alone with their dependencies (${named}${overBudget.length > 5 ? ", …" : ""})`,
       );
     }
     if (!button) fail.push("Button is not a public export");
@@ -595,8 +626,8 @@ async function main() {
       `import * as bridge from ${JSON.stringify(VUE_BRIDGE)}; console.log(bridge);`,
       "vue_react_bridge",
     );
-    // Every Vue export bundled alone, as React's are: none over
-    // MAX_EXPORT_GZIP_KB (decision 227).
+    // Every Vue export bundled alone, as React's are, with its dependencies:
+    // none over MAX_EXPORT_GZIP_KB (decision 227).
     const vueExports =
       (
         await (
@@ -611,14 +642,19 @@ async function main() {
         ).generate({ format: "es" })
       ).output[0].exports ?? [];
     const vuePerExport: Array<[string, number]> = [];
+    const vuePerExportWithDeps: Array<[string, number, number]> = [];
     for (const name of vueExports) {
+      const source = `import { ${name} } from ${JSON.stringify(VUE_ENTRY)}; console.log(${name});`;
       const { gzip } = await cost(
-        `import { ${name} } from ${JSON.stringify(VUE_ENTRY)}; console.log(${name});`,
+        source,
         `vue_export_${vuePerExport.length}_${name}`,
       );
       vuePerExport.push([name, gzip]);
+      const withDeps = await withDependencies.cost(source, VUE_PKG_DIR);
+      vuePerExportWithDeps.push([name, withDeps.gzip, gzip]);
     }
     vuePerExport.sort((a, b) => b[1] - a[1]);
+    vuePerExportWithDeps.sort((a, b) => b[1] - a[1]);
     const vueButton = vuePerExport.find(([name]) => name === "KozmosButton");
     const vueSorted = vuePerExport
       .map(([, gzip]) => gzip)
@@ -643,13 +679,9 @@ async function main() {
       `./react-bridge:    ${kb(bridge.gzip).toFixed(2)} KB / ${MAX_VUE_BRIDGE_GZIP_KB.toFixed(2)} KB (${kb(bridge.raw).toFixed(2)} KB minified; React's parts, React and ReactDOM besides)`,
     );
     console.log(
-      `Exports measured:  ${vuePerExport.length}, median ${kb(vueMedian).toFixed(2)} KB, the heaviest alone:`,
+      `Exports measured:  ${vuePerExport.length}, median ${kb(medianOf(vuePerExportWithDeps)).toFixed(2)} KB with dependencies (${kb(vueMedian).toFixed(2)} KB without), each alone:`,
     );
-    for (const [name, gzip] of vuePerExport.slice(0, 5)) {
-      console.log(
-        `  ${name.padEnd(28)} ${kb(gzip).toFixed(2)} KB / ${MAX_EXPORT_GZIP_KB.toFixed(2)} KB`,
-      );
-    }
+    printExports(vuePerExportWithDeps);
     console.log(
       `KozmosButton alone: ${vueButton ? kb(vueButton[1]).toFixed(2) : "missing"} KB / ${MAX_VUE_BUTTON_GZIP_KB.toFixed(2)} KB`,
     );
@@ -670,12 +702,12 @@ async function main() {
       );
     if (!vuePerExport.length)
       fail.push("@kozmos-ds/vue's main entry was read as exporting nothing");
-    const vueOver = vuePerExport.filter(
+    const vueOver = vuePerExportWithDeps.filter(
       ([, gzip]) => kb(gzip) > MAX_EXPORT_GZIP_KB,
     );
     if (vueOver.length)
       fail.push(
-        `${vueOver.length} of ${vuePerExport.length} @kozmos-ds/vue exports cost over ${MAX_EXPORT_GZIP_KB} KB alone (${vueOver
+        `${vueOver.length} of ${vuePerExportWithDeps.length} @kozmos-ds/vue exports cost over ${MAX_EXPORT_GZIP_KB} KB alone with their dependencies (${vueOver
           .slice(0, 5)
           .map(([name, gzip]) => `${name} ${kb(gzip).toFixed(2)}`)
           .join(", ")}${vueOver.length > 5 ? ", …" : ""})`,
@@ -685,6 +717,7 @@ async function main() {
         `@kozmos-ds/vue/react-bridge costs ${kb(bridge.gzip).toFixed(2)} KB, over ${MAX_VUE_BRIDGE_GZIP_KB} KB`,
       );
   } finally {
+    await withDependencies.dispose();
     fs.rmSync(work, { recursive: true, force: true });
   }
 
