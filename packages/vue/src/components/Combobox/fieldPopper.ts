@@ -104,14 +104,36 @@ export const KozmosFieldPopper = defineComponent({
     };
 
     let observer: ResizeObserver | undefined;
+    let reobserveFrame = 0;
     const onMove = () => place();
+    // As Radix's Popper (floating-ui's autoUpdate) does: when the field
+    // resizes, the popup is no longer observed until the next frame. Placing
+    // it writes the field's width as the popup's, so the popup resizes in the
+    // same frame, and WebKit then raises "ResizeObserver loop completed with
+    // undelivered notifications" (floating-ui#1740).
+    const onResize = (entries: ResizeObserverEntry[]) => {
+      const anchor = props.anchor();
+      const floating = content.value;
+      if (
+        observer &&
+        floating &&
+        entries.some((entry) => entry.target === anchor)
+      ) {
+        observer.unobserve(floating);
+        cancelAnimationFrame(reobserveFrame);
+        reobserveFrame = requestAnimationFrame(() => {
+          if (observer && content.value) observer.observe(content.value);
+        });
+      }
+      place();
+    };
     onMounted(() => {
       mounted.value = true;
       nextTick(() => {
         place();
         const anchor = props.anchor();
         if (typeof ResizeObserver !== "undefined") {
-          observer = new ResizeObserver(onMove);
+          observer = new ResizeObserver(onResize);
           if (anchor) observer.observe(anchor);
           if (content.value) observer.observe(content.value);
         }
@@ -124,6 +146,8 @@ export const KozmosFieldPopper = defineComponent({
     });
     onBeforeUnmount(() => {
       observer?.disconnect();
+      observer = undefined;
+      cancelAnimationFrame(reobserveFrame);
       window.removeEventListener("scroll", onMove, { capture: true });
       window.removeEventListener("resize", onMove);
     });
