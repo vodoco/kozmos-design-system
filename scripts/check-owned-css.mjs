@@ -2815,6 +2815,79 @@ try {
   await still.close();
   await moving.close();
 
+  // GAP-292: WebKit draws no box-shadow on a <button> or an <input> it still
+  // draws natively, and a control stays native until an author rule sets its
+  // background, its border or its appearance. Without @scope (Safari
+  // 26.0–26.3 applies none to a form field) the only such rules were the
+  // scoped preflight and utilities, so a chosen radio card or tile kept its
+  // owned inset edge in Chromium and lost it in WebKit. This page has no
+  // host rule on buttons, so nothing but Kozmos's owned CSS can style one.
+  const bare = await browser.newPage({
+    viewport: { width: 1100, height: 1100 },
+  });
+  const bareErrors = [];
+  bare.on("pageerror", (error) => bareErrors.push(error.message));
+  await bare.setContent(
+    `<!doctype html><html><head><style>${root.toString()}</style></head><body><div id="fixture"></div></body></html>`,
+  );
+  await bare.addScriptTag({ content: code });
+  await bare.getByTestId("outer-radio-card-on").waitFor();
+  await settleLayout(bare);
+  const chosenEdges = [];
+  for (const id of ["outer", "nested"])
+    for (const part of ["radio-card-on", "radio-tile-on"]) {
+      const drawn = await bare.getByTestId(`${id}-${part}`).evaluate((node) => {
+        const probe = document.createElement("span");
+        probe.style.color = "var(--primitives-colors-theme-600)";
+        node.parentElement.append(probe);
+        const edge = getComputedStyle(probe).color;
+        probe.remove();
+        return {
+          checked: node.getAttribute("aria-checked"),
+          edge,
+          boxShadow: getComputedStyle(node).boxShadow,
+        };
+      });
+      assert.equal(drawn.checked, "true", `without @scope, ${id} ${part}`);
+      assert(
+        drawn.boxShadow.includes(`${drawn.edge} 0px 0px 0px 1px inset`),
+        `without @scope, the chosen ${id} ${part} draws no theme 600 inset edge (${drawn.edge}): box-shadow ${drawn.boxShadow}`,
+      );
+      chosenEdges.push(`${id} ${part}`);
+    }
+  // And no owned box-shadow anywhere on the host is lost the same way: each
+  // form control's shadow is read as it is, then once more with an author
+  // background-image, which makes it a styled control and changes nothing
+  // else. A shadow that only shows then was dropped by the native drawing.
+  const dropped = await bare.evaluate(() =>
+    [
+      ...document.querySelectorAll(
+        "#fixture button, #fixture input, #fixture select, #fixture textarea",
+      ),
+    ].flatMap((node) => {
+      const before = getComputedStyle(node).boxShadow;
+      const inline = node.style.backgroundImage;
+      node.style.backgroundImage = "none";
+      const styled = getComputedStyle(node).boxShadow;
+      node.style.backgroundImage = inline;
+      return before === styled
+        ? []
+        : [
+            `${node.tagName} ${node.getAttribute("data-testid") ?? node.className}: ${before} → ${styled}`,
+          ];
+    }),
+  );
+  assert.deepEqual(
+    dropped,
+    [],
+    "without @scope, a form control's owned box-shadow is dropped while it is drawn natively",
+  );
+  assert.deepEqual(bareErrors, []);
+  console.log(
+    `PASS GAP-292, without @scope and with no host rule on buttons: ${chosenEdges.join(", ")} draw their theme 600 inset edge, and no form control drops an owned box-shadow`,
+  );
+  await bare.close();
+
   // One grey on every surface: the Skeleton is Figma's Colors/background/200,
   // as iOS and Android draw it (Olcay, 2026-09-27). React drew `bg-muted`,
   // which is background/100. `outer` is the dark theme and `nested` the light

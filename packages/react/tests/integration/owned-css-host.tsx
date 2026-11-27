@@ -373,6 +373,20 @@ function StateLooks({ id }: { id: string }) {
             />,
           )}
         </RadioGroup>
+        <RadioGroup aria-label={`${id} tiles`} defaultValue="a">
+          <RadioGroupItem
+            data-testid={`${id}-radio-tile-on`}
+            value="a"
+            variant="tile"
+            label="Tile"
+          />
+          <RadioGroupItem
+            data-testid={`${id}-radio-tile-off`}
+            value="b"
+            variant="tile"
+            label="Other tile"
+          />
+        </RadioGroup>
         <Tabs defaultValue="a">
           <TabsList>
             <TabsTrigger data-testid={`${id}-tab-on`} value="a">
