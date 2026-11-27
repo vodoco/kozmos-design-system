@@ -103,7 +103,7 @@ const MAX_BUTTON_GZIP_KB = 2;
 // 0.4 KB above a Mac's local run of this script (main measured 120.26 there
 // and 119.80 on a Mac), so size the budget from CI's number.
 // After wave V2's choices, selects, chips and overlays batches, Everything
-// measured 121.54 KB on a Mac; the line is CI's measurement + 0.5.
+// measured 122.00 KB in CI's bundle job (121.54 on a Mac), so 122.50.
 const MAX_TOTAL_GZIP_KB = 122.5;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
