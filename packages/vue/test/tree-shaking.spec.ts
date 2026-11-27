@@ -57,6 +57,8 @@ const MARKS = {
   KozmosSpriteIcon: ['"KozmosSpriteIcon"'],
   KozmosChip: ['"KozmosChip"'],
   KozmosChipGroup: ['"KozmosChipGroup"'],
+  KozmosMultiSelect: ['"KozmosMultiSelect"'],
+  KozmosChipInput: ['"KozmosChipInput"'],
   // A single-choice KozmosChipGroup's radios (shared/rovingFocus.ts).
   rovingFocus: ['"KozmosRovingFocus"'],
   bridge: ['"KozmosBridgeHost"'],
@@ -164,6 +166,23 @@ describe.each(Object.entries(bundlers))(
     it("import { KozmosChip } keeps it, without a group's roving focus", async () => {
       expect(kept(await bundle(consumer(["KozmosChip"])))).toEqual([
         "KozmosChip",
+      ]);
+    }, 60_000);
+
+    // A field that holds chips draws the row a group of toggles draws, and
+    // never the single-choice group: until 27 Nov 2026 KozmosMultiSelect
+    // kept KozmosChipGroup and its roving focus, 11.88 KB alone.
+    it("import { KozmosMultiSelect } keeps its chips, without KozmosChipGroup", async () => {
+      expect(kept(await bundle(consumer(["KozmosMultiSelect"])))).toEqual([
+        "KozmosChip",
+        "KozmosMultiSelect",
+      ]);
+    }, 60_000);
+
+    it("import { KozmosChipInput } keeps its chips, without KozmosChipGroup", async () => {
+      expect(kept(await bundle(consumer(["KozmosChipInput"])))).toEqual([
+        "KozmosChip",
+        "KozmosChipInput",
       ]);
     }, 60_000);
 

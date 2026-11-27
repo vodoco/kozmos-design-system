@@ -23,7 +23,7 @@ import {
   readEntries,
 } from "#kozmos-recipes";
 import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
-import { KozmosChip, KozmosChipGroup } from "../Chip/Chip";
+import { chipRowAttributes, KozmosChip } from "../Chip/Chip";
 import { KozmosFieldWrapper } from "../FieldWrapper/FieldWrapper";
 import type { KozmosInputStatus } from "../Input/types";
 
@@ -209,7 +209,7 @@ export const KozmosChipInput = defineComponent({
               ...rest,
             },
             [
-              h(KozmosChipGroup, { class: CHIP_FIELD_GROUP_CLASS }, () => [
+              h("div", chipRowAttributes(CHIP_FIELD_GROUP_CLASS), [
                 ...list.map((entry) =>
                   h(
                     KozmosChip,

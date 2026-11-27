@@ -41,7 +41,7 @@ import {
   scrollOptionIntoView,
 } from "#kozmos-recipes";
 import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
-import { KozmosChip, KozmosChipGroup } from "../Chip/Chip";
+import { chipRowAttributes, KozmosChip } from "../Chip/Chip";
 import { KozmosFieldPopper } from "../Combobox/fieldPopper";
 import { MapShellPresentationKey } from "../Combobox/types";
 import { KozmosFieldWrapper } from "../FieldWrapper/FieldWrapper";
@@ -701,7 +701,7 @@ export const KozmosMultiSelect = defineComponent({
                   ...rest,
                 },
                 [
-                  h(KozmosChipGroup, { class: CHIP_FIELD_GROUP_CLASS }, () => [
+                  h("div", chipRowAttributes(CHIP_FIELD_GROUP_CLASS), [
                     ...chips,
                     text,
                   ]),

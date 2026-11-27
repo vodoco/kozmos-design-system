@@ -347,6 +347,18 @@ export const KozmosChip = defineComponent({
 });
 
 /**
+ * The row a group of toggles draws, KozmosChipGroup's with `multiple`: the
+ * `<div>` React's ChipGroup draws then, from the same recipe. A field that
+ * holds its entries as chips (KozmosMultiSelect, KozmosChipInput) draws its
+ * row with this, as React's draw a ChipGroup of toggles, without the
+ * single-choice radio group KozmosChipGroup also is. Internal: the package
+ * exports none of it.
+ */
+export function chipRowAttributes(className?: string, dir?: "ltr" | "rtl") {
+  return { class: chipGroupClass(className), "data-slot": "chip-group", dir };
+}
+
+/**
  * Vue's counterpart of React's ChipGroup: the row chips wrap in, the `<div>`
  * React's draws from the same recipe. `multiple`, the default, leaves each
  * chip its own toggle. `single` makes the chips one choice, a radio group
@@ -419,14 +431,11 @@ export const KozmosChipGroup = defineComponent({
         onMousedown,
         ...rest
       } = attrs as Record<string, unknown>;
-      const classes = chipGroupClass(normalizeClass(className));
       if (props.selectionMode !== "single")
         return h(
           "div",
           {
-            class: classes,
-            "data-slot": "chip-group",
-            dir: props.dir,
+            ...chipRowAttributes(normalizeClass(className), props.dir),
             ...styleAttribute(style),
             onFocus,
             onBlur,
@@ -439,6 +448,7 @@ export const KozmosChipGroup = defineComponent({
       const others = without(rest, "disabled", "required", "name");
       const disabled = attrs.disabled === "" || attrs.disabled === true;
       const required = attrs.required === "" || attrs.required === true;
+      const classes = chipGroupClass(normalizeClass(className));
       return h(
         "div",
         {
