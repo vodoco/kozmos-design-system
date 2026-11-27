@@ -227,17 +227,17 @@ try {
           );
           if (allowance) {
             allowed.set(allowance, allowed.get(allowance) + 1);
-            for (const [density, read] of [
-              ["touch", touch],
-              ["compact", compact],
-            ]) {
+            // At the density the control is drawn in, which a DensityScope
+            // in the story (ThemeProvider's Density) holds apart from the
+            // toolbar's.
+            for (const read of [touch, compact]) {
               const px =
                 typeof allowance.px === "number"
                   ? allowance.px
-                  : allowance.px[density];
+                  : allowance.px[read.density];
               if (Math.abs(read.drawn - px) > 0.5)
                 failures.push(
-                  `${what} is drawn ${read.drawn.toFixed(1)}px ${density}, not the ${px}px its allowance holds it to (${allowance.selector})`,
+                  `${what} is drawn ${read.drawn.toFixed(1)}px ${read.density}, not the ${px}px its allowance holds it to (${allowance.selector})`,
                 );
             }
             continue;
