@@ -44,17 +44,9 @@ const SUITE = "token-references";
  * without them. Any other name read unset fails.
  */
 const UNSET_BY_DESIGN = {
-  // The glass spotlight's position, which React's DesignConfigProvider sets
-  // and moves with the pointer. Vue has no design config yet (its MotionKey
-  // is the key one will provide), and without one the spotlight's opacity
-  // falls back to 0 (`var(--glass-spotlight-opacity, 0)`), so the glass
-  // Button's ::after draws nothing either way.
-  "--spotlight-x":
-    "the design config's glass spotlight, transparent without one",
-  "--spotlight-y":
-    "the design config's glass spotlight, transparent without one",
-};
-const { base, covered } = await storiesFor(SUITE);
+  // None: every story is drawn inside a KozmosDesignConfigProvider, which
+  // sets the glass spotlight's position (GAP-291), as React's preview is.
+};const { base, covered } = await storiesFor(SUITE);
 const browser = await launch();
 const failures = [];
 try {
