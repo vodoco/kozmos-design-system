@@ -42,7 +42,7 @@ const BASELINE = {
   // being Tailwind's red-300 / red-50 / red-400 and took the destructive roles.
   colour: { total: 15, components: 5 },
   // 6 across 5 until 2026-09-22, when the four map cards took the panel role.
-  radius: { total: 2, components: 1 },
+  radius: { total: 0, components: 0 },
 };
 
 console.log("Raw values that bypass a role\n");

@@ -49,6 +49,99 @@ export const EXCEPTIONS: Record<string, string> = {
   // (recipes/rating.ts), the functions React's parameter list names.
   "KozmosRating.itemLabel:default":
     "React's default is the recipe's defaultRatingItemLabel, a function the contract cannot read as a literal; Vue's default is the same function, and rating.parity.spec.ts reads each option's name",
+  // React's SegmentedControlItem's label is a ReactNode; Vue's has no
+  // ReactNode, so a segment's label is text or a VNode (an icon beside
+  // words, drawn with `h`), what Vue draws inside the segment. The rest of
+  // the item, its value and disabled, is React's to the letter
+  // (SegmentedControl/types.ts).
+  "KozmosSegmentedControl.items:type":
+    "Vue's segment is React's SegmentedControlItem but for its label, text or a VNode where React's is a ReactNode; the same segment is drawn (segmented-control.parity.spec.ts)",
+  // React's formatValue(value) is a render prop; Vue's is the scoped slot
+  // formatValue, given one props object, `{ value }`, as a Vue slot is.
+  // What it draws as text alone is what the thumb says (aria-valuetext), as
+  // React's says a string or a number.
+  "KozmosSlider.formatValue:render-prop":
+    "React's formatValue(value) is Vue's formatValue scoped slot, given { value }: a Vue slot takes one props object, not arguments; text it draws is the thumb's aria-valuetext (slider.parity.spec.ts)",
   "KozmosRating.valueLabel:default":
     "React's default is the recipe's defaultRatingValueLabel, a function the contract cannot read as a literal; Vue's default is the same function, and rating.parity.spec.ts reads the read-only label",
+  // React's ComboboxOption takes `trailing` as a ReactNode; Vue has no
+  // ReactNode, so KozmosComboboxOption takes text, a number or a VNode,
+  // what Vue draws at a row's end. Every other field is React's
+  // (Listbox/types.ts), and listbox.parity.spec.ts draws trailing words in
+  // both. The option is in what a choice emits too.
+  "KozmosListbox.options:type":
+    "Vue's KozmosComboboxOption is React's ComboboxOption but for `trailing`, text, a number or a VNode where React's is a ReactNode; listbox.parity.spec.ts draws trailing words in both",
+  "KozmosListbox.update:modelValue:payload":
+    "The option a choice emits is KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  // Combobox's options are Listbox's (KozmosListbox.options:type), and
+  // its filter is given them; its commands' icons are Vue components or
+  // VNodes where React's are nodes. Its defaults are React's own: the
+  // shared recipe's defaultFilterOption, and no commands.
+  "KozmosCombobox.options:type":
+    "Vue's KozmosComboboxOption is React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type); combobox.parity.spec.ts draws the options in both",
+  "KozmosCombobox.update:modelValue:payload":
+    "The option a choice emits is KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosCombobox.filterOption:type":
+    "The filter is given KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosCombobox.popupActions:type":
+    "Vue's KozmosComboboxPopupAction is React's ComboboxPopupAction but for its icon, a Vue component or a VNode where React's is a ReactNode; combobox.parity.spec.ts draws and runs the commands in both",
+  "KozmosCombobox.filterOption:default":
+    "React's default is the recipe's defaultFilterOption, a function the contract cannot read as a literal; Vue's default is the same function (recipes/combobox.ts), and combobox.parity.spec.ts filters by typing in both",
+  "KozmosCombobox.popupActions:default":
+    "React's default is NO_ACTIONS, an empty list the contract cannot read as a literal; Vue's default is an empty list too, and combobox.parity.spec.ts draws a combobox without commands in both",
+  // MultiSelect's options are Listbox's (KozmosListbox.options:type), and
+  // its filter is given them and its change emits them. Its defaults are
+  // React's own: the shared recipe's filter and limit words.
+  "KozmosMultiSelect.options:type":
+    "Vue's KozmosComboboxOption is React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type); multi-select.parity.spec.ts draws the options in both",
+  "KozmosMultiSelect.update:modelValue:payload":
+    "The options a change emits are KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosMultiSelect.filterOption:type":
+    "The filter is given KozmosComboboxOption, React's ComboboxOption but for `trailing`'s node (KozmosListbox.options:type)",
+  "KozmosMultiSelect.filterOption:default":
+    "React's default is the recipe's defaultFilterOption, a function the contract cannot read as a literal; Vue's default is the same function (recipes/combobox.ts), and multi-select.parity.spec.ts filters by typing in both",
+  "KozmosMultiSelect.maxSelectedLabel:default":
+    "React's default is the recipe's defaultMaxSelectedLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and multi-select.parity.spec.ts hears the limit said in both",
+  // ChipInput's defaults are React's own, from the shared recipe.
+  "KozmosChipInput.defaultValue:default":
+    "React's default is NO_ENTRIES, an empty list the contract cannot read as a literal; Vue's default is an empty list too, and chip-input.parity.spec.ts draws a field without entries in both",
+  "KozmosChipInput.removeLabel:default":
+    "React's default is the recipe's chipInputDefaults.removeLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts draws the removes' names in both",
+  "KozmosChipInput.addedLabel:default":
+    "React's default is the recipe's chipInputDefaults.addedLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
+  "KozmosChipInput.removedLabel:default":
+    "React's default is the recipe's chipInputDefaults.removedLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
+  "KozmosChipInput.duplicateLabel:default":
+    "React's default is the recipe's chipInputDefaults.duplicateLabel, a function the contract cannot read as a literal; Vue's default is the same function (recipes/multi-select.ts), and chip-input.parity.spec.ts hears what each says",
+  // Wave V2's overlays. Drawer's `modal` defaults to `placement ===
+  // "fixed"`, an expression: Vue's prop is unset by default and the root
+  // reads it so (drawer.parity.spec.ts draws a fixed and an inline drawer
+  // modal and not).
+  "KozmosDrawer.modal:default":
+    'React\'s default is the expression placement === "fixed", which the contract cannot read as a literal; Vue\'s `modal` is unset by default and the root makes it placement === "fixed", as drawer.parity.spec.ts draws',
+  // React's virtualRef is a React RefObject; Vue has no React ref. Vue's
+  // takes the same `{ current }` object, a Vue ref, or the rect itself.
+  "KozmosPopoverAnchor.virtualRef:type":
+    "React's RefObject<Measurable> is Vue's { current } object of the same rect, or a Vue ref of it, or the rect: popover.parity.spec.ts anchors to a rect and to an element through { current } in both",
+  // Tooltip's delays: Radix documents 700 and false, the provider's, which
+  // a Tooltip takes when it sets none. Vue's are unset, so the provider's
+  // reach it, as they reach React's.
+  "KozmosTooltip.delayDuration:default":
+    "Radix's 700 is the provider's default, which a Tooltip with none of its own takes: Vue's is unset, so a KozmosTooltipProvider's delay reaches it, as it reaches React's",
+  "KozmosTooltip.disableHoverableContent:default":
+    "Radix's false is the provider's default, which a Tooltip with none of its own takes: Vue's is unset, so a KozmosTooltipProvider's reaches it, as it reaches React's",
+  // KozmosAnchoredPopover (GAP-190) is Vue's own: React's Popover, a
+  // PopoverAnchor on `anchor` and a PopoverContent in one part, as the
+  // bridge's was. It takes the content's props and events, and beside them
+  // the root's open state and what it sits beside.
+  "KozmosAnchoredPopover.anchor:extra-prop":
+    "What it sits beside: React's PopoverAnchor's virtualRef, given as an element, a component or a rect (popover.parity.spec.ts, AnchoredPopover.spec.ts)",
+  "KozmosAnchoredPopover.open:extra-prop":
+    "React's Popover's `open`, the root this one part draws round its content (v-model:open)",
+  "KozmosAnchoredPopover.defaultOpen:extra-prop":
+    "React's Popover's `defaultOpen`, the root this one part draws round its content",
+  "KozmosAnchoredPopover.modal:extra-prop":
+    "React's Popover's `modal`, the root this one part draws round its content",
+  "KozmosAnchoredPopover.update:open:extra-event":
+    "React's Popover's onOpenChange, the root this one part draws round its content (v-model:open)",
 };

@@ -28,6 +28,26 @@ import {
   scrollOptionIntoView,
 } from "../Listbox/option-groups";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import {
+  COMBOBOX_ACTION_ICON_CLASS,
+  COMBOBOX_ACTION_LABEL_CLASS,
+  COMBOBOX_ACTIONS_START_CLASS,
+  COMBOBOX_EMPTY_CLASS,
+  COMBOBOX_INPUT_CLASS,
+  COMBOBOX_LIST_CLASS,
+  COMBOBOX_POPUP_CLASS,
+  COMBOBOX_POPUP_INLINE_CLASS,
+  defaultFilterOption,
+  COMBOBOX_ACTION_GLYPH_CLASS,
+  FIELD_CHEVRON_CLASS,
+  FIELD_CHEVRON_OPEN_CLASS,
+  firstAutomaticKey,
+  popupEntryKey as entryKey,
+  validPopupActions,
+  type PopupEntryOf,
+} from "../../recipes/combobox";
+import { OPTION_CLASS, nextEnabledIndex } from "../../recipes/option";
+import { firstEnabledIndex } from "../../recipes/listbox";
 import { useInputModality } from "../../utils/input-modality";
 import { FieldWrapper, type MixedValueProps } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/inputVariants";
@@ -80,15 +100,7 @@ export interface ComboboxPopupAction {
   onAction: () => void;
 }
 const NO_ACTIONS: ComboboxPopupAction[] = [];
-type PopupEntry =
-  | { kind: "value"; option: ComboboxOption; disabled?: boolean }
-  | { kind: "action"; action: ComboboxPopupAction; disabled?: boolean };
-
-function entryKey(entry: PopupEntry) {
-  return entry.kind === "value"
-    ? `value:${entry.option.value}`
-    : `action:${entry.action.id}`;
-}
+type PopupEntry = PopupEntryOf<ComboboxOption, ComboboxPopupAction>;
 
 export interface ComboboxProps
   extends
@@ -121,49 +133,6 @@ export interface ComboboxProps
   status?: InputStatus;
   value?: string;
   wrapperClassName?: string;
-}
-
-function defaultFilterOption(option: ComboboxOption, inputValue: string) {
-  const query = inputValue.trim().toLowerCase();
-  if (!query) return true;
-  return (
-    option.label.toLowerCase().includes(query) ||
-    option.value.toLowerCase().includes(query) ||
-    option.description?.toLowerCase().includes(query)
-  );
-}
-
-function nextEnabledIndex(
-  options: { disabled?: boolean }[],
-  currentIndex: number,
-  direction: 1 | -1,
-) {
-  if (options.length === 0) return -1;
-
-  for (let offset = 1; offset <= options.length; offset += 1) {
-    const index =
-      (currentIndex + direction * offset + options.length) % options.length;
-    if (!options[index]?.disabled) return index;
-  }
-
-  return -1;
-}
-
-function firstEnabledIndex(options: { disabled?: boolean }[]) {
-  return options.findIndex((option) => !option.disabled);
-}
-
-/**
- * The entry made active for the visitor, as the popup opens or the query
- * changes: the first option that can be chosen, never a command. A command
- * runs only when the visitor moves to it, or Enter on text that matches
- * nothing would run "Current position" or "Select from map" in its place.
- */
-function firstAutomaticKey(entries: PopupEntry[]) {
-  const first = entries.find(
-    (entry) => entry.kind === "value" && !entry.disabled,
-  );
-  return first ? entryKey(first) : null;
 }
 
 /** The overlay popup goes to the theme's portal; the inline one stays put. */
@@ -313,14 +282,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         ),
       [filterOption, options, visibleInputValue],
     );
-    const validActions = React.useMemo(() => {
-      const counts = new Map<string, number>();
-      for (const action of popupActions)
-        counts.set(action.id, (counts.get(action.id) ?? 0) + 1);
-      return popupActions.filter(
-        (action) => action.id.trim() && counts.get(action.id) === 1,
-      );
-    }, [popupActions]);
+    const validActions = React.useMemo(
+      () => validPopupActions(popupActions),
+      [popupActions],
+    );
     const entries = React.useMemo<PopupEntry[]>(
       () => [
         ...filteredOptions.map((option) => ({
@@ -486,8 +451,8 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
               index === activeIndex && !entry.disabled ? "true" : undefined
             }
             className={cn(
-              "kozmos-reset kozmos-option",
-              index === filteredOptions.length && "border-t border-border",
+              OPTION_CLASS,
+              index === filteredOptions.length && COMBOBOX_ACTIONS_START_CLASS,
             )}
             onMouseEnter={() => {
               if (!entry.disabled) setActiveIndex(index);
@@ -496,11 +461,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
             onClick={() => selectEntry(entry)}
           >
             {entry.action.icon && (
-              <span aria-hidden="true" className="shrink-0">
+              <span aria-hidden="true" className={COMBOBOX_ACTION_ICON_CLASS}>
                 {entry.action.icon}
               </span>
             )}
-            <span className="min-w-0 flex-1 whitespace-normal font-medium [overflow-wrap:anywhere]">
+            <span className={COMBOBOX_ACTION_LABEL_CLASS}>
               {entry.action.label}
             </span>
           </div>
@@ -602,7 +567,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     // (decision 82). The utility beats a caller's px-* and
                     // gives way to a caller's pe-*; the owned rule holds it
                     // where no @scope rule reaches an <input> (WebKit).
-                    "kozmos-combobox-input",
+                    COMBOBOX_INPUT_CLASS,
                     fieldActionsRoom(canClear),
                     className,
                   )}
@@ -666,7 +631,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       aria-label={clearLabel}
                       onClick={clearSelection}
                     >
-                      <X className="h-4 w-4" aria-hidden="true" />
+                      <X
+                        className={COMBOBOX_ACTION_GLYPH_CLASS}
+                        aria-hidden="true"
+                      />
                     </button>
                   )}
                   <button
@@ -678,8 +646,8 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   >
                     <ChevronDown
                       className={cn(
-                        "h-4 w-4 transition-transform",
-                        open && "rotate-180",
+                        FIELD_CHEVRON_CLASS,
+                        open && FIELD_CHEVRON_OPEN_CLASS,
                       )}
                       aria-hidden="true"
                     />
@@ -701,10 +669,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     className={cn(
                       // The frame does not scroll: the listbox in it does (GAP-137),
                       // so the scroll region is the widget the input controls.
-                      "flex max-h-64 flex-col rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay",
+                      COMBOBOX_POPUP_CLASS,
                       // Inline, it takes its place in the flow under the field;
                       // as an overlay the portal places it (FieldPopupContent).
-                      popupLayout === "inline" && "mt-1 w-full",
+                      popupLayout === "inline" && COMBOBOX_POPUP_INLINE_CLASS,
                     )}
                     style={{ maxHeight: FIELD_POPUP_MAX_HEIGHT }}
                   >
@@ -712,13 +680,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                     {filteredOptions.length === 0 &&
                       validActions.length > 0 &&
                       showEmptyText && (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                          {emptyText}
-                        </div>
+                        <div className={COMBOBOX_EMPTY_CLASS}>{emptyText}</div>
                       )}
                     <div
                       id={listboxOpen ? listboxId : undefined}
-                      className="min-h-0 overflow-y-auto"
+                      className={COMBOBOX_LIST_CLASS}
                       data-modality={modality}
                       data-kozmos-scrollbar={scrollbarFor(presentation)}
                       role={listboxOpen ? "listbox" : undefined}
@@ -730,7 +696,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                       <FieldPopupDrawn onDrawn={setListboxDrawn} />
                       {entries.length === 0
                         ? showEmptyText && (
-                            <div className="px-3 py-2 text-sm text-muted-foreground">
+                            <div className={COMBOBOX_EMPTY_CLASS}>
                               {emptyText}
                             </div>
                           )

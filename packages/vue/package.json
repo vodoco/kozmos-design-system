@@ -87,6 +87,7 @@
     }
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
     "@kozmos-ds/icons": "workspace:*",
     "@kozmos-ds/styles": "workspace:*",
     "class-variance-authority": "0.7.1",

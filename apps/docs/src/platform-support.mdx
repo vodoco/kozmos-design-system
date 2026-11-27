@@ -68,7 +68,15 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 `Title` and `Description`, `KozmosAlert`, `KozmosAlertTitle`, `KozmosAlertDescription`,
 `KozmosNotice`, `KozmosCounter`, `KozmosIconButton`, `KozmosCheckbox`,
 `KozmosRating`, `KozmosFieldWrapper`, `KozmosInput`, `KozmosTextarea`,
-`KozmosPasswordInput`, `KozmosNumberInput` and `KozmosOTPInput` so far), which
+`KozmosPasswordInput`, `KozmosNumberInput`, `KozmosOTPInput`, `KozmosSwitch`,
+`KozmosRadioGroup` with `KozmosRadioGroupItem`, `KozmosSegmentedControl`,
+`KozmosSlider`, `KozmosListbox`, `KozmosSelect` with its trigger, value, content,
+groups, labels, items, separators and scroll buttons, `KozmosCombobox`, `KozmosChip` with
+`KozmosChipGroup`, `KozmosMultiSelect`, `KozmosChipInput`, `KozmosDialog`,
+`KozmosDrawer` and `KozmosBottomSheet` with their trigger, content, header, footer,
+title, description and close, `KozmosPopover` with its trigger, anchor, content and
+arrow, `KozmosAnchoredPopover`, and `KozmosTooltip` with its provider, trigger and
+content so far), which
 draw the element their React counterparts draw, import no React and render on the
 server. `packages/vue/PORTING.md` is how a part is ported.
 The parts not yet ported are in `@kozmos-ds/vue/react-bridge`, whose adapters mount
@@ -76,9 +84,8 @@ the React parts inside Vue wrappers: they need React and React DOM as well as Vu
 and do not render on the server.
 
 A bridged part in no other bridged part's slot is a React root. One in another's slot
-is drawn in that part's React tree, so a part made of parts (`KozmosRadioGroup` and its
-`KozmosRadioGroupItem`s, `KozmosSelect` and its trigger, content and items, Accordion,
-Dialog, Drawer, Tabs, Tooltip and Toast with theirs, and `KozmosToaster` with
+is drawn in that part's React tree, so a part made of parts (Accordion, Tabs and
+Toast with theirs, and `KozmosToaster` with
 `toast()`) works as it does in React. These Vue providers reach every bridged part
 inside them (GAP-230, decision 172):
 
@@ -93,8 +100,8 @@ inside them (GAP-230, decision 172):
   bridged part draws in place, but not what one draws in a portal: React's
   `MotionContext` is not exported, so the bridge cannot give it.
 
-Every bridged root also has a Radix `TooltipProvider` of its own, so a `KozmosTooltip`
-needs none. A trigger cannot take a Vue element as its child (`as-child`), so it
+Every bridged root also has a Radix `TooltipProvider` of its own, for the tooltips a
+bridged part draws. A bridged trigger cannot take a Vue element as its child (`as-child`), so it
 draws its own button. Write props in either case:
 `default-value` reaches React as `defaultValue` (GAP-238); `aria-*` and `data-*`
 pass as written.

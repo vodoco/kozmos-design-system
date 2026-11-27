@@ -22,11 +22,23 @@ import {
   FieldPopupStatus,
   keepFieldFocus,
 } from "../Combobox/field-popup";
+import { FIELD_ACTION, FIELD_ACTIONS_ROW } from "../Combobox/field-actions";
 import {
-  FIELD_ACTION,
-  FIELD_ACTIONS_ROW,
-  fieldActionsRoom,
-} from "../Combobox/field-actions";
+  COMBOBOX_ACTION_GLYPH_CLASS,
+  defaultFilterOption as filterByDefault,
+  FIELD_CHEVRON_CLASS,
+  FIELD_CHEVRON_OPEN_CLASS,
+} from "../../recipes/combobox";
+import { firstEnabledIndex } from "../../recipes/listbox";
+import { nextEnabledIndex as enabledIndex } from "../../recipes/option";
+import {
+  CHIP_FIELD_GROUP_CLASS,
+  CHIP_FIELD_INPUT_CLASS,
+  defaultMaxSelectedLabel,
+  MULTI_SELECT_EMPTY_CLASS,
+  MULTI_SELECT_POPUP_CLASS,
+  multiSelectFieldClass,
+} from "../../recipes/multi-select";
 import {
   MapShellPresentationContext,
   scrollbarFor,
@@ -76,33 +88,7 @@ export interface MultiSelectProps
 const NO_VALUES: string[] = [];
 
 function defaultFilterOption(option: ComboboxOption, inputValue: string) {
-  const query = inputValue.trim().toLowerCase();
-  if (!query) return true;
-  return (
-    option.label.toLowerCase().includes(query) ||
-    option.value.toLowerCase().includes(query) ||
-    option.description?.toLowerCase().includes(query)
-  );
-}
-
-function enabledIndex(
-  options: ComboboxOption[],
-  currentIndex: number,
-  direction: 1 | -1,
-) {
-  if (options.length === 0) return -1;
-
-  for (let offset = 1; offset <= options.length; offset += 1) {
-    const index =
-      (currentIndex + direction * offset + options.length) % options.length;
-    if (!options[index]?.disabled) return index;
-  }
-
-  return -1;
-}
-
-function firstEnabledIndex(options: ComboboxOption[]) {
-  return options.findIndex((option) => !option.disabled);
+  return !!filterByDefault(option, inputValue);
 }
 
 export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
@@ -120,7 +106,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       id,
       label,
       maxSelected,
-      maxSelectedLabel = (max) => `Limit of ${max} reached`,
+      maxSelectedLabel = defaultMaxSelectedLabel,
       mixed = false,
       mixedLabel = "Multiple values",
       onResetMixed,
@@ -453,27 +439,16 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             <FieldPopupAnchor asChild>
               <div
                 ref={setRefs}
-                className={cn(
-                  // kozmos-multiselect-field: the field rings for its input
-                  // alone, as Combobox's input does (owned-selection.css).
-                  "kozmos-multiselect-field relative flex min-h-field w-full items-center gap-2 rounded-control border border-input bg-background px-2 py-1 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-                  // Combobox's room for its buttons (field-actions.ts): 96 or
-                  // 48 in touch, 88 or 44 in compact, after px-2.
-                  fieldActionsRoom(canClear),
-                  resolvedStatus === "error" &&
-                    "border-destructive focus-within:ring-destructive",
-                  resolvedStatus === "warning" &&
-                    "border-warning focus-within:ring-warning",
-                  resolvedStatus === "success" &&
-                    "border-success focus-within:ring-success",
-                  disabled &&
-                    "cursor-not-allowed bg-muted text-muted-foreground opacity-80",
+                className={multiSelectFieldClass(
+                  resolvedStatus,
+                  disabled,
+                  canClear,
                   className,
                 )}
                 onClick={() => inputRef.current?.focus()}
                 {...props}
               >
-                <ChipGroup className="min-w-0 flex-1 gap-1.5">
+                <ChipGroup className={CHIP_FIELD_GROUP_CLASS}>
                   {selectedOptions.map((option) => (
                     <Chip
                       key={option.value}
@@ -505,7 +480,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     }
                     aria-required={required || undefined}
                     autoComplete="off"
-                    className="kozmos-reset kozmos-multiselect-input"
+                    className={CHIP_FIELD_INPUT_CLASS}
                     // Mixed, said once: by the empty field's placeholder.
                     data-mixed={mixed ? "" : undefined}
                     disabled={disabled}
@@ -572,7 +547,10 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                         clearSelection();
                       }}
                     >
-                      <X className="h-4 w-4" aria-hidden="true" />
+                      <X
+                        className={COMBOBOX_ACTION_GLYPH_CLASS}
+                        aria-hidden="true"
+                      />
                     </button>
                   )}
                   <button
@@ -589,8 +567,8 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   >
                     <ChevronDown
                       className={cn(
-                        "h-4 w-4 transition-transform",
-                        open && "rotate-180",
+                        FIELD_CHEVRON_CLASS,
+                        open && FIELD_CHEVRON_OPEN_CLASS,
                       )}
                       aria-hidden="true"
                     />
@@ -625,12 +603,12 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
                     aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
                     aria-multiselectable={listboxOpen ? true : undefined}
-                    className="max-h-64 overflow-y-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
+                    className={MULTI_SELECT_POPUP_CLASS}
                     style={{ maxHeight: FIELD_POPUP_MAX_HEIGHT }}
                   >
                     <FieldPopupDrawn onDrawn={setListboxDrawn} />
                     {filteredOptions.length === 0 ? (
-                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                      <div className={MULTI_SELECT_EMPTY_CLASS}>
                         {emptyText}
                       </div>
                     ) : (

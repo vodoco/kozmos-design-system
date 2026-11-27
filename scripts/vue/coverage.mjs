@@ -108,7 +108,6 @@ export const VUE_STORIES = {
   },
   "vue-poicard--default": { interaction: "buttons-in-order" },
   "vue-poicard--inside-map-overlay": { interaction: "buttons-in-order" },
-  "vue-radiogroup--group": { interaction: "radio-group" },
   "vue-searchbar--floating-overlay": { interaction: "search-typing" },
   "vue-searchbar--inline": { interaction: "search-typing" },
   "vue-stepper--dots": {
@@ -125,6 +124,20 @@ export const VUE_STORIES = {
   "vue-wayfindingcard--wayfinding-flow": { interaction: "wayfinding-swap" },
   "vue-wayfindingcard--inside-map-overlay": {
     interaction: "wayfinding-swap",
+  },
+  "vue-foundations-theming-themeprovider--default": {
+    interaction: "theme-switch",
+    exempt: {
+      themes:
+        "The story's own KozmosThemeProvider is the demo: it follows the theme its buttons set (system until one is pressed), not the toolbar's, as React's story draws it; the interaction checks each button's theme",
+    },
+  },
+  "vue-foundations-theming-themeprovider--density": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Decision 82's controls at both densities, each one's interaction its own story's (Button, IconButton, Input, Select, Combobox, MultiSelect, NumberInput, PasswordInput); the themes suite measures each at its density, and axe scans them",
+    },
   },
   "vue-foundations-typography-text--default": {
     interaction: null,
@@ -802,6 +815,104 @@ export const VUE_STORIES = {
   },
   "vue-core-inputs-otpinput--validation-states": {
     interaction: "controls-in-order",
+  },
+  "vue-core-inputs-switch--default": { interaction: "switch" },
+  "vue-core-inputs-switch--checked": { interaction: "switch" },
+  "vue-core-inputs-switch--disabled": { interaction: "switch-disabled" },
+  "vue-core-inputs-switch--error": { interaction: "switch" },
+  "vue-core-inputs-switch--with-description": { interaction: "switch" },
+  "vue-core-inputs-switch--state-label": { interaction: "switch" },
+  "vue-core-inputs-radiogroup--default": { interaction: "radio-choice" },
+  "vue-core-inputs-radiogroup--disabled": { interaction: "radio-disabled" },
+  "vue-core-inputs-radiogroup--error": { interaction: "radio-choice" },
+  "vue-core-inputs-radiogroup--with-description": {
+    interaction: "radio-choice",
+  },
+  "vue-core-inputs-radiogroup--cards": { interaction: "radio-choice" },
+  "vue-core-inputs-radiogroup--tiles": { interaction: "radio-choice" },
+  "vue-core-inputs-segmentedcontrol--default": { interaction: "segmented" },
+  "vue-core-inputs-segmentedcontrol--full-width": { interaction: "segmented" },
+  "vue-core-inputs-segmentedcontrol--error": {
+    interaction: "segmented-held",
+  },
+  "vue-core-inputs-segmentedcontrol--disabled": {
+    interaction: "segmented-disabled",
+  },
+  "vue-core-inputs-slider--default": { interaction: "slider" },
+  "vue-core-inputs-slider--range": { interaction: "slider" },
+  "vue-core-inputs-slider--with-readout": { interaction: "slider" },
+  "vue-core-inputs-listbox--grouped-and-ungrouped": { interaction: "listbox" },
+  "vue-core-inputs-listbox--single": { interaction: "listbox" },
+  "vue-core-inputs-listbox--multiple": { interaction: "listbox" },
+  "vue-core-inputs-listbox--grouped": { interaction: "listbox" },
+  "vue-core-inputs-select--default": { interaction: "select" },
+  "vue-core-inputs-select--with-scroll": { interaction: "select" },
+  "vue-core-inputs-select--disabled": { interaction: "select-disabled" },
+  "vue-core-inputs-select--with-error": { interaction: "select" },
+  "vue-core-inputs-select--option-counts": { interaction: "select" },
+  "vue-core-inputs-select--option-counts-open": { interaction: "select-open" },
+  "vue-core-inputs-select--mixed-value": { interaction: "select-mixed" },
+  "vue-core-inputs-combobox--default": { interaction: "combobox" },
+  "vue-core-inputs-combobox--with-validation": { interaction: "combobox" },
+  "vue-core-inputs-combobox--grouped": { interaction: "combobox" },
+  "vue-core-inputs-combobox--mixed-value": { interaction: "combobox-mixed" },
+  "vue-core-data-display-chip--default": { interaction: "chip-toggles" },
+  "vue-core-data-display-chip--sizes": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Plain chips show a size or a variant: nothing to focus or press, so there is no interaction; axe scans them",
+    },
+  },
+  "vue-core-data-display-chip--variants": {
+    interaction: null,
+    exempt: {
+      interactions:
+        "Plain chips show a size or a variant: nothing to focus or press, so there is no interaction; axe scans them",
+    },
+  },
+  "vue-core-data-display-chip--one-choice": { interaction: "radio-choice" },
+  "vue-core-inputs-multiselect--default": { interaction: "multiselect" },
+  "vue-core-inputs-multiselect--with-selected-values": {
+    interaction: "multiselect",
+  },
+  "vue-core-inputs-multiselect--grouped": { interaction: "multiselect" },
+  "vue-core-inputs-chipinput--default": { interaction: "chip-input" },
+  "vue-core-overlays-dialog--default": { interaction: "dialog" },
+  "vue-core-overlays-drawer--default": { interaction: "drawer" },
+  "vue-core-overlays-drawer--inline": { interaction: "drawer-inline" },
+  "vue-core-overlays-bottomsheet--default": { interaction: "bottom-sheet" },
+  "vue-core-overlays-popover--default": { interaction: "popover" },
+  "vue-core-overlays-popover--anchored-to-a-control": {
+    interaction: "popover-anchored",
+  },
+  "vue-core-overlays-popover--anchored-to-a-rect": {
+    interaction: "popover-rect",
+  },
+  "vue-core-overlays-tooltip--default": { interaction: "tooltip" },
+  "vue-core-overlays-layering--select-in-dialog": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--combobox-in-dialog": {
+    interaction: "layers-combobox",
+  },
+  "vue-core-overlays-layering--tooltip-in-dialog": {
+    interaction: "layers-tooltip",
+  },
+  "vue-core-overlays-layering--select-in-drawer": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--combobox-in-drawer": {
+    interaction: "layers-combobox",
+  },
+  "vue-core-overlays-layering--select-in-bottom-sheet": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--select-in-popover": {
+    interaction: "layers-select",
+  },
+  "vue-core-overlays-layering--combobox-in-popover": {
+    interaction: "layers-combobox",
   },
 };
 

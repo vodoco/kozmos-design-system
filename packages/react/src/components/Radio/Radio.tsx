@@ -8,6 +8,29 @@ import { useFieldRef } from "../FieldWrapper/mixedValue";
 import { Label } from "../Label";
 import { ControlText } from "../Label/ControlText";
 import { useKozmosAnalytics } from "../../utils/analytics";
+// The recipe is shared with Vue's KozmosRadioGroup (recipes/radio.ts).
+import {
+  RADIO_CARD_DESCRIPTION_CLASS,
+  RADIO_CARD_LINE_CLASS,
+  RADIO_CARD_TITLE_CLASS,
+  RADIO_CARD_WORDS_CLASS,
+  RADIO_CLASS,
+  RADIO_DOT_CLASS,
+  RADIO_ERROR_CLASS,
+  RADIO_GROUP_CLASS,
+  RADIO_INDICATOR_CLASS,
+  RADIO_LABEL_CLASS,
+  RADIO_LABEL_ERROR_CLASS,
+  RADIO_TILE_CHECK_MARK_CLASS,
+  RADIO_TILE_DESCRIPTION_CLASS,
+  RADIO_TILE_TITLE_CLASS,
+  radioBoxClass,
+  radioCardMarkClass,
+  radioMediaClass,
+  radioRowClass,
+  radioTileCheckClass,
+  untitledRadioBoxWarning,
+} from "../../recipes/radio";
 
 export interface RadioGroupProps extends React.ComponentPropsWithoutRef<
   typeof RadioGroupPrimitive.Root
@@ -84,7 +107,7 @@ const RadioGroup = React.forwardRef<
         className={wrapperClassName}
       >
         <RadioGroupPrimitive.Root
-          className={cn("grid gap-2", className)}
+          className={cn(RADIO_GROUP_CLASS, className)}
           aria-invalid={hasError}
           aria-describedby={mergeAriaIds(
             ariaDescribedBy,
@@ -200,13 +223,12 @@ const RadioGroupItem = React.forwardRef<
       )
         return;
       warnedUntitledBox = true;
-      console.warn(
-        `RadioGroupItem: a ${variant} has no label and no aria-label, so nothing names it to a screen reader; its description is never its name. Pass label, or aria-label for an icon-only tile.`,
-      );
+      console.warn(untitledRadioBoxWarning(variant as "card" | "tile"));
     }, [boxed, named, variant]);
 
     if (boxed) {
       const tile = variant === "tile";
+      const box = variant as "card" | "tile";
       // The whole box is the one radio: Radix's button, role="radio", in
       // the group's roving focus (one Tab stop, the arrows move and choose).
       // Its name is the title alone and its description the line under it;
@@ -223,35 +245,16 @@ const RadioGroupItem = React.forwardRef<
           aria-invalid={error || undefined}
           aria-labelledby={label ? titleId : undefined}
           aria-describedby={describedBy}
-          className={cn(
-            // The edge, theme 600 when chosen, is drawn a second pixel
-            // heavier by owned CSS (kozmos-radio-card, an inset shadow that
-            // the focus ring adds to), and the ring's dot or the tile's
-            // check shows: the choice is never colour alone.
-            "kozmos-radio-card group relative flex w-full min-w-0 rounded-container border border-border p-3 text-foreground transition-colors hover:bg-hover-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-primary",
-            tile
-              ? "min-h-24 flex-col items-center justify-center gap-1 text-center"
-              : "flex-col items-stretch gap-3 text-start",
-            error &&
-              "border-destructive focus-visible:ring-destructive aria-checked:border-destructive",
-            className,
-          )}
+          // The edge is heavier when chosen, and the ring's dot or the
+          // tile's check shows: the choice is never colour alone.
+          className={radioBoxClass(box, error, className)}
           {...props}
         >
           {media != null && (
             <span
               aria-hidden="true"
               data-slot="media"
-              className={cn(
-                "flex",
-                // A tile's icon turns theme 600 when chosen, as SwiftUI's and
-                // Compose's do; a card's image keeps its own colours.
-                tile
-                  ? "items-center justify-center text-foreground group-aria-checked:text-primary"
-                  : // Concentric with the card: its radius less the card's
-                    // 12 inset (docs/nested-radius.md), owned CSS.
-                    "kozmos-radio-card-media w-full overflow-hidden text-foreground",
-              )}
+              className={radioMediaClass(box)}
             >
               {media}
             </span>
@@ -262,7 +265,7 @@ const RadioGroupItem = React.forwardRef<
                 <span
                   id={titleId}
                   aria-hidden="true"
-                  className="text-sm font-medium leading-5"
+                  className={RADIO_TILE_TITLE_CLASS}
                 >
                   {label}
                 </span>
@@ -271,7 +274,7 @@ const RadioGroupItem = React.forwardRef<
                 <span
                   id={descriptionId}
                   aria-hidden="true"
-                  className="text-xs leading-4 text-muted-foreground"
+                  className={RADIO_TILE_DESCRIPTION_CLASS}
                 >
                   {description}
                 </span>
@@ -279,42 +282,34 @@ const RadioGroupItem = React.forwardRef<
               <RadioGroupPrimitive.Indicator
                 aria-hidden="true"
                 data-slot="check"
-                className={cn(
-                  "absolute end-2 top-2 flex h-5 w-5 items-center justify-center rounded-pill bg-theme-fill text-theme-fill-foreground",
-                  error && "bg-destructive",
-                )}
+                className={radioTileCheckClass(error)}
               >
-                <Check className="h-3.5 w-3.5" />
+                <Check className={RADIO_TILE_CHECK_MARK_CLASS} />
               </RadioGroupPrimitive.Indicator>
             </>
           ) : (
-            <span className="flex w-full items-start gap-2">
+            <span className={RADIO_CARD_LINE_CLASS}>
               <span
                 aria-hidden="true"
                 data-slot="mark"
-                className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-pill border border-input text-theme-fill group-aria-checked:border-primary",
-                  error &&
-                    "border-destructive text-destructive-text group-aria-checked:border-destructive",
-                )}
+                className={radioCardMarkClass(error)}
               >
-                <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-                  <Circle className="h-2.5 w-2.5 fill-current text-current" />
+                <RadioGroupPrimitive.Indicator
+                  className={RADIO_INDICATOR_CLASS}
+                >
+                  <Circle className={RADIO_DOT_CLASS} />
                 </RadioGroupPrimitive.Indicator>
               </span>
-              <span
-                aria-hidden="true"
-                className="flex min-w-0 flex-col gap-0.5"
-              >
+              <span aria-hidden="true" className={RADIO_CARD_WORDS_CLASS}>
                 {label && (
-                  <span id={titleId} className="text-sm font-medium leading-5">
+                  <span id={titleId} className={RADIO_CARD_TITLE_CLASS}>
                     {label}
                   </span>
                 )}
                 {description && (
                   <span
                     id={descriptionId}
-                    className="text-sm leading-5 text-muted-foreground"
+                    className={RADIO_CARD_DESCRIPTION_CLASS}
                   >
                     {description}
                   </span>
@@ -327,30 +322,17 @@ const RadioGroupItem = React.forwardRef<
     }
 
     return (
-      <div
-        className={cn(
-          "flex min-h-11 gap-2",
-          description ? "items-start" : "items-center",
-        )}
-      >
+      <div className={radioRowClass(!!description)}>
         <RadioGroupPrimitive.Item
           ref={ref}
           id={inputId}
-          className={cn(
-            // The ring is a border on the surface, theme 600; the dot is a fill,
-            // the theme fill, theme 500 in both themes (decision 59). The dot
-            // draws in currentColor, so the text colour is the dot's.
-            "peer aspect-square h-5 w-5 shrink-0 rounded-pill border border-input text-theme-fill ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-primary aria-checked:text-theme-fill",
-            error &&
-              "border-destructive text-destructive-text focus-visible:ring-destructive aria-checked:border-destructive aria-checked:text-destructive-text",
-            className,
-          )}
+          className={cn(RADIO_CLASS, error && RADIO_ERROR_CLASS, className)}
           aria-invalid={error || undefined}
           aria-describedby={describedBy}
           {...props}
         >
-          <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-            <Circle className="h-2.5 w-2.5 fill-current text-current" />
+          <RadioGroupPrimitive.Indicator className={RADIO_INDICATOR_CLASS}>
+            <Circle className={RADIO_DOT_CLASS} />
           </RadioGroupPrimitive.Indicator>
         </RadioGroupPrimitive.Item>
         {description ? (
@@ -359,15 +341,15 @@ const RadioGroupItem = React.forwardRef<
             label={label}
             description={description}
             descriptionId={descriptionId}
-            labelClassName={cn(error && "text-destructive-text")}
+            labelClassName={cn(error && RADIO_LABEL_ERROR_CLASS)}
           />
         ) : (
           label && (
             <Label
               htmlFor={inputId}
               className={cn(
-                "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-                error && "text-destructive-text",
+                RADIO_LABEL_CLASS,
+                error && RADIO_LABEL_ERROR_CLASS,
               )}
             >
               {label}

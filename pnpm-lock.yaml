@@ -762,6 +762,9 @@ importers:
 
   packages/vue:
     dependencies:
+      "@floating-ui/dom":
+        specifier: ^1.8.0
+        version: 1.8.0
       "@kozmos-ds/icons":
         specifier: workspace:*
         version: link:../icons

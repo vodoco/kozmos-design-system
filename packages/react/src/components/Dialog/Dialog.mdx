@@ -67,15 +67,15 @@ export function AnalyticsInvite({ illustration }: { illustration: string }) {
     `}
     vue={`
 <script setup>
-import { KozmosButton } from "@kozmos-ds/vue"
 import {
+  KozmosButton,
   KozmosDialog,
   KozmosDialogContent,
   KozmosDialogDescription,
   KozmosDialogFooter,
   KozmosDialogHeader,
   KozmosDialogTitle,
-} from "@kozmos-ds/vue/react-bridge"
+} from "@kozmos-ds/vue"
 // An illustration above the title, out to the dialog's edges and top
 // corners: the header's #media slot. Left unnamed it is decorative;
 // media-label names it as one image.
@@ -200,7 +200,7 @@ import {
   KozmosDialogDescription,
   KozmosDialogHeader,
   KozmosDialogTitle,
-} from "@kozmos-ds/vue/react-bridge"
+} from "@kozmos-ds/vue"
 // The window less 16 on each side: the header keeps its height and the
 // image takes the rest, as large as it fits.
 defineProps({ src: String })
@@ -317,7 +317,7 @@ import {
   KozmosDialogHeader,
   KozmosDialogTitle,
   KozmosDialogTrigger,
-} from "@kozmos-ds/vue/react-bridge"
+} from "@kozmos-ds/vue"
 </script>
 
 <template>

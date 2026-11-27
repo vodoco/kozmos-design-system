@@ -36,39 +36,42 @@ React part draws the slot, so it finds the context its compound gives it:
 <script setup>
 import { ref } from "vue";
 import {
-  KozmosRadioGroup,
-  KozmosRadioGroupItem,
-  KozmosSelect,
-  KozmosSelectContent,
-  KozmosSelectItem,
-  KozmosSelectTrigger,
-  KozmosSelectValue,
+  KozmosAccordion,
+  KozmosAccordionContent,
+  KozmosAccordionItem,
+  KozmosAccordionTrigger,
+  KozmosTabs,
+  KozmosTabsList,
+  KozmosTabsTrigger,
 } from "@kozmos-ds/vue/react-bridge";
 const level = ref("1");
 </script>
 
 <template>
-  <KozmosRadioGroup v-model="level" aria-label="Level">
-    <KozmosRadioGroupItem value="1" label="Level 1" />
-    <KozmosRadioGroupItem value="2" label="Level 2" />
-  </KozmosRadioGroup>
-  <KozmosSelect v-model="level">
-    <KozmosSelectTrigger aria-label="Level"
-      ><KozmosSelectValue
-    /></KozmosSelectTrigger>
-    <KozmosSelectContent>
-      <KozmosSelectItem value="1">Level 1</KozmosSelectItem>
-      <KozmosSelectItem value="2">Level 2</KozmosSelectItem>
-    </KozmosSelectContent>
-  </KozmosSelect>
+  <KozmosTabs v-model="level">
+    <KozmosTabsList aria-label="Level">
+      <KozmosTabsTrigger value="1">Level 1</KozmosTabsTrigger>
+      <KozmosTabsTrigger value="2">Level 2</KozmosTabsTrigger>
+    </KozmosTabsList>
+  </KozmosTabs>
+  <KozmosAccordion v-model="level" type="single">
+    <KozmosAccordionItem value="1">
+      <KozmosAccordionTrigger>Level 1</KozmosAccordionTrigger>
+      <KozmosAccordionContent>Its rooms</KozmosAccordionContent>
+    </KozmosAccordionItem>
+    <KozmosAccordionItem value="2">
+      <KozmosAccordionTrigger>Level 2</KozmosAccordionTrigger>
+      <KozmosAccordionContent>Its rooms</KozmosAccordionContent>
+    </KozmosAccordionItem>
+  </KozmosAccordion>
 </template>
 ```
 
-The parts of Accordion, Card, Dialog, Drawer, Select, Tabs, Tooltip and Toast are bridged, and
+The parts of Accordion, Tabs and Toast are bridged, and
 `KozmosToaster` draws what `toast()` (React's own, exported here) shows. A slot the React part does not
 draw (an inactive tab's panel) shows nothing. Two things are not bridged: a trigger cannot take a Vue
-element as its child (`as-child`), so it draws its own button (open a dialog or drawer from a
-`KozmosButton` by `v-model:open`); and Table's rows and cells, since a `<table>` holds no box a Vue
+element as its child (`as-child`), so it draws its own button (open what it opens from a
+`KozmosButton` by its `v-model`); and Table's rows and cells, since a `<table>` holds no box a Vue
 slot is drawn in.
 
 **Vue's providers reach the React parts (decision 172).** Every React root the bridge mounts is drawn
@@ -80,7 +83,7 @@ inside React's providers, given what the nearest Vue provider holds, and follows
 | `KozmosDensityScope`         | React's `DensityScope`: the density                                                                                                                      |
 | `KozmosAnalyticsProvider`    | React's `AnalyticsProvider`, which hands each event to the Vue provider's batch                                                                          |
 | `KozmosDesignConfigProvider` | its glass, shadow and motion properties, through its theme provider's tokens, and its glass spotlight; its reduced motion only in place, not in a portal |
-| (none)                       | a Radix `TooltipProvider`, so a `KozmosTooltip` needs none; `KozmosTooltipProvider` sets the delays inside it                                            |
+| (none)                       | a Radix `TooltipProvider`, for the tooltips a bridged part draws                                                                                         |
 
 A part drawn in a compound's tree is given only the providers that sit between it and the compound.
 `KozmosDesignConfigProvider`'s reduced motion marks what a bridged part draws in place, but not what it
@@ -94,15 +97,15 @@ import {
   KozmosThemeProvider,
   type KozmosAnalyticsEvent,
 } from "@kozmos-ds/vue";
-import { KozmosSwitch } from "@kozmos-ds/vue/react-bridge";
+import { KozmosToggleButton } from "@kozmos-ds/vue/react-bridge";
 const send = (events: KozmosAnalyticsEvent[]) => console.log(events);
 </script>
 
 <template>
   <KozmosThemeProvider theme="dark" density="compact">
     <KozmosAnalyticsProvider @dispatch="send">
-      <!-- reports switch_toggled -->
-      <KozmosSwitch aria-label="Step-free" />
+      <!-- reports toggle_pressed -->
+      <KozmosToggleButton aria-label="Step-free">S</KozmosToggleButton>
       <!-- reports button_clicked -->
       <KozmosButton>Save</KozmosButton>
     </KozmosAnalyticsProvider>

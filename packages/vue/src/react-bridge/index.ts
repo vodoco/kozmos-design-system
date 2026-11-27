@@ -2,8 +2,8 @@
  * `@kozmos-ds/vue/react-bridge`: the Kozmos parts that have no Vue port yet,
  * each mounting its React component. A wrapper in no other wrapper's slot
  * is a React root; one in another's slot is drawn in that one's React tree,
- * so a part made of parts (`KozmosRadioGroup` and its items, `KozmosSelect`
- * and its trigger, content and items) is one React tree, and the Vue
+ * so a part made of parts (`KozmosTabs` and its list, triggers and panels)
+ * is one React tree, and the Vue
  * providers around it (KozmosThemeProvider, KozmosDensityScope,
  * KozmosAnalyticsProvider) reach every part it draws (GAP-230, decision
  * 172; react-adapter.ts). It needs `react`, `react-dom` and
@@ -27,17 +27,13 @@ import {
   PART_TAKES,
 } from "./part-takes";
 import {
-  Switch,
-  Slider as ReactSlider,
   Search,
   SearchBar,
-  Select,
   BottomNavigation,
   Navbar,
   Sidebar,
   Menu,
   ContextMenu,
-  Drawer,
   Toast,
   Pagination,
   Stepper,
@@ -45,10 +41,6 @@ import {
   SettingsRow,
   Table,
   Tree,
-  Tooltip,
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
   Accordion,
   MapView,
   LocationPin,
@@ -57,7 +49,6 @@ import {
   DirectionStep,
   FloorSelector,
   POICard,
-  BottomSheet,
   FileUpload as ReactFileUpload,
   ImageCropper,
   DatePicker,
@@ -65,17 +56,12 @@ import {
   FloatingActionButton,
   SplitButton,
   ToggleButton,
-  SegmentedControl,
   Tabs,
-  Dialog,
   MapOverlay,
-  Chip,
   DynamicIsland,
   FeedbackCard,
   MapControlsGroup,
   NavigationAnnouncer,
-  RadioGroup as ReactRadioGroup,
-  RadioGroupItem as ReactRadioGroupItem,
   RouteSummary,
   RoutingInputGroup,
   SaveLocationCard,
@@ -88,12 +74,8 @@ import {
   BrowseCategoriesPanel,
   CategoryTile,
   ColorPicker,
-  Combobox,
   DateRangePicker,
-  Listbox,
   MapControlButton,
-  MultiSelect,
-  ChipInput,
   NavigationItem,
   POIDetailPanel,
   POIMediaGallery,
@@ -107,33 +89,9 @@ import {
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-  DrawerTrigger,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerClose,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectLabel,
-  SelectItem,
-  SelectSeparator,
   TabsList,
   TabsTrigger,
   TabsContent,
-  TooltipProvider,
-  TooltipTrigger,
-  TooltipContent,
   Toaster,
   ToastProvider,
   ToastViewport,
@@ -187,80 +145,15 @@ const TourStepAdapter = ({ target, ...props }: any) =>
   });
 TourStepAdapter.displayName = "TourStep";
 
-// GAP-190: a popover the product opens beside an element or rect it does not
-// own. One part, not a PopoverAnchor of its own: the anchor is an element
-// or rect Vue holds, which no wrapper draws. `anchor` is an
-// element, a Vue component (a template ref on KozmosButton: its element), or
-// anything with a getBoundingClientRect(); the rest go to PopoverContent,
-// v-model:open to `open` and `onOpenChange`. Focus is React's: a close that
-// loses it gives it back to what had it, else to an element anchor.
-type Rect = { getBoundingClientRect(): DOMRect };
-
-/** The element or rect `anchor` names, or null while it has none yet. */
-function resolveAnchor(anchor: unknown): Element | Rect | null {
-  let node: unknown =
-    anchor && typeof anchor === "object" && "$el" in anchor
-      ? (anchor as { $el: unknown }).$el
-      : anchor;
-  // A wrapper's own box draws nothing (display: contents): its element is
-  // the first one inside it, once React has drawn it.
-  while (
-    node instanceof Element &&
-    node.ownerDocument.defaultView?.getComputedStyle(node).display ===
-      "contents"
-  ) {
-    node = node.firstElementChild;
-  }
-  if (node instanceof Element) return node;
-  return node && typeof (node as Rect).getBoundingClientRect === "function"
-    ? (node as Rect)
-    : null;
-}
-
-const AnchoredPopoverAdapter = ({
-  anchor,
-  open,
-  defaultOpen,
-  onOpenChange,
-  modal,
-  children,
-  ...contentProps
-}: any) => {
-  const [, redraw] = React.useReducer((count: number) => count + 1, 0);
-  const resolved = resolveAnchor(anchor);
-  // A component's element arrives when its own React root draws it: watch
-  // its box until then.
-  const box =
-    anchor && typeof anchor === "object" && "$el" in anchor
-      ? (anchor as { $el: unknown }).$el
-      : null;
-  React.useEffect(() => {
-    if (!(box instanceof Element)) return undefined;
-    const observer = new MutationObserver(redraw);
-    observer.observe(box, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [box]);
-  const virtualRef = React.useMemo(() => ({ current: resolved }), [resolved]);
-  return React.createElement(
-    Popover,
-    { open, defaultOpen, onOpenChange, modal },
-    resolved ? React.createElement(PopoverAnchor, { virtualRef } as any) : null,
-    React.createElement(PopoverContent, contentProps, children),
-  );
-};
-AnchoredPopoverAdapter.displayName = "AnchoredPopover";
-
 // What each adapter hands on, as React's types read the parts it hands it
 // to (part-takes.ts).
 describeParts([
   [BackdropAdapter, ADAPTER_TAKES.BackdropAdapter],
   [TourStepAdapter, ADAPTER_TAKES.TourStepAdapter],
-  [AnchoredPopoverAdapter, ADAPTER_TAKES.AnchoredPopoverAdapter],
 ]);
 describeBooleans([
   [BackdropAdapter, ADAPTER_BOOLEANS.BackdropAdapter],
   [TourStepAdapter, ADAPTER_BOOLEANS.TourStepAdapter],
-  [AnchoredPopoverAdapter, ADAPTER_BOOLEANS.AnchoredPopoverAdapter],
 ]);
 
 // ----------------------------------------------------------------------
@@ -285,34 +178,17 @@ const textField = {
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
-// Null is where the slider starts: its default, else its own fallback.
-export const KozmosSlider = createVueWrapper(ReactSlider, {
-  modelValue: {
-    prop: "value",
-    callback: "onValueChange",
-    empty: ({ defaultValue, min = 0, max = 100, thumbCount = 1 }) =>
-      defaultValue ??
-      Array.from({ length: thumbCount }, (_, index) =>
-        thumbCount === 1 ? min : min + ((max - min) * index) / (thumbCount - 1),
-      ),
-  },
-});
 export const KozmosSearch = createVueWrapper(Search, {
   modelValue: textField,
 });
 export const KozmosSearchBar = createVueWrapper(SearchBar, {
   modelValue: { prop: "value", callback: "onChange", empty: "" },
 });
-// Radix's Select shows its placeholder for "".
-export const KozmosSelect = createVueWrapper(Select, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-});
 export const KozmosBottomNavigation = createVueWrapper(BottomNavigation);
 export const KozmosNavbar = createVueWrapper(Navbar);
 export const KozmosSidebar = createVueWrapper(Sidebar);
 export const KozmosMenu = createVueWrapper(Menu);
 export const KozmosContextMenu = createVueWrapper(ContextMenu);
-export const KozmosDrawer = createVueWrapper(Drawer);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosPagination = createVueWrapper(Pagination);
 export const KozmosStepper = createVueWrapper(Stepper);
@@ -363,16 +239,7 @@ Object.assign(KozmosTree, {
     ariaLabel: { type: String, default: undefined },
   },
 });
-export const KozmosTooltip = createVueWrapper(Tooltip);
-export const KozmosPopover = createVueWrapper(Popover);
-// Its attrs are React's alone, as every wrapper's are (createVueWrapper): a
-// component given as `anchor` is never set as an attribute on the wrapper's
-// own box. Not wrapped in an Object.assign() of its own: the declarations
-// then spelt its whole type out, with Vue's GlobalComponents where Vue's
-// own constraint refuses it, and an app that type-checks its libraries
-// failed to compile (TS2344; test/consumer-types.spec.ts).
-export const KozmosAnchoredPopover = createVueWrapper(AnchoredPopoverAdapter);
-// Its attrs are React's alone, as KozmosAnchoredPopover's are: Vue would
+// Its attrs are React's alone, as every wrapper's are: Vue would
 // write each onto the wrapper's own box, where a component given as target
 // or a function as positionLabel cannot be written, and title would be a
 // native tooltip. The two are declared as props as well, as Backdrop's is.
@@ -409,7 +276,6 @@ export const KozmosFloorSelector = createVueWrapper(FloorSelector, {
   },
 });
 export const KozmosPOICard = createVueWrapper(POICard);
-export const KozmosBottomSheet = createVueWrapper(BottomSheet);
 export const KozmosFileUpload = createVueWrapper(ReactFileUpload, {
   modelValue: { prop: "value", callback: "onFilesChange", empty: [] },
 });
@@ -430,37 +296,21 @@ export const KozmosSplitButton = createVueWrapper(SplitButton);
 export const KozmosToggleButton = createVueWrapper(ToggleButton, {
   pressed: { prop: "pressed", callback: "onPressedChange", empty: false },
 });
-// Nothing chosen is `null` to React: `undefined` hands the choice back to
-// the control.
-export const KozmosSegmentedControl = createVueWrapper(SegmentedControl, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: null },
-});
 export const KozmosTabs = createVueWrapper(Tabs, {
   modelValue: { prop: "value", callback: "onValueChange", empty: "" },
 });
-export const KozmosDialog = createVueWrapper(Dialog);
 export const KozmosMapOverlay = createVueWrapper(MapOverlay);
-export const KozmosChip = createVueWrapper(Chip);
 export const KozmosDynamicIsland = createVueWrapper(DynamicIsland);
 export const KozmosFeedbackCard = createVueWrapper(FeedbackCard);
 export const KozmosMapControlsGroup = createVueWrapper(MapControlsGroup, {
   stepFree: { prop: "stepFree", callback: "onStepFreeChange", empty: false },
 });
 export const KozmosNavigationAnnouncer = createVueWrapper(NavigationAnnouncer);
-export const KozmosRadioGroup = createVueWrapper(ReactRadioGroup, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-});
-export const KozmosRadioGroupItem = createVueWrapper(ReactRadioGroupItem);
 export const KozmosRouteSummary = createVueWrapper(RouteSummary);
 export const KozmosRoutingInputGroup = createVueWrapper(RoutingInputGroup);
 export const KozmosSaveLocationCard = createVueWrapper(SaveLocationCard);
 export const KozmosScrollArea = createVueWrapper(ScrollArea);
 export const KozmosUserLocationMarker = createVueWrapper(UserLocationMarker);
-
-// Custom Input Binding Interfaces
-export const KozmosSwitch = createVueWrapper(Switch, {
-  modelValue: { prop: "checked", callback: "onCheckedChange", empty: false },
-});
 
 // ----------------------------------------------------------------------
 // Components added after the original adapter list was written.
@@ -547,10 +397,6 @@ export const KozmosColorPicker = createVueWrapper(ColorPicker, {
     empty: ({ defaultFormat = "hsl" }) => defaultFormat,
   },
 });
-export const KozmosCombobox = createVueWrapper(Combobox, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: "" },
-  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
-});
 export const KozmosDateRangePicker = createVueWrapper(DateRangePicker, {
   modelValue: {
     prop: "value",
@@ -558,81 +404,27 @@ export const KozmosDateRangePicker = createVueWrapper(DateRangePicker, {
     empty: { start: "", end: "" },
   },
 });
-// One option is a string, several an array.
-export const KozmosListbox = createVueWrapper(Listbox, {
-  modelValue: {
-    prop: "value",
-    callback: "onValueChange",
-    empty: ({ multiple }) => (multiple ? [] : ""),
-  },
-  // The option a product moves (GAP-260): `v-model:active-value`, null for
-  // none.
-  activeValue: {
-    prop: "activeValue",
-    callback: "onActiveValueChange",
-    empty: null,
-  },
-});
-export const KozmosMultiSelect = createVueWrapper(MultiSelect, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
-  searchValue: {
-    prop: "searchValue",
-    callback: "onSearchValueChange",
-    empty: "",
-  },
-});
-// GAP-222 (decision 216): the entries are the v-model, the typed text a
-// second one, as Combobox's inputValue.
-export const KozmosChipInput = createVueWrapper(ChipInput, {
-  modelValue: { prop: "value", callback: "onValueChange", empty: [] },
-  inputValue: { prop: "inputValue", callback: "onInputValueChange", empty: "" },
-});
-
 // ----------------------------------------------------------------------
 // The parts of the parts made of parts (GAP-230, decision 172). Each is
 // drawn in the React tree of the wrapper whose slot it is in, so it finds
 // the context its compound gives it, as a React child does:
 //
-//   <KozmosRadioGroup v-model="level">
-//     <KozmosRadioGroupItem value="1" label="Level 1" />
-//   </KozmosRadioGroup>
+//   <KozmosTabs v-model="level">
+//     <KozmosTabsList>
+//       <KozmosTabsTrigger value="1">Level 1</KozmosTabsTrigger>
+//     </KozmosTabsList>
+//   </KozmosTabs>
 //
 // A trigger draws its own button: `as-child` cannot hand its behaviour to
-// a Vue element (a slot is drawn in a box of its own), so open a dialog,
-// drawer or tooltip from a KozmosButton by `v-model:open` instead.
+// a Vue element (a slot is drawn in a box of its own), so open what it
+// opens from a KozmosButton by its `v-model` instead.
 // ----------------------------------------------------------------------
 export const KozmosAccordionItem = createVueWrapper(AccordionItem);
 export const KozmosAccordionTrigger = createVueWrapper(AccordionTrigger);
 export const KozmosAccordionContent = createVueWrapper(AccordionContent);
-export const KozmosDialogTrigger = createVueWrapper(DialogTrigger);
-export const KozmosDialogContent = createVueWrapper(DialogContent);
-export const KozmosDialogHeader = createVueWrapper(DialogHeader);
-export const KozmosDialogTitle = createVueWrapper(DialogTitle);
-export const KozmosDialogDescription = createVueWrapper(DialogDescription);
-export const KozmosDialogFooter = createVueWrapper(DialogFooter);
-export const KozmosDialogClose = createVueWrapper(DialogClose);
-export const KozmosDrawerTrigger = createVueWrapper(DrawerTrigger);
-export const KozmosDrawerContent = createVueWrapper(DrawerContent);
-export const KozmosDrawerHeader = createVueWrapper(DrawerHeader);
-export const KozmosDrawerTitle = createVueWrapper(DrawerTitle);
-export const KozmosDrawerDescription = createVueWrapper(DrawerDescription);
-export const KozmosDrawerFooter = createVueWrapper(DrawerFooter);
-export const KozmosDrawerClose = createVueWrapper(DrawerClose);
-export const KozmosSelectTrigger = createVueWrapper(SelectTrigger);
-export const KozmosSelectValue = createVueWrapper(SelectValue);
-export const KozmosSelectContent = createVueWrapper(SelectContent);
-export const KozmosSelectGroup = createVueWrapper(SelectGroup);
-export const KozmosSelectLabel = createVueWrapper(SelectLabel);
-export const KozmosSelectItem = createVueWrapper(SelectItem);
-export const KozmosSelectSeparator = createVueWrapper(SelectSeparator);
 export const KozmosTabsList = createVueWrapper(TabsList);
 export const KozmosTabsTrigger = createVueWrapper(TabsTrigger);
 export const KozmosTabsContent = createVueWrapper(TabsContent);
-// Every bridged root is inside a TooltipProvider of its own, so a
-// KozmosTooltip needs none; one sets the delays for the tooltips in it.
-export const KozmosTooltipProvider = createVueWrapper(TooltipProvider);
-export const KozmosTooltipTrigger = createVueWrapper(TooltipTrigger);
-export const KozmosTooltipContent = createVueWrapper(TooltipContent);
 // Mount one KozmosToaster, inside a KozmosThemeProvider, and call `toast()`
 // from anywhere: its toasts are drawn in the provider's theme, as React's.
 // The parts below compose a toast by hand, as React's do.

@@ -3,6 +3,15 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "../../utils";
 import { createThemePortal } from "../../theme/ThemePortal";
 import { ThemeProviderContext } from "../../theme/theme-context";
+import {
+  TOOLTIP_ARROW_CLASSES,
+  TOOLTIP_ARROW_SIZE,
+  TOOLTIP_CONTENT_CLASS,
+  TOOLTIP_CONTENT_MOTION_CLASS,
+  TOOLTIP_DISABLED_TRIGGER_CLASS,
+  TOOLTIP_TONE_CLASSES,
+  tooltipTone,
+} from "../../recipes/tooltip";
 
 const TooltipPortal = createThemePortal(TooltipPrimitive.Portal);
 
@@ -42,7 +51,7 @@ const TooltipTrigger = React.forwardRef<
   return (
     <TooltipPrimitive.Trigger ref={ref} asChild {...props}>
       <span
-        className={cn("inline-flex", className)}
+        className={cn(TOOLTIP_DISABLED_TRIGGER_CLASS, className)}
         data-disabled-trigger=""
         tabIndex={0}
       >
@@ -52,19 +61,6 @@ const TooltipTrigger = React.forwardRef<
   );
 });
 TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName;
-
-// The surface each tone draws: the popover's, with its border, or the
-// inverse surface under its words, with the border in the surface's own
-// colour so the tooltip keeps its size (decision 192, GAP-210).
-const TOOLTIP_TONE_CLASSES = {
-  default: "border bg-popover px-3 py-1.5 text-sm text-popover-foreground",
-  inverse:
-    "border border-inverse bg-inverse px-3 py-1.5 text-sm text-inverse-foreground",
-} as const;
-const TOOLTIP_ARROW_CLASSES = {
-  default: "-translate-y-px fill-popover",
-  inverse: "-translate-y-px fill-inverse",
-} as const;
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
@@ -97,16 +93,16 @@ const TooltipContent = React.forwardRef<
     ref,
   ) => {
     const theme = React.useContext(ThemeProviderContext);
-    const surface = tone === "inverse" ? "inverse" : "default";
+    const surface = tooltipTone(tone);
     const content = (
       <TooltipPrimitive.Content
         ref={ref}
         sideOffset={sideOffset}
         data-tone={surface === "inverse" ? "inverse" : undefined}
         className={cn(
-          "z-50 overflow-visible rounded-control",
+          TOOLTIP_CONTENT_CLASS,
           TOOLTIP_TONE_CLASSES[surface],
-          "shadow-overlay animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          TOOLTIP_CONTENT_MOTION_CLASS,
           className,
         )}
         {...props}
@@ -118,8 +114,8 @@ const TooltipContent = React.forwardRef<
           side, so "up" in its own frame is always into the body, and its
           box, which places the tooltip, keeps its size. */}
         <TooltipPrimitive.Arrow
-          width={8}
-          height={4}
+          width={TOOLTIP_ARROW_SIZE.width}
+          height={TOOLTIP_ARROW_SIZE.height}
           className={TOOLTIP_ARROW_CLASSES[surface]}
         />
       </TooltipPrimitive.Content>

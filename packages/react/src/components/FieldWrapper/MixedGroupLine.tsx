@@ -1,9 +1,15 @@
 import * as React from "react";
+import { FIELD_RESET_CLASS } from "../../recipes/field";
+import {
+  MIXED_GROUP_LABEL_CLASS,
+  mixedGroupFocusTarget,
+} from "../../recipes/mixed-group";
 
 // The mixed state of a group of options (decisions 188 and 191): a
 // RadioGroup or a SegmentedControl that stands for several values. A module
 // of its own that the package does not export, beside the fields' helpers
-// (mixedValue.ts).
+// (mixedValue.ts). The recipe is shared with Vue's RadioGroup and
+// SegmentedControl (recipes/mixed-group.ts).
 
 /**
  * What a mixed group draws under its options, as a field draws it (GAP-153):
@@ -36,7 +42,7 @@ export function MixedGroupLine({
       <p
         id={mixedId}
         data-slot="mixed-label"
-        className="kozmos-reset kozmos-field-message kozmos-field-default"
+        className={MIXED_GROUP_LABEL_CLASS}
       >
         {mixedLabel}
       </p>
@@ -45,25 +51,12 @@ export function MixedGroupLine({
   return (
     <button
       type="button"
-      className="kozmos-reset kozmos-field-reset"
+      className={FIELD_RESET_CLASS}
       data-slot="reset-mixed"
       onClick={() => {
         // The button goes as the group turns mixed again: focus goes to the
-        // option the group's Tab stop is on (or its first usable one), which
-        // is then read in the group with its several values, not lost to
-        // the page. Focus alone never chooses: Radix chooses on focus only
-        // while an arrow key is held.
-        const root = group.current;
-        const options = root
-          ? [
-              ...root.querySelectorAll<HTMLElement>(
-                '[role="radio"]:not([disabled])',
-              ),
-            ]
-          : [];
-        (
-          options.find((option) => option.tabIndex === 0) ?? options[0]
-        )?.focus();
+        // option holding the group's Tab stop, never lost to the page.
+        mixedGroupFocusTarget(group.current)?.focus();
         onResetMixed();
       }}
     >

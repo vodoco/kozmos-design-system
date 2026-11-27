@@ -14,11 +14,6 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  RadioGroupItem,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   TabsContent,
   TabsList,
   TabsTrigger,
@@ -53,6 +48,9 @@ import { planOf, reactSides } from "../../test/contract/read-contract";
  * part with a model.
  */
 const WrappedCounter = createVueWrapper(KozmosReact.Counter);
+// A box drawing a Vue slot: React's DialogHeader, wrapped as the bridge
+// wraps a part (Dialog is native in Vue since wave V2).
+const WrappedDialogHeader = createVueWrapper(KozmosReact.DialogHeader);
 const WrappedIconButton = Object.assign(
   createVueWrapper(KozmosReact.IconButton),
   { props: { counterLabel: null } },
@@ -77,16 +75,13 @@ const WrappedCheckbox = createVueWrapper(KozmosReact.Checkbox, {
 // so typing stopped filtering, typed MultiSelect's array into a string, and
 // dropped a user's `@change`.
 
-const fruit = [
-  { value: "apple", label: "Apple" },
-  { value: "banana", label: "Banana" },
-  { value: "cherry", label: "Cherry" },
-];
 const plan = new File(["%PDF"], "plan.pdf", { type: "application/pdf" });
 const tree = [
   { id: "1", name: "src", children: [{ id: "2", name: "a.ts" }] },
   { id: "3", name: "b.ts" },
 ];
+// The same rows, under a name the listener tests' own helper leaves free.
+const trees = tree;
 const photos = ["a", "b", "c"].map((id) => ({
   id,
   src: "data:,",
@@ -246,22 +241,6 @@ const PARTS: Part[] = [
     alone: "true",
   },
   {
-    name: "KozmosSlider",
-    props: { "aria-label": "Volume", max: 10 },
-    start: [3],
-    before: "3",
-    field: () => $("[role=slider]"),
-    change: (thumb) => press(thumb, "ArrowRight"),
-    next: [4],
-    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
-    shows: "4",
-    // Where it starts with nothing given: its minimum.
-    nothing: "0",
-    fromNothing: { next: [1], shows: "1" },
-    listener: "onValueChange",
-    alone: "1",
-  },
-  {
     name: "KozmosFloorSelector",
     props: { floors: ["1", "2", "3"], label: "Floor" },
     start: "1",
@@ -339,217 +318,6 @@ const PARTS: Part[] = [
     alone: ["plan.pdf"],
   },
   {
-    // Its items cannot be KozmosRadioGroupItems: each wrapper is a React
-    // root of its own, and Radix's items must share their group's (GAP-016).
-    // React's items, handed over as `children`, share it.
-    name: "KozmosRadioGroup",
-    props: {
-      "aria-label": "Mode",
-      children: ["walk", "drive"].map((value) =>
-        e(RadioGroupItem, { key: value, value, label: value }),
-      ),
-    },
-    start: "walk",
-    before: "walk",
-    field: () => $("[role=radio][value=drive]"),
-    change: (radio) => radio.click(),
-    next: "drive",
-    shown: () => $("[role=radio][aria-checked=true]")?.getAttribute("value"),
-    shows: "drive",
-    nothing: undefined,
-    listener: "onValueChange",
-    alone: "drive",
-  },
-  {
-    name: "KozmosSegmentedControl",
-    props: {
-      label: "Mode",
-      items: [
-        { value: "walk", label: "Walk" },
-        { value: "drive", label: "Drive" },
-      ],
-    },
-    start: "walk",
-    before: "Walk",
-    field: () => byText("[role=radio]", "Drive"),
-    change: (segment) => segment.click(),
-    next: "drive",
-    shown: () => $("[role=radio][aria-checked=true]")?.textContent?.trim(),
-    shows: "Drive",
-    nothing: undefined,
-    listener: "onValueChange",
-    alone: "Drive",
-  },
-  {
-    // The choice is the value; what is typed is only the query.
-    name: "KozmosCombobox",
-    props: { options: fruit, label: "Fruit" },
-    start: "banana",
-    before: "Banana",
-    field: () => $("input"),
-    change: async (input) => {
-      input.focus();
-      type(input, "Ap");
-      (await until(() => byText("[role=option]", "Apple")))!.click();
-    },
-    next: "apple",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "Apple",
-    nothing: "",
-    listener: "onValueChange",
-    alone: "Apple",
-  },
-  {
-    name: "KozmosCombobox",
-    model: "inputValue",
-    props: { options: fruit, label: "Fruit" },
-    start: "",
-    before: "",
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "Ap");
-    },
-    next: "Ap",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "Ap",
-    nothing: "",
-    listener: "onInputValueChange",
-    alone: "Ap",
-  },
-  {
-    name: "KozmosListbox",
-    props: { options: fruit, "aria-label": "Fruit" },
-    start: "apple",
-    before: ["Apple"],
-    field: () => byText("[role=option]", "Banana"),
-    change: (option) => option.click(),
-    next: "banana",
-    shown: () => texts("[role=option][aria-selected=true]"),
-    shows: ["Banana"],
-    nothing: [],
-    listener: "onValueChange",
-    alone: ["Banana"],
-  },
-  {
-    // Several options: nothing is an empty array (`empty` reads `multiple`).
-    name: "KozmosListbox",
-    variant: "multiple",
-    props: { options: fruit, "aria-label": "Fruit", multiple: true },
-    start: ["apple"],
-    before: ["Apple"],
-    field: () => byText("[role=option]", "Banana"),
-    change: (option) => option.click(),
-    next: ["apple", "banana"],
-    shown: () => texts("[role=option][aria-selected=true]"),
-    shows: ["Apple", "Banana"],
-    nothing: [],
-    fromNothing: { next: ["banana"], shows: ["Banana"] },
-    listener: "onValueChange",
-    alone: ["Banana"],
-  },
-  {
-    // The option a product moves (GAP-260): the list asks for the next one
-    // by its keys. Null is no active option, so Down Arrow reaches the first.
-    name: "KozmosListbox",
-    model: "activeValue",
-    props: { options: fruit, "aria-label": "Fruit" },
-    start: "apple",
-    before: "Apple",
-    field: () => $("[role=listbox]"),
-    change: (list: HTMLElement) => {
-      list.focus();
-      list.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
-      );
-    },
-    next: "banana",
-    shown: () =>
-      document.getElementById(
-        $("[role=listbox]")?.getAttribute("aria-activedescendant") ?? "",
-      )?.textContent ?? null,
-    shows: "Banana",
-    nothing: null,
-    fromNothing: { next: "apple", shows: "Apple" },
-    listener: "onActiveValueChange",
-    alone: "Banana",
-  },
-  {
-    // An array, from onValueChange: typing in its search never reaches it.
-    name: "KozmosMultiSelect",
-    props: { options: fruit, label: "Fruit" },
-    start: ["apple"],
-    before: ["Apple"],
-    field: () => $("input"),
-    change: async (input) => {
-      input.focus();
-      type(input, "Ba");
-      (await until(() => byText("[role=option]", "Banana")))!.click();
-    },
-    next: ["apple", "banana"],
-    shown: () => texts('[data-slot="chip-label"]'),
-    shows: ["Apple", "Banana"],
-    nothing: [],
-    fromNothing: { next: ["banana"], shows: ["Banana"] },
-    listener: "onValueChange",
-    alone: ["Banana"],
-  },
-  {
-    name: "KozmosMultiSelect",
-    model: "searchValue",
-    props: { options: fruit, label: "Fruit" },
-    start: "",
-    before: "",
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "Ba");
-    },
-    next: "Ba",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "Ba",
-    nothing: "",
-    listener: "onSearchValueChange",
-    alone: "Ba",
-  },
-  {
-    // GAP-222: an array, from onValueChange: a comma adds what was typed.
-    name: "KozmosChipInput",
-    props: { label: "Keywords" },
-    start: ["coffee"],
-    before: ["coffee"],
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "tea,");
-    },
-    next: ["coffee", "tea"],
-    shown: () => texts('[data-slot="chip-label"]'),
-    shows: ["coffee", "tea"],
-    nothing: [],
-    fromNothing: { next: ["tea"], shows: ["tea"] },
-    listener: "onValueChange",
-    alone: ["tea"],
-  },
-  {
-    name: "KozmosChipInput",
-    model: "inputValue",
-    props: { label: "Keywords" },
-    start: "",
-    before: "",
-    field: () => $("input"),
-    change: (input) => {
-      input.focus();
-      type(input, "tea");
-    },
-    next: "tea",
-    shown: () => $<HTMLInputElement>("input")?.value,
-    shows: "tea",
-    nothing: "",
-    listener: "onInputValueChange",
-    alone: "tea",
-  },
-  {
     name: "KozmosDateRangePicker",
     props: { label: "Stay" },
     start: { start: "2026-11-01", end: "2026-11-05" },
@@ -566,36 +334,6 @@ const PARTS: Part[] = [
     },
     listener: "onValueChange",
     alone: ["", "2026-11-09"],
-  },
-  {
-    name: "KozmosSwitch",
-    props: { "aria-label": "Wi-Fi" },
-    start: false,
-    before: "false",
-    field: () => $("[role=switch]"),
-    change: (toggle) => toggle.click(),
-    next: true,
-    shown: () => $("[role=switch]")?.getAttribute("aria-checked"),
-    shows: "true",
-    nothing: "false",
-    listener: "onCheckedChange",
-    alone: "true",
-  },
-  {
-    name: "KozmosSwitch",
-    model: "checked",
-    implicit: true,
-    props: { "aria-label": "Wi-Fi" },
-    start: false,
-    before: "false",
-    field: () => $("[role=switch]"),
-    change: (toggle) => toggle.click(),
-    next: true,
-    shown: () => $("[role=switch]")?.getAttribute("aria-checked"),
-    shows: "true",
-    nothing: "false",
-    listener: "onCheckedChange",
-    alone: "true",
   },
   {
     name: "KozmosWayfindingInputRow",
@@ -624,42 +362,6 @@ const PARTS: Part[] = [
     nothing: "",
     listener: "onDestinationChange",
     alone: "Lounge",
-  },
-  {
-    // Radix's Select, opened and chosen from with the keyboard; its parts
-    // below the root are React's, handed over as `children` (GAP-016).
-    name: "KozmosSelect",
-    props: {
-      children: [
-        e(
-          SelectTrigger,
-          { key: "trigger", "aria-label": "Fruit" },
-          e(SelectValue, { placeholder: "Pick one" }),
-        ),
-        e(
-          SelectContent,
-          { key: "content" },
-          ["apple", "banana"].map((value) =>
-            e(SelectItem, { key: value, value }, value),
-          ),
-        ),
-      ],
-    },
-    start: "apple",
-    before: "apple",
-    field: () => $("[role=combobox]"),
-    change: async (trigger) => {
-      trigger.focus();
-      press(trigger, "Enter");
-      press(await until(() => byText("[role=option]", "banana"))!, "Enter");
-    },
-    next: "banana",
-    shown: () => $("[role=combobox]")?.textContent,
-    shows: "banana",
-    // Its placeholder.
-    nothing: "Pick one",
-    listener: "onValueChange",
-    alone: "banana",
   },
   {
     name: "KozmosAccordion",
@@ -896,40 +598,6 @@ const PARTS: Part[] = [
   // A model whose nothing depends on the part's props (`empty` a function):
   // a row for each thing the function reads, which a constant gets wrong.
   // ------------------------------------------------------------------------
-  {
-    // Its default is where it starts with nothing given.
-    name: "KozmosSlider",
-    variant: "defaultValue",
-    props: { "aria-label": "Volume", max: 10, defaultValue: [5] },
-    start: [3],
-    before: "3",
-    field: () => $("[role=slider]"),
-    change: (thumb) => press(thumb, "ArrowRight"),
-    next: [4],
-    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
-    shows: "4",
-    nothing: "5",
-    fromNothing: { next: [6], shows: "6" },
-    listener: "onValueChange",
-    alone: "6",
-  },
-  {
-    // With no default, its thumbs start spread from its min to its max.
-    name: "KozmosSlider",
-    variant: "min, max and thumbCount",
-    props: { "aria-label": "Range", min: 2, max: 8, thumbCount: 2 },
-    start: [4, 6],
-    before: "4",
-    field: () => $("[role=slider]"),
-    change: (thumb) => press(thumb, "ArrowRight"),
-    next: [5, 6],
-    shown: () => $("[role=slider]")?.getAttribute("aria-valuenow"),
-    shows: "5",
-    nothing: "2",
-    fromNothing: { next: [3, 8], shows: "3" },
-    listener: "onValueChange",
-    alone: "3",
-  },
   {
     name: "KozmosColorPicker",
     model: "alpha",
@@ -1236,7 +904,9 @@ describe("every controlled pair is a model", () => {
 
   it("has a model for each pair each React part has", () => {
     // Every wrapper's React part is read, and every exception says why.
-    expect(parts.length).toBeGreaterThan(90);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (67 after wave V2's chips and overlays).
+    expect(parts.length).toBeGreaterThan(50);
     expect(
       parts
         .filter((part) => !part.bridge || !part.react)
@@ -1280,54 +950,6 @@ describe("every controlled pair is a model", () => {
     }
     expect(missing).toEqual([]);
   }, 60_000);
-});
-
-// --------------------------------------------------------------------------
-// What a query is, beside a value.
-// --------------------------------------------------------------------------
-
-describe("a typed query is not the value", () => {
-  it("KozmosCombobox without v-model filters as you type", async () => {
-    mount(() => h(Bridge.KozmosCombobox, { options: fruit, label: "Fruit" }));
-    const input = await until(() => $<HTMLInputElement>("input"));
-    input.focus();
-    type(input, "Ap");
-    await eventually(() => {
-      expect(input.value).toBe("Ap");
-      expect(texts("[role=option]")).toEqual(["Apple"]);
-    });
-  });
-
-  it("KozmosCombobox with v-model filters as you type, and emits only a choice", async () => {
-    const { model, emitted } = mountPart(PARTS_BY.KozmosCombobox, {
-      vModel: true,
-    });
-    const input = await until(() => $<HTMLInputElement>("input"));
-    input.focus();
-    type(input, "Ap");
-    // A fixed wait: nothing may be emitted.
-    await settle();
-    await eventually(() => {
-      expect(input.value).toBe("Ap");
-      expect(texts("[role=option]")).toEqual(["Apple"]);
-    });
-    expect(emitted).toEqual([]);
-    expect(model.value).toBe("banana");
-  });
-
-  it("KozmosMultiSelect with v-model filters as you type, and keeps its array", async () => {
-    const { model, emitted } = mountPart(PARTS_BY.KozmosMultiSelect, {
-      vModel: true,
-    });
-    const input = await until(() => $<HTMLInputElement>("input"));
-    input.focus();
-    type(input, "Ba");
-    // A fixed wait: nothing may be emitted.
-    await settle();
-    await eventually(() => expect(texts("[role=option]")).toEqual(["Banana"]));
-    expect(emitted).toEqual([]);
-    expect(model.value).toEqual(["apple"]);
-  });
 });
 
 // --------------------------------------------------------------------------
@@ -1403,19 +1025,6 @@ describe("each model's other changes", () => {
     });
   });
 
-  it("KozmosSegmentedControl's choice taken back is undefined, and the control holds nothing", async () => {
-    const { emitted } = mountPart(PARTS_BY.KozmosSegmentedControl, {
-      vModel: true,
-    });
-    (await until(() => byText("[role=radio]", "Walk")))!.click();
-    // A fixed wait: the change is emitted once, and no more.
-    await settle();
-    expect(emitted).toEqual([undefined]);
-    await eventually(() =>
-      expect($("[role=radio][aria-checked=true]")).toBeNull(),
-    );
-  });
-
   it("an empty model leaves a text field controlled", async () => {
     const value = ref<string | undefined>(undefined);
     mount(() =>
@@ -1430,48 +1039,6 @@ describe("each model's other changes", () => {
       expect(value.value).toBe("A");
       expect(input.value).toBe("A");
     });
-  });
-
-  it("KozmosCombobox chosen twice and reset to null shows nothing, not its first choice", async () => {
-    const { model } = mountPart(PARTS_BY.KozmosCombobox, {
-      vModel: true,
-      start: null,
-    });
-    for (const label of ["Apple", "Banana"]) {
-      const input = await until(() => $<HTMLInputElement>("input"));
-      input.focus();
-      type(input, label.slice(0, 2));
-      (await until(() => byText("[role=option]", label)))!.click();
-      await settle();
-    }
-    expect(model.value).toBe("banana");
-    model.value = null;
-    await eventually(() =>
-      expect($<HTMLInputElement>("input")!.value).toBe(""),
-    );
-  });
-
-  it("KozmosCombobox keeps each character typed when the product clears its model as the visitor types (GAP-232)", async () => {
-    const value = ref<string | null>("banana");
-    mount(() =>
-      h(Bridge.KozmosCombobox, {
-        options: fruit,
-        label: "Fruit",
-        modelValue: value.value,
-        "onUpdate:modelValue": (next: string | null) => (value.value = next),
-        "onUpdate:inputValue": () => (value.value = null),
-      }),
-    );
-    const input = await until(() => $<HTMLInputElement>("input"));
-    await eventually(() => expect(input.value).toBe("Banana"));
-    input.focus();
-    for (const text of ["C", "Ch", "Che"]) {
-      type(input, text);
-      // A fixed wait: what was typed may not be taken back.
-      await settle();
-      expect(input.value).toBe(text);
-    }
-    expect(value.value).toBeNull();
   });
 });
 
@@ -1640,16 +1207,6 @@ describe("a model's nothing, read from React's props", () => {
   it.each([
     ["KozmosAccordion", "modelValue", { type: "multiple" }, []],
     ["KozmosAccordion", "modelValue", { type: "single" }, ""],
-    ["KozmosListbox", "modelValue", { multiple: true }, []],
-    ["KozmosListbox", "modelValue", {}, ""],
-    ["KozmosSlider", "modelValue", { defaultValue: [5] }, [5]],
-    ["KozmosSlider", "modelValue", {}, [0]],
-    [
-      "KozmosSlider",
-      "modelValue",
-      { min: 2, max: 8, thumbCount: 3 },
-      [2, 5, 8],
-    ],
     ["KozmosPOIMediaGallery", "activeIndex", { defaultActiveIndex: 2 }, 2],
     ["KozmosPOIMediaGallery", "activeIndex", {}, 0],
     ["KozmosColorPicker", "alpha", { defaultAlpha: 60 }, 60],
@@ -2144,25 +1701,22 @@ describe("handlers given as an array", () => {
     await eventually(() => expect(input.value).toBe("Ada L"));
   });
 
-  it("KozmosCombobox's @value-change as an array, beside v-model", async () => {
+  // A bridged part whose model is more than a string: Combobox, then
+  // MultiSelect, were the example until their ports (wave V2).
+  it("KozmosDateRangePicker's @value-change as an array, beside v-model", async () => {
     const inner = vi.fn();
     const outer = vi.fn();
+    const part = PARTS_BY.KozmosDateRangePicker;
     const { emitted } = mountPart(
-      {
-        ...PARTS_BY.KozmosCombobox,
-        props: {
-          ...PARTS_BY.KozmosCombobox.props,
-          onValueChange: [inner, outer],
-        },
-      },
+      { ...part, props: { ...part.props, onValueChange: [inner, outer] } },
       { vModel: true },
     );
-    await PARTS_BY.KozmosCombobox.change(await until(() => $("input")));
+    await part.change(await until(() => $$("input[type=date]")[1]));
     await settle();
-    // Combobox reports the option beside its value.
-    expect(inner).toHaveBeenCalledWith("apple", fruit[0]);
-    expect(outer).toHaveBeenCalledWith("apple", fruit[0]);
-    expect(emitted).toEqual(["apple"]);
+    expect(inner).toHaveBeenCalledTimes(1);
+    expect(inner.mock.calls[0][0]).toEqual(part.next);
+    expect(outer.mock.calls).toEqual(inner.mock.calls);
+    expect(emitted).toEqual([part.next]);
   });
 });
 
@@ -2174,21 +1728,24 @@ describe("handlers given as an array", () => {
 // --------------------------------------------------------------------------
 
 describe("a listener that comes and goes after mount", () => {
-  /** A Listbox bound to "apple", with the listener `listeners` gives it now. */
-  const listbox = (
+  /**
+   * A Tree whose selection is bound to "1" (its "src" row), with the
+   * listener `listeners` gives it now. A bridged part with a model of its
+   * own name: Listbox was the example until its port (wave V2).
+   */
+  const tree = (
     listeners: (listen: (next: string) => void) => Record<string, unknown>,
   ) => {
-    const value = ref("apple");
+    const value = ref("1");
     const emitted: unknown[] = [];
     const listen = (next: string) => {
       emitted.push(next);
       value.value = next;
     };
     mount(() =>
-      h(Bridge.KozmosListbox, {
-        options: fruit,
-        "aria-label": "Fruit",
-        modelValue: value.value,
+      h(Bridge.KozmosTree, {
+        data: trees,
+        selectedId: value.value,
         ...listeners(listen),
       }),
     );
@@ -2197,63 +1754,63 @@ describe("a listener that comes and goes after mount", () => {
   // A fixed wait after each choice: most checks after it are that nothing
   // was emitted.
   const choose = async (label: string) => {
-    (await until(() => byText("[role=option]", label)))!.click();
+    (await until(() => byText("[role=treeitem]", label)))!.click();
     await settle();
   };
-  const chosen = () => texts("[role=option][aria-selected=true]");
+  const chosen = () => texts("[role=treeitem][aria-selected=true]");
 
   it("as a key that is there or not", async () => {
     const listening = ref(false);
-    const { emitted } = listbox((listen) =>
-      listening.value ? { "onUpdate:modelValue": listen } : {},
+    const { emitted } = tree((listen) =>
+      listening.value ? { "onUpdate:selectedId": listen } : {},
     );
-    await choose("Banana");
+    await choose("b.ts");
     expect(emitted).toEqual([]);
-    expect(chosen()).toEqual(["Apple"]);
+    expect(chosen()).toEqual(["src"]);
     listening.value = true;
     await settle();
-    await choose("Banana");
-    expect(emitted).toEqual(["banana"]);
-    expect(chosen()).toEqual(["Banana"]);
+    await choose("b.ts");
+    expect(emitted).toEqual(["3"]);
+    expect(chosen()).toEqual(["b.ts"]);
     listening.value = false;
     await settle();
-    await choose("Cherry");
-    expect(emitted).toEqual(["banana"]);
-    expect(chosen()).toEqual(["Banana"]);
+    await choose("src");
+    expect(emitted).toEqual(["3"]);
+    expect(chosen()).toEqual(["b.ts"]);
   });
 
   // The key stays; only its value changes. Under `emits`, Vue skipped the
   // wrapper for the camelCase key, the one templates compile to.
-  for (const key of ["onUpdate:modelValue", "onUpdate:model-value"])
+  for (const key of ["onUpdate:selectedId", "onUpdate:selected-id"])
     it(`as \`"${key}": listening ? fn : undefined\``, async () => {
       const listening = ref(false);
-      const { emitted } = listbox((listen) => ({
+      const { emitted } = tree((listen) => ({
         [key]: listening.value ? listen : undefined,
       }));
-      await choose("Banana");
+      await choose("b.ts");
       expect(emitted).toEqual([]);
       listening.value = true;
       await settle();
-      await choose("Banana");
-      expect(emitted).toEqual(["banana"]);
+      await choose("b.ts");
+      expect(emitted).toEqual(["3"]);
       listening.value = false;
       await settle();
-      await choose("Cherry");
-      expect(emitted).toEqual(["banana"]);
-      expect(chosen()).toEqual(["Banana"]);
+      await choose("src");
+      expect(emitted).toEqual(["3"]);
+      expect(chosen()).toEqual(["b.ts"]);
     });
 
-  for (const event of ["update:modelValue", "update:model-value"])
+  for (const event of ["update:selectedId", "update:selected-id"])
     it(`as a template's v-on="listening ? { '${event}': listen } : {}"`, async () => {
       const state = {
-        fruit,
-        value: ref("apple"),
+        trees,
+        value: ref("1"),
         listening: ref(false),
         emitted: [] as string[],
       };
       mount(
         defineComponent({
-          components: { KozmosListbox: Bridge.KozmosListbox },
+          components: { KozmosTree: Bridge.KozmosTree },
           setup: () => ({
             ...state,
             listen: (next: string) => {
@@ -2261,20 +1818,20 @@ describe("a listener that comes and goes after mount", () => {
               state.value.value = next;
             },
           }),
-          template: `<KozmosListbox :options="fruit" aria-label="Fruit" :model-value="value" v-on="listening ? { '${event}': listen } : {}" />`,
+          template: `<KozmosTree :data="trees" :selected-id="value" v-on="listening ? { '${event}': listen } : {}" />`,
         }),
       );
-      await choose("Banana");
+      await choose("b.ts");
       expect(state.emitted).toEqual([]);
       state.listening.value = true;
       await nextTick();
       await settle();
-      await choose("Banana");
-      expect(state.emitted).toEqual(["banana"]);
+      await choose("b.ts");
+      expect(state.emitted).toEqual(["3"]);
       state.listening.value = false;
       await settle();
-      await choose("Cherry");
-      expect(state.emitted).toEqual(["banana"]);
+      await choose("src");
+      expect(state.emitted).toEqual(["3"]);
     });
 });
 
@@ -2317,8 +1874,8 @@ describe("attributes reach React alone", () => {
       slot: "3",
     },
     {
-      name: "KozmosDialogHeader",
-      component: Bridge.KozmosDialogHeader,
+      name: "DialogHeader",
+      component: WrappedDialogHeader,
       kind: "a box drawing a Vue slot",
       slot: "Gate 4",
     },

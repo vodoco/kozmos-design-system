@@ -5,7 +5,24 @@ import { Label } from "../Label";
 import { ControlText } from "../Label/ControlText";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Minus } from "@kozmos-ds/icons";
+// The recipe is shared with Vue's KozmosSwitch (recipes/switch.ts).
 import { useFieldRef } from "../FieldWrapper/mixedValue";
+import { FIELD_RESET_CLASS } from "../../recipes/field";
+import {
+  SWITCH_CLASS,
+  SWITCH_CONTROL_TEXT_CLASS,
+  SWITCH_ERROR_CLASS,
+  SWITCH_ERROR_TEXT_CLASS,
+  SWITCH_LABEL_CLASS,
+  SWITCH_LABEL_ERROR_CLASS,
+  SWITCH_STATE_LABEL_CLASS,
+  SWITCH_THUMB_CHECKED_CLASS,
+  SWITCH_THUMB_CLASS,
+  SWITCH_WRAPPER_CLASS,
+  switchMixedClass,
+  switchMixedDashClass,
+  switchRowClass,
+} from "../../recipes/switch";
 
 export interface SwitchProps extends React.ComponentPropsWithoutRef<
   typeof SwitchPrimitive.Root
@@ -104,29 +121,15 @@ const Switch = React.forwardRef<
     const isChecked = checkedProp ?? uncontrolledChecked;
 
     return (
-      <div className={cn("flex flex-col gap-1.5 w-full", wrapperClassName)}>
-        <div
-          className={cn(
-            "flex min-h-11 gap-2",
-            description ? "items-start" : "items-center",
-          )}
-        >
+      <div className={cn(SWITCH_WRAPPER_CLASS, wrapperClassName)}>
+        <div className={switchRowClass(!!description)}>
           <SwitchPrimitive.Root
             id={inputId}
             className={cn(
-              "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-pill border-2 border-muted-foreground bg-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 aria-checked:border-theme-fill aria-checked:bg-theme-fill",
-              hasError &&
-                "border-destructive focus-visible:ring-destructive aria-checked:border-destructive aria-checked:bg-destructive",
-              // Mixed (decision 189): the track filled as when on, the
-              // destructive fill in error as a checked one's, with the dash
-              // centred where the thumb was.
-              mixed &&
-                cn(
-                  "justify-center",
-                  hasError
-                    ? "border-destructive bg-destructive"
-                    : "border-theme-fill bg-theme-fill",
-                ),
+              SWITCH_CLASS,
+              hasError && SWITCH_ERROR_CLASS,
+              // Mixed (decision 189): the track filled, the dash centred.
+              mixed && switchMixedClass(hasError),
               className,
             )}
             {...props}
@@ -147,31 +150,17 @@ const Switch = React.forwardRef<
             )}
           >
             {mixed ? (
-              // Checkbox's mixed mark, the minus at 16, in the colour the
-              // thumb would be: the theme foreground on the theme fill,
-              // white in both themes (5.6:1), and the surface on an
-              // error's fill, as its thumb.
+              // Checkbox's mixed mark, in the colour the thumb would be.
               <Minus
                 aria-hidden="true"
                 data-slot="mixed-dash"
-                className={cn(
-                  "pointer-events-none h-4 w-4",
-                  hasError ? "text-background" : "text-theme-fill-foreground",
-                )}
+                className={switchMixedDashClass(hasError)}
               />
             ) : (
               <SwitchPrimitive.Thumb
                 className={cn(
-                  // On, the thumb slides 20 toward the inline end: right, or left
-                  // in a right-to-left box, read from --kozmos-rtl as every
-                  // direction rule is (never :dir()). A bare translate-x-5 slid
-                  // it right in both, out of a right-to-left track.
-                  "pointer-events-none block h-5 w-5 rounded-pill bg-background shadow-raised ring-0 transition-transform data-[state=checked]:translate-x-[calc(1.25rem_*_(1_-_2_*_var(--kozmos-rtl,0)))] data-[state=unchecked]:translate-x-0",
-                  // The thumb on the checked track is a mark on the theme fill: the
-                  // theme foreground, white in both themes (decision 59). On an
-                  // error's track it stays the surface, as SwiftUI and Compose
-                  // draw it.
-                  !hasError && "data-[state=checked]:bg-theme-fill-foreground",
+                  SWITCH_THUMB_CLASS,
+                  !hasError && SWITCH_THUMB_CHECKED_CLASS,
                 )}
               />
             )}
@@ -183,7 +172,7 @@ const Switch = React.forwardRef<
             <span
               aria-hidden="true"
               data-slot="state-label"
-              className="flex h-6 shrink-0 items-center text-sm leading-5 text-muted-foreground peer-disabled:opacity-50"
+              className={SWITCH_STATE_LABEL_CLASS}
             >
               {mixed ? mixedLabel : isChecked ? onLabel : offLabel}
             </span>
@@ -196,16 +185,16 @@ const Switch = React.forwardRef<
               label={label}
               description={description}
               descriptionId={descriptionId}
-              className="pt-0.5"
-              labelClassName={cn(hasError && "text-destructive-text")}
+              className={SWITCH_CONTROL_TEXT_CLASS}
+              labelClassName={cn(hasError && SWITCH_LABEL_ERROR_CLASS)}
             />
           ) : (
             label && (
               <Label
                 htmlFor={inputId}
                 className={cn(
-                  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-                  hasError && "text-destructive-text",
+                  SWITCH_LABEL_CLASS,
+                  hasError && SWITCH_LABEL_ERROR_CLASS,
                 )}
               >
                 {label}
@@ -223,7 +212,7 @@ const Switch = React.forwardRef<
         {!mixed && onResetMixed && !props.disabled ? (
           <button
             type="button"
-            className="kozmos-reset kozmos-field-reset"
+            className={FIELD_RESET_CLASS}
             data-slot="reset-mixed"
             onClick={() => {
               // The button goes as the switch turns mixed again: focus goes
@@ -237,7 +226,7 @@ const Switch = React.forwardRef<
           </button>
         ) : null}
         {isStringError && (
-          <p id={errorId} className="text-sm text-destructive-text">
+          <p id={errorId} className={SWITCH_ERROR_TEXT_CLASS}>
             {error}
           </p>
         )}

@@ -13,13 +13,6 @@ type Presentation = AdaptiveMapLayoutSnapshot["presentation"];
 export const MapShellPresentationContext =
   React.createContext<Presentation | null>(null);
 
-/**
- * A scroll region's scrollbar, by presentation: none that lasts on a phone
- * (decision 75: touch platforms show none at rest), Kozmos's thin one
- * elsewhere (GAP-139). Set as `data-kozmos-scrollbar`; owned CSS draws it.
- */
-export function scrollbarFor(
-  presentation: Presentation | null,
-): "hidden" | "thin" {
-  return presentation === "bottom" ? "hidden" : "thin";
-}
+// Moved to recipes/scrollbar.ts, shared with @kozmos-ds/vue's KozmosCombobox:
+// framework-free, so Vue builds it in.
+export { scrollbarFor } from "../../recipes/scrollbar";

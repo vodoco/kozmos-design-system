@@ -54,7 +54,9 @@ const SUITE = "themes";
  * a rule of their part sets over it, each matched by a selector, held to
  * that size in both densities, with the reason. Any other control drawn at
  * neither its density's size nor this fails, and an allowance no story
- * draws fails too, so none outlives its part.
+ * draws fails too, so none outlives its part. `px` is one size for both
+ * densities, or a size for each, for a rule that follows the density less
+ * a fixed amount.
  */
 const SIZED_OVER_DENSITY = [
   {
@@ -70,6 +72,13 @@ const SIZED_OVER_DENSITY = [
     px: 44,
     reason:
       "OTPInput's cells are a 44 square in every density: its owned rule (packages/styles/src/styles/owned-native-fields.css, `.kozmos-input.kozmos-otp-cell`) sets h-11 w-11 over the field's --density-field-height-md, as React's OTPInput draws them",
+  },
+  {
+    selector: ".kozmos-multiselect-input",
+    property: "height",
+    px: { touch: 32, compact: 28 },
+    reason:
+      "MultiSelect's and ChipInput's input is the field less its padding and border, 12 under --density-field-height-md, so the field keeps its density's height with the input in it: its owned rule (packages/styles/src/styles/owned-selection.css, `.kozmos-multiselect-input`) sets calc(var(--density-field-height-md) - 0.75rem), and React's check-density.mjs reads the same (multi-select input)",
   },
 ];
 
@@ -218,14 +227,19 @@ try {
           );
           if (allowance) {
             allowed.set(allowance, allowed.get(allowance) + 1);
-            for (const [density, read] of [
-              ["touch", touch],
-              ["compact", compact],
-            ])
-              if (Math.abs(read.drawn - allowance.px) > 0.5)
+            // At the density the control is drawn in, which a DensityScope
+            // in the story (ThemeProvider's Density) holds apart from the
+            // toolbar's.
+            for (const read of [touch, compact]) {
+              const px =
+                typeof allowance.px === "number"
+                  ? allowance.px
+                  : allowance.px[read.density];
+              if (Math.abs(read.drawn - px) > 0.5)
                 failures.push(
-                  `${what} is drawn ${read.drawn.toFixed(1)}px ${density}, not the ${allowance.px}px its allowance holds it to (${allowance.selector})`,
+                  `${what} is drawn ${read.drawn.toFixed(1)}px ${read.density}, not the ${px}px its allowance holds it to (${allowance.selector})`,
                 );
+            }
             continue;
           }
           if (touch.atSize && compact.atSize) {
@@ -285,7 +299,7 @@ try {
 for (const [allowance, count] of allowed)
   if (count)
     console.log(
-      `${count} control reading(s) measured against an allowance of ${allowance.px}px (${allowance.selector} ${allowance.property}): ${allowance.reason}`,
+      `${count} control reading(s) measured against an allowance of ${typeof allowance.px === "number" ? `${allowance.px}px` : `${allowance.px.touch}px touch and ${allowance.px.compact}px compact`} (${allowance.selector} ${allowance.property}): ${allowance.reason}`,
     );
   else
     failures.push(

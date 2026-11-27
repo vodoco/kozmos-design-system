@@ -6,6 +6,16 @@ import {
   renderOptionGroups,
   scrollOptionIntoView,
 } from "./option-groups";
+import { nextEnabledIndex } from "../../recipes/option";
+import {
+  asValueArray,
+  firstEnabledIndex,
+  LISTBOX_CLASS,
+  LISTBOX_EMBEDDED_CLASS,
+  listboxNextValue,
+  listboxOptionId as optionIdIn,
+  listboxRowId,
+} from "../../recipes/listbox";
 import { cn } from "../../utils";
 import { useInputModality } from "../../utils/input-modality";
 import { type ComboboxOption } from "../Combobox";
@@ -53,40 +63,7 @@ export function listboxOptionId(
   options: ComboboxOption[],
   value: string | null | undefined,
 ) {
-  if (value == null) return undefined;
-  const index = orderByGroup(options).findIndex(
-    (option) => option.value === value,
-  );
-  return index >= 0 ? `${listboxId}-option-${index}` : undefined;
-}
-
-function asValueArray(value: string | string[] | undefined) {
-  if (Array.isArray(value)) return value;
-  return value ? [value] : [];
-}
-
-function firstEnabledIndex(options: ComboboxOption[], selected?: string[]) {
-  // A chosen option is where the list starts, as the WAI-ARIA listbox has it.
-  const chosen = options.findIndex(
-    (option) => !option.disabled && selected?.includes(option.value),
-  );
-  return chosen >= 0 ? chosen : options.findIndex((option) => !option.disabled);
-}
-
-function nextEnabledIndex(
-  options: ComboboxOption[],
-  currentIndex: number,
-  direction: 1 | -1,
-) {
-  if (options.length === 0) return -1;
-
-  for (let offset = 1; offset <= options.length; offset += 1) {
-    const index =
-      (currentIndex + direction * offset + options.length) % options.length;
-    if (!options[index]?.disabled) return index;
-  }
-
-  return -1;
+  return optionIdIn(listboxId, options, value);
 }
 
 export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
@@ -155,7 +132,7 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
     };
     const activeOptionId =
       activeIndex >= 0 && options[activeIndex]
-        ? `${listboxId}-option-${activeIndex}`
+        ? listboxRowId(listboxId, activeIndex)
         : undefined;
 
     // New options move the active one in the render that brings them, so no
@@ -200,13 +177,11 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
     const commitOption = (option: ComboboxOption) => {
       if (disabled || option.disabled) return;
 
-      const nextValue = multiple
-        ? selectedSet.has(option.value)
-          ? selectedValues.filter(
-              (selectedValue) => selectedValue !== option.value,
-            )
-          : [...selectedValues, option.value]
-        : option.value;
+      const nextValue = listboxNextValue(
+        selectedValues,
+        option.value,
+        multiple,
+      );
 
       if (value === undefined) {
         setUncontrolledValue(nextValue);
@@ -227,8 +202,8 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
         data-modality={focused ? modality : undefined}
         data-embedded={embedded || undefined}
         className={cn(
-          "kozmos-reset kozmos-listbox",
-          embedded && "kozmos-listbox-embedded",
+          LISTBOX_CLASS,
+          embedded && LISTBOX_EMBEDDED_CLASS,
           className,
         )}
         onFocus={(event) => {
@@ -269,7 +244,7 @@ export const Listbox = React.forwardRef<HTMLDivElement, ListboxProps>(
           return (
             <OptionRow
               key={option.value}
-              id={`${listboxId}-option-${index}`}
+              id={listboxRowId(listboxId, index)}
               option={option}
               selected={selected}
               active={active}

@@ -54,13 +54,15 @@ import {
   KozmosSelectItem,
   KozmosSelectTrigger,
   KozmosSelectValue,
-} from "@kozmos-ds/vue/react-bridge"
+} from "@kozmos-ds/vue"
 </script>
 
 <template>
   <KozmosSelect>
     <KozmosSelectTrigger aria-label="Theme" class="w-[180px]">
-      <KozmosSelectValue placeholder="Theme" />
+      <KozmosSelectValue>
+        <template #placeholder>Theme</template>
+      </KozmosSelectValue>
     </KozmosSelectTrigger>
     <KozmosSelectContent>
       <KozmosSelectItem value="light">Light</KozmosSelectItem>
@@ -228,7 +230,7 @@ import {
   KozmosSelectItem,
   KozmosSelectTrigger,
   KozmosSelectValue,
-} from "@kozmos-ds/vue/react-bridge"
+} from "@kozmos-ds/vue"
 </script>
 
 <template>

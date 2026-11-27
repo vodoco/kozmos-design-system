@@ -55,6 +55,12 @@ const MARKS = {
   KozmosIcon: ['"KozmosIcon"'],
   KozmosCodeBlock: ['"KozmosCodeBlock"', "kozmos-code-block-pre"],
   KozmosSpriteIcon: ['"KozmosSpriteIcon"'],
+  KozmosChip: ['"KozmosChip"'],
+  KozmosChipGroup: ['"KozmosChipGroup"'],
+  KozmosMultiSelect: ['"KozmosMultiSelect"'],
+  KozmosChipInput: ['"KozmosChipInput"'],
+  // A single-choice KozmosChipGroup's radios (shared/rovingFocus.ts).
+  rovingFocus: ['"KozmosRovingFocus"'],
   bridge: ['"KozmosBridgeHost"'],
 } as const;
 
@@ -153,11 +159,45 @@ describe.each(Object.entries(bundlers))(
       ]);
     }, 60_000);
 
+    // A chip is one of a group's radios only inside a single-choice
+    // KozmosChipGroup, which hands it the roving focus: a chip alone, as
+    // React's Chip without Radix's RadioGroup, carries none of it. Until
+    // 27 Nov 2026 KozmosChip imported it, and alone cost 4.15 KB.
+    it("import { KozmosChip } keeps it, without a group's roving focus", async () => {
+      expect(kept(await bundle(consumer(["KozmosChip"])))).toEqual([
+        "KozmosChip",
+      ]);
+    }, 60_000);
+
+    // A field that holds chips draws the row a group of toggles draws, and
+    // never the single-choice group: until 27 Nov 2026 KozmosMultiSelect
+    // kept KozmosChipGroup and its roving focus, 11.88 KB alone.
+    it("import { KozmosMultiSelect } keeps its chips, without KozmosChipGroup", async () => {
+      expect(kept(await bundle(consumer(["KozmosMultiSelect"])))).toEqual([
+        "KozmosChip",
+        "KozmosMultiSelect",
+      ]);
+    }, 60_000);
+
+    it("import { KozmosChipInput } keeps its chips, without KozmosChipGroup", async () => {
+      expect(kept(await bundle(consumer(["KozmosChipInput"])))).toEqual([
+        "KozmosChip",
+        "KozmosChipInput",
+      ]);
+    }, 60_000);
+
     // The control: the marks are found when the parts are there.
     it("import { KozmosBadge, KozmosSeparator } keeps both", async () => {
       expect(
         kept(await bundle(consumer(["KozmosBadge", "KozmosSeparator"]))),
       ).toEqual(["KozmosBadge", "KozmosSeparator"]);
+    }, 60_000);
+
+    it("import { KozmosChipGroup } keeps the group and its roving focus", async () => {
+      expect(kept(await bundle(consumer(["KozmosChipGroup"])))).toEqual([
+        "KozmosChipGroup",
+        "rovingFocus",
+      ]);
     }, 60_000);
   },
 );

@@ -46,7 +46,7 @@ const ID_PROPERTY = new Set(["--kozmos-design-id"]);
  *   such a test compares.
  *
  * `ignore` names attributes a framework adds for itself, never drawn by the
- * part (none today; `data-v-*` would be Vue's scoped styles).
+ * part: Reka's tooltip trigger's `data-grace-area-trigger` (stories.parity.spec.ts).
  */
 export function normalizeHtml(
   html: string,

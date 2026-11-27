@@ -43,22 +43,22 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosLabel } from "@kozmos-ds/vue"
 import {
+  KozmosLabel,
   KozmosRadioGroup,
   KozmosRadioGroupItem,
-} from "@kozmos-ds/vue/react-bridge"
+} from "@kozmos-ds/vue"
 </script>
 
 <template>
   <KozmosRadioGroup aria-label="Choose an option" default-value="option-one">
     <div class="flex items-center space-x-2">
       <KozmosRadioGroupItem id="r1" value="option-one" />
-      <KozmosLabel html-for="r1">Option One</KozmosLabel>
+      <KozmosLabel for="r1">Option One</KozmosLabel>
     </div>
     <div class="flex items-center space-x-2">
       <KozmosRadioGroupItem id="r2" value="option-two" />
-      <KozmosLabel html-for="r2">Option Two</KozmosLabel>
+      <KozmosLabel for="r2">Option Two</KozmosLabel>
     </div>
   </KozmosRadioGroup>
 </template>
@@ -126,7 +126,7 @@ Each box is one radio, named by its title alone; its description is its descript
 
 **On SwiftUI** the description is read after the name as the element's custom content, at high importance, so VoiceOver speaks it whether or not the reader turned on Speak Hints; its key, "Description", is looked up in your app's `Localizable` strings. Compose reads it after the title, in the one node. A Compose card or tile fills the width it is given, so side by side in a `Row` give each `Modifier.weight(1f)`, as the snippet below does. `KozmosRadioGroupItem` is now generic over its media, `KozmosRadioGroupItem<Media>`: every initialiser compiles unchanged, but code that names the type needs a parameter, `KozmosRadioGroupItem<EmptyView>` for an option without media.
 
-**On Vue** a bridged `KozmosRadioGroupItem` inside a bridged `KozmosRadioGroup` is drawn in the group's React tree (GAP-230), so it is the group's option, as on React; its media is its `#media` slot.
+**On Vue** `KozmosRadioGroupItem` takes its media in its `#media` slot.
 
 <Canvas of={RadioStories.Cards} />
 
@@ -164,11 +164,11 @@ export function GeometryChoice() {
     `}
     vue={`
 <script setup>
-import { KozmosGrid } from "@kozmos-ds/vue"
 import {
+  KozmosGrid,
   KozmosRadioGroup,
   KozmosRadioGroupItem,
-} from "@kozmos-ds/vue/react-bridge"
+} from "@kozmos-ds/vue"
 // Each option's media is its #media slot.
 </script>
 
@@ -334,10 +334,7 @@ export function AccessAcrossSelection({ levels }: { levels: string[] }) {
     `}
     vue={`
 <script setup>
-import {
-  KozmosRadioGroup,
-  KozmosRadioGroupItem,
-} from "@kozmos-ds/vue/react-bridge"
+import { KozmosRadioGroup, KozmosRadioGroupItem } from "@kozmos-ds/vue"
 import { computed, ref } from "vue"
 // The features' access differs, so the group is mixed until an option is
 // chosen: none is chosen, and "Multiple values" is under the options.

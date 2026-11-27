@@ -42,6 +42,16 @@ beforeAll(() => {
   const side = reactSides();
   takesAttributes = (react) => side(react).reactAttributes.length > 0;
 }, 120_000);
+// jsdom has no ResizeObserver, which Radix's Slider measures its thumbs
+// with (and KozmosSlider as it does): a stand-in that never reports, in
+// both.
+beforeAll(() => {
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+});
 
 /** A sample's args without `children`: the outer part draws the port as its child. */
 const withoutChildren = (args: StoryArgs) =>
@@ -91,13 +101,18 @@ async function clicks(
   return { marked: marked?.localName ?? null, landed };
 }
 
-/** The port a compound's part draws inside (`Port.within`), with its sample. */
-const outerOf = (port: Port) => {
-  const outer = port.within
-    ? PORTS.find((candidate) => candidate.react === port.within)
-    : undefined;
-  const sample = withoutChildren(outer?.sample ?? {});
-  return outer ? { outer, sample } : undefined;
+/**
+ * The ports a compound's part draws inside (`Port.within`), each with its
+ * sample, the nearest first, out to one drawn on its own.
+ */
+const outersOf = (port: Port) => {
+  const outers: { outer: Port; sample: StoryArgs }[] = [];
+  for (let at = port; at.within; ) {
+    const outer = PORTS.find((candidate) => candidate.react === at.within)!;
+    outers.push({ outer, sample: withoutChildren(outer.sample ?? {}) });
+    at = outer;
+  }
+  return outers;
 };
 
 const asReact = (
@@ -111,14 +126,15 @@ const asReact = (
     { ...props, "data-parity": "listener", onClick },
     children === undefined || children === null ? undefined : String(children),
   );
-  const around = outerOf(port);
-  const part = around
-    ? React.createElement(
+  const part = outersOf(port).reduce<React.ReactElement>(
+    (inner, around) =>
+      React.createElement(
         lookup(KozmosReact, around.outer.react) as React.ElementType,
         around.sample,
-        drawn,
-      )
-    : drawn;
+        inner,
+      ),
+    drawn,
+  );
   return port.react === "ThemeProvider"
     ? part
     : React.createElement(KozmosReact.ThemeProvider, null, part);
@@ -138,13 +154,13 @@ const asVue = (
         ? undefined
         : { default: () => String(children) },
     );
-  const around = outerOf(port);
-  const part = around
-    ? () =>
-        h(lookup(KozmosVue, around.outer.vue) as Component, around.sample, {
-          default: drawn,
-        })
-    : drawn;
+  const part = outersOf(port).reduce<() => ReturnType<typeof h>>(
+    (inner, around) => () =>
+      h(lookup(KozmosVue, around.outer.vue) as Component, around.sample, {
+        default: inner,
+      }),
+    drawn,
+  );
   return port.react === "ThemeProvider"
     ? part()
     : h(KozmosVue.KozmosThemeProvider, null, { default: part });

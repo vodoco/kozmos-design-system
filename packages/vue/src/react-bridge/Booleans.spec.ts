@@ -136,46 +136,6 @@ const CASES: Case[] = [
     byDefault: false,
   },
   {
-    // Clearable unless told otherwise: an absent attribute leaves it so.
-    name: "KozmosCombobox",
-    part: KozmosReact.Combobox,
-    prop: "clearable",
-    attribute: "clearable",
-    template: (a) =>
-      `<KozmosCombobox :options="fruit" label="Fruit" model-value="apple" ${a} />`,
-    drawn: () => $("[aria-label='Clear selection']") !== null,
-    byDefault: true,
-  },
-  {
-    name: "KozmosSwitch",
-    part: KozmosReact.Switch,
-    prop: "disabled",
-    attribute: "disabled",
-    template: (a) => `<KozmosSwitch aria-label="Wi-Fi" ${a} />`,
-    drawn: () => $<HTMLButtonElement>("[role=switch]")!.disabled,
-    byDefault: false,
-  },
-  {
-    // `v-model:checked`'s, read from the attributes: a boolean here.
-    name: "KozmosSwitch",
-    part: KozmosReact.Switch,
-    prop: "checked",
-    attribute: "checked",
-    template: (a) => `<KozmosSwitch aria-label="Wi-Fi" ${a} />`,
-    drawn: () => $("[role=switch]")!.getAttribute("aria-checked") === "true",
-    byDefault: false,
-  },
-  {
-    // GAP-162: the state in words beside the track, off unless asked.
-    name: "KozmosSwitch",
-    part: KozmosReact.Switch,
-    prop: "showStateLabel",
-    attribute: "show-state-label",
-    template: (a) => `<KozmosSwitch label="Gate alerts" ${a} />`,
-    drawn: () => $("[data-slot=state-label]") !== null,
-    byDefault: false,
-  },
-  {
     // Decision 159: a border and the control radius round the table.
     name: "KozmosTable",
     part: KozmosReact.Table,
@@ -244,22 +204,20 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
   // Vue keeps an attribute as the template spells it: an SFC's `readOnly`,
   // a kebab-case `read-only`, and an in-DOM template's `readonly`, which the
   // browser writes in small letters. Each is React's `readOnly`.
+  // A bridged field: Combobox was the example until its port (wave V2).
   it.each(["readOnly", "read-only", "readonly"])(
-    "KozmosCombobox %s is React's readOnly: no clear button",
+    "KozmosSearch %s is React's readOnly",
     async (attribute) => {
-      const given = await propsOf(KozmosReact.Combobox, () =>
-        mount(
-          page(
-            `<KozmosCombobox :options="fruit" label="Fruit" model-value="apple" ${attribute} />`,
-          ),
-        ),
+      const given = await propsOf(KozmosReact.Search, () =>
+        mount(page(`<KozmosSearch aria-label="Gate" ${attribute} />`)),
       );
       expect(given.readOnly).toBe(true);
       expect(
         Object.keys(given).filter((key) => /^read-?only$/i.test(key)),
       ).toEqual(["readOnly"]);
-      expect($("[aria-label='Clear selection']")).toBeNull();
-      expect($<HTMLInputElement>("input")!.readOnly).toBe(true);
+      await eventually(() =>
+        expect($<HTMLInputElement>("input")?.readOnly).toBe(true),
+      );
     },
   );
 
@@ -375,12 +333,10 @@ describe("a model whose React prop is a boolean", () => {
     expect(booleanModels()).toEqual([
       "KozmosToggleButton pressed → pressed",
       "KozmosMapControlsGroup stepFree → stepFree",
-      "KozmosSwitch modelValue → checked",
     ]);
     for (const [name, model] of [
       ["KozmosToggleButton", "pressed"],
       ["KozmosMapControlsGroup", "stepFree"],
-      ["KozmosSwitch", "modelValue"],
     ] as const)
       for (const value of [false, true]) {
         const component = Bridge[name] as Component;
@@ -424,14 +380,6 @@ describe("a model whose React prop is a boolean", () => {
       attribute: "step-free",
       prop: "stepFree",
       template: (a) => `<KozmosMapControlsGroup label="Map controls" ${a} />`,
-    },
-    {
-      name: "KozmosSwitch",
-      part: KozmosReact.Switch,
-      attribute: "model-value",
-      prop: "checked",
-      template: (a) => `<KozmosSwitch aria-label="Wi-Fi" ${a} />`,
-      drawn: () => $("[role=switch]")!.getAttribute("aria-checked") === "true",
     },
   ];
 
@@ -549,7 +497,9 @@ describe("which props of each part are booleans", () => {
     );
 
   it("part-takes.ts's booleans are what React's types say (else run pnpm --filter @kozmos-ds/vue bridge:takes)", () => {
-    expect(Object.keys(table.booleans.parts).length).toBeGreaterThan(100);
+    // The table read the bridge's parts, not nothing: fewer as each port
+    // leaves it (100 after wave V2's selects).
+    expect(Object.keys(table.booleans.parts).length).toBeGreaterThan(50);
     expect(byName()).toEqual(table.booleans.parts);
     expect(
       Object.fromEntries(
@@ -635,13 +585,17 @@ describe("which props of each part are booleans", () => {
           check(key, "maybe", { [boolean]: "maybe" });
         }
     }
-    expect(entries.length).toBeGreaterThan(100);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (97 after wave V2's choices and selects).
+    expect(entries.length).toBeGreaterThan(50);
     expect(wrong).toEqual([]);
   }, 60_000);
 
   it("describes every Kozmos* export's part", () => {
     const parts = bridgedParts();
-    expect(parts.length).toBeGreaterThan(90);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (67 after wave V2's chips and overlays).
+    expect(parts.length).toBeGreaterThan(50);
     const undescribed = parts
       .filter(({ bridge }) => {
         const part = bridge?.part as { name?: string } | undefined;

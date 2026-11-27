@@ -48,11 +48,28 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosBottomSheet } from "@kozmos-ds/vue/react-bridge"
+import {
+  KozmosBottomSheet,
+  KozmosBottomSheetContent,
+  KozmosBottomSheetDescription,
+  KozmosBottomSheetTitle,
+  KozmosBottomSheetTrigger,
+  KozmosButton,
+} from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosBottomSheet />
+  <KozmosBottomSheet>
+    <KozmosBottomSheetTrigger as-child>
+      <KozmosButton>Show details</KozmosButton>
+    </KozmosBottomSheetTrigger>
+    <KozmosBottomSheetContent>
+      <KozmosBottomSheetTitle>Location details</KozmosBottomSheetTitle>
+      <KozmosBottomSheetDescription>
+        Reception is on the ground floor.
+      </KozmosBottomSheetDescription>
+    </KozmosBottomSheetContent>
+  </KozmosBottomSheet>
 </template>
     `}
     swift={`

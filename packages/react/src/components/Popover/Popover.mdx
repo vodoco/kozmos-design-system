@@ -38,11 +38,23 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosPopover } from "@kozmos-ds/vue/react-bridge"
+import {
+  KozmosButton,
+  KozmosPopover,
+  KozmosPopoverContent,
+  KozmosPopoverTrigger,
+} from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosPopover />
+  <KozmosPopover>
+    <KozmosPopoverTrigger as-child>
+      <KozmosButton>Opening hours</KozmosButton>
+    </KozmosPopoverTrigger>
+    <KozmosPopoverContent>
+      <p>Monday–Friday, 09:00–18:00</p>
+    </KozmosPopoverContent>
+  </KozmosPopover>
 </template>
     `}
     swift={`
@@ -153,11 +165,11 @@ export function AddDeskStep() {
     vue={`
 <script setup>
 import { ref } from "vue"
-import { KozmosButton } from "@kozmos-ds/vue"
-import { KozmosAnchoredPopover } from "@kozmos-ds/vue/react-bridge"
+import { KozmosAnchoredPopover, KozmosButton } from "@kozmos-ds/vue"
 
-// The harness mounts one React root per component, so the anchored popover
-// is one part. anchor takes an element, a component's template ref (its
+// KozmosPopover with a KozmosPopoverAnchor as-child round the control and a
+// KozmosPopoverContent draws the same; KozmosAnchoredPopover is the three in
+// one part. anchor takes an element, a component's template ref (its
 // element) or anything with a getBoundingClientRect(); focus is handled as
 // React's PopoverContent handles it.
 const target = ref(null)

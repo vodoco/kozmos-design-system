@@ -11,6 +11,18 @@ import {
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { IconButton } from "../IconButton";
 import { WithoutGenericClick } from "../../utils/generic-click";
+import {
+  DIALOG_CLOSE_CLASS,
+  DIALOG_CONTENT_CLASS,
+  DIALOG_DESCRIPTION_CLASS,
+  DIALOG_FOOTER_CLASS,
+  DIALOG_HEADER_CLASS,
+  DIALOG_MEDIA_CLASS,
+  DIALOG_OVERLAY_CLASS,
+  DIALOG_TITLE_CLASS,
+  dialogContentSizeClass,
+  dialogFooterLayoutClass,
+} from "../../recipes/dialog";
 
 const Dialog: React.FC<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>
@@ -40,10 +52,7 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn(
-      "kozmos-modal-overlay fixed inset-0 z-50 bg-overlay-scrim data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className,
-    )}
+    className={cn(DIALOG_OVERLAY_CLASS, className)}
     {...props}
   />
 ));
@@ -90,10 +99,8 @@ const DialogContent = React.forwardRef<
           ref={contentRef}
           data-size={size}
           className={cn(
-            "kozmos-dialog-content fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2 gap-6 border bg-background p-6 shadow-overlay transition-none duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-container",
-            size === "full"
-              ? "max-w-none h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)]"
-              : "max-w-lg",
+            DIALOG_CONTENT_CLASS,
+            dialogContentSizeClass(size),
             className,
           )}
           {...props}
@@ -108,7 +115,7 @@ const DialogContent = React.forwardRef<
               <IconButton
                 type="button"
                 variant="outline"
-                className="kozmos-dialog-close absolute end-6 top-[calc(1.5rem_+_(2.75rem_-_var(--density-icon-control-size-md,2.75rem))_/_2)]"
+                className={DIALOG_CLOSE_CLASS}
                 aria-label={closeLabel}
               >
                 <X aria-hidden="true" />
@@ -148,13 +155,10 @@ const DialogHeader = ({
   children,
   ...props
 }: DialogHeaderProps) => (
-  <div
-    className={cn("flex min-w-0 flex-col gap-2 text-start", className)}
-    {...props}
-  >
+  <div className={cn(DIALOG_HEADER_CLASS, className)} {...props}>
     {media !== undefined && media !== null && media !== false ? (
       <div
-        className="kozmos-dialog-media"
+        className={DIALOG_MEDIA_CLASS}
         data-bleed={mediaBleed ? "" : undefined}
         {...(mediaLabel
           ? { role: "img", "aria-label": mediaLabel }
@@ -179,10 +183,8 @@ const DialogFooter = ({
   <div
     data-layout={layout}
     className={cn(
-      "kozmos-dialog-footer flex min-w-0 gap-2 [overflow-wrap:anywhere]",
-      layout === "stacked"
-        ? "flex-col"
-        : "flex-col-reverse sm:flex-row sm:flex-wrap sm:justify-end",
+      DIALOG_FOOTER_CLASS,
+      dialogFooterLayoutClass(layout),
       className,
     )}
     {...props}
@@ -196,15 +198,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn(
-      // Room for the close, the icon button's size, and 12 (decision 82).
-      // GAP-275: 8 over the words, so the first line centres on the close,
-      // and none under them, so a description sits 8 under a one-line title;
-      // 36 tall at least, so the description starts where the close's 44
-      // target ends (24 + 44 = 68 = 24 + 36 + the header's 8).
-      "min-h-9 min-w-0 pt-2 pe-[calc(var(--density-icon-control-size-md,2.75rem)_+_0.75rem)] text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]",
-      className,
-    )}
+    className={cn(DIALOG_TITLE_CLASS, className)}
     {...props}
   />
 ));
@@ -216,10 +210,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn(
-      "min-w-0 text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]",
-      className,
-    )}
+    className={cn(DIALOG_DESCRIPTION_CLASS, className)}
     {...props}
   />
 ));

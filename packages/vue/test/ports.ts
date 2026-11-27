@@ -47,7 +47,9 @@ export interface Port {
    * The part of a compound this one draws only inside, by its React export
    * (`Avatar` for `AvatarFallback`): Radix's parts throw outside their
    * root, so the attributes and listeners checks draw it there, in both,
-   * with that port's sample.
+   * with that port's sample. The part it names may itself be drawn
+   * inside another (Select's item inside its content, inside its root):
+   * each is drawn inside the next, out to one drawn on its own.
    */
   within?: string;
   /**
@@ -66,8 +68,8 @@ export const PORTS: Port[] = [
     elsewhere: {
       // A provider whose buttons call useTheme().setTheme.
       Default: "parity/mounted.parity.spec.ts",
-      // DensityScope at both densities; the controls it shows beyond Button
-      // are not ported yet, and are drawn in both once they are.
+      // DensityScope at both densities, its controls all native:
+      // story-renders.parity.spec.ts draws the story itself in both.
       Density: "parity/provider-and-scope.parity.spec.ts",
     },
     drawnIn: "parity/button.parity.spec.ts",
@@ -814,6 +816,652 @@ export const PORTS: Port[] = [
     sample: { label: "Code", length: 4 },
     events: {
       "update:modelValue": "parity/otpinput.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSwitch",
+    react: "Switch",
+    stories: "components/Switch/Switch.stories.tsx",
+    elsewhere: {
+      // Each its own render, of one switch.
+      Default: "parity/switch.parity.spec.ts",
+      Checked: "parity/switch.parity.spec.ts",
+      Disabled: "parity/switch.parity.spec.ts",
+      Error: "parity/switch.parity.spec.ts",
+      WithDescription: "parity/switch.parity.spec.ts",
+      StateLabel: "parity/switch.parity.spec.ts",
+    },
+    drawnIn: "parity/switch.parity.spec.ts",
+    sample: { label: "Airplane Mode" },
+    events: {
+      "update:checked": "parity/switch.parity.spec.ts",
+      resetMixed: "parity/switch.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosRadioGroup",
+    react: "RadioGroup",
+    // React's RadioGroup and RadioGroupItem are one module, Radio.
+    stories: "components/Radio/Radio.stories.tsx",
+    elsewhere: {
+      // Each its own render, of a group and its items.
+      Default: "parity/radio.parity.spec.ts",
+      Disabled: "parity/radio.parity.spec.ts",
+      Error: "parity/radio.parity.spec.ts",
+      WithDescription: "parity/radio.parity.spec.ts",
+      Cards: "parity/radio.parity.spec.ts",
+      Tiles: "parity/radio.parity.spec.ts",
+    },
+    drawnIn: "parity/radio.parity.spec.ts",
+    sample: { "aria-label": "Level", defaultValue: "1" },
+    events: {
+      "update:modelValue": "parity/radio.parity.spec.ts",
+      resetMixed: "parity/radio.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosRadioGroupItem",
+    react: "RadioGroupItem",
+    stories: null,
+    drawnIn: "parity/radio.parity.spec.ts",
+    within: "RadioGroup",
+    sample: { value: "1", label: "Level 1" },
+  },
+  {
+    vue: "KozmosSegmentedControl",
+    react: "SegmentedControl",
+    stories: "components/SegmentedControl/SegmentedControl.stories.tsx",
+    elsewhere: {
+      // The meta's `items` is a module constant the reader cannot read.
+      Default: "parity/segmented-control.parity.spec.ts",
+      FullWidth: "parity/segmented-control.parity.spec.ts",
+      Error: "parity/segmented-control.parity.spec.ts",
+      Disabled: "parity/segmented-control.parity.spec.ts",
+    },
+    drawnIn: "parity/segmented-control.parity.spec.ts",
+    sample: {
+      label: "Mode",
+      defaultValue: "walk",
+      items: [
+        { value: "walk", label: "Walk" },
+        { value: "drive", label: "Drive" },
+      ],
+    },
+    events: {
+      "update:modelValue": "parity/segmented-control.parity.spec.ts",
+      resetMixed: "parity/segmented-control.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSlider",
+    react: "Slider",
+    stories: "components/Slider/Slider.stories.tsx",
+    elsewhere: {
+      // Each its own render; WithReadout's formatValue is a function.
+      Default: "parity/slider.parity.spec.ts",
+      Range: "parity/slider.parity.spec.ts",
+      WithReadout: "parity/slider.parity.spec.ts",
+    },
+    drawnIn: "parity/slider.parity.spec.ts",
+    sample: { label: "Volume", defaultValue: [50] },
+    events: {
+      "update:modelValue": "parity/slider.parity.spec.ts",
+      valueCommit: "parity/slider.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosListbox",
+    react: "Listbox",
+    stories: "components/Listbox/Listbox.stories.tsx",
+    elsewhere: {
+      Single: "parity/listbox.parity.spec.ts",
+      Multiple: "parity/listbox.parity.spec.ts",
+      Grouped: "parity/listbox.parity.spec.ts",
+    },
+    events: {
+      "update:activeValue": "parity/listbox.parity.spec.ts",
+      "update:modelValue": "parity/listbox.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSelect",
+    react: "Select",
+    stories: "components/Select/Select.stories.tsx",
+    // Every story draws the parts by hand: select.parity.spec.ts draws each
+    // in both, closed in a server render and open, mounted.
+    elsewhere: {
+      Default: "parity/select.parity.spec.ts",
+      WithScroll: "parity/select.parity.spec.ts",
+      Disabled: "parity/select.parity.spec.ts",
+      WithError: "parity/select.parity.spec.ts",
+      OptionCounts: "parity/select.parity.spec.ts",
+      OptionCountsOpen: "parity/select.parity.spec.ts",
+      MixedValue: "parity/select.parity.spec.ts",
+    },
+    drawnIn: "parity/select.parity.spec.ts",
+    // Open, so its list and items are drawn in the document, in the theme's
+    // portal, where the attributes and listeners checks look for theirs.
+    sample: { defaultOpen: true },
+    events: {
+      "update:open": "parity/select.parity.spec.ts",
+      "update:modelValue": "parity/select.parity.spec.ts",
+      resetMixed: "parity/select.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSelectTrigger",
+    react: "SelectTrigger",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "Select",
+    sample: { "aria-label": "Fruit" },
+  },
+  {
+    vue: "KozmosSelectValue",
+    react: "SelectValue",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "Select",
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectContent",
+    react: "SelectContent",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "Select",
+    sample: {},
+    events: {
+      closeAutoFocus: "parity/select.parity.spec.ts",
+      escapeKeyDown: "parity/select.parity.spec.ts",
+      pointerDownOutside: "parity/select.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSelectGroup",
+    react: "SelectGroup",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectLabel",
+    react: "SelectLabel",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    // Radix's label names its group: drawn only inside one.
+    within: "SelectGroup",
+    sample: { children: "Fruits" },
+  },
+  {
+    vue: "KozmosSelectItem",
+    react: "SelectItem",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    sample: { value: "apple", children: "Apple" },
+  },
+  {
+    vue: "KozmosSelectSeparator",
+    react: "SelectSeparator",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectScrollUpButton",
+    react: "SelectScrollUpButton",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    // Drawn only while the list can scroll up, which a jsdom list cannot.
+    unmarked: {
+      why: "Radix and Reka draw the arrow only while the list can scroll, and nothing scrolls in jsdom",
+      drawnIn: "parity/select.parity.spec.ts",
+    },
+    sample: {},
+  },
+  {
+    vue: "KozmosSelectScrollDownButton",
+    react: "SelectScrollDownButton",
+    stories: null,
+    drawnIn: "parity/select.parity.spec.ts",
+    within: "SelectContent",
+    unmarked: {
+      why: "Radix and Reka draw the arrow only while the list can scroll, and nothing scrolls in jsdom",
+      drawnIn: "parity/select.parity.spec.ts",
+    },
+    sample: {},
+  },
+  {
+    vue: "KozmosCombobox",
+    react: "Combobox",
+    stories: "components/Combobox/Combobox.stories.tsx",
+    elsewhere: {
+      Default: "parity/combobox.parity.spec.ts",
+      WithValidation: "parity/combobox.parity.spec.ts",
+      Grouped: "parity/combobox.parity.spec.ts",
+      MixedValue: "parity/combobox.parity.spec.ts",
+    },
+    drawnIn: "parity/combobox.parity.spec.ts",
+    sample: {
+      label: "View",
+      options: [
+        { value: "overview", label: "Overview" },
+        { value: "details", label: "Details" },
+      ],
+    },
+    events: {
+      "update:inputValue": "parity/combobox.parity.spec.ts",
+      "update:modelValue": "parity/combobox.parity.spec.ts",
+      resetMixed: "parity/combobox.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosChip",
+    react: "Chip",
+    stories: "components/Chip/Chip.stories.tsx",
+    elsewhere: {
+      Default: "parity/chip.parity.spec.ts",
+      Sizes: "parity/chip.parity.spec.ts",
+      Variants: "parity/chip.parity.spec.ts",
+      OneChoice: "parity/chip.parity.spec.ts",
+    },
+    drawnIn: "parity/chip.parity.spec.ts",
+    sample: { children: "Coffee" },
+    events: {
+      remove: "parity/chip.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosChipGroup",
+    react: "ChipGroup",
+    // React's Chip and ChipGroup are one module, Chip, and share its stories.
+    stories: null,
+    drawnIn: "parity/chip.parity.spec.ts",
+    sample: {},
+    events: {
+      "update:modelValue": "parity/chip.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMultiSelect",
+    react: "MultiSelect",
+    stories: "components/MultiSelect/MultiSelect.stories.tsx",
+    elsewhere: {
+      Default: "parity/multi-select.parity.spec.ts",
+      WithSelectedValues: "parity/multi-select.parity.spec.ts",
+      Grouped: "parity/multi-select.parity.spec.ts",
+    },
+    drawnIn: "parity/multi-select.parity.spec.ts",
+    sample: {
+      label: "Tools",
+      options: [
+        { value: "filters", label: "Filters" },
+        { value: "layers", label: "Layers" },
+      ],
+      defaultValue: ["filters"],
+    },
+    events: {
+      "update:searchValue": "parity/multi-select.parity.spec.ts",
+      "update:modelValue": "parity/multi-select.parity.spec.ts",
+      resetMixed: "parity/multi-select.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosChipInput",
+    react: "ChipInput",
+    stories: "components/ChipInput/ChipInput.stories.tsx",
+    elsewhere: {
+      Default: "parity/chip-input.parity.spec.ts",
+    },
+    drawnIn: "parity/chip-input.parity.spec.ts",
+    sample: { label: "Keywords", defaultValue: ["coffee"] },
+    events: {
+      "update:modelValue": "parity/chip-input.parity.spec.ts",
+      "update:inputValue": "parity/chip-input.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosDialog",
+    react: "Dialog",
+    stories: "components/Dialog/Dialog.stories.tsx",
+    // Its story draws the parts by hand: dialog.parity.spec.ts draws it in
+    // both, closed in a server render and open, mounted.
+    elsewhere: { Default: "parity/dialog.parity.spec.ts" },
+    drawnIn: "parity/dialog.parity.spec.ts",
+    // Open, so its content is drawn in the document, in the theme's portal,
+    // where the attributes and listeners checks look for its parts'.
+    sample: { defaultOpen: true },
+    events: { "update:open": "parity/dialog.parity.spec.ts" },
+  },
+  {
+    vue: "KozmosDialogTrigger",
+    react: "DialogTrigger",
+    stories: null,
+    drawnIn: "parity/dialog.parity.spec.ts",
+    within: "Dialog",
+    sample: { children: "Edit Profile" },
+  },
+  {
+    vue: "KozmosDialogContent",
+    react: "DialogContent",
+    stories: null,
+    drawnIn: "parity/dialog.parity.spec.ts",
+    within: "Dialog",
+    sample: {},
+    events: {
+      openAutoFocus: "parity/dialog.parity.spec.ts",
+      closeAutoFocus: "parity/dialog.parity.spec.ts",
+      escapeKeyDown: "parity/dialog.parity.spec.ts",
+      pointerDownOutside: "parity/dialog.parity.spec.ts",
+      focusOutside: "parity/dialog.parity.spec.ts",
+      interactOutside: "parity/dialog.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosDialogHeader",
+    react: "DialogHeader",
+    stories: null,
+    drawnIn: "parity/dialog.parity.spec.ts",
+    sample: { children: "Edit profile" },
+  },
+  {
+    vue: "KozmosDialogFooter",
+    react: "DialogFooter",
+    stories: null,
+    drawnIn: "parity/dialog.parity.spec.ts",
+    sample: { children: "Save" },
+  },
+  {
+    vue: "KozmosDialogTitle",
+    react: "DialogTitle",
+    stories: null,
+    drawnIn: "parity/dialog.parity.spec.ts",
+    within: "DialogContent",
+    sample: { children: "Edit profile" },
+  },
+  {
+    vue: "KozmosDialogDescription",
+    react: "DialogDescription",
+    stories: null,
+    drawnIn: "parity/dialog.parity.spec.ts",
+    within: "DialogContent",
+    sample: { children: "Make changes." },
+  },
+  {
+    vue: "KozmosDialogClose",
+    react: "DialogClose",
+    stories: null,
+    drawnIn: "parity/dialog.parity.spec.ts",
+    within: "DialogContent",
+    sample: { children: "Cancel" },
+  },
+  {
+    vue: "KozmosDrawer",
+    react: "Drawer",
+    stories: "components/Drawer/Drawer.stories.tsx",
+    // Its stories draw the parts by hand: drawer.parity.spec.ts draws each
+    // in both, closed in a server render and open, mounted.
+    elsewhere: {
+      Default: "parity/drawer.parity.spec.ts",
+      Inline: "parity/drawer.parity.spec.ts",
+    },
+    drawnIn: "parity/drawer.parity.spec.ts",
+    sample: { defaultOpen: true },
+    events: { "update:open": "parity/drawer.parity.spec.ts" },
+  },
+  {
+    vue: "KozmosDrawerTrigger",
+    react: "DrawerTrigger",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "Drawer",
+    sample: { children: "Open drawer" },
+  },
+  {
+    vue: "KozmosDrawerContent",
+    react: "DrawerContent",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "Drawer",
+    sample: {},
+    events: {
+      openAutoFocus: "parity/drawer.parity.spec.ts",
+      closeAutoFocus: "parity/drawer.parity.spec.ts",
+      escapeKeyDown: "parity/drawer.parity.spec.ts",
+      pointerDownOutside: "parity/drawer.parity.spec.ts",
+      focusOutside: "parity/drawer.parity.spec.ts",
+      interactOutside: "parity/drawer.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosDrawerHeader",
+    react: "DrawerHeader",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    sample: { children: "Manage" },
+  },
+  {
+    vue: "KozmosDrawerFooter",
+    react: "DrawerFooter",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    sample: { children: "Save" },
+  },
+  {
+    vue: "KozmosDrawerTitle",
+    react: "DrawerTitle",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "DrawerContent",
+    sample: { children: "Manage" },
+  },
+  {
+    vue: "KozmosDrawerDescription",
+    react: "DrawerDescription",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "DrawerContent",
+    sample: { children: "Review." },
+  },
+  {
+    vue: "KozmosDrawerClose",
+    react: "DrawerClose",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "DrawerContent",
+    sample: { children: "Cancel" },
+  },
+  {
+    vue: "KozmosBottomSheet",
+    react: "BottomSheet",
+    stories: "components/BottomSheet/BottomSheet.stories.tsx",
+    // Its story draws the parts by hand: drawer.parity.spec.ts draws it in
+    // both, closed in a server render and open, mounted.
+    elsewhere: { Default: "parity/drawer.parity.spec.ts" },
+    drawnIn: "parity/drawer.parity.spec.ts",
+    sample: { defaultOpen: true },
+    events: { "update:open": "parity/drawer.parity.spec.ts" },
+  },
+  {
+    vue: "KozmosBottomSheetTrigger",
+    react: "BottomSheetTrigger",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "BottomSheet",
+    sample: { children: "Open" },
+  },
+  {
+    vue: "KozmosBottomSheetContent",
+    react: "BottomSheetContent",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "BottomSheet",
+    sample: {},
+    events: {
+      openAutoFocus: "parity/drawer.parity.spec.ts",
+      closeAutoFocus: "parity/drawer.parity.spec.ts",
+      escapeKeyDown: "parity/drawer.parity.spec.ts",
+      pointerDownOutside: "parity/drawer.parity.spec.ts",
+      focusOutside: "parity/drawer.parity.spec.ts",
+      interactOutside: "parity/drawer.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosBottomSheetHeader",
+    react: "BottomSheetHeader",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    sample: { children: "Edit" },
+  },
+  {
+    vue: "KozmosBottomSheetFooter",
+    react: "BottomSheetFooter",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    sample: { children: "Save" },
+  },
+  {
+    vue: "KozmosBottomSheetTitle",
+    react: "BottomSheetTitle",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "BottomSheetContent",
+    sample: { children: "Edit" },
+  },
+  {
+    vue: "KozmosBottomSheetDescription",
+    react: "BottomSheetDescription",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "BottomSheetContent",
+    sample: { children: "Make changes." },
+  },
+  {
+    vue: "KozmosBottomSheetClose",
+    react: "BottomSheetClose",
+    stories: null,
+    drawnIn: "parity/drawer.parity.spec.ts",
+    within: "BottomSheetContent",
+    sample: { children: "Cancel" },
+  },
+  {
+    vue: "KozmosPopover",
+    react: "Popover",
+    stories: "components/Popover/Popover.stories.tsx",
+    // Its stories draw the parts by hand: popover.parity.spec.ts draws them
+    // in both, closed in a server render and open, mounted.
+    elsewhere: {
+      Default: "parity/popover.parity.spec.ts",
+      AnchoredToAControl: "parity/popover.parity.spec.ts",
+      AnchoredToARect: "parity/popover.parity.spec.ts",
+    },
+    drawnIn: "parity/popover.parity.spec.ts",
+    sample: { defaultOpen: true },
+    events: { "update:open": "parity/popover.parity.spec.ts" },
+  },
+  {
+    vue: "KozmosPopoverTrigger",
+    react: "PopoverTrigger",
+    stories: null,
+    drawnIn: "parity/popover.parity.spec.ts",
+    within: "Popover",
+    sample: { children: "Open popover" },
+  },
+  {
+    vue: "KozmosPopoverAnchor",
+    react: "PopoverAnchor",
+    stories: null,
+    drawnIn: "parity/popover.parity.spec.ts",
+    within: "Popover",
+    sample: { children: "Add desk" },
+  },
+  {
+    vue: "KozmosPopoverContent",
+    react: "PopoverContent",
+    stories: null,
+    drawnIn: "parity/popover.parity.spec.ts",
+    within: "Popover",
+    sample: {},
+    events: {
+      openAutoFocus: "parity/popover.parity.spec.ts",
+      closeAutoFocus: "parity/popover.parity.spec.ts",
+      escapeKeyDown: "parity/popover.parity.spec.ts",
+      pointerDownOutside: "parity/popover.parity.spec.ts",
+      focusOutside: "parity/popover.parity.spec.ts",
+      interactOutside: "parity/popover.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosPopoverArrow",
+    react: "PopoverArrow",
+    stories: null,
+    drawnIn: "parity/popover.parity.spec.ts",
+    within: "PopoverContent",
+    sample: {},
+  },
+  {
+    vue: "KozmosAnchoredPopover",
+    // Vue's own (GAP-190): React's Popover, a PopoverAnchor on `anchor` and
+    // a PopoverContent in one part, as the bridge's was. It takes what the
+    // content takes, and the root's open state and `anchor` beside it
+    // (contract/exceptions.ts); the attribute checks draw React's content in
+    // an open Popover beside it.
+    react: "PopoverContent",
+    stories: null,
+    drawnIn: "parity/popover.parity.spec.ts",
+    within: "Popover",
+    sample: { open: true },
+    events: {
+      "update:open": "parity/popover.parity.spec.ts",
+      openAutoFocus: "parity/popover.parity.spec.ts",
+      closeAutoFocus: "parity/popover.parity.spec.ts",
+      escapeKeyDown: "parity/popover.parity.spec.ts",
+      pointerDownOutside: "parity/popover.parity.spec.ts",
+      focusOutside: "parity/popover.parity.spec.ts",
+      interactOutside: "parity/popover.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosTooltip",
+    react: "Tooltip",
+    stories: "components/Tooltip/Tooltip.stories.tsx",
+    // Its story draws the parts by hand: tooltip.parity.spec.ts draws it in
+    // both, closed in a server render and open, mounted.
+    elsewhere: { Default: "parity/tooltip.parity.spec.ts" },
+    drawnIn: "parity/tooltip.parity.spec.ts",
+    within: "TooltipProvider",
+    sample: { open: true },
+    events: { "update:open": "parity/tooltip.parity.spec.ts" },
+  },
+  {
+    vue: "KozmosTooltipProvider",
+    react: "TooltipProvider",
+    stories: null,
+    drawnIn: "parity/tooltip.parity.spec.ts",
+    sample: {},
+  },
+  {
+    vue: "KozmosTooltipTrigger",
+    react: "TooltipTrigger",
+    stories: null,
+    drawnIn: "parity/tooltip.parity.spec.ts",
+    within: "Tooltip",
+    sample: { children: "Hover me" },
+  },
+  {
+    vue: "KozmosTooltipContent",
+    react: "TooltipContent",
+    stories: null,
+    drawnIn: "parity/tooltip.parity.spec.ts",
+    within: "Tooltip",
+    sample: { children: "Add to library" },
+    events: {
+      escapeKeyDown: "parity/tooltip.parity.spec.ts",
+      pointerDownOutside: "parity/tooltip.parity.spec.ts",
     },
   },
 ];

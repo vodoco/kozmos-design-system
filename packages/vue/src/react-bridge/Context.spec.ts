@@ -2,7 +2,13 @@
 import { describe, expect, it } from "vitest";
 import { h, nextTick, ref } from "vue";
 import React from "react";
-import { useTheme } from "@kozmos-ds/react";
+import {
+  DialogHeader,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useTheme,
+} from "@kozmos-ds/react";
 import {
   KozmosAnalyticsProvider,
   KozmosButton,
@@ -43,12 +49,19 @@ const SetsTheme = () => {
   );
 };
 const KozmosSetsTheme = createVueWrapper(SetsTheme);
+// A React part drawn in a portal and one that draws its slot in a box, each
+// wrapped as the bridge wraps its parts: Tooltip and DialogHeader are
+// native in Vue since wave V2, and the bridge exports neither.
+const KozmosTooltipProbe = createVueWrapper(Tooltip);
+const KozmosTooltipTriggerProbe = createVueWrapper(TooltipTrigger);
+const KozmosTooltipContentProbe = createVueWrapper(TooltipContent);
+const KozmosBoxProbe = createVueWrapper(DialogHeader);
 
 /** An open tooltip's surface, which React draws in its theme's portal. */
 const tooltip = (words: string) =>
-  h(Bridge.KozmosTooltip, { open: true }, () => [
-    h(Bridge.KozmosTooltipTrigger, null, () => "Info"),
-    h(Bridge.KozmosTooltipContent, null, () => words),
+  h(KozmosTooltipProbe, { open: true }, () => [
+    h(KozmosTooltipTriggerProbe, null, () => "Info"),
+    h(KozmosTooltipContentProbe, null, () => words),
   ]);
 const surface = (words: string) =>
   until(() =>
@@ -90,13 +103,13 @@ describe("KozmosAnalyticsProvider", () => {
     mount(() =>
       providerWithin(
         1000,
-        h(Bridge.KozmosSwitch, { "aria-label": "Step-free" }),
+        h(Bridge.KozmosToggleButton, { "aria-label": "Step-free" }, () => "S"),
         h(KozmosButton, null, () => "Save"),
       ),
     );
-    const control = await until(() => $("[role=switch]"));
+    const control = await until(() => $("button[aria-pressed]"));
     control.click();
-    $("button:not([role])")!.click();
+    $("button:not([aria-pressed])")!.click();
     // The bridged part's event reaches the provider a task after the native
     // one (React's AnalyticsProvider hands it on in a timeout), in the same
     // batch.
@@ -110,9 +123,9 @@ describe("KozmosAnalyticsProvider", () => {
           properties: { variant: "default", emotion: null },
         },
         {
-          component: "Switch",
-          eventName: "switch_toggled",
-          properties: { checked: true },
+          component: "ToggleButton",
+          eventName: "toggle_pressed",
+          properties: { pressed: true },
         },
       ]),
     );
@@ -123,22 +136,28 @@ describe("KozmosAnalyticsProvider", () => {
     batches.length = 0;
     mount(() =>
       provider(
-        h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
-          h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
-          h(Bridge.KozmosDialogHeader, null, () => [
-            h(Bridge.KozmosSwitch, { "aria-label": "Step-free" }),
+        h(Bridge.KozmosAccordion, { type: "single", collapsible: true }, () => [
+          h(Bridge.KozmosAccordionItem, { value: "1" }, () => [
+            h(Bridge.KozmosAccordionTrigger, {}, () => "Level 1"),
+            h(KozmosBoxProbe, null, () => [
+              h(
+                Bridge.KozmosToggleButton,
+                { "aria-label": "Step-free" },
+                () => "S",
+              ),
+            ]),
           ]),
         ]),
       ),
     );
-    (await until(() => $("[role=switch]"))).click();
-    (await until(() => $("[role=radio]"))).click();
+    (await until(() => $("button[aria-pressed]"))).click();
+    (await until(() => $("button[aria-expanded]"))).click();
     await eventually(() =>
       expect(
         reported()
           .map((event) => event.eventName)
           .sort(),
-      ).toEqual(["radio_selection_changed", "switch_toggled"]),
+      ).toEqual(["accordion_toggled", "toggle_pressed"]),
     );
   });
 
@@ -147,7 +166,7 @@ describe("KozmosAnalyticsProvider", () => {
     const inner: KozmosAnalyticsEvent[][] = [];
     mount(() =>
       provider(
-        h(Bridge.KozmosDialogHeader, null, () => [
+        h(KozmosBoxProbe, null, () => [
           h(
             KozmosAnalyticsProvider,
             {
@@ -155,12 +174,18 @@ describe("KozmosAnalyticsProvider", () => {
               onDispatch: (events: KozmosAnalyticsEvent[]) =>
                 inner.push(events),
             },
-            () => [h(Bridge.KozmosSwitch, { "aria-label": "Step-free" })],
+            () => [
+              h(
+                Bridge.KozmosToggleButton,
+                { "aria-label": "Step-free" },
+                () => "S",
+              ),
+            ],
           ),
         ]),
       ),
     );
-    (await until(() => $("[role=switch]"))).click();
+    (await until(() => $("button[aria-pressed]"))).click();
     await eventually(() => expect(inner.flat()).toHaveLength(1));
     await settle();
     expect(batches).toEqual([]);
@@ -219,14 +244,19 @@ describe("KozmosThemeProvider", () => {
   it("a bridged part takes its direction", async () => {
     mount(() =>
       h(KozmosThemeProvider, { dir: "rtl" }, () => [
-        h(Bridge.KozmosRadioGroup, { "aria-label": "Level" }, () => [
-          h(Bridge.KozmosRadioGroupItem, { value: "1", label: "Level 1" }),
+        h(Bridge.KozmosTabs, { defaultValue: "1" }, () => [
+          h(Bridge.KozmosTabsList, { "aria-label": "Level" }, () => [
+            h(Bridge.KozmosTabsTrigger, { value: "1" }, () => "Level 1"),
+          ]),
         ]),
       ]),
     );
-    // Radix's group reads its direction from React's DirectionProvider.
-    const group = await until(() => $("[role=radiogroup]"));
-    expect(group.getAttribute("dir")).toBe("rtl");
+    // Radix's tabs read their direction from React's DirectionProvider, and
+    // write it on their root, around the list its slot draws.
+    const list = await until(() => $("[role=tablist]"));
+    expect(
+      list.parentElement?.closest("[data-orientation]")?.getAttribute("dir"),
+    ).toBe("rtl");
   });
 });
 
@@ -246,7 +276,7 @@ describe("KozmosDensityScope", () => {
   it("a scope between a compound and its part reaches the part", async () => {
     mount(() =>
       h(KozmosThemeProvider, { density: "touch" }, () => [
-        h(Bridge.KozmosDialogHeader, null, () => [
+        h(KozmosBoxProbe, null, () => [
           h(KozmosDensityScope, { density: "compact" }, () => [
             tooltip("Inside"),
           ]),

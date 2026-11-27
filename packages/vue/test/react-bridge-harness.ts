@@ -186,7 +186,6 @@ export function unmount() {
 const ADAPTERS: Record<string, string> = {
   BackdropAdapter: "Backdrop",
   TourStepAdapter: "TourStep",
-  AnchoredPopoverAdapter: "Popover",
 };
 
 /** One `Kozmos*` export of the bridge, as `createVueWrapper` made it. */

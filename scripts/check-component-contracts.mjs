@@ -246,6 +246,13 @@ const files = {
   reactCheckboxRecipe: "packages/react/src/recipes/checkbox.ts",
   reactRadio: "packages/react/src/components/Radio/Radio.tsx",
   reactSwitch: "packages/react/src/components/Switch/Switch.tsx",
+  // Radio's, Switch's, Slider's and SegmentedControl's recipes, shared with
+  // Vue's ports (wave V2, choices).
+  reactRadioRecipe: "packages/react/src/recipes/radio.ts",
+  reactSwitchRecipe: "packages/react/src/recipes/switch.ts",
+  reactSliderRecipe: "packages/react/src/recipes/slider.ts",
+  reactSegmentedControlRecipe:
+    "packages/react/src/recipes/segmented-control.ts",
   reactInput: "packages/react/src/components/Input/Input.tsx",
   // Input's recipe, shared with Vue's KozmosInput and every field drawn on
   // it (wave V2, the fields batch).
@@ -278,6 +285,11 @@ const files = {
   reactNumberInputRecipe: "packages/react/src/recipes/number-input.ts",
   reactPasswordInputRecipe: "packages/react/src/recipes/password-input.ts",
   reactOTPInputRecipe: "packages/react/src/recipes/otp-input.ts",
+  reactSelectRecipe: "packages/react/src/recipes/select.ts",
+  reactComboboxRecipe: "packages/react/src/recipes/combobox.ts",
+  reactMultiSelectRecipe: "packages/react/src/recipes/multi-select.ts",
+  reactListboxRecipe: "packages/react/src/recipes/listbox.ts",
+  reactOptionRecipe: "packages/react/src/recipes/option.ts",
   reactNumberInputFigma:
     "packages/react/src/components/NumberInput/NumberInput.figma.tsx",
   reactOTPInput: "packages/react/src/components/OTPInput/OTPInput.tsx",
@@ -332,6 +344,7 @@ const files = {
     "packages/react/src/components/EmptyState/EmptyState.figma.tsx",
   reactTailwindConfig: "packages/styles/tailwind.config.js",
   reactTooltip: "packages/react/src/components/Tooltip/Tooltip.tsx",
+  reactTooltipRecipe: "packages/react/src/recipes/tooltip.ts",
   reactTooltipFigma: "packages/react/src/components/Tooltip/Tooltip.figma.tsx",
   reactDrawer: "packages/react/src/components/Drawer/Drawer.tsx",
   reactDrawerFigma: "packages/react/src/components/Drawer/Drawer.figma.tsx",
@@ -1028,20 +1041,20 @@ assertContains(
   "React Checkbox neutral unchecked border",
 );
 assertContains(
-  files.reactRadio,
-  source.reactRadio,
+  files.reactRadioRecipe,
+  source.reactRadioRecipe,
   "min-h-11",
   "React Radio 44px row target",
 );
 assertContains(
-  files.reactRadio,
-  source.reactRadio,
+  files.reactRadioRecipe,
+  source.reactRadioRecipe,
   "h-5 w-5",
   "React Radio 20px visual control",
 );
 assertContains(
-  files.reactRadio,
-  source.reactRadio,
+  files.reactRadioRecipe,
+  source.reactRadioRecipe,
   "border-input",
   "React Radio neutral unchecked border",
 );
@@ -1052,26 +1065,26 @@ assertContains(
   "React Radio item error API",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "min-h-11",
   "React Switch 44px row target",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "h-6 w-11",
   "React Switch 44x24 visual track",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "h-5 w-5",
   "React Switch 20px visual thumb",
 );
 assertContains(
-  files.reactSwitch,
-  source.reactSwitch,
+  files.reactSwitchRecipe,
+  source.reactSwitchRecipe,
   "border-muted-foreground bg-muted-foreground",
   "React Switch neutral unchecked track",
 );
@@ -1121,14 +1134,14 @@ assertContains(
   "React Input validation status API",
 );
 assertContains(
-  files.reactSelect,
-  source.reactSelect,
+  files.reactSelectRecipe,
+  source.reactSelectRecipe,
   "flex h-field w-full",
   "React SelectTrigger at the density's field height (44 touch, 40 compact)",
 );
 assertContains(
-  files.reactSlider,
-  source.reactSlider,
+  files.reactSliderRecipe,
+  source.reactSliderRecipe,
   "border border-input bg-secondary",
   "React Slider inactive track boundary",
 );
@@ -1265,15 +1278,15 @@ assertContains(
   "Slider Code Connect type-to-thumb-count mapping",
 );
 assertContains(
-  files.reactSlider,
-  source.reactSlider,
+  files.reactSliderRecipe,
+  source.reactSliderRecipe,
   "thumbCount ??",
   "Slider range thumb count inference",
 );
 assertContains(
-  files.reactSlider,
-  source.reactSlider,
-  "Array.isArray(props.defaultValue)",
+  files.reactSliderRecipe,
+  source.reactSliderRecipe,
+  "Array.isArray(defaultValue)",
   "Slider range defaultValue inference",
 );
 assertContains(
@@ -1731,8 +1744,8 @@ assertContains(
   "React Tooltip arrow rendering",
 );
 assertContains(
-  files.reactTooltip,
-  source.reactTooltip,
+  files.reactTooltipRecipe,
+  source.reactTooltipRecipe,
   "overflow-visible",
   "React Tooltip content lets the arrow protrude",
 );
@@ -2316,6 +2329,70 @@ for (const [part, module] of [
   ["KozmosPasswordInput", "PasswordInput/PasswordInput"],
   ["KozmosNumberInput", "NumberInput/NumberInput"],
   ["KozmosOTPInput", "OTPInput/OTPInput"],
+  // Switch, RadioGroup and its items, SegmentedControl and Slider (wave V2,
+  // the choices batch). RadioGroup's parts are one module, as React's are.
+  ["KozmosSwitch", "Switch/Switch"],
+  ["KozmosRadioGroup", "Radio/Radio"],
+  ["KozmosRadioGroupItem", "Radio/Radio"],
+  ["KozmosSegmentedControl", "SegmentedControl/SegmentedControl"],
+  ["KozmosSlider", "Slider/Slider"],
+  // Chip with ChipGroup (one module, as React's), MultiSelect and ChipInput
+  // (wave V2, the chips batch).
+  ["KozmosChip", "Chip/Chip"],
+  ["KozmosChipGroup", "Chip/Chip"],
+  ["KozmosMultiSelect", "MultiSelect/MultiSelect"],
+  ["KozmosChipInput", "ChipInput/ChipInput"],
+  // Listbox, Select and its nine parts, and Combobox (wave V2, the selects
+  // batch).
+  ["KozmosListbox", "Listbox/Listbox"],
+  ["KozmosCombobox", "Combobox/Combobox"],
+  ["KozmosSelect", "Select/Select"],
+  ["KozmosSelectContent", "Select/Select"],
+  ["KozmosSelectGroup", "Select/Select"],
+  ["KozmosSelectItem", "Select/Select"],
+  ["KozmosSelectLabel", "Select/Select"],
+  ["KozmosSelectScrollDownButton", "Select/Select"],
+  ["KozmosSelectScrollUpButton", "Select/Select"],
+  ["KozmosSelectSeparator", "Select/Select"],
+  ["KozmosSelectTrigger", "Select/Select"],
+  ["KozmosSelectValue", "Select/Select"],
+  // Dialog, Drawer and BottomSheet with their parts, Popover with its parts
+  // and AnchoredPopover, and Tooltip with its parts (wave V2, the overlays
+  // batch).
+  ["KozmosDialog", "Dialog/Dialog"],
+  ["KozmosDialogTrigger", "Dialog/Dialog"],
+  ["KozmosDialogContent", "Dialog/Dialog"],
+  ["KozmosDialogHeader", "Dialog/Dialog"],
+  ["KozmosDialogFooter", "Dialog/Dialog"],
+  ["KozmosDialogTitle", "Dialog/Dialog"],
+  ["KozmosDialogDescription", "Dialog/Dialog"],
+  ["KozmosDialogClose", "Dialog/Dialog"],
+  ["KozmosTooltip", "Tooltip/Tooltip"],
+  ["KozmosTooltipProvider", "Tooltip/Tooltip"],
+  ["KozmosTooltipTrigger", "Tooltip/Tooltip"],
+  ["KozmosTooltipContent", "Tooltip/Tooltip"],
+  ["KozmosPopover", "Popover/Popover"],
+  ["KozmosPopoverTrigger", "Popover/Popover"],
+  ["KozmosPopoverAnchor", "Popover/Popover"],
+  ["KozmosPopoverContent", "Popover/Popover"],
+  ["KozmosPopoverArrow", "Popover/Popover"],
+  ["KozmosAnchoredPopover", "Popover/Popover"],
+  ["KozmosDrawer", "Drawer/Drawer"],
+  ["KozmosDrawerTrigger", "Drawer/Drawer"],
+  ["KozmosDrawerContent", "Drawer/Drawer"],
+  ["KozmosDrawerHeader", "Drawer/Drawer"],
+  ["KozmosDrawerFooter", "Drawer/Drawer"],
+  ["KozmosDrawerTitle", "Drawer/Drawer"],
+  ["KozmosDrawerDescription", "Drawer/Drawer"],
+  ["KozmosDrawerClose", "Drawer/Drawer"],
+  ["KozmosBottomSheet", "BottomSheet/BottomSheet"],
+  ["KozmosBottomSheetTrigger", "BottomSheet/BottomSheet"],
+  ["KozmosBottomSheetClose", "BottomSheet/BottomSheet"],
+  ["KozmosBottomSheetContent", "BottomSheet/BottomSheet"],
+  ["KozmosBottomSheetHeader", "BottomSheet/BottomSheet"],
+  ["KozmosBottomSheetFooter", "BottomSheet/BottomSheet"],
+  ["KozmosBottomSheetTitle", "BottomSheet/BottomSheet"],
+  ["KozmosBottomSheetDescription", "BottomSheet/BottomSheet"],
 ]) {
   assertContains(
     files.vueIndex,
@@ -6202,64 +6279,64 @@ assertContains(
   "Linked Android Code Connect includes SegmentedControl source",
 );
 assertNotContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "focus-within:ring-2",
   "React SegmentedControl should not draw a whole-track focus ring",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "rounded-[12px] font-medium",
   "React SegmentedControl selected item radius",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "rounded-[16px] border",
   "React SegmentedControl base radius",
 );
 assertNotContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   "var(--primitives-radius-md)",
   "React SegmentedControl radius must not inherit the 16px primitive md radius",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'sm: "min-h-[52px]"',
   "React SegmentedControl small outer height",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'default: "min-h-[52px]"',
   "React SegmentedControl default outer height",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'lg: "min-h-[56px]"',
   "React SegmentedControl large outer height",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   'sm: "min-h-11 px-3 text-xs"',
   "React SegmentedControl small item target",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   // GAP-267 (decision 201): 117 less the default's 16 a side, as the grid
   // column's most, and the words as its least (min-width: min-content).
   'className: "grid-cols-[minmax(max-content,85px)]"',
   "React SegmentedControl default segment minimum width",
 );
 assertContains(
-  files.reactSegmentedControl,
-  source.reactSegmentedControl,
+  files.reactSegmentedControlRecipe,
+  source.reactSegmentedControlRecipe,
   '"inline-grid min-w-min ',
   "React SegmentedControl options shrink to their words, never past them (GAP-267)",
 );
@@ -11956,10 +12033,10 @@ assertContains(
 // it as a padding class, and for a day it said 4 while Figma said 12. These
 // assertions are the only thing that ties the two spellings together.
 for (const [key, needle, label] of [
-  ["reactCombobox", "bg-popover p-3", "Combobox"],
-  ["reactMultiSelect", "bg-popover p-3", "MultiSelect"],
+  ["reactComboboxRecipe", "bg-popover p-3", "Combobox"],
+  ["reactMultiSelectRecipe", "bg-popover p-3", "MultiSelect"],
   ["reactMenu", "bg-popover p-3", "Menu"],
-  ["reactSelect", '"p-3",', "Select viewport"],
+  ["reactSelectRecipe", '"p-3";', "Select viewport"],
 ]) {
   assertContains(
     files[key],
@@ -12027,8 +12104,8 @@ for (const [file, from] of [
 }
 const ownedSelectionPath = "packages/styles/src/styles/owned-selection.css";
 assertContains(
-  files.reactListbox,
-  source.reactListbox,
+  files.reactListboxRecipe,
+  source.reactListboxRecipe,
   "kozmos-listbox",
   "Listbox selects its owned recipe",
 );

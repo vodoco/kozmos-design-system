@@ -111,8 +111,7 @@ import {
  * small letters; the bridge's own extension) and `read-only`. React's own
  * wins when two are given; of two others, the last. A model whose React
  * prop is a boolean is read the same way, by the model's name: bare
- * `<KozmosToggleButton pressed>`, `<KozmosSwitch checked>` and
- * `<KozmosCheckbox model-value>` are `true`. Which props are booleans, and
+ * `<KozmosToggleButton pressed>` is `true`. Which props are booleans, and
  * of which kind, is read from React's types, as listeners' props are:
  * part-takes.ts, which Booleans.spec.ts holds to them. A prop that takes any
  * ReactNode is a slot, not a boolean. A part `createVueWrapper` has no
@@ -165,8 +164,8 @@ import {
  * A wrapper in no other wrapper's slot is a React root. A wrapper in
  * another's slot is drawn by that one's tree, through a portal into its own
  * box, where the part it is in draws the slot: React's context reaches it
- * as it reaches a React child, so a KozmosRadioGroupItem finds its
- * KozmosRadioGroup, a KozmosSelectItem its KozmosSelect, and every part
+ * as it reaches a React child, so a KozmosTabsTrigger finds its
+ * KozmosTabs, a KozmosAccordionItem its KozmosAccordion, and every part
  * the context its compound gives its children. Each slot is a Host: the
  * wrappers inside it register their portals with it (SlotHost provides it
  * to them), and the slot's React element draws them.

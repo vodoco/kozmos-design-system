@@ -6,16 +6,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import ts from "typescript";
-import {
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-  IconButton,
-  PopoverContent,
-} from "@kozmos-ds/react";
+import { IconButton, MenuContent } from "@kozmos-ds/react";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as Bridge from "./index";
 import { ADAPTER_TAKES, PART_TAKES } from "./part-takes";
@@ -280,13 +271,17 @@ describe("which on… props each part takes", () => {
         if (takesProp(takes, prop) !== handlers.has(prop))
           wrong.push(`${name} ${prop}: ${handlers.has(prop)}`);
     }
-    expect(entries.length).toBeGreaterThan(100);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (97 after wave V2's choices and selects).
+    expect(entries.length).toBeGreaterThan(50);
     expect(wrong).toEqual([]);
   }, 60_000);
 
   it("describes every Kozmos* export's part", () => {
     const parts = bridgedParts();
-    expect(parts.length).toBeGreaterThan(90);
+    // It read the bridge's parts, not nothing: fewer as each port leaves it
+    // (67 after wave V2's chips and overlays).
+    expect(parts.length).toBeGreaterThan(50);
     const undescribed = parts
       .filter(({ bridge }) => {
         const part = bridge?.part as { name?: string } | undefined;
@@ -300,7 +295,7 @@ describe("which on… props each part takes", () => {
     expect(undescribed).toEqual([]);
   });
 
-  it("the parts that take no onClick: the element-less ten, Tooltip, Toaster, and two whose props omit it", () => {
+  it("the parts that take no onClick: the element-less ones, Toaster, and two whose props omit it", () => {
     const none = bridgedParts()
       .filter(({ bridge }) => !takesProp(bridge!.takes!, "onClick"))
       .map(({ name }) => name)
@@ -308,7 +303,6 @@ describe("which on… props each part takes", () => {
     expect(none).toEqual(
       [
         ...ELEMENTLESS,
-        "KozmosTooltip",
         // Its props are its own: where its toasts go, and their words.
         "KozmosToaster",
         // Their props omit onClick: each draws a button whose click is its
@@ -362,7 +356,7 @@ export declare const Picker: (props: PickRowProps | PickListProps) => React.Reac
 
 /** A part whose props carry React's DOM attributes (Input's). */
 const dom: Takes = { dom: true, own: [] };
-/** A part that takes no DOM event, and a callback of its own (Dialog's). */
+/** A part that takes no DOM event, and a callback of its own (Menu's). */
 const none: Takes = { dom: false, own: ["onOpenChange"] };
 /** A part with a callback named like an event React knows (WayfindingCard's). */
 const closes: Takes = { dom: true, own: ["onClose"] };
@@ -707,10 +701,6 @@ describe("each listener on a bridged field runs once", () => {
   });
 });
 
-const fruit = [
-  { value: "apple", label: "Apple" },
-  { value: "banana", label: "Banana" },
-];
 const tile = { id: "shopping", label: "Shopping", selected: false };
 const poi = {
   id: "gate-12",
@@ -765,16 +755,11 @@ const first = (selector: string) => (drawn: HTMLElement) =>
  * here), else the first element it draws.
  */
 const IN_PLACE: Record<string, InPlace> = {
-  KozmosSlider: {
-    props: { "aria-label": "Volume" },
-    click: first("span[data-orientation]"),
-  },
   KozmosSearch: { props: { "aria-label": "Search" }, click: first("input") },
   KozmosSearchBar: {
     props: { placeholder: "Where to?" },
     click: first("input"),
   },
-  KozmosSelect: { slot: true },
   KozmosBottomNavigation: {
     props: { items: [{ icon: e("span"), label: "Home" }] },
   },
@@ -782,14 +767,12 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSidebar: { slot: true },
   KozmosMenu: { slot: true },
   KozmosContextMenu: { slot: true },
-  KozmosDrawer: { slot: true },
   KozmosPagination: { slot: true },
   KozmosStepper: { props: { steps: ["Pick", "Pay"], currentStep: 0 } },
   KozmosSettingsRow: { props: { label: "Analytics" } },
   // A table cannot hold the slot's box.
   KozmosTable: { click: first("table") },
   KozmosTree: { props: { data: [{ id: "1", name: "a.ts" }] } },
-  KozmosPopover: { slot: true },
   KozmosAccordion: { slot: true },
   KozmosMapView: { slot: true },
   KozmosLocationPin: {},
@@ -799,7 +782,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosFloorSelector: { props: { floors: ["1", "2"], label: "Floor" } },
   // Its onClick is its button's; its other props go on the card.
   KozmosPOICard: { props: { title: "Gate 4" }, click: first("button") },
-  KozmosBottomSheet: { slot: true },
   KozmosFileUpload: {
     props: { label: "Floor plan" },
     click: (drawn) => drawn.querySelector("input[type=file]")?.parentElement,
@@ -810,20 +792,13 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosFloatingActionButton: { slot: true },
   KozmosSplitButton: { slot: true },
   KozmosToggleButton: { slot: true },
-  KozmosSegmentedControl: {
-    props: { label: "Mode", items: [{ value: "walk", label: "Walk" }] },
-    click: first("[role=group]"),
-  },
   KozmosTabs: { slot: true },
-  KozmosDialog: { slot: true },
   KozmosMapOverlay: { slot: true },
-  KozmosChip: { slot: true },
   // Its island, inside the theme scope it draws round it.
   KozmosDynamicIsland: { click: first("[data-kozmos-root] > *") },
   KozmosFeedbackCard: {},
   KozmosMapControlsGroup: {},
   KozmosNavigationAnnouncer: { props: { message: "Turn left" } },
-  KozmosRadioGroup: { slot: true },
   KozmosRouteSummary: {},
   KozmosRoutingInputGroup: {
     props: {
@@ -837,10 +812,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosSaveLocationCard: {},
   KozmosScrollArea: { slot: true },
   KozmosUserLocationMarker: {},
-  KozmosSwitch: {
-    props: { "aria-label": "Wi-Fi" },
-    click: first("[role=switch]"),
-  },
   KozmosAdaptiveMapShell: { props: { panel: "Gate 4" } },
   KozmosBrowseCategoriesPanel: {
     props: { categories: [tile], onSelect: noop, renderIcon: () => null },
@@ -894,36 +865,10 @@ const IN_PLACE: Record<string, InPlace> = {
     props: { label: "Brand" },
     click: first("input[type=text]"),
   },
-  KozmosCombobox: {
-    props: { options: fruit, label: "Fruit" },
-    click: first("input[role=combobox]"),
-  },
   KozmosDateRangePicker: {
     props: { label: "Stay" },
     click: (drawn) => drawn.querySelector("[role=group]")?.children[1],
   },
-  KozmosListbox: { props: { options: fruit, "aria-label": "Fruit" } },
-  KozmosMultiSelect: {
-    props: { options: fruit, label: "Fruit" },
-    click: (drawn) =>
-      drawn.querySelector("[data-slot=chip-group]")?.parentElement,
-  },
-  KozmosChipInput: {
-    props: { label: "Keywords" },
-    click: first("input"),
-  },
-  // Every root is inside a TooltipProvider of its own (GAP-230), so a
-  // tooltip draws alone; it and its provider draw no element.
-  KozmosTooltip: { slot: true },
-  KozmosTooltipProvider: { slot: true },
-  // The parts of the parts made of parts that draw alone, as their React
-  // parts do (GAP-230).
-  KozmosDialogHeader: { slot: true },
-  KozmosDialogFooter: { slot: true },
-  KozmosDrawerHeader: { slot: true },
-  KozmosDrawerFooter: { slot: true },
-  KozmosSelectGroup: { slot: true },
-  KozmosSelectSeparator: {},
   // Its list, drawn in place outside a theme provider.
   KozmosToaster: {},
   KozmosToastProvider: { slot: true },
@@ -937,11 +882,7 @@ const IN_PLACE: Record<string, InPlace> = {
  * Exports that draw nothing in place, and take onClick: what they draw in a
  * portal is theirs, and the portal tests hear it.
  */
-const IN_A_PORTAL = [
-  "KozmosBackdrop",
-  "KozmosAnchoredPopover",
-  "KozmosTourStep",
-];
+const IN_A_PORTAL = ["KozmosBackdrop", "KozmosTourStep"];
 
 /**
  * Exports that draw only inside their compound, as their React parts do:
@@ -951,15 +892,9 @@ const CANNOT_DRAW_ALONE = IN_A_COMPOUND;
 
 /** The parts the review named, which draw no element of their own. */
 const ELEMENTLESS = [
-  "KozmosDialog",
-  "KozmosSelect",
   "KozmosMenu",
   "KozmosContextMenu",
-  "KozmosDrawer",
-  "KozmosPopover",
-  "KozmosBottomSheet",
   "KozmosNavigationAnnouncer",
-  "KozmosTooltipProvider",
   "KozmosToastProvider",
 ];
 
@@ -1117,7 +1052,6 @@ describe("the part decides what runs its listener", () => {
   it.each([
     ["KozmosFloatingActionButton", { "aria-label": "Go" }, "button"],
     ["KozmosToggleButton", { "aria-label": "Bold" }, "button"],
-    ["KozmosChip", {}, "button"],
   ] as const)(
     "%s disabled: React runs no onClick of a disabled button",
     async (name, props, selector) => {
@@ -1152,68 +1086,21 @@ const probe = () =>
 /** One drawn in place, beside it. */
 const inPlace = () =>
   e("button", { key: "in-place", type: "button", "data-in-place": "" }, "Open");
-const a11y = (Title: unknown, Description: unknown) => [
-  e(Title as React.ElementType, { key: "title" }, "Title"),
-  e(Description as React.ElementType, { key: "description" }, "Description"),
-];
 
 /** Each part, open, and how many times a press in its portal runs @click and @keydown. */
 const IN_PORTALS: [string, number, Record<string, unknown>, boolean][] = [
   // Element-less: what they draw in a portal is not heard.
   [
-    "KozmosDialog",
+    "KozmosMenu",
     0,
     {
       open: true,
-      children: [
-        inPlace(),
-        e(
-          DialogContent,
-          { key: "content" },
-          ...a11y(DialogTitle, DialogDescription),
-          probe(),
-        ),
-      ],
-    },
-    true,
-  ],
-  [
-    "KozmosDrawer",
-    0,
-    {
-      open: true,
-      children: [
-        inPlace(),
-        e(
-          DrawerContent,
-          { key: "content" },
-          ...a11y(DrawerTitle, DrawerDescription),
-          probe(),
-        ),
-      ],
-    },
-    true,
-  ],
-  [
-    "KozmosPopover",
-    0,
-    {
-      open: true,
-      children: [inPlace(), e(PopoverContent, { key: "content" }, probe())],
+      modal: false,
+      children: [inPlace(), e(MenuContent, { key: "content" }, probe())],
     },
     true,
   ],
   // They take onClick, and give it to what they draw in a portal.
-  [
-    "KozmosAnchoredPopover",
-    1,
-    {
-      open: true,
-      anchor: { getBoundingClientRect: () => new DOMRect(0, 0, 10, 10) },
-      children: probe(),
-    },
-    false,
-  ],
   ["KozmosBackdrop", 1, { children: probe() }, false],
   ["KozmosTourStep", 1, { title: "Step", children: probe() }, false],
 ];
@@ -1256,17 +1143,17 @@ describe("what a part draws in a portal", () => {
     },
   );
 
-  it("Dialog > IconButton in its content: the button's @click runs once, and Dialog's not at all", async () => {
+  it("Menu > IconButton in its content: the button's @click runs once, and Menu's not at all", async () => {
     const outer = vi.fn();
     const inner = vi.fn();
     mount(() =>
-      h(Bridge.KozmosDialog, {
+      h(Bridge.KozmosMenu, {
         open: true,
+        modal: false,
         onClick: outer,
         children: e(
-          DialogContent,
+          MenuContent,
           null,
-          ...a11y(DialogTitle, DialogDescription),
           e(IconButton, { "aria-label": "Go", onClick: inner }, "x"),
         ),
       }),
@@ -1290,7 +1177,7 @@ describe("what a part draws in a portal", () => {
 // --------------------------------------------------------------------------
 
 describe("a wrapper inside another", () => {
-  it("DialogHeader > ToggleButton: each @click runs once, and .stop on the inner silences the outer", async () => {
+  it("ScrollArea > ToggleButton: each @click runs once, and .stop on the inner silences the outer", async () => {
     for (const [modifier, outerTimes] of [
       ["", 1],
       [".stop", 0],
@@ -1299,7 +1186,7 @@ describe("a wrapper inside another", () => {
       const inner = vi.fn();
       mount(
         page(
-          `<KozmosDialogHeader @click="outer"><KozmosToggleButton aria-label="Go" @click${modifier}="inner">x</KozmosToggleButton></KozmosDialogHeader>`,
+          `<KozmosScrollArea @click="outer"><KozmosToggleButton aria-label="Go" @click${modifier}="inner">x</KozmosToggleButton></KozmosScrollArea>`,
           { outer, inner },
         ),
       );
@@ -1323,10 +1210,10 @@ describe("a wrapper inside another", () => {
 // --------------------------------------------------------------------------
 
 describe("a listener's event is of its own type, and its modifiers act on it", () => {
-  /** KozmosDialog with a trigger drawn in place, from a Vue slot: the box's. */
+  /** KozmosMenu with a trigger drawn in place, from a Vue slot: the box's. */
   const dialog = (listeners: string, state: Record<string, unknown>) =>
     page(
-      `<KozmosDialog ${listeners}><button type="button" data-probe>Open</button></KozmosDialog>`,
+      `<KozmosMenu ${listeners}><button type="button" data-probe>Open</button></KozmosMenu>`,
       state,
     );
 
@@ -1462,7 +1349,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
     const listen = (event: Event) => seen.push(event.type);
     mount(
       page(
-        `<KozmosDialog @focus="listen" @blur="listen" @scroll="listen"><button type="button" data-probe>Open</button><div data-scroller style="overflow: auto">Long</div></KozmosDialog>`,
+        `<KozmosMenu @focus="listen" @blur="listen" @scroll="listen"><button type="button" data-probe>Open</button><div data-scroller style="overflow: auto">Long</div></KozmosMenu>`,
         { listen },
       ),
     );
@@ -1552,15 +1439,16 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
   it(".prevent is React's too: a Radix part sees the event prevented, and does nothing", async () => {
     const clicked = vi.fn();
     mount(
-      page(`<KozmosSwitch aria-label="Wi-Fi" @click.prevent="clicked" />`, {
-        clicked,
-      }),
+      page(
+        `<KozmosToggleButton aria-label="Bold" @click.prevent="clicked">B</KozmosToggleButton>`,
+        { clicked },
+      ),
     );
-    const box = await until(() => $<HTMLElement>("[role=switch]"));
+    const box = await until(() => $<HTMLElement>("button[aria-pressed]"));
     box.click();
     await settle();
     expect(clicked).toHaveBeenCalledTimes(1);
-    expect(box.getAttribute("aria-checked")).toBe("false");
+    expect(box.getAttribute("aria-pressed")).toBe("false");
   });
 
   it(".self is the element the part gives the listener to, and currentTarget is restored after", async () => {

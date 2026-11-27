@@ -141,17 +141,19 @@ export function Example({ onSave }: { onSave: (name: string) => void }) {
   vue={`
 <script setup>
 import { ref } from "vue"
-import { KozmosButton, KozmosInput } from "@kozmos-ds/vue"
 import {
+  KozmosButton,
   KozmosDrawer,
   KozmosDrawerContent,
   KozmosDrawerDescription,
   KozmosDrawerFooter,
   KozmosDrawerHeader,
   KozmosDrawerTitle,
-} from "@kozmos-ds/vue/react-bridge"
-// v-model:open opens it from a KozmosButton: a bridged trigger cannot take
-// a Vue element as its child (as-child), so it would draw a button of its own.
+  KozmosDrawerTrigger,
+  KozmosInput,
+} from "@kozmos-ds/vue"
+// The trigger takes the KozmosButton as its child (as-child); v-model:open
+// holds the open state, so Save closes it.
 const emit = defineEmits(["save"])
 const open = ref(false)
 const name = ref("Ground floor")
@@ -162,8 +164,10 @@ function save() {
 </script>
 
 <template>
-  <KozmosButton @click="open = true">Manage layer</KozmosButton>
   <KozmosDrawer v-model:open="open">
+    <KozmosDrawerTrigger as-child>
+      <KozmosButton>Manage layer</KozmosButton>
+    </KozmosDrawerTrigger>
     <KozmosDrawerContent side="right">
       <KozmosDrawerHeader>
         <KozmosDrawerTitle>Manage layer</KozmosDrawerTitle>

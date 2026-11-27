@@ -35,7 +35,7 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosSlider } from "@kozmos-ds/vue/react-bridge"
+import { KozmosSlider } from "@kozmos-ds/vue"
 </script>
 
 <template>
@@ -114,8 +114,8 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosSlider } from "@kozmos-ds/vue/react-bridge"
-const percent = (value) => \`\${value}%\`
+import { KozmosSlider } from "@kozmos-ds/vue"
+// The #formatValue slot words the value; drawn as text, the thumb says it.
 </script>
 
 <template>
@@ -125,8 +125,9 @@ const percent = (value) => \`\${value}%\`
     :max="100"
     :step="5"
     show-value
-    :format-value="percent"
-  />
+  >
+    <template #formatValue="{ value }">{{ value }}%</template>
+  </KozmosSlider>
 </template>
     `}
     swift={`

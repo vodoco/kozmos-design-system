@@ -270,6 +270,69 @@ const caretAtEnd = (field) =>
 const values = (page) =>
   controls(page, "input").evaluateAll((inputs) => inputs.map((i) => i.value));
 
+/** The overlays open: dialogs, drawers, sheets and popovers. */
+const overlayCount = (page) => page.locator("[role=dialog]").count();
+
+/** Opens a story's overlay from its "Open" trigger, by the keyboard. */
+async function openHost(page) {
+  const open = controls(page, "button").filter({ hasText: "Open" }).first();
+  await open.focus();
+  await page.keyboard.press("Enter");
+  await settle(page);
+  assert((await overlayCount(page)) > 0, "Enter on Open opens the overlay");
+}
+
+/**
+ * A modal overlay from its trigger, the story's first button: Tab reaches
+ * it, Enter opens the overlay with focus inside, Tab keeps it inside,
+ * Escape closes it back to the trigger, a click opens it and a click on its
+ * close named `closeName` closes it.
+ */
+async function modal(page, closeName) {
+  const trigger = controls(page, "button").first();
+  const overlay = page.locator("[role=dialog]");
+  const inside = () =>
+    page.evaluate(() => !!document.activeElement?.closest("[role=dialog]"));
+  await focusStart(page);
+  await page.keyboard.press("Tab");
+  await settle(page);
+  assert.equal(
+    await trigger.evaluate((el) => el === document.activeElement),
+    true,
+    `Tab reaches the trigger (focus is on ${await focused(page)})`,
+  );
+  await page.keyboard.press("Enter");
+  await settle(page);
+  assert.equal(await overlay.count(), 1, "Enter opens it");
+  assert.equal(
+    await inside(),
+    true,
+    `focus moves in (focus is on ${await focused(page)})`,
+  );
+  for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
+  await settle(page);
+  assert.equal(
+    await inside(),
+    true,
+    `Tab stays inside (focus is on ${await focused(page)})`,
+  );
+  await page.keyboard.press("Escape");
+  await settle(page);
+  assert.equal(await overlay.count(), 0, "Escape closes it");
+  assert.equal(
+    await trigger.evaluate((el) => el === document.activeElement),
+    true,
+    `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+  );
+  await trigger.click();
+  await settle(page);
+  assert.equal(await overlay.count(), 1, "a click opens it");
+  await overlay.getByRole("button", { name: closeName }).click();
+  await settle(page);
+  assert.equal(await overlay.count(), 0, `a click on ${closeName} closes it`);
+  return `Tab to the trigger, Enter opened it with focus inside, Tab stayed inside, Escape closed it to the trigger, a click opened it and ${closeName} closed it`;
+}
+
 const INTERACTIONS = {
   /** The story's one button, by keyboard and pointer. */
   async button(page) {
@@ -333,6 +396,52 @@ const INTERACTIONS = {
   },
 
   /**
+   * ThemeProvider's demo: its three buttons, Tab after Tab, each pressed by
+   * Enter, set the theme of the provider the story draws (useTheme's
+   * setTheme): Light and Dark their own, System the page's colour scheme.
+   * A button that sets nothing, or another theme, fails.
+   */
+  async "theme-switch"(page) {
+    const buttons = await controls(page, "button").all();
+    assert.equal(buttons.length, 3, "the demo draws three buttons");
+    const themeOf = () =>
+      buttons[0].evaluate((el) =>
+        el.closest("[data-kozmos-root]")?.getAttribute("data-theme"),
+      );
+    const system = await page.evaluate(() =>
+      matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+    );
+    const wanted = ["light", "dark", system];
+    await focusStart(page);
+    const did = [];
+    for (const [index, button] of buttons.entries()) {
+      await page.keyboard.press("Tab");
+      await settle(page);
+      const name = await button.evaluate((el) =>
+        window.__kozmosVue.describe(el),
+      );
+      assert.equal(
+        await button.evaluate((el) => el === document.activeElement),
+        true,
+        `Tab reaches ${name} (focus is on ${await focused(page)})`,
+      );
+      // From the other theme, so each press is seen to change it.
+      await buttons[index === 1 ? 0 : 1].evaluate((el) => el.click());
+      await settle(page);
+      await button.focus();
+      await page.keyboard.press("Enter");
+      await settle(page);
+      assert.equal(
+        await themeOf(),
+        wanted[index],
+        `Enter on ${name} sets the provider's theme to ${wanted[index]}`,
+      );
+      did.push(`${name} ${wanted[index]}`);
+    }
+    return `Tab, then Enter on each: ${did.join(", ")}`;
+  },
+
+  /**
    * Every link, button and field, Tab after Tab in reading order: each link
    * followed by Enter and by a click (heard, not followed), each button
    * pressed and hovered, each field typed into, a read-only one holding its
@@ -392,40 +501,6 @@ const INTERACTIONS = {
       await control.focus();
     }
     return `${done.link} link(s), ${done.button} button(s) and ${done.field} field(s), Tab after Tab in reading order`;
-  },
-
-  /**
-   * A bridged group and its bridged options, one React tree (GAP-230): Tab
-   * reaches the chosen option, a held arrow moves to the next and chooses
-   * it, and a click chooses another, each held by v-model.
-   */
-  async "radio-group"(page) {
-    const radios = controls(page, "[role=radio]");
-    const chosen = () => controls(page, "output").textContent();
-    assert.equal(await radios.count(), 3, "the group draws its three options");
-    await focusStart(page);
-    await page.keyboard.press("Tab");
-    await settle(page);
-    assert.equal(
-      await radios.nth(0).evaluate((el) => el === document.activeElement),
-      true,
-      `Tab reaches the chosen option (focus is on ${await focused(page)})`,
-    );
-    // Radix chooses the option an arrow moves to while the key is down.
-    await page.keyboard.down("ArrowDown");
-    await settle(page);
-    await page.keyboard.up("ArrowDown");
-    await settle(page);
-    assert.equal(
-      await radios.nth(1).getAttribute("aria-checked"),
-      "true",
-      "ArrowDown chooses the next option",
-    );
-    assert.equal(await chosen(), "Level 2", "v-model holds the option chosen");
-    await radios.nth(2).click();
-    await settle(page);
-    assert.equal(await chosen(), "Level 3", "a click chooses an option");
-    return "Tab to the chosen option, ArrowDown to the next, a click on the last, each held by v-model";
   },
 
   /**
@@ -538,6 +613,548 @@ const INTERACTIONS = {
       `the reset hands the focus to its field (focus is on ${await focused(page)})`,
     );
     return "typed into the mixed field, which took the edit and offered its reset; the reset took it back, the focus on the field";
+  },
+
+  /**
+   * A native list (wave V2): Tab reaches it, ArrowDown moves its active row
+   * (aria-activedescendant, focus staying on the list) and draws the
+   * keyboard's ring, Enter chooses the active row, and a click chooses
+   * another; a multiple list toggles each in. A list that ignores a key or
+   * a press fails.
+   */
+  async listbox(page) {
+    const list = controls(page, "[role=listbox]").first();
+    const multiple =
+      (await list.getAttribute("aria-multiselectable")) === "true";
+    const activeId = () => list.getAttribute("aria-activedescendant");
+    const chosen = () =>
+      list.evaluate((el) =>
+        [...el.querySelectorAll("[role=option][aria-selected=true]")].map(
+          (row) => row.querySelector(".kozmos-option-label")?.textContent,
+        ),
+      );
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await list.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the list (focus is on ${await focused(page)})`,
+    );
+    const start = await activeId();
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    const moved = await activeId();
+    assert.notEqual(moved, start, "ArrowDown moves the active row");
+    assert.equal(
+      await list.evaluate((el) => el === document.activeElement),
+      true,
+      "focus stays on the list as its active row moves",
+    );
+    assert.equal(
+      await list.getAttribute("data-modality"),
+      "keyboard",
+      "the keyboard's ring is drawn on the active row",
+    );
+    const label = await page
+      .locator(`[id="${moved}"] .kozmos-option-label`)
+      .textContent();
+    const before = await chosen();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    const after = await chosen();
+    assert.equal(
+      after.includes(label),
+      !before.includes(label) || !multiple,
+      `Enter chooses ${label}`,
+    );
+    const rows = controls(page, "[role=listbox] [role=option]");
+    const other = (await rows.count()) - 1;
+    const otherLabel = await rows
+      .nth(other)
+      .locator(".kozmos-option-label")
+      .textContent();
+    const held = (await chosen()).includes(otherLabel);
+    await rows.nth(other).click();
+    await settle(page);
+    // A multiple list's click toggles the row; a single list's chooses it.
+    assert.equal(
+      (await chosen()).includes(otherLabel),
+      multiple ? !held : true,
+      `a click ${multiple && held ? "takes out" : "chooses"} ${otherLabel}`,
+    );
+    if (!multiple)
+      assert.deepEqual(await chosen(), [otherLabel], "one option is chosen");
+    return `Tab to the list, ArrowDown to ${label} with the ring, Enter on it, a click on ${otherLabel}${multiple ? ", each toggled in" : ""}`;
+  },
+
+  /**
+   * A native Select (wave V2): Tab reaches its trigger, Enter opens its
+   * list (in the theme's portal) with focus on a row, ArrowDown and Enter
+   * choose the next row, closing the list and handing focus back, and the
+   * trigger shows the row's words; then a click opens it and a click on
+   * the last row chooses that one. A select that ignores a key or a press
+   * fails.
+   */
+  async select(page) {
+    const trigger = controls(page, "[role=combobox]").first();
+    const list = page.locator("[role=listbox]");
+    const words = async () => (await trigger.textContent()).trim();
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the trigger (focus is on ${await focused(page)})`,
+    );
+    const before = await words();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 1, "Enter opens the list");
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? "",
+      ),
+      "option",
+      `the open list has focus on a row (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    const row = await page.evaluate(() =>
+      document.activeElement
+        ?.querySelector(".kozmos-option-content")
+        ?.textContent?.trim(),
+    );
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Enter on a row closes the list");
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `the choice hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    assert.equal(await words(), row, `the trigger shows ${row}`);
+    assert.notEqual(await words(), before, "the choice changed the value");
+    await trigger.click();
+    await settle(page);
+    assert.equal(await list.count(), 1, "a click opens the list");
+    const last = list.locator("[role=option]").last();
+    const lastWords = (
+      await last.locator(".kozmos-option-content").textContent()
+    ).trim();
+    await last.click();
+    await settle(page);
+    assert.equal(await list.count(), 0, "a click on a row closes the list");
+    assert.equal(await words(), lastWords, `a click chose ${lastWords}`);
+    return `Tab to the trigger, Enter to open, ArrowDown and Enter to choose ${row}, a click to open and a click on ${lastWords}`;
+  },
+
+  /** A disabled Select: no stop for Tab, and a press opens nothing. */
+  async "select-disabled"(page) {
+    const trigger = controls(page, "[role=combobox]").first();
+    assert.equal(await trigger.isDisabled(), true, "the trigger is disabled");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      false,
+      "Tab passes the disabled trigger",
+    );
+    const box = await trigger.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await settle(page);
+    assert.equal(
+      await page.locator("[role=listbox]").count(),
+      0,
+      "a press on the disabled trigger opens nothing",
+    );
+    return "unavailable to Tab, and a press opens nothing";
+  },
+
+  /**
+   * A Select drawn open: its rows are named by their words and counts, a
+   * row has focus, and Escape closes the list, handing focus back to the
+   * trigger.
+   */
+  async "select-open"(page) {
+    const list = page.locator("[role=listbox]");
+    assert.equal(await list.count(), 1, "the list is drawn open");
+    assert.equal(
+      await list.locator('[role=option][aria-label="POI, 96"]').count(),
+      1,
+      "a row is named by its words and its count",
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? "",
+      ),
+      "option",
+      `a row has focus (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(
+      await controls(page, "[role=combobox]")
+        .first()
+        .evaluate((el) => el === document.activeElement),
+      true,
+      `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    return "open with a row focused, each named by its words and count, Escape closes it and focus goes back";
+  },
+
+  /**
+   * A mixed Select (GAP-153): a choice edits it, offering its reset, and the
+   * reset takes it back to mixed with the focus on its trigger.
+   */
+  async "select-mixed"(page) {
+    const trigger = controls(page, "[role=combobox][data-mixed]").first();
+    const id = await trigger.getAttribute("id");
+    const own = controls(page, `[role=combobox][id="${id}"]`);
+    await own.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      null,
+      "a choice edits the mixed field",
+    );
+    const reset = own
+      .locator("xpath=ancestor::*[contains(@class, 'kozmos-field')][1]")
+      .locator("[data-slot=reset-mixed]");
+    assert.equal(await reset.count(), 1, "the edited field offers its reset");
+    await reset.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      "",
+      "the reset takes the field back to mixed",
+    );
+    assert.equal(
+      await own.evaluate((el) => el === document.activeElement),
+      true,
+      `the reset hands the focus to its trigger (focus is on ${await focused(page)})`,
+    );
+    return "chose in the mixed field, which took the edit and offered its reset; the reset took it back, the focus on the trigger";
+  },
+
+  /**
+   * A native Combobox (wave V2): Tab reaches its field and opens its list
+   * (in the theme's portal), focus staying in the field; typing filters the
+   * list and makes the first match active; ArrowDown moves the active row
+   * (aria-activedescendant); Enter chooses it, closing the list, and the
+   * field shows its label; Escape closes a list opened again. A field that
+   * ignores a key or a press fails.
+   */
+  async combobox(page) {
+    const field = controls(page, "input[role=combobox]").first();
+    const list = page.locator("[role=listbox]");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the field (focus is on ${await focused(page)})`,
+    );
+    assert.equal(await list.count(), 1, "focus opens the list");
+    const labels = await list
+      .locator("[role=option] .kozmos-option-label")
+      .allTextContents();
+    assert(labels.length > 1, "the list draws its options");
+    await field.fill("");
+    await settle(page);
+    const query = labels[1].slice(0, 2);
+    await page.keyboard.type(query);
+    await settle(page);
+    const shown = await list
+      .locator("[role=option] .kozmos-option-label")
+      .allTextContents();
+    assert(
+      shown.every((label) =>
+        label.toLowerCase().includes(query.toLowerCase()),
+      ) || shown.length < labels.length,
+      `typing "${query}" filters the list (${shown.join(", ")})`,
+    );
+    const activeId = await field.getAttribute("aria-activedescendant");
+    assert(activeId, "typing makes the first match active");
+    if (shown.length > 1) {
+      await page.keyboard.press("ArrowDown");
+      await settle(page);
+      assert.notEqual(
+        await field.getAttribute("aria-activedescendant"),
+        activeId,
+        "ArrowDown moves the active row",
+      );
+    }
+    const chosen = await page
+      .locator(
+        `[id="${await field.getAttribute("aria-activedescendant")}"] .kozmos-option-label`,
+      )
+      .textContent();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Enter chooses and closes the list");
+    assert.equal(await field.inputValue(), chosen, `the field shows ${chosen}`);
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.equal(await list.count(), 1, "ArrowDown opens the list again");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      "focus stays in the field",
+    );
+    return `Tab to the field and its list, "${query}" typed and filtered, ArrowDown and Enter to choose ${chosen}, ArrowDown and Escape`;
+  },
+
+  /**
+   * A mixed Combobox (GAP-153): a query keeps it mixed, a choice edits it,
+   * offering its reset, and the reset takes it back to mixed with the focus
+   * on its field.
+   */
+  async "combobox-mixed"(page) {
+    const field = controls(page, "input[role=combobox][data-mixed]").first();
+    const id = await field.getAttribute("id");
+    const own = controls(page, `input[id="${id}"]`);
+    await own.focus();
+    await page.keyboard.type("d");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      "",
+      "a query keeps the field mixed",
+    );
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      null,
+      "a choice edits the mixed field",
+    );
+    const reset = own
+      .locator("xpath=ancestor::*[contains(@class, 'kozmos-field')][1]")
+      .locator("[data-slot=reset-mixed]");
+    assert.equal(await reset.count(), 1, "the edited field offers its reset");
+    await reset.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await own.getAttribute("data-mixed"),
+      "",
+      "the reset takes the field back to mixed",
+    );
+    assert.equal(await own.inputValue(), "", "a mixed field shows no value");
+    assert.equal(
+      await own.evaluate((el) => el === document.activeElement),
+      true,
+      `the reset hands the focus to its field (focus is on ${await focused(page)})`,
+    );
+    return "typed a query that kept the field mixed, chose, which edited it and offered its reset; the reset took it back, the focus on the field";
+  },
+
+  /**
+   * Filter chips and a removable one (Chip's Default): Tab reaches each
+   * toggle in reading order and draws a focus; Enter presses it, which the
+   * story answers by selecting it (aria-pressed true); a click presses
+   * another; then the removable chip's remove, by Enter, takes the chip
+   * away. A chip that ignores a key or a press fails.
+   */
+  async "chip-toggles"(page) {
+    const toggles = await controls(page, "button[aria-pressed]").all();
+    assert(toggles.length > 1, "the story draws toggle chips");
+    await focusStart(page);
+    for (const toggle of toggles) {
+      await page.keyboard.press("Tab");
+      await settle(page);
+      const name = await toggle.evaluate((el) =>
+        window.__kozmosVue.describe(el),
+      );
+      assert.equal(
+        await toggle.evaluate((el) => el === document.activeElement),
+        true,
+        `Tab reaches ${name} (focus is on ${await focused(page)})`,
+      );
+      const focusLook = await lookOf(toggle);
+      await page.keyboard.press("Enter");
+      await settle(page);
+      assert.equal(
+        await toggle.getAttribute("aria-pressed"),
+        "true",
+        `Enter on ${name} selects it`,
+      );
+      await toggle.evaluate((el) => el.blur());
+      await settle(page);
+      assert(
+        !same(focusLook, await lookOf(toggle)),
+        `${name} draws a focus that differs from its rest`,
+      );
+      await toggle.focus();
+    }
+    await toggles[0].click();
+    await settle(page);
+    assert.equal(
+      await toggles[0].getAttribute("aria-pressed"),
+      "true",
+      "a click selects a chip",
+    );
+    const removes = controls(page, "button.kozmos-chip-remove");
+    const count = await removes.count();
+    assert(count > 0, "the story draws a removable chip");
+    const chips = await controls(page, "[data-slot=chip]").count();
+    await removes.first().focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      await controls(page, "[data-slot=chip]").count(),
+      chips - 1,
+      "Enter on a chip's remove takes the chip away",
+    );
+    return `${toggles.length} toggle chips, Tab after Tab, each selected by Enter, one by a click; a remove by Enter took its chip away`;
+  },
+
+  /**
+   * A MultiSelect: focus on its input opens the list (in the theme's
+   * portal), focus staying in the input; ArrowDown moves the active row;
+   * Enter toggles it, a chip coming or going, the list staying open;
+   * Backspace in the empty input removes the last chip; Escape closes the
+   * list; a chip's remove by Enter removes its chip, focus back in the
+   * input. A field that ignores a key or a press fails.
+   */
+  async multiselect(page) {
+    const field = controls(page, "input[role=combobox]").first();
+    const list = page.locator("[role=listbox]");
+    const chips = () => controls(page, "[data-slot=chip]").count();
+    await focusStart(page);
+    await field.focus();
+    await settle(page);
+    assert.equal(await list.count(), 1, "focus opens the list");
+    assert.equal(
+      await list.getAttribute("aria-multiselectable"),
+      "true",
+      "the list is multi-selectable",
+    );
+    const before = await chips();
+    const activeBefore = await field.getAttribute("aria-activedescendant");
+    assert(activeBefore, "the list makes an option active");
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.notEqual(
+      await field.getAttribute("aria-activedescendant"),
+      activeBefore,
+      "ArrowDown moves the active row",
+    );
+    const id = await field.getAttribute("aria-activedescendant");
+    const wasChosen = await page
+      .locator(`[id="${id}"]`)
+      .getAttribute("aria-selected");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    const after = await chips();
+    assert.equal(
+      after,
+      wasChosen === "true" ? before - 1 : before + 1,
+      "Enter toggles the active option, a chip coming or going",
+    );
+    assert.equal(await list.count(), 1, "the list stays open after a choice");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      "focus stays in the input",
+    );
+    if (after > 0) {
+      await page.keyboard.press("Backspace");
+      await settle(page);
+      assert.equal(
+        await chips(),
+        after - 1,
+        "Backspace in the empty input removes the last chip",
+      );
+    }
+    // A chip to remove by its button.
+    if ((await chips()) === 0) {
+      await page.keyboard.press("ArrowDown");
+      await settle(page);
+      await page.keyboard.press("Enter");
+      await settle(page);
+      await page.keyboard.press("Escape");
+      await settle(page);
+    }
+    const left = await chips();
+    assert(left > 0, "a choice draws a chip");
+    await controls(page, "button.kozmos-chip-remove").first().focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await chips(), left - 1, "a chip's remove removes its chip");
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `the remove hands focus to the input (focus is on ${await focused(page)})`,
+    );
+    return "focus opened the list, ArrowDown moved its active row, Enter toggled it, Escape closed it; Backspace and a chip's remove each took a chip away, focus in the input";
+  },
+
+  /**
+   * A ChipInput: typed text and Enter add an entry as a chip, the field
+   * emptied; a comma adds another; Backspace in the empty field removes the
+   * last; a chip's remove by Enter removes its chip, focus back in the
+   * field.
+   */
+  async "chip-input"(page) {
+    const field = controls(page, "input").first();
+    const labels = () =>
+      controls(page, "[data-slot=chip-label]").allTextContents();
+    await focusStart(page);
+    await field.focus();
+    const before = await labels();
+    await page.keyboard.type("tea");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.deepEqual(
+      await labels(),
+      [...before, "tea"],
+      "Enter adds the typed text as a chip",
+    );
+    assert.equal(await field.inputValue(), "", "the field is emptied");
+    await page.keyboard.type("cake,");
+    await settle(page);
+    assert.deepEqual(
+      await labels(),
+      [...before, "tea", "cake"],
+      "a comma adds the text before it",
+    );
+    await page.keyboard.press("Backspace");
+    await settle(page);
+    assert.deepEqual(
+      await labels(),
+      [...before, "tea"],
+      "Backspace in the empty field removes the last chip",
+    );
+    await controls(page, "button.kozmos-chip-remove").first().focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(
+      (await labels()).length,
+      before.length,
+      "a chip's remove removes its chip",
+    );
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `the remove hands focus to the field (focus is on ${await focused(page)})`,
+    );
+    return "Enter and a comma added entries, Backspace and a chip's remove took them away, focus in the field";
   },
 
   /** Typing into the search field, its value held in Vue through the bridge. */
@@ -1030,6 +1647,644 @@ const INTERACTIONS = {
       "ArrowRight chooses as it moves",
     );
     return "Tab to the first thumb, a click chooses up and a second clears it, ArrowRight chooses as it moves, held by v-model";
+  },
+
+  /**
+   * One switch that owns its state: Tab reaches it and draws a focus; Space
+   * toggles it, and so does Enter (Radix's switch leaves Enter to the
+   * button's own click, where a checkbox refuses it); a click toggles it,
+   * and so does a click on its label. Its state words, when it draws them,
+   * follow it.
+   */
+  async switch(page) {
+    const track = controls(page, "[role=switch]");
+    assert.equal(await track.count(), 1, "the story draws one switch");
+    const checked = () => track.getAttribute("aria-checked");
+    const words = controls(page, "[data-slot=state-label]");
+    const said = async () =>
+      (await words.count()) ? await words.textContent() : null;
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await track.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the switch (focus is on ${await focused(page)})`,
+    );
+    const focusLook = await lookOf(track);
+    await track.evaluate((el) => el.blur());
+    await settle(page);
+    assert(
+      !same(focusLook, await lookOf(track)),
+      "the switch draws no focus: its look is the same focused from the keyboard and at rest",
+    );
+    await track.focus();
+    const start = await checked();
+    const flipped = start === "true" ? "false" : "true";
+    const startWords = await said();
+    await page.keyboard.press("Space");
+    await settle(page);
+    assert.equal(await checked(), flipped, "Space toggles the switch");
+    if (startWords !== null)
+      assert.notEqual(await said(), startWords, "its state words follow it");
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await checked(), start, "Enter toggles it back");
+    await track.click();
+    await settle(page);
+    assert.equal(await checked(), flipped, "a click toggles it");
+    const label = controls(page, "label");
+    if (await label.count()) {
+      await label.first().click();
+      await settle(page);
+      assert.equal(await checked(), start, "a click on its label toggles it");
+    }
+    return "Tab to the switch, Space, Enter, a click and its label each toggle it, its words following";
+  },
+
+  /** A disabled switch: no stop for Tab, and a click leaves it as it is. */
+  async "switch-disabled"(page) {
+    const track = controls(page, "[role=switch]");
+    assert.equal(await track.isDisabled(), true, "the switch is disabled");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await track.evaluate((el) => el === document.activeElement),
+      false,
+      "Tab passes the disabled switch",
+    );
+    const before = await track.getAttribute("aria-checked");
+    await track.click({ force: true });
+    await settle(page);
+    assert.equal(
+      await track.getAttribute("aria-checked"),
+      before,
+      "a click leaves the disabled switch as it is",
+    );
+    return "unavailable to Tab, and a click leaves it as it is";
+  },
+
+  /**
+   * Each radio group of the story that owns its choice: Tab reaches its
+   * chosen option, the group's one stop, and draws a focus; a second Tab
+   * leaves the group; an arrow moves to the next option and chooses it, in
+   * the writing direction, going round from the last; a click on another
+   * option chooses it.
+   */
+  async "radio-choice"(page) {
+    const groups = await controls(page, "[role=radiogroup]").all();
+    assert(groups.length > 0, "the story draws a radio group");
+    // The last group's second Tab needs somewhere to go: Firefox would wrap
+    // it round to the group's own stop (standInAfterStory).
+    const takeStandIn = await standInAfterStory(page);
+    await focusStart(page);
+    for (const group of groups) {
+      const radios = group.locator("[role=radio]");
+      const count = await radios.count();
+      assert(count > 1, "the group draws a choice of options");
+      const at = () =>
+        radios.evaluateAll((all) => all.indexOf(document.activeElement));
+      const chosenAt = () =>
+        radios.evaluateAll((all) =>
+          all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+        );
+      const chosen = await chosenAt();
+      await page.keyboard.press("Tab");
+      await settle(page);
+      assert.equal(
+        await at(),
+        chosen >= 0 ? chosen : 0,
+        `Tab reaches the chosen option, the group's one stop (focus is on ${await focused(page)})`,
+      );
+      const focusLook = await lookOf(radios.nth(await at()));
+      const from = await at();
+      await page.keyboard.press("ArrowRight");
+      await settle(page);
+      const next = (from + 1) % count;
+      assert.equal(await at(), next, "ArrowRight moves to the next option");
+      assert.equal(
+        await chosenAt(),
+        next,
+        "the option an arrow reaches is chosen",
+      );
+      await radios.nth(from).click();
+      await settle(page);
+      assert.equal(await chosenAt(), from, "a click chooses an option");
+      await radios.nth(from).focus();
+      await page.keyboard.press("Tab");
+      await settle(page);
+      assert.equal(await at(), -1, "a second Tab leaves the group");
+      // Chosen as it was when Tab reached it, and no longer focused.
+      assert(
+        !same(focusLook, await lookOf(radios.nth(from))),
+        "the focused option draws no focus: its look is the same as at rest",
+      );
+      await page.keyboard.press("Shift+Tab");
+      await settle(page);
+    }
+    await takeStandIn();
+    return `${groups.length} group(s): Tab to the chosen option, the one stop; ArrowRight moves and chooses; a click chooses; Tab leaves`;
+  },
+
+  /** A disabled radio group: no stop for Tab, and a click chooses nothing. */
+  async "radio-disabled"(page) {
+    const radios = controls(page, "[role=radio]");
+    assert(await radios.count(), "the story draws options");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await radios.evaluateAll((all) => all.includes(document.activeElement)),
+      false,
+      "Tab passes the disabled options",
+    );
+    const before = await radios.evaluateAll((all) =>
+      all.map((el) => el.getAttribute("aria-checked")),
+    );
+    await radios.last().click({ force: true });
+    await settle(page);
+    assert.deepEqual(
+      await radios.evaluateAll((all) =>
+        all.map((el) => el.getAttribute("aria-checked")),
+      ),
+      before,
+      "a click on a disabled option chooses nothing",
+    );
+    return "unavailable to Tab, and a click chooses nothing";
+  },
+
+  /**
+   * A segmented control that owns its choice: Tab reaches the chosen
+   * segment and draws a focus; the arrows move focus along the segments
+   * without choosing; Space chooses the focused one and Enter too; a click
+   * chooses another, and a click on the chosen one takes the choice back.
+   */
+  async segmented(page) {
+    const segments = controls(page, "[role=radio]");
+    const count = await segments.count();
+    assert(count > 1, "the story draws its segments");
+    const at = () =>
+      segments.evaluateAll((all) => all.indexOf(document.activeElement));
+    const chosenAt = () =>
+      segments.evaluateAll((all) =>
+        all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+      );
+    const chosen = await chosenAt();
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await at(),
+      chosen,
+      `Tab reaches the chosen segment (focus is on ${await focused(page)})`,
+    );
+    const focusLook = await lookOf(segments.nth(chosen));
+    await segments.nth(chosen).evaluate((el) => el.blur());
+    await settle(page);
+    assert(
+      !same(focusLook, await lookOf(segments.nth(chosen))),
+      "the segment draws no focus: its look is the same focused and at rest",
+    );
+    await segments.nth(chosen).focus();
+    await page.keyboard.press("ArrowRight");
+    await settle(page);
+    const next = (chosen + 1) % count;
+    assert.equal(
+      await at(),
+      next,
+      "ArrowRight moves focus to the next segment",
+    );
+    assert.equal(await chosenAt(), chosen, "moving focus chooses nothing");
+    await page.keyboard.press("Space");
+    await settle(page);
+    assert.equal(await chosenAt(), next, "Space chooses the focused segment");
+    await page.keyboard.press("ArrowLeft");
+    await settle(page);
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await chosenAt(), chosen, "Enter chooses the focused segment");
+    await segments.nth(next).click();
+    await settle(page);
+    assert.equal(await chosenAt(), next, "a click chooses a segment");
+    await segments.nth(next).click();
+    await settle(page);
+    assert.equal(
+      await chosenAt(),
+      -1,
+      "a click on the chosen segment takes it back",
+    );
+    return "Tab to the chosen segment; the arrows move focus, Space and Enter choose, a click chooses and a second takes it back";
+  },
+
+  /**
+   * A segmented control its story holds at a value: Tab reaches the chosen
+   * segment, and a click on another asks for a change its owner does not
+   * make, so the choice stays.
+   */
+  async "segmented-held"(page) {
+    const segments = controls(page, "[role=radio]");
+    const chosenAt = () =>
+      segments.evaluateAll((all) =>
+        all.findIndex((el) => el.getAttribute("aria-checked") === "true"),
+      );
+    const chosen = await chosenAt();
+    assert(chosen >= 0, "the story holds a segment");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await segments
+        .nth(chosen)
+        .evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the chosen segment (focus is on ${await focused(page)})`,
+    );
+    await segments.nth((chosen + 1) % (await segments.count())).click();
+    await settle(page);
+    assert.equal(await chosenAt(), chosen, "the choice stays its owner's");
+    return "Tab to the chosen segment; a click leaves the choice its owner holds";
+  },
+
+  /**
+   * A disabled segmented control: the group keeps a Tab stop, so its
+   * overflowing segments are still reached, and a click on a segment
+   * chooses nothing.
+   */
+  async "segmented-disabled"(page) {
+    const group = controls(page, "[role=group]");
+    const segments = controls(page, "[role=radio]");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await group.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the disabled control's group (focus is on ${await focused(page)})`,
+    );
+    const before = await segments.evaluateAll((all) =>
+      all.map((el) => el.getAttribute("aria-checked")),
+    );
+    await segments.last().click({ force: true });
+    await settle(page);
+    assert.deepEqual(
+      await segments.evaluateAll((all) =>
+        all.map((el) => el.getAttribute("aria-checked")),
+      ),
+      before,
+      "a click on a disabled segment chooses nothing",
+    );
+    return "Tab to the group, its one stop; a click chooses nothing";
+  },
+
+  /**
+   * Each slider of the story: Tab reaches each thumb in turn, and draws a
+   * focus; ArrowRight moves it a step up and ArrowLeft back. A click near
+   * the track's end moves the nearest thumb there; Home sends the first
+   * thumb to the slider's least and End the last to its most, as Radix's.
+   */
+  async slider(page) {
+    const sliders = await controls(
+      page,
+      "[aria-disabled][data-orientation]",
+    ).all();
+    assert(sliders.length > 0, "the story draws a slider");
+    const now = async (thumb) =>
+      Number(await thumb.getAttribute("aria-valuenow"));
+    let count = 0;
+    await focusStart(page);
+    for (const slider of sliders) {
+      const thumbs = await slider.locator("[role=slider]").all();
+      for (const thumb of thumbs) {
+        await page.keyboard.press("Tab");
+        await settle(page);
+        assert.equal(
+          await thumb.evaluate((el) => el === document.activeElement),
+          true,
+          `Tab reaches the thumb (focus is on ${await focused(page)})`,
+        );
+        const focusLook = await lookOf(thumb);
+        const start = await now(thumb);
+        await page.keyboard.press("ArrowRight");
+        await settle(page);
+        assert((await now(thumb)) > start, "ArrowRight moves the thumb up");
+        await page.keyboard.press("ArrowLeft");
+        await settle(page);
+        assert.equal(await now(thumb), start, "ArrowLeft moves it back");
+        await thumb.evaluate((el) => el.blur());
+        await settle(page);
+        assert(
+          !same(focusLook, await lookOf(thumb)),
+          "the thumb draws no focus: its look is the same focused and at rest",
+        );
+        await thumb.focus();
+        count++;
+      }
+      const first = thumbs[0];
+      const last = thumbs[thumbs.length - 1];
+      const track = slider.locator(":scope > [data-orientation]").first();
+      const box = await track.boundingBox();
+      const before = await now(last);
+      await page.mouse.click(box.x + box.width - 2, box.y + box.height / 2);
+      await settle(page);
+      assert(
+        (await now(last)) > before,
+        "a click near the track's end moves the nearest thumb there",
+      );
+      await first.focus();
+      await page.keyboard.press("Home");
+      await settle(page);
+      assert.equal(
+        await first.getAttribute("aria-valuenow"),
+        await first.getAttribute("aria-valuemin"),
+        "Home sends the first thumb to the least",
+      );
+      await last.focus();
+      await page.keyboard.press("End");
+      await settle(page);
+      assert.equal(
+        await last.getAttribute("aria-valuenow"),
+        await last.getAttribute("aria-valuemax"),
+        "End sends the last thumb to the most",
+      );
+    }
+    return `${count} thumb(s): Tab to each, the arrows move it, a click on the track moves the nearest, Home and End reach the ends`;
+  },
+  /**
+   * A modal overlay (wave V2): Tab reaches its trigger and Enter opens it,
+   * with focus inside; Tab stays inside however often it is pressed; Escape
+   * closes it and gives the trigger its focus back; a click opens it again
+   * and a click on its close closes it. One that ignores a key or a press
+   * fails.
+   */
+  async dialog(page) {
+    return modal(page, "Close");
+  },
+  async drawer(page) {
+    return modal(page, "Close drawer");
+  },
+  async "bottom-sheet"(page) {
+    return modal(page, "Close bottom sheet");
+  },
+
+  /**
+   * An inline panel (GAP-198), open from the start: it took no focus, the
+   * page beside it stays usable (a press on the header's Help leaves it
+   * open), Escape from inside closes it and gives its trigger the focus, and
+   * the trigger opens it again.
+   */
+  async "drawer-inline"(page) {
+    const panel = page.locator("[role=complementary]");
+    assert.equal(await panel.count(), 1, "the panel is drawn open");
+    assert.equal(
+      await page.evaluate(
+        () => !!document.activeElement?.closest("[role=complementary]"),
+      ),
+      false,
+      "opened by the page, it took no focus",
+    );
+    const help = page.getByRole("button", { name: "Help" });
+    await help.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "a press on the page leaves it open");
+    await panel.getByRole("button", { name: "Close drawer" }).focus();
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await panel.count(), 0, "Escape from inside closes it");
+    const trigger = controls(page, "button").filter({ hasText: "Get started" });
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `closing hands focus to its trigger (focus is on ${await focused(page)})`,
+    );
+    await trigger.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "its trigger opens it again");
+    return "open without focus, a press on the page left it open, Escape from inside closed it to its trigger, a click opened it";
+  },
+
+  /**
+   * A Popover: a click on its trigger opens it; Escape closes it, focus back
+   * on the trigger; a click outside closes it again.
+   */
+  async popover(page) {
+    const trigger = controls(page, "button").first();
+    const panel = page.locator("[role=dialog]");
+    await trigger.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "a click opens it");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await panel.count(), 0, "Escape closes it");
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    await trigger.click();
+    await settle(page);
+    assert.equal(await panel.count(), 1, "a click opens it again");
+    await page.mouse.click(2, 2);
+    await settle(page);
+    assert.equal(await panel.count(), 0, "a click outside closes it");
+    return "a click opened it, Escape closed it to its trigger, a click outside closed it";
+  },
+
+  /**
+   * GAP-190: a step anchored to "Add desk", a plain button: no popover
+   * attributes on it; "Got it" closes the step, "Show the step" opens it, and
+   * Escape closes it, focus back on what opened it.
+   */
+  async "popover-anchored"(page) {
+    const step = page.locator('[role=dialog][aria-label="Step 2 of 5"]');
+    const desk = controls(page, "button").filter({ hasText: "Add desk" });
+    assert.equal(await step.count(), 1, "the step is drawn open");
+    for (const attribute of ["aria-haspopup", "aria-expanded", "aria-controls"])
+      assert.equal(
+        await desk.getAttribute(attribute),
+        null,
+        `Add desk carries no ${attribute}`,
+      );
+    await step.getByRole("button", { name: "Got it" }).click();
+    await settle(page);
+    assert.equal(await step.count(), 0, "Got it closes the step");
+    const show = controls(page, "button").filter({ hasText: "Show the step" });
+    // From the keyboard: WebKit gives a pressed button no focus, and a step
+    // opened with nothing focused gives focus to its anchor as it closes.
+    await show.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await step.count(), 1, "Show the step opens it");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await step.count(), 0, "Escape closes it");
+    assert.equal(
+      await show.evaluate((el) => el === document.activeElement),
+      true,
+      `focus goes back to what opened it (focus is on ${await focused(page)})`,
+    );
+    return "plain anchor, Got it closed the step, Show the step opened it, Escape closed it back to Show the step";
+  },
+
+  /** A popover beside a rect on a map: drawn open, beside the map, with no anchor element. */
+  async "popover-rect"(page) {
+    const hint = page.locator('[role=dialog][aria-label="Reception desk"]');
+    assert.equal(await hint.count(), 1, "the hint is drawn open");
+    const map = await controls(page, ".bg-muted").first().boundingBox();
+    const box = await hint.boundingBox();
+    assert(
+      box.x + box.width > map.x &&
+        box.x < map.x + map.width &&
+        box.y + box.height <= map.y + map.height * 0.6 + 1,
+      "the hint sits above the point on the map",
+    );
+    return "open above its point on the map, beside no element";
+  },
+
+  /**
+   * A Tooltip: the pointer resting on its trigger opens it, Escape closes it;
+   * Tab onto the trigger opens it at once and describes the trigger by it.
+   */
+  async tooltip(page) {
+    const trigger = controls(page, "button").first();
+    const tip = page.locator("[role=tooltip]");
+    const box = await trigger.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(900);
+    await settle(page);
+    assert.equal(await tip.count(), 1, "resting on the trigger opens it");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await tip.count(), 0, "Escape closes it");
+    await page.mouse.move(0, 0);
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(await tip.count(), 1, "Tab onto the trigger opens it");
+    const describedBy = await trigger.getAttribute("aria-describedby");
+    assert.equal(
+      await page.evaluate(
+        (id) => document.getElementById(id)?.getAttribute("role"),
+        describedBy,
+      ),
+      "tooltip",
+      "the trigger is described by the tooltip",
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    return "the pointer resting opened it, Escape closed it; Tab opened it, describing the trigger";
+  },
+
+  /**
+   * Wave V2's reason for porting the overlays together: a native Select in a
+   * native overlay. The overlay opens from "Open"; a click opens the Select
+   * and a click on a row chooses it, the overlay staying open; Enter opens
+   * the list again and Escape closes it alone; the next Escape closes the
+   * overlay.
+   */
+  async "layers-select"(page) {
+    const hosts = page.locator("[role=dialog]");
+    await openHost(page);
+    const before = await hosts.count();
+    const field = page.locator("button[role=combobox]");
+    const list = page.locator("[role=listbox]");
+    await field.click();
+    await settle(page);
+    assert.equal(await list.count(), 1, "a click opens the Select's list");
+    await list.locator("[role=option]").filter({ hasText: "Banana" }).click();
+    await settle(page);
+    assert.equal(await list.count(), 0, "a click on a row closes the list");
+    assert.equal(
+      (await field.textContent()).trim(),
+      "Banana",
+      "the click chose Banana",
+    );
+    assert.equal(await hosts.count(), before, "the overlay stays open");
+    await field.focus();
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await list.count(), 1, "Enter opens the list again");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(await hosts.count(), before, "and leaves the overlay open");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(
+      await overlayCount(page),
+      0,
+      "the next Escape closes the overlay",
+    );
+    return "opened the overlay, chose Banana with the pointer, Escape closed the list then the overlay";
+  },
+
+  /**
+   * A native Combobox in a native overlay: its popup takes the pointer (a
+   * modal's body turns pointer events off), a click on a row chooses it and
+   * the overlay stays open; Escape closes the popup alone, the next one the
+   * overlay.
+   */
+  async "layers-combobox"(page) {
+    const hosts = page.locator("[role=dialog]");
+    await openHost(page);
+    const before = await hosts.count();
+    const field = page.locator("input[role=combobox]");
+    const list = page.locator("[role=listbox]");
+    await field.click();
+    await settle(page);
+    assert.equal(await list.count(), 1, "a click on the field opens its list");
+    await list.locator("[role=option]").filter({ hasText: "Banana" }).click();
+    await settle(page);
+    assert.equal(await field.inputValue(), "Banana", "the click chose Banana");
+    assert.equal(await hosts.count(), before, "the overlay stays open");
+    await field.focus();
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.equal(await list.count(), 1, "ArrowDown opens the list again");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await list.count(), 0, "Escape closes the list");
+    assert.equal(await hosts.count(), before, "and leaves the overlay open");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(
+      await overlayCount(page),
+      0,
+      "the next Escape closes the overlay",
+    );
+    return "opened the overlay, chose Banana with the pointer in the popup, Escape closed the popup then the overlay";
+  },
+
+  /**
+   * A Tooltip on a button in a Dialog: Tab onto the button opens it; Escape
+   * closes the tooltip alone, the next one the Dialog.
+   */
+  async "layers-tooltip"(page) {
+    await openHost(page);
+    const tip = page.locator("[role=tooltip]");
+    const button = page
+      .locator("[role=dialog] button")
+      .filter({ hasText: "Add to library" });
+    // Focus in the Dialog moves to the button from the keyboard.
+    await button.focus();
+    for (let i = 0; i < 4 && !(await tip.count()); i++) {
+      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Tab");
+      await settle(page);
+    }
+    assert.equal(await tip.count(), 1, "the button's tooltip opens on focus");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await tip.count(), 0, "Escape closes the tooltip");
+    assert.equal(await overlayCount(page), 1, "and leaves the Dialog open");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(
+      await overlayCount(page),
+      0,
+      "the next Escape closes the Dialog",
+    );
+    return "the tooltip opened on focus in the Dialog, Escape closed it, then the Dialog";
   },
 };
 
