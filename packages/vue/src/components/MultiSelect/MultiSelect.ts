@@ -45,6 +45,7 @@ import { KozmosChip, KozmosChipGroup } from "../Chip/Chip";
 import { KozmosFieldPopper } from "../Combobox/fieldPopper";
 import { MapShellPresentationKey } from "../Combobox/types";
 import { KozmosFieldWrapper } from "../FieldWrapper/FieldWrapper";
+import { joinLayers } from "../shared/layers";
 import { useListens, without } from "../FieldWrapper/fieldModel";
 import type { KozmosInputStatus } from "../Input/types";
 import {
@@ -114,8 +115,9 @@ const status = (message?: string) =>
  * The popup is drawn in the theme's portal, placed under the field as
  * React's popper places it (`../Combobox/fieldPopper.ts`). React's popup
  * is also a Radix DismissableLayer, which closes it on an Escape anywhere
- * but the input; this listens for that Escape on the document itself, and
- * joins no layer stack (the Vue overlays it would join are not ported).
+ * but the input; this listens for that Escape on the document itself. The
+ * popup joins the overlays' layers (`../shared/layers.ts`), and an open
+ * list keeps its Escape from an overlay under it, as the topmost layer does.
  * The map shell's presentation, which picks the list's scrollbar, is read
  * from MapShellPresentationKey, which nothing provides yet, so the list
  * draws the thin scrollbar it draws outside a shell.
@@ -557,6 +559,8 @@ export const KozmosMultiSelect = defineComponent({
                 : activeOption,
             );
           } else if (event.key === "Escape") {
+            // An open list's Escape is the field's (the root's keydown).
+            if (open.value) event.stopPropagation();
             open.value = false;
           }
         },
@@ -568,6 +572,11 @@ export const KozmosMultiSelect = defineComponent({
               "div",
               {
                 ref: popup,
+                // A layer of the overlays' stack, as React's popup is a
+                // Radix DismissableLayer: a Dialog, Drawer or Popover it
+                // opens in hears a press in it as inside, and it takes the
+                // pointer a modal under it turned off (shared/layers.ts).
+                ...joinLayers(popup.value),
                 onMousedown: (event: MouseEvent) => {
                   if (
                     keepsFieldFocus(event.target, event.offsetX, event.offsetY)
@@ -583,7 +592,10 @@ export const KozmosMultiSelect = defineComponent({
                 "aria-labelledby": listbox ? ariaLabelledBy : undefined,
                 "aria-multiselectable": listbox ? true : undefined,
                 class: MULTI_SELECT_POPUP_CLASS,
-                style: { maxHeight: FIELD_POPUP_MAX_HEIGHT },
+                style: {
+                  maxHeight: FIELD_POPUP_MAX_HEIGHT,
+                  ...joinLayers(popup.value).style,
+                },
               },
               [
                 h(Drawn, {
@@ -656,6 +668,15 @@ export const KozmosMultiSelect = defineComponent({
             {
               ref: root,
               class: "relative",
+              onKeydown: (event: KeyboardEvent) => {
+                // While the list is open its Escape is the field's, as the
+                // topmost Radix layer keeps it from an overlay under it in
+                // React: the input closes the list itself (and stops it
+                // there), and from the field's buttons it closes here.
+                if (event.key !== "Escape" || !open.value) return;
+                event.stopPropagation();
+                if (event.target !== input.value) open.value = false;
+              },
               onFocusout: (event: FocusEvent) => {
                 const next = event.relatedTarget as Node | null;
                 if (

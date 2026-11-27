@@ -22,6 +22,7 @@ import {
   KozmosDrawerDescription,
   KozmosDrawerTitle,
   KozmosDrawerTrigger,
+  KozmosMultiSelect,
   KozmosPopover,
   KozmosPopoverContent,
   KozmosPopoverTrigger,
@@ -43,8 +44,8 @@ import {
 } from "./overlays";
 
 /**
- * Why the overlays were ported together (wave V2): a native Select or
- * Combobox inside an overlay must work as React's does inside React's. Each
+ * Why the overlays were ported together (wave V2): a native Select,
+ * Combobox or MultiSelect inside an overlay must work as React's does inside React's. Each
  * host is opened from its trigger; the field in it is opened and an option
  * pressed: the value changes and the host stays open; then Escape closes
  * only the field's list first, and the host next. Run in both frameworks,
@@ -161,7 +162,7 @@ const state = (value: () => string) => ({
 
 async function inBoth(
   host: Host,
-  field: "select" | "combobox",
+  field: "select" | "combobox" | "multiselect",
   steps: (() => void | Promise<void>)[],
 ) {
   const seen = { react: [] as unknown[], vue: [] as unknown[] };
@@ -191,11 +192,17 @@ async function inBoth(
                 ),
               ),
             )
-          : e(KozmosReact.Combobox, {
-              label: "Fruit",
-              options: fruit,
-              onValueChange: (next: string) => values.push(next),
-            });
+          : field === "combobox"
+            ? e(KozmosReact.Combobox, {
+                label: "Fruit",
+                options: fruit,
+                onValueChange: (next: string) => values.push(next),
+              })
+            : e(KozmosReact.MultiSelect, {
+                label: "Fruit",
+                options: fruit,
+                onValueChange: (next: string[]) => values.push(next.join()),
+              });
       await mountReact(reactHost(host, e(Field)));
     } else {
       const chosen = ref<string>();
@@ -226,15 +233,25 @@ async function inBoth(
                   ),
                 ],
               )
-            : h(KozmosCombobox, {
-                label: "Fruit",
-                options: fruit,
-                modelValue: chosen.value,
-                "onUpdate:modelValue": (next: string) => {
-                  chosen.value = next;
-                  values.push(next);
-                },
-              }),
+            : field === "combobox"
+              ? h(KozmosCombobox, {
+                  label: "Fruit",
+                  options: fruit,
+                  modelValue: chosen.value,
+                  "onUpdate:modelValue": (next: string) => {
+                    chosen.value = next;
+                    values.push(next);
+                  },
+                })
+              : h(KozmosMultiSelect, {
+                  label: "Fruit",
+                  options: fruit,
+                  modelValue: chosen.value ? chosen.value.split(",") : [],
+                  "onUpdate:modelValue": (next: string[]) => {
+                    chosen.value = next.join();
+                    values.push(next.join());
+                  },
+                }),
         ),
       );
     }
@@ -302,6 +319,23 @@ describe.each<Host>(["dialog", "drawer", "bottom sheet", "popover"])(
       expect(seen.react[2]).toMatchObject({ host: 1, value: "banana" });
       expect(seen.react[4]).toMatchObject({ host: 1, list: 0 });
       expect(seen.react[5]).toMatchObject({ host: 0 });
+      expect(seen.vue).toEqual(seen.react);
+    });
+
+    it("MultiSelect: its popup takes a press on an option, which chooses it and leaves the host and the list open; Escape closes the list, then the host", async () => {
+      const field = () =>
+        document.querySelector<HTMLInputElement>("input[role=combobox]")!;
+      const seen = await inBoth(host, "multiselect", [
+        open,
+        () => field().focus(),
+        () => press(option("Banana")),
+        escape,
+        escape,
+      ]);
+      expect(seen.react[1]).toMatchObject({ host: 1, list: 1 });
+      expect(seen.react[2]).toMatchObject({ host: 1, value: "banana" });
+      expect(seen.react[3]).toMatchObject({ host: 1, list: 0 });
+      expect(seen.react[4]).toMatchObject({ host: 0 });
       expect(seen.vue).toEqual(seen.react);
     });
   },

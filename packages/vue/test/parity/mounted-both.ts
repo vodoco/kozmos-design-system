@@ -42,7 +42,8 @@ const GEOMETRY = /^(transform|left|top|z-index|--radix-popper-[\w-]+)$/;
  * The document as each draws it, with the popper's geometry made one:
  * where Radix's floating-ui and the port's placement put the popup in
  * jsdom, which lays nothing out, differs, so each geometric declaration is
- * kept by name; and the declarations sorted.
+ * kept by name; and the declarations sorted. Vue's layer mark is taken
+ * off, as Radix's layers draw none.
  */
 export function alike(html: string) {
   const document = new DOMParser().parseFromString(html, "text/html");
@@ -61,6 +62,13 @@ export function alike(html: string) {
   }
   for (const element of document.body.querySelectorAll("[data-v-app]"))
     element.removeAttribute("data-v-app");
+  // A field's popup is a layer of the overlays' stack in both: React's a
+  // Radix DismissableLayer, which marks nothing; Vue's carries the mark
+  // Reka's layers read (shared/layers.ts, joinLayers).
+  for (const element of document.body.querySelectorAll(
+    "[data-dismissable-layer]",
+  ))
+    element.removeAttribute("data-dismissable-layer");
   return normalizeHtml(document.body.innerHTML);
 }
 

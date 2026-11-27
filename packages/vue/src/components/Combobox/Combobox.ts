@@ -143,8 +143,8 @@ const iconOf = (icon: Component | VNode) => (isVNode(icon) ? icon : h(icon));
  * as React's popper places it (`fieldPopper.ts`); `popup-layout="inline"`
  * draws it in the flow under the field. React's popup is also a Radix
  * DismissableLayer, so Radix's own overlays around it see it as the layer
- * above them; Reka UI keeps its layer to itself, and the Vue overlays it
- * would join are not ported, so this popup joins none.
+ * above them; Reka UI keeps its layer to itself, so this popup joins the
+ * Vue overlays' stack by its DOM contract (`../shared/layers.ts`).
  */
 export const KozmosCombobox = defineComponent({
   name: "KozmosCombobox",
