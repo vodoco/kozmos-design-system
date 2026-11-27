@@ -36,11 +36,10 @@ React part draws the slot, so it finds the context its compound gives it:
 <script setup>
 import { ref } from "vue";
 import {
-  KozmosSelect,
-  KozmosSelectContent,
-  KozmosSelectItem,
-  KozmosSelectTrigger,
-  KozmosSelectValue,
+  KozmosAccordion,
+  KozmosAccordionContent,
+  KozmosAccordionItem,
+  KozmosAccordionTrigger,
   KozmosTabs,
   KozmosTabsList,
   KozmosTabsTrigger,
@@ -55,15 +54,16 @@ const level = ref("1");
       <KozmosTabsTrigger value="2">Level 2</KozmosTabsTrigger>
     </KozmosTabsList>
   </KozmosTabs>
-  <KozmosSelect v-model="level">
-    <KozmosSelectTrigger aria-label="Level"
-      ><KozmosSelectValue
-    /></KozmosSelectTrigger>
-    <KozmosSelectContent>
-      <KozmosSelectItem value="1">Level 1</KozmosSelectItem>
-      <KozmosSelectItem value="2">Level 2</KozmosSelectItem>
-    </KozmosSelectContent>
-  </KozmosSelect>
+  <KozmosAccordion v-model="level" type="single">
+    <KozmosAccordionItem value="1">
+      <KozmosAccordionTrigger>Level 1</KozmosAccordionTrigger>
+      <KozmosAccordionContent>Its rooms</KozmosAccordionContent>
+    </KozmosAccordionItem>
+    <KozmosAccordionItem value="2">
+      <KozmosAccordionTrigger>Level 2</KozmosAccordionTrigger>
+      <KozmosAccordionContent>Its rooms</KozmosAccordionContent>
+    </KozmosAccordionItem>
+  </KozmosAccordion>
 </template>
 ```
 
