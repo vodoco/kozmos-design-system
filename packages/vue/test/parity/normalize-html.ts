@@ -15,7 +15,11 @@ const ID_REFERENCE = new Set([
   "aria-flowto",
   "aria-labelledby",
   "aria-owns",
+  // A design config's id, which marks its scope (DesignConfigProvider).
+  "data-kozmos-design-scope",
 ]);
+/** Custom properties whose value is an id: a design config's own. */
+const ID_PROPERTY = new Set(["--kozmos-design-id"]);
 
 /**
  * One canonical text for an HTML fragment, so React's and Vue's server renders
@@ -56,11 +60,12 @@ export function normalizeHtml(
     if (!ids.has(id)) ids.set(id, `id-${ids.size + 1}`);
     return ids.get(id)!;
   };
-  // `url(#gradient)` in fill, clip-path, mask, filter, marker-* and style.
+  // `url(#gradient)` in fill, clip-path, mask, filter, marker-* and style,
+  // quoted or not (a design config's `url("#…-surface")`), as each wrote it.
   const urls = (raw: string) =>
     raw.replace(
-      /url\(\s*#([^)\s]+)\s*\)/g,
-      (_, id) => `url(#${canonical(id)})`,
+      /url\(\s*(["']?)#([^)"'\s]+)\1\s*\)/g,
+      (_, quote, id) => `url(${quote}#${canonical(id)}${quote})`,
     );
   const ignored = (name: string) =>
     ignore.some((rule) =>
@@ -78,7 +83,9 @@ export function normalizeHtml(
               .filter(Boolean)
               .map((part) => {
                 const colon = part.indexOf(":");
-                return `${part.slice(0, colon).trim()}:${part.slice(colon + 1).trim()}`;
+                const property = part.slice(0, colon).trim();
+                const declared = part.slice(colon + 1).trim();
+                return `${property}:${ID_PROPERTY.has(property) ? canonical(declared) : declared}`;
               })
               .join(";")
           : urls(raw);

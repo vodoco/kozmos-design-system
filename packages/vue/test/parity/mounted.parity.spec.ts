@@ -4,18 +4,12 @@ import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import * as KozmosReact from "@kozmos-ds/react";
+import { createApp, defineComponent, h, nextTick, ref, type App } from "vue";
 import {
-  computed,
-  createApp,
-  defineComponent,
-  h,
-  nextTick,
-  provide,
-  ref,
-  type App,
-} from "vue";
-import { KozmosThemeProvider, useTheme } from "../../src/index";
-import { MotionKey } from "../../src/theme/injection";
+  KozmosDesignConfigProvider,
+  KozmosThemeProvider,
+  useTheme,
+} from "../../src/index";
 import { normalizeHtml } from "./normalize-html";
 
 /**
@@ -124,29 +118,30 @@ describe("the portal", () => {
         React.createElement(KozmosReact.ThemeProvider, null, "x"),
       ),
     );
-    // React's design config also hands its design tokens to the provider, as
-    // a style; Vue has no design config yet, so the marks are compared
-    // without the style.
-    const react = portals(["style"]);
+    // Each framework names the design config's id its own way.
+    const named = (html: string) => {
+      const id = html.match(/--kozmos-design-id:\s*([^;"]+)/)![1].trim();
+      return html.split(id).join("DESIGN");
+    };
+    const react = [...document.body.querySelectorAll("[data-kozmos-portal]")]
+      .map((portal) => portal.outerHTML)
+      .map((html) => normalizeHtml(named(html)));
     act(() => reactRoot!.unmount());
     reactRoot = undefined;
     document.body.replaceChildren();
-    // Vue has no design-config provider yet: what it will provide is MotionKey.
-    const Reduced = defineComponent({
-      setup(_, { slots }) {
-        provide(
-          MotionKey,
-          computed(() => "reduced" as const),
-        );
-        return () => slots.default?.();
-      },
-    });
     await mountVue(() =>
-      h(Reduced, null, () => h(KozmosThemeProvider, null, () => "x")),
+      h(KozmosDesignConfigProvider, { config: { motion: "reduced" } }, () =>
+        h(KozmosThemeProvider, null, () => "x"),
+      ),
     );
-    const [vue] = portals(["style"]);
-    expect(vue).toContain('data-kozmos-motion="reduced"');
-    expect(react).toContain(vue);
+    const vue = [...document.body.querySelectorAll("[data-kozmos-portal]")]
+      .map((portal) => portal.outerHTML)
+      .map((html) => normalizeHtml(named(html)));
+    expect(
+      vue.every((html) => html.includes('data-kozmos-motion="reduced"')),
+    ).toBe(true);
+    expect(vue).toHaveLength(2);
+    expect(vue).toEqual(react);
   });
 });
 

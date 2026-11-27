@@ -55,7 +55,7 @@ field draws from its own unscoped CSS instead, and draws there as in Chrome and 
 `@kozmos-ds/vue` publishes only as a prerelease, on npm's `next` tag
 (`npm install @kozmos-ds/vue@next vue`), from 0.17.0-next.0; its version names the
 `@kozmos-ds/styles` it was built against. It is built on Reka UI: its main entry holds the Vue parts (`KozmosThemeProvider`,
-`KozmosDensityScope`, `KozmosAnalyticsProvider`, `KozmosButton`, `KozmosBadge`,
+`KozmosDesignConfigProvider` with `useDesignConfig`, `KozmosDensityScope`, `KozmosAnalyticsProvider`, `KozmosButton`, `KozmosBadge`,
 `KozmosSeparator`, `KozmosText`, `KozmosHeading`, `KozmosLabel`, `KozmosIcon`,
 `KozmosKbd`, `KozmosCodeBlock`, `KozmosSpriteIcon`, `KozmosBox`, `KozmosStack`,
 `KozmosGrid`, `KozmosContainer`, `KozmosSurface`, `KozmosTag`, `KozmosAvatar` with
@@ -87,12 +87,15 @@ inside them (GAP-230, decision 172):
   popover, a toast) is drawn in the theme, and React's `useTheme().setTheme` sets the
   Vue provider's theme;
 - `KozmosDensityScope`: its density;
-- `KozmosAnalyticsProvider`: the bridged parts' events join its batches.
+- `KozmosAnalyticsProvider`: the bridged parts' events join its batches;
+- `KozmosDesignConfigProvider`: its glass, shadow and motion properties, which it hands
+  its theme provider as tokens, and its glass spotlight. Its reduced motion marks what a
+  bridged part draws in place, but not what one draws in a portal: React's
+  `MotionContext` is not exported, so the bridge cannot give it.
 
 Every bridged root also has a Radix `TooltipProvider` of its own, so a `KozmosTooltip`
-needs none. Nothing else does: `DesignConfigProvider`'s configuration and reduced
-motion have no Vue provider yet, and a trigger cannot take a Vue element as its
-child (`as-child`), so it draws its own button. Write props in either case:
+needs none. A trigger cannot take a Vue element as its child (`as-child`), so it
+draws its own button. Write props in either case:
 `default-value` reaches React as `defaultValue` (GAP-238); `aria-*` and `data-*`
 pass as written.
 

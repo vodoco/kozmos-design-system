@@ -84,6 +84,17 @@ export const PORTS: Port[] = [
     sample: { density: "compact", children: "Scoped" },
   },
   {
+    vue: "KozmosDesignConfigProvider",
+    react: "DesignConfigProvider",
+    stories: null,
+    drawnIn: "parity/design-config.parity.spec.ts",
+    sample: { children: "Configured" },
+    events: {
+      "update:config": "parity/design-config.parity.spec.ts",
+      "update:theme": "parity/design-config.parity.spec.ts",
+    },
+  },
+  {
     vue: "KozmosButton",
     react: "Button",
     stories: "components/Button/Button.stories.tsx",
@@ -824,6 +835,7 @@ export const LEAVING_BRIDGE: Record<string, string> = {};
 export const COMPOSABLES: { vue: string; react: string }[] = [
   { vue: "useTheme", react: "useTheme" },
   { vue: "useKozmosAnalytics", react: "useKozmosAnalytics" },
+  { vue: "useDesignConfig", react: "useDesignConfig" },
 ];
 
 export const REPOSITORY = path.resolve(__dirname, "../../..");

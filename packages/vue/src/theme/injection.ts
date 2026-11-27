@@ -40,8 +40,8 @@ export const DensityKey: InjectionKey<ComputedRef<KozmosDensity>> =
  * The design config's reduced motion where a part renders, as React's
  * MotionContext: "reduced" under a design config that reduces motion, and
  * undefined otherwise. Every ThemeProvider marks its portal with it, so what
- * draws there stops its loops as what draws in place does (GAP-50). Vue has
- * no design-config provider yet; this is the key it will provide.
+ * draws there stops its loops as what draws in place does (GAP-50).
+ * KozmosDesignConfigProvider provides it (GAP-291).
  */
 export const MotionKey: InjectionKey<ComputedRef<"reduced" | undefined>> =
   Symbol("KozmosMotion");

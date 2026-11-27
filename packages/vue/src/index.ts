@@ -11,6 +11,16 @@ export { KozmosThemeProvider } from "./components/ThemeProvider/ThemeProvider";
 export { KozmosDensityScope } from "./components/DensityScope/DensityScope";
 export { KozmosButton } from "./components/Button/Button";
 export {
+  KozmosDesignConfigProvider,
+  useDesignConfig,
+} from "./components/DesignConfigProvider/DesignConfigProvider";
+export type {
+  KozmosDesignConfig,
+  KozmosDesignConfigInput,
+  KozmosDesignConfigState,
+  KozmosGlassConfig,
+} from "./components/DesignConfigProvider/types";
+export {
   KozmosAnalyticsProvider,
   useKozmosAnalytics,
 } from "./components/AnalyticsProvider/AnalyticsProvider";
