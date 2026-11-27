@@ -4,9 +4,7 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "../../utils";
 import {
   POPOVER_ARROW_CLASS,
-  POPOVER_ARROW_SIZE,
   POPOVER_CONTENT_CLASS,
-  POPOVER_CONTENT_DEFAULTS,
   focusIfFocusable,
 } from "../../recipes/popover";
 
@@ -117,8 +115,8 @@ const PopoverContent = React.forwardRef<
   (
     {
       className,
-      align = POPOVER_CONTENT_DEFAULTS.align,
-      sideOffset = POPOVER_CONTENT_DEFAULTS.sideOffset,
+      align = "center",
+      sideOffset = 4,
       portalContainer,
       onOpenAutoFocus,
       onCloseAutoFocus,
@@ -194,25 +192,15 @@ PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 const PopoverArrow = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Arrow>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Arrow>
->(
-  (
-    {
-      className,
-      width = POPOVER_ARROW_SIZE.width,
-      height = POPOVER_ARROW_SIZE.height,
-      ...props
-    },
-    ref,
-  ) => (
-    <PopoverPrimitive.Arrow
-      ref={ref}
-      width={width}
-      height={height}
-      className={cn(POPOVER_ARROW_CLASS, className)}
-      {...props}
-    />
-  ),
-);
+>(({ className, width = 8, height = 4, ...props }, ref) => (
+  <PopoverPrimitive.Arrow
+    ref={ref}
+    width={width}
+    height={height}
+    className={cn(POPOVER_ARROW_CLASS, className)}
+    {...props}
+  />
+));
 PopoverArrow.displayName = PopoverPrimitive.Arrow.displayName;
 
 export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent, PopoverArrow };

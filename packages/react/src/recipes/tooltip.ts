@@ -26,8 +26,6 @@ export const TOOLTIP_ARROW_CLASSES = {
 export const TOOLTIP_CONTENT_CLASS = "z-50 overflow-visible rounded-control";
 export const TOOLTIP_CONTENT_MOTION_CLASS =
   "shadow-overlay animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2";
-/** The panel's distance from its trigger unless told. */
-export const TOOLTIP_SIDE_OFFSET = 4;
 /**
  * The tip, 8 by 4, overlaps the body by 1px, as Figma's Tooltip tip does: it
  * covers the body's border where the two meet (site GAP-74).

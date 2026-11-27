@@ -9,7 +9,6 @@ import {
   TOOLTIP_CONTENT_CLASS,
   TOOLTIP_CONTENT_MOTION_CLASS,
   TOOLTIP_DISABLED_TRIGGER_CLASS,
-  TOOLTIP_SIDE_OFFSET,
   TOOLTIP_TONE_CLASSES,
   tooltipTone,
 } from "../../recipes/tooltip";
@@ -85,7 +84,7 @@ const TooltipContent = React.forwardRef<
   (
     {
       className,
-      sideOffset = TOOLTIP_SIDE_OFFSET,
+      sideOffset = 4,
       children,
       portalContainer,
       tone = "default",
