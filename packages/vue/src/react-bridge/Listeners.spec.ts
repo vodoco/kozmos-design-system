@@ -9,6 +9,7 @@ import ts from "typescript";
 import { IconButton, MenuContent } from "@kozmos-ds/react";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as Bridge from "./index";
+import { KozmosMenu, KozmosSearch } from "../../test/bridged-parts";
 import { ADAPTER_TAKES, PART_TAKES } from "./part-takes";
 import {
   HEARD_ON_THE_WAY_DOWN,
@@ -61,10 +62,16 @@ import {
 
 const page = (template: string, state: Record<string, unknown> = {}) =>
   defineComponent({
-    components: Bridge as Record<string, Component>,
+    components: Specs as Record<string, Component>,
     setup: () => state,
     template,
   });
+/**
+ * The bridge's exports, and React's Search and Menu through its adapter as
+ * it mounted them before their native ports (test/bridged-parts.ts): the
+ * specs' text field and its element-less part that opens in a portal.
+ */
+const Specs = { ...Bridge, KozmosSearch, KozmosMenu };
 const e = React.createElement;
 const noop = () => {};
 
@@ -669,7 +676,7 @@ describe("each listener on a bridged field runs once", () => {
     const b = vi.fn();
     const which = ref<"none" | "a" | "b" | "aOnce">("none");
     mount(() =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         "aria-label": "Field",
         ...(which.value === "a" && { onClick: a }),
         ...(which.value === "b" && { onClick: b }),
@@ -755,7 +762,6 @@ const first = (selector: string) => (drawn: HTMLElement) =>
  * here), else the first element it draws.
  */
 const IN_PLACE: Record<string, InPlace> = {
-  KozmosSearch: { props: { "aria-label": "Search" }, click: first("input") },
   KozmosSearchBar: {
     props: { placeholder: "Where to?" },
     click: first("input"),
@@ -765,8 +771,6 @@ const IN_PLACE: Record<string, InPlace> = {
   },
   KozmosNavbar: { slot: true },
   KozmosSidebar: { slot: true },
-  KozmosMenu: { slot: true },
-  KozmosContextMenu: { slot: true },
   KozmosPagination: { slot: true },
   KozmosStepper: { props: { steps: ["Pick", "Pay"], currentStep: 0 } },
   KozmosSettingsRow: { props: { label: "Analytics" } },
@@ -790,7 +794,6 @@ const IN_PLACE: Record<string, InPlace> = {
   KozmosDatePicker: { props: { "aria-label": "Date" }, click: first("input") },
   KozmosTimePicker: { props: { "aria-label": "Time" }, click: first("input") },
   KozmosFloatingActionButton: { slot: true },
-  KozmosSplitButton: { slot: true },
   KozmosToggleButton: { slot: true },
   KozmosTabs: { slot: true },
   KozmosMapOverlay: { slot: true },
@@ -891,12 +894,7 @@ const IN_A_PORTAL = ["KozmosBackdrop", "KozmosTourStep"];
 const CANNOT_DRAW_ALONE = IN_A_COMPOUND;
 
 /** The parts the review named, which draw no element of their own. */
-const ELEMENTLESS = [
-  "KozmosMenu",
-  "KozmosContextMenu",
-  "KozmosNavigationAnnouncer",
-  "KozmosToastProvider",
-];
+const ELEMENTLESS = ["KozmosNavigationAnnouncer", "KozmosToastProvider"];
 
 /** The first element React drew inside a wrapper's root that draws a box. */
 function firstDrawn(drawn: Element) {
@@ -1112,7 +1110,7 @@ describe("what a part draws in a portal", () => {
       const onClick = vi.fn();
       const onKeydown = vi.fn();
       const host = mount(() =>
-        h(Bridge[name as keyof typeof Bridge] as Component, {
+        h(Specs[name as keyof typeof Specs] as Component, {
           ...props,
           onClick,
           onKeydown,
@@ -1147,7 +1145,7 @@ describe("what a part draws in a portal", () => {
     const outer = vi.fn();
     const inner = vi.fn();
     mount(() =>
-      h(Bridge.KozmosMenu, {
+      h(KozmosMenu, {
         open: true,
         modal: false,
         onClick: outer,
@@ -1221,7 +1219,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
     const seen: Record<string, Event> = {};
     const listen = (name: string) => (event: Event) => (seen[name] = event);
     mount(() =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         "aria-label": "Field",
         modelValue: "",
         "onUpdate:modelValue": noop,
@@ -1273,7 +1271,7 @@ describe("a listener's event is of its own type, and its modifiers act on it", (
   it("@mouseenter and @mouseleave: outside, the label, the input, the label, outside", async () => {
     const seen: string[] = [];
     mount(() =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         label: "Name",
         onMouseenter: (event: Event) => seen.push(`enter(${event.type})`),
         onMouseleave: (event: Event) => seen.push(`leave(${event.type})`),

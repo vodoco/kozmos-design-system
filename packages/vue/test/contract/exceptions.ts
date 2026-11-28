@@ -5,6 +5,18 @@
  * list never outlives what it excuses.
  */
 export const EXCEPTIONS: Record<string, string> = {
+  // React's SplitButton items take `label` and `icon` as ReactNodes; Vue has
+  // no ReactNode, so KozmosSplitButtonMenuAction takes the label as text or
+  // a VNode and the icon as a Vue component or a VNode, what Vue draws in a
+  // row. Every other field is React's (SplitButton/types.ts), and
+  // split-button.parity.spec.ts draws items with icons and labels in both.
+  "KozmosSplitButton.menuItems:type":
+    "Vue's KozmosSplitButtonMenuItem is React's SplitButtonMenuItem but for an action's `label` (text or a VNode) and `icon` (a Vue component or a VNode), where React's are ReactNodes; split-button.parity.spec.ts draws them in both",
+  // React's onMainClick is given React's synthetic MouseEvent; Vue's
+  // mainClick is given the browser's own MouseEvent, as every Vue listener
+  // is. split-button.parity.spec.ts presses the main half in both.
+  "KozmosSplitButton.onMainClick:payload":
+    "Vue's mainClick is given the native MouseEvent where React's onMainClick is given React's synthetic MouseEvent; split-button.parity.spec.ts presses the main half in both",
   // A component type is a value (read-contract.ts, isRenderProp): React's
   // Icon takes a glyph from `@kozmos-ds/icons`, a React component; Vue's
   // takes the same glyph from `@kozmos-ds/icons/vue`, its Vue functional

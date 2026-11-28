@@ -914,6 +914,14 @@ export const VUE_STORIES = {
   "vue-core-overlays-layering--combobox-in-popover": {
     interaction: "layers-combobox",
   },
+  "vue-core-layout-menu--default": { interaction: "menu" },
+  "vue-core-layout-menu--external-item": { interaction: "menu" },
+  "vue-core-layout-menu--external-item-open": { interaction: "menu-open" },
+  "vue-core-layout-contextmenu--default": { interaction: "context-menu" },
+  "vue-core-layout-contextmenu--open": { interaction: "context-menu-open" },
+  "vue-core-actions-splitbutton--default": { interaction: "split-button" },
+  "vue-core-inputs-search--default": { interaction: "search-typing" },
+  "vue-core-inputs-search--clearable": { interaction: "search-clear" },
 };
 
 /** What every Vue story's id starts with, and no React story's. */

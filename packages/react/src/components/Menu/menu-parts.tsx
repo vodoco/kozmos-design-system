@@ -1,32 +1,26 @@
 import React from "react";
 import { LinkExternal01 } from "@kozmos-ds/icons";
+import {
+  MENU_EXTERNAL_END_CLASS,
+  MENU_EXTERNAL_ICON_CLASS,
+  MENU_EXTERNAL_LABEL,
+  menuTargetKeepsTab,
+} from "../../recipes/menu";
 
 // The classes Menu's parts draw with, shared with ContextMenu's (GAP-155): a
-// context menu is Menu's panel and rows, opened where it is asked for.
-
-export const menuContentClass =
-  "z-50 min-w-32 overflow-hidden rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2";
-
-export const menuSubTriggerClass =
-  "flex cursor-default select-none items-center rounded-marker px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent";
-
-export const menuItemClass =
-  "relative flex cursor-default select-none items-center rounded-marker px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
-
-/** A checkbox or radio item: its indicator sits in the inset at its start. */
-export const menuIndicatorItemClass =
-  "relative flex cursor-default select-none items-center rounded-marker py-1.5 ps-8 pe-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
-
-export const menuIndicatorClass =
-  "absolute start-2 flex h-3.5 w-3.5 items-center justify-center";
-
-export const menuLabelClass = "px-2 py-1.5 text-sm font-semibold";
-
-export const menuSeparatorClass = "-mx-1 my-1 h-px bg-border";
-
-export const menuShortcutClass = "ms-auto text-xs tracking-widest opacity-50";
-
-export const menuSubIconClass = "kozmos-rtl-mirror ms-auto h-4 w-4";
+// context menu is Menu's panel and rows, opened where it is asked for. They
+// live in the shared recipe, which Vue's parts draw with too.
+export {
+  menuContentClass,
+  menuIndicatorClass,
+  menuIndicatorItemClass,
+  menuItemClass,
+  menuLabelClass,
+  menuSeparatorClass,
+  menuShortcutClass,
+  menuSubIconClass,
+  menuSubTriggerClass,
+} from "../../recipes/menu";
 
 export interface MenuItemExternalProps {
   /**
@@ -46,10 +40,6 @@ export interface MenuItemExternalProps {
    */
   externalLabel?: string;
 }
-
-// A target that keeps the page in this tab, as Link reads it. An empty
-// target is this tab too.
-const SAME_TAB = /^(?:_self|_parent|_top)?$/i;
 
 /**
  * An item's children with `external`'s icon and words, and, around a
@@ -78,7 +68,7 @@ export function externalItemChildren({
   }
   if (!React.isValidElement<ChildLinkProps>(children)) return children;
   const { target, rel } = children.props;
-  if (target != null && SAME_TAB.test(target)) return children;
+  if (menuTargetKeepsTab(target)) return children;
   return React.cloneElement(
     children,
     {
@@ -97,7 +87,7 @@ interface ChildLinkProps {
 }
 
 function ExternalDecoration({
-  label = "opens in a new tab",
+  label = MENU_EXTERNAL_LABEL,
 }: {
   label?: string;
 }) {
@@ -105,10 +95,10 @@ function ExternalDecoration({
     <>
       {/* At the row's end, a gap from its words however narrow the menu,
           pointing to the end: mirrored right to left, as Link's is. */}
-      <span className="ms-auto flex shrink-0 ps-2" aria-hidden="true">
+      <span className={MENU_EXTERNAL_END_CLASS} aria-hidden="true">
         <LinkExternal01
           aria-hidden="true"
-          className="kozmos-rtl-mirror h-4 w-4"
+          className={MENU_EXTERNAL_ICON_CLASS}
           data-kozmos-menu-external=""
         />
       </span>

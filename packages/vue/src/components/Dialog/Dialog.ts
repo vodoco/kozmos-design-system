@@ -34,7 +34,11 @@ import {
 } from "#kozmos-recipes";
 import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
 import { KozmosIconButton } from "../IconButton/IconButton";
-import { KozmosWithoutGenericClick, useOverlayPortal } from "../shared/layers";
+import {
+  KozmosWithoutGenericClick,
+  layerEscape,
+  useOverlayPortal,
+} from "../shared/layers";
 import type { KozmosDialogContentSize } from "./types";
 
 /** The events Radix's (and Reka's) modal content reports, React's names. */
@@ -65,8 +69,9 @@ export function contentListeners(
   return {
     onOpenAutoFocus: (event: Event) => emit("openAutoFocus", event as never),
     onCloseAutoFocus: (event: Event) => emit("closeAutoFocus", event as never),
-    onEscapeKeyDown: (event: KeyboardEvent) =>
+    onEscapeKeyDown: layerEscape((event: KeyboardEvent) =>
       emit("escapeKeyDown", event as never),
+    ),
     onPointerDownOutside: (event: CustomEvent) =>
       emit("pointerDownOutside", event as never),
     onFocusOutside: (event: CustomEvent) =>

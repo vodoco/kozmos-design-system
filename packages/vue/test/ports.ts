@@ -1464,6 +1464,410 @@ export const PORTS: Port[] = [
       pointerDownOutside: "parity/tooltip.parity.spec.ts",
     },
   },
+  {
+    vue: "KozmosMenu",
+    react: "Menu",
+    stories: "components/Menu/Menu.stories.tsx",
+    // Every story draws the parts by hand: menu.parity.spec.ts draws each in
+    // both, closed in a server render and open, mounted.
+    elsewhere: {
+      Default: "parity/menu.parity.spec.ts",
+      ExternalItem: "parity/menu.parity.spec.ts",
+      ExternalItemOpen: "parity/menu.parity.spec.ts",
+    },
+    drawnIn: "parity/menu.parity.spec.ts",
+    // Open, so its panel and rows are drawn in the document, in the theme's
+    // portal, where the attributes and listeners checks look for theirs.
+    sample: { defaultOpen: true },
+    events: {
+      "update:open": "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMenuTrigger",
+    react: "MenuTrigger",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "Menu",
+    sample: { children: "Open" },
+  },
+  {
+    vue: "KozmosMenuContent",
+    react: "MenuContent",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "Menu",
+    sample: {},
+    events: {
+      closeAutoFocus: "parity/menu.parity.spec.ts",
+      escapeKeyDown: "parity/menu.parity.spec.ts",
+      pointerDownOutside: "parity/menu.parity.spec.ts",
+      focusOutside: "parity/menu.parity.spec.ts",
+      interactOutside: "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMenuPortal",
+    react: "MenuPortal",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "Menu",
+    unmarked: {
+      why: "the portal draws no element of its own, only what is put in it, in the theme's portal",
+      drawnIn: "parity/menu.parity.spec.ts",
+    },
+    sample: { children: "Panel" },
+  },
+  {
+    vue: "KozmosMenuItem",
+    react: "MenuItem",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuContent",
+    sample: { children: "Rename" },
+    events: {
+      select: "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMenuCheckboxItem",
+    react: "MenuCheckboxItem",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuContent",
+    sample: { children: "Show grid" },
+    events: {
+      "update:checked": "parity/menu.parity.spec.ts",
+      select: "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMenuRadioGroup",
+    react: "MenuRadioGroup",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuContent",
+    sample: {},
+    events: {
+      "update:modelValue": "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMenuRadioItem",
+    react: "MenuRadioItem",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuRadioGroup",
+    sample: { value: "list", children: "List" },
+    events: {
+      select: "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMenuGroup",
+    react: "MenuGroup",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuContent",
+    sample: {},
+  },
+  {
+    vue: "KozmosMenuLabel",
+    react: "MenuLabel",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuContent",
+    sample: { children: "Account" },
+  },
+  {
+    vue: "KozmosMenuSeparator",
+    react: "MenuSeparator",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuContent",
+    sample: {},
+  },
+  {
+    vue: "KozmosMenuShortcut",
+    react: "MenuShortcut",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    sample: { children: "⌘K" },
+  },
+  {
+    vue: "KozmosMenuSub",
+    react: "MenuSub",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuContent",
+    unmarked: {
+      why: "a submenu draws no element of its own",
+      drawnIn: "parity/menu.parity.spec.ts",
+    },
+    sample: {},
+    events: {
+      "update:open": "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosMenuSubTrigger",
+    react: "MenuSubTrigger",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuSub",
+    sample: { children: "More" },
+  },
+  {
+    vue: "KozmosMenuSubContent",
+    react: "MenuSubContent",
+    stories: null,
+    drawnIn: "parity/menu.parity.spec.ts",
+    within: "MenuSub",
+    unmarked: {
+      why: "a submenu's panel is drawn once its row opens it, and Radix's and Reka's close one asked to start open as its menu opens: the spec opens it from its row",
+      drawnIn: "parity/menu.parity.spec.ts",
+    },
+    sample: {},
+    events: {
+      escapeKeyDown: "parity/menu.parity.spec.ts",
+      pointerDownOutside: "parity/menu.parity.spec.ts",
+      focusOutside: "parity/menu.parity.spec.ts",
+      interactOutside: "parity/menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenu",
+    react: "ContextMenu",
+    stories: "components/ContextMenu/ContextMenu.stories.tsx",
+    elsewhere: {
+      Default: "parity/context-menu.parity.spec.ts",
+      Open: "parity/context-menu.parity.spec.ts",
+    },
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    sample: {},
+    events: {
+      openChange: "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenuTrigger",
+    react: "ContextMenuTrigger",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenu",
+    sample: { children: "Open" },
+  },
+  {
+    vue: "KozmosContextMenuContent",
+    react: "ContextMenuContent",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenu",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: {},
+    events: {
+      closeAutoFocus: "parity/context-menu.parity.spec.ts",
+      escapeKeyDown: "parity/context-menu.parity.spec.ts",
+      pointerDownOutside: "parity/context-menu.parity.spec.ts",
+      focusOutside: "parity/context-menu.parity.spec.ts",
+      interactOutside: "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenuPortal",
+    react: "ContextMenuPortal",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenu",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: { children: "Panel" },
+  },
+  {
+    vue: "KozmosContextMenuItem",
+    react: "ContextMenuItem",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuContent",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: { children: "Rename" },
+    events: {
+      select: "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenuCheckboxItem",
+    react: "ContextMenuCheckboxItem",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuContent",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: { children: "Show grid" },
+    events: {
+      "update:checked": "parity/context-menu.parity.spec.ts",
+      select: "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenuRadioGroup",
+    react: "ContextMenuRadioGroup",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuContent",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: {},
+    events: {
+      "update:modelValue": "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenuRadioItem",
+    react: "ContextMenuRadioItem",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuRadioGroup",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: { value: "list", children: "List" },
+    events: {
+      select: "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenuGroup",
+    react: "ContextMenuGroup",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuContent",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: {},
+  },
+  {
+    vue: "KozmosContextMenuLabel",
+    react: "ContextMenuLabel",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuContent",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: { children: "Account" },
+  },
+  {
+    vue: "KozmosContextMenuSeparator",
+    react: "ContextMenuSeparator",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuContent",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: {},
+  },
+  {
+    vue: "KozmosContextMenuShortcut",
+    react: "ContextMenuShortcut",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    sample: { children: "⌘K" },
+  },
+  {
+    vue: "KozmosContextMenuSub",
+    react: "ContextMenuSub",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuContent",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: {},
+    events: {
+      "update:open": "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosContextMenuSubTrigger",
+    react: "ContextMenuSubTrigger",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuSub",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: { children: "More" },
+  },
+  {
+    vue: "KozmosContextMenuSubContent",
+    react: "ContextMenuSubContent",
+    stories: null,
+    drawnIn: "parity/context-menu.parity.spec.ts",
+    within: "ContextMenuSub",
+    unmarked: {
+      why: "a context menu opens only where it is asked for (a right click, a long press, its key), which no args can do: the spec opens it and draws each part in both",
+      drawnIn: "parity/context-menu.parity.spec.ts",
+    },
+    sample: {},
+    events: {
+      escapeKeyDown: "parity/context-menu.parity.spec.ts",
+      pointerDownOutside: "parity/context-menu.parity.spec.ts",
+      focusOutside: "parity/context-menu.parity.spec.ts",
+      interactOutside: "parity/context-menu.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSplitButton",
+    react: "SplitButton",
+    stories: "components/SplitButton/SplitButton.stories.tsx",
+    // Its items' onClick are functions, which the reader cannot read:
+    // split-button.parity.spec.ts draws the story in both, closed and open.
+    elsewhere: {
+      Default: "parity/split-button.parity.spec.ts",
+    },
+    drawnIn: "parity/split-button.parity.spec.ts",
+    sample: { children: "Save", menuLabel: "More options" },
+    events: {
+      mainClick: "parity/split-button.parity.spec.ts",
+    },
+  },
+  {
+    vue: "KozmosSearch",
+    react: "Search",
+    stories: "components/Search/Search.stories.tsx",
+    // Each its own render: search.parity.spec.ts draws them in both.
+    elsewhere: {
+      Default: "parity/search.parity.spec.ts",
+      Clearable: "parity/search.parity.spec.ts",
+    },
+    drawnIn: "parity/search.parity.spec.ts",
+    sample: { label: "Find a place", placeholder: "Search..." },
+    events: {
+      "update:modelValue": "parity/search.parity.spec.ts",
+      clear: "parity/search.parity.spec.ts",
+    },
+  },
 ];
 
 /**
@@ -1482,10 +1886,6 @@ export const LEAVING_BRIDGE: Record<string, string> = {};
  */
 export type Wave = "V3" | "V4" | "V5" | "SDK" | "never";
 
-const MENU_PARTS =
-  "a part of Menu, which the bridge mounts only as a whole: a Vue app cannot compose Menu's content, items, groups or submenus until Menu and its parts are ported";
-const CONTEXT_MENU_PARTS =
-  "a part of ContextMenu, which the bridge mounts only as a whole: a Vue app cannot compose its trigger, content or items until ContextMenu and its parts are ported";
 const PAGINATION_PARTS =
   "a part of Pagination, which the bridge mounts only as a whole: a Vue app cannot compose its own pager from these until Pagination and its parts are ported";
 const TABLE_PARTS =
@@ -1513,42 +1913,6 @@ export const NOT_IN_VUE: Record<string, { wave: Wave; why: string }> = {
   DialogOverlay: { wave: "never", why: NOT_EXPORTED_OVERLAY },
   DrawerPortal: { wave: "never", why: NOT_EXPORTED_OVERLAY },
   DrawerOverlay: { wave: "never", why: NOT_EXPORTED_OVERLAY },
-  ...Object.fromEntries(
-    [
-      "MenuCheckboxItem",
-      "MenuContent",
-      "MenuGroup",
-      "MenuItem",
-      "MenuLabel",
-      "MenuPortal",
-      "MenuRadioGroup",
-      "MenuRadioItem",
-      "MenuSeparator",
-      "MenuShortcut",
-      "MenuSub",
-      "MenuSubContent",
-      "MenuSubTrigger",
-      "MenuTrigger",
-    ].map((name) => [name, { wave: "V3", why: MENU_PARTS }]),
-  ),
-  ...Object.fromEntries(
-    [
-      "ContextMenuCheckboxItem",
-      "ContextMenuContent",
-      "ContextMenuGroup",
-      "ContextMenuItem",
-      "ContextMenuLabel",
-      "ContextMenuPortal",
-      "ContextMenuRadioGroup",
-      "ContextMenuRadioItem",
-      "ContextMenuSeparator",
-      "ContextMenuShortcut",
-      "ContextMenuSub",
-      "ContextMenuSubContent",
-      "ContextMenuSubTrigger",
-      "ContextMenuTrigger",
-    ].map((name) => [name, { wave: "V3", why: CONTEXT_MENU_PARTS }]),
-  ),
   ...Object.fromEntries(
     [
       "PaginationContent",

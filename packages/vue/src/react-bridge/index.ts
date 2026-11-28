@@ -27,13 +27,10 @@ import {
   PART_TAKES,
 } from "./part-takes";
 import {
-  Search,
   SearchBar,
   BottomNavigation,
   Navbar,
   Sidebar,
-  Menu,
-  ContextMenu,
   Toast,
   Pagination,
   Stepper,
@@ -54,7 +51,6 @@ import {
   DatePicker,
   TimePicker,
   FloatingActionButton,
-  SplitButton,
   ToggleButton,
   Tabs,
   MapOverlay,
@@ -178,17 +174,12 @@ const textField = {
 // ----------------------------------------------------------------------
 // Universal Kozmos Vue 3 Component Exports (The Armada)
 // ----------------------------------------------------------------------
-export const KozmosSearch = createVueWrapper(Search, {
-  modelValue: textField,
-});
 export const KozmosSearchBar = createVueWrapper(SearchBar, {
   modelValue: { prop: "value", callback: "onChange", empty: "" },
 });
 export const KozmosBottomNavigation = createVueWrapper(BottomNavigation);
 export const KozmosNavbar = createVueWrapper(Navbar);
 export const KozmosSidebar = createVueWrapper(Sidebar);
-export const KozmosMenu = createVueWrapper(Menu);
-export const KozmosContextMenu = createVueWrapper(ContextMenu);
 export const KozmosToast = createVueWrapper(Toast);
 export const KozmosPagination = createVueWrapper(Pagination);
 export const KozmosStepper = createVueWrapper(Stepper);
@@ -292,7 +283,6 @@ export const KozmosTimePicker = createVueWrapper(TimePicker, {
 });
 export const KozmosFloatingActionButton =
   createVueWrapper(FloatingActionButton);
-export const KozmosSplitButton = createVueWrapper(SplitButton);
 export const KozmosToggleButton = createVueWrapper(ToggleButton, {
   pressed: { prop: "pressed", callback: "onPressedChange", empty: false },
 });

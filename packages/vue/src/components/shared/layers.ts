@@ -34,6 +34,12 @@ import {
  *   another (portalled after it) is inside the lower one. A popup that is
  *   no Reka layer, Combobox's, joins that stack's DOM contract
  *   (`joinLayers`): React's is a Radix DismissableLayer with no dismiss.
+ *   A field that claims Escape for itself (a clearable Search holding
+ *   text) claims it as it handles it (`claimEscape`), as React's draws an
+ *   empty Radix layer that is then the highest: the Escape is prevented,
+ *   which Reka's layers (hearing Escape on the window, after the field)
+ *   dismiss nothing on, and every layer's escapeKeyDown is deaf to it
+ *   (`layerEscape`), as no Radix layer under the highest hears it.
  * - **Focus.** Reka's FocusScope stack: a scope opened inside another
  *   (Select's list in a Dialog) pauses the outer one until it closes.
  * - **Portals.** Each is drawn in the nearest KozmosThemeProvider's portal,
@@ -258,4 +264,32 @@ export function triggerChild(
   const copy = [...children];
   copy[index] = cloneVNode(children[index], attrs, true);
   return copy;
+}
+
+/** The Escapes a field above the layers claimed (`claimEscape`). */
+const claimedEscapes = new WeakSet<Event>();
+
+/**
+ * A field claims this Escape for itself, as the highest layer: React's
+ * draws an empty Radix DismissableLayer while it would handle it (Search's
+ * clear), so no layer under it hears it. Prevented, so no Reka layer
+ * dismisses on it, and no layer's escapeKeyDown is told of it
+ * (`layerEscape`).
+ */
+export function claimEscape(event: KeyboardEvent) {
+  claimedEscapes.add(event);
+  event.preventDefault();
+}
+
+/**
+ * A layer's escapeKeyDown handler, as every overlay hands Reka's on: deaf
+ * to an Escape a field above it claimed, as a Radix layer under the
+ * highest is.
+ */
+export function layerEscape<E extends KeyboardEvent>(
+  handler: (event: E) => void,
+) {
+  return (event: E) => {
+    if (!claimedEscapes.has(event)) handler(event);
+  };
 }

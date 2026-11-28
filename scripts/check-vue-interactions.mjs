@@ -2067,6 +2067,304 @@ const INTERACTIONS = {
    * A Popover: a click on its trigger opens it; Escape closes it, focus back
    * on the trigger; a click outside closes it again.
    */
+  /**
+   * A menu, as Radix's DropdownMenu: Tab to its trigger, Enter opens it with
+   * focus on its first row, the arrows and End move among the rows, Escape
+   * closes it and hands focus back to the trigger; a click opens it and a
+   * click on a row chooses it and closes it.
+   */
+  async menu(page) {
+    const trigger = controls(page, "[aria-haspopup=menu]").first();
+    const menu = page.locator("[role=menu]");
+    const row = () =>
+      page.evaluate(() =>
+        document.activeElement?.getAttribute("role") === "menuitem"
+          ? document.activeElement.textContent.trim()
+          : null,
+      );
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the trigger (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await menu.count(), 1, "Enter opens the menu");
+    const first = await row();
+    assert(
+      first,
+      `focus is on the first row (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    const second = await row();
+    assert(second && second !== first, "ArrowDown moves to the next row");
+    await page.keyboard.press("End");
+    await settle(page);
+    const last = await row();
+    await page.keyboard.press("Home");
+    await settle(page);
+    assert.equal(await row(), first, "Home goes back to the first row");
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await menu.count(), 0, "Escape closes it");
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    await trigger.click();
+    await settle(page);
+    assert.equal(await menu.count(), 1, "a click opens it");
+    await menu.locator("[role=menuitem]").first().click();
+    await settle(page);
+    assert.equal(await menu.count(), 0, "a click on a row closes it");
+    return `Tab to the trigger, Enter opened it on ${first}, ArrowDown to ${second}, End to ${last}, Home back, Escape closed it to the trigger, a click opened it and a click on a row chose it`;
+  },
+
+  /**
+   * A menu drawn open and not modal (the visual review's): its rows take
+   * the arrows from the panel, and Escape closes it to its trigger.
+   */
+  async "menu-open"(page) {
+    const menu = page.locator("[role=menu]");
+    const trigger = controls(page, "[aria-haspopup=menu]").first();
+    assert.equal(await menu.count(), 1, "the menu is drawn open");
+    await menu.focus();
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? "",
+      ),
+      "menuitem",
+      `ArrowDown from the panel focuses a row (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await menu.count(), 0, "Escape closes it");
+    assert.equal(
+      await trigger.evaluate((el) => el === document.activeElement),
+      true,
+      `Escape hands focus back to the trigger (focus is on ${await focused(page)})`,
+    );
+    return "ArrowDown from the open panel focused a row, Escape closed it to its trigger";
+  },
+
+  /**
+   * A context menu (GAP-155): Tab to its area, Shift+F10 opens it with focus
+   * on its first row; the arrows move, ArrowRight (ArrowLeft right to left)
+   * opens the submenu on its first row, ArrowLeft closes it back to its row;
+   * Escape closes the menu. A right click opens it; the pointer resting on
+   * the submenu's row opens the submenu, and crossing diagonally into it,
+   * over the menu's next row, keeps it open (the pointer's grace area);
+   * a click on a row there chooses it and closes the menu.
+   */
+  async "context-menu"(page) {
+    const area = controls(page, "[tabindex='0']").first();
+    const menus = page.locator("[role=menu]");
+    const row = () =>
+      page.evaluate(() =>
+        document.activeElement?.getAttribute("role") === "menuitem"
+          ? document.activeElement.textContent.trim()
+          : null,
+      );
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await area.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the area (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Shift+F10");
+    await settle(page);
+    assert.equal(await menus.count(), 1, "Shift+F10 opens the menu");
+    const first = await row();
+    assert(
+      first,
+      `focus is on the first row (focus is on ${await focused(page)})`,
+    );
+    const rtl = await area.evaluate(
+      (el) => getComputedStyle(el).direction === "rtl",
+    );
+    const [open, close] = rtl
+      ? ["ArrowLeft", "ArrowRight"]
+      : ["ArrowRight", "ArrowLeft"];
+    const subRow = page.locator("[role=menuitem][aria-haspopup=menu]").first();
+    const sub = (await subRow.textContent()).trim();
+    for (let i = 0; i < 8 && (await row()) !== sub; i++) {
+      await page.keyboard.press("ArrowDown");
+      await settle(page);
+    }
+    assert.equal(await row(), sub, `ArrowDown reaches ${sub}`);
+    await page.keyboard.press(open);
+    await settle(page);
+    assert.equal(await menus.count(), 2, `${open} opens the submenu`);
+    const inSub = await row();
+    assert(inSub && inSub !== sub, "focus moves into the submenu");
+    await page.keyboard.press(close);
+    await settle(page);
+    assert.equal(await menus.count(), 1, `${close} closes the submenu`);
+    assert.equal(await row(), sub, `${close} hands focus back to ${sub}`);
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await menus.count(), 0, "Escape closes the menu");
+    const box = await area.boundingBox();
+    await page.mouse.click(box.x + 24, box.y + 24, { button: "right" });
+    await settle(page);
+    assert.equal(await menus.count(), 1, "a right click opens the menu");
+    const trigger = await subRow.boundingBox();
+    await page.mouse.move(trigger.x + 8, trigger.y + trigger.height / 2);
+    await page.waitForTimeout(250);
+    await settle(page);
+    assert.equal(
+      await menus.count(),
+      2,
+      "the pointer resting on its row opens the submenu",
+    );
+    const panel = await menus.nth(1).boundingBox();
+    // Diagonally into the submenu's first row, across the menu's next row.
+    const target = {
+      x: panel.x + 16,
+      y: panel.y + panel.height - 12,
+    };
+    await page.mouse.move(target.x, target.y, { steps: 12 });
+    await settle(page);
+    assert.equal(
+      await menus.count(),
+      2,
+      "crossing into the submenu keeps it open (the pointer's grace area)",
+    );
+    const deep = menus.nth(1).locator("[role=menuitem]").last();
+    const deepWords = (await deep.textContent()).trim();
+    await deep.click();
+    await settle(page);
+    assert.equal(
+      await menus.count(),
+      0,
+      `a click on ${deepWords} closes the menu`,
+    );
+    return `Tab to the area, Shift+F10 opened it on ${first}, ${open} into ${sub}'s submenu and ${close} out, Escape closed it; a right click opened it, resting on ${sub} opened its submenu, a diagonal into it kept it open, and a click on ${deepWords} chose it`;
+  },
+
+  /** A context menu drawn open at a right click's point: Escape closes it. */
+  async "context-menu-open"(page) {
+    const menus = page.locator("[role=menu]");
+    assert.equal(await menus.count(), 1, "the menu is drawn open");
+    await menus.first().focus();
+    await page.keyboard.press("ArrowDown");
+    await settle(page);
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? "",
+      ),
+      "menuitem",
+      `ArrowDown from the panel focuses a row (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await menus.count(), 0, "Escape closes it");
+    return "ArrowDown from the open panel focused a row, Escape closed it";
+  },
+
+  /**
+   * SplitButton (GAP-168): Tab to its main half, Enter presses it; Tab to its
+   * chevron, Enter opens its menu on the first item, Escape closes it back
+   * to the chevron; a click on the chevron opens it and a click on an item
+   * chooses it.
+   */
+  async "split-button"(page) {
+    const [main, chevron] = await controls(page, "button").all();
+    const menu = page.locator("[role=menu]");
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await main.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the main half (focus is on ${await focused(page)})`,
+    );
+    const before = await clicks(page);
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await clicks(page), before + 1, "Enter presses the main half");
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await chevron.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the chevron (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Enter");
+    await settle(page);
+    assert.equal(await menu.count(), 1, "Enter on the chevron opens the menu");
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? "",
+      ),
+      "menuitem",
+      `focus is on an item (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await menu.count(), 0, "Escape closes it");
+    assert.equal(
+      await chevron.evaluate((el) => el === document.activeElement),
+      true,
+      `Escape hands focus back to the chevron (focus is on ${await focused(page)})`,
+    );
+    await chevron.click();
+    await settle(page);
+    assert.equal(await menu.count(), 1, "a click opens it");
+    await menu.locator("[role=menuitem]").first().click();
+    await settle(page);
+    assert.equal(await menu.count(), 0, "a click on an item closes it");
+    return "Tab to the main half and Enter pressed it, Tab to the chevron and Enter opened its menu on an item, Escape closed it to the chevron, a click opened it and a click chose an item";
+  },
+
+  /**
+   * A clearable Search (GAP-161): Tab to the field, Escape empties it and
+   * takes the clear away, typing draws it again, and a click on it empties
+   * the field and leaves the focus there.
+   */
+  async "search-clear"(page) {
+    const field = controls(page, "input").first();
+    const clear = controls(page, "button[aria-label='Clear search']");
+    assert.equal(
+      await clear.count(),
+      1,
+      "the field holding text draws its clear",
+    );
+    await focusStart(page);
+    await page.keyboard.press("Tab");
+    await settle(page);
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `Tab reaches the field (focus is on ${await focused(page)})`,
+    );
+    await page.keyboard.press("Escape");
+    await settle(page);
+    assert.equal(await field.inputValue(), "", "Escape empties the field");
+    assert.equal(await clear.count(), 0, "the empty field draws no clear");
+    await page.keyboard.type("Gate 4");
+    await settle(page);
+    assert.equal(await clear.count(), 1, "typing draws the clear again");
+    await clear.click();
+    await settle(page);
+    assert.equal(await field.inputValue(), "", "the clear empties the field");
+    assert.equal(
+      await field.evaluate((el) => el === document.activeElement),
+      true,
+      `the clear hands focus back to the field (focus is on ${await focused(page)})`,
+    );
+    return "Tab to the field, Escape emptied it, typing drew the clear again, and the clear emptied it with focus kept in the field";
+  },
+
   async popover(page) {
     const trigger = controls(page, "button").first();
     const panel = page.locator("[role=dialog]");

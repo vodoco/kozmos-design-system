@@ -33,11 +33,11 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosSearch } from "@kozmos-ds/vue/react-bridge"
+import { KozmosSearch } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosSearch />
+  <KozmosSearch aria-label="Search places" />
 </template>
     `}
     swift={`
@@ -109,7 +109,7 @@ export function Example() {
     vue={`
 <script setup>
 import { ref } from "vue"
-import { KozmosSearch } from "@kozmos-ds/vue/react-bridge"
+import { KozmosSearch } from "@kozmos-ds/vue"
 const query = ref("Gate B12")
 </script>
 

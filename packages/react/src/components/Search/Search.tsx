@@ -6,6 +6,17 @@ import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { FieldWrapper } from "../FieldWrapper";
 import { useUncontrolledValue } from "../FieldWrapper/characterCount";
+import {
+  FIELD_ACTION_ICON_CLASS,
+  INPUT_ACTION_CLASS,
+  INPUT_WITH_ACTION_CLASS,
+} from "../../recipes/input";
+import {
+  emptySearchField,
+  SEARCH_BOX_CLASS,
+  SEARCH_ICON_CLASS,
+  SEARCH_INPUT_CLASS,
+} from "../../recipes/search";
 
 export interface SearchProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -22,22 +33,6 @@ export interface SearchProps extends React.InputHTMLAttributes<HTMLInputElement>
   clearLabel?: string;
   /** Called once the field is cleared, after its `onChange`. */
   onClear?: () => void;
-}
-
-/**
- * Empties the field as typing would: through the value's own setter and an
- * input event, so React calls the field's `onChange` with "", controlled or
- * not, and a product's state follows. Setting `value` on the element alone
- * changed the DOM behind React's back.
- */
-function emptyField(input: HTMLInputElement) {
-  const setValue = Object.getOwnPropertyDescriptor(
-    Object.getPrototypeOf(input),
-    "value",
-  )?.set;
-  if (setValue) setValue.call(input, "");
-  else input.value = "";
-  input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 const Search = React.forwardRef<HTMLInputElement, SearchProps>(
@@ -80,7 +75,7 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
     const clear = () => {
       const input = inputRef.current;
       if (!input) return;
-      emptyField(input);
+      emptySearchField(input);
       // The button goes with the text: the focus goes back to the field
       // before the product's callback, which may move it on deliberately.
       input.focus();
@@ -103,23 +98,22 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
         inputId={inputId}
         className={wrapperClassName}
       >
-        <div className="relative flex items-center">
+        <div className={SEARCH_BOX_CLASS}>
           {/* The icon is at the inline start, left or right as the field
               reads, and the text clears it there (owned CSS on
               kozmos-search-input): a physical left-3 / pl-9 kept both on the
               left in a right-to-left field. */}
-          <SearchIcon className="absolute start-3 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
+          <SearchIcon className={SEARCH_ICON_CLASS} />
           <input
             ref={setRefs}
             id={inputId}
             className={cn(
               inputVariants({ error: hasError }),
-              "kozmos-search-input",
+              SEARCH_INPUT_CLASS,
               // Room for the clear, as Input keeps for its action: the
               // utility beats a caller's px-*, the owned rule holds where no
               // @scope rule reaches an <input> (WebKit).
-              canClear &&
-                "kozmos-input-with-action pe-[calc(var(--density-field-height-md,2.75rem)_+_0.25rem)]",
+              canClear && INPUT_WITH_ACTION_CLASS,
               className,
             )}
             type="search"
@@ -178,13 +172,10 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
             <button
               type="button"
               aria-label={clearLabel}
-              className="kozmos-reset kozmos-field-action kozmos-input-action"
+              className={INPUT_ACTION_CLASS}
               onClick={clear}
             >
-              <X
-                className="kozmos-reset kozmos-field-action-icon"
-                aria-hidden="true"
-              />
+              <X className={FIELD_ACTION_ICON_CLASS} aria-hidden="true" />
             </button>
           ) : null}
         </div>

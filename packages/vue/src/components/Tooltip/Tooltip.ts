@@ -27,7 +27,12 @@ import {
   tooltipTone,
 } from "#kozmos-recipes";
 import { ThemeKey } from "../../theme/injection";
-import { radixArrow, triggerChild, useOverlayPortal } from "../shared/layers";
+import {
+  layerEscape,
+  radixArrow,
+  triggerChild,
+  useOverlayPortal,
+} from "../shared/layers";
 import type {
   KozmosOverlayAlign,
   KozmosOverlaySide,
@@ -243,8 +248,9 @@ export const KozmosTooltipContent = defineComponent({
             normalizeClass(className),
           ),
           "data-kozmos-density": portal.density.value,
-          onEscapeKeyDown: (event: KeyboardEvent) =>
+          onEscapeKeyDown: layerEscape((event: KeyboardEvent) =>
             emit("escapeKeyDown", event),
+          ),
           onPointerDownOutside: (event: Event) =>
             emit(
               "pointerDownOutside",

@@ -11,6 +11,15 @@ import {
   MenuTrigger,
 } from "../Menu";
 import { WithoutGenericClick } from "../../utils/generic-click";
+import {
+  SPLIT_BUTTON_CHEVRON_CLASS,
+  SPLIT_BUTTON_CLASS,
+  SPLIT_BUTTON_ITEM_ICON_CLASS,
+  SPLIT_BUTTON_ITEM_WITH_ICON_CLASS,
+  SPLIT_BUTTON_MAIN_CLASS,
+  SPLIT_BUTTON_MENU_CLASS,
+  splitButtonSeamClass,
+} from "../../recipes/menu";
 
 /** An action in a SplitButton's menu (GAP-168). */
 export interface SplitButtonMenuAction {
@@ -81,23 +90,14 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     return (
-      <div
-        ref={ref}
-        className={cn("inline-flex rounded-control shadow-raised", className)}
-        {...props}
-      >
+      <div ref={ref} className={cn(SPLIT_BUTTON_CLASS, className)} {...props}>
         <WithoutGenericClick>
-          {/* The seam tints the inline-end side alone: a colour on all four
-              sides outranked the outline variant's own, and its outline
-              drew white at a fifth over white (site GAP-73). On the subtle
-              variant's pale fill white does not show: the seam is the
-              fill's pressed step, which an emotion sets too (GAP-200). */}
+          {/* The seam tints the inline-end side alone (site GAP-73, GAP-200:
+              recipes/menu.ts). */}
           <Button
             className={cn(
-              "rounded-e-none border-e focus:z-10",
-              variant === "subtle"
-                ? "border-e-[var(--kz-button-bg-pressed)]"
-                : "border-e-theme-fill-foreground/20",
+              SPLIT_BUTTON_MAIN_CLASS,
+              splitButtonSeamClass(variant),
             )}
             onClick={(e) => {
               trackEvent("SplitButton", "split_button_main_clicked");
@@ -113,13 +113,13 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
         <Menu>
           <MenuTrigger asChild>
             <Button
-              className="rounded-s-none px-2 focus:z-10"
+              className={SPLIT_BUTTON_MENU_CLASS}
               variant={variant}
               size={size}
               disabled={disabled}
               aria-label={menuLabel}
             >
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className={SPLIT_BUTTON_CHEVRON_CLASS} />
             </Button>
           </MenuTrigger>
           <MenuContent align="end">
@@ -131,7 +131,9 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
                   key={index}
                   disabled={item.disabled}
                   textValue={item.textValue}
-                  className={item.icon ? "gap-2" : undefined}
+                  className={
+                    item.icon ? SPLIT_BUTTON_ITEM_WITH_ICON_CLASS : undefined
+                  }
                   // onSelect, not onClick: Radix never selects a disabled
                   // item, where a click still reached onClick.
                   onSelect={() => {
@@ -151,7 +153,7 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
                   {item.icon && (
                     <span
                       aria-hidden="true"
-                      className="flex h-4 w-4 shrink-0 items-center justify-center [&>svg]:h-4 [&>svg]:w-4"
+                      className={SPLIT_BUTTON_ITEM_ICON_CLASS}
                     >
                       {item.icon}
                     </span>

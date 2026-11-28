@@ -18,13 +18,10 @@
 // reads a `[String, Boolean]` one. Every spelling is React's prop. A prop
 // that takes any ReactNode is a slot, and none of them.
 import {
-  Search,
   SearchBar,
   BottomNavigation,
   Navbar,
   Sidebar,
-  Menu,
-  ContextMenu,
   Toast,
   Pagination,
   Stepper,
@@ -45,7 +42,6 @@ import {
   DatePicker,
   TimePicker,
   FloatingActionButton,
-  SplitButton,
   ToggleButton,
   Tabs,
   MapOverlay,
@@ -90,8 +86,6 @@ import type { Booleans, Takes } from "./react-adapter";
 
 /** Every React DOM event, and nothing of its own: most parts. */
 const D: Takes = { dom: true, own: [] };
-const searchTakes: Takes = { dom: true, own: ["onClear"] };
-const menuTakes: Takes = { dom: false, own: ["onOpenChange"] };
 const accordionTakes: Takes = { dom: true, own: ["onValueChange"] };
 const datePickerTakes: Takes = {
   dom: true,
@@ -113,13 +107,10 @@ const tourStepTakes: Takes = {
 
 /** By React part. */
 export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
-  [Search, searchTakes],
-  [SearchBar, searchTakes],
+  [SearchBar, { dom: true, own: ["onClear"] }],
   [BottomNavigation, D],
   [Navbar, D],
   [Sidebar, D],
-  [Menu, menuTakes],
-  [ContextMenu, menuTakes],
   [
     Toast,
     {
@@ -175,7 +166,6 @@ export const PART_TAKES: ReadonlyMap<unknown, Takes> = new Map<unknown, Takes>([
   [DatePicker, datePickerTakes],
   [TimePicker, datePickerTakes],
   [FloatingActionButton, D],
-  [SplitButton, { dom: true, own: ["onMainClick"] }],
   [ToggleButton, { dom: true, own: ["onPressedChange", "onResetMixed"] }],
   [Tabs, accordionTakes],
   [MapOverlay, D],
@@ -360,7 +350,6 @@ const html = (
 /** React's `HTMLAttributes`' booleans, and none of its own: most parts. */
 const H = html();
 const backdropBooleans = html(["visible"]);
-const settingsRowBooleans = html(["disabled"]);
 const datePickerBooleans = html(
   [
     "checked",
@@ -389,22 +378,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   Booleans
 >([
   [
-    Search,
-    html(
-      [
-        "checked",
-        "clearable",
-        "disabled",
-        "formNoValidate",
-        "multiple",
-        "readOnly",
-        "required",
-      ],
-      ["capture"],
-      ["error"],
-    ),
-  ],
-  [
     SearchBar,
     html(
       [
@@ -421,13 +394,11 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [BottomNavigation, html(["inset"])],
   [Navbar, html(["logoInset"])],
   [Sidebar, html(["collapsed", "collapsible"])],
-  [Menu, { flags: ["defaultOpen", "modal", "open"], unions: [], texts: [] }],
-  [ContextMenu, { flags: ["modal"], unions: [], texts: [] }],
   [Toast, html(["asChild", "defaultOpen", "forceMount", "open"])],
   [Pagination, H],
   [Stepper, H],
   [Backdrop, backdropBooleans],
-  [SettingsRow, settingsRowBooleans],
+  [SettingsRow, html(["disabled"])],
   [Table, html(["framed", "selectable"])],
   [Tree, html(["checkable", "divided", "virtualized"])],
   [Accordion, html(["asChild", "collapsible", "disabled"])],
@@ -443,7 +414,6 @@ export const PART_BOOLEANS: ReadonlyMap<unknown, Booleans> = new Map<
   [DatePicker, datePickerBooleans],
   [TimePicker, datePickerBooleans],
   [FloatingActionButton, html(["disabled", "formNoValidate", "isLoading"])],
-  [SplitButton, settingsRowBooleans],
   [
     ToggleButton,
     html([

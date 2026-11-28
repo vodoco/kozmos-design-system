@@ -7,6 +7,9 @@ import React from "react";
 import * as KozmosReact from "@kozmos-ds/react";
 import { KozmosButton } from "../index";
 import * as Bridge from "./index";
+// React's Search through the bridge's adapter, as the bridge mounted it
+// before its native port: the specs' text field (test/bridged-parts.ts).
+import { KozmosSearch } from "../../test/bridged-parts";
 import { ADAPTER_BOOLEANS, PART_BOOLEANS } from "./part-takes";
 import {
   bridgeOf,
@@ -52,7 +55,11 @@ const noop = () => {};
 
 const page = (template: string) =>
   defineComponent({
-    components: { ...(Bridge as Record<string, Component>), KozmosButton },
+    components: {
+      ...(Bridge as Record<string, Component>),
+      KozmosButton,
+      KozmosSearch,
+    },
     setup: () => ({ fruit }),
     template,
   });
@@ -224,7 +231,7 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
   it("React's own spelling wins over another given beside it", async () => {
     const given = await propsOf(KozmosReact.Search, () =>
       mount(() =>
-        h(Bridge.KozmosSearch, {
+        h(KozmosSearch, {
           "aria-label": "Gate",
           "read-only": "",
           readOnly: false,
@@ -236,7 +243,7 @@ describe("a boolean prop's attribute, in any spelling a template gives it", () =
   });
 
   it("of two spellings neither of which is React's, the last given wins", () => {
-    const input = PART_BOOLEANS.get(KozmosReact.Search)!;
+    const input = bridgeOf(KozmosSearch)!.booleans!;
     expect(withBooleans({ readonly: "", "read-only": false }, input)).toEqual({
       readOnly: false,
     });
