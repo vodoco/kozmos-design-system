@@ -1,5 +1,0 @@
----
-"@kozmos-ds/react": patch
----
-
-Switch's, RadioGroup's (with RadioGroupItem's cards and tiles), SegmentedControl's and Slider's classes move into the package's shared `recipes` module (`recipes/switch.ts`, `recipes/radio.ts`, `recipes/segmented-control.ts`, `recipes/slider.ts`), with Slider's thumb count, starting values and thumb names, and the mixed group's line and its reset's focus target (`recipes/mixed-group.ts`), which `@kozmos-ds/vue` builds its own `KozmosSwitch`, `KozmosRadioGroup`, `KozmosRadioGroupItem`, `KozmosSegmentedControl` and `KozmosSlider` from, so the two draw the same element (wave V2, choices). Nothing changes for a product: every export is as before, `dist/index.d.ts`, `.d.mts`, `.d.cts` and `style.css` are byte-identical to main's, and the parts' tests pass unchanged. The published files gain `dist/esm/recipes/switch.mjs`, `radio.mjs`, `segmented-control.mjs`, `slider.mjs` and `mixed-group.mjs`. The bundle budget for everything at once moves from 120.30 to 121.11 KB gzip under decision 229: Everything measured 120.61 KB after the move, plus half a kilobyte.

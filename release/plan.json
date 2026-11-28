@@ -4,7 +4,7 @@
   "packages": [
     {
       "name": "@kozmos-ds/vue",
-      "version": "0.17.2-next.0"
+      "version": "0.17.3-next.0"
     }
   ]
 }

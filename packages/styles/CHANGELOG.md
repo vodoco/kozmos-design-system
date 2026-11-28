@@ -1,5 +1,12 @@
 # @kozmos-ds/styles
 
+## 0.17.3
+
+### Patch Changes
+
+- d636477: The design configuration's pure parts move into the package's shared `recipes` module (`recipes/design-config.ts`: the config's shape and defaults, `normalizeDesignConfig`, the custom properties a config sets, reduced motion, and the spotlight's position), which `@kozmos-ds/vue` builds its own `KozmosDesignConfigProvider` from, so a config sets the same properties in both (GAP-291). Nothing changes for a product: `DesignConfigProvider`, `KozmosTheme` and `useDesignConfig` are exported as before, `dist/index.d.ts` and `style.css` are byte-identical to main's, and the design config's tests pass unchanged. The published files gain `dist/esm/recipes/design-config.mjs` in place of `dist/esm/context/design-config.mjs`. `@kozmos-ds/styles`, built from React's and Vue's sources, ships a byte-identical `style.css`: Vue's KozmosDesignConfigProvider draws no class.
+- f2bca3e: A chosen RadioGroup card or tile draws its heavier theme 600 edge in Safari 26.0–26.3 too (GAP-292). WebKit draws no box-shadow on a `<button>` it still draws natively, and the box's only rules that made it a styled button were the scoped preflight's and utilities', which those Safari versions do not apply to a form field, so the chosen edge vanished there, in React and in Vue alike. The box now carries the preflight's button reset (`-webkit-appearance: button; background-image: none`) in owned CSS. With `@scope`, and in Chromium and Firefox, nothing drawn changes.
+
 ## 0.17.2
 
 ### Patch Changes

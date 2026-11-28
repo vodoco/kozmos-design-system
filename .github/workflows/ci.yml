@@ -1024,7 +1024,12 @@ jobs:
         if: ${{ !cancelled() && steps.build-vue.outcome == 'success' }}
         run: pnpm --filter @kozmos-ds/vue test:react18
 
-  # The four Vue browser suites, one browser to a shard, at once. Each shard
+  # The four Vue browser suites, two shards to a browser, all at once: themes
+  # and owned CSS in one, token references and interactions in the other.
+  # One shard to a browser ran four suites for up to 42 minutes after wave
+  # V2 (237 stories), and main's Firefox shard reached the 45-minute limit
+  # on 27 Nov (run 46070727963): split, each shard has room as V3 adds
+  # stories. Each shard
   # builds what it needs itself, as the browsers job's do, so it is a
   # complete, re-runnable check. Each suite serves the built Storybook
   # itself, on a port the system picks (scripts/vue/stories.mjs), and holds
@@ -1040,12 +1045,24 @@ jobs:
       fail-fast: false
       matrix:
         shard:
-          - name: Vue Browser Suites (chromium)
+          - name: Vue Browser Suites (chromium, themes and owned CSS)
             browser: chromium
-          - name: Vue Browser Suites (firefox)
+            suites: themes,owned-css
+          - name: Vue Browser Suites (chromium, token references and interactions)
+            browser: chromium
+            suites: token-references,interactions
+          - name: Vue Browser Suites (firefox, themes and owned CSS)
             browser: firefox
-          - name: Vue Browser Suites (webkit)
+            suites: themes,owned-css
+          - name: Vue Browser Suites (firefox, token references and interactions)
+            browser: firefox
+            suites: token-references,interactions
+          - name: Vue Browser Suites (webkit, themes and owned CSS)
             browser: webkit
+            suites: themes,owned-css
+          - name: Vue Browser Suites (webkit, token references and interactions)
+            browser: webkit
+            suites: token-references,interactions
     # The web job's container, fonts and shell: why is written there.
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
@@ -1087,7 +1104,7 @@ jobs:
         run: bash scripts/ci/check-runner-fonts.sh
 
       - name: Vue Browser Suites
-        run: ADAPTIVE_BROWSER=${{ matrix.shard.browser }} pnpm test:vue-stories
+        run: ADAPTIVE_BROWSER=${{ matrix.shard.browser }} VUE_SUITES=${{ matrix.shard.suites }} pnpm test:vue-stories
 
   # The required check, by its name: it passes only when the Vue job and
   # every browser shard passed. It runs when either failed too (a skipped
