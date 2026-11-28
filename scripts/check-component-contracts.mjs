@@ -268,7 +268,7 @@ const files = {
     "packages/react/src/components/MultiSelect/MultiSelect.figma.tsx",
   reactListbox: "packages/react/src/components/Listbox/Listbox.tsx",
   // Menu's classes, which ContextMenu shares (GAP-155).
-  reactMenu: "packages/react/src/components/Menu/menu-parts.tsx",
+  reactMenu: "packages/react/src/recipes/menu.ts",
   reactMapControlButton:
     "packages/react/src/components/MapControlButton/MapControlButton.tsx",
   reactMapControlButtonFigma:

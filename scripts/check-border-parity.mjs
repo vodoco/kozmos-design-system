@@ -248,8 +248,9 @@ for (const [file, needle, label] of [
     "bg-border",
     "Separator",
   ],
+  // Menu's classes are its recipe's, shared with Vue's KozmosMenu.
   [
-    "packages/react/src/components/Menu/menu-parts.tsx",
+    "packages/react/src/recipes/menu.ts",
     "h-px bg-border",
     "Menu and ContextMenu separator",
   ],

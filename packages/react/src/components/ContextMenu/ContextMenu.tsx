@@ -18,6 +18,10 @@ import {
   menuSubTriggerClass,
   type MenuItemExternalProps,
 } from "../Menu/menu-parts";
+import {
+  openContextMenuAt,
+  opensContextMenuFromKeyboard,
+} from "../../recipes/menu";
 
 // A context menu (GAP-155): Menu's panel and rows, opened where it is asked
 // for: a right click at the pointer, a long press on touch, and the
@@ -41,34 +45,6 @@ const ContextMenuPortal = createThemePortal(ContextMenuPrimitive.Portal);
 const ContextMenuSub = ContextMenuPrimitive.Sub;
 const ContextMenuRadioGroup = ContextMenuPrimitive.RadioGroup;
 
-/**
- * The keyboard's context-menu key and Shift+F10 open the menu at the item
- * that has focus, at its inline start and block end, in every browser and on
- * every system: a browser that fires `contextmenu` for them places it
- * somewhere of its own, and macOS's fire none.
- */
-function opensFromKeyboard(event: React.KeyboardEvent) {
-  return (
-    event.key === "ContextMenu" ||
-    (event.key === "F10" &&
-      event.shiftKey &&
-      !event.altKey &&
-      !event.ctrlKey &&
-      !event.metaKey)
-  );
-}
-
-/**
- * The reading direction the item is in: its nearest `dir` of "rtl" or
- * "ltr", else (`dir="auto"`, or none) its computed direction, which the
- * browser resolves.
- */
-function readsRightToLeft(item: HTMLElement) {
-  const dir = item.closest("[dir]")?.getAttribute("dir")?.toLowerCase();
-  if (dir === "rtl" || dir === "ltr") return dir === "rtl";
-  return getComputedStyle(item).direction === "rtl";
-}
-
 const ContextMenuTrigger = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Trigger>
@@ -78,21 +54,15 @@ const ContextMenuTrigger = React.forwardRef<
     disabled={disabled}
     onKeyDown={(event) => {
       onKeyDown?.(event);
-      if (event.defaultPrevented || disabled || !opensFromKeyboard(event))
+      if (
+        event.defaultPrevented ||
+        disabled ||
+        !opensContextMenuFromKeyboard(event)
+      )
         return;
       event.preventDefault();
-      const item = event.target as HTMLElement;
-      const box = item.getBoundingClientRect();
-      const rtl = readsRightToLeft(item);
-      // Radix opens the menu at a contextmenu event's point.
-      item.dispatchEvent(
-        new MouseEvent("contextmenu", {
-          bubbles: true,
-          cancelable: true,
-          clientX: rtl ? box.right : box.left,
-          clientY: box.bottom,
-        }),
-      );
+      // Radix opens the menu at a contextmenu event's point: the item's.
+      openContextMenuAt(event.target as HTMLElement);
     }}
     {...props}
   />
