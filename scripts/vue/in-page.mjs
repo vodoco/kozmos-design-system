@@ -895,6 +895,29 @@ export function installVueProbes() {
     (LAYOUT_RESOLVED.test(property) && RESOLVED_BY_LAYOUT.test(value));
 
   /**
+   * A logical longhand's physical one, for an element written horizontally
+   * in `rtl` or not: a utility declares `border-inline-end-width`
+   * (Tailwind's `border-e`) or `border-start-end-radius` (`rounded-e-none`)
+   * where an owned shorthand expands to `border-right-width` and
+   * `border-top-right-radius`, and the two name one property of the box.
+   * Itself when it is no logical longhand.
+   */
+  function physical(longhand, rtl) {
+    const start = rtl ? "right" : "left";
+    const end = rtl ? "left" : "right";
+    const corner = (block, inline) =>
+      `border-${block}-${inline === "start" ? start : end}-radius`;
+    const radius = longhand.match(/^border-(start|end)-(start|end)-radius$/);
+    if (radius)
+      return corner(radius[1] === "start" ? "top" : "bottom", radius[2]);
+    return longhand
+      .replace(/-inline-start(?=-|$)/, `-${start}`)
+      .replace(/-inline-end(?=-|$)/, `-${end}`)
+      .replace(/-block-start(?=-|$)/, "-top")
+      .replace(/-block-end(?=-|$)/, "-bottom");
+  }
+
+  /**
    * What the owned rules (outside @scope, naming a .kozmos- class) declare
    * for each held element, as computed now, by longhand: `{ key: { value,
    * selector, declared, contested } }`, keyed by the element's place, its
@@ -911,14 +934,16 @@ export function installVueProbes() {
     const out = {};
     elements.forEach((element, index) => {
       const scoped = new Set();
+      const rtl = getComputedStyle(element).direction === "rtl";
       for (const { rule, pseudo } of matched.get(element))
         if (rule.scope)
           for (const { property, value } of rule.declarations)
             if (!property.startsWith("--"))
               for (const longhand of longhands(property, value))
-                scoped.add(
-                  `${pseudo ? pseudo.replace(/^:+/, "::") : ""} ${longhand}`,
-                );
+                for (const name of new Set([longhand, physical(longhand, rtl)]))
+                  scoped.add(
+                    `${pseudo ? pseudo.replace(/^:+/, "::") : ""} ${name}`,
+                  );
       for (const { rule, pseudo } of matched.get(element)) {
         if (!rule.owned) continue;
         for (const { property, value } of rule.declarations) {
