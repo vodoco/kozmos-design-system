@@ -4,7 +4,11 @@ Kozmos is consumed from this repository's `packages/android` source as an Androi
 
 ## Unreleased — repository source
 
-Native source changes on `main` after the 0.17.2 snapshot below. Nothing here is tagged yet.
+Native source changes on `main` after the 0.17.3 snapshot below. Nothing here is tagged yet.
+
+## 0.17.3 — repository snapshot
+
+No native source change since 0.17.2. The 0.17.3 changes (the recipes wave V2 of the Vue port shares with React, and GAP-292's radio card edge in Safari) are in React and the stylesheet only. This entry does not announce a native registry release.
 
 ## 0.17.2 — repository snapshot
 
