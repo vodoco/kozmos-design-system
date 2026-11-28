@@ -3381,9 +3381,9 @@ Wave V2 of the Vue port: the form controls and overlays are native Vue, so 59 of
 parts now render without React. It is built on `@kozmos-ds/styles` and `@kozmos-ds/react` 0.17.3 and
 pins both exactly: `npm install @kozmos-ds/vue@next vue`.
 
-- **New native parts in `@kozmos-ds/vue`**, each drawing the element its React counterpart draws from the
-  same recipes, held to React's by the API contract and DOM parity checks, with visual baselines that
-  match React's byte for byte:
+- **Wave V2's native parts in `@kozmos-ds/vue`.** Each draws its React counterpart's element from the
+  shared recipes and is held to React's API and DOM by the contract and parity checks; every visual
+  baseline with a React counterpart is byte-identical to React's:
   - controls and fields: `KozmosCounter`, `KozmosIconButton`, `KozmosCheckbox`, `KozmosRating`,
     `KozmosFieldWrapper`, `KozmosInput`, `KozmosTextarea`, `KozmosPasswordInput`, `KozmosNumberInput`
     and `KozmosOTPInput` (#625);
