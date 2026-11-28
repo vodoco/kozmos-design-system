@@ -8,6 +8,7 @@ import * as KozmosBridge from "../src/react-bridge/index";
 import {
   COMPOSABLES,
   LEAVING_BRIDGE,
+  NOT_IN_VUE,
   PORTS,
   REACT_SOURCE,
   type Port,
@@ -42,6 +43,68 @@ describe("every Vue export answers to React", () => {
       ...COMPOSABLES.map((pair) => pair.react),
     ])
       expect(react.has(name), `@kozmos-ds/react exports no ${name}`).toBe(true);
+  });
+});
+
+/**
+ * The reverse: every React part a Vue app can use, natively or through the
+ * bridge, by the name React gives it with `Kozmos` before it. A React
+ * export is a part when it is a function component or a forwardRef, memo or
+ * lazy one; a constant or a context provider (`EmptyStateDensity`) is not.
+ * A part that is another export under a second name (`FormField` is
+ * `FieldWrapper`) is reachable when that export is. A part Vue cannot reach
+ * is named in `NOT_IN_VUE` with why and its wave, and a name there that Vue
+ * reaches fails, so the list only shrinks.
+ */
+const COMPONENT_TYPES = new Set(
+  ["react.forward_ref", "react.memo", "react.lazy"].map((name) =>
+    Symbol.for(name),
+  ),
+);
+const isPart = (value: unknown) =>
+  typeof value === "function" ||
+  (typeof value === "object" &&
+    value !== null &&
+    COMPONENT_TYPES.has((value as { $$typeof?: symbol }).$$typeof!));
+const reactParts = () =>
+  Object.entries(KozmosReact)
+    .filter(([name, value]) => /^[A-Z]/.test(name) && isPart(value))
+    .map(([name]) => name)
+    .sort();
+const reachable = (name: string): boolean => {
+  if (
+    PORTS.some((port) => port.react === name) ||
+    `Kozmos${name}` in KozmosVue ||
+    `Kozmos${name}` in KozmosBridge
+  )
+    return true;
+  const value = (KozmosReact as Record<string, unknown>)[name];
+  return Object.entries(KozmosReact).some(
+    ([other, same]) =>
+      other !== name &&
+      same === value &&
+      (PORTS.some((port) => port.react === other) ||
+        `Kozmos${other}` in KozmosVue ||
+        `Kozmos${other}` in KozmosBridge),
+  );
+};
+
+describe("every React part is reachable from Vue", () => {
+  it("is native, bridged, or named in NOT_IN_VUE", () => {
+    expect(
+      reactParts().filter((name) => !reachable(name) && !(name in NOT_IN_VUE)),
+    ).toEqual([]);
+  });
+
+  it("names in NOT_IN_VUE only React parts Vue cannot reach, each with why", () => {
+    const parts = new Set(reactParts());
+    expect(
+      Object.keys(NOT_IN_VUE).filter(
+        (name) => !parts.has(name) || reachable(name),
+      ),
+    ).toEqual([]);
+    for (const { why } of Object.values(NOT_IN_VUE))
+      expect(why.trim().length).toBeGreaterThan(20);
   });
 });
 

@@ -1476,6 +1476,149 @@ export const PORTS: Port[] = [
 export const LEAVING_BRIDGE: Record<string, string> = {};
 
 /**
+ * The wave a part reaches Vue in: V3 overlays, feedback and menus; V4
+ * navigation and data; V5 pickers; the SDK track after the core parts
+ * (decision of 22 Nov); or never, with why.
+ */
+export type Wave = "V3" | "V4" | "V5" | "SDK" | "never";
+
+const MENU_PARTS =
+  "a part of Menu, which the bridge mounts only as a whole: a Vue app cannot compose Menu's content, items, groups or submenus until Menu and its parts are ported";
+const CONTEXT_MENU_PARTS =
+  "a part of ContextMenu, which the bridge mounts only as a whole: a Vue app cannot compose its trigger, content or items until ContextMenu and its parts are ported";
+const PAGINATION_PARTS =
+  "a part of Pagination, which the bridge mounts only as a whole: a Vue app cannot compose its own pager from these until Pagination and its parts are ported";
+const TABLE_PARTS =
+  "a part of Table, which the bridge mounts only as a whole: a Vue app cannot compose rows, cells or selection until Table and its parts are ported";
+const TREE_PARTS =
+  "a row of Tree, which the bridge mounts only as a whole: a Vue app cannot compose Tree's rows until Tree and its rows are ported";
+const SDK_PART =
+  "an SDK part with no Vue port and no bridge entry; the SDK parts come after every core part";
+const NOT_EXPORTED_OVERLAY =
+  "not exported from Vue, by decision (27 Nov): React's content part always draws its own portal and overlay (DialogContent, DrawerContent), and Vue's native one draws Reka's, with portalContainer for the target, as React's does. The separate part is useful only beside a content built from Radix itself, which no story, example or app in this repository does";
+
+/**
+ * React parts a Vue app can reach neither from the main entry nor from the
+ * bridge, by their React export, each with why and the wave that brings it
+ * (`Wave`). `coverage.spec.ts` fails on a React part that is neither
+ * reachable nor here, and on a name here that is not a React part or that
+ * Vue now reaches, so the list only shrinks as the waves land.
+ */
+export const NOT_IN_VUE: Record<string, { wave: Wave; why: string }> = {
+  KozmosTheme: {
+    wave: "never",
+    why: "React's alias for DesignConfigProvider; Vue exports KozmosDesignConfigProvider, and in Vue KozmosTheme is the theme type (GAP-291)",
+  },
+  DialogPortal: { wave: "never", why: NOT_EXPORTED_OVERLAY },
+  DialogOverlay: { wave: "never", why: NOT_EXPORTED_OVERLAY },
+  DrawerPortal: { wave: "never", why: NOT_EXPORTED_OVERLAY },
+  DrawerOverlay: { wave: "never", why: NOT_EXPORTED_OVERLAY },
+  ...Object.fromEntries(
+    [
+      "MenuCheckboxItem",
+      "MenuContent",
+      "MenuGroup",
+      "MenuItem",
+      "MenuLabel",
+      "MenuPortal",
+      "MenuRadioGroup",
+      "MenuRadioItem",
+      "MenuSeparator",
+      "MenuShortcut",
+      "MenuSub",
+      "MenuSubContent",
+      "MenuSubTrigger",
+      "MenuTrigger",
+    ].map((name) => [name, { wave: "V3", why: MENU_PARTS }]),
+  ),
+  ...Object.fromEntries(
+    [
+      "ContextMenuCheckboxItem",
+      "ContextMenuContent",
+      "ContextMenuGroup",
+      "ContextMenuItem",
+      "ContextMenuLabel",
+      "ContextMenuPortal",
+      "ContextMenuRadioGroup",
+      "ContextMenuRadioItem",
+      "ContextMenuSeparator",
+      "ContextMenuShortcut",
+      "ContextMenuSub",
+      "ContextMenuSubContent",
+      "ContextMenuSubTrigger",
+      "ContextMenuTrigger",
+    ].map((name) => [name, { wave: "V3", why: CONTEXT_MENU_PARTS }]),
+  ),
+  ...Object.fromEntries(
+    [
+      "PaginationContent",
+      "PaginationEllipsis",
+      "PaginationItem",
+      "PaginationLink",
+      "PaginationNext",
+      "PaginationPrevious",
+    ].map((name) => [name, { wave: "V4", why: PAGINATION_PARTS }]),
+  ),
+  ...Object.fromEntries(
+    [
+      "TableBody",
+      "TableCaption",
+      "TableCell",
+      "TableFooter",
+      "TableHead",
+      "TableHeader",
+      "TableRow",
+      "TableRowSelect",
+      "TableSelectAll",
+    ].map((name) => [name, { wave: "V4", why: TABLE_PARTS }]),
+  ),
+  ...Object.fromEntries(
+    [
+      "TreeChildItemRow",
+      "TreeItemRow",
+      "TreeParentItemRow",
+      "TreeSectionRow",
+    ].map((name) => [name, { wave: "V4", why: TREE_PARTS }]),
+  ),
+  ActionCard: {
+    wave: "V4",
+    why: "a core part (rich content in an assistant's turn) with no Vue port and no bridge entry",
+  },
+  UserMessage: {
+    wave: "V4",
+    why: "a core part (the visitor's turn in a conversation) with no Vue port and no bridge entry",
+  },
+  Calendar: {
+    wave: "V5",
+    why: "a core picker with no bridge entry of its own: DatePicker and DateRangePicker are bridged, the month grid they draw is not",
+  },
+  ...Object.fromEntries(
+    [
+      "AICompanionPanel",
+      "AIInputBar",
+      "AIMessage",
+      "AIMessageList",
+      "AISearchButton",
+      "ArrivalPanel",
+      "CategoryField",
+      "ClientAppBanner",
+      "DirectionIcon",
+      "Itinerary",
+      "LanguageSwitcher",
+      "ManoeuvreCard",
+      "MapAttribution",
+      "MapInfo",
+      "MapInfoPanel",
+      "MapStatusPill",
+      "POIResultGroup",
+      "RouteLocationField",
+      "RouteProgressRail",
+      "RouteSetupPanel",
+    ].map((name) => [name, { wave: "SDK", why: SDK_PART }]),
+  ),
+};
+
+/**
  * Composables the main entry exports, with the React hook each answers to.
  * The contract holds what each returns to React's: the same keys, a ref in
  * Vue for each value in React, the same functions.
