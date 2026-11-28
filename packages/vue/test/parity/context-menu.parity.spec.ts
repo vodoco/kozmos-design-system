@@ -28,6 +28,7 @@ import {
 } from "../../src/index";
 import {
   inBoth,
+  openBeside,
   trees,
   type MenuParts,
   type MenuSpec,
@@ -161,6 +162,111 @@ describe("KozmosContextMenu behaves as React's ContextMenu", () => {
     expect(seen.vue).toEqual(seen.react);
     // Menu_item_selected, as React's, under ContextMenu's name.
     expect(seen.events.vue).toEqual(seen.events.react);
+  });
+
+  it("a right click on its open trigger closes it and opens it again at the new point, as Radix's dismisses then opens; modal and not", async () => {
+    // A right press on the trigger: Radix's layer dismisses on it (Reka's
+    // prevents that), then its contextmenu opens the menu at its point.
+    const rightPress = (x: number, y: number): Step => ({
+      name: `right press at ${x}, ${y}`,
+      act: () => {
+        const target = area();
+        const init = {
+          bubbles: true,
+          cancelable: true,
+          button: 2,
+          buttons: 2,
+          clientX: x,
+          clientY: y,
+        };
+        target.dispatchEvent(
+          new PointerEvent("pointerdown", { ...init, pointerType: "mouse" }),
+        );
+        target.dispatchEvent(new MouseEvent("mousedown", init));
+      },
+    });
+    const placed = (name: string): Step => ({
+      name,
+      act: () => {},
+      dom: true,
+    });
+    for (const modal of [true, false]) {
+      const seen = await inBoth(
+        draw(
+          { page: true, root: { modal }, nodes },
+          {
+            root: ["openChange"],
+            content: [
+              "pointerDownOutside",
+              "interactOutside",
+              "closeAutoFocus",
+            ],
+          },
+        ),
+        [
+          rightClick(30, 40),
+          placed("opened at 30, 40"),
+          rightPress(120, 64),
+          rightClick(120, 64),
+          placed("opened at 120, 64"),
+        ],
+      );
+      expect((seen.react.at(-1) as { log: string[] }).log).toEqual([
+        "root:openChange true",
+        "content:pointerDownOutside",
+        "content:interactOutside",
+        "root:openChange false",
+        "content:closeAutoFocus",
+        "root:openChange true",
+      ]);
+      expect(seen.vue).toEqual(seen.react);
+    }
+  });
+
+  it("focus moving into a Dialog opened beside it is outside, as Radix's tree says: focusOutside unprevented, interactOutside prevented if modal, and a menu that is not modal, and a submenu, close", async () => {
+    for (const modal of [true, false]) {
+      const seen = await inBoth(
+        draw(
+          { nodes, dialogBeside: true, root: { modal } },
+          {
+            root: ["openChange"],
+            content: ["focusOutside", "interactOutside"],
+            sub: ["focusOutside", "interactOutside"],
+            subOpen: true,
+          },
+        ),
+        [
+          rightClick(),
+          pressKey("End"),
+          pressKey("ArrowUp"),
+          pressKey("ArrowRight"),
+          { name: "a Dialog opens beside it", act: () => openBeside() },
+        ],
+      );
+      expect((seen.react.at(-1) as { log: string[] }).log).toEqual(
+        modal
+          ? [
+              "root:openChange true",
+              "sub:openChange true",
+              "content:focusOutside",
+              "content:interactOutside (prevented)",
+              "sub:focusOutside",
+              "sub:interactOutside",
+              "sub:openChange false",
+            ]
+          : [
+              "root:openChange true",
+              "sub:openChange true",
+              "content:focusOutside",
+              "content:interactOutside",
+              "root:openChange false",
+              "sub:focusOutside",
+              "sub:interactOutside",
+              "sub:openChange false",
+            ],
+      );
+      expect(seen.vue).toEqual(seen.react);
+    }
   });
 
   it("is placed at the point it was opened at", async () => {

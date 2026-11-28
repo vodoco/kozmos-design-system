@@ -29,6 +29,7 @@ import {
 } from "../../src/index";
 import {
   inBoth,
+  openBeside,
   trees,
   type MenuParts,
   type MenuSpec,
@@ -484,6 +485,51 @@ describe("KozmosMenu behaves as React's Menu", () => {
       );
       expect((seen.react.at(-1) as { log: string[] }).log).toContain(
         "sub:escapeKeyDown",
+      );
+      expect(seen.vue).toEqual(seen.react);
+    }
+  });
+
+  it("focus moving into a Dialog opened beside it is outside, as Radix's tree says: focusOutside unprevented, interactOutside prevented if modal, and a menu that is not modal, and a submenu, close", async () => {
+    for (const modal of [true, false]) {
+      const seen = await inBoth(
+        draw(
+          { ...fruit, dialogBeside: true, root: { modal } },
+          {
+            root: ["openChange"],
+            content: ["focusOutside", "interactOutside"],
+            sub: ["focusOutside", "interactOutside"],
+            subOpen: true,
+          },
+        ),
+        [
+          enterTrigger,
+          pressKey("m"),
+          pressKey("ArrowRight"),
+          { name: "a Dialog opens beside it", act: () => openBeside() },
+        ],
+      );
+      expect((seen.react.at(-1) as { log: string[] }).log).toEqual(
+        modal
+          ? [
+              "root:openChange true",
+              "sub:openChange true",
+              "content:focusOutside",
+              "content:interactOutside (prevented)",
+              "sub:focusOutside",
+              "sub:interactOutside",
+              "sub:openChange false",
+            ]
+          : [
+              "root:openChange true",
+              "sub:openChange true",
+              "content:focusOutside",
+              "content:interactOutside",
+              "sub:focusOutside",
+              "sub:interactOutside",
+              "sub:openChange false",
+              "root:openChange false",
+            ],
       );
       expect(seen.vue).toEqual(seen.react);
     }

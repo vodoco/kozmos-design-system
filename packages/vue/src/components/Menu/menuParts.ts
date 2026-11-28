@@ -54,7 +54,7 @@ import {
 } from "#kozmos-recipes";
 import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
 import { useKozmosDensity } from "../../theme/injection";
-import { useOverlayPortal } from "../shared/layers";
+import { layerEscape, useOverlayPortal } from "../shared/layers";
 
 /**
  * What Menu's and ContextMenu's parts share (GAP-155): a context menu is
@@ -114,6 +114,8 @@ interface PanelState {
 const PanelKey: InjectionKey<PanelState> = Symbol("KozmosMenuPanel");
 /** Whether the submenu around a part is open. */
 const SubOpenKey: InjectionKey<() => boolean> = Symbol("KozmosMenuSubOpen");
+/** Says the submenu around a part is about to close itself. */
+const SubClosingKey: InjectionKey<() => void> = Symbol("KozmosMenuSubClosing");
 
 /**
  * The presses and focus moves outside that a menu's panel took to dismiss
@@ -126,7 +128,11 @@ const dismissing = new WeakSet<Event>();
 /** After a panel's interactOutside: the menu will close on it, unless prevented. */
 export function markDismissing(event: CustomEvent) {
   const original = event.detail?.originalEvent as Event | undefined;
-  if (original && !event.defaultPrevented) dismissing.add(original);
+  // A press only: Radix dismisses on it at once (a discrete event), and
+  // its submenu's panel is gone before it hears it; a focus move is told
+  // to each panel, as Reka tells it.
+  if (original?.type === "pointerdown" && !event.defaultPrevented)
+    dismissing.add(original);
 }
 const dismissed = (event: CustomEvent) =>
   dismissing.has(event.detail?.originalEvent as Event);
@@ -611,8 +617,9 @@ export function usePanel(options: {
   onUpdated(hold);
   onBeforeUnmount(giveBack);
   const listeners = {
-    onEscapeKeyDown: once("onEscapeKeyDown", (event: KeyboardEvent) =>
-      emit("escapeKeyDown", event),
+    onEscapeKeyDown: once(
+      "onEscapeKeyDown",
+      layerEscape((event: KeyboardEvent) => emit("escapeKeyDown", event)),
     ),
     onPointerDownOutside: once("onPointerDownOutside", (event: CustomEvent) =>
       emit("pointerDownOutside", event),
@@ -984,16 +991,32 @@ export function createMenuParts(
       let leaving = false;
       onBeforeUnmount(() => (leaving = true));
       provide(SubOpenKey, () => own.value);
+      // A submenu that closes itself (a focus outside it) says so, as
+      // Radix's does, even as the menu around it closes too.
+      let closingItself = false;
+      provide(SubClosingKey, () => {
+        closingItself = true;
+        queueMicrotask(() => (closingItself = false));
+      });
       return () =>
         h(
           reka.Sub,
           {
-            open: props.open,
-            defaultOpen: props.defaultOpen ?? false,
+            // Held here, so it can say a change as Radix's does.
+            open: props.open ?? own.value,
             "onUpdate:open": (open: boolean) => {
+              // Said only as it changes, as Radix's controllable state.
+              if (open === own.value && props.open === undefined) return;
               own.value = open;
-              if (!open && (leaving || !parentOpen())) return;
-              emit("update:open", open);
+              const itself = closingItself;
+              closingItself = false;
+              if (!open && !itself && (leaving || !parentOpen())) return;
+              // A submenu the app does not hold says it once the change is
+              // drawn, as Radix's says it in an effect; one it holds, at
+              // once.
+              if (props.open === undefined)
+                queueMicrotask(() => emit("update:open", open));
+              else emit("update:open", open);
             },
           },
           () => slots.default?.(),
@@ -1066,6 +1089,7 @@ export function createMenuParts(
     setup(props, { attrs, emit, slots }) {
       const keys = useRadixKeys(() => props.loop);
       const once = onceEach();
+      const closing = inject(SubClosingKey, () => {});
 
       return () => {
         const { class: className, ...rest } = attrs;
@@ -1079,8 +1103,11 @@ export function createMenuParts(
               forceMount: props.forceMount,
               loop: props.loop,
               class: cn(menuContentClass, normalizeClass(className)),
-              onEscapeKeyDown: once("onEscapeKeyDown", (event: KeyboardEvent) =>
-                emit("escapeKeyDown", event),
+              onEscapeKeyDown: once(
+                "onEscapeKeyDown",
+                layerEscape((event: KeyboardEvent) =>
+                  emit("escapeKeyDown", event),
+                ),
               ),
               onPointerDownOutside: once(
                 "onPointerDownOutside",
@@ -1090,7 +1117,10 @@ export function createMenuParts(
                 },
               ),
               onFocusOutside: once("onFocusOutside", (event: CustomEvent) => {
-                if (!dismissed(event)) emit("focusOutside", event as never);
+                if (dismissed(event)) return;
+                emit("focusOutside", event as never);
+                // Reka's submenu closes on it next, unless prevented.
+                if (!event.defaultPrevented) closing();
               }),
               onInteractOutside: once(
                 "onInteractOutside",

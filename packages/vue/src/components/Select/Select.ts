@@ -77,6 +77,7 @@ import { useListens } from "../FieldWrapper/fieldModel";
 import { drawn } from "../drawn";
 import { callAll, useInputModality } from "../Listbox/options";
 import { ThemeKey, useKozmosDensity } from "../../theme/injection";
+import { layerEscape } from "../shared/layers";
 import type {
   KozmosSelectAlign,
   KozmosSelectDirection,
@@ -841,8 +842,9 @@ export const KozmosSelectContent = defineComponent({
             updatePositionStrategy: props.updatePositionStrategy,
             position: props.position,
             onCloseAutoFocus: (event: Event) => emit("closeAutoFocus", event),
-            onEscapeKeyDown: (event: KeyboardEvent) =>
+            onEscapeKeyDown: layerEscape((event: KeyboardEvent) =>
               emit("escapeKeyDown", event),
+            ),
             onPointerDownOutside: (
               event: CustomEvent<{ originalEvent: PointerEvent }>,
             ) => emit("pointerDownOutside", event),

@@ -1,7 +1,22 @@
 import * as React from "react";
 import { act } from "react";
 import { defineComponent, h, ref, type Component, type VNode } from "vue";
+import * as KozmosReact from "@kozmos-ds/react";
+import {
+  KozmosDialog,
+  KozmosDialogContent,
+  KozmosDialogDescription,
+  KozmosDialogTitle,
+} from "../../src/index";
 import type { KozmosAnalyticsEvent } from "../../src/theme/injection";
+
+const Dialog: Pair = [KozmosReact.Dialog, KozmosDialog];
+const DialogContent: Pair = [KozmosReact.DialogContent, KozmosDialogContent];
+const DialogTitle: Pair = [KozmosReact.DialogTitle, KozmosDialogTitle];
+const DialogDescription: Pair = [
+  KozmosReact.DialogDescription,
+  KozmosDialogDescription,
+];
 import { body, e, mountReact, mountVue, read, settle } from "./overlays";
 
 /**
@@ -59,6 +74,11 @@ export type MenuNode =
     };
 
 export interface MenuSpec {
+  /**
+   * A Dialog drawn beside the menu, not inside it, which `openBeside()`
+   * opens over it as a page would (its own trigger is not the menu's).
+   */
+  dialogBeside?: boolean;
   root?: Props;
   /** The trigger's props, and its child: a `<button>` as its own child, or text. */
   trigger?: Props;
@@ -78,6 +98,9 @@ const asVue = ({ className, ...rest }: Props = {}) => ({
   ...rest,
   ...(className === undefined ? {} : { class: className }),
 });
+
+/** Opens the Dialog a spec draws beside its menu (`dialogBeside`). */
+export let openBeside: () => void = () => {};
 
 /** The callbacks heard, React's by its name and Vue's by the same. */
 export function useLog() {
@@ -238,10 +261,46 @@ export function trees(
     );
   }
 
+  function ReactBeside() {
+    const [open, setOpen] = React.useState(false);
+    openBeside = () => setOpen(true);
+    return e(
+      Dialog[0],
+      { open, onOpenChange: setOpen },
+      e(
+        DialogContent[0],
+        null,
+        e(DialogTitle[0], null, "Level 2"),
+        e(DialogDescription[0], null, "Rename the level"),
+        e("button", { type: "button" }, "In the dialog"),
+      ),
+    );
+  }
+  const VueBeside = defineComponent({
+    setup() {
+      const open = ref(false);
+      openBeside = () => (open.value = true);
+      return () =>
+        h(
+          Dialog[1],
+          {
+            open: open.value,
+            "onUpdate:open": (next: boolean) => (open.value = next),
+          },
+          () =>
+            h(DialogContent[1], null, () => [
+              h(DialogTitle[1], null, () => "Level 2"),
+              h(DialogDescription[1], null, () => "Rename the level"),
+              h("button", { type: "button" }, "In the dialog"),
+            ]),
+        );
+    },
+  });
   const react = () =>
     e(
       React.Fragment,
       null,
+      spec.dialogBeside ? e(ReactBeside, { key: "beside" }) : null,
       spec.page
         ? [
             e("button", { key: "host", type: "button", id: "host" }, "Host"),
@@ -372,6 +431,7 @@ export function trees(
 
   const vueRoot = { ...spec.root };
   const vue = () => [
+    ...(spec.dialogBeside ? [h(VueBeside)] : []),
     ...(spec.page
       ? [
           h("button", { type: "button", id: "host" }, "Host"),
@@ -490,6 +550,11 @@ export async function inBoth(
     }
     seen.events[side] = read(events);
   }
+  if (process.env.MENUS_DEBUG)
+    (await import("node:fs")).appendFileSync(
+      process.env.MENUS_DEBUG,
+      JSON.stringify((globalThis as any).__dbg) + "\n",
+    );
   if (process.env.MENUS_DEBUG)
     (await import("node:fs")).appendFileSync(
       process.env.MENUS_DEBUG,

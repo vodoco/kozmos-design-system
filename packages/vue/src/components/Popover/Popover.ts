@@ -35,7 +35,12 @@ import {
 } from "#kozmos-recipes";
 import { CONTENT_EVENTS, contentListeners } from "../Dialog/Dialog";
 import { POPPER_PROPS, popperProps } from "../Tooltip/Tooltip";
-import { radixArrow, triggerChild, useOverlayPortal } from "../shared/layers";
+import {
+  layerEscape,
+  radixArrow,
+  triggerChild,
+  useOverlayPortal,
+} from "../shared/layers";
 import type { KozmosOverlayAlign } from "../Tooltip/types";
 
 /** Anything a popover can be placed beside: an element, or a rect. */
@@ -344,8 +349,11 @@ export const KozmosPopoverContent = defineComponent({
                 if (!focusIfFocusable(invoker)) focusIfFocusable(anchor?.value);
               });
             }),
-            onEscapeKeyDown: once("onEscapeKeyDown", (event: KeyboardEvent) =>
-              emit("escapeKeyDown", event),
+            onEscapeKeyDown: once(
+              "onEscapeKeyDown",
+              layerEscape((event: KeyboardEvent) =>
+                emit("escapeKeyDown", event),
+              ),
             ),
             onPointerDownOutside: once(
               "onPointerDownOutside",

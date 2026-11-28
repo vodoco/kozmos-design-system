@@ -40,6 +40,7 @@ import {
   createMenuParts,
   elementOf,
   given,
+  markDismissing,
   MenuModalKey,
   PANEL_EVENTS,
   panelOf,
@@ -85,6 +86,7 @@ export const KozmosContextMenu = defineComponent({
       computed(() => props.modal),
     );
     const point = shallowRef<Point>({ x: 0, y: 0 });
+    const open = shallowRef(false);
     provide(PointKey, {
       point,
       reference: {
@@ -98,7 +100,14 @@ export const KozmosContextMenu = defineComponent({
         {
           dir: props.dir,
           modal: props.modal,
-          "onUpdate:open": (open: boolean) => emit("openChange", open),
+          // Held here, so each change is said as it is made, as Radix's
+          // ContextMenu calls onOpenChange as it sets its state (Reka's
+          // own state says it a flush later).
+          open: open.value,
+          "onUpdate:open": (next: boolean) => {
+            open.value = next;
+            emit("openChange", next);
+          },
         },
         () => slots.default?.(),
       );
@@ -258,6 +267,9 @@ export const KozmosContextMenuContent = defineComponent({
     const at = inject(PointKey)!;
     const modal = inject(MenuModalKey, undefined);
     const self = shallowRef<unknown>(null);
+    // A press or focus outside a menu that is not modal, as Radix's
+    // ContextMenuContent marks it.
+    let interacted = false;
     const panel = usePanel({
       props,
       attrs,
@@ -299,9 +311,38 @@ export const KozmosContextMenuContent = defineComponent({
                 class: cn(menuContentClass, normalizeClass(className)),
                 "data-kozmos-density": panel.portal.density.value,
                 ...panel.listeners,
+                onInteractOutside: panel.once(
+                  "onInteractOutside",
+                  (event: CustomEvent) => {
+                    emit("interactOutside", event as never);
+                    markDismissing(event);
+                    if (event.defaultPrevented) return;
+                    if (!root.modal.value) interacted = true;
+                    // A right press on the trigger: Reka keeps the menu
+                    // open (ContextMenuContent prevents this press, so its
+                    // layer does not dismiss), Radix's layer dismisses, and
+                    // the contextmenu after it opens the menu again at its
+                    // point. Closed here, as Radix's dismiss closes it.
+                    const original = event.detail?.originalEvent as
+                      | PointerEvent
+                      | undefined;
+                    if (
+                      original?.button === 2 &&
+                      event.target === root.triggerElement.value
+                    )
+                      root.onOpenChange(false);
+                  },
+                ),
                 onCloseAutoFocus: panel.once(
                   "onCloseAutoFocus",
-                  (event: Event) => emit("closeAutoFocus", event),
+                  (event: Event) => {
+                    emit("closeAutoFocus", event);
+                    // Radix's keeps focus where a press outside a menu that
+                    // is not modal put it; Reka's, here, never heard one.
+                    if (!event.defaultPrevented && interacted)
+                      event.preventDefault();
+                    interacted = false;
+                  },
                 ),
               },
               rest,

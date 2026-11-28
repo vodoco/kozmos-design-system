@@ -4,6 +4,7 @@ import {
   h,
   inject,
   mergeProps,
+  nextTick,
   normalizeClass,
   provide,
   shallowRef,
@@ -69,15 +70,26 @@ export const KozmosMenu = defineComponent({
       MenuModalKey,
       computed(() => props.modal),
     );
+    // Held here, so a change is said as Radix's says it: a menu the app
+    // holds at once, one it does not once the change is drawn (Radix's
+    // controllable state says it in an effect, after a submenu's).
+    const own = shallowRef(props.defaultOpen ?? false);
     return () =>
       h(
         RekaRoot,
         {
-          open: props.open,
-          defaultOpen: props.defaultOpen ?? false,
+          open: props.open ?? own.value,
           dir: props.dir,
           modal: props.modal,
-          "onUpdate:open": (open: boolean) => emit("update:open", open),
+          "onUpdate:open": (open: boolean) => {
+            if (props.open !== undefined) {
+              if (open !== props.open) emit("update:open", open);
+              return;
+            }
+            if (open === own.value) return;
+            own.value = open;
+            void nextTick(() => emit("update:open", open));
+          },
         },
         () => slots.default?.(),
       );

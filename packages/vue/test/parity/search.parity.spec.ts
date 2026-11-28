@@ -337,6 +337,10 @@ describe("KozmosSearch's clear (GAP-161), as React's", () => {
 });
 
 describe("a native Search in a native Dialog and Popover", () => {
+  /** Each Escape the Dialog or Popover is told of (its escapeKeyDown). */
+  const told: string[] = [];
+  const onEscapeKeyDown = (event: KeyboardEvent) =>
+    told.push(`escapeKeyDown ${event.defaultPrevented}`);
   const host = (
     kind: "dialog" | "popover",
     react: boolean,
@@ -358,7 +362,7 @@ describe("a native Search in a native Dialog and Popover", () => {
             ),
             e(
               KozmosReact.DialogContent,
-              null,
+              { onEscapeKeyDown },
               e(KozmosReact.DialogTitle, null, "Find a place"),
               e(KozmosReact.DialogDescription, null, "Search the venue"),
               e(KozmosReact.Search, search),
@@ -375,7 +379,7 @@ describe("a native Search in a native Dialog and Popover", () => {
             ),
             e(
               KozmosReact.PopoverContent,
-              { "aria-label": "Filter" },
+              { "aria-label": "Filter", onEscapeKeyDown },
               e(KozmosReact.Search, search),
             ),
           );
@@ -384,7 +388,7 @@ describe("a native Search in a native Dialog and Popover", () => {
           h(KozmosDialogTrigger, { asChild: true }, () =>
             h(KozmosButton, null, () => "Find"),
           ),
-          h(KozmosDialogContent, null, () => [
+          h(KozmosDialogContent, { onEscapeKeyDown }, () => [
             h(KozmosDialogTitle, null, () => "Find a place"),
             h(KozmosDialogDescription, null, () => "Search the venue"),
             h(KozmosSearch, search),
@@ -395,8 +399,10 @@ describe("a native Search in a native Dialog and Popover", () => {
           h(KozmosPopoverTrigger, { asChild: true }, () =>
             h(KozmosButton, null, () => "Find"),
           ),
-          h(KozmosPopoverContent, { "aria-label": "Filter" }, () =>
-            h(KozmosSearch, search),
+          h(
+            KozmosPopoverContent,
+            { "aria-label": "Filter", onEscapeKeyDown },
+            () => h(KozmosSearch, search),
           ),
         ]);
   };
@@ -428,15 +434,18 @@ describe("a native Search in a native Dialog and Popover", () => {
             seen[side].push({
               open: document.querySelectorAll('[role="dialog"]').length,
               value: input?.value ?? null,
+              told: told.splice(0),
             });
           }
         }
       }
+      // The first Escape is the field's, as the highest layer's: the
+      // overlay is not told of it.
       expect(seen.react.slice(0, 4)).toEqual([
-        { open: 1, value: "Gate" },
-        { open: 1, value: "Gate" },
-        { open: 1, value: "" },
-        { open: 0, value: null },
+        { open: 1, value: "Gate", told: [] },
+        { open: 1, value: "Gate", told: [] },
+        { open: 1, value: "", told: [] },
+        { open: 0, value: null, told: ["escapeKeyDown false"] },
       ]);
       expect(seen.vue).toEqual(seen.react);
     },

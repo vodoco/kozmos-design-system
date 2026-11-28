@@ -20,6 +20,7 @@ import {
   SEARCH_ICON_CLASS,
   SEARCH_INPUT_CLASS,
 } from "#kozmos-recipes";
+import { claimEscape } from "../shared/layers";
 import { useKozmosAnalytics } from "../AnalyticsProvider/AnalyticsProvider";
 import { KozmosFieldWrapper } from "../FieldWrapper/FieldWrapper";
 import {
@@ -152,7 +153,9 @@ export const KozmosSearch = defineComponent({
             !event.defaultPrevented &&
             !event.isComposing
           ) {
-            event.preventDefault();
+            // The highest layer's, as React's empty Radix layer makes it:
+            // no Dialog or Popover around the field hears it.
+            claimEscape(event);
             clear();
           }
         },
