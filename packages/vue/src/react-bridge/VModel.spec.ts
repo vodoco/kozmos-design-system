@@ -20,6 +20,7 @@ import {
 } from "@kozmos-ds/react";
 import * as KozmosReact from "@kozmos-ds/react";
 import * as Bridge from "./index";
+import { KozmosSearch } from "../../test/bridged-parts";
 import { bridgeOf, createVueWrapper, RADIX_MODELS } from "./react-adapter";
 import {
   $,
@@ -103,9 +104,17 @@ function stub(property: "clientWidth" | "clientHeight", value: number) {
 // Every model of every wrapper, and how a visitor changes it.
 // --------------------------------------------------------------------------
 
+/**
+ * The bridge's exports, and React's Search through its adapter as it
+ * mounted it before Search's native port (test/bridged-parts.ts): the
+ * specs' text field, its `v-model` the DOM's change as DatePicker's and
+ * TimePicker's is, on a field words can be typed into.
+ */
+const Specs = { ...Bridge, KozmosSearch };
+
 interface Part {
-  /** The bridge's export. */
-  name: keyof typeof Bridge;
+  /** The bridge's export, or the specs' Search. */
+  name: keyof typeof Specs;
   /** The model, as Vue names it: `modelValue` is `v-model`. */
   model?: string;
   /** What sets this row apart from another of the same model (its props). */
@@ -148,7 +157,7 @@ interface Part {
 }
 
 const textField = (
-  name: keyof typeof Bridge,
+  name: keyof typeof Specs,
   selector: string,
   start: string,
   next: string,
@@ -168,7 +177,11 @@ const textField = (
 });
 
 const PARTS: Part[] = [
-  textField("KozmosSearch", "input[type=search]", "caf", "cafe"),
+  {
+    ...textField("KozmosSearch", "input[type=search]", "caf", "cafe"),
+    // The specs' own, no export of the bridge's (test/bridged-parts.ts).
+    implicit: true,
+  },
   textField("KozmosDatePicker", "input[type=date]", "2026-11-01", "2026-11-06"),
   textField("KozmosTimePicker", "input[type=time]", "09:00", "09:30"),
   {
@@ -753,7 +766,7 @@ function mountPart(
   const undo = part.env?.();
   if (undo) onTeardown.push(undo);
   mount(() =>
-    h(Bridge[part.name] as Component, {
+    h(Specs[part.name] as Component, {
       ...part.props,
       ...(vModel && {
         [name]: model.value,
@@ -977,7 +990,7 @@ describe("each model's other changes", () => {
   it("KozmosSearch shows the model when the parent refuses a change, or changes it", async () => {
     const value = ref("ADA");
     mount(() =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         modelValue: value.value,
         // Capitals only: anything else is refused.
         "onUpdate:modelValue": (next: string) => {
@@ -999,7 +1012,7 @@ describe("each model's other changes", () => {
     const value = ref("Gate");
     const cleared = vi.fn();
     mount(() =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         "aria-label": "Place",
         clearable: "",
         clearLabel: "Aramayı temizle",
@@ -1028,7 +1041,7 @@ describe("each model's other changes", () => {
   it("an empty model leaves a text field controlled", async () => {
     const value = ref<string | undefined>(undefined);
     mount(() =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         modelValue: value.value,
         "onUpdate:modelValue": (next: string) => (value.value = next),
       }),
@@ -1254,7 +1267,7 @@ describe("a model's nothing, read from React's props", () => {
     // %o, not %j: JSON writes NaN and Infinity as null.
     "%s's %s, with %o, is %o",
     async (name, model, props, nothing) => {
-      const binding = bridgeOf(Bridge[name])!.models[model];
+      const binding = bridgeOf(Specs[name])!.models[model];
       const Wrapper = createVueWrapper(Recorder, { [model]: binding });
       mount(() =>
         h(Wrapper, {
@@ -1383,7 +1396,7 @@ describe("a model's change goes through Vue's emit", () => {
             string,
             unknown[],
           ];
-          if (instance.type !== Bridge.KozmosSearch) return;
+          if (instance.type !== KozmosSearch) return;
           emitted.push([event, args]);
         },
         on() {},
@@ -1402,7 +1415,7 @@ describe("a model's change goes through Vue's emit", () => {
     const state = { name: ref("Ada"), listener };
     mount(
       defineComponent({
-        components: { KozmosSearch: Bridge.KozmosSearch },
+        components: { KozmosSearch: KozmosSearch },
         setup: () => state,
         template: `<KozmosSearch aria-label="Name" v-model.trim="name" @update:model-value="listener" />`,
       }),
@@ -1419,7 +1432,7 @@ describe("a model's change goes through Vue's emit", () => {
     const emitted = recordEmits();
     const once = vi.fn();
     mount(() =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         "aria-label": "Name",
         modelValue: "Ada",
         "onUpdate:modelValueOnce": once,
@@ -1461,7 +1474,7 @@ describe("every spelling of a model", () => {
   /** A template, compiled at runtime as an SFC's is at build. */
   const page = (template: string, state: Record<string, unknown>) =>
     defineComponent({
-      components: Bridge as Record<string, Component>,
+      components: Specs as Record<string, Component>,
       setup: () => state,
       template,
     });
@@ -1469,19 +1482,19 @@ describe("every spelling of a model", () => {
   const name = ref("Bob");
   const spellings = {
     "h() camelCase": () =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         "aria-label": "Name",
         modelValue: name.value,
         "onUpdate:modelValue": (next: string) => (name.value = next),
       }),
     "h() kebab-case": () =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         "aria-label": "Name",
         "model-value": name.value,
         "onUpdate:model-value": (next: string) => (name.value = next),
       }),
     "h() kebab-case value, camelCase listener": () =>
-      h(Bridge.KozmosSearch, {
+      h(KozmosSearch, {
         "aria-label": "Name",
         "model-value": name.value,
         "onUpdate:modelValue": (next: string) => (name.value = next),
@@ -1585,7 +1598,7 @@ describe("every spelling of a model", () => {
 describe("v-model's modifiers", () => {
   const page = (template: string, state: Record<string, unknown>) =>
     defineComponent({
-      components: Bridge as Record<string, Component>,
+      components: Specs as Record<string, Component>,
       setup: () => state,
       template,
     });
@@ -1675,7 +1688,7 @@ describe("handlers given as an array", () => {
     const value = ref("Ada");
     mount(() =>
       h(
-        Bridge.KozmosSearch,
+        KozmosSearch,
         mergeProps(
           {
             "aria-label": "Name",
@@ -1887,7 +1900,7 @@ describe("attributes reach React alone", () => {
     },
     {
       name: "KozmosSearch",
-      component: Bridge.KozmosSearch,
+      component: KozmosSearch,
       kind: "a field, its <input> React's element",
     },
     {

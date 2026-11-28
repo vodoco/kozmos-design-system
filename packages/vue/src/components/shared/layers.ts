@@ -34,6 +34,12 @@ import {
  *   another (portalled after it) is inside the lower one. A popup that is
  *   no Reka layer, Combobox's, joins that stack's DOM contract
  *   (`joinLayers`): React's is a Radix DismissableLayer with no dismiss.
+ *   A field that claims Escape for itself (a clearable Search holding
+ *   text) prevents it as it handles it: Reka's layers hear Escape on the
+ *   window, after the field, and dismiss nothing on a prevented one, so a
+ *   Dialog or Popover around it gives that Escape way. React's draws an
+ *   empty Radix layer for it, because Radix's hear Escape first, on the
+ *   document in the capture phase.
  * - **Focus.** Reka's FocusScope stack: a scope opened inside another
  *   (Select's list in a Dialog) pauses the outer one until it closes.
  * - **Portals.** Each is drawn in the nearest KozmosThemeProvider's portal,

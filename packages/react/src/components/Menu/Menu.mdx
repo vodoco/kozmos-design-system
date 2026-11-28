@@ -165,11 +165,29 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosMenu } from "@kozmos-ds/vue/react-bridge"
+import { ref } from "vue"
+import {
+  KozmosButton,
+  KozmosMenu,
+  KozmosMenuContent,
+  KozmosMenuItem,
+  KozmosMenuTrigger,
+} from "@kozmos-ds/vue"
+
+const sort = ref("Nearby")
 </script>
 
 <template>
-  <KozmosMenu />
+  <KozmosMenu>
+    <KozmosMenuTrigger as-child>
+      <KozmosButton>Sort places</KozmosButton>
+    </KozmosMenuTrigger>
+    <KozmosMenuContent>
+      <KozmosMenuItem @select="sort = 'Nearby'">Nearby</KozmosMenuItem>
+      <KozmosMenuItem @select="sort = 'Name'">Name</KozmosMenuItem>
+    </KozmosMenuContent>
+  </KozmosMenu>
+  <output>Sort: {{ sort }}</output>
 </template>
     `}
     swift={`

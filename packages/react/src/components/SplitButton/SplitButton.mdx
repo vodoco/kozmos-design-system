@@ -61,7 +61,7 @@ export function PublishTargets({ onPublish }: { onPublish: (target: string) => v
     `}
     vue={`
 <script setup>
-import { KozmosSplitButton } from "@kozmos-ds/vue/react-bridge"
+import { KozmosMenuItem, KozmosSplitButton } from "@kozmos-ds/vue"
 
 const items = [
   { label: "Publish to staging", onClick: () => publish("staging") },
@@ -74,7 +74,12 @@ function publish(target) {
 </script>
 
 <template>
-  <KozmosSplitButton :menu-items="items" @main-click="publish('draft')">Publish</KozmosSplitButton>
+  <KozmosSplitButton :menu-items="items" @main-click="publish('draft')">
+    Publish
+    <template #menu-content>
+      <KozmosMenuItem @select="publish('tonight')">Publish tonight</KozmosMenuItem>
+    </template>
+  </KozmosSplitButton>
 </template>
     `}
     swift={`
@@ -165,11 +170,20 @@ export function Example() {
     `}
     vue={`
 <script setup>
-import { KozmosSplitButton } from "@kozmos-ds/vue/react-bridge"
+import { ref } from "vue"
+import { KozmosSplitButton } from "@kozmos-ds/vue"
+
+const action = ref("None")
+const items = [
+  { label: "Save draft", onClick: () => (action.value = "Save draft requested") },
+]
 </script>
 
 <template>
-  <KozmosSplitButton />
+  <KozmosSplitButton :menu-items="items" @main-click="action = 'Publish requested'">
+    Publish
+  </KozmosSplitButton>
+  <output>Demo action: {{ action }}</output>
 </template>
     `}
     swift={`
