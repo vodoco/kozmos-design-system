@@ -1886,10 +1886,6 @@ export const LEAVING_BRIDGE: Record<string, string> = {};
  */
 export type Wave = "V3" | "V4" | "V5" | "SDK" | "never";
 
-const MENU_PARTS =
-  "a part of Menu, which the bridge mounts only as a whole: a Vue app cannot compose Menu's content, items, groups or submenus until Menu and its parts are ported";
-const CONTEXT_MENU_PARTS =
-  "a part of ContextMenu, which the bridge mounts only as a whole: a Vue app cannot compose its trigger, content or items until ContextMenu and its parts are ported";
 const PAGINATION_PARTS =
   "a part of Pagination, which the bridge mounts only as a whole: a Vue app cannot compose its own pager from these until Pagination and its parts are ported";
 const TABLE_PARTS =
@@ -1917,42 +1913,6 @@ export const NOT_IN_VUE: Record<string, { wave: Wave; why: string }> = {
   DialogOverlay: { wave: "never", why: NOT_EXPORTED_OVERLAY },
   DrawerPortal: { wave: "never", why: NOT_EXPORTED_OVERLAY },
   DrawerOverlay: { wave: "never", why: NOT_EXPORTED_OVERLAY },
-  ...Object.fromEntries(
-    [
-      "MenuCheckboxItem",
-      "MenuContent",
-      "MenuGroup",
-      "MenuItem",
-      "MenuLabel",
-      "MenuPortal",
-      "MenuRadioGroup",
-      "MenuRadioItem",
-      "MenuSeparator",
-      "MenuShortcut",
-      "MenuSub",
-      "MenuSubContent",
-      "MenuSubTrigger",
-      "MenuTrigger",
-    ].map((name) => [name, { wave: "V3", why: MENU_PARTS }]),
-  ),
-  ...Object.fromEntries(
-    [
-      "ContextMenuCheckboxItem",
-      "ContextMenuContent",
-      "ContextMenuGroup",
-      "ContextMenuItem",
-      "ContextMenuLabel",
-      "ContextMenuPortal",
-      "ContextMenuRadioGroup",
-      "ContextMenuRadioItem",
-      "ContextMenuSeparator",
-      "ContextMenuShortcut",
-      "ContextMenuSub",
-      "ContextMenuSubContent",
-      "ContextMenuSubTrigger",
-      "ContextMenuTrigger",
-    ].map((name) => [name, { wave: "V3", why: CONTEXT_MENU_PARTS }]),
-  ),
   ...Object.fromEntries(
     [
       "PaginationContent",
