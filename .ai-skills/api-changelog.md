@@ -3375,6 +3375,58 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
 
 ## `@kozmos-ds/vue` — current 0.17.3-next.0
 
+### 0.17.3-next.0
+
+Wave V2 of the Vue port: the form controls and overlays are native Vue, so 59 of Kozmos's 88 core
+parts now render without React. It is built on `@kozmos-ds/styles` and `@kozmos-ds/react` 0.17.3 and
+pins both exactly: `npm install @kozmos-ds/vue@next vue`.
+
+- **Wave V2's native parts in `@kozmos-ds/vue`.** Each draws its React counterpart's element from the
+  shared recipes and is held to React's API and DOM by the contract and parity checks; every visual
+  baseline with a React counterpart is byte-identical to React's:
+  - controls and fields: `KozmosCounter`, `KozmosIconButton`, `KozmosCheckbox`, `KozmosRating`,
+    `KozmosFieldWrapper`, `KozmosInput`, `KozmosTextarea`, `KozmosPasswordInput`, `KozmosNumberInput`
+    and `KozmosOTPInput` (#625);
+  - the design config: `KozmosDesignConfigProvider` with `useDesignConfig` (GAP-291, #626);
+  - choices: `KozmosSwitch`, `KozmosRadioGroup` with `KozmosRadioGroupItem`, `KozmosSegmentedControl`
+    and `KozmosSlider`; selects: `KozmosListbox`, `KozmosSelect` (with its trigger, value, content,
+    group, label, item, separator and scroll buttons), `KozmosCombobox`, `KozmosMultiSelect` and
+    `KozmosChipInput`; chips: `KozmosChip` and `KozmosChipGroup`; overlays: `KozmosDialog`,
+    `KozmosDrawer` and `KozmosBottomSheet` (each with its trigger, content, header, title,
+    description, footer and close), `KozmosPopover` (with trigger, anchor, content and arrow),
+    `KozmosAnchoredPopover` and `KozmosTooltip` (with provider, trigger and content) (#628).
+
+  The native overlays share one layering system, as Radix's do in React: a native Select, Popover or
+  Tooltip opened inside a native Dialog stays inside its modal, and Escape and an outside press close
+  the topmost layer only. Each part's prop types are exported beside it.
+
+- **Breaking for `0.17.2-next.0`: 51 bridge exports left `@kozmos-ds/vue/react-bridge`.** Import them
+  from `@kozmos-ds/vue` instead: `KozmosAnchoredPopover`, `KozmosBottomSheet`, `KozmosCheckbox`,
+  `KozmosChip`, `KozmosChipInput`, `KozmosCombobox`, `KozmosCounter`, `KozmosDialog` (with
+  `KozmosDialogTrigger`, `KozmosDialogContent`, `KozmosDialogHeader`, `KozmosDialogTitle`,
+  `KozmosDialogDescription`, `KozmosDialogFooter` and `KozmosDialogClose`), `KozmosDrawer` (with the
+  same seven parts), `KozmosFieldWrapper`, `KozmosIconButton`, `KozmosInput`, `KozmosListbox`,
+  `KozmosMultiSelect`, `KozmosNumberInput`, `KozmosOTPInput`, `KozmosPasswordInput`, `KozmosPopover`,
+  `KozmosRadioGroup`, `KozmosRadioGroupItem`, `KozmosRating`, `KozmosSegmentedControl`, `KozmosSelect`
+  (with `KozmosSelectTrigger`, `KozmosSelectValue`, `KozmosSelectContent`, `KozmosSelectGroup`,
+  `KozmosSelectLabel`, `KozmosSelectItem` and `KozmosSelectSeparator`), `KozmosSlider`, `KozmosSwitch`,
+  `KozmosTextarea` and `KozmosTooltip` (with `KozmosTooltipProvider`, `KozmosTooltipTrigger` and
+  `KozmosTooltipContent`).
+- **Breaking: the models follow React's controlled pairs** (`PORTING.md` §4). The bridge handed a
+  listener such as `@open-change` to React's callback; a native part emits `update:<prop>` instead, and
+  nothing named `…-change`:
+  - `KozmosCheckbox` and `KozmosSwitch`: `v-model` is now `v-model:checked`;
+  - `KozmosDialog`, `KozmosDrawer`, `KozmosBottomSheet`, `KozmosPopover`, `KozmosTooltip` and
+    `KozmosSelect`'s open state: `:open` with `@open-change` is now `v-model:open`;
+  - `KozmosCombobox`, `KozmosChipInput`, `KozmosListbox`, `KozmosMultiSelect`, `KozmosNumberInput` and
+    `KozmosChip`: `:value` with `@value-change` is now `v-model`;
+  - `KozmosCombobox`'s and `KozmosChipInput`'s typed text is `v-model:inputValue`,
+    `KozmosMultiSelect`'s search `v-model:searchValue`, `KozmosListbox`'s active option
+    `v-model:activeValue` and `KozmosPasswordInput`'s reveal `v-model:visible`.
+
+  Callbacks that are not a controlled pair stay events of the same name (`@reset-mixed`, `@remove`,
+  `@action`).
+
 ### 0.17.2-next.0
 
 The V1 parts on `@kozmos-ds/styles` and `@kozmos-ds/react` 0.17.2, which it pins exactly:
